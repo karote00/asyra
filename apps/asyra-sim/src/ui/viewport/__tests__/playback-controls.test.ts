@@ -24,7 +24,9 @@ it('checks the exact user-paused frame and resets sampling when Play restarts fr
       `[aria-label="${name} trajectory"]`
     )
 
-    if (!button) throw new Error(`Missing ${name} control`)
+    if (!button) {
+      throw new Error(`Missing ${name} control`)
+    }
 
     await act(() => button.click())
   }
@@ -80,8 +82,9 @@ it('keeps Play running and exposes no automatic collision pause control', async 
             if (
               'onCollision' in options &&
               typeof options.onCollision === 'function'
-            )
+            ) {
               options.onCollision(time)
+            }
           }
         })
       )
@@ -91,7 +94,9 @@ it('keeps Play running and exposes no automatic collision pause control', async 
       '[aria-label="Play trajectory"]'
     )
 
-    if (!play) throw new Error('Missing Play control')
+    if (!play) {
+      throw new Error('Missing Play control')
+    }
 
     await act(() => play.click())
 

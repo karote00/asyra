@@ -29,7 +29,9 @@ function face(vertices: Point[], region: number): Face | null {
       a[0] * b[1] - a[1] * b[0]
     ],
     length = Math.hypot(...n)
-  if (length < 1e-14) return null
+  if (length < 1e-14) {
+    return null
+  }
   const normal = n.map((v) => v / length) as Vec
   return { vertices, normal, w: dot(normal, vertices[0].p), region }
 }
@@ -43,8 +45,12 @@ function split(
 ) {
   const types = p.vertices.map((v) => {
       const d = dot(plane.normal, v.p) - plane.w
-      if (d > epsilon) return 1
-      if (d < -epsilon) return 2
+      if (d > epsilon) {
+        return 1
+      }
+      if (d < -epsilon) {
+        return 2
+      }
       return 0
     }),
     kind = types.reduce<number>((a, b) => a | b, 0)
@@ -68,8 +74,12 @@ function split(
       c = p.vertices[j],
       ta = types[i],
       tc = types[j]
-    if (ta !== 2) f.push(a)
-    if (ta !== 1) b.push(a)
+    if (ta !== 2) {
+      f.push(a)
+    }
+    if (ta !== 1) {
+      b.push(a)
+    }
     if ((ta | tc) === 3) {
       const t =
         (plane.w - dot(plane.normal, a.p)) / dot(plane.normal, sub(c.p, a.p))
@@ -92,11 +102,12 @@ function split(
   for (const [vertices, target] of [
     [clean(f), front],
     [clean(b), back]
-  ] as const)
+  ] as const) {
     if (vertices.length >= 3) {
       // Preserve the known plane even when the first three resulting vertices are collinear.
       target.push({ ...p, vertices: [...vertices] })
     }
+  }
 }
 class SolidTree {
   plane: Face | undefined
@@ -107,12 +118,15 @@ class SolidTree {
     this.build(polygons)
   }
   build(polygons: Face[]) {
-    if (!polygons.length) return
+    if (!polygons.length) {
+      return
+    }
     this.plane ??= polygons[Math.floor(polygons.length / 2)]
     const front: Face[] = [],
       back: Face[] = []
-    for (const p of polygons)
+    for (const p of polygons) {
       split(this.plane, p, this.faces, this.faces, front, back)
+    }
     if (front.length) {
       this.front ??= new SolidTree()
       this.front.build(front)
@@ -140,17 +154,25 @@ class SolidTree {
       w: -p.w
     })
     this.faces = this.faces.map(invert)
-    if (this.plane) this.plane = invert(this.plane)
+    if (this.plane) {
+      this.plane = invert(this.plane)
+    }
     this.front?.invert()
     this.back?.invert()
     ;[this.front, this.back] = [this.back, this.front]
   }
   clip(polygons: Face[]): Face[] {
-    if (!this.plane) return [...polygons]
+    if (!this.plane) {
+      return [...polygons]
+    }
     let front: Face[] = [],
       back: Face[] = []
-    for (const p of polygons) split(this.plane, p, front, back, front, back)
-    if (this.front) front = this.front.clip(front)
+    for (const p of polygons) {
+      split(this.plane, p, front, back, front, back)
+    }
+    if (this.front) {
+      front = this.front.clip(front)
+    }
     back = this.back ? this.back.clip(back) : []
     return [...front, ...back]
   }
@@ -174,7 +196,11 @@ function polygons(mesh: Mesh, region: number, authored: boolean): Face[] {
       region
     )
     if (f) {
-      if (authored) for (const v of f.vertices) v.n ??= [...f.normal]
+      if (authored) {
+        for (const v of f.vertices) {
+          v.n ??= [...f.normal]
+        }
+      }
       faces.push(f)
     }
   }
@@ -213,7 +239,7 @@ interface SolidMesh extends Mesh {
 function triangulateSolid(faces: Face[], authored: boolean): SolidMesh {
   const key = (p: Vec) => p.map((v) => Math.round(v * 1e9)).join(',')
   const points = new Map<string, Vec>()
-  for (const f of faces)
+  for (const f of faces) {
     for (const v of f.vertices) {
       const k = key(v.p)
       let position = points.get(k)
@@ -223,6 +249,7 @@ function triangulateSolid(faces: Face[], authored: boolean): SolidMesh {
       }
       v.p = position
     }
+  }
   const positions = [...points.values()]
   const extent = Math.max(
     ...[0, 1, 2].map(
@@ -245,19 +272,26 @@ function triangulateSolid(faces: Face[], authored: boolean): SolidMesh {
       candidates = new Set<Vec>()
     for (let i = 0; i <= steps; i++) {
       const [x, y, z] = bucket(a.p.map((v, k) => v + (d[k] * i) / steps) as Vec)
-      for (let dx = -1; dx <= 1; dx++)
-        for (let dy = -1; dy <= 1; dy++)
-          for (let dz = -1; dz <= 1; dz++)
-            for (const p of grid.get(`${x + dx},${y + dy},${z + dz}`) ?? [])
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            for (const p of grid.get(`${x + dx},${y + dy},${z + dz}`) ?? []) {
               candidates.add(p)
+            }
+          }
+        }
+      }
     }
     const inner: [number, Vec][] = []
     for (const p of candidates) {
       const v = sub(p, a.p),
         t = dot(v, d) / length
-      if (t <= 1e-8 || t >= 1 - 1e-8) continue
-      if (Math.hypot(...v.map((x, k) => x - t * d[k])) < 2e-9)
+      if (t <= 1e-8 || t >= 1 - 1e-8) {
+        continue
+      }
+      if (Math.hypot(...v.map((x, k) => x - t * d[k])) < 2e-9) {
         inner.push([t, p])
+      }
     }
     inner.sort((u, v) => u[0] - v[0])
     return [
@@ -282,11 +316,15 @@ function triangulateSolid(faces: Face[], authored: boolean): SolidMesh {
       .map((v) => Math.round(v * 1e9))
       .join(',')
     const found = vertices.get(k)
-    if (found !== undefined) return found
+    if (found !== undefined) {
+      return found
+    }
     const id = mesh.positions.length / 3
     mesh.positions.push(...p.p)
     mesh.uvs.push(...p.uv)
-    if (normal && mesh.normals) mesh.normals.push(...normal)
+    if (normal && mesh.normals) {
+      mesh.normals.push(...normal)
+    }
     vertices.set(k, id)
     return id
   }
@@ -300,16 +338,25 @@ function triangulateSolid(faces: Face[], authored: boolean): SolidMesh {
       ...(authored ? { n: [0, 0, 0] as Vec } : {})
     }
     for (const v of boundary) {
-      for (let k = 0; k < 3; k++) centre.p[k] += v.p[k] / boundary.length
-      for (let k = 0; k < 2; k++) centre.uv[k] += v.uv[k] / boundary.length
-      if (centre.n && v.n)
-        for (let k = 0; k < 3; k++) centre.n[k] += v.n[k] / boundary.length
+      for (let k = 0; k < 3; k++) {
+        centre.p[k] += v.p[k] / boundary.length
+      }
+      for (let k = 0; k < 2; k++) {
+        centre.uv[k] += v.uv[k] / boundary.length
+      }
+      if (centre.n && v.n) {
+        for (let k = 0; k < 3; k++) {
+          centre.n[k] += v.n[k] / boundary.length
+        }
+      }
     }
     const ci = index(centre, f.region)
     for (let i = 0; i < boundary.length; i++) {
       const a = boundary[i],
         b = boundary[(i + 1) % boundary.length]
-      if (!face([centre, a, b], f.region)) continue
+      if (!face([centre, a, b], f.region)) {
+        continue
+      }
       mesh.indices.push(ci, index(a, f.region), index(b, f.region))
       mesh.triangleRegions.push(f.region)
     }

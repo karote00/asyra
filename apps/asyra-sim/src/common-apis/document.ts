@@ -25,47 +25,54 @@ export function loadCanonicalDocument(
   data: unknown
 ): readonly ModelLoadIssue[] {
   const issues: ModelLoadIssue[] = []
-  if (record(data) && record(data.props))
+  if (record(data) && record(data.props)) {
     for (const [id, property] of Object.entries(data.props)) {
-      if (!record(property)) continue
+      if (!record(property)) {
+        continue
+      }
       if (
         property.type === PropertyTypes.BODY &&
         !validBodyProperty(property[PropertyFields.BODY])
-      )
+      ) {
         issues.push({
           path: `props.${id}.${PropertyFields.BODY}`,
           message:
             'Analysis geometry or joint parameters required schema recovery; confirm or correct the repaired model before analysis.'
         })
+      }
       if (
         property.type === PropertyTypes.CANDIDATE &&
         !validCandidateParameters(property[PropertyFields.CANDIDATE])
-      )
+      ) {
         issues.push({
           path: `props.${id}.${PropertyFields.CANDIDATE}`,
           message:
             'Candidate parameters required schema recovery; confirm or correct the repaired model before analysis.'
         })
+      }
       if (
         property.type === PropertyTypes.EXPERIMENT &&
         !validExperimentDefinition(property[PropertyFields.EXPERIMENT])
-      )
+      ) {
         issues.push({
           path: `props.${id}.${PropertyFields.EXPERIMENT}`,
           message:
             'Experiment inputs required schema recovery; confirm or correct the definition before analysis.'
         })
+      }
       if (
         property.type === PropertyTypes.RUN_REFERENCE &&
         (!validRunReference(property[PropertyFields.RUN_REFERENCE]) ||
           property[PropertyFields.RUN_REFERENCE] === null)
-      )
+      ) {
         issues.push({
           path: `props.${id}.${PropertyFields.RUN_REFERENCE}`,
           message:
             'Retained run reference requires review; original evidence has not been replaced.'
         })
+      }
     }
+  }
   const unsubscribe = core.registerLoadDiagnosticsHook((diagnostics) => {
     issues.push(
       ...diagnostics.map((item) => ({ path: item.path, message: item.message }))

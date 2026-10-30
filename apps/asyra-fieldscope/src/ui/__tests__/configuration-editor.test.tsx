@@ -35,7 +35,9 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
     const value = host.querySelector<HTMLButtonElement>(
       `button[aria-label="${label}"]`
     )
-    if (!value) throw new Error(`Missing ${label}`)
+    if (!value) {
+      throw new Error(`Missing ${label}`)
+    }
     return value
   }
   try {
@@ -50,7 +52,9 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
       ).toBe('m')
     }
     const row = button('上移第 1 項').parentElement
-    if (!row) throw new Error('Missing strip actions')
+    if (!row) {
+      throw new Error('Missing strip actions')
+    }
     expect(row.querySelectorAll('button').length).toBe(3)
     expect(
       [...row.querySelectorAll('button')].map((b) =>
@@ -84,7 +88,9 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
     const width = host.querySelector<HTMLInputElement>(
       'input[aria-label="單棟寬度"]'
     )
-    if (!length || !width) throw new Error('Missing dimension fields')
+    if (!length || !width) {
+      throw new Error('Missing dimension fields')
+    }
     await act(async () => {
       length.value = '41'
       length.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))

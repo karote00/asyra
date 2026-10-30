@@ -26,7 +26,9 @@ export interface RunRecord {
 
 export function stableJson(value: unknown): string {
   return JSON.stringify(value, (_key, item) => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) return item
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return item
+    }
     return Object.fromEntries(
       Object.keys(item)
         .sort()
@@ -74,8 +76,9 @@ export function validateRunRecord(input: unknown): RunRecord {
     !Number.isInteger(input.environment.hardwareConcurrency) ||
     input.environment.hardwareConcurrency < 1 ||
     input.environment.hardwareConcurrency > 1024
-  )
+  ) {
     throw new Error('Invalid retained run metadata')
+  }
   const snapshot = validateHistoricalSnapshot(input.snapshot)
   const result = validateHistoricalResult(snapshot, input.result)
   if (
@@ -85,8 +88,9 @@ export function validateRunRecord(input: unknown): RunRecord {
         input.lineage.bodyOrigins,
         snapshot.workcell.bodies.map((body) => body.id)
       ))
-  )
+  ) {
     throw new Error('Invalid or incomplete retained candidate lineage')
+  }
   return freeze({
     version: 1,
     name: input.name,
@@ -101,11 +105,13 @@ export function validateRunRecord(input: unknown): RunRecord {
 }
 
 export function validateRunRecords(input: unknown): readonly RunRecord[] {
-  if (!Array.isArray(input) || input.length > 1000)
+  if (!Array.isArray(input) || input.length > 1000) {
     throw new Error('Invalid retained run collection (maximum 1000)')
+  }
   const records = input.map(validateRunRecord)
-  if (new Set(records.map((run) => run.result.runId)).size !== records.length)
+  if (new Set(records.map((run) => run.result.runId)).size !== records.length) {
     throw new Error('Duplicate retained run identity')
+  }
   return Object.freeze(records)
 }
 
@@ -126,11 +132,14 @@ export class RunArchive {
     const run = validateRunRecord(input),
       previous = this.records.get(run.result.runId)
     if (previous) {
-      if (stableJson(previous) !== stableJson(run))
+      if (stableJson(previous) !== stableJson(run)) {
         throw new Error('Run identity already has different immutable content')
+      }
       return previous
     }
-    if (this.records.size >= 1000) throw new Error('Retained run limit reached')
+    if (this.records.size >= 1000) {
+      throw new Error('Retained run limit reached')
+    }
     this.validateSources(run)
     this.records.set(run.result.runId, run)
     return run

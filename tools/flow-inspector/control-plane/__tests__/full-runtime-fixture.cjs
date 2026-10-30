@@ -499,7 +499,7 @@ function createFullRuntimeFixture(root, parent) {
   const directory = fs.mkdtempSync(path.join(parent, 'full-runtime-'))
   const repository = path.join(directory, 'repository')
   fs.mkdirSync(path.join(repository, 'packages'), { recursive: true })
-  for (const name of packageNames)
+  for (const name of packageNames) {
     fs.cpSync(
       path.join(root, 'packages', name),
       path.join(repository, 'packages', name),
@@ -507,8 +507,10 @@ function createFullRuntimeFixture(root, parent) {
         recursive: true
       }
     )
-  for (const name of ['package.json', 'yarn.lock'])
+  }
+  for (const name of ['package.json', 'yarn.lock']) {
     fs.copyFileSync(path.join(root, name), path.join(repository, name))
+  }
   write(
     repository,
     architecturePath,
@@ -679,12 +681,13 @@ function createFullRuntimeFixture(root, parent) {
       'baseline',
       sourceAdmission
     )
-    if (expectedStatus)
+    if (expectedStatus) {
       assert.equal(
         evidence.status,
         expectedStatus,
         JSON.stringify(evidence.issues)
       )
+    }
     const record = {
       id,
       phase: 'completed',

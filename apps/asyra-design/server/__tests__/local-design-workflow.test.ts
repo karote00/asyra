@@ -313,10 +313,11 @@ describe('ordered ready parts', () => {
       { parts: [] },
       { parts: [{ key: 'first', draft: { ...draft, unknown: true } }] },
       { parts: [{ key: 'first', callback: '() => draw()' }] }
-    ])
+    ]) {
       expect(Boolean(operationInputIssue(input, native))).toBe(
         Boolean(operationInputIssue(input, schema))
       )
+    }
     expect(
       operationInputIssue({ parts: [{ key: 'first', draft }] }, schema)
     ).toBeUndefined()
@@ -388,10 +389,11 @@ describe('ordered ready parts', () => {
     execute.mockImplementation(async (batch) => {
       order.push('apply')
       const part = order.length / 2
-      if (part === 2)
+      if (part === 2) {
         expect(batch.actions[0].arguments).toMatchObject({
           parentId: 'actual-first'
         })
+      }
       return {
         context: {},
         actionResults: [
@@ -739,19 +741,21 @@ it('retains existing measurement and inspection when combined preparation applie
         compositionId: 'root',
         appliedElementIds: ['root']
       }
-      if (action.name === AiActionNames.REVIEW_DESIGN)
+      if (action.name === AiActionNames.REVIEW_DESIGN) {
         result = {
           complete: true,
           findings: [],
           measuredTextIds: [],
           evidence: { sessionId: 'combined', revision: 1 }
         }
-      if (action.name === AiActionNames.INSPECT_DRAWING)
+      }
+      if (action.name === AiActionNames.INSPECT_DRAWING) {
         result = {
           available: true,
           partial: false,
           image: { dataUrl: 'data:image/png;base64,AA==' }
         }
+      }
       return {
         context: {},
         actionResults: [
@@ -1314,24 +1318,25 @@ const inspectionBoundaryFixture = (
         let result: AiBatchReceipt['actionResults'][number]['result']
         if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
           applied++
-          if (options.lostApply === applied)
+          if (options.lostApply === applied) {
             throw new Error('Application acknowledgement lost')
-          if (options.uncertainApply === applied)
+          }
+          if (options.uncertainApply === applied) {
             result = {
               status: 'partial',
               settlement: 'unknown',
               compositionId: 'part-' + applied
             }
-          else if (options.unknownApply === applied)
+          } else if (options.unknownApply === applied) {
             result = { status: 'unknown', compositionId: 'part-' + applied }
-          else if (options.stopApply === applied)
+          } else if (options.stopApply === applied) {
             result = {
               status: 'partial',
               compositionId: 'part-' + applied,
               appliedElementIds: ['part-' + applied],
               complete: false
             }
-          else
+          } else {
             result = {
               status: 'complete',
               compositionId: 'part-' + (options.repeatedTarget ? 1 : applied),
@@ -1339,6 +1344,7 @@ const inspectionBoundaryFixture = (
                 'part-' + (options.repeatedTarget ? 1 : applied)
               ]
             }
+          }
         } else if (action.name === AiActionNames.REVIEW_DESIGN) {
           if (options.failCheck === target) {
             receipt.failure = {
@@ -1370,7 +1376,9 @@ const inspectionBoundaryFixture = (
             (action.arguments as { evidence: object }).evidence,
             'receiptId'
           )
-          if (imageValidation) options.cancelBinding?.abort()
+          if (imageValidation) {
+            options.cancelBinding?.abort()
+          }
           result = {
             current:
               options.unavailableValidation && imageValidation
@@ -1397,13 +1405,14 @@ const inspectionBoundaryFixture = (
             }
           }
         }
-        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
           Object.assign(result as object, {
             timing: {
               totalMs: 8,
               canonicalWork: { counters: { created: applied } }
             }
           })
+        }
         receipt.actionResults.push({
           actionId: action.id,
           actionName: action.name,
@@ -1825,7 +1834,9 @@ it.each([false, true])(
         entry.startsWith(AiActionNames.INSPECT_DRAWING + ':')
       )
     ).toEqual([])
-    if (ordered) expect(result.remainingParts).toEqual(['c'])
+    if (ordered) {
+      expect(result.remainingParts).toEqual(['c'])
+    }
     const checks = JSON.parse(
       await operations.call(
         'read_design_checks',
@@ -1967,8 +1978,9 @@ it.each([
       const result = JSON.parse(reply.text)
       expect(result.toolOutcome.settlement, result.message).toBe(settlement)
       expect(reply.text).toContain('ACTION_FAILED')
-      if (failCheck && settlement !== 'unknown')
+      if (failCheck && settlement !== 'unknown') {
         expect(reply.text).toContain('Measurement transport failed')
+      }
       expect(
         events.filter((event) =>
           event.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
@@ -2159,7 +2171,9 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
   const imageResult = appliedReceipt.actionResults.find(
     (entry) => entry.actionName === AiActionNames.INSPECT_DRAWING
   )?.result.image
-  if (!imageResult) throw new Error('Saved inspection metadata missing')
+  if (!imageResult) {
+    throw new Error('Saved inspection metadata missing')
+  }
   const pixels = await sharp({
     create: {
       width: imageResult.width,
@@ -2197,7 +2211,9 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
   const content = await localToolContent(reply.text)
   const delivered = content.find((item) => item.type === 'inputText')
   expect(delivered?.type).toBe('inputText')
-  if (delivered?.type !== 'inputText') throw new Error('Missing receipt')
+  if (delivered?.type !== 'inputText') {
+    throw new Error('Missing receipt')
+  }
   expect(JSON.parse(delivered.text)).toEqual(expected)
   expect(content).toContainEqual({
     type: 'inputImage',
@@ -2216,7 +2232,9 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
       entry.stage === 'action_completed' &&
       entry.tool === 'apply_prepared_design'
   )
-  if (!prepared || !applied) throw new Error('Missing owner observation')
+  if (!prepared || !applied) {
+    throw new Error('Missing owner observation')
+  }
   expect(prepared.result).toEqual(compactFixture.prepared)
   expect(applied.result).toEqual(appliedReceipt)
   expect(prepared.callId).toEqual(expect.any(String))
@@ -2235,7 +2253,9 @@ it.each(['compact', 'full'] as const)(
       reuse: 'recovery condition'
     }
     const prior = execute.getMockImplementation()
-    if (!prior) throw new Error('Missing execution fixture')
+    if (!prior) {
+      throw new Error('Missing execution fixture')
+    }
     execute.mockImplementation(async (...args) => {
       const receipt = await prior(...args)
       Object.assign(receipt.actionResults[0].result as object, {
@@ -2273,8 +2293,9 @@ it.each(['compact', 'full'] as const)(
         entry.stage === 'action_completed' &&
         entry.tool === 'apply_prepared_design'
     )
-    if (!preparedObservation || !appliedObservation)
+    if (!preparedObservation || !appliedObservation) {
       throw new Error('Missing owner observation')
+    }
     const prepared = JSON.parse(JSON.stringify(preparedObservation))
     const applied = JSON.parse(JSON.stringify(appliedObservation))
     expect(applied.result.actionResults[0].result.timing).toEqual(timing)
@@ -2364,9 +2385,12 @@ it.each([
     expect(outcome.status).toBe(
       Object.keys(options).length ? 'partial' : 'success'
     )
-    if (options.lostApply) expect(outcome.settlement).toBe('unknown')
-    if (options.failCheck || options.captureUnavailable)
+    if (options.lostApply) {
+      expect(outcome.settlement).toBe('unknown')
+    }
+    if (options.failCheck || options.captureUnavailable) {
       expect(outcome.settlement).toBe('completed')
+    }
   }
 )
 
@@ -2387,7 +2411,9 @@ it('persists original workflow diagnostics before recording compact native deliv
   )
   const { designs, operations, execute } = setup()
   const executeOwner = execute.getMockImplementation()
-  if (!executeOwner) throw new Error('Missing owner fixture')
+  if (!executeOwner) {
+    throw new Error('Missing owner fixture')
+  }
   const timing = { totalMs: 12, canonicalWork: { counters: { created: 2 } } }
   execute.mockImplementation(async (...args) => {
     const receipt = await executeOwner(...args)
@@ -2397,8 +2423,9 @@ it('persists original workflow diagnostics before recording compact native deliv
   const originals = new Map<string, unknown>()
   const workflow = createLocalDesignWorkflow(designs, operations, {
     trace: (stage, evidence) => {
-      if (stage === 'action_completed')
+      if (stage === 'action_completed') {
         originals.set(String(evidence.callId), structuredClone(evidence.result))
+      }
       usage.trace(stage, evidence)
     }
   })
@@ -2418,7 +2445,9 @@ it('persists original workflow diagnostics before recording compact native deliv
   const stored = await sink.flush()
   expect(stored.status).toBe('saved')
   expect(recordingError).not.toHaveBeenCalled()
-  if (!stored.path) throw new Error('Missing recording')
+  if (!stored.path) {
+    throw new Error('Missing recording')
+  }
   const records = (await readFile(stored.path, 'utf8'))
     .trim()
     .split('\n')
@@ -2428,8 +2457,9 @@ it('persists original workflow diagnostics before recording compact native deliv
     if (
       record.stage !== 'action_completed' &&
       record.stage !== 'tool_completed'
-    )
+    ) {
       continue
+    }
     const payload = record.diagnostic.output.payload
     expect(payload.path).toEqual(expect.any(String))
     const saved = JSON.parse(
@@ -2442,10 +2472,12 @@ it('persists original workflow diagnostics before recording compact native deliv
     } else {
       expect(originals.has(record.callId)).toBe(true)
       expect(saved).toEqual(originals.get(record.callId))
-      if (record.tool === 'apply_prepared_design')
+      if (record.tool === 'apply_prepared_design') {
         expect(saved.actionResults[0].result.timing).toEqual(timing)
-      if (record.tool === 'prepare_design')
+      }
+      if (record.tool === 'prepare_design') {
         expect(saved.sourceWork.nodes).toBe(2)
+      }
     }
     verified++
   }
@@ -2489,7 +2521,9 @@ it.each(['compact', 'full'] as const)(
     const definition = operations.definitions.find(
       (tool) => tool.name === next.execution.tool
     )
-    if (!definition) throw new Error('Unregistered review route')
+    if (!definition) {
+      throw new Error('Unregistered review route')
+    }
     const recorded = await invokeLocalTool(
       operations,
       definition,
@@ -2525,7 +2559,9 @@ it('executes the delivered review-selection example and next invocation with few
     const invoke = async (namespace: string, tool: string, args: object) => {
       const owner = namespace === 'design_workflow' ? f.workflow : f.operations
       const definition = owner.definitions.find((entry) => entry.name === tool)
-      if (!definition) throw new Error('Unregistered example route')
+      if (!definition) {
+        throw new Error('Unregistered example route')
+      }
       calls.push(tool)
       const reply = await invokeLocalTool(
         owner,
@@ -2548,7 +2584,9 @@ it('executes the delivered review-selection example and next invocation with few
           'describe_design_apis',
           query
         )
-        if (!value.contentDelivery) return value
+        if (!value.contentDelivery) {
+          return value
+        }
         const page = value.contentDelivery
         expect(page.startByte).toBe(offset)
         text += page.text
@@ -2571,12 +2609,15 @@ it('executes the delivered review-selection example and next invocation with few
     })
     const invocation = usage.tools[0].invocationExample.invocation
     expect(invocation).toBeDefined()
-    if (selected)
+    if (selected) {
       expect(invocation.arguments.reviewChecks).toEqual([
         { criterionId: 'appearance' }
       ])
+    }
     // The control needs the same criteria but cannot bind in the drawing call.
-    if (!selected) invocation.arguments.plan = reviewPlanExample
+    if (!selected) {
+      invocation.arguments.plan = reviewPlanExample
+    }
     const value = await invoke(
       invocation.namespace,
       invocation.tool,
@@ -2585,8 +2626,9 @@ it('executes the delivered review-selection example and next invocation with few
     const content = await localToolContent(JSON.stringify(value))
     expect(content.filter((item) => item.type === 'inputImage')).toHaveLength(1)
     const receipt = content.find((item) => item.type === 'inputText')
-    if (!receipt || receipt.type !== 'inputText')
+    if (!receipt || receipt.type !== 'inputText') {
       throw new Error('Missing receipt')
+    }
     let handoff = JSON.parse(receipt.text).visualReview
     if (!selected) {
       const review = await discover({
@@ -2936,13 +2978,21 @@ it.each(['signature', 'evidence', 'status'] as const)(
       status: 'pass',
       evidence: 'Visible.'
     }
-    if (field === 'signature') check.binding.signature = 'tampered'
-    if (field === 'evidence') check.evidence = 'x'.repeat(1001)
-    if (field === 'status') check.status = 'approved'
+    if (field === 'signature') {
+      check.binding.signature = 'tampered'
+    }
+    if (field === 'evidence') {
+      check.evidence = 'x'.repeat(1001)
+    }
+    if (field === 'status') {
+      check.status = 'approved'
+    }
     const definition = f.operations.definitions.find(
       (tool) => tool.name === next.tool
     )
-    if (!definition) throw new Error('Missing review')
+    if (!definition) {
+      throw new Error('Missing review')
+    }
     const reply = await invokeLocalTool(
       f.operations,
       definition,
@@ -3141,12 +3191,13 @@ it.each([true, false])(
   async (criteriaBefore) => {
     const options = { staleImage: false }
     const f = inspectionBoundaryFixture(options)
-    if (criteriaBefore)
+    if (criteriaBefore) {
       await f.operations.call(
         'define_design_criteria',
         reviewPlanExample,
         signal()
       )
+    }
     const raw = await f.workflow.call(
       'prepare_and_apply_design',
       { draft, inspection: 'immediate' },
@@ -3162,7 +3213,9 @@ it.each([true, false])(
       redisplayed.filter((item) => item.type === 'inputImage')
     ).toHaveLength(1)
     const text = redisplayed.find((item) => item.type === 'inputText')
-    if (!text || text.type !== 'inputText') throw new Error('Missing receipt')
+    if (!text || text.type !== 'inputText') {
+      throw new Error('Missing receipt')
+    }
     const retained = JSON.parse(text.text)
     expect(retained.toolOutcome).toMatchObject({
       status: 'success',
@@ -3171,12 +3224,13 @@ it.each([true, false])(
     const inspectionIds = retained.actionResults
       .filter((a: { actionName: string }) => a.actionName === 'inspect_drawing')
       .map((a: { result: { inspectionId: string } }) => a.result.inspectionId)
-    if (!criteriaBefore)
+    if (!criteriaBefore) {
       await f.operations.call(
         'define_design_criteria',
         reviewPlanExample,
         signal()
       )
+    }
     const bind = {
       phase: 'visual',
       final: false,
@@ -3357,7 +3411,9 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
     })
     const owner = name === 'prepare_design' ? f.designs : f.workflow
     const definition = owner.definitions.find((tool) => tool.name === name)
-    if (!definition) throw new Error('Missing preparation definition')
+    if (!definition) {
+      throw new Error('Missing preparation definition')
+    }
     const call = async (args: unknown) =>
       JSON.parse(
         (
@@ -3488,13 +3544,15 @@ it('uses the failed part owner guide without replaying completed material work',
   expect(next.parts[0]).not.toHaveProperty('materialSourceId')
   expect(next.parts[1].materialSourceId).toBe(seed.artifactId)
   expect(f.execute).toHaveBeenCalledTimes(3)
-  for (const [batch] of f.execute.mock.calls.slice(1))
+  for (const [batch] of f.execute.mock.calls.slice(1)) {
     expect(batch.actions[0].arguments).toMatchObject({ parentId: 'root' })
-  for (const part of repaired.parts)
+  }
+  for (const part of repaired.parts) {
     expect(f.session.recipe(part.artifactId).recipe).toEqual({
       ...source,
       linearFields: materialRepair.linearFields
     })
+  }
 })
 
 it('retains material conflicts and source ownership without writes or replay', async () => {
@@ -3620,11 +3678,12 @@ it('preserves material selectors for all raw parts retained by input admission',
   expect(repaired.failedPart).toBeUndefined()
   expect(f.execute).toHaveBeenCalledTimes(2)
   expect(f.compile).toHaveBeenCalledTimes(2)
-  for (const part of repaired.parts)
+  for (const part of repaired.parts) {
     expect(f.session.recipe(part.artifactId).recipe).toEqual({
       ...source,
       linearFields: materialRepair.linearFields
     })
+  }
 })
 
 it('repairs resolved material directly after the original source expires', async () => {
@@ -3639,7 +3698,9 @@ it('repairs resolved material directly after the original source expires', async
   const definition = f.designs.definitions.find(
     (tool) => tool.name === 'prepare_design'
   )
-  if (!definition) throw new Error('Missing preparation definition')
+  if (!definition) {
+    throw new Error('Missing preparation definition')
+  }
   const call = async (args: unknown) =>
     JSON.parse(
       (

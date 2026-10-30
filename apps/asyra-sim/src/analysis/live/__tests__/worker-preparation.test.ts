@@ -28,7 +28,9 @@ it('reuses complete original preparation through the installed live Worker and i
       await host.handle({ type: LiveMessages.SAMPLE, id: i + 1, time })
       durations.push(performance.now() - start)
       expect(messages.at(-1)?.type).toBe(LiveMessages.RESULT)
-      if (!i) firstBuilds = build.mock.calls.length
+      if (!i) {
+        firstBuilds = build.mock.calls.length
+      }
       expect(build).toHaveBeenCalledTimes(firstBuilds)
     }
     expect(firstBuilds).toBeGreaterThan(0)
@@ -54,10 +56,11 @@ it('reuses complete original preparation through the installed live Worker and i
   }
 
   for (const message of messages) {
-    if (message.type === LiveMessages.RESULT)
+    if (message.type === LiveMessages.RESULT) {
       expect(message.evidence).toEqual(
         runOriginalPartMethod(sampleSnapshot(snapshot, message.time))
       )
+    }
   }
 }, 20000)
 

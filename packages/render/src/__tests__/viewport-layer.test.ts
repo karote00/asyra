@@ -59,8 +59,9 @@ describe('ViewportLayer', () => {
         command.type === 'create-object' ||
         command.type === 'update-object'
       ) {
-        if ('transformGroup' in (command.properties ?? {}))
+        if ('transformGroup' in (command.properties ?? {})) {
           throw new Error('Unsupported transformGroup')
+        }
       }
       return execute(command)
     }

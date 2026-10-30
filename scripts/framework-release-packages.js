@@ -180,9 +180,13 @@ export const readFrameworkReleaseSource = ({ repositoryRoot }) => {
     .filter((entry) => entry.isDirectory())
     .flatMap((entry) => {
       const manifestPath = path.join(packagesRoot, entry.name, 'package.json')
-      if (!fs.existsSync(manifestPath)) return []
+      if (!fs.existsSync(manifestPath)) {
+        return []
+      }
       const manifest = readJson(manifestPath)
-      if (manifest.private === true) return []
+      if (manifest.private === true) {
+        return []
+      }
       return [
         {
           directory: entry.name,

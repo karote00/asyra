@@ -50,8 +50,9 @@ async function optionalRead(io, file) {
 function parseProcCpu(value) {
   const line = value?.split('\n').find((entry) => /^cpu\s/u.test(entry))
   const ticks = line?.trim().split(/\s+/u).slice(1).map(Number)
-  if (!ticks?.length || ticks.some((tick) => !Number.isFinite(tick)))
+  if (!ticks?.length || ticks.some((tick) => !Number.isFinite(tick))) {
     return { available: false }
+  }
   return {
     available: true,
     totalTicks: ticks.reduce((total, tick) => total + tick, 0),
@@ -64,29 +65,36 @@ function parseKeyValues(value) {
   const fields = new Map()
   for (const line of value?.trim().split('\n') ?? []) {
     const [name, raw, ...extra] = line.trim().split(/\s+/u)
-    if (name && raw && extra.length === 0) fields.set(name, finite(raw))
+    if (name && raw && extra.length === 0) {
+      fields.set(name, finite(raw))
+    }
   }
   return fields
 }
 
 const processCgroupRoot = (cgroupRoot, membership) => {
   const line = membership?.split('\n').find((value) => value.startsWith('0::/'))
-  if (!line) return null
+  if (!line) {
+    return null
+  }
   const resolved = path.resolve(cgroupRoot, '.' + line.slice(3))
   const relative = path.relative(cgroupRoot, resolved)
   if (
     relative === '..' ||
     relative.startsWith('../') ||
     path.isAbsolute(relative)
-  )
+  ) {
     return null
+  }
   return resolved
 }
 
 async function captureCgroup(io, cgroupRoot, procRoot) {
   const membership = await optionalRead(io, path.join(procRoot, 'self/cgroup'))
   const groupRoot = processCgroupRoot(cgroupRoot, membership)
-  if (!groupRoot) return { available: false }
+  if (!groupRoot) {
+    return { available: false }
+  }
   const [cpuMax, cpuStat, memoryCurrent, memoryMax] = await Promise.all([
     optionalRead(io, path.join(groupRoot, 'cpu.max')),
     optionalRead(io, path.join(groupRoot, 'cpu.stat')),
@@ -95,8 +103,9 @@ async function captureCgroup(io, cgroupRoot, procRoot) {
   ])
   if (
     [cpuMax, cpuStat, memoryCurrent, memoryMax].every((value) => value === null)
-  )
+  ) {
     return { available: false }
+  }
   const [quota, period] = cpuMax?.trim().split(/\s+/u) ?? []
   const cpu = parseKeyValues(cpuStat)
   return {
@@ -115,19 +124,24 @@ async function captureCgroup(io, cgroupRoot, procRoot) {
 
 const projectRelativeCwd = (repositoryRoot, cwd) => {
   const relative = path.relative(repositoryRoot, cwd)
-  if (relative === '') return '.'
+  if (relative === '') {
+    return '.'
+  }
   if (
     relative === '..' ||
     relative.startsWith('../') ||
     path.isAbsolute(relative)
-  )
+  ) {
     return null
+  }
   return relative
 }
 
 const parseProcessStat = (value) => {
   const close = value?.lastIndexOf(')') ?? -1
-  if (close < 0) return null
+  if (close < 0) {
+    return null
+  }
   const fields = value
     .slice(close + 1)
     .trim()
@@ -169,15 +183,19 @@ async function captureProjectProcesses({
     try {
       const cwd = await io.readLink(path.join(procRoot, String(pid), 'cwd'))
       const relative = projectRelativeCwd(repositoryRoot, cwd)
-      if (relative === null) continue
+      if (relative === null) {
+        continue
+      }
       const [stat, name] = await Promise.all([
         optionalRead(io, path.join(procRoot, String(pid), 'stat')),
         optionalRead(io, path.join(procRoot, String(pid), 'comm'))
       ])
       const identity = parseProcessStat(stat)
-      if (!identity) continue
+      if (!identity) {
+        continue
+      }
       matchingProcesses++
-      if (rows.length < RESOURCE_EVIDENCE_LIMITS.processRows)
+      if (rows.length < RESOURCE_EVIDENCE_LIMITS.processRows) {
         rows.push({
           pid,
           ppid: identity.ppid,
@@ -188,6 +206,7 @@ async function captureProjectProcesses({
           ),
           cwd: truncate(relative, RESOURCE_EVIDENCE_LIMITS.processCwd)
         })
+      }
     } catch {
       /* Process exited or denied inspection between fixed reads. */
     }
@@ -321,8 +340,9 @@ function boundedEvidence(packet) {
     ;(beforeRows.length >= afterRows.length ? beforeRows : afterRows).pop()
     value = 'PRODUCTION_ARTIFACT_RESOURCE ' + JSON.stringify(bounded)
   }
-  if (Buffer.byteLength(value) <= RESOURCE_EVIDENCE_LIMITS.serializedBytes)
+  if (Buffer.byteLength(value) <= RESOURCE_EVIDENCE_LIMITS.serializedBytes) {
     return value
+  }
   return (
     'PRODUCTION_ARTIFACT_RESOURCE ' +
     JSON.stringify({
@@ -362,7 +382,9 @@ export async function runWithArtifactResourceEvidence({
   const timeline = []
   const mark = (name) => {
     try {
-      if (timeline.length >= RESOURCE_EVIDENCE_LIMITS.timelineMarks) return
+      if (timeline.length >= RESOURCE_EVIDENCE_LIMITS.timelineMarks) {
+        return
+      }
       const current = readMonotonic()
       timeline.push({
         name: truncate(name, RESOURCE_EVIDENCE_LIMITS.markName),
@@ -417,6 +439,8 @@ export async function runWithArtifactResourceEvidence({
   } catch {
     /* Diagnostic reporting cannot affect the artifact operation. */
   }
-  if (failure) throw failure
+  if (failure) {
+    throw failure
+  }
   return result
 }

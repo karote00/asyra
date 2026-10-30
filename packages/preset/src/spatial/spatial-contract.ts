@@ -23,10 +23,18 @@ const admittedDescriptors = new WeakSet<object>()
 
 /** Compare accepted geometry values, not caller-owned object identity. */
 export function sameSpatialShape(a: SpatialShape, b: SpatialShape): boolean {
-  if (a === b && admittedShapes.has(a)) return true
+  if (a === b && admittedShapes.has(a)) {
+    return true
+  }
   const equal = (x: readonly number[], y: readonly number[]) => {
-    if (x.length !== y.length) return false
-    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false
+    if (x.length !== y.length) {
+      return false
+    }
+    for (let i = 0; i < x.length; i++) {
+      if (x[i] !== y[i]) {
+        return false
+      }
+    }
     return true
   }
   switch (a.kind) {
@@ -62,10 +70,15 @@ const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 export function isSpatialShape(value: unknown): value is SpatialShape {
-  if (!record(value)) return false
-  if (value.kind === 'box')
+  if (!record(value)) {
+    return false
+  }
+  if (value.kind === 'box') {
     return finiteTuple(value.size, 3) && value.size.every(positive)
-  if (value.kind === 'sphere') return positive(value.radius)
+  }
+  if (value.kind === 'sphere') {
+    return positive(value.radius)
+  }
   if (value.kind === 'capsule') {
     return (
       positive(value.radius) &&
@@ -74,7 +87,9 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
       value.length >= 0
     )
   }
-  if (value.kind !== 'triangles') return false
+  if (value.kind !== 'triangles') {
+    return false
+  }
   const { positions, indices, colors, uvs, normals } = value
   if (
     !Array.isArray(positions) ||
@@ -91,61 +106,88 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
       (!Array.isArray(colors) || colors.length !== positions.length)) ||
     (uvs !== undefined &&
       (!Array.isArray(uvs) || uvs.length !== (positions.length / 3) * 2))
-  )
+  ) {
     return false
+  }
   // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
-  for (let i = 0; i < positions.length; i++)
-    if (!Number.isFinite(positions[i])) return false
-  if (Array.isArray(colors))
+  for (let i = 0; i < positions.length; i++) {
+    if (!Number.isFinite(positions[i])) {
+      return false
+    }
+  }
+  if (Array.isArray(colors)) {
     // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
     for (let i = 0; i < colors.length; i++) {
       const n = colors[i]
-      if (typeof n !== 'number' || !Number.isFinite(n) || n < 0 || n > 1)
+      if (typeof n !== 'number' || !Number.isFinite(n) || n < 0 || n > 1) {
         return false
+      }
     }
-  if (Array.isArray(uvs))
+  }
+  if (Array.isArray(uvs)) {
     // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
-    for (let i = 0; i < uvs.length; i++)
-      if (!Number.isFinite(uvs[i])) return false
-  if (Array.isArray(normals))
+    for (let i = 0; i < uvs.length; i++) {
+      if (!Number.isFinite(uvs[i])) {
+        return false
+      }
+    }
+  }
+  if (Array.isArray(normals)) {
     for (let i = 0; i < normals.length; i += 3) {
       if (
         !Number.isFinite(normals[i]) ||
         !Number.isFinite(normals[i + 1]) ||
         !Number.isFinite(normals[i + 2])
-      )
+      ) {
         return false
+      }
       const length = Math.hypot(normals[i], normals[i + 1], normals[i + 2])
-      if (!Number.isFinite(length) || Math.abs(length - 1) > 1e-4) return false
+      if (!Number.isFinite(length) || Math.abs(length - 1) > 1e-4) {
+        return false
+      }
     }
+  }
   const vertices = positions.length / 3
   // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
   for (let i = 0; i < indices.length; i++) {
     const index = indices[i]
-    if (!Number.isSafeInteger(index) || index < 0 || index >= vertices)
+    if (!Number.isSafeInteger(index) || index < 0 || index >= vertices) {
       return false
+    }
   }
   return true
 }
 
 export function readSpatialShape(value: unknown): SpatialShape {
-  if (record(value) && admittedShapes.has(value)) return value as SpatialShape
+  if (record(value) && admittedShapes.has(value)) {
+    return value as SpatialShape
+  }
   // Triangle payloads contain only flat numeric arrays. Capture accessors once,
   // detach those arrays directly, then validate the exact retained snapshot.
   let snapshot: unknown = record(value) ? { ...value } : value
   if (record(snapshot) && snapshot.kind === 'triangles') {
     for (const key of ['positions', 'colors', 'indices', 'uvs', 'normals']) {
       const source = snapshot[key]
-      if (!Array.isArray(source)) continue
-      if (source.length > 3000000) throw new Error('Invalid spatial shape')
+      if (!Array.isArray(source)) {
+        continue
+      }
+      if (source.length > 3000000) {
+        throw new Error('Invalid spatial shape')
+      }
       const copy = new Array<unknown>(source.length)
-      for (let i = 0; i < source.length; i++) copy[i] = source[i]
+      for (let i = 0; i < source.length; i++) {
+        copy[i] = source[i]
+      }
       snapshot[key] = copy
     }
-  } else snapshot = structuredClone(snapshot)
-  if (!isSpatialShape(snapshot)) throw new Error('Invalid spatial shape')
+  } else {
+    snapshot = structuredClone(snapshot)
+  }
+  if (!isSpatialShape(snapshot)) {
+    throw new Error('Invalid spatial shape')
+  }
   let shape: SpatialShape
-  if (snapshot.kind === 'triangles')
+  if (snapshot.kind === 'triangles') {
     shape = {
       kind: 'triangles',
       positions: Object.freeze(snapshot.positions),
@@ -154,16 +196,17 @@ export function readSpatialShape(value: unknown): SpatialShape {
       ...(snapshot.colors ? { colors: Object.freeze(snapshot.colors) } : {}),
       indices: Object.freeze(snapshot.indices)
     }
-  else if (snapshot.kind === 'box')
+  } else if (snapshot.kind === 'box') {
     shape = { kind: 'box', size: Object.freeze(snapshot.size) }
-  else if (snapshot.kind === 'sphere')
+  } else if (snapshot.kind === 'sphere') {
     shape = { kind: 'sphere', radius: snapshot.radius }
-  else
+  } else {
     shape = {
       kind: 'capsule',
       radius: snapshot.radius,
       length: snapshot.length
     }
+  }
   Object.freeze(shape)
   admittedShapes.add(shape)
   return shape
@@ -174,7 +217,9 @@ const admittedInstances = new WeakSet<object>()
 export function readSpatialInstances(
   value: unknown
 ): readonly SpatialInstance[] {
-  if (Array.isArray(value) && admittedInstances.has(value)) return value
+  if (Array.isArray(value) && admittedInstances.has(value)) {
+    return value
+  }
   const snapshot: unknown = structuredClone(value)
   if (
     !Array.isArray(snapshot) ||
@@ -193,13 +238,15 @@ export function readSpatialInstances(
         (item.scale === undefined ||
           (finiteTuple(item.scale, 3) && item.scale.every(positive)))
     )
-  )
+  ) {
     throw new Error('Invalid spatial instances')
+  }
   const ids = snapshot
     .filter((item) => item.id !== undefined)
     .map((item) => item.id)
-  if (new Set(ids).size !== ids.length)
+  if (new Set(ids).size !== ids.length) {
     throw new Error('Duplicate spatial instance identity')
+  }
   const instances = Object.freeze(
     snapshot.map((item) =>
       Object.freeze({
@@ -219,14 +266,19 @@ export function readSpatialInstances(
 export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
   let admittedOptics: Extract<SpatialDescriptor, { kind: 'mesh' }>['optics']
 
-  if (record(value) && admittedDescriptors.has(value))
+  if (record(value) && admittedDescriptors.has(value)) {
     return value as SpatialDescriptor
+  }
   if (record(value)) {
     const snapshot = { ...value }
     for (const key of ['position', 'target', 'rotation', 'scale']) {
-      if (Array.isArray(snapshot[key])) snapshot[key] = [...snapshot[key]]
+      if (Array.isArray(snapshot[key])) {
+        snapshot[key] = [...snapshot[key]]
+      }
     }
-    if (record(snapshot.distant)) snapshot.distant = { ...snapshot.distant }
+    if (record(snapshot.distant)) {
+      snapshot.distant = { ...snapshot.distant }
+    }
     value = snapshot
   }
   if (!record(value) || !finiteTuple(value.position, 3)) {
@@ -258,8 +310,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
       ['castShadow', 'receiveShadow'].some(
         (key) => value[key] !== undefined && typeof value[key] !== 'boolean'
       )
-    )
+    ) {
       throw new Error('Invalid spatial pose or shadow policy')
+    }
     if (
       !finiteTuple(value.rotation, 4) ||
       Math.abs(Math.hypot(...value.rotation) - 1) > 1e-8 ||
@@ -287,8 +340,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
       ['castShadow', 'receiveShadow'].some(
         (key) => value[key] !== undefined && typeof value[key] !== 'boolean'
       )
-    )
+    ) {
       throw new Error('Invalid spatial pose or shadow policy')
+    }
     if (
       value.surface !== undefined &&
       (!record(value.shape) ||
@@ -296,8 +350,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
         (record(value.distant) &&
           (!record(value.distant.shape) ||
             !Array.isArray(value.distant.shape.uvs))))
-    )
+    ) {
       throw new Error('Surface textures require UV coordinates')
+    }
     if (
       (value.emissive !== undefined &&
         (!Number.isInteger(value.emissive) ||
@@ -307,15 +362,17 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
         (typeof value.emissiveIntensity !== 'number' ||
           !Number.isFinite(value.emissiveIntensity) ||
           value.emissiveIntensity < 0))
-    )
+    ) {
       throw new Error('Invalid spatial emissive material')
+    }
     if (
       value.environmentIntensity !== undefined &&
       (typeof value.environmentIntensity !== 'number' ||
         !Number.isFinite(value.environmentIntensity) ||
         value.environmentIntensity < 0)
-    )
+    ) {
       throw new Error('Invalid spatial environment material')
+    }
     if (value.optics !== undefined) {
       const optics = value.optics
       if (
@@ -338,8 +395,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
         (optics.captureLayer !== undefined &&
           (!Number.isSafeInteger(optics.captureLayer) ||
             (optics.captureLayer as number) < 0))
-      )
+      ) {
         throw new Error('Invalid spatial optical material')
+      }
       admittedOptics = Object.freeze({
         ...(optics.captureLayer !== undefined
           ? { captureLayer: optics.captureLayer as number }
@@ -356,8 +414,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
       if (
         n !== undefined &&
         (typeof n !== 'number' || !Number.isFinite(n) || n < 0 || n > 1)
-      )
+      ) {
         throw new Error('Invalid spatial material')
+      }
     }
     if (
       value.distant !== undefined &&
@@ -366,8 +425,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
         (value.distant.pixelError !== undefined &&
           !positive(value.distant.pixelError)) ||
         !value.instances)
-    )
+    ) {
       throw new Error('Invalid distant representation')
+    }
   }
   const position = Object.freeze([...(value.position as number[])])
   const descriptor =

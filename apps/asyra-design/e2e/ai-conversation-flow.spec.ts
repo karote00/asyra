@@ -97,7 +97,9 @@ for (const count of [16, 320, 1280]) {
       const profile = (
         await import('../src/testing/runtime-access')
       ).getActiveAiDrawingPerformanceProfile()
-      if (!profile) throw new Error('Missing App performance owner')
+      if (!profile) {
+        throw new Error('Missing App performance owner')
+      }
       profile.reset()
     })
     await page
@@ -113,7 +115,9 @@ for (const count of [16, 320, 1280]) {
       const profile = (
         await import('../src/testing/runtime-access')
       ).getActiveAiDrawingPerformanceProfile()
-      if (!profile) throw new Error('Missing App performance owner')
+      if (!profile) {
+        throw new Error('Missing App performance owner')
+      }
       return {
         snapshot: profile.snapshot(),
         canonical: profile
@@ -171,8 +175,9 @@ test('retains drawing after a failed refinement with one undo and redo', async (
     route.fulfill({ json: { state: 'ready' } })
   )
   await page.route('**/api/ai/action-batch', (route) => {
-    if (route.request().headers()['x-ai-batch-receipt'])
+    if (route.request().headers()['x-ai-batch-receipt']) {
       return route.fulfill({ json: { accepted: true } })
+    }
     return route.fulfill({
       contentType: 'application/x-ndjson',
       body: [
@@ -287,7 +292,9 @@ for (const width of [360, 1280]) {
       page.getByRole('button', { name: 'Send', exact: true })
     ).toBeInViewport()
     const bounds = await notice.boundingBox()
-    if (!bounds) throw new Error('Subscription notice has no visible bounds')
+    if (!bounds) {
+      throw new Error('Subscription notice has no visible bounds')
+    }
     expect(bounds.x).toBeGreaterThanOrEqual(0)
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
     await page.getByTestId('ai-agent-panel').screenshot({
@@ -559,8 +566,9 @@ for (const width of [360, 1280]) {
     ).toHaveCount(0)
     const bounds = await message.getByLabel('Your message').boundingBox()
     const panelBounds = await page.getByTestId('ai-agent-panel').boundingBox()
-    if (!bounds || !panelBounds)
+    if (!bounds || !panelBounds) {
       throw new Error('Visible message and panel bounds are required')
+    }
     expect(bounds.x + bounds.width).toBeGreaterThan(
       panelBounds.x + panelBounds.width - 25
     )
@@ -612,7 +620,9 @@ for (const width of [360, 1280]) {
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const ids = await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
-      if (!core) throw new Error('App runtime is required')
+      if (!core) {
+        throw new Error('App runtime is required')
+      }
       return [...core.deps.sceneTree.getAllElements().keys()]
     })
     expect(ids).toContain(replacement.groupDescriptor.id)
@@ -652,7 +662,7 @@ for (const scenario of [
     )
     await page.route('**/api/ai/action-batch', async (route) => {
       requests++
-      if (requests === 1)
+      if (requests === 1) {
         return route.fulfill({
           json: {
             batchId: 'question',
@@ -666,6 +676,7 @@ for (const scenario of [
             ]
           }
         })
+      }
       expect(route.request().postDataJSON().metadata.replyTo.intent).toBe(
         scenario.intent
       )
@@ -937,8 +948,9 @@ for (const width of [360, 1280]) {
     })
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const address = server.address()
-    if (!address || typeof address === 'string')
+    if (!address || typeof address === 'string') {
       throw new Error('Missing fixture address')
+    }
     try {
       await page.route('**/api/ai/status', (route) =>
         route.fulfill({ json: { state: 'ready' } })
@@ -957,7 +969,9 @@ for (const width of [360, 1280]) {
         .fill('Trace the reference, then change visibility')
       await page.getByRole('button', { name: 'Send', exact: true }).click()
       await connection
-      if (!response) throw new Error('Missing stream')
+      if (!response) {
+        throw new Error('Missing stream')
+      }
       await page.getByLabel('Work history').click()
       const status = page.getByRole('status', { name: 'Current activity' })
       const current = page
@@ -1170,8 +1184,9 @@ for (const width of [360, 1280]) {
         .first()
       const originalRow = await firstRow.elementHandle()
       const originalText = await firstRow.textContent()
-      if (!originalRow || originalText === null)
+      if (!originalRow || originalText === null) {
         throw new Error('Missing original Activity row')
+      }
       // Compare content-space position while longer concrete history follows scrolling.
       const originalOffset = await firstRow.evaluate(
         (row) =>
@@ -1317,10 +1332,11 @@ for (const width of [360, 1280]) {
               : [label, 'Operation ended - outcome unconfirmed']
           )
           await expect(current).toHaveText(label)
-          if (tool === 'inspect_drawing' && toolStatus === 'running')
+          if (tool === 'inspect_drawing' && toolStatus === 'running') {
             await page.getByTestId('ai-agent-panel').screenshot({
               path: testInfo.outputPath('active-inspection-purpose.png')
             })
+          }
         }
       }
       await expect(
@@ -1575,7 +1591,9 @@ for (const width of [360, 1280]) {
         exact: true
       })
       const textBounds = await resultText.boundingBox()
-      if (!textBounds) throw new Error('Missing result text')
+      if (!textBounds) {
+        throw new Error('Missing result text')
+      }
       await page.mouse.move(
         textBounds.x + 1,
         textBounds.y + textBounds.height / 2
@@ -1680,7 +1698,9 @@ for (const width of [360, 1280]) {
     for (const button of [toggle, create, close]) {
       await expect(button).toHaveText('')
       const bounds = await button.boundingBox()
-      if (!bounds) throw new Error('Missing navigation icon')
+      if (!bounds) {
+        throw new Error('Missing navigation icon')
+      }
       expect(bounds.width).toBe(24)
       expect(bounds.height).toBe(24)
       positions.push(bounds.x)
@@ -1752,7 +1772,9 @@ test('panel text selection supports native copy after canvas focus', async ({
     .click({ position: { x: 300, y: 250 } })
   const title = page.getByText('Your AI subscription', { exact: true })
   const bounds = await title.boundingBox()
-  if (!bounds) throw new Error('Missing panel text')
+  if (!bounds) {
+    throw new Error('Missing panel text')
+  }
   await page.mouse.move(bounds.x + 1, bounds.y + bounds.height / 2)
   await page.mouse.down()
   await page.mouse.move(
@@ -1936,15 +1958,16 @@ for (const width of [360, 1280]) {
         second.groupDescriptor.id,
         third.groupDescriptor.id
       ][requests - 1]
-      if (requests > 1)
+      if (requests > 1) {
         expect(request.metadata.aiTargets.compositionId).toBe(previous)
+      }
       let action = {
         id: 'draw',
         name: 'apply_prepared_design',
         arguments: { design: deliverPreparedDesign(initial) } as unknown,
         summary: 'Create the design'
       }
-      if (requests > 1)
+      if (requests > 1) {
         action = {
           id: 'revise',
           name: 'replace_vector_composition',
@@ -1954,6 +1977,7 @@ for (const width of [360, 1280]) {
           },
           summary: 'Revise the drawing'
         }
+      }
       return route.fulfill({
         json: { batchId: `revision-${requests}`, actions: [action] }
       })
@@ -2230,8 +2254,9 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
   })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const address = server.address()
-  if (!address || typeof address === 'string')
+  if (!address || typeof address === 'string') {
     throw new Error('Missing stream address')
+  }
   try {
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
@@ -2272,7 +2297,9 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
     await undo(page)
     expect(await getCoreDocumentDigest(page)).toEqual(first)
     await expect(message).toHaveAttribute('data-outcome', 'active')
-    if (!stream) throw new Error('Missing stream')
+    if (!stream) {
+      throw new Error('Missing stream')
+    }
     stream.write(
       JSON.stringify({
         type: 'batch',
@@ -2351,7 +2378,9 @@ for (const direction of ['undo', 'redo'] as const) {
             historyApis[name] = async (options) => {
               calls.push(name)
               const gated = name === direction && first
-              if (gated) first = false
+              if (gated) {
+                first = false
+              }
               let held = false
               try {
                 await original[name](
@@ -2372,10 +2401,11 @@ for (const direction of ['undo', 'redo'] as const) {
                                 resolve
                               )
                             )
-                            if (fail)
+                            if (fail) {
                               throw new Error(
                                 'Controlled history slice failure'
                               )
+                            }
                           }
                           await options?.yieldToHost?.()
                         }

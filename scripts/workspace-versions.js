@@ -14,7 +14,9 @@ const readManifest = (manifestPath) =>
 const getManifestPaths = (rootDirectory) =>
   WORKSPACE_DIRECTORIES.flatMap((directory) => {
     const workspaceDirectory = path.join(rootDirectory, directory)
-    if (!fs.existsSync(workspaceDirectory)) return []
+    if (!fs.existsSync(workspaceDirectory)) {
+      return []
+    }
     return fs
       .readdirSync(workspaceDirectory, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
@@ -26,9 +28,15 @@ export const resolveWorkspaceDependencyRange = ({
   environment,
   dependencyVersion
 }) => {
-  if (environment === 'dev') return 'workspace:*'
-  if (environment === 'prod') return `^${dependencyVersion}`
-  if (environment === 'release') return dependencyVersion
+  if (environment === 'dev') {
+    return 'workspace:*'
+  }
+  if (environment === 'prod') {
+    return `^${dependencyVersion}`
+  }
+  if (environment === 'release') {
+    return dependencyVersion
+  }
   throw new Error(`Unsupported workspace version environment: ${environment}`)
 }
 
@@ -48,7 +56,9 @@ export const createWorkspaceVersionPlan = ({ rootDirectory, environment }) => {
 
     for (const field of DEPENDENCY_FIELDS) {
       const dependencies = manifest[field]
-      if (!dependencies) continue
+      if (!dependencies) {
+        continue
+      }
 
       for (const dependencyName of Object.keys(dependencies)) {
         const dependencyVersion = versions.get(dependencyName)
@@ -59,7 +69,9 @@ export const createWorkspaceVersionPlan = ({ rootDirectory, environment }) => {
           environment,
           dependencyVersion
         })
-        if (dependencies[dependencyName] === nextRange) continue
+        if (dependencies[dependencyName] === nextRange) {
+          continue
+        }
         dependencies[dependencyName] = nextRange
         updates.push(`${field}.${dependencyName} -> ${nextRange}`)
       }

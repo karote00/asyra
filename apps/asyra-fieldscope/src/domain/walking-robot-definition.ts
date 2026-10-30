@@ -167,20 +167,25 @@ const quaternion = (
     !Array.isArray(value) ||
     value.length !== 4 ||
     !value.every(Number.isFinite)
-  )
+  ) {
     return false
+  }
   const norm = Math.hypot(...value)
   return norm > 0 && Math.abs(norm - 1) <= 1e-9
 }
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) deepFreeze(child)
+    for (const child of Object.values(value)) {
+      deepFreeze(child)
+    }
     Object.freeze(value)
   }
   return value
 }
 function evidence(value: unknown) {
-  if (!record(value) || !identity(value.id)) return false
+  if (!record(value) || !identity(value.id)) {
+    return false
+  }
   return value.kind === 'measured'
     ? exact(value, ['kind', 'id'])
     : value.kind === 'synthetic' &&
@@ -243,12 +248,18 @@ function exactSet<T extends Record<string, unknown>>(
   expected: readonly string[],
   validator: (value: T) => boolean
 ) {
-  if (!Array.isArray(values) || values.length !== expected.length) return false
+  if (!Array.isArray(values) || values.length !== expected.length) {
+    return false
+  }
   const actual = new Set<string>()
   for (const item of values) {
-    if (!record(item) || !validator(item as T)) return false
+    if (!record(item) || !validator(item as T)) {
+      return false
+    }
     const id = keys.map((key) => String(item[key])).join('-')
-    if (actual.has(id)) return false
+    if (actual.has(id)) {
+      return false
+    }
     actual.add(id)
   }
   return expected.every((id) => actual.has(id))
@@ -326,8 +337,9 @@ function leg(value: Record<string, unknown>) {
   )
 }
 function jointState(value: unknown, definition: Record<string, unknown>) {
-  if (!record(value) || !exact(value, ['carriage', 'arms', 'legs']))
+  if (!record(value) || !exact(value, ['carriage', 'arms', 'legs'])) {
     return false
+  }
   const carriage = definition.carriage as Record<string, unknown>
   const arms = definition.arms as WalkingArmDefinition[]
   const legs = definition.legs as WalkingLegDefinition[]
@@ -336,8 +348,9 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
     !Number.isFinite(value.carriage) ||
     Number(value.carriage) < lift[0] ||
     Number(value.carriage) > lift[1]
-  )
+  ) {
     return false
+  }
   const validArms = exactSet<Record<string, unknown>>(
     value.arms,
     ['side', 'role'],
@@ -352,8 +365,9 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
           'elbowPitch',
           'wristPitch'
         ])
-      )
+      ) {
         return false
+      }
       const spec = arms.find(
         ({ side, role }) => side === item.side && role === item.role
       )
@@ -378,8 +392,9 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
     ['side', 'station'],
     legIds,
     (item) => {
-      if (!exact(item, ['side', 'station', 'abduction', 'hip', 'knee']))
+      if (!exact(item, ['side', 'station', 'abduction', 'hip', 'knee'])) {
         return false
+      }
       const spec = legs.find(
         ({ side, station }) => side === item.side && station === item.station
       )
@@ -419,7 +434,9 @@ export function classifyWalkingRobotDefinition(
       return 'unsupported-version'
     }
   }
-  if (!record(raw) || 'format' in raw) return 'unsupported-version'
+  if (!record(raw) || 'format' in raw) {
+    return 'unsupported-version'
+  }
   const numericKeys = [
     'width',
     'length',
@@ -449,8 +466,9 @@ export function classifyWalkingRobotDefinition(
     !['left', 'right', 'both'].includes(String(raw.scanSide)) ||
     !record(raw.lane) ||
     !record(raw.survey)
-  )
+  ) {
     return 'unsupported-version'
+  }
   const positiveKeys = [
       'width',
       'length',
@@ -475,8 +493,9 @@ export function classifyWalkingRobotDefinition(
     Number(raw.height) < 0.8 ||
     Number(raw.height) > 3 ||
     Number(raw.start) >= Number(raw.end)
-  )
+  ) {
     return 'unsupported-version'
+  }
   const lane = raw.lane
   if (
     (lane.kind === 'strip' &&
@@ -493,8 +512,9 @@ export function classifyWalkingRobotDefinition(
         Number(lane.boundary) > 3 ||
         !['left', 'right'].includes(String(lane.side)))) ||
     !['strip', 'shared'].includes(String(lane.kind))
-  )
+  ) {
     return 'unsupported-version'
+  }
   const survey = raw.survey,
     surveyKeys = [
       'entranceWidth',
@@ -510,8 +530,9 @@ export function classifyWalkingRobotDefinition(
         survey[key] === null ||
         (Number.isFinite(survey[key]) && Number(survey[key]) >= 0)
     )
-  )
+  ) {
     return 'unsupported-version'
+  }
   return 'legacy-unversioned'
 }
 
@@ -544,8 +565,9 @@ function validateWalkingDefinition(raw: unknown, format: string) {
     !evidence(value.geometryEvidence) ||
     !evidence(value.jointEvidence) ||
     !evidence(value.massEvidence)
-  )
+  ) {
     return invalid()
+  }
   const base = value.base
   const carriage = value.carriage
   if (
@@ -571,8 +593,9 @@ function validateWalkingDefinition(raw: unknown, format: string) {
     !record(value.presets) ||
     !exact(value.presets, ['stowed', 'leftWorking', 'rightWorking']) ||
     !Object.values(value.presets).every((preset) => jointState(preset, value))
-  )
+  ) {
     return invalid()
+  }
   return value
 }
 
@@ -592,8 +615,9 @@ function validSourceModel(value: WalkingRobotDefinition) {
       model.kind !== 'solid-articulation/2') ||
     !evidence(model.evidence) ||
     !keys.every((key) => positive(model[key]))
-  )
+  ) {
     return false
+  }
   const [pin, inner, outer, gap, setback] = keys.map((key) =>
     Number(model[key])
   )
@@ -604,8 +628,9 @@ function validSourceModel(value: WalkingRobotDefinition) {
     outer <= 0.5 &&
     gap < 0.25 &&
     setback >= outer
-  ))
+  )) {
     return false
+  }
   const links = [
     ...value.arms.flatMap(({ upper, forearm, wrist }) => [
       upper,
@@ -614,8 +639,9 @@ function validSourceModel(value: WalkingRobotDefinition) {
     ]),
     ...value.legs.flatMap(({ coxa, upper, lower }) => [coxa, upper, lower])
   ]
-  if (!links.every(({ length, section }) => length > 2 * setback * section))
+  if (!links.every(({ length, section }) => length > 2 * setback * section)) {
     return false
+  }
   if (
     !value.legs.every(
       ({ coxa, upper }) =>
@@ -623,8 +649,9 @@ function validSourceModel(value: WalkingRobotDefinition) {
         coxa.section * setback +
           Math.max(coxa.section * setback, upper.section * (0.5 + gap))
     )
-  )
+  ) {
     return false
+  }
   const { mast, chassis } = value.base,
     carriage = value.carriage
   const railBottom = mast.centre[1] - mast.size[1] / 2
@@ -633,8 +660,9 @@ function validSourceModel(value: WalkingRobotDefinition) {
     railBottom >
       carriage.liftRange[0] + carriage.centre[1] - carriage.size[1] / 2 ||
     railTop < carriage.liftRange[1] + carriage.centre[1] + carriage.size[1] / 2
-  )
+  ) {
     return false
+  }
   const railOuter = carriage.size[2] / 2 + mast.size[2] / 2
   return (
     mast.centre[2] === carriage.centre[2] &&
@@ -648,11 +676,14 @@ function validSourceModel(value: WalkingRobotDefinition) {
 export function readWalkingRobotDefinition(
   raw: unknown
 ): WalkingRobotDefinition {
-  if (record(raw) && admitted.has(raw))
+  if (record(raw) && admitted.has(raw)) {
     return raw as unknown as WalkingRobotDefinition
+  }
   const value = validateWalkingDefinition(raw, WALKING_ROBOT_FORMAT)
   const result = value as unknown as WalkingRobotDefinition
-  if (!validSourceModel(result)) return invalid()
+  if (!validSourceModel(result)) {
+    return invalid()
+  }
   deepFreeze(result)
   admitted.add(result)
   return result
@@ -706,8 +737,9 @@ export function readActiveWalkingRobotDefinition(
   const values = planes.map((p) => p.n << BigInt(p.e - exponent))
   const low = values.reduce((a, b) => (a < b ? a : b)),
     high = values.reduce((a, b) => (a > b ? a : b))
-  if (high - low > limit.n << BigInt(limit.e - exponent))
+  if (high - low > limit.n << BigInt(limit.e - exponent)) {
     throw new WalkingActionDefinitionError('body-width-exceeded')
+  }
   return definition
 }
 

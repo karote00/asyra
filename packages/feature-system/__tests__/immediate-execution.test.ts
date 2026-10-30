@@ -96,7 +96,9 @@ describe('immediate Feature execution through existing session settlement', () =
             endStarted.resolve()
             await endGate.promise
             order.push('end')
-            if (fail) throw new Error('end failed')
+            if (fail) {
+              throw new Error('end failed')
+            }
           }
         }
       })
@@ -212,7 +214,9 @@ describe('immediate Feature execution through existing session settlement', () =
       execution: replay
     })
     const retained = input.listeners.get('history')
-    if (!retained) throw new Error('Missing history binding')
+    if (!retained) {
+      throw new Error('Missing history binding')
+    }
     await runtime.disposeFeatureSystem(snapshot)
     runtime.beginFeatureSystemRuntime()
     runtime.setCorePackages({

@@ -262,7 +262,9 @@ describe('document publication recovery outbox', () => {
         const index = records.findIndex(
           (record) => record.publicationId === publicationId
         )
-        if (index >= 0) records.splice(index, 1)
+        if (index >= 0) {
+          records.splice(index, 1)
+        }
       })
     }
     const outbox = new DocumentPublicationOutbox({

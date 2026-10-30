@@ -166,16 +166,19 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const get = vi.spyOn(root, 'get')
     get.mockImplementation(((key: string) => {
       const value = originalGet(key as never)
-      if (key !== 'children') return value
+      if (key !== 'children') {
+        return value
+      }
       return new Proxy(value as string[], {
         get(target, property, receiver) {
-          if (property === Symbol.iterator)
+          if (property === Symbol.iterator) {
             return function* () {
               for (const id of target) {
                 oldMemberReads++
                 yield id
               }
             }
+          }
           return Reflect.get(target, property, receiver)
         }
       })
@@ -235,12 +238,13 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       const beforeChildren = root.get('children')
       const failure = new Error('ordinary creation fault')
       const injectFailure = () => {
-        if (failureAt === 'materialization')
+        if (failureAt === 'materialization') {
           return vi
             .spyOn(sceneTree, 'createElement')
             .mockImplementationOnce(() => {
               throw failure
             })
+        }
         if (failureAt === 'membership') {
           const membership = vi
             .spyOn(root, 'addNewElements')
@@ -692,12 +696,16 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
         ) {
           return []
         }
-        if (!('payload' in event)) return []
+        if (!('payload' in event)) {
+          return []
+        }
         const id = (event.payload as { data?: { id?: unknown } } | undefined)
           ?.data?.id
         return typeof id === 'string' ? [id] : []
       })
-      if (elementIds.length > 0) replayEventBatches.push(elementIds)
+      if (elementIds.length > 0) {
+        replayEventBatches.push(elementIds)
+      }
     })
     const applyPreparedElementMutation = vi.spyOn(
       sceneTree,

@@ -48,7 +48,11 @@ it('fits the entire eye patch to the curved head instead of burying its upper ed
       "puppet('man').find((p) => p.id === 'eye-left')"
     ).mesh.positions
   let top = 0
-  for (let i = 0; i < eye.length; i += 3) if (eye[i + 2] > eye[top + 2]) top = i
+  for (let i = 0; i < eye.length; i += 3) {
+    if (eye[i + 2] > eye[top + 2]) {
+      top = i
+    }
+  }
   const x = eye[top],
     z = eye[top + 2],
     surface =
@@ -93,15 +97,17 @@ it('retains garment collar, cuffs and source-specific buttons as replaceable reg
   const { puppet } = await import('../puppets')
   const man = puppet('man').map((p) => p.id),
     woman = puppet('woman').map((p) => p.id)
-  for (const ids of [man, woman])
+  for (const ids of [man, woman]) {
     for (const id of [
       'collar-band',
       'collar-flap-left',
       'collar-flap-right',
       'cuff-left',
       'cuff-right'
-    ])
+    ]) {
       expect(ids).toContain(id)
+    }
+  }
   expect(man.filter((id) => id.startsWith('shirt-button-'))).toHaveLength(2)
   expect(woman.filter((id) => id.startsWith('shirt-button-'))).toHaveLength(0)
 })

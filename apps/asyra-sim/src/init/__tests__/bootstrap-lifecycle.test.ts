@@ -28,13 +28,17 @@ function historicalSnapshot(
   const experiment = runtime
     .getExperiments(candidateId)
     .find((item) => item.id === experimentId)
-  if (!experiment) throw new Error('Missing historical experiment fixture')
+  if (!experiment) {
+    throw new Error('Missing historical experiment fixture')
+  }
   const legacy = createSyntheticExample().workcell
   const workcell = runtime.getWorkcell(candidateId)
   // Author the actual v1 fixture, not new execution from today's original parts.
   for (const body of workcell.bodies) {
     const previous = legacy.bodies.find((item) => item.id === body.id)
-    if (!previous) throw new Error('Missing legacy fixture body')
+    if (!previous) {
+      throw new Error('Missing legacy fixture body')
+    }
     body.colliders = previous.colliders
   }
   return historicalProxyFixture({
@@ -75,9 +79,12 @@ beforeEach(() => {
   )
 })
 afterEach(async () => {
-  for (const runtime of runtimes.splice(0))
+  for (const runtime of runtimes.splice(0)) {
     await runtime.dispose().catch(() => undefined)
-  if (core.getRuntimeState() === 'active') await core.resetRuntime()
+  }
+  if (core.getRuntimeState() === 'active') {
+    await core.resetRuntime()
+  }
   vi.unstubAllGlobals()
 })
 
@@ -244,7 +251,9 @@ describe('App composition lifetime', () => {
     const removable = first
       .getWorkcell(candidate.id)
       .bodies.find((item) => item.id === 'example:fixture-post')
-    if (!removable) throw new Error('Missing removable fixture')
+    if (!removable) {
+      throw new Error('Missing removable fixture')
+    }
     await first.features.edit.remove(candidate.id, removable.id)
     await first.features.history.undo()
     const frozen = first.createExperimentSnapshot(experiment.id, [])
@@ -283,7 +292,9 @@ describe('App composition lifetime', () => {
     expect(capture).not.toHaveBeenCalled()
     const expected = await first.captureSnapshot()
     const metadata = session.getState().project
-    if (!metadata) throw new Error('Missing acknowledged project')
+    if (!metadata) {
+      throw new Error('Missing acknowledged project')
+    }
     const stored = await repository.read(metadata.id)
     expect(stored.journal).toHaveLength(8)
     expect(
@@ -307,8 +318,9 @@ describe('App composition lifetime', () => {
     const replay = vi.spyOn(core, 'applyRemoteCanonicalChangeSlices')
     const second = await start(recovered)
     expect(replay).toHaveBeenCalledTimes(recovered.replay?.length ?? 0)
-    for (const [index, call] of replay.mock.calls.entries())
+    for (const [index, call] of replay.mock.calls.entries()) {
       expect(call[0].slices).toBe(recovered.replay?.[index].slices)
+    }
     replay.mockRestore()
     expect(second.getHistoryDepth()).toBe(0)
     expect(await second.captureSnapshot()).toEqual(expected)
@@ -388,7 +400,9 @@ describe('App composition lifetime', () => {
       runtime.createExperimentSnapshot(experiment.id, [])
     )
     const geometry = snapshot.workcell.bodies[0].colliders[0].geometry
-    if (geometry.kind !== 'mesh') throw new Error('Missing full part')
+    if (geometry.kind !== 'mesh') {
+      throw new Error('Missing full part')
+    }
     geometry.positions = geometry.positions.map((n) => n * 0.5)
     const before = runtime.getHistoryDepth()
     await expect(
@@ -486,7 +500,9 @@ describe('App composition lifetime', () => {
     expect(() => first.exportObservations('field-run')).toThrow('closed')
     expect(() => first.features.observations.discard(receipt)).toThrow('closed')
     const sources = saved.observationSources
-    if (!sources) throw new Error('Missing saved sources')
+    if (!sources) {
+      throw new Error('Missing saved sources')
+    }
     const corrupt = {
       ...saved,
       observationSources: sources.map((source) => ({
@@ -665,7 +681,9 @@ describe('App composition lifetime', () => {
     expect(first.getCandidateLineage(a)).toBeUndefined()
     const lineage = first.getCandidateLineage(b)
     expect(lineage?.copiedFromCandidateId).toBe(a)
-    if (!lineage) throw new Error('Missing lineage')
+    if (!lineage) {
+      throw new Error('Missing lineage')
+    }
     const source = first.getCandidateLineage(b)
     Object.values(lineage.bodyOrigins)[0].bodyId = 'external-change'
     expect(first.getCandidateLineage(b)).toEqual(source)
@@ -689,8 +707,9 @@ describe('App composition lifetime', () => {
     expect(snapshot.methodDescriptor).toEqual(
       methods.find((method) => method.id === snapshot.method.id)
     )
-    if (!methods[0].manifest)
+    if (!methods[0].manifest) {
       throw new Error('Missing installed method manifest')
+    }
     methods[0].manifest.name = 'Caller mutation'
     expect(first.getMethodDescriptors()[0].manifest?.name).not.toBe(
       'Caller mutation'
@@ -782,8 +801,9 @@ describe('App composition lifetime', () => {
     const { start } = environment()
     const first = await start()
     const candidate = first.getCandidates()[0]
-    for (const experiment of first.getExperiments(candidate.id).slice(1))
+    for (const experiment of first.getExperiments(candidate.id).slice(1)) {
       await first.features.edit.removeExperiment(experiment.id)
+    }
     const experiments = first.getExperiments(candidate.id)
     expect(experiments).toHaveLength(1)
     const saved = await first.captureSnapshot()

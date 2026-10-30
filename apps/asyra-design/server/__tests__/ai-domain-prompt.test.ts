@@ -171,8 +171,9 @@ describe('stage-owned App guidance', () => {
       'completedSteps',
       'artifactId',
       'new values'
-    ])
+    ]) {
       expect(general).toContain(name)
+    }
     expect(general).toContain('Do not replay uncertain writes')
     expect(general).toContain('No old snapshot')
   })
@@ -209,8 +210,9 @@ describe('stage-owned App guidance', () => {
       'record_design_calculations',
       'select_design_references',
       'review_drawing'
-    ])
+    ]) {
       expect(general).toContain(name)
+    }
     expect(general).not.toContain('record_design_review')
     expect(general).toContain('all original criteria')
     const review = requireTestValue(
@@ -242,8 +244,9 @@ describe('stage-owned App guidance', () => {
       '0.5 source pixels',
       'analysisIds',
       'componentMappings'
-    ])
+    ]) {
       expect(imageGuidance).toContain(detail)
+    }
     expect(AI_IMAGE_TOOL_CATALOG.map((t) => t.id).sort()).toEqual(
       Object.values(AiImageToolIds).sort()
     )
@@ -254,7 +257,9 @@ describe('stage-owned App guidance', () => {
 })
 
 const requireTestValue = <T>(value: T | undefined | null): T => {
-  if (value == null) throw new Error('Required test fixture is unavailable')
+  if (value == null) {
+    throw new Error('Required test fixture is unavailable')
+  }
   return value
 }
 

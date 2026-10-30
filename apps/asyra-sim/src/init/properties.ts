@@ -74,7 +74,9 @@ export interface RunReference {
 export function validRunReference(
   value: unknown
 ): value is RunReference | null {
-  if (value === null) return true
+  if (value === null) {
+    return true
+  }
   return (
     hasExactOwnKeys(value, [
       'version',
@@ -106,7 +108,9 @@ export function validBodyProperty(value: unknown): value is BodyParameters {
 export function validCandidateParameters(
   value: unknown
 ): value is CandidateParameters {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
   const candidate = value as CandidateParameters
   return (
     (candidate.robotRootId === null ||

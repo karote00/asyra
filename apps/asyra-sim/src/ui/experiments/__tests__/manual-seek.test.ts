@@ -132,11 +132,12 @@ it('uses exact cached results without a reset frame or a second input capture', 
 
     f.preview.sample(4, { discontinuity: true })
 
-    for (const [view] of f.publish.mock.calls.slice(before))
+    for (const [view] of f.publish.mock.calls.slice(before)) {
       expect(view).toMatchObject({
         time: 4,
         feedback: { kind: 'collision', checkedTime: 4 }
       })
+    }
     expect(f.create).toHaveBeenCalledOnce()
     expect(f.sample).toHaveBeenCalledTimes(3)
   } finally {

@@ -180,9 +180,9 @@ it('propagates every checkpoint interruption and never publishes a partial regio
   const stop = new Error('cancelled')
   for (const input of [source, fan()]) {
     const complete = measured(input)
-    if (input === source)
+    if (input === source) {
       expect(complete.counts['exact-buffer']).toBeUndefined()
-    else {
+    } else {
       for (const kind of [
         'exact-buffer',
         'exact-decode',
@@ -192,15 +192,18 @@ it('propagates every checkpoint interruption and never publishes a partial regio
         'exact-multiply',
         'exact-add',
         'exact-zero'
-      ])
+      ]) {
         expect(complete.counts[kind]).toBeGreaterThan(0)
+      }
     }
     for (let at = 1; at <= complete.work; at++) {
       let work = 0,
         published: unknown
       try {
         published = planarRegions(input, () => {
-          if (++work === at) throw stop
+          if (++work === at) {
+            throw stop
+          }
         })
       } catch (caught) {
         expect(caught).toBe(stop)
@@ -219,7 +222,9 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
   'screens all original source bindings once under the frozen preparation ceiling',
   async () => {
     const censusPath = process.env.SIM_PLANAR_CENSUS_FILE
-    if (!censusPath) throw new Error('Missing reviewed census file path')
+    if (!censusPath) {
+      throw new Error('Missing reviewed census file path')
+    }
     const censusText = readFileSync(censusPath, 'utf8')
     expect(digest(censusText)).toBe(
       'b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99'
@@ -257,8 +262,9 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
         end?: number
         result?: ReturnType<typeof planarRegions>
       }[] = bindings.map(({ key, geometry }) => {
-        if (geometry.kind !== 'mesh')
+        if (geometry.kind !== 'mesh') {
           throw new Error('Expected full original source')
+        }
         return {
           binding: key,
           asset: geometry.source.assetId,
@@ -272,11 +278,13 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
     let work = 0,
       error: string | undefined
     const tick = (kind: string) => {
-      if (performance.now() - started >= 20000)
+      if (performance.now() - started >= 20000) {
         throw new Error('20000 ms preparation limit')
+      }
       counts[kind] = (counts[kind] ?? 0) + 1
-      if (++work >= 230088)
+      if (++work >= 230088) {
         throw new Error('230088 preparation ceiling leaves no query reserve')
+      }
     }
     try {
       for (let index = 0; index < bindings.length; index++) {
@@ -285,7 +293,9 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
         row.state = 'running'
         row.start = work
         tick('binding-admission')
-        if (geometry.kind !== 'mesh') throw new Error('Expected mesh')
+        if (geometry.kind !== 'mesh') {
+          throw new Error('Expected mesh')
+        }
         const result = planarRegions(geometry, tick)
         tick('binding-publication')
         row.result = result
@@ -343,8 +353,9 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
       rows
         .filter((r) => r.state !== 'unvisited')
         .reduce((n, r) => {
-          if (r.end === undefined || r.start === undefined)
+          if (r.end === undefined || r.start === undefined) {
             throw new Error('Missing charged binding range')
+          }
           return n + r.end - r.start
         }, 0)
     ).toBe(work)
@@ -355,7 +366,9 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
     } else {
       expect(complete).toBe(true)
       for (const row of rows) {
-        if (!row.result) throw new Error('Missing complete region receipt')
+        if (!row.result) {
+          throw new Error('Missing complete region receipt')
+        }
         expect(new Set(row.result.regions.flat()).size).toBe(row.triangles)
         expect(row.result.regions.flat().length).toBe(row.triangles)
       }

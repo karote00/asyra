@@ -35,7 +35,9 @@ it.each([false, true])(
       geometry,
       pose: ops.fromPose(IDENTITY_POSE)
     }))
-    if (reverse) pair.reverse()
+    if (reverse) {
+      pair.reverse()
+    }
     const [a, b] = pair,
       threshold = 1 / 64
     const query = new OriginalMeshQuery()

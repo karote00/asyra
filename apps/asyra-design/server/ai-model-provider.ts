@@ -184,10 +184,11 @@ export const requestConfiguredAiActionBatch = async (
     }
     return value
   }
-  if (backend !== 'http')
+  if (backend !== 'http') {
     return invalidConfiguration(
       'AI_PROVIDER_BACKEND must be http or local-codex.'
     )
+  }
   const configuration = resolveAiModelBackendConfiguration(
     options.environment ?? process.env
   )

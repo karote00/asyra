@@ -293,8 +293,11 @@ describe('generic HTTP AI provider', () => {
       )
       await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
       expect(transport?.aborted).toBe(false)
-      if (mode === 'abort') controller.abort()
-      else provider.dispose()
+      if (mode === 'abort') {
+        controller.abort()
+      } else {
+        provider.dispose()
+      }
       await checked
       expect(transport?.aborted).toBe(true)
       expect(vi.getTimerCount()).toBe(0)

@@ -65,17 +65,20 @@ export const createAiInvoker = <T>(options: {
       const dispatch = async (index: number): Promise<T> => {
         call.signal?.throwIfAborted()
         const handler = middleware[index]
-        if (!handler) return options.execute(call)
+        if (!handler) {
+          return options.execute(call)
+        }
         let used = false
         let open = true
         let downstream: Promise<T> | undefined
         let output: T
         try {
           output = await handler(call, () => {
-            if (used || !active || !open)
+            if (used || !active || !open) {
               return Promise.reject(
                 new Error('Invocation next must run at most once while active')
               )
+            }
             used = true
             downstream = dispatch(index + 1)
             void downstream.catch(() => undefined)

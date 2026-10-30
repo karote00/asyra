@@ -125,7 +125,9 @@ describe('durable recipe reuse', () => {
     })
     const second = setup(store)
     const primitive = second.registry.get('set')
-    if (!primitive) throw new Error('Missing primitive')
+    if (!primitive) {
+      throw new Error('Missing primitive')
+    }
     second.registry.register(
       { ...primitive, revision: 2 },
       { expectedRevision: 1 }
@@ -377,8 +379,9 @@ it('does not publish a partial inventory whose newest revisions may be omitted',
     requestId: 'author',
     receipt
   })
-  for (let i = 0; i < 32; i++)
+  for (let i = 0; i < 32; i++) {
     entries.set(`extra${i}`, { key: `extra${i}`, version: '1', record: null })
+  }
   const next = setup(store)
   expect(await next.persistence.load('new')).toMatchObject({
     loaded: [],

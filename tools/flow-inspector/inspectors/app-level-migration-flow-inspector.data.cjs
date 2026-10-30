@@ -1008,12 +1008,12 @@
 
   const freeze = (value) => {
     if (!value || typeof value !== 'object' || Object.isFrozen(value))
-      return value
+      {return value}
     Object.freeze(value)
     Object.values(value).forEach(freeze)
     return value
   }
   freeze(data)
-  if (typeof globalThis !== 'undefined') globalThis.FLOW_INSPECTOR_DATA = data
-  if (typeof module !== 'undefined' && module.exports) module.exports = data
+  if (typeof globalThis !== 'undefined') {globalThis.FLOW_INSPECTOR_DATA = data}
+  if (typeof module !== 'undefined' && module.exports) {module.exports = data}
 })()

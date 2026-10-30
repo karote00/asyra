@@ -23,8 +23,9 @@ for (const width of [320, 820, 1440]) {
       .locator('article')
       .first()
       .boundingBox()
-    if (!products || !entry || !starters || !firstStarter)
+    if (!products || !entry || !starters || !firstStarter) {
       throw new Error('Homepage entry sections are missing')
+    }
     expect(starters.y).toBeGreaterThanOrEqual(products.y + products.height - 1)
     expect(entry.y).toBeGreaterThan(starters.y)
     expect(firstStarter.y).toBeGreaterThanOrEqual(entry.y + entry.height - 1)
@@ -44,8 +45,9 @@ for (const width of [320, 820, 1440]) {
       const style = getComputedStyle(element)
       const luminance = (color: string) => {
         const channels = color.match(/[\d.]+/g)
-        if (!channels || channels.length < 3)
+        if (!channels || channels.length < 3) {
           throw new Error(`Expected an RGB color: ${color}`)
+        }
         const values = channels.slice(0, 3).map(Number)
         const linear = values.map((channel) => {
           const value = channel / 255
@@ -79,7 +81,9 @@ for (const width of [320, 820, 1440]) {
     )
     for (const link of await section.getByRole('link').all()) {
       const box = await link.boundingBox()
-      if (!box) throw new Error('Developer entry link is missing')
+      if (!box) {
+        throw new Error('Developer entry link is missing')
+      }
       expect(box.height).toBeGreaterThanOrEqual(44)
       expect(box.x).toBeGreaterThanOrEqual(0)
       expect(box.x + box.width).toBeLessThanOrEqual(width)
@@ -136,7 +140,9 @@ test('primary Start building CTAs route to Generic Starter source', async ({
     await expect(
       page.getByText('npx create-asyra-app@0.1.0 my-app --package-manager=npm')
     ).toBeVisible()
-    if (index === 0) await page.goto('/')
+    if (index === 0) {
+      await page.goto('/')
+    }
   }
 })
 

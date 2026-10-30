@@ -39,8 +39,12 @@ const defaultApis: ArrangementApis = {
     core.getElementComputedData(id, ['x', 'y', 'width', 'height']),
   corner: (id, parentId, point) => {
     const workspace = core.elementLocalToWorkspace(id, point)
-    if (!workspace) return null
-    if (parentId === core.getCurrentWorkspaceId()) return workspace
+    if (!workspace) {
+      return null
+    }
+    if (parentId === core.getCurrentWorkspaceId()) {
+      return workspace
+    }
     return core.workspaceToElementLocal(parentId, workspace)
   },
   apply: (updates, groups) =>
@@ -80,14 +84,19 @@ export const createDesignArranger =
             (!Number.isFinite(request.gap) ||
               request.gap < 0 ||
               request.gap > 100000))))
-    )
+    ) {
       throw new Error('Invalid arrangement request.')
+    }
     const records = new Map<string, LayoutRecord>()
     const read = (id: string): LayoutRecord => {
       const cached = records.get(id)
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
       const record = apis.read(id)
-      if (!record) throw new Error('An arrangement target is unavailable.')
+      if (!record) {
+        throw new Error('An arrangement target is unavailable.')
+      }
       records.set(id, record)
       return record
     }
@@ -95,15 +104,20 @@ export const createDesignArranger =
       const visited = new Set<string>()
       let current = id
       while (current) {
-        if (visited.has(current) || visited.size >= 512)
+        if (visited.has(current) || visited.size >= 512) {
           throw new Error('Invalid arrangement hierarchy.')
+        }
         visited.add(current)
         const record = read(current)
-        if (record.lock)
+        if (record.lock) {
           throw new Error('An arrangement target or parent is locked.')
-        if (record.type === 'workspace') break
-        if (!record.parentId)
+        }
+        if (record.type === 'workspace') {
+          break
+        }
+        if (!record.parentId) {
           throw new Error('An arrangement parent is unavailable.')
+        }
         current = record.parentId
       }
     }
@@ -111,8 +125,9 @@ export const createDesignArranger =
     if (
       !parentId ||
       request.elementIds.some((id) => read(id).parentId !== parentId)
-    )
+    ) {
       throw new Error('Arrangement requires siblings in one parent.')
+    }
     const axis = request.axis === 'horizontal' ? 'x' : 'y'
     const targets = request.elementIds.map((id) => {
       const geometry = apis.geometry(id)
@@ -121,11 +136,13 @@ export const createDesignArranger =
         values.some(
           (value) => typeof value !== 'number' || !Number.isFinite(value)
         )
-      )
+      ) {
         throw new Error('Arrangement geometry is unavailable.')
+      }
       const [x, y, width, height] = values as number[]
-      if (width < 0 || height < 0)
+      if (width < 0 || height < 0) {
         throw new Error('Arrangement size is invalid.')
+      }
       const corners = [
         { x: 0, y: 0 },
         { x: width, y: 0 },
@@ -137,8 +154,9 @@ export const createDesignArranger =
           (point) =>
             !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)
         )
-      )
+      ) {
         throw new Error('Arrangement projection is unavailable.')
+      }
       const coordinates = corners.map((point) => (point as Position)[axis])
       const start = Math.min(...coordinates),
         end = Math.max(...coordinates)
@@ -155,14 +173,16 @@ export const createDesignArranger =
     let gap = request.gap ?? 0
     if (request.operation === 'distribute') {
       targets.sort((a, b) => a.start - b.start)
-      if (request.gap === undefined)
+      if (request.gap === undefined) {
         gap =
           (end - start - targets.reduce((sum, t) => sum + t.size, 0)) /
           (targets.length - 1)
-      if (gap < 0)
+      }
+      if (gap < 0) {
         throw new Error(
           'There is not enough space to distribute without overlap. Specify a gap.'
         )
+      }
     }
     let cursor = start
     const updates: PositionUpdate[] = []
@@ -170,25 +190,31 @@ export const createDesignArranger =
       let edge = cursor
       if (request.operation === 'align') {
         edge = start
-        if (request.alignment === 'center')
+        if (request.alignment === 'center') {
           edge = (start + end - target.size) / 2
-        if (request.alignment === 'end') edge = end - target.size
+        }
+        if (request.alignment === 'end') {
+          edge = end - target.size
+        }
       }
       const position = target.position + edge - target.start
-      if (!Number.isFinite(position) || Math.abs(position) > 100000)
+      if (!Number.isFinite(position) || Math.abs(position) > 100000) {
         throw new Error('Arranged position is outside the supported range.')
-      if (Math.abs(position - target.position) > 1e-8)
+      }
+      if (Math.abs(position - target.position) > 1e-8) {
         updates.push({ elementId: target.id, values: { [axis]: position } })
+      }
       cursor = edge + target.size + gap
       return { elementId: target.id, [axis]: position }
     })
-    if (updates.length)
+    if (updates.length) {
       apis.apply(
         updates,
         updates
           .filter((update) => read(update.elementId).type === 'group')
           .map((update) => update.elementId)
       )
+    }
     return {
       status: updates.length ? 'complete' : 'no-change',
       compositionId: parentId,

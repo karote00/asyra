@@ -78,17 +78,22 @@ export const createAiStartup = (
         typeof receipt?.complete !== 'boolean' ||
         typeof receipt?.requestId !== 'string' ||
         !Number.isSafeInteger(receipt?.acknowledgedSequence)
-      )
+      ) {
         throw new Error('Invalid execution record receipt')
+      }
       return receipt
     }
   }
   const deliveryHost = createRecordDeliveryHost(deliveryOptions)
   let recovery = Promise.resolve()
   const reconnect = () => {
-    if (deliveryClosed) return
+    if (deliveryClosed) {
+      return
+    }
     recovery = recovery.then(async () => {
-      if (!deliveryClosed) await deliveryHost.recover()
+      if (!deliveryClosed) {
+        await deliveryHost.recover()
+      }
     })
   }
   let runtime: AiAgentRuntime | undefined

@@ -205,7 +205,9 @@ class BoundedEvidenceBuffer<T> {
   }
 
   latest(): T | undefined {
-    if (this.entries.length === 0) return
+    if (this.entries.length === 0) {
+      return
+    }
     if (this.entries.length < this.capacity) {
       return this.entries.at(-1)
     }
@@ -245,7 +247,9 @@ export const getActiveAiDrawingPerformanceProfile =
 const serializeDiagnosticValue = (
   value: unknown
 ): AiDrawingPerformanceDiagnosticValue | undefined => {
-  if (value === undefined) return
+  if (value === undefined) {
+    return
+  }
   if (
     typeof value === 'string' ||
     typeof value === 'number' ||
@@ -493,9 +497,13 @@ export const installAiDrawingPerformanceProfile = ({
     try {
       detachTransactionStatus = source.subscribeToTransactionStatus(
         (status) => {
-          if (disposed || !Number.isFinite(status.timestamp)) return
+          if (disposed || !Number.isFinite(status.timestamp)) {
+            return
+          }
           factoryStatuses.append(captureFactoryTransactionStatus(status))
-          if (status.status !== 'committed') return
+          if (status.status !== 'committed') {
+            return
+          }
           factoryCommits.append(
             Object.freeze({
               capturedAtMs: status.timestamp,
@@ -514,7 +522,9 @@ export const installAiDrawingPerformanceProfile = ({
     runtimeEvidenceSource = source
     let detached = false
     const detachRuntimeEvidence = () => {
-      if (detached) return
+      if (detached) {
+        return
+      }
       detached = true
       callDetached(detachTransactionStatus)
       if (runtimeEvidenceDisposer === detachRuntimeEvidence) {
@@ -531,7 +541,9 @@ export const installAiDrawingPerformanceProfile = ({
     readonly publicationId: string
   }): void => {
     const capturedAtMs = epochNow()
-    if (disposed || !Number.isFinite(capturedAtMs)) return
+    if (disposed || !Number.isFinite(capturedAtMs)) {
+      return
+    }
     factoryPublications.append(
       Object.freeze({
         capturedAtMs,
@@ -633,7 +645,9 @@ export const installAiDrawingPerformanceProfile = ({
       return conversationDisposer
     },
     dispose: () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       disposed = true
       conversationDisposer?.()
       conversationDisposer = null
@@ -782,7 +796,9 @@ export const installAiDrawingPerformanceProfile = ({
       return zoom
     },
     reset: () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       counters.clear()
       counterTotals.clear()
       factoryCommits.clear()

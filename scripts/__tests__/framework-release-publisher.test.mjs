@@ -82,9 +82,11 @@ test('publisher skips exact existing versions and publishes only missing validat
       allowedPackageNames: packages.map(({ name }) => name),
       runCommand(command, args) {
         commands.push([command, ...args])
-        if (command === 'git' && args[0] === 'rev-parse') return sourceSha
+        if (command === 'git' && args[0] === 'rev-parse') {
+          return sourceSha
+        }
         if (command === 'npm' && args[0] === 'view') {
-          if (args[1].endsWith('@latest'))
+          if (args[1].endsWith('@latest')) {
             return JSON.stringify({
               version: '1.0.0',
               'dist.integrity': 'previous-integrity',
@@ -95,13 +97,15 @@ test('publisher skips exact existing versions and publishes only missing validat
                 )
               ).deliveries[0].baseline.sourceSha
             })
-          if (args[1] === '@asyra/core@1.4.2')
+          }
+          if (args[1] === '@asyra/core@1.4.2') {
             return JSON.stringify({
               version: '1.4.2',
               'dist.integrity': artifactsList.find(
                 (pkg) => pkg.name === '@asyra/core'
               ).integrity
             })
+          }
           const error = new Error('missing exact version')
           error.code = 'E404'
           throw error
@@ -159,9 +163,11 @@ test('publisher queries every exact version before publishing and stops on non-4
           allowedPackageNames: packages.map(({ name }) => name),
           runCommand(command, args) {
             commands.push([command, ...args])
-            if (command === 'git' && args[0] === 'rev-parse') return sourceSha
+            if (command === 'git' && args[0] === 'rev-parse') {
+              return sourceSha
+            }
             if (command === 'npm' && args[0] === 'view') {
-              if (args[1].endsWith('@latest'))
+              if (args[1].endsWith('@latest')) {
                 return JSON.stringify({
                   version: '1.0.0',
                   'dist.integrity': 'previous-integrity',
@@ -172,6 +178,7 @@ test('publisher queries every exact version before publishing and stops on non-4
                     )
                   ).deliveries[0].baseline.sourceSha
                 })
+              }
               if (args[1] === '@asyra/factory@2.1.3') {
                 const error = new Error('registry unavailable')
                 error.code = 'EAI_AGAIN'
@@ -246,8 +253,9 @@ test('a failed artifact or packed-consumer gate prevents every publish and tag',
           },
           runCommand(command, args) {
             commands.push([command, ...args])
-            if (command === 'git' && args[0] === 'rev-parse')
+            if (command === 'git' && args[0] === 'rev-parse') {
               return 'd'.repeat(40)
+            }
             return ''
           }
         }),
@@ -270,9 +278,11 @@ test('direct publisher blocks missing release guidance before any publish or tag
           artifacts: artifactsList,
           allowedPackageNames: packages.map(({ name }) => name),
           runCommand(command, args) {
-            if (command === 'git' && args[0] === 'rev-parse') return sourceSha
+            if (command === 'git' && args[0] === 'rev-parse') {
+              return sourceSha
+            }
             if (command === 'npm' && args[0] === 'view') {
-              if (args[1].endsWith('@latest'))
+              if (args[1].endsWith('@latest')) {
                 return JSON.stringify({
                   version: '1.0.0',
                   'dist.integrity': 'previous-integrity',
@@ -283,6 +293,7 @@ test('direct publisher blocks missing release guidance before any publish or tag
                     )
                   ).deliveries[0].baseline.sourceSha
                 })
+              }
               const error = new Error('E404')
               error.code = 'E404'
               throw error
@@ -290,8 +301,9 @@ test('direct publisher blocks missing release guidance before any publish or tag
             if (
               args[0] === 'publish' ||
               (args[0] === 'tag' && args[1] !== '--list')
-            )
+            ) {
               mutations.push(args)
+            }
             return ''
           }
         }),
@@ -308,16 +320,19 @@ test('partial publish retains per-package outcomes and retries the original guid
       const mutations = []
       let fail = true
       const runCommand = (command, args) => {
-        if (command === 'git' && args[0] === 'rev-parse') return sourceSha
+        if (command === 'git' && args[0] === 'rev-parse') {
+          return sourceSha
+        }
         if (command === 'npm' && args[0] === 'view') {
           const name = args[1].slice(0, args[1].lastIndexOf('@'))
           const artifact = artifactsList.find((item) => item.name === name)
-          if (registry.has(name))
+          if (registry.has(name)) {
             return JSON.stringify({
               version: artifact.version,
               'dist.integrity': artifact.integrity
             })
-          if (args[1].endsWith('@latest'))
+          }
+          if (args[1].endsWith('@latest')) {
             return JSON.stringify({
               version: '1.0.0',
               'dist.integrity': 'previous-integrity',
@@ -328,6 +343,7 @@ test('partial publish retains per-package outcomes and retries the original guid
                 )
               ).deliveries[0].baseline.sourceSha
             })
+          }
           const error = new Error('E404')
           error.code = 'E404'
           throw error
@@ -337,8 +353,9 @@ test('partial publish retains per-package outcomes and retries the original guid
             (item) => item.tarballPath === args[1]
           )
           mutations.push(artifact.name)
-          if (fail && artifact.name === '@asyra/core')
+          if (fail && artifact.name === '@asyra/core') {
             throw new Error('Registry write interrupted')
+          }
           registry.set(artifact.name, true)
         }
         return ''

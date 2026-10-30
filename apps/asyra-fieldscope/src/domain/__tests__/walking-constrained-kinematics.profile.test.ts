@@ -25,7 +25,7 @@ import {
 import type { Fraction } from './walking-constrained-kinematics-test-fixtures'
 
 describe('exact polynomial complementary tripod offline profiles', () => {
-  for (const phase of [0, 1] as const)
+  for (const phase of [0, 1] as const) {
     it(`proves phase ${phase} full soles from actual vertices and encloses all original part points`, async (context) => {
       await context.annotate(
         `Starting phase ${phase} complete original-vertex envelope proof`,
@@ -104,14 +104,16 @@ describe('exact polynomial complementary tripod offline profiles', () => {
             !minimumX ||
             x.numerator * minimumX.denominator <
               minimumX.numerator * x.denominator
-          )
+          ) {
             minimumX = x
+          }
           if (
             !maximumX ||
             x.numerator * maximumX.denominator >
               maximumX.numerator * x.denominator
-          )
+          ) {
             maximumX = x
+          }
           sourceVertices++
         }
         expect(coordinates.size).toBe(
@@ -155,7 +157,7 @@ describe('exact polynomial complementary tripod offline profiles', () => {
         expect(
           support.fixedVertices.map((v) => v.index).sort((a, b) => a - b)
         ).toEqual([...indices].sort((a, b) => a - b))
-        for (const vertex of support.fixedVertices)
+        for (const vertex of support.fixedVertices) {
           expect(
             pointOracle(
               frame,
@@ -164,6 +166,7 @@ describe('exact polynomial complementary tripod offline profiles', () => {
                 .map(exact)
             )
           ).toEqual(vertex.position)
+        }
       }
       const initial = owner.evaluate(cycle, phase, exact(0))
       for (const swing of bounded.swing) {
@@ -221,6 +224,7 @@ describe('exact polynomial complementary tripod offline profiles', () => {
         }
       }
     }, 300000)
+  }
 })
 
 describe('constrained projection offline geometry profiles', () => {
@@ -288,8 +292,8 @@ describe('constrained projection offline geometry profiles', () => {
         const support = projection.supports.find(
           (support) => support.part === entry.part
         )
-        if (support)
-          for (const vertex of support.fixedVertices)
+        if (support) {
+          for (const vertex of support.fixedVertices) {
             expect(
               pointOracle(
                 entry.exact,
@@ -298,6 +302,8 @@ describe('constrained projection offline geometry profiles', () => {
                   .map(exact)
               )
             ).toEqual(vertex.position)
+          }
+        }
       }
     }
     const nonSupport = required(

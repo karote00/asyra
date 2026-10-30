@@ -26,21 +26,24 @@ interface Triangle {
   bounds: GeometryBounds
 }
 const limit = (value: number, maximum: number) => {
-  if (!Number.isSafeInteger(value) || value > maximum)
+  if (!Number.isSafeInteger(value) || value > maximum) {
     throw new Error('Hierarchy experiment guard exceeded')
+  }
 }
 const elapsed = (started: number) => {
-  if (performance.now() - started > 10000)
+  if (performance.now() - started > 10000) {
     throw new Error('Hierarchy experiment time guard exceeded')
+  }
 }
 const union = (bounds: readonly GeometryBounds[]): GeometryBounds => {
   const min: [number, number, number] = [Infinity, Infinity, Infinity],
     max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
-  for (const box of bounds)
+  for (const box of bounds) {
     for (let axis = 0; axis < 3; axis++) {
       min[axis] = Math.min(min[axis], box.min[axis])
       max[axis] = Math.max(max[axis], box.max[axis])
     }
+  }
   return Object.freeze({ min: Object.freeze(min), max: Object.freeze(max) })
 }
 const separated = (a: GeometryBounds, b: GeometryBounds) =>
@@ -65,7 +68,9 @@ export function prepareHierarchy(source: GeometrySource) {
   for (const mesh of source.meshes) {
     elapsed(started)
     const shape = mesh.shape
-    if (shape.kind !== 'triangles') throw new Error('Expected triangle source')
+    if (shape.kind !== 'triangles') {
+      throw new Error('Expected triangle source')
+    }
     if (!shapes.has(shape)) {
       shapes.add(shape)
       work.shapes++
@@ -87,12 +92,14 @@ export function prepareHierarchy(source: GeometrySource) {
       })
     }
     let axis = 0
-    for (let next = 1; next < 3; next++)
+    for (let next = 1; next < 3; next++) {
       if (
         bounds.max[next] - bounds.min[next] >
         bounds.max[axis] - bounds.min[axis]
-      )
+      ) {
         axis = next
+      }
+    }
     const center = (item: Triangle) =>
       item.bounds.min[axis] / 2 + item.bounds.max[axis] / 2
     items.sort((a, b) => center(a) - center(b) || a.ordinal - b.ordinal)
@@ -110,13 +117,17 @@ export function prepareHierarchy(source: GeometrySource) {
   for (const mesh of source.meshes) {
     elapsed(started)
     const shape = mesh.shape
-    if (shape.kind !== 'triangles') throw new Error('Expected triangles')
+    if (shape.kind !== 'triangles') {
+      throw new Error('Expected triangles')
+    }
     let mapped = mappings.get(shape)
     if (!mapped) {
       mapped = new Map()
       mappings.set(shape, mapped)
     }
-    if (mapped.has(mesh.origin.regions)) continue
+    if (mapped.has(mesh.origin.regions)) {
+      continue
+    }
     work.mappings++
     const roots = mesh.origin.regions.map((region) => {
       work.regions++
@@ -126,7 +137,9 @@ export function prepareHierarchy(source: GeometrySource) {
         offset < region.indexStart + region.indexCount;
         offset += 3
       ) {
-        if (work.builtTriangles % 256 === 0) elapsed(started)
+        if (work.builtTriangles % 256 === 0) {
+          elapsed(started)
+        }
         limit(++work.builtTriangles, 1000000)
         const points: GeometryBounds[] = []
         for (let corner = 0; corner < 3; corner++) {
@@ -136,8 +149,9 @@ export function prepareHierarchy(source: GeometrySource) {
               shape.positions[index + 1],
               shape.positions[index + 2]
             ] as Point3
-          if (!point.every(Number.isFinite))
+          if (!point.every(Number.isFinite)) {
             throw new Error('Nonfinite original vertex')
+          }
           work.vertices++
           points.push({ min: point, max: point })
         }
@@ -155,8 +169,9 @@ export function prepareHierarchy(source: GeometrySource) {
     payloadBytes: work.nodes * 8 * 8 + work.leafReferences * 8,
     roots: (mesh: GeometryMesh) => {
       const roots = mappings.get(mesh.shape)?.get(mesh.origin.regions)
-      if (!roots || !source.meshes.includes(mesh))
+      if (!roots || !source.meshes.includes(mesh)) {
         throw new Error('Foreign source mapping')
+      }
       return roots
     }
   })
@@ -170,7 +185,9 @@ export function queryHierarchy(
     source = tree.source,
     state = input.robot,
     rig = source.receipt.robot.rig
-  if (!state || !rig) throw new Error('Expected admitted test pose')
+  if (!state || !rig) {
+    throw new Error('Expected admitted test pose')
+  }
   elapsed(started)
   const pose = evaluateRobotAffinePose(rig, state.joints),
     bodies = new Map(pose.parts.map((part) => [part.source, part.affine]))
@@ -189,21 +206,29 @@ export function queryHierarchy(
     Array.from(
       { length: mesh.descriptor?.instances?.length ?? 1 },
       (_, instance) => {
-        if (instance % 256 === 0) elapsed(started)
+        if (instance % 256 === 0) {
+          elapsed(started)
+        }
         const frames: ReturnType<typeof prepareQueryForwardFrame>[] = [],
           placement = mesh.descriptor?.instances?.[instance]
-        if (placement) frames.push(prepareQueryInstanceFrame(placement))
+        if (placement) {
+          frames.push(prepareQueryInstanceFrame(placement))
+        }
         if (mesh.kind === 'robot') {
           const body = bodies.get(
             mesh.origin as (typeof pose.parts)[number]['source']
           )
-          if (!body) throw new Error('Missing source body')
+          if (!body) {
+            throw new Error('Missing source body')
+          }
           frames.push(
             prepareQueryAffineFrame(body),
             prepareQueryForwardFrame(state.base)
           )
         } else {
-          if (!mesh.descriptor) throw new Error('Missing placement')
+          if (!mesh.descriptor) {
+            throw new Error('Missing placement')
+          }
           frames.push(prepareQueryForwardFrame(mesh.descriptor))
         }
         const displacement =
@@ -216,8 +241,9 @@ export function queryHierarchy(
               interval(mask & 2 ? local.max[1] : local.min[1]),
               interval(mask & 4 ? local.max[2] : local.min[2])
             ]
-            for (const frame of frames)
+            for (const frame of frames) {
               point = transformQueryPoint(frame, point)
+            }
             work.corners++
             const min = point.map(
               (value, axis) =>
@@ -260,7 +286,9 @@ export function queryHierarchy(
   )
   type Placement = (typeof placements)[number]
   const compare = (first: Placement, second: Placement) => {
-    if (work.meshPairs % 256 === 0) elapsed(started)
+    if (work.meshPairs % 256 === 0) {
+      elapsed(started)
+    }
     work.meshPairs++
     work.total += first.count * second.count
     limit(work.total, Number.MAX_SAFE_INTEGER)
@@ -268,13 +296,17 @@ export function queryHierarchy(
       work.excluded += first.count * second.count
       return
     }
-    for (const a of first.roots)
+    for (const a of first.roots) {
       for (const b of second.roots) {
         const stack: [Node, Node][] = [[a, b]]
         while (stack.length) {
-          if (work.nodePairs % 256 === 0) elapsed(started)
+          if (work.nodePairs % 256 === 0) {
+            elapsed(started)
+          }
           const pair = stack.pop()
-          if (!pair) throw new Error('Missing pending pair')
+          if (!pair) {
+            throw new Error('Missing pending pair')
+          }
           const [left, right] = pair,
             count = left.count * right.count
           if (work.nodePairs >= 500000) {
@@ -296,9 +328,9 @@ export function queryHierarchy(
             continue
           }
           work.candidates += count
-          if (capture)
-            for (const x of left.triangles ?? [])
-              for (const y of right.triangles ?? [])
+          if (capture) {
+            for (const x of left.triangles ?? []) {
+              for (const y of right.triangles ?? []) {
                 candidates.push({
                   first: {
                     mesh: first.meshIndex,
@@ -311,15 +343,22 @@ export function queryHierarchy(
                     triangle: y
                   }
                 })
+              }
+            }
+          }
         }
       }
+    }
   }
   const robots = placements.filter((item) => item.mesh.kind === 'robot'),
     environment = placements.filter((item) => item.mesh.kind !== 'robot')
   for (let index = 0; index < robots.length; index++) {
-    for (const item of environment) compare(robots[index], item)
-    for (let other = index + 1; other < robots.length; other++)
+    for (const item of environment) {
+      compare(robots[index], item)
+    }
+    for (let other = index + 1; other < robots.length; other++) {
       compare(robots[index], robots[other])
+    }
   }
   return { work, candidates, milliseconds: performance.now() - started }
 }

@@ -38,17 +38,24 @@ export function captureSources(root, destination) {
     .filter(Boolean)
   // App consumes package build output; capture ignored current builds as well.
   const walk = (directory) => {
-    if (!fs.existsSync(directory)) return
+    if (!fs.existsSync(directory)) {
+      return
+    }
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
       const file = path.join(directory, entry.name)
-      if (entry.isDirectory()) walk(file)
-      else if (entry.isFile()) listed.push(path.relative(root, file))
+      if (entry.isDirectory()) {
+        walk(file)
+      } else if (entry.isFile()) {
+        listed.push(path.relative(root, file))
+      }
     }
   }
   const packages = path.join(root, 'packages')
-  if (fs.existsSync(packages))
-    for (const entry of fs.readdirSync(packages))
+  if (fs.existsSync(packages)) {
+    for (const entry of fs.readdirSync(packages)) {
       walk(path.join(packages, entry, 'dist'))
+    }
+  }
   const sources = {},
     contents = {}
   for (const file of [...new Set(listed)].filter(relevant).sort()) {
@@ -57,22 +64,26 @@ export function captureSources(root, destination) {
       sources[file] = { deleted: true }
       continue
     }
-    if (!fs.lstatSync(filename).isFile())
+    if (!fs.lstatSync(filename).isFile()) {
       throw new Error(`Source is not a regular file: ${file}`)
+    }
     const bytes = fs.readFileSync(filename)
     sources[file] = {
       bytes: bytes.length,
       sha256: createHash('sha256').update(bytes).digest('hex')
     }
-    if (destination) contents[file] = bytes.toString('base64')
+    if (destination) {
+      contents[file] = bytes.toString('base64')
+    }
   }
   const digest = createHash('sha256')
     .update(JSON.stringify(sources))
     .digest('hex')
-  if (destination)
+  if (destination) {
     fs.writeFileSync(destination, gzipSync(JSON.stringify(contents)), {
       flag: 'wx'
     })
+  }
   return { digest, files: sources, archive: destination }
 }
 
@@ -82,8 +93,9 @@ export function verifyEvaluationService(service, app) {
     service.cwd !== app ||
     !Number.isInteger(service.pid) ||
     service.pid < 2
-  )
+  ) {
     throw new Error('Evaluation service ownership unavailable')
+  }
   const cwd = execFileSync(
     'lsof',
     ['-a', '-p', String(service.pid), '-d', 'cwd', '-Fn'],
@@ -94,8 +106,9 @@ export function verifyEvaluationService(service, app) {
     ['-o', 'command=', '-p', String(service.pid)],
     { encoding: 'utf8', timeout: 2000 }
   )
-  if (!cwd.split('\n').includes('n' + app) || !/\bvite\b/.test(command))
+  if (!cwd.split('\n').includes('n' + app) || !/\bvite\b/.test(command)) {
     throw new Error('Evaluation service cwd or command mismatch')
+  }
   return { pid: service.pid, cwd: app, command: command.trim() }
 }
 
@@ -106,13 +119,17 @@ export function captureRequestIdentity(request, origin) {
     request.method() !== 'POST' ||
     url.origin !== origin ||
     url.pathname !== ACTION_BATCH_ENDPOINT
-  )
+  ) {
     return undefined
+  }
   // The same endpoint accepts execution receipts without starting a model request.
   // Match the server's header-presence branch before interpreting the body.
-  if (request.headers()[AI_BATCH_RECEIPT_HEADER] !== undefined) return undefined
+  if (request.headers()[AI_BATCH_RECEIPT_HEADER] !== undefined) {
+    return undefined
+  }
   const id = request.postDataJSON()?.metadata?.sourceRequestId
-  if (typeof id !== 'string' || !id.trim())
+  if (typeof id !== 'string' || !id.trim()) {
     throw new Error('Provider request has no source identity')
+  }
   return id
 }

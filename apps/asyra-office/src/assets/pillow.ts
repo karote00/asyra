@@ -40,13 +40,16 @@ function pillowMesh(intervals: readonly number[], radial: number) {
             })
       for (let i = 0; i < n; i++) {
         const k = (i + 1) % n
-        if (j === 1) triangle(centre, row[i], row[k])
-        else {
+        if (j === 1) {
+          triangle(centre, row[i], row[k])
+        } else {
           triangle(prior[i], row[i], row[k])
           triangle(prior[i], row[k], prior[k])
         }
       }
-      if (j === radial) seam = row
+      if (j === radial) {
+        seam = row
+      }
       prior = row
     }
   }
@@ -55,8 +58,9 @@ function pillowMesh(intervals: readonly number[], radial: number) {
 export function throwPillow(): AssetPart {
   const g = requiredSpecValue(source.geometry, 'pillow geometry'),
     tier = requiredSpecValue(source.lod, 'pillow LoD').tiers[2]
-  if (!('outlineIntervals' in tier) || !('radialIntervals' in tier))
+  if (!('outlineIntervals' in tier) || !('radialIntervals' in tier)) {
     throw new Error('Invalid pillow LoD')
+  }
   return {
     ...part(
       'pillow',

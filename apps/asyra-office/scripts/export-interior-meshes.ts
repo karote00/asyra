@@ -40,11 +40,12 @@ const assets = {
 const meshes = Object.fromEntries(
   Object.entries(assets).map(([id, parts]) => {
     const unique = new Map<string, number[]>()
-    for (const p of parts)
+    for (const p of parts) {
       for (let i = 0; i < p.mesh.positions.length; i += 3) {
         const vertex = p.mesh.positions.slice(i, i + 3)
         unique.set(vertex.map((n) => n.toFixed(6)).join(','), vertex)
       }
+    }
     return [id, [...unique.values()]]
   })
 )

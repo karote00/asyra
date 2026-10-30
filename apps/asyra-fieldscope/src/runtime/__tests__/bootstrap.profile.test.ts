@@ -120,8 +120,9 @@ it('walking local action production prepares exact motion once and refreshes per
       createWalkingRuntimeSelection(definition)
     )
     const report = runtime.getWalkingOperatingReport()
-    if (report.status === 'legacy-view' || !report.demand.route)
+    if (report.status === 'legacy-view' || !report.demand.route) {
       throw new Error('Missing walking action source')
+    }
     expect(report.profile.kind).toBe('solid-articulation/2')
     const source = report.source,
       volume = report.demand.route.volume
@@ -149,10 +150,14 @@ it('walking local action production prepares exact motion once and refreshes per
       const leg = source.definition.legs.find(
         (l) => l.side === chain.side && l.station === chain.station
       )
-      if (!contact || !foot || !leg) throw new Error('Incomplete authored leg')
+      if (!contact || !foot || !leg) {
+        throw new Error('Incomplete authored leg')
+      }
       const frames = chain.jointIds.map((id) => {
         const joint = source.rig.joints.find((j) => j.id === id)
-        if (!joint) throw new Error('Missing joint')
+        if (!joint) {
+          throw new Error('Missing joint')
+        }
         return joint.frame
       })
       const point = [0, 1, 2].map((axis) =>
@@ -426,8 +431,9 @@ it('walking local action production prepares exact motion once and refreshes per
     ).toBe('running')
     expect(start.relation?.status).toBe('clear')
     expect(start.observation?.coverage).toBe('complete-empty')
-    if (!start.observation || !start.work.observation)
+    if (!start.observation || !start.work.observation) {
       throw new Error('Missing admitted start observation and work')
+    }
     expect(start.observation.reasons).not.toContain('outside-dynamic-domain')
     expect(
       start.observation.sightBounds.min.every(
@@ -477,8 +483,9 @@ it('walking local action production prepares exact motion once and refreshes per
       cameraFrames: 1,
       sightQueries: 1
     })
-    if (!running.work.observation)
+    if (!running.work.observation) {
       throw new Error('Missing continuation observation work')
+    }
     expect(
       Object.values(running.work.observation.sourcePreparation).every(
         (value) => value === 0
@@ -498,8 +505,9 @@ it('walking local action production prepares exact motion once and refreshes per
     })
     expect(complete.status, JSON.stringify(complete.reasons)).toBe('complete')
     expect(complete.work.exactPredicates).toBe(0)
-    if (!complete.work.observation)
+    if (!complete.work.observation) {
       throw new Error('Missing completion observation work')
+    }
     expect(
       Object.values(complete.work.observation.sourcePreparation).every(
         (value) => value === 0
@@ -509,7 +517,9 @@ it('walking local action production prepares exact motion once and refreshes per
     expect(complete.observation).not.toBe(running.observation)
     expect(runtime.isCurrentWalkingLocalActionDecision(complete)).toBe(true)
     expect(runtime.getWalkingLocalActionDecision()).toBe(complete)
-    if (!complete.action) throw new Error('Missing admitted action')
+    if (!complete.action) {
+      throw new Error('Missing admitted action')
+    }
     const personBounds = complete.action.sweep.bounds
     const tracked = {
       ...dynamic,
@@ -548,8 +558,9 @@ it('walking local action production prepares exact motion once and refreshes per
     const moving = person.observation?.detections.find(
       (d) => d.kind === 'dynamic'
     )
-    if (!moving || moving.kind !== 'dynamic')
+    if (!moving || moving.kind !== 'dynamic') {
       throw new Error('Missing current person observation')
+    }
     expect(moving.motion).toBe('moving')
     const stopped = runtime.continueWalkingLocalAction({
       actionId: 'person-policy',
@@ -563,8 +574,9 @@ it('walking local action production prepares exact motion once and refreshes per
     const stationary = stopped.observation?.detections.find(
       (d) => d.kind === 'dynamic'
     )
-    if (!stationary || stationary.kind !== 'dynamic')
+    if (!stationary || stationary.kind !== 'dynamic') {
       throw new Error('Missing stationary person identity')
+    }
     expect(stationary.motion).toBe('stationary')
     expect(stationary.trackId).toBe(moving.trackId)
     expect(stationary.sourceIdentity).toBe(moving.sourceIdentity)
@@ -722,8 +734,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
       )
     )
     const report = runtime.getWalkingOperatingReport()
-    if (report.status === 'legacy-view' || !report.demand.route)
+    if (report.status === 'legacy-view' || !report.demand.route) {
       throw new Error('Missing walking route')
+    }
     expect(report.profile.kind).toBe('solid-articulation/2')
     const volume = report.demand.route.volume
     const x = (volume.min[0] + volume.max[0]) / 2
@@ -785,7 +798,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
     }
     const first = runtime.observeWalkingAction(request)
     expect(first.status).toBe('available')
-    if (first.status !== 'available') throw new Error(first.reason)
+    if (first.status !== 'available') {
+      throw new Error(first.reason)
+    }
     expect(first.observation.coverage).toBe('complete-empty')
     expect(first.observation.reliability.status).toBe('reliable')
     expect(first.observation.context.report).toBe(report)
@@ -799,7 +814,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
       true
     )
     const second = runtime.observeWalkingAction(request)
-    if (second.status !== 'available') throw new Error(second.reason)
+    if (second.status !== 'available') {
+      throw new Error(second.reason)
+    }
     expect(second.work.farmMembershipBuilds).toBe(0)
     expect(second.observation.work.indexBuilds).toBe(0)
     expect(second.observation.work.cameraFrames).toBe(1)
@@ -809,7 +826,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
       false
     )
     const third = runtime.observeWalkingAction({ ...request, now: 1.5 })
-    if (third.status !== 'available') throw new Error(third.reason)
+    if (third.status !== 'available') {
+      throw new Error(third.reason)
+    }
     expect(third.work.farmMembershipBuilds).toBe(0)
     expect(third.observation.work.indexBuilds).toBe(0)
     expect(runtime.getWalkingActionObservation()).toBe(third.observation)
@@ -841,12 +860,15 @@ it('walking observation production bootstrap issues complete-empty and retires s
       actors: [actor]
     })
     const moving = runtime.observeWalkingAction(request)
-    if (moving.status !== 'available') throw new Error(moving.reason)
+    if (moving.status !== 'available') {
+      throw new Error(moving.reason)
+    }
     const movingHit = moving.observation.detections.find(
       (d) => d.kind === 'dynamic'
     )
-    if (!movingHit || movingHit.kind !== 'dynamic')
+    if (!movingHit || movingHit.kind !== 'dynamic') {
       throw new Error('Missing actual dynamic sight witness')
+    }
     expect(movingHit).toMatchObject({
       trackId: actor.trackId,
       actorKind: 'moving-object',
@@ -856,7 +878,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
     expect(moving.observation.work.sourceActorVisits).toBe(1)
     expect(moving.work.farmMembershipBuilds).toBe(0)
     const stopped = runtime.observeWalkingAction({ ...request, now: 1.5 })
-    if (stopped.status !== 'available') throw new Error(stopped.reason)
+    if (stopped.status !== 'available') {
+      throw new Error(stopped.reason)
+    }
     const stoppedHit = stopped.observation.detections.find(
       (d) => d.kind === 'dynamic'
     )
@@ -866,8 +890,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
       motion: 'stationary',
       sourceIdentity: movingHit.sourceIdentity
     })
-    if (!stoppedHit || stoppedHit.kind !== 'dynamic')
+    if (!stoppedHit || stoppedHit.kind !== 'dynamic') {
       throw new Error('Missing stationary tracked source')
+    }
     expect(stoppedHit.sourceIdentity).toBe(movingHit.sourceIdentity)
     expect(runtime.isCurrentWalkingActionObservation(moving.observation)).toBe(
       false
@@ -888,7 +913,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
       false
     )
     const updated = runtime.observeWalkingAction(request)
-    if (updated.status !== 'available') throw new Error(updated.reason)
+    if (updated.status !== 'available') {
+      throw new Error(updated.reason)
+    }
     const updatedHit = updated.observation.detections.find(
       (d) => d.kind === 'dynamic'
     )
@@ -900,13 +927,17 @@ it('walking observation production bootstrap issues complete-empty and retires s
 
     // Choose a real authored leaf face with a beyond-source action box inside W1.
     const leaf = report.demand.freePassage.exclusions.flatMap((item) => {
-      if (item.kind !== 'source') return []
+      if (item.kind !== 'source') {
+        return []
+      }
       const patch = item.mesh.sourceAnatomy?.patches.find(
         (p) => p.role === 'leaf-blade' && p.source.region === item.region
       )
       const descriptor = item.mesh.descriptor,
         shape = descriptor.shape
-      if (!patch || shape.kind !== 'triangles') return []
+      if (!patch || shape.kind !== 'triangles') {
+        return []
+      }
       const placement = descriptor.instances?.[item.instance]
       const points = [0, 1, 2].map((i) => {
         const offset = shape.indices[patch.source.ranges[0].indexStart + i] * 3
@@ -936,10 +967,16 @@ it('walking observation production bootstrap issues complete-empty and retires s
         .sub(points[0])
         .cross(points[2].clone().sub(points[0]))
         .normalize()
-      if (!normal.length()) return []
+      if (!normal.length()) {
+        return []
+      }
       const distances = normal.toArray().map((v, axis) => {
-        if (v > 0) return (centre.toArray()[axis] - item.bounds.min[axis]) / v
-        if (v < 0) return (centre.toArray()[axis] - item.bounds.max[axis]) / v
+        if (v > 0) {
+          return (centre.toArray()[axis] - item.bounds.min[axis]) / v
+        }
+        if (v < 0) {
+          return (centre.toArray()[axis] - item.bounds.max[axis]) / v
+        }
         return Infinity
       })
       const beyond = Math.min(...distances.filter((v) => v >= 0)) + 0.02
@@ -954,8 +991,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
                 v > volume.min[axis] + 0.001 && v < volume.max[axis] - 0.001
             )
         )
-      )
+      ) {
         return []
+      }
       const bounds = {
         min: target.toArray().map((v) => v - 0.0001) as [
           number,
@@ -970,11 +1008,14 @@ it('walking observation production bootstrap issues complete-empty and retires s
             v > item.bounds.max[axis] ||
             bounds.max[axis] < item.bounds.min[axis]
         )
-      )
+      ) {
         return []
+      }
       return [{ item, patch, origin, normal, bounds }]
     })[0]
-    if (!leaf) throw new Error('Missing actual source-separated leaf scenario')
+    if (!leaf) {
+      throw new Error('Missing actual source-separated leaf scenario')
+    }
     const leafConfig = {
       ...config,
       camera: {
@@ -998,13 +1039,16 @@ it('walking observation production bootstrap issues complete-empty and retires s
       ...request,
       actionBounds: leaf.bounds
     })
-    if (seen.status !== 'available') throw new Error(seen.reason)
+    if (seen.status !== 'available') {
+      throw new Error(seen.reason)
+    }
     expect(seen.observation.coverage).toBe('partial')
     const leafHit = seen.observation.detections.find(
       (d) => d.kind === 'static' && d.anatomy.includes(leaf.patch)
     )
-    if (!leafHit || leafHit.kind !== 'static')
+    if (!leafHit || leafHit.kind !== 'static') {
       throw new Error('Missing actual canonical crop hit')
+    }
     expect(leafHit.mesh.origin).toBe(leaf.item.mesh)
     expect(leafHit.region).toBe(leaf.item.region)
     expect(leafHit.instance).toBe(leaf.item.instance)
@@ -1016,7 +1060,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
       ...request,
       actionBounds: leaf.bounds
     })
-    if (seenAgain.status !== 'available') throw new Error(seenAgain.reason)
+    if (seenAgain.status !== 'available') {
+      throw new Error(seenAgain.reason)
+    }
     expect(seenAgain.observation.work.membershipBuilds).toBe(0)
     expect(seenAgain.observation.work.membershipVisits).toBe(0)
     expect(seenAgain.observation.work.rayTriangles).toBe(
@@ -1044,7 +1090,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
         ...request,
         actionBounds: leaf.bounds
       })
-      if (unknown.status !== 'available') throw new Error(unknown.reason)
+      if (unknown.status !== 'available') {
+        throw new Error(unknown.reason)
+      }
       expect(unknown.observation.coverage).not.toBe('complete-empty')
       expect(unknown.observation.reasons).toContain('unresolved-ray')
       expect(unknown.observation.detections).toHaveLength(0)
@@ -1064,8 +1112,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
     )
     runtime.configureWalkingObservationScenario(config, dynamics)
     const beforeSelection = runtime.observeWalkingAction(request)
-    if (beforeSelection.status !== 'available')
+    if (beforeSelection.status !== 'available') {
       throw new Error(beforeSelection.reason)
+    }
     await runtime.setWalkingRuntimeSelection(
       createWalkingRuntimeSelection(
         createSyntheticWalkingRobotDefinition({
@@ -1078,7 +1127,9 @@ it('walking observation production bootstrap issues complete-empty and retires s
       runtime.isCurrentWalkingActionObservation(beforeSelection.observation)
     ).toBe(false)
     const beforeFarm = runtime.observeWalkingAction(request)
-    if (beforeFarm.status !== 'available') throw new Error(beforeFarm.reason)
+    if (beforeFarm.status !== 'available') {
+      throw new Error(beforeFarm.reason)
+    }
     expect(
       Object.values(beforeFarm.work.sourcePreparation).every(
         (value) => value === 0

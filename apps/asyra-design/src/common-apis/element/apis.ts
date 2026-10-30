@@ -58,23 +58,32 @@ const setElementFlags = (
   const changes = new Set<string>()
   const targets = new Map<string, ElementFlagResult>()
   const result = elementIds.map((elementId): ElementFlagResult => {
-    if (changes.has(elementId)) return 'unchanged'
+    if (changes.has(elementId)) {
+      return 'unchanged'
+    }
     const previous = targets.get(elementId)
-    if (previous) return previous
+    if (previous) {
+      return previous
+    }
     const element = core.getElementData(elementId)
     let status: ElementFlagResult = 'changed'
-    if (!element || element.type === EntityTypes.WORKSPACE)
+    if (!element || element.type === EntityTypes.WORKSPACE) {
       status = 'unavailable'
-    else if (element[key] === value) status = 'unchanged'
+    } else if (element[key] === value) {
+      status = 'unchanged'
+    }
     targets.set(elementId, status)
-    if (status === 'changed') changes.add(elementId)
+    if (status === 'changed') {
+      changes.add(elementId)
+    }
     return status
   })
   if (changes.size) {
     const resolvedOptions = resolveEventOptions(options)
     runTransaction(() => {
-      for (const elementId of changes)
+      for (const elementId of changes) {
         core.updateElementData(elementId, { [key]: value }, resolvedOptions)
+      }
     })
   }
   return result
@@ -465,7 +474,9 @@ export const elementApis = {
       parentId,
       workspacePosition
     )
-    if (!localPosition) return null
+    if (!localPosition) {
+      return null
+    }
     if (
       !Number.isFinite(localPosition.x) ||
       !Number.isFinite(localPosition.y)
@@ -490,7 +501,9 @@ export const elementApis = {
     }
 
     const localPoint = core.workspaceToElementLocal(elementId, point)
-    if (!localPoint) return false
+    if (!localPoint) {
+      return false
+    }
 
     return (
       localPoint.x >= -padding &&
@@ -551,8 +564,9 @@ export const elementApis = {
           createOptions[offset].type === 'vector' &&
           (createOptions[offset].parentId ?? core.getCurrentWorkspaceId()) ===
             parentId
-        )
+        ) {
           offset++
+        }
         const group = createOptions.slice(first, offset)
         result.push(
           ...(vectorApis.createVectorElementsInParent(

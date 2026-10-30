@@ -63,8 +63,9 @@ export function installLivePlaybackFeature(
         typeof input !== 'object' ||
         !('snapshot' in input) ||
         !('time' in input)
-      )
+      ) {
         throw new Error('Invalid live playback Feature input')
+      }
 
       return service.open(
         input.snapshot as ExperimentSnapshot,

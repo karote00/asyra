@@ -1,7 +1,8 @@
 /** Metres; rounded lips are contained within the configured channel width. */
 export function createDrainProfile(width: number) {
-  if (!Number.isFinite(width) || width <= 0)
+  if (!Number.isFinite(width) || width <= 0) {
     throw new Error('Invalid drain width')
+  }
   const lipRadius = Math.min(0.01, width / 10)
   const radius = width / 2 - lipRadius
   const waterLevel = -0.05

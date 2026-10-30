@@ -127,7 +127,9 @@ const toFailure = (
   )
 
 const recordWorkerTiming = (phase: string, durationMs: number): void => {
-  if (!Number.isFinite(durationMs) || durationMs < 0) return
+  if (!Number.isFinite(durationMs) || durationMs < 0) {
+    return
+  }
   emitBrowserDragPhase(phase, durationMs)
 }
 
@@ -214,8 +216,12 @@ export class CollaborationWebSocketProvider implements Provider {
 
   completeDocumentBootstrap(): Promise<void> {
     this.requireConnected()
-    if (this.documentBootstrapCompleted) return Promise.resolve()
-    if (this.bootstrapCompletionPromise) return this.bootstrapCompletionPromise
+    if (this.documentBootstrapCompleted) {
+      return Promise.resolve()
+    }
+    if (this.bootstrapCompletionPromise) {
+      return this.bootstrapCompletionPromise
+    }
     const bootstrap = this.documentSessionBootstrap
     if (!bootstrap) {
       return Promise.reject(
@@ -251,8 +257,12 @@ export class CollaborationWebSocketProvider implements Provider {
 
   private connectTransport(): Promise<void> {
     this.requireUsable()
-    if (this.status === 'connected') return Promise.resolve()
-    if (this.connectPromise) return this.connectPromise
+    if (this.status === 'connected') {
+      return Promise.resolve()
+    }
+    if (this.connectPromise) {
+      return this.connectPromise
+    }
 
     const generation = ++this.connectionGeneration
     this.bootstrapPhaseIndex = 0
@@ -309,7 +319,9 @@ export class CollaborationWebSocketProvider implements Provider {
 
   async disconnect(): Promise<void> {
     this.requireUsable()
-    if (this.disconnectPromise) return this.disconnectPromise
+    if (this.disconnectPromise) {
+      return this.disconnectPromise
+    }
 
     const generation = this.connectionGeneration
     const worker = this.transportWorker
@@ -354,12 +366,16 @@ export class CollaborationWebSocketProvider implements Provider {
 
   async reconnect(): Promise<void> {
     this.requireUsable()
-    if (this.transportWorker) await this.disconnect()
+    if (this.transportWorker) {
+      await this.disconnect()
+    }
     await this.connect()
   }
 
   async destroy(): Promise<void> {
-    if (this.status === 'disposed') return
+    if (this.status === 'disposed') {
+      return
+    }
 
     const generation = this.connectionGeneration
     const disposedFailure = new ProviderFailure(
@@ -480,7 +496,9 @@ export class CollaborationWebSocketProvider implements Provider {
     const sequence = this.appliedDocumentSequence
     const documentGeneration =
       this.documentSessionBootstrap?.documentGeneration ?? 0
-    if (sequence === null) throw new Error('Document sequence is unavailable')
+    if (sequence === null) {
+      throw new Error('Document sequence is unavailable')
+    }
     const result = (await this.request(
       {
         type: CollaborationMessageTypes.CONFIRM_PERSISTENCE,
@@ -500,10 +518,11 @@ export class CollaborationWebSocketProvider implements Provider {
       result.sequence !== sequence ||
       !Number.isSafeInteger(result.durableSequence) ||
       result.durableSequence < sequence
-    )
+    ) {
       throw new Error(
         'Persistence acknowledgement does not match the captured document version'
       )
+    }
     return result
   }
 
@@ -595,7 +614,9 @@ export class CollaborationWebSocketProvider implements Provider {
         reject(failure)
       }
     }).finally(() => {
-      if (abort) signal?.removeEventListener('abort', abort)
+      if (abort) {
+        signal?.removeEventListener('abort', abort)
+      }
     })
   }
 
@@ -615,11 +636,15 @@ export class CollaborationWebSocketProvider implements Provider {
   }
 
   private releasePublicationCapacity(): void {
-    if (!this.publicationCapacityReserved) return
+    if (!this.publicationCapacityReserved) {
+      return
+    }
     this.publicationCapacityReserved = false
     while (this.publicationCapacityWaiters.length > 0) {
       const waiter = this.publicationCapacityWaiters.shift()
-      if (!waiter) return
+      if (!waiter) {
+        return
+      }
       if (
         waiter.generation !== this.connectionGeneration ||
         this.status !== 'connected' ||
@@ -790,7 +815,9 @@ export class CollaborationWebSocketProvider implements Provider {
     }
     if (response.type === 'request-accepted') {
       const pending = this.pendingRequests.get(response.requestId)
-      if (!pending) return
+      if (!pending) {
+        return
+      }
       this.pendingRequests.delete(response.requestId)
       if (pending.kind === 'control') {
         pending.resolve(response.persistence)
@@ -818,7 +845,9 @@ export class CollaborationWebSocketProvider implements Provider {
     }
     if (response.type === 'request-rejected') {
       const pending = this.pendingRequests.get(response.requestId)
-      if (!pending) return
+      if (!pending) {
+        return
+      }
       this.pendingRequests.delete(response.requestId)
       if (pending.kind === 'publication') {
         if (
@@ -939,7 +968,9 @@ export class CollaborationWebSocketProvider implements Provider {
   private consumeActivePublication(): void {
     const delivery = this.activePublicationDelivery
     const consume = this.publicationConsumer
-    if (!delivery || delivery.state !== 'awaiting-consumer' || !consume) return
+    if (!delivery || delivery.state !== 'awaiting-consumer' || !consume) {
+      return
+    }
     delivery.state = 'applying'
     void Promise.resolve()
       .then(() => consume(delivery.publication))
@@ -1067,7 +1098,9 @@ export class CollaborationWebSocketProvider implements Provider {
     response: Extract<CollaborationTransportWorkerResponse, { type: 'failure' }>
   ): void {
     if (this.suppressedAppFailureGeneration === response.generation) {
-      if (response.terminal) this.stopTransportWorker()
+      if (response.terminal) {
+        this.stopTransportWorker()
+      }
       return
     }
     const failure = toFailure(
@@ -1118,7 +1151,9 @@ export class CollaborationWebSocketProvider implements Provider {
     generation: number
   ): void {
     const pending = this.pendingConnection
-    if (!pending || pending.generation !== generation) return
+    if (!pending || pending.generation !== generation) {
+      return
+    }
     this.clearConnectionTimeout()
     this.pendingConnection = null
     this.connectPromise = null
@@ -1146,14 +1181,18 @@ export class CollaborationWebSocketProvider implements Provider {
   }
 
   private clearConnectionTimeout(): void {
-    if (!this.connectionTimeout) return
+    if (!this.connectionTimeout) {
+      return
+    }
     clearTimeout(this.connectionTimeout)
     this.connectionTimeout = null
   }
 
   private resolvePendingDisconnect(generation: number): void {
     const pending = this.pendingDisconnect
-    if (!pending || pending.generation !== generation) return
+    if (!pending || pending.generation !== generation) {
+      return
+    }
     this.pendingDisconnect = null
     this.disconnectPromise = null
     pending.resolve()
@@ -1170,7 +1209,9 @@ export class CollaborationWebSocketProvider implements Provider {
 
   private requireConnected(): void {
     this.requireUsable()
-    if (this.status === 'connected' && this.transportWorker) return
+    if (this.status === 'connected' && this.transportWorker) {
+      return
+    }
     const failure = new ProviderFailure(
       'not-connected',
       '[collaboration] provider is not connected'
@@ -1191,7 +1232,9 @@ export class CollaborationWebSocketProvider implements Provider {
 
   private requireDocumentSessionLive(): void {
     this.requireConnected()
-    if (this.documentBootstrapCompleted) return
+    if (this.documentBootstrapCompleted) {
+      return
+    }
     const failure = new ProviderFailure(
       'not-connected',
       '[collaboration] document bootstrap has not completed'
@@ -1317,7 +1360,9 @@ export class CollaborationWebSocketProvider implements Provider {
       return
     }
     const source = this.sourcePublicationAcceptance
-    if (source?.state === 'applying') return
+    if (source?.state === 'applying') {
+      return
+    }
     const expectedSequence = this.appliedDocumentSequence + 1
     if (source?.acceptance.sequence === expectedSequence) {
       source.state = 'applying'
@@ -1362,7 +1407,9 @@ export class CollaborationWebSocketProvider implements Provider {
             this.consumeNextDocumentSequence()
           },
           (error: unknown) => {
-            if (this.sourcePublicationAcceptance !== source) return
+            if (this.sourcePublicationAcceptance !== source) {
+              return
+            }
             if (source.proposed) {
               source.state = 'awaiting-server-rejection'
               try {
@@ -1409,14 +1456,18 @@ export class CollaborationWebSocketProvider implements Provider {
   }
 
   private canAwaitEarlierSourceSequence(): boolean {
-    if (this.sourcePublicationAcceptance) return true
+    if (this.sourcePublicationAcceptance) {
+      return true
+    }
     return [...this.pendingRequests.values()].some(
       ({ kind }) => kind === 'publication'
     )
   }
 
   private setStatus(status: ProviderStatus): void {
-    if (this.status === status) return
+    if (this.status === status) {
+      return
+    }
     this.status = status
     this.emit(this.statusSubscribers, status)
   }

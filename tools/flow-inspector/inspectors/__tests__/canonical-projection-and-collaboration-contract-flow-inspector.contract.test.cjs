@@ -384,7 +384,7 @@ test('Inspector paths, anchors, routes, and artifacts resolve', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
     route.producedArtifacts.forEach((artifactId) => {
       const artifact = artifacts.get(artifactId)
       assert.ok(artifact, `${route.id} artifact ${artifactId}`)

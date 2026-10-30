@@ -119,8 +119,9 @@ export const createLocalToolHost = (options: {
   let closed = false
   const leaf = async (call: AiInvocationContext): Promise<Reply> => {
     const binding = bindings.get(call.name)
-    if (!binding)
+    if (!binding) {
       throw new Error('No registered native owner for this invocation')
+    }
     return schedule(binding.access, () =>
       context.run(call, async () => {
         const work = () =>
@@ -139,7 +140,9 @@ export const createLocalToolHost = (options: {
   const register = (group: LocalToolGroup) => {
     for (const source of group.owner.definitions) {
       const name = `${group.name}.${source.name}`
-      if (bindings.has(name)) throw new Error('Duplicate native tool identity')
+      if (bindings.has(name)) {
+        throw new Error('Duplicate native tool identity')
+      }
       const definition = createAiToolContract(source)
       bindings.set(name, {
         owner: group.owner,
@@ -175,10 +178,11 @@ export const createLocalToolHost = (options: {
             { name, input, signal: execution.signal },
             true
           )
-          if (!reply.success)
+          if (!reply.success) {
             throw new Error(
               'Use host invocation to retain the full failure receipt'
             )
+          }
           return JSON.parse(reply.text)
         }
       })
@@ -228,18 +232,21 @@ export const createLocalToolHost = (options: {
     observe: options.observe,
     execute: async (call) => {
       const binding = bindings.get(call.name)
-      if (!binding)
+      if (!binding) {
         return localToolFailureReply(
           'Unknown registered tool.',
           'UNKNOWN_TOOL',
           { settlement: 'not-started' }
         )
+      }
       const issue = operationInputIssue(
         call.input,
         binding.definition.inputSchema
       )
       // The canonical boundary preserves owner-specific repair diagnostics.
-      if (issue) return leaf(call)
+      if (issue) {
+        return leaf(call)
+      }
       const projection = binding.owner.invocationSchemas?.(
         binding.definition.name,
         call.input
@@ -285,7 +292,9 @@ export const createLocalToolHost = (options: {
             validatedSchema === undefined
               ? operationContractIssue(value, outputSchema, { stage: 'output' })
               : undefined
-          if (outputIssue) throw new Error(outputIssue)
+          if (outputIssue) {
+            throw new Error(outputIssue)
+          }
           await leases.retain({
             requestId: options.requestId,
             fromCallId: call.callId,
@@ -298,7 +307,9 @@ export const createLocalToolHost = (options: {
         if (options.signal.aborted || call.signal?.aborted) {
           abortError = error
           aborted = true
-        } else output = interrupted(error, 'TOOL_HANDOFF_FAILED')
+        } else {
+          output = interrupted(error, 'TOOL_HANDOFF_FAILED')
+        }
       }
       if (opened) {
         try {
@@ -307,16 +318,24 @@ export const createLocalToolHost = (options: {
             callId: call.callId
           })
         } catch (error) {
-          if (!aborted) output = interrupted(error, 'TOOL_CLEANUP_FAILED')
+          if (!aborted) {
+            output = interrupted(error, 'TOOL_CLEANUP_FAILED')
+          }
         }
       }
-      if (aborted) throw abortError
-      if (!output) throw new Error('Native invocation did not settle')
+      if (aborted) {
+        throw abortError
+      }
+      if (!output) {
+        throw new Error('Native invocation did not settle')
+      }
       return output
     }
   })
   const track = <T>(work: () => Promise<T>): Promise<T> => {
-    if (closed) return Promise.reject(new Error('Tool host is closing'))
+    if (closed) {
+      return Promise.reject(new Error('Tool host is closing'))
+    }
     const task = Promise.resolve().then(work)
     active.add(task)
     void task.finally(() => active.delete(task)).catch(() => undefined)
@@ -333,7 +352,9 @@ export const createLocalToolHost = (options: {
       // the same declared envelope, including failures and custom owner projectors.
       // Selected leaves are projected by their owner before an invocation envelope.
       // The envelope's declared value slot preserves that already projected result.
-      if (!contract) throw new Error('Missing registered result contract')
+      if (!contract) {
+        throw new Error('Missing registered result contract')
+      }
       const schemas = modelToolResultSchemas(contract)
       const projectionSchema = {
         anyOf: [
@@ -380,22 +401,24 @@ export const createLocalToolHost = (options: {
             !operationContractIssue(failure.executionResult, ownerResults, {
               stage: 'output'
             })
-          )
+          ) {
             receipt = {
               ...failure,
               executionResult: project(name, input, failure.executionResult)
             }
+          }
         }
       }
       let view = receipt
-      if (binding.owner.projectModelResult)
+      if (binding.owner.projectModelResult) {
         view = binding.owner.projectModelResult(
           binding.definition.name,
           input,
           receipt
         )
-      else if (contract.delivery && !boundaryFailure)
+      } else if (contract.delivery && !boundaryFailure) {
         view = projectToolDelivery(contract, receipt)
+      }
       const acknowledged =
         value && typeof value === 'object' && 'toolOutcome' in value
           ? (value.toolOutcome as AiToolOutcome)
@@ -413,12 +436,13 @@ export const createLocalToolHost = (options: {
         if (
           report.settlement !== acknowledged.settlement ||
           (acknowledged.status !== 'success' && report.status === 'success')
-        )
+        ) {
           return toolDeliveryFailure(
             value,
             'Model projection changed the acknowledged execution outcome.',
             contract
           )
+        }
         view = { ...view, toolOutcome: report }
       }
       // Match validated owner fields before removing internal-only fields. A closed
@@ -463,12 +487,17 @@ export const createLocalToolHost = (options: {
         ...call,
         signal: call.signal ?? options.signal
       })
-      if (internal) return reply
+      if (internal) {
+        return reply
+      }
       const original = JSON.parse(reply.text)
       const value = project(call.name, call.input, original)
-      if (value === original) return reply
-      if (!value || typeof value !== 'object' || Array.isArray(value))
+      if (value === original) {
+        return reply
+      }
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return { ...reply, text: JSON.stringify(value) }
+      }
       const projected = value as Record<string, unknown>
       const outcome =
         projected.toolOutcome && typeof projected.toolOutcome === 'object'
@@ -488,7 +517,7 @@ export const createLocalToolHost = (options: {
     definitions() {
       return library.list().map((definition) => {
         const binding = bindings.get(definition.name)
-        if (binding)
+        if (binding) {
           return {
             ...definition,
             ...Object.fromEntries(
@@ -524,6 +553,7 @@ export const createLocalToolHost = (options: {
                 }
               : {})
           }
+        }
         return {
           ...definition,
           registeredName: definition.name,

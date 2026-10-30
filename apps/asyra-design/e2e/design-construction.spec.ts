@@ -26,7 +26,9 @@ const faceBoundaryFixture = JSON.parse(
 const referencedFaceInput = structuredClone(faceBoundaryFixture.inputs[0])
 for (const [path, face] of faceBoundaryFixture.pairs[0]) {
   let owner = referencedFaceInput.draft
-  for (const key of path.slice(0, -1)) owner = owner[key]
+  for (const key of path.slice(0, -1)) {
+    owner = owner[key]
+  }
   owner[path[path.length - 1]] = { face }
 }
 referencedFaceInput.inspection = 'defer'
@@ -80,11 +82,15 @@ const attachConstructionEvidence = async (name: string, value: unknown) => {
 test.afterEach(() => {
   const testInfo = test.info()
   for (const attachment of testInfo.attachments) {
-    if (!attachment.name.startsWith('construction-')) continue
+    if (!attachment.name.startsWith('construction-')) {
+      continue
+    }
     expect(attachment.contentType).toBe('application/json')
     expect(Boolean(attachment.body), attachment.name).toBe(false)
     const file = attachment.path
-    if (!file) throw new Error('Missing evidence file: ' + attachment.name)
+    if (!file) {
+      throw new Error('Missing evidence file: ' + attachment.name)
+    }
     expect(() => JSON.parse(readFileSync(file, 'utf8'))).not.toThrow()
   }
 })
@@ -107,9 +113,12 @@ const captureConstructionCollaboration = (
       document.dispatchEvent(
         new CustomEvent(RuntimeDiagnosticEvents.REQUEST, { detail })
       )
-      if (detail.error) throw new Error(detail.error)
-      if (!Object.hasOwn(detail, 'response'))
+      if (detail.error) {
+        throw new Error(detail.error)
+      }
+      if (!Object.hasOwn(detail, 'response')) {
         throw new Error(`Missing diagnostic response: ${operation}`)
+      }
       return { operation, at: Date.now(), response: detail.response }
     })
   }, reset)
@@ -510,11 +519,12 @@ for (const [name, draft] of Object.entries({
           10
         )
       }
-      for (const property of ['width', 'height'] as const)
+      for (const property of ['width', 'height'] as const) {
         expect(Number(actual.nodes[i].values?.[property])).toBeCloseTo(
           Number(entry.descriptor[property]),
           5
         )
+      }
     }
     if (name === 'ovals') {
       const root = design.entries[0].descriptor
@@ -554,7 +564,9 @@ for (const [name, draft] of Object.entries({
               await import('../src/testing/runtime-access')
             return ids.map((id) => {
               const bounds = elementApis.getElementClientBounds(id)
-              if (!bounds) throw new Error('Missing oval client bounds')
+              if (!bounds) {
+                throw new Error('Missing oval client bounds')
+              }
               return elementApis.getRenderElementIdAtClientPos({
                 x: bounds.x + bounds.width / 2,
                 y: bounds.y + bounds.height / 2
@@ -769,7 +781,7 @@ for (const scenario of [
     artifacts: 1,
     members: 1442
   }
-])
+]) {
   test(scenario.title, async ({ page, browser }) => {
     test.setTimeout(180000)
     const designs: PreparedDesign[] = []
@@ -796,7 +808,9 @@ for (const scenario of [
       }
       try {
         const chunks: Buffer[] = []
-        for await (const chunk of request) chunks.push(Buffer.from(chunk))
+        for await (const chunk of request) {
+          chunks.push(Buffer.from(chunk))
+        }
         const input = JSON.parse(Buffer.concat(chunks).toString())
         const token = request.headers['x-ai-batch-receipt']
         if (typeof token === 'string') {
@@ -812,8 +826,9 @@ for (const scenario of [
             ? createDesignPreparationSession(
                 undefined,
                 async (...args) => {
-                  if (++attempts === 2)
+                  if (++attempts === 2) {
                     throw new Error('Injected preparation interruption')
+                  }
                   return prepareDesignAsync(...args)
                 },
                 undefined,
@@ -825,11 +840,13 @@ for (const scenario of [
           input.actions,
           tools,
           async (batch) => {
-            for (const action of batch.actions)
-              if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+            for (const action of batch.actions) {
+              if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
                 designs.push(
                   (action.arguments as { design: PreparedDesign }).design
                 )
+              }
+            }
             return exchange.execute(batch, controller.signal, (frame) =>
               response.write(JSON.stringify(frame) + '\n')
             )
@@ -886,8 +903,9 @@ for (const scenario of [
     })
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const address = server.address()
-    if (!address || typeof address === 'string')
+    if (!address || typeof address === 'string') {
       throw new Error('Missing test endpoint')
+    }
     try {
       await page.route('**/api/ai/status', (route) =>
         route.fulfill({ json: { state: 'ready' } })
@@ -901,13 +919,15 @@ for (const scenario of [
       await page.goto(document.url)
       await waitForAppReady(page)
       const fileId = new URL(page.url()).searchParams.get('fileId')
-      if (!fileId) throw new Error('Missing document identity')
+      if (!fileId) {
+        throw new Error('Missing document identity')
+      }
       if (referenced) {
         peerContext = await browser.newContext()
         peer = await peerContext.newPage()
         await peer.goto(page.url())
         await waitForAppReady(peer)
-        for (const actor of [page, peer])
+        for (const actor of [page, peer]) {
           await expect
             .poll(() =>
               actor.evaluate(async () =>
@@ -917,6 +937,7 @@ for (const scenario of [
               )
             )
             .toBe('connected')
+        }
         for (const actor of [page, peer]) {
           captureBrowserErrors(actor)
           await captureConstructionCollaboration(actor, true)
@@ -944,11 +965,13 @@ for (const scenario of [
         status: 'success',
         settlement: 'completed'
       })
-      if (scenario.artifacts > 1)
+      if (scenario.artifacts > 1) {
         expect(workflowResult.parts).toHaveLength(
           referenced ? 1 : scenario.artifacts
         )
-      else expect(workflowResult.parts).toBeUndefined()
+      } else {
+        expect(workflowResult.parts).toBeUndefined()
+      }
       expect(designs).toHaveLength(scenario.artifacts)
       expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
       const root = designs[0].entries[0].descriptor
@@ -968,7 +991,9 @@ for (const scenario of [
       // One assertion retains the complete oracle without recording 65,000 test steps.
       const differences: string[] = []
       for (const [i, entry] of members.entries()) {
-        if (actual[i].parentId !== root.id) differences.push(`parent:${i}`)
+        if (actual[i].parentId !== root.id) {
+          differences.push(`parent:${i}`)
+        }
         for (const [field, observed, expected] of [
           ['x', actual[i].world.x, Number(root.x) + Number(entry.descriptor.x)],
           ['y', actual[i].world.y, Number(root.y) + Number(entry.descriptor.y)],
@@ -976,8 +1001,9 @@ for (const scenario of [
           ['height', actual[i].values?.height, entry.descriptor.height]
         ]) {
           const delta = Math.abs(Number(observed) - Number(expected))
-          if (!Number.isFinite(delta) || delta >= 0.000005)
+          if (!Number.isFinite(delta) || delta >= 0.000005) {
             differences.push(`${i}:${field}:${delta}`)
+          }
         }
       }
       expect(differences).toEqual([])
@@ -989,8 +1015,9 @@ for (const scenario of [
       let digestTransport: unknown
       const digestPage = new Proxy(page, {
         get(target, property, receiver) {
-          if (property !== 'evaluate')
+          if (property !== 'evaluate') {
             return Reflect.get(target, property, receiver)
+          }
           return async (...args: Parameters<typeof page.evaluate>) => {
             const result = await page.evaluate(...args)
             digestTransport = result
@@ -1032,7 +1059,7 @@ for (const scenario of [
           )
         )
       ).toBe(1)
-      if (peer)
+      if (peer) {
         await expect
           .poll(() =>
             getCoreDocumentDigest(
@@ -1041,13 +1068,15 @@ for (const scenario of [
             )
           )
           .toEqual(after)
+      }
       await page.getByRole('button', { name: 'Close Agent panel' }).click()
-      if (peer)
+      if (peer) {
         await peer.evaluate(async () => {
           const { getActiveAiDrawingPerformanceProfile } =
             await import('../src/testing/runtime-access')
           getActiveAiDrawingPerformanceProfile()?.reset()
         })
+      }
       await page.evaluate(async () => {
         const { historyApis } = await import('../src/common-apis/history')
         await historyApis.undo()
@@ -1099,7 +1128,9 @@ for (const scenario of [
               const { getActiveAiDrawingPerformanceProfile } =
                 await import('../src/testing/runtime-access')
               const profile = getActiveAiDrawingPerformanceProfile()
-              if (!profile) throw new Error('Missing peer Undo profile')
+              if (!profile) {
+                throw new Error('Missing peer Undo profile')
+              }
               return {
                 visibility: document.visibilityState,
                 sample: profile.snapshot(),
@@ -1123,7 +1154,7 @@ for (const scenario of [
         await historyApis.redo()
       })
       expect(await getCoreDocumentDigest(page)).toEqual(after)
-      if (peer)
+      if (peer) {
         await expect
           .poll(() =>
             getCoreDocumentDigest(
@@ -1132,6 +1163,7 @@ for (const scenario of [
             )
           )
           .toEqual(after)
+      }
       await expect
         .poll(() => getPersistedDocumentDigest(fileId), { timeout: 30000 })
         .toEqual(after)
@@ -1167,3 +1199,4 @@ for (const scenario of [
       )
     }
   })
+}

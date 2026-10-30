@@ -51,9 +51,15 @@ function ordered(evidence: DistanceEvidence) {
   expect(evidence.upper).toBeGreaterThanOrEqual(evidence.lower)
 }
 function status(evidence: DistanceEvidence, threshold: number) {
-  if (evidence.penetration) return 'penetration'
-  if (evidence.upper < threshold) return 'finding'
-  if (evidence.lower > threshold) return 'clear'
+  if (evidence.penetration) {
+    return 'penetration'
+  }
+  if (evidence.upper < threshold) {
+    return 'finding'
+  }
+  if (evidence.lower > threshold) {
+    return 'clear'
+  }
   return 'uncertain'
 }
 // Exact binary64 comparison of a squared bound with the dyadic source gap².
@@ -63,10 +69,14 @@ function squaredGapCompare(value: number) {
   const bits = view.getBigUint64(0),
     exponent = Number((bits >> 52n) & 2047n)
   let n = bits & ((1n << 52n) - 1n)
-  if (exponent) n += 1n << 52n
+  if (exponent) {
+    n += 1n << 52n
+  }
   const shift = exponent ? exponent - 1075 : -1074
   const d = shift < 0 ? 1n << BigInt(-shift) : 1n
-  if (shift >= 0) n <<= BigInt(shift)
+  if (shift >= 0) {
+    n <<= BigInt(shift)
+  }
   return n * n * 1024n - d * d
 }
 afterEach(() => vi.restoreAllMocks())
@@ -162,7 +172,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             item.a.bodyId === 'example:joint-2' &&
             item.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing frozen source pair')
+        if (!pair) {
+          throw new Error('Missing frozen source pair')
+        }
         const node = [
           snapshot.trajectory.keyframes[segment].time,
           snapshot.trajectory.keyframes[segment + 1].time
@@ -203,24 +215,28 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           const solve = convex.convexDistance
           vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
             convexCalls++
-            if (activeTarget) targetConvex++
+            if (activeTarget) {
+              targetConvex++
+            }
             return solve(...args)
           })
           const context = new OriginalMeshQuery(),
             raw = context.distance.bind(context)
           context.distance = (a, b, threshold, tolerance, iterations) => {
-            if (!time || time[0] !== time[1])
+            if (!time || time[0] !== time[1]) {
               throw new Error('Missing actual static input')
+            }
             const sampleTime = time[0],
               before = context.work
             activeTarget = sampleTime === targetTime
             let evidence: DistanceEvidence
             try {
               if (activeTarget && enabled) {
-                if (!source)
+                if (!source) {
                   throw new Error(
                     'Source witness must be computed and paid first'
                   )
+                }
                 const result = seededDistance(
                   context,
                   source,
@@ -231,9 +247,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 )
                 evidence = result.evidence
                 addedWork += result.addedWork
-              } else evidence = raw(a, b, threshold, tolerance, iterations)
-              if (sampleTime === sourceTime)
+              } else {
+                evidence = raw(a, b, threshold, tolerance, iterations)
+              }
+              if (sampleTime === sourceTime) {
                 source = { node, time: sampleTime, shapes: [a, b], evidence }
+              }
               if (activeTarget) {
                 targetCalls++
                 beforeTarget = before
@@ -264,11 +283,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           )
           expect(result.coverage).toBe('complete')
           expect(targetCalls).toBe(1)
-          if (!targetEvidence || !source)
+          if (!targetEvidence || !source) {
             throw new Error('Missing completed target/source')
+          }
           for (const shape of source.shapes) {
-            if (shape.geometry.kind !== 'mesh')
+            if (shape.geometry.kind !== 'mesh') {
               throw new Error('Expected immutable original mesh')
+            }
             expect(Object.isFrozen(shape.geometry.positions)).toBe(true)
             expect(Object.isFrozen(shape.geometry.indices)).toBe(true)
           }

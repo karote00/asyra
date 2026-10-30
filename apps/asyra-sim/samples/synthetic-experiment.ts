@@ -69,8 +69,9 @@ export function createSyntheticExperimentPresets(example: SyntheticExample) {
   const joints = example.workcell.bodies.filter(
     (body) => body.joint.kind !== 'fixed'
   )
-  if (joints.length !== 6)
+  if (joints.length !== 6) {
     throw new Error('The sample studies require six actuated joints')
+  }
   const study = (
     name: string,
     // Sparse, one-based J1-J6 values; every output frame contains all six joints.

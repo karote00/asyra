@@ -674,8 +674,9 @@ export const registerSelectionOverlayRenderLayer = (
         deps.systemContext.getManagedProperty<string | null>(
           PresetSystemPropertyKeys.HOVERED_ELEMENT_ID
         ) ?? null
-      if (hoveredElementId && isSuppressed(hoveredElementId))
+      if (hoveredElementId && isSuppressed(hoveredElementId)) {
         hoveredElementId = null
+      }
       const drawSignatureParts = [
         pathEditingVectorId ?? '',
         selectedIds.join(','),

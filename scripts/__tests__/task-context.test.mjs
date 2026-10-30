@@ -92,8 +92,9 @@ test('child carries plan identity, owner and prerequisites but selects its own s
     { objective: 'Drop plan', section: '## Task 2', mode: 'standalone' },
     { objective: 'Change plan', section: '## Task 2', plan: {} },
     { objective: 'Missing selection' }
-  ])
+  ]) {
     assert.throws(() => inheritContext(parent, selection))
+  }
 })
 
 test('plan paths, sections, owners and base SHAs reject incomplete or unsafe values', () => {

@@ -45,11 +45,14 @@ export const admitAiRecipe = (
       'bindings',
       'issues'
     ])
-  )
+  ) {
     throw new TypeError('All recipe limits must be explicitly configured')
-  for (const value of Object.values(options.limits))
-    if (!Number.isSafeInteger(value) || value < 1)
+  }
+  for (const value of Object.values(options.limits)) {
+    if (!Number.isSafeInteger(value) || value < 1) {
       throw new TypeError('Recipe limits must be positive safe integers')
+    }
+  }
   const issues: AiRecipeIssue[] = []
   let omittedIssues = 0
   const issue = (
@@ -142,17 +145,22 @@ export const admitAiRecipe = (
   let stateSchema: RecipeSchema | undefined
   let bindings = 0
   const bindingShape = (binding: unknown, depth = 0): RecipeSchema => {
-    if (depth > options.limits.bindingDepth || !recipeRecord(binding))
+    if (depth > options.limits.bindingDepth || !recipeRecord(binding)) {
       return { type: 'opaque' }
-    if (binding.kind === 'literal') return recipeLiteralShape(binding.value)
+    }
+    if (binding.kind === 'literal') {
+      return recipeLiteralShape(binding.value)
+    }
     if (
       binding.kind === 'state' &&
       stateSchema &&
       typeof binding.path === 'string'
-    )
+    ) {
       return recipeSchemaAt(stateSchema, binding.path)
-    if (binding.kind === 'input' && typeof binding.path === 'string')
+    }
+    if (binding.kind === 'input' && typeof binding.path === 'string') {
       return recipeSchemaAt(inputSchema, binding.path)
+    }
     if (
       binding.kind === 'step' &&
       typeof binding.step === 'string' &&
@@ -161,7 +169,7 @@ export const admitAiRecipe = (
       const source = outputs.get(binding.step)
       return source ? recipeSchemaAt(source, binding.path) : { type: 'opaque' }
     }
-    if (binding.kind === 'object' && recipeRecord(binding.fields))
+    if (binding.kind === 'object' && recipeRecord(binding.fields)) {
       return {
         type: 'object',
         additionalProperties: false,
@@ -173,8 +181,10 @@ export const admitAiRecipe = (
           ])
         )
       }
-    if (binding.kind === 'array')
+    }
+    if (binding.kind === 'array') {
       return { type: 'array', items: { type: 'opaque' } }
+    }
     return { type: 'opaque' }
   }
   const checkBinding = (
@@ -229,7 +239,9 @@ export const admitAiRecipe = (
           binding.value,
           recipeValidationSchema(target)
         )
-        if (validation !== undefined) reject(validation)
+        if (validation !== undefined) {
+          reject(validation)
+        }
         return
       }
       if (
@@ -245,15 +257,19 @@ export const admitAiRecipe = (
           return
         }
         let source = binding.kind === 'input' ? inputSchema : undefined
-        if (binding.kind === 'state') source = stateSchema
-        if (binding.kind === 'step' && typeof binding.step === 'string')
+        if (binding.kind === 'state') {
+          source = stateSchema
+        }
+        if (binding.kind === 'step' && typeof binding.step === 'string') {
           source = outputs.get(binding.step)
+        }
         if (!source) {
           reject('Output must belong to a valid earlier step')
           return
         }
-        if (!recipeAssignable(recipeSchemaAt(source, binding.path), target))
+        if (!recipeAssignable(recipeSchemaAt(source, binding.path), target)) {
           reject('Source schema does not guarantee the destination contract')
+        }
         return
       }
       if (target['x-runtime-value']) {
@@ -281,8 +297,11 @@ export const admitAiRecipe = (
         recipeRecord(binding.fields)
       ) {
         const fields = binding.fields
-        for (const key of target.required)
-          if (!recipeOwn(fields, key)) reject(`Missing required field ${key}`)
+        for (const key of target.required) {
+          if (!recipeOwn(fields, key)) {
+            reject(`Missing required field ${key}`)
+          }
+        }
         for (const [key, child] of Object.entries(fields)) {
           if (!recipeOwn(target.properties, key)) {
             reject(`Unknown destination field ${key}`)
@@ -307,8 +326,9 @@ export const admitAiRecipe = (
         if (
           binding.items.length < (target.minItems ?? 0) ||
           binding.items.length > (target.maxItems ?? Infinity)
-        )
+        ) {
           reject('Array length violates the destination contract')
+        }
         if (target.uniqueItems && binding.items.length > 1) {
           const literalValues = binding.items.map((child) =>
             recipeRecord(child) &&
@@ -321,10 +341,11 @@ export const admitAiRecipe = (
           if (
             literalValues.includes(undefined) ||
             new Set(literalValues).size !== literalValues.length
-          )
+          ) {
             reject(
               'Array uniqueness is not proven by distinct primitive literals'
             )
+          }
         }
         binding.items.forEach((child, index) =>
           checkBinding(
@@ -361,7 +382,7 @@ export const admitAiRecipe = (
       )
       return
     }
-    if (ids.has(step.id))
+    if (ids.has(step.id)) {
       issue(
         'step',
         `${path}/id`,
@@ -369,6 +390,7 @@ export const admitAiRecipe = (
         'Duplicate step',
         step.id
       )
+    }
     ids.add(step.id)
     let contract: AiToolContract | undefined
     try {
@@ -497,13 +519,14 @@ export const admitAiRecipe = (
         if (
           !recipeAssignable(status, statusContract) ||
           !recipeAssignable(progress, progressContract)
-        )
+        ) {
           issue(
             'schema',
             '/iteration/check',
             'Required typed verification status and nonempty progress',
             'Verification output is not guaranteed'
           )
+        }
       }
       iteration.repairs.forEach((step, index) =>
         checkStep(step, `/iteration/repairs/${index}`)
@@ -511,8 +534,10 @@ export const admitAiRecipe = (
       checkBinding(iteration.next, state, '/iteration/next')
       stateSchema = undefined
       outputs.clear()
-      for (const [id, schema] of outerOutputs) outputs.set(id, schema)
-      if (checker)
+      for (const [id, schema] of outerOutputs) {
+        outputs.set(id, schema)
+      }
+      if (checker) {
         outputs.set(iteration.id, {
           type: 'object',
           additionalProperties: false,
@@ -523,6 +548,7 @@ export const admitAiRecipe = (
             iterations: { type: 'integer', minimum: 0, maximum: rounds }
           }
         })
+      }
     } catch (error) {
       issue(
         'schema',
@@ -533,7 +559,9 @@ export const admitAiRecipe = (
     }
   }
   checkBinding(detached.output, outputSchema, '/output')
-  if (issues.length) return failure()
+  if (issues.length) {
+    return failure()
+  }
   const contracts = [...dependencies.values()]
   const effectOrder = ['read', 'prepare', 'mutation', 'external'] as const
   const effect =

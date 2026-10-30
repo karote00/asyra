@@ -34,7 +34,9 @@ describe('Preset default cleanup ownership', () => {
       const index = registrations.findIndex(
         ({ ref }) => ref.kind === kind && ref.key === key
       )
-      if (index >= 0) registrations.splice(index, 1)
+      if (index >= 0) {
+        registrations.splice(index, 1)
+      }
     }
     const core = {
       getRegistrations: () => registrations,
@@ -99,7 +101,9 @@ describe('Preset default cleanup ownership', () => {
     })
     const renderCleanup = vi.fn(() => {
       renderCleanupAttempts += 1
-      if (renderCleanupAttempts === 1) throw new Error('temporary failure')
+      if (renderCleanupAttempts === 1) {
+        throw new Error('temporary failure')
+      }
       registrations.splice(
         registrations.findIndex(({ ref }) => ref.kind === 'render-strategy'),
         1

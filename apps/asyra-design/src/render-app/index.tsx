@@ -122,7 +122,9 @@ const RenderApp: React.FC<RenderAppProps> = ({
             }
           )
         }
-        if (!active) await destroyRuntime()
+        if (!active) {
+          await destroyRuntime()
+        }
       })
     lifecycleRef.current = lifecycle
     void lifecycle.catch((error: unknown) => {
@@ -141,9 +143,13 @@ const RenderApp: React.FC<RenderAppProps> = ({
   }, [])
 
   useEffect(() => {
-    if (!recoverySession) return
+    if (!recoverySession) {
+      return
+    }
     const guard = (event: BeforeUnloadEvent) => {
-      if (!recoverySession.hasUnpersistedChanges()) return
+      if (!recoverySession.hasUnpersistedChanges()) {
+        return
+      }
       event.preventDefault()
       event.returnValue = ''
     }

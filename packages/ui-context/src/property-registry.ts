@@ -126,9 +126,12 @@ export class PropertyRegistry {
 
   private setupYJSFilter(key: string, trigger: TriggerConfig): void {
     this.yjsFilters.set(key, (change) => {
-      if (trigger.action && change.action !== trigger.action) return false
-      if (trigger.key && 'key' in change && change.key !== trigger.key)
+      if (trigger.action && change.action !== trigger.action) {
         return false
+      }
+      if (trigger.key && 'key' in change && change.key !== trigger.key) {
+        return false
+      }
       return true
     })
   }
@@ -251,7 +254,9 @@ export class PropertyRegistry {
       attempt(() => subscription.unsubscribe())
     )
     subjects.forEach((subject) => attempt(() => subject.complete()))
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 }
 

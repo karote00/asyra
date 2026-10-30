@@ -240,8 +240,9 @@ test('native watch admits an unmapped file without inventing mapped test results
     reporter.onTestRunEnd([], [], 'passed')
     assert.deepEqual(store.snapshot().documents[0].current.observations, before)
     const warnings = store.snapshot().documents[0].current.warnings
-    if (status === 'passed') assert.deepEqual(warnings, [])
-    else {
+    if (status === 'passed') {
+      assert.deepEqual(warnings, [])
+    } else {
       assert.equal(warnings.length, 1)
       assert.equal(warnings[0].kind, 'unmapped')
       assert.equal(warnings[0].nodeId, 'integration')

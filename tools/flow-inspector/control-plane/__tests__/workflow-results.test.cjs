@@ -411,11 +411,12 @@ test('all exact Design cases pass only after successful dependencies', () => {
 })
 test('selected CI scopes require success and unselected scopes must be skipped', () => {
   assert.equal(assess().status, 'passed')
-  for (const result of ['failure', 'cancelled', 'skipped', ''])
+  for (const result of ['failure', 'cancelled', 'skipped', '']) {
     assert.equal(
       assess(envelopes(), { workspaceValidation: result }).status,
       result === 'failure' ? 'failed' : 'unverified'
     )
+  }
   assert.equal(
     assess(envelopes(), { workspaceResults: [] }).status,
     'unverified'
@@ -727,12 +728,13 @@ test('formal path owners reach their selected gates through the final aggregate'
       scope.workspaceMatrix.length > 0 ? 'success' : 'skipped',
       changedPath
     )
-    if (scope.frameworkReleaseRequired || scope.createAppPackages.length > 0)
+    if (scope.frameworkReleaseRequired || scope.createAppPackages.length > 0) {
       assert.equal(
         aggregate(envelopes(), identity, jobsFor(scope, true), scope).status,
         'unverified',
         changedPath + ' missing selected owner gate'
       )
+    }
   }
 })
 
@@ -941,7 +943,7 @@ test('selected workspace E2E owners require one passing run and reject zero test
       scope
     ).blockers.join('; ')
   )
-  for (const result of ['missing', 'not-selected', 'failed'])
+  for (const result of ['missing', 'not-selected', 'failed']) {
     assert.notEqual(
       assess(
         envelopes(),
@@ -970,6 +972,7 @@ test('selected workspace E2E owners require one passing run and reject zero test
       'passed',
       result
     )
+  }
   for (const invalid of [
     { e2eStatus: 'passed', e2eResult: undefined },
     { e2eStatus: 'passed', e2eTask: null },
@@ -1094,8 +1097,9 @@ test('workflow wires non-workspace owners to their concrete readiness producers'
   )
   assert.match(main, /actions\/upload-artifact@/)
   assert.match(main, /actions\/download-artifact@/)
-  for (const removedJob of ['framework', 'design', 'sim', 'website', 'tools'])
+  for (const removedJob of ['framework', 'design', 'sim', 'website', 'tools']) {
     assert.doesNotMatch(main, new RegExp(`^  ${removedJob}:`, 'm'))
+  }
 })
 test('Inspector fixes the complete scoped aggregate owner, route, and artifact contract', () => {
   const step = proofFlow.steps.find(
@@ -1125,8 +1129,9 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
     'per-suite E2E results for functional, collaboration, Flow Inspector board, and render contracts',
     'Design E2E producer envelopes and required forwarder results',
     'GitHub repository, base, head, integration, run and attempt identity'
-  ])
+  ]) {
     assert.ok(step.inputs.includes(input), input)
+  }
   assert.ok(
     step.conditions.some((condition) =>
       /docs-only.*shared validation.*applicable document-owner check/iu.test(
@@ -1290,7 +1295,7 @@ test('a Delete assertion failure survives missing downstream observations and fa
   assert.equal(result.cases[0].status, 'failed')
   assert.equal(result.cases[1].status, 'unverified')
 })
-for (const status of ['skipped', 'interrupted', 'unknown'])
+for (const status of ['skipped', 'interrupted', 'unknown']) {
   test(status + ' cannot pass', () => {
     const r = report([0])
     r.suites[0].suites[0].specs[0].tests[0].results[0].status = status
@@ -1299,6 +1304,7 @@ for (const status of ['skipped', 'interrupted', 'unknown'])
       'passed'
     )
   })
+}
 test('failed retry followed by pass remains failed', () => {
   const r = report([0])
   r.suites[0].suites[0].specs[0].tests[0].results = [
@@ -1313,28 +1319,39 @@ for (const variant of [
   'wrong-project',
   'expected-failure',
   'errors'
-])
+]) {
   test(variant + ' report is unverified', () => {
     const r = report([0])
     const specs = r.suites[0].suites[0].specs
-    if (variant === 'missing') specs.length = 0
-    if (variant === 'duplicate') specs.push(structuredClone(specs[0]))
-    if (variant === 'wrong-project') specs[0].tests[0].projectName = 'firefox'
-    if (variant === 'expected-failure')
+    if (variant === 'missing') {
+      specs.length = 0
+    }
+    if (variant === 'duplicate') {
+      specs.push(structuredClone(specs[0]))
+    }
+    if (variant === 'wrong-project') {
+      specs[0].tests[0].projectName = 'firefox'
+    }
+    if (variant === 'expected-failure') {
       specs[0].tests[0].expectedStatus = 'failed'
-    if (variant === 'errors')
+    }
+    if (variant === 'errors') {
       r.errors.push({ message: 'do not expose report text' })
+    }
     assert.equal(collect(r, 'design', identity).cases[0].status, 'unverified')
   })
-for (const key of Object.keys(identity))
+}
+for (const key of Object.keys(identity)) {
   test('mismatched ' + key + ' cannot pass', () => {
     const e = envelopes()
     e[0].identity[key] += 'x'
     assert.equal(assess(e).status, 'unverified')
   })
+}
 test('malformed envelope, removed or duplicated cases cannot weaken inventory', () => {
-  for (const records of [[], [null], [{ producer: 'design' }]])
+  for (const records of [[], [null], [{ producer: 'design' }]]) {
     assert.notEqual(assess(records).status, 'passed')
+  }
   const e = envelopes()
   e[0].cases = []
   assert.equal(assess(e).status, 'unverified')
@@ -1347,11 +1364,12 @@ test('malformed envelope, removed or duplicated cases cannot weaken inventory', 
   assert.notEqual(assess(changed).status, 'passed')
 })
 test('dependency failure or cancellation blocks green even if selected cases passed', () => {
-  for (const outcome of ['failure', 'cancelled', 'skipped', ''])
+  for (const outcome of ['failure', 'cancelled', 'skipped', '']) {
     assert.notEqual(
       assess(envelopes(), { validate: outcome, e2e: 'success' }).status,
       'passed'
     )
+  }
 })
 test('bounded output contains no raw report messages or stdout', () => {
   const r = report([0])
@@ -1854,11 +1872,12 @@ for (const guard of [
       .digest('hex')
     const jobs = { workspaceValidation: 'skipped', [guard]: 'success' }
     assert.equal(assess(envelopes(), jobs, selected).status, 'passed')
-    for (const result of [undefined, 'skipped', 'failure', 'cancelled'])
+    for (const result of [undefined, 'skipped', 'failure', 'cancelled']) {
       assert.notEqual(
         assess(envelopes(), { ...jobs, [guard]: result }, selected).status,
         'passed'
       )
+    }
     const unselected = makeScope({ workspaceMatrix: [], e2eSuites: [] })
     assert.notEqual(assess(envelopes(), jobs, unselected).status, 'passed')
   })

@@ -106,8 +106,12 @@ const ensureRepositoryTarget = ({
   sourcePath
 }) => {
   const url = new URL(destination)
-  if (VERIFIED_PUBLIC_LINKS.has(destination)) return
-  if (`${url.origin}${url.pathname}` === REPOSITORY_URL) return
+  if (VERIFIED_PUBLIC_LINKS.has(destination)) {
+    return
+  }
+  if (`${url.origin}${url.pathname}` === REPOSITORY_URL) {
+    return
+  }
   const prefix = `${REPOSITORY_URL}/blob/main/`
   const treePrefix = `${REPOSITORY_URL}/tree/main/`
   let relativeTarget
@@ -183,7 +187,9 @@ export const validateReadmeLinks = ({ filePath, repositoryRoot, source }) => {
 const validateHeadings = ({ id, source, sourcePath }) => {
   const key = id.startsWith('@asyra/') ? 'package' : id
   const required = REQUIRED_HEADINGS[key]
-  if (!required) return
+  if (!required) {
+    return
+  }
   required.forEach((heading) => {
     if (!source.includes(`${heading}\n`)) {
       throw new Error(`${sourcePath} is missing ${heading}`)

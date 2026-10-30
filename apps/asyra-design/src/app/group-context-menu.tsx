@@ -26,7 +26,9 @@ export const GroupContextMenu = ({
   descriptors,
   onDismiss
 }: GroupContextMenuProps) => {
-  if (!session) return null
+  if (!session) {
+    return null
+  }
 
   return (
     <ContextMenu
@@ -41,7 +43,9 @@ export const GroupContextMenu = ({
       viewport={session.viewport}
       onActivate={(itemId) => {
         const descriptor = descriptors.find(({ id }) => id === itemId)
-        if (!descriptor?.enabled) return
+        if (!descriptor?.enabled) {
+          return
+        }
 
         flushSync(() =>
           onDismiss(

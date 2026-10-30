@@ -27,7 +27,9 @@ it('uses the approved seven-part tea chair with a broad rear crown', () => {
   const heights = []
   for (let i = 0; i < shell.length; i += 3) {
     const angle = Math.atan2(shell[i] / 0.22, shell[i + 1] / 0.23)
-    if (Math.abs(angle - Math.PI / 3) < 0.015) heights.push(shell[i + 2])
+    if (Math.abs(angle - Math.PI / 3) < 0.015) {
+      heights.push(shell[i + 2])
+    }
   }
   expect(Math.max(...heights)).toBeGreaterThan(0.55)
 })
@@ -107,10 +109,11 @@ it('ends work-chair back supports at the seat underside after shared back positi
   const posts = catalogAsset('work-chair').filter((p) =>
     p.id.startsWith('back-post-')
   )
-  for (const p of posts)
+  for (const p of posts) {
     expect(
       Math.min(...p.mesh.positions.filter((_, i) => i % 3 === 2))
     ).toBeCloseTo(0.29, 3)
+  }
 })
 
 it('revolves the approved canister as separate closed body and lid with reusable appearance', async () => {

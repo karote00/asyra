@@ -136,7 +136,9 @@ it('retains complete placed triangles across pose/appearance frames and replaces
     expect(frame.meshes[0].descriptor.shape).toBe(initial)
   }
   const binding = workcell.bodies[1].visuals?.[0]
-  if (!binding) throw new Error('Missing original binding')
+  if (!binding) {
+    throw new Error('Missing original binding')
+  }
   binding.scale = [4, 3, 2]
   const replacement = prepareWorkcellProjection(workcell, resources)(view)
   expect(replacement.meshes[0].descriptor.shape).not.toEqual(initial)
@@ -158,8 +160,9 @@ it.each([0, Math.PI / 2, -Math.PI / 4])(
       (mesh) => mesh.descriptor.shape.kind === 'triangles'
     )
     expect(visual).toBeDefined()
-    if (!visual || visual.descriptor.shape.kind !== 'triangles')
+    if (!visual || visual.descriptor.shape.kind !== 'triangles') {
       throw new Error('Missing visual projection')
+    }
     expect(visual.elementId).toBe('tool')
     expect(visual.descriptor.shape.positions).toEqual([
       0, 0, 0, 2, 0, 0, 0, 3, 0
@@ -188,8 +191,9 @@ it.each([0, Math.PI / 2, -Math.PI / 4])(
     const resolved = resolvePartWorkcell(workcell, resources).bodies[1]
       .colliders[0].geometry
     expect(resolved.kind).toBe('mesh')
-    if (resolved.kind !== 'mesh')
+    if (resolved.kind !== 'mesh') {
       throw new Error('Missing resolved original part')
+    }
     expect(visual.descriptor.shape.positions).toEqual(resolved.positions)
     expect(visual.descriptor.shape.indices).toEqual(resolved.indices)
     expect(workcell).toEqual(before)
@@ -231,7 +235,9 @@ it('does not synthesize colliders for a visual-only body and preserves independe
     tool = workcell.bodies[1]
   tool.colliders = []
   const binding = tool.visuals?.[0]
-  if (!binding) throw new Error('Missing test binding')
+  if (!binding) {
+    throw new Error('Missing test binding')
+  }
   tool.visuals = [binding, { ...binding, id: 'second', scale: [1, 1, 1] }]
   const frame = createWorkcellFrame(workcell, view, resources)
   expect(frame.meshes).toHaveLength(2)

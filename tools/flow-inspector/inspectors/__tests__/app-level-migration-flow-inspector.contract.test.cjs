@@ -86,16 +86,16 @@ test('every step has exact execution fields and all routes and artifacts resolve
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner ${id}`)
       if (route.to)
-        assert.ok(
+        {assert.ok(
           artifact.consumerStepIds.includes(route.to),
           `${route.id} consumer ${id}`
-        )
+        )}
     })
   })
 
@@ -112,10 +112,10 @@ test('every step has exact execution fields and all routes and artifacts resolve
       )
     )
     if (!artifact.terminal)
-      assert.ok(
+      {assert.ok(
         artifact.consumerStepIds.length > 0,
         `${artifact.id} consumer required`
-      )
+      )}
   })
 })
 

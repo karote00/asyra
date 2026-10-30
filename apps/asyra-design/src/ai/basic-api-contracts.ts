@@ -107,9 +107,12 @@ export const apiUniqueElementIds = {
 export const isElementTargetSchema = (schema: unknown): boolean =>
   schema === apiElementIds || schema === apiUniqueElementIds
 export const hasElementTargetSchema = (schema: unknown): boolean => {
-  if (isElementTargetSchema(schema)) return true
-  if (!schema || typeof schema !== 'object' || Array.isArray(schema))
+  if (isElementTargetSchema(schema)) {
+    return true
+  }
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
     return false
+  }
   const properties = (schema as Record<string, unknown>).properties
   return (
     !!properties &&
@@ -142,11 +145,15 @@ const describeResultContract = (
   declared?: BasicApiResultKind
 ) => {
   let kind = declared
-  if (!declared && effect === 'read') kind = 'value'
-  if (!declared && (effect === 'selection' || effect === 'viewport'))
+  if (!declared && effect === 'read') {
+    kind = 'value'
+  }
+  if (!declared && (effect === 'selection' || effect === 'viewport')) {
     kind = 'transient'
-  if (!kind)
+  }
+  if (!kind) {
     throw new Error('Document writers must declare an owner result contract.')
+  }
   return { kind, description: resultDescriptions[kind] }
 }
 

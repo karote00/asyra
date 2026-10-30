@@ -136,7 +136,9 @@ describe('original part complete-time evidence', () => {
         query('prismatic', -3, 3, [0.17, 0.2, 0.2]),
         settings,
         () => {
-          if (++calls > 10) throw new Error('cancelled')
+          if (++calls > 10) {
+            throw new Error('cancelled')
+          }
         }
       )
     ).toThrow('cancelled')
@@ -145,7 +147,9 @@ describe('original part complete-time evidence', () => {
     const source = createMechanicalVisuals().find(
       (part) => part.body === 'fixture-table'
     )
-    if (!source) throw new Error('Missing sample table source')
+    if (!source) {
+      throw new Error('Missing sample table source')
+    }
     const asset = await decodeRestrictedGlb(source.bytes)
     const part = resolvePart(
       {

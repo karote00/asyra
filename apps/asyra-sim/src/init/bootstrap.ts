@@ -85,7 +85,9 @@ export async function bootstrap(
 ) {
   const experimentInputs = new ExperimentInputReader()
   const core = currentCore
-  if (!core.isCompositionOpen()) throw new Error('Runtime already started')
+  if (!core.isCompositionOpen()) {
+    throw new Error('Runtime already started')
+  }
   let rendering: ReturnType<typeof installCustomRenderer> | undefined
   let visualResources: VisualAssetArchive | undefined
   let observationResources: ObservationAttachmentArchive | undefined
@@ -96,14 +98,20 @@ export async function bootstrap(
   const pauses = new Set<object>()
   let loadIssues: readonly ModelLoadIssue[] = []
   const assertLive = () => {
-    if (disposed) throw new Error('Runtime is closed')
+    if (disposed) {
+      throw new Error('Runtime is closed')
+    }
   }
   const assertAccepting = () => {
     assertLive()
-    if (pauses.size) throw new Error('Runtime editing is paused')
+    if (pauses.size) {
+      throw new Error('Runtime editing is paused')
+    }
   }
   const dispose = () => {
-    if (disposal) return disposal
+    if (disposal) {
+      return disposal
+    }
     disposed = true
     pauses.clear()
     // Defer teardown so reentrant cleanup observes the same terminal promise.
@@ -129,9 +137,12 @@ export async function bootstrap(
       // Also covers startup failure before the storage Feature cleanup was registered.
       attempt(() => visualResources?.dispose())
       attempt(() => observationResources?.dispose())
-      if (errors.length === 1) throw errors[0]
-      if (errors.length)
+      if (errors.length === 1) {
+        throw errors[0]
+      }
+      if (errors.length) {
         throw new AggregateError(errors, 'Runtime cleanup failed')
+      }
     })
     return disposal
   }
@@ -151,10 +162,12 @@ export async function bootstrap(
     if (snapshot) {
       for (const bindings of readCapturedVisualBindingGroups(
         snapshot.document
-      ).values())
+      ).values()) {
         visuals.resolveBindings(bindings)
-      for (const run of snapshot.runs ?? [])
+      }
+      for (const run of snapshot.runs ?? []) {
         visuals.resolveWorkcell(run.snapshot.workcell)
+      }
     }
     const archive = new RunArchive(snapshot?.runs, (record) =>
       validateOriginalPartSources(record.snapshot, visuals)
@@ -167,10 +180,11 @@ export async function bootstrap(
           run.snapshot.snapshotId !== reference.snapshotId ||
           run.snapshot.source.candidateId !== reference.candidateId ||
           run.snapshot.source.experimentId !== reference.experimentId
-        )
+        ) {
           throw new Error(
             `Retained evidence is missing or mismatched: ${reference.runId}`
           )
+        }
         return run
       })
     rendering = installCustomRenderer(core, provider)
@@ -179,11 +193,12 @@ export async function bootstrap(
     for (const channel of [
       SharedDataChannelNames.SCENE_TREE,
       SharedDataChannelNames.PROPS
-    ])
+    ]) {
       core.registerSharedDataChannel(
         channel,
         core.createLocalSharedDataChannel()
       )
+    }
     const editing = installEditingFeatures(core, {
       validateVisuals: (workcell) => {
         resolvePartWorkcell(workcell, visuals.resolveWorkcell(workcell))
@@ -192,7 +207,9 @@ export async function bootstrap(
         observations.resolve(references),
       readRun: (runId) => {
         const run = archive.get(runId)
-        if (!run) return
+        if (!run) {
+          return
+        }
         return {
           runId,
           snapshotId: run.snapshot.snapshotId,
@@ -212,8 +229,9 @@ export async function bootstrap(
     const live = installLivePlaybackFeature(core, liveRunner)
     subscriptions.add(
       core.subscribeToTransactionStatus((event) => {
-        if (event.status === 'committed' || event.status === 'rolled-back')
+        if (event.status === 'committed' || event.status === 'rolled-back') {
           liveRunner.invalidate()
+        }
       })
     )
     const visualStorage = installVisualStorageFeatures(
@@ -328,16 +346,20 @@ export async function bootstrap(
             }
       )
     ]
-    for (const publication of snapshot?.replay ?? [])
+    for (const publication of snapshot?.replay ?? []) {
       await core.applyRemoteCanonicalChangeSlices({
         origin: publication.origin,
         slices: publication.slices
       })
+    }
     if (snapshot) {
       const restored = core.getCanonicalOwnerSnapshot()
       captureRuns(restored)
-      for (const bindings of readCapturedVisualBindingGroups(restored).values())
+      for (const bindings of readCapturedVisualBindingGroups(
+        restored
+      ).values()) {
         visuals.resolveBindings(bindings)
+      }
       observations.resolve(
         projectObservationAttachments({ document: restored })
       )
@@ -367,8 +389,9 @@ export async function bootstrap(
         const body = example.workcell.bodies.find(
           (value) => value.id === `example:${source.body}`
         )
-        if (!body)
+        if (!body) {
           throw new Error(`Missing example visual target: ${source.body}`)
+        }
         body.visuals = [
           {
             version: 1,
@@ -391,7 +414,9 @@ export async function bootstrap(
       }
     }
     observer = new ResizeObserver((entries) => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       const box = entries[0]?.contentRect
       if (box && box.width > 0 && box.height > 0) {
         core.resizeRenderer(box.width, box.height)
@@ -426,10 +451,14 @@ export async function bootstrap(
           .filter((id) => !known.has(`run:${id}`))
           .map((id) => {
             const run = archive.get(id)
-            if (!run) throw new Error(`Missing publication run ${id}`)
-            for (const body of run.snapshot.workcell.bodies)
-              for (const binding of body.visuals ?? [])
+            if (!run) {
+              throw new Error(`Missing publication run ${id}`)
+            }
+            for (const body of run.snapshot.workcell.bodies) {
+              for (const binding of body.visuals ?? []) {
                 references.visuals.add(binding.assetId)
+              }
+            }
             return run
           })
         const visualIds = [...references.visuals].filter(
@@ -488,10 +517,11 @@ export async function bootstrap(
       exportObservations: (runId: string) => {
         const notes = getObservations(runId)
         const run = archive.get(runId)
-        if (!run)
+        if (!run) {
           throw new Error(
             'Missing retained run evidence for observation export'
           )
+        }
         return exportObservationBundle(run, notes, observations)
       },
       getVisualAssets: (workcell: Workcell, pending?: PreparedVisualImport) => {
@@ -551,7 +581,9 @@ export async function bootstrap(
           definition,
           INSTALLED_METHOD_CATALOG.descriptors
         )
-        if (!loadIssues.length) return report
+        if (!loadIssues.length) {
+          return report
+        }
         return {
           ...report,
           blockers: [
@@ -569,10 +601,11 @@ export async function bootstrap(
         acknowledgedWarningCodes: readonly string[]
       ) => {
         assertAccepting()
-        if (loadIssues.length)
+        if (loadIssues.length) {
           throw new Error(
             'Retained load recovery requirements block formal analysis'
           )
+        }
         const experiment = readExperiment(core, experimentId)
         const workcell = readWorkcell(core, experiment.candidateId)
         const definition = experimentInputs.resolve(
@@ -610,9 +643,13 @@ export async function bootstrap(
         layer.submitCamera(camera)
       },
       pick: (x: number, y: number) => {
-        if (disposed) return null
+        if (disposed) {
+          return null
+        }
         const result = core.pickSpatialAtClientPoint({ x, y })
-        if (!result) return null
+        if (!result) {
+          return null
+        }
         return result.kind === 'overlay'
           ? result.elementId
           : (result.hit.elementId ?? result.hit.visualId)
@@ -626,7 +663,9 @@ export async function bootstrap(
       subscribe: (listener: (publication: SharedPublication) => void) => {
         assertLive()
         const unsubscribe = core.subscribeToSharedPublication((publication) => {
-          if (!disposed) listener(publication)
+          if (!disposed) {
+            listener(publication)
+          }
         })
         subscriptions.add(unsubscribe)
         return () => {

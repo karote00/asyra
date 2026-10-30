@@ -41,10 +41,12 @@ const identityKeys = [
 // turn a failed or incomplete rerun green.
 const sourceIdentityKeys = identityKeys.filter((key) => key !== 'attempt')
 function isSameRunEvidence(producer, current) {
-  if (!sourceIdentityKeys.every((key) => producer?.[key] === current[key]))
+  if (!sourceIdentityKeys.every((key) => producer?.[key] === current[key])) {
     return false
-  if (current.run === 'local')
+  }
+  if (current.run === 'local') {
     return current.attempt === 'local' && producer.attempt === 'local'
+  }
   const positiveAttempt = (value) =>
     typeof value === 'string' &&
     /^[1-9][0-9]*$/.test(value) &&
@@ -67,9 +69,12 @@ function classify(observations, reportValid) {
     observations.some((o) =>
       o.results?.some((s) => ['failed', 'timedOut'].includes(s))
     )
-  )
+  ) {
     return 'failed'
-  if (!reportValid || observations.length !== 1) return 'unverified'
+  }
+  if (!reportValid || observations.length !== 1) {
+    return 'unverified'
+  }
   const o = observations[0]
   return o.project === 'chromium' &&
     o.expected === 'passed' &&
@@ -79,14 +84,21 @@ function classify(observations, reportValid) {
     : 'unverified'
 }
 function collect(report, producer, identity) {
-  if (!['design', 'collaboration'].includes(producer))
+  if (!['design', 'collaboration'].includes(producer)) {
     throw new Error('Unknown workflow producer')
+  }
   const specs = []
   function walk(suites) {
-    if (!Array.isArray(suites)) return
+    if (!Array.isArray(suites)) {
+      return
+    }
     for (const suite of suites) {
-      if (!suite || typeof suite !== 'object') continue
-      if (Array.isArray(suite.specs)) specs.push(...suite.specs)
+      if (!suite || typeof suite !== 'object') {
+        continue
+      }
+      if (Array.isArray(suite.specs)) {
+        specs.push(...suite.specs)
+      }
       walk(suite.suites)
     }
   }
@@ -152,15 +164,16 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
     ['base', 'head', 'integration'].every((k) =>
       /^[a-f0-9]{40}$/.test(identity[k])
     )
-  if (!validIdentity)
+  if (!validIdentity) {
     blockers.push('Expected execution identity is unavailable')
+  }
   const selectedSuites =
     scopeEvidence?.relationshipMap?.executionPlan?.checks?.e2e?.selected ?? []
   const scope = aggregateScope(scopeEvidence, identity, jobs)
   blockers.push(...scope.blockers)
   const cases = inventory.map((c) => {
     const ownerSuite = c.producer === 'design' ? 'functional' : 'collaboration'
-    if (!selectedSuites.includes(ownerSuite))
+    if (!selectedSuites.includes(ownerSuite)) {
       return {
         id: c.id,
         owner: 'apps/asyra-design',
@@ -168,6 +181,7 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
         title: c.title,
         status: 'not-selected'
       }
+    }
     const records = Array.isArray(envelopes)
       ? envelopes.filter((e) => e?.producer === c.producer)
       : []
@@ -189,10 +203,12 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
       observed &&
       Array.isArray(observed.observations) &&
       observed.observations.every((o) => o && Array.isArray(o.results))
-    )
+    ) {
       status = classify(observed.observations, e.reportValid)
-    if (!admitted)
+    }
+    if (!admitted) {
       blockers.push(c.id + ': missing or invalid producer evidence')
+    }
     return {
       id: c.id,
       owner: 'apps/asyra-design/src/features/delete-element/index.ts',
@@ -201,12 +217,15 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
       status
     }
   })
-  if (jobs.validate !== 'success')
+  if (jobs.validate !== 'success') {
     blockers.push('validate: prerequisite did not succeed')
-  if (selectedSuites.length > 0 && jobs.e2e !== 'success')
+  }
+  if (selectedSuites.length > 0 && jobs.e2e !== 'success') {
     blockers.push('e2e: selected suite workflow did not succeed')
-  if (selectedSuites.length === 0 && jobs.e2e !== 'skipped')
+  }
+  if (selectedSuites.length === 0 && jobs.e2e !== 'skipped') {
     blockers.push('e2e: unselected producer did not remain skipped')
+  }
   const suiteResults = jobs.e2eSuiteResults
   if (
     !suiteResults ||
@@ -218,8 +237,9 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
     for (const suite of e2eSuiteNames) {
       const result = suiteResults[suite]
       if (selectedSuites.includes(suite)) {
-        if (result !== 'success')
+        if (result !== 'success') {
           blockers.push(`e2e ${suite}: selected suite did not succeed`)
+        }
       } else if (
         selectedSuites.length === 0 &&
         jobs.e2e === 'skipped' &&
@@ -232,14 +252,15 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
     }
   }
   let status = 'passed'
-  if (cases.some((c) => c.status === 'failed') || scope.status === 'failed')
+  if (cases.some((c) => c.status === 'failed') || scope.status === 'failed') {
     status = 'failed'
-  else if (
+  } else if (
     blockers.length ||
     cases.some((c) => c.status !== 'passed' && c.status !== 'not-selected') ||
     scope.status !== 'passed'
-  )
+  ) {
     status = 'unverified'
+  }
   return {
     version: 1,
     identity,
@@ -290,8 +311,9 @@ function projectObservations(
       if (
         matches.length !== 1 ||
         !isSameRunEvidence(matches[0].identity, identity)
-      )
+      ) {
         throw new Error('Missing matching producer identity')
+      }
       const expected = matches[0].identity
       const bundle = path.join(
         directory,
@@ -309,20 +331,24 @@ function projectObservations(
           (record) =>
             hash(JSON.stringify(record.report)) === matches[0].reportDigest
         )
-      )
+      ) {
         throw new Error('Bundle does not contain the collected product report')
-      if (!state.currentCases.length)
+      }
+      if (!state.currentCases.length) {
         throw new Error('No observed cases in selected bundle')
+      }
       let status = 'observed'
-      if (state.currentCases.some((item) => item.status === 'failed'))
+      if (state.currentCases.some((item) => item.status === 'failed')) {
         status = 'failed'
-      else if (
+      } else if (
         state.warningGroups.current.length ||
         state.currentCases.some((item) => item.resolution === 'stale')
-      )
+      ) {
         status = 'unverified'
-      if (status !== 'observed')
+      }
+      if (status !== 'observed') {
         result.blockers.push(producer + ': retained observations are ' + status)
+      }
       result.producers[producer] = { status, ...state }
     } catch (error) {
       result.producers[producer] = {
@@ -598,10 +624,11 @@ function aggregateScope(evidence, identity, jobs) {
         graph.filter(({ contentOnly }) => !contentOnly).length) &&
     JSON.stringify(relationshipMap.unknownPaths) === '[]' &&
     JSON.stringify(evidence.unknownPaths) === '[]'
-  if (!admitted)
+  if (!admitted) {
     blockers.push(
       'CI relationship map is missing, unknown, malformed, or has an incompatible source/run/attempt'
     )
+  }
 
   const selectedCheckResults = jobs.selectedCheckResults
   const expectedCheckNames = ['lint', 'repositoryScripts', 'naming']
@@ -625,26 +652,30 @@ function aggregateScope(evidence, identity, jobs) {
         !result ||
         result.mode !== selection.mode ||
         JSON.stringify(result.inputs) !== JSON.stringify(selection.inputs)
-      )
+      ) {
         return false
-      if (selection.mode === 'not-selected')
+      }
+      if (selection.mode === 'not-selected') {
         return result.status === 'not-selected'
-      if (name === 'repositoryScripts' && selection.mode === 'files')
+      }
+      if (name === 'repositoryScripts' && selection.mode === 'files') {
         return (
           result.status === 'passed' &&
           JSON.stringify(result.executedTests) ===
             JSON.stringify(selection.tests)
         )
+      }
       if (name === 'lint') {
         if (
           result.status === 'not-selected' &&
           selection.mode === 'files' &&
           result.reason === 'no-applicable-files'
-        )
+        ) {
           return (
             Array.isArray(result.executedFiles) &&
             result.executedFiles.length === 0
           )
+        }
         return (
           result.status === 'passed' &&
           Array.isArray(result.executedFiles) &&
@@ -657,10 +688,11 @@ function aggregateScope(evidence, identity, jobs) {
       }
       return result.status === 'passed'
     })
-  if (!checkResultsValid)
+  if (!checkResultsValid) {
     blockers.push(
       'selected-checks: missing, stale, or mismatched execution results'
     )
+  }
   for (const name of [
     'securityAudit',
     'dependencyValidation',
@@ -671,8 +703,9 @@ function aggregateScope(evidence, identity, jobs) {
       !['full', 'not-selected'].includes(guard?.mode) ||
       !Array.isArray(guard?.inputs) ||
       jobs[name] !== (guard.mode === 'full' ? 'success' : 'skipped')
-    )
+    ) {
       blockers.push(`${name}: missing, failed or unexpected selected guard`)
+    }
   }
   const artifactSelection = executionPlan?.checks?.productionArtifacts
   const artifactApps = artifactSelection?.apps
@@ -687,18 +720,21 @@ function aggregateScope(evidence, identity, jobs) {
   if (
     !validArtifacts ||
     jobs.productionArtifacts !== (artifactApps.length ? 'success' : 'skipped')
-  )
+  ) {
     blockers.push(
       'production-artifacts: missing, failed or unexpected selected producer'
     )
+  }
   const declarationsSelected =
     executionPlan?.checks?.frameworkDeclarations?.mode === 'full'
-  if (declarationsSelected && jobs.frameworkDeclarationResult !== 'success')
+  if (declarationsSelected && jobs.frameworkDeclarationResult !== 'success') {
     blockers.push('framework-declarations: selected build did not succeed')
-  if (!declarationsSelected && jobs.frameworkDeclarationResult !== 'skipped')
+  }
+  if (!declarationsSelected && jobs.frameworkDeclarationResult !== 'skipped') {
     blockers.push(
       'framework-declarations: unselected build did not remain skipped'
     )
+  }
 
   const selectedMatrix = validMatrix ? relationshipMap.workspaceMatrix : []
   const expectedNames = selectedMatrix.map(({ name }) => name)
@@ -706,28 +742,34 @@ function aggregateScope(evidence, identity, jobs) {
     ? jobs.workspaceResults
     : []
   const matrixResult = jobs.workspaceValidation
-  if (selectedMatrix.length > 0 && matrixResult !== 'success')
+  if (selectedMatrix.length > 0 && matrixResult !== 'success') {
     blockers.push(
       'workspace-validation: selected matrix did not succeed (' +
         (matrixResult || 'missing') +
         ')'
     )
-  if (selectedMatrix.length === 0 && matrixResult !== 'skipped')
+  }
+  if (selectedMatrix.length === 0 && matrixResult !== 'skipped') {
     blockers.push(
       'workspace-validation: unselected matrix did not remain skipped'
     )
+  }
   const flowInspectorSelected =
     admitted && relationshipMap.flowInspectorValidationRequired
-  if (flowInspectorSelected && jobs.flowInspectorValidation !== 'success')
+  if (flowInspectorSelected && jobs.flowInspectorValidation !== 'success') {
     blockers.push('flow-inspector-validation: selected checks did not succeed')
-  if (!flowInspectorSelected && jobs.flowInspectorValidation !== 'skipped')
+  }
+  if (!flowInspectorSelected && jobs.flowInspectorValidation !== 'skipped') {
     blockers.push(
       'flow-inspector-validation: unselected check did not remain skipped'
     )
+  }
 
   const byWorkspace = new Map()
   for (const record of resultRecords) {
-    if (!record || typeof record.workspace !== 'string') continue
+    if (!record || typeof record.workspace !== 'string') {
+      continue
+    }
     const entries = byWorkspace.get(record.workspace) ?? []
     entries.push(record)
     byWorkspace.set(record.workspace, entries)
@@ -797,37 +839,45 @@ function aggregateScope(evidence, identity, jobs) {
           (!['related', 'files'].includes(entry.testSelection.mode) ||
             JSON.stringify(record.testResult.inputs) ===
               JSON.stringify(entry.testSelection.inputs)))
-    if (!recordValid)
+    if (!recordValid) {
       blockers.push(entry.name + ': invalid or unsuccessful matrix result')
+    }
   }
   if (
     resultRecords.some((record) => !expectedNames.includes(record?.workspace))
-  )
+  ) {
     blockers.push('workspace-validation: unexpected matrix result')
+  }
 
   const frameworkReleaseSelected =
     admitted && relationshipMap.frameworkReleaseRequired
-  if (frameworkReleaseSelected && jobs.frameworkRelease !== 'success')
+  if (frameworkReleaseSelected && jobs.frameworkRelease !== 'success') {
     blockers.push(
       'framework-release-readiness: selected release gate did not succeed'
     )
-  if (!frameworkReleaseSelected && jobs.frameworkRelease !== 'skipped')
+  }
+  if (!frameworkReleaseSelected && jobs.frameworkRelease !== 'skipped') {
     blockers.push(
       'framework-release-readiness: unselected release gate did not remain skipped'
     )
+  }
   const createAppSelected =
     admitted && relationshipMap.createAppPackages.length > 0
-  if (createAppSelected && jobs.createAppReadiness !== 'success')
+  if (createAppSelected && jobs.createAppReadiness !== 'success') {
     blockers.push(
       'create-app-readiness: selected package check did not succeed'
     )
-  if (!createAppSelected && jobs.createAppReadiness !== 'skipped')
+  }
+  if (!createAppSelected && jobs.createAppReadiness !== 'skipped') {
     blockers.push(
       'create-app-readiness: unselected package check did not remain skipped'
     )
-  for (const name of ['designForwarder', 'collaborationForwarder'])
-    if (jobs[name] !== 'success')
+  }
+  for (const name of ['designForwarder', 'collaborationForwarder']) {
+    if (jobs[name] !== 'success') {
       blockers.push(name + ': required forwarder did not succeed')
+    }
+  }
   const failed =
     jobs.validate === 'failure' ||
     jobs.e2e === 'failure' ||
@@ -856,8 +906,11 @@ function aggregateScope(evidence, identity, jobs) {
     jobs.collaborationForwarder === 'failure'
   const passed = admitted && blockers.length === 0
   let status = 'unverified'
-  if (passed) status = 'passed'
-  else if (failed) status = 'failed'
+  if (passed) {
+    status = 'passed'
+  } else if (failed) {
+    status = 'failed'
+  }
   return {
     version: 1,
     identity,
@@ -924,8 +977,9 @@ if (require.main === module) {
   if (command === 'collect') {
     let report = null
     try {
-      if (fs.statSync(reportPath).size <= 32 * 1024 * 1024)
+      if (fs.statSync(reportPath).size <= 32 * 1024 * 1024) {
         report = JSON.parse(fs.readFileSync(reportPath, 'utf8'))
+      }
     } catch {
       /* Missing producer output remains unverified. */
     }
@@ -1031,10 +1085,12 @@ if (require.main === module) {
       Object.values(result.observations.producers).some(
         (producer) => producer.status === 'failed'
       )
-    )
+    ) {
       result.status = 'failed'
-    if (result.observations.blockers.length && result.status === 'passed')
+    }
+    if (result.observations.blockers.length && result.status === 'passed') {
       result.status = 'unverified'
+    }
     const { safePath } = require('./snapshot.cjs')
     const resultPath = safePath(
       process.cwd(),
@@ -1071,6 +1127,8 @@ if (require.main === module) {
       })
     )
     process.exitCode = result.status === 'passed' ? 0 : 1
-  } else throw new Error('Expected collect or aggregate')
+  } else {
+    throw new Error('Expected collect or aggregate')
+  }
 }
 module.exports = { collect, aggregate, projectObservations }

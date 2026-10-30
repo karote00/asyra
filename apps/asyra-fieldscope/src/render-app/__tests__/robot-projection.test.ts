@@ -168,8 +168,9 @@ it('shares the exact installed station product and retires placement without reg
       )
       expect(mesh.descriptor.position).toEqual([10, 0, DEFAULT_ROBOT.dockZ])
     }
-    for (let i = 0; i < 5; i++)
+    for (let i = 0; i < 5; i++) {
       expect(owner.getDockSource() === moved).toBe(true)
+    }
     expect(build).toHaveBeenCalledTimes(1)
     owner.clear()
     expect(owner.isCurrentDockSource(moved)).toBe(false)

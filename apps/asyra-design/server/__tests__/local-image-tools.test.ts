@@ -297,12 +297,13 @@ describe('local provider image tools', () => {
         controller.signal
       )
     ).rejects.toThrow(/cancel/i)
-    for (let index = 1; index < 128; index++)
+    for (let index = 1; index < 128; index++) {
       await tools.call(
         AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
         selection,
         signal
       )
+    }
     expect(
       JSON.parse(
         await tools.call(
@@ -847,8 +848,9 @@ it('preserves native region pixels and isolates reuse by selected source region'
     { ...region, x: 0.5 },
     { ...region, width: 0 },
     { ...region, width: 3 }
-  ])
+  ]) {
     await expect(call(bad)).rejects.toThrow(/region/i)
+  }
   expect(convert).toHaveBeenCalledTimes(2)
 })
 
@@ -866,7 +868,9 @@ it('selects regions in display orientation and rejects cancelled conversion befo
   const controller = new AbortController()
   let cancel = true
   const convert = vi.fn(async (_input: { bytes: Uint8Array }) => {
-    if (cancel) controller.abort()
+    if (cancel) {
+      controller.abort()
+    }
     return '<svg width="1" height="3"><path d="M0,0L1,0L1,3Z" fill="#000000"/></svg>'
   })
   const input = {
@@ -1052,14 +1056,16 @@ it('validates retained bytes with stable identity and reuses admission evidence'
 
 it('recovers an invalid layer source and hands real separated contours to drawing preparation', async () => {
   const pixels = Buffer.alloc(12 * 12 * 4)
-  for (let y = 0; y < 12; y++)
-    for (let x = 0; x < 12; x++)
+  for (let y = 0; y < 12; y++) {
+    for (let x = 0; x < 12; x++) {
       pixels.set(
         x >= 4 && x < 8 && y >= 4 && y < 8
           ? [255, 255, 255, 255]
           : [0, 136, 0, 255],
         (y * 12 + x) * 4
       )
+    }
+  }
   const bytes = await sharp(pixels, {
     raw: { width: 12, height: 12, channels: 4 }
   })

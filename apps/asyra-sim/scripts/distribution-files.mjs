@@ -12,8 +12,9 @@ export function distributionFiles(directory) {
   function visit(relative) {
     const filename = path.join(directory, relative)
     const stat = lstatSync(filename)
-    if (stat.isSymbolicLink())
+    if (stat.isSymbolicLink()) {
       throw new Error(`Distribution symlink: ${relative}`)
+    }
     if (stat.isDirectory()) {
       for (const name of readdirSync(filename).sort()) {
         if (
@@ -22,18 +23,22 @@ export function distributionFiles(directory) {
             (character) =>
               character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127
           )
-        )
+        ) {
           throw new Error('Unsupported distribution filename.')
+        }
         visit(path.posix.join(relative, name))
       }
     } else if (stat.isFile()) {
       bytes += stat.size
       files.push(relative)
-      if (files.length > 20000 || bytes > 512 * 1024 * 1024)
+      if (files.length > 20000 || bytes > 512 * 1024 * 1024) {
         throw new Error(
           'Distribution exceeds its 20,000-file / 512 MiB assembly limit.'
         )
-    } else throw new Error(`Unsupported distribution input: ${relative}`)
+      }
+    } else {
+      throw new Error(`Unsupported distribution input: ${relative}`)
+    }
   }
   visit('')
   return files

@@ -55,11 +55,12 @@ class FlowReporter {
   }
   onTestRunEnd(_modules, errors, reason) {
     let diagnostic = reason === 'interrupted' ? 'Execution interrupted' : ''
-    if (errors.length)
+    if (errors.length) {
       diagnostic = errors
         .map((e) => e.message)
         .join('\n')
         .slice(0, 1200)
+    }
     publish(this.project, this.receipt, this.records, diagnostic, {
       executedOnly: true
     })

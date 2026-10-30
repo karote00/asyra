@@ -6,7 +6,9 @@
       const target = globalThis.FLOW_INSPECTOR_WORKSPACE_ENTRY
       const detail = document.getElementById('detail'),
         graph = document.getElementById('flow')
-      if (!target || !detail || !graph) return
+      if (!target || !detail || !graph) {
+        return
+      }
       const architectureDigest = [
         ...new Uint8Array(
           await window.crypto.subtle.digest(
@@ -20,7 +22,9 @@
       const lifetime = new AbortController()
       const node = (tag, text) => {
         const element = document.createElement(tag)
-        if (text !== undefined) element.textContent = text
+        if (text !== undefined) {
+          element.textContent = text
+        }
         return element
       }
       // eslint-disable-next-line no-control-regex
@@ -30,10 +34,11 @@
         errors,
         stripTerminal = false
       ) => {
-        if (!errors?.length)
+        if (!errors?.length) {
           container.append(
             node('p', 'Structured assertion details were not recorded.')
           )
+        }
         for (const [index, error] of (errors ?? []).entries()) {
           const assertion = node('section')
           assertion.className = 'test-result-assertion'
@@ -49,7 +54,9 @@
             actual: 'Actual',
             stack: 'Original stack'
           })) {
-            if (!Object.hasOwn(error, key)) continue
+            if (!Object.hasOwn(error, key)) {
+              continue
+            }
             assertion.append(
               node('h6', label + (error[key] === '' ? ' - empty string' : ''))
             )
@@ -67,13 +74,14 @@
             !['expected', 'actual', 'diff'].some((key) =>
               Object.hasOwn(error, key)
             )
-          )
+          ) {
             assertion.append(
               node(
                 'p',
                 'The runner did not supply expected, actual or diff values.'
               )
             )
+          }
           container.append(assertion)
         }
       }
@@ -121,17 +129,21 @@
           evidence.target = '_blank'
           evidence.rel = 'noopener noreferrer'
           section.append(evidence, node('p', group.startedAt))
-          for (const message of group.issues) section.append(node('p', message))
-          if (group.executionFailureDetails.length)
+          for (const message of group.issues) {
+            section.append(node('p', message))
+          }
+          if (group.executionFailureDetails.length) {
             appendFailureDetails(section, group.executionFailureDetails)
+          }
           if (group.supersededBy) {
             const successor = node('a', 'Superseded by - ' + group.supersededBy)
             successor.href = '/api/test-results/' + group.supersededBy
             successor.target = '_blank'
             successor.rel = 'noopener noreferrer'
             section.append(successor)
-            if (group.replacementReason)
+            if (group.replacementReason) {
               section.append(node('p', group.replacementReason))
+            }
           }
           container.append(section)
         }
@@ -156,14 +168,17 @@
       const records = new Map()
       const get = async (url) => {
         const response = await fetch(url, { signal: lifetime.signal })
-        if (!response.ok)
+        if (!response.ok) {
           throw new Error('Result unavailable: ' + response.status)
+        }
         return response.json()
       }
       const recordFor = async (id) => {
         if (!records.has(id)) {
           const value = await get('/api/test-results/' + id)
-          if (value.phase === 'completed') records.set(id, value)
+          if (value.phase === 'completed') {
+            records.set(id, value)
+          }
           return value
         }
         return records.get(id)
@@ -172,7 +187,9 @@
         const location = item.locations.find(
           (location) => location.targetId === target.data.target.id
         )
-        if (!location) return
+        if (!location) {
+          return
+        }
         if (location.architectureVersion !== architectureDigest) {
           notice.textContent =
             'Recorded architecture differs from this canvas; inspect retained context without guessing a current node.'
@@ -190,7 +207,7 @@
       }
       const highlight = () => {
         const failures = displayedCases
-        for (const card of graph.querySelectorAll('[data-step-id]'))
+        for (const card of graph.querySelectorAll('[data-step-id]')) {
           card.classList.toggle(
             'observation-failed',
             failures.some(
@@ -204,6 +221,7 @@
                 )
             )
           )
+        }
       }
       let refreshInteractions = null
       const drafts = new Map()
@@ -262,7 +280,9 @@
             body: JSON.stringify(body)
           })
           const value = await response.json()
-          if (!response.ok) throw new Error(value.error || 'Node action failed')
+          if (!response.ok) {
+            throw new Error(value.error || 'Node action failed')
+          }
           return value
         }
         const update = async () => {
@@ -273,12 +293,18 @@
               '/api/node-context/' + item.runId + '/' + item.id.split(':')[1]
             )
           } catch (error) {
-            if (current() && revision === contextRevision) throw error
+            if (current() && revision === contextRevision) {
+              throw error
+            }
             return
           }
-          if (!current() || revision !== contextRevision) return
+          if (!current() || revision !== contextRevision) {
+            return
+          }
           const next = JSON.stringify(value)
-          if (next === signature) return
+          if (next === signature) {
+            return
+          }
           signature = next
           status.textContent = 'Reference: ' + value.reference
           comments.replaceChildren(
@@ -345,20 +371,25 @@
           )
         }
         const act = async (callback) => {
-          if (pending || !current()) return
+          if (pending || !current()) {
+            return
+          }
           pending = true
           previewButton.disabled = confirmButton.disabled = add.disabled = true
           try {
             await callback()
           } catch (error) {
-            if (current()) status.textContent = error.message
+            if (current()) {
+              status.textContent = error.message
+            }
           } finally {
             pending = false
-            if (current())
+            if (current()) {
               previewButton.disabled =
                 confirmButton.disabled =
                 add.disabled =
                   false
+            }
           }
         }
         input.addEventListener(
@@ -376,7 +407,9 @@
               preview = null
               confirmButton.hidden = true
               const value = await post('/api/node-reruns/preview', selection)
-              if (!current()) return
+              if (!current()) {
+                return
+              }
               preview = value
               rerunId = window.crypto.randomUUID()
               previewText.textContent = [
@@ -399,13 +432,17 @@
           'click',
           () =>
             act(async () => {
-              if (!preview) return
+              if (!preview) {
+                return
+              }
               await post('/api/node-reruns', {
                 ...selection,
                 requestId: rerunId,
                 previewDigest: preview.previewDigest
               })
-              if (!current()) return
+              if (!current()) {
+                return
+              }
               confirmButton.hidden = true
               preview = null
               await update()
@@ -423,7 +460,9 @@
                 requestId,
                 text
               })
-              if (!current()) return
+              if (!current()) {
+                return
+              }
               if (input.value === text) {
                 input.value = ''
                 drafts.delete(item.id)
@@ -434,11 +473,15 @@
           { signal: lifetime.signal }
         )
         refreshInteractions = async () => {
-          if (!current() || pending) return
+          if (!current() || pending) {
+            return
+          }
           try {
             await update()
           } catch (error) {
-            if (current()) status.textContent = error.message
+            if (current()) {
+              status.textContent = error.message
+            }
           }
         }
         refreshInteractions()
@@ -447,7 +490,9 @@
         chosen = item.id
         try {
           const record = await recordFor(item.runId)
-          if (disposed || chosen !== item.id) return
+          if (disposed || chosen !== item.id) {
+            return
+          }
           details.replaceChildren(
             node('h4', item.testName),
             node('p', item.reason)
@@ -519,7 +564,7 @@
           }
           if (record.retainedArtifacts?.length) {
             details.append(node('h5', 'Retained run artifacts'))
-            for (const artifact of record.retainedArtifacts)
+            for (const artifact of record.retainedArtifacts) {
               details.append(
                 node(
                   'pre',
@@ -531,6 +576,7 @@
                   ].join('\n')
                 )
               )
+            }
             details.append(
               node(
                 'p',
@@ -543,11 +589,14 @@
           evidence.target = '_blank'
           evidence.rel = 'noopener noreferrer'
           details.append(evidence)
-          if (item.resolution === 'mapped') mountInteractions(item)
+          if (item.resolution === 'mapped') {
+            mountInteractions(item)
+          }
           locate(item)
         } catch (error) {
-          if (!disposed && chosen === item.id)
+          if (!disposed && chosen === item.id) {
             notice.textContent = error.message
+          }
         }
       }
       const render = async () => {
@@ -563,16 +612,18 @@
             disposed ||
             revision !== renderRevision ||
             requestedSelection !== selection
-          )
+          ) {
             return false
+          }
           throw error
         }
         if (
           disposed ||
           revision !== renderRevision ||
           requestedSelection !== selection
-        )
+        ) {
           return false
+        }
         const cases = selected?.cases ?? state.currentCases
         displayedCases = cases
         if (chosen && !cases.some((item) => item.id === chosen)) {
@@ -619,10 +670,11 @@
           node('h4', 'Current observation storage problems')
         )
         storageProblems.hidden = !state.issues.length
-        for (const issue of state.issues)
+        for (const issue of state.issues) {
           storageProblems.append(node('p', issue))
+        }
         appendProblems(currentProblems, groups)
-        if (!groups.length)
+        if (!groups.length) {
           currentProblems.append(
             node(
               'p',
@@ -631,12 +683,14 @@
                 : 'No current evidence problems.'
             )
           )
+        }
         historicalWarnings.hidden =
           Boolean(selected) || !state.warningGroups.history.length
         historySummary.textContent =
           'Historical warnings - ' + state.warningGroups.history.length
-        if (!selected)
+        if (!selected) {
           appendProblems(historicalProblems, state.warningGroups.history)
+        }
         list.replaceChildren()
         if (selected) {
           const evidence = node('a', 'Open selected run report and context')
@@ -685,12 +739,16 @@
         return true
       }
       const refresh = async () => {
-        if (busy || disposed) return
+        if (busy || disposed) {
+          return
+        }
         busy = true
         try {
           await refreshInteractions?.()
           const next = await get('/api/test-results')
-          if (disposed) return
+          if (disposed) {
+            return
+          }
           const nextSignature = JSON.stringify(next)
           if (nextSignature !== signature) {
             state = next
@@ -714,7 +772,9 @@
             history.value = selection
           }
           if (nextSignature !== signature || selectionDirty) {
-            if (await render()) signature = nextSignature
+            if (await render()) {
+              signature = nextSignature
+            }
           }
           const id = new URLSearchParams(window.parent.location.search).get(
             'observation'
@@ -734,7 +794,9 @@
           }
         } catch (error) {
           selectionDirty = true
-          if (!disposed) notice.textContent = error.message
+          if (!disposed) {
+            notice.textContent = error.message
+          }
         } finally {
           busy = false
         }

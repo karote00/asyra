@@ -38,7 +38,9 @@ export class FeatureTaskRegistry {
   private accepting = true
 
   register(featureName: string, registration: FeatureTaskRegistration): void {
-    if (!this.accepting) throw new FeatureRuntimeClosedError()
+    if (!this.accepting) {
+      throw new FeatureRuntimeClosedError()
+    }
     if (this.registrations.has(featureName)) {
       throw new Error(`Feature task "${featureName}" is already registered`)
     }
@@ -50,7 +52,9 @@ export class FeatureTaskRegistry {
     input: Input,
     options: InvokeFeatureTaskOptions = {}
   ): Promise<Result> {
-    if (!this.accepting) return Promise.reject(new FeatureRuntimeClosedError())
+    if (!this.accepting) {
+      return Promise.reject(new FeatureRuntimeClosedError())
+    }
     const registration = this.registrations.get(featureName)
     if (!registration) {
       return Promise.reject(new FeatureTaskNotFoundError(featureName))
@@ -73,7 +77,9 @@ export class FeatureTaskRegistry {
 
     const invocation: Promise<unknown> = Promise.resolve()
       .then(() => {
-        if (!this.accepting) throw new FeatureRuntimeClosedError()
+        if (!this.accepting) {
+          throw new FeatureRuntimeClosedError()
+        }
         return (registration.handler as FeatureTaskHandler<Input, Result>)(
           input,
           {

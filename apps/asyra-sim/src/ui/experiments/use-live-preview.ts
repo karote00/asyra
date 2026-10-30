@@ -16,22 +16,30 @@ export function useLivePreview(active: boolean, identity: string) {
     current.current = null
     previous?.dispose()
 
-    if (previous) settled.current = previous.completion
+    if (previous) {
+      settled.current = previous.completion
+    }
   })
 
   useEffect(() => {
-    if (!active) suspend()
+    if (!active) {
+      suspend()
+    }
 
     return suspend
   }, [active, identity, suspend])
 
   const sample = useCommittedCallback(
     (time: number, options: LiveSampleOptions) => {
-      if (!active) return
+      if (!active) {
+        return
+      }
 
       const state = view.getSnapshot()
 
-      if (!state.canonical || !state.resolvedInput || !state.executable) return
+      if (!state.canonical || !state.resolvedInput || !state.executable) {
+        return
+      }
 
       if (!current.current) {
         const run = state.selectedRun

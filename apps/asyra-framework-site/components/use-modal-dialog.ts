@@ -8,14 +8,18 @@ export function useModalDialog() {
 
   const openDialog = () => {
     const dialog = dialogRef.current
-    if (!dialog || dialog.open) return
+    if (!dialog || dialog.open) {
+      return
+    }
 
     dialog.showModal()
   }
 
   const closeDialog = () => {
     const dialog = dialogRef.current
-    if (!dialog?.open) return
+    if (!dialog?.open) {
+      return
+    }
 
     dialog.close()
   }

@@ -40,10 +40,11 @@ test(
           base: 'main'
         },
         runner: async (options) => {
-          if (hold && !options.signal.aborted)
+          if (hold && !options.signal.aborted) {
             await new Promise((resolve) =>
               options.signal.addEventListener('abort', resolve, { once: true })
             )
+          }
           return require('../runner.cjs').runVerification(options)
         }
       }
@@ -176,7 +177,9 @@ test(
       let oldListReady = false,
         freshLists = 0
       await page.route('**/api/target-assessments', async (route) => {
-        if (route.request().method() !== 'GET') return route.continue()
+        if (route.request().method() !== 'GET') {
+          return route.continue()
+        }
         if (oldListReady) {
           freshLists++
           return route.continue()
@@ -248,7 +251,9 @@ test(
       let admissionRequest
       await page.route('**/api/targets/decide', async (route) => {
         const body = route.request().postDataJSON()
-        if (body.action !== 'admit') return route.continue()
+        if (body.action !== 'admit') {
+          return route.continue()
+        }
         admissionRequest = body
         await route.fulfill({
           status: 200,
@@ -345,10 +350,11 @@ test(
         ['narrow', 430, 920]
       ]) {
         await page.setViewportSize({ width, height })
-        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+        if (width <= 900 && (await page.locator('.sidebar').isVisible())) {
           await page
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
+        }
         await frame.locator('#assessment-summary').scrollIntoViewIfNeeded()
         const file = path.join(artifacts, name + '.png')
         await page.screenshot({ path: file })
@@ -566,7 +572,7 @@ test(
         let retries = 0
         await page.route('**' + taskPath, (route) => {
           retries++
-          if (retries === 1)
+          if (retries === 1) {
             return route.fulfill({
               status: 503,
               contentType: 'application/json',
@@ -574,6 +580,7 @@ test(
                 error: 'Task detail temporarily unavailable'
               })
             })
+          }
           return route.continue()
         })
         await frame.locator('#refresh').click()
@@ -693,7 +700,9 @@ test(
           }
         }
         await page.route('**/api/target-assessments', async (route) => {
-          if (route.request().method() !== 'GET') return route.continue()
+          if (route.request().method() !== 'GET') {
+            return route.continue()
+          }
           const response = await route.fetch()
           const records = await response.json()
           await route.fulfill({
@@ -1005,8 +1014,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -1043,7 +1055,9 @@ test(
           providerAuthorization: authorization,
           providerComplete: async () => {
             calls++
-            if (calls === 2) return new Promise(() => undefined)
+            if (calls === 2) {
+              return new Promise(() => undefined)
+            }
             return {
               text: '{"tool":"shell"}',
               terminal: true,
@@ -1147,8 +1161,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -1184,8 +1201,9 @@ test(
         window.cardReads = 0
         const original = Element.prototype.querySelectorAll
         Element.prototype.querySelectorAll = function (selector) {
-          if (this.id === 'flow' && selector === '.step-card')
+          if (this.id === 'flow' && selector === '.step-card') {
             window.cardReads++
+          }
           return original.call(this, selector)
         }
       })
@@ -1353,8 +1371,11 @@ test(
       const reads = await viewport.evaluate(() => window.cardReads)
       const capture = async (name, locator) => {
         const file = path.join(artifacts, name + '.png')
-        if (locator) await locator.screenshot({ path: file })
-        else await page.screenshot({ path: file, fullPage: true })
+        if (locator) {
+          await locator.screenshot({ path: file })
+        } else {
+          await page.screenshot({ path: file, fullPage: true })
+        }
         screenshots.push({
           file,
           url: page.url(),
@@ -1723,7 +1744,9 @@ test(
       ).toHaveCount(3)
       let idleReads = 0
       page.on('request', (request) => {
-        if (request.url().endsWith('/api/state')) idleReads++
+        if (request.url().endsWith('/api/state')) {
+          idleReads++
+        }
       })
       await page.waitForTimeout(1200)
       assert.equal(idleReads, 0)
@@ -1767,8 +1790,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previousTemporary === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previousTemporary
+      if (previousTemporary === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previousTemporary
+      }
     }
   }
 )
@@ -1806,8 +1832,9 @@ test(
         tab.on('pageerror', (error) => errors.push(error.message))
       )
       context.on('response', (response) => {
-        if (response.status() >= 400)
+        if (response.status() >= 400) {
           errors.push(response.status() + ' ' + response.url())
+        }
       })
       await page.goto(server.origin + '/transaction-atomicity')
       const entries = await page.evaluate(() =>
@@ -1904,14 +1931,17 @@ test(
             const url = new URL(record.href)
             assert.equal(url.origin, server.origin)
             const resource = url.origin + url.pathname + url.search
-            if (destinations.has(resource) && (!url.hash || fragmentClicked))
+            if (destinations.has(resource) && (!url.hash || fragmentClicked)) {
               continue
+            }
             const anchor = anchors.nth(record.index)
             for (const disclosure of await anchor
               .locator('xpath=ancestor::details')
-              .all())
-              if ((await disclosure.getAttribute('open')) === null)
+              .all()) {
+              if ((await disclosure.getAttribute('open')) === null) {
                 await disclosure.locator(':scope > summary').click()
+              }
+            }
             const graph = await canvas.locator('#flow').elementHandle()
             const viewport = canvas.locator('.flow-viewport')
             const before = await viewport.evaluate((node) => ({
@@ -1938,7 +1968,9 @@ test(
                   .locator('html')
                   .evaluate(() => window.FLOW_INSPECTOR_WORKSPACE_ENTRY.slug)
                 assert.equal(new URL(popup.url()).pathname, '/' + linkedSlug)
-              } else assert.equal(popup.url(), record.href)
+              } else {
+                assert.equal(popup.url(), record.href)
+              }
               assert.equal(
                 await graph.evaluate((node) => node.isConnected),
                 true
@@ -1955,7 +1987,9 @@ test(
                 selected
               )
               destinations.set(resource, popup.url())
-              if (url.hash) fragmentClicked = true
+              if (url.hash) {
+                fragmentClicked = true
+              }
               if (
                 screenshots.length === 0 ||
                 (url.pathname.endsWith('.html') && screenshots.length === 1)
@@ -2024,8 +2058,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previousTemporary === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previousTemporary
+      if (previousTemporary === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previousTemporary
+      }
     }
   }
 )
@@ -2181,8 +2218,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previousTemporary === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previousTemporary
+      if (previousTemporary === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previousTemporary
+      }
     }
   }
 )
@@ -2348,8 +2388,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (prior === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = prior
+      if (prior === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = prior
+      }
     }
   }
 )
@@ -2522,8 +2565,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -2700,8 +2746,11 @@ test(
       console.log('Live provider review artifacts: ' + artifacts)
     } finally {
       await browser?.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -2875,8 +2924,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -2974,8 +3026,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -3093,10 +3148,11 @@ test(
         ['narrow', 390, 844]
       ]) {
         await page.setViewportSize({ width, height })
-        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+        if (width <= 900 && (await page.locator('.sidebar').isVisible())) {
           await page
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
+        }
         await canvas.locator('#pr-controls').scrollIntoViewIfNeeded()
         await expect(canvas.locator('#pr-prepare')).toBeVisible()
         assert.equal(
@@ -3186,8 +3242,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -3291,10 +3350,11 @@ test(
         ['narrow', 390, 844]
       ]) {
         await page.setViewportSize({ width, height })
-        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+        if (width <= 900 && (await page.locator('.sidebar').isVisible())) {
           await page
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
+        }
         await canvas.locator('#pr-result').scrollIntoViewIfNeeded()
         await page.screenshot({
           path: path.join(artifacts, name + '-status.png')
@@ -3334,8 +3394,11 @@ test(
       )
     } finally {
       await browser?.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -3422,10 +3485,11 @@ test(
         ['narrow', 430, 920]
       ]) {
         await page.setViewportSize({ width, height })
-        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+        if (width <= 900 && (await page.locator('.sidebar').isVisible())) {
           await page
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
+        }
         await frame.locator('#target-controls').scrollIntoViewIfNeeded()
         await frame.locator('#target-observations').scrollIntoViewIfNeeded()
         await expect(frame.locator('#target-observations')).toBeVisible()
@@ -3481,8 +3545,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )
@@ -3604,8 +3671,9 @@ test(
         'Factory runtime contribution',
         'Collaboration runtime contribution',
         'UI Context runtime integration'
-      ])
+      ]) {
         await expect(page.locator('#assessment-works')).toContainText(title)
+      }
 
       const api = await fetch(
         server.origin + '/api/target-assessments/' + integrated.assessment.id
@@ -3684,11 +3752,17 @@ test(
       )
     } finally {
       await browser?.close()
-      if (server) await server.close()
-      else await prepared?.service.close()
+      if (server) {
+        await server.close()
+      } else {
+        await prepared?.service.close()
+      }
       fixture.cleanup()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )

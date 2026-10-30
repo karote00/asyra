@@ -35,8 +35,9 @@ export const createLocalToolStore = async (
       positive
     ) ||
     options.recordBytes > options.totalBytes
-  )
+  ) {
     throw new TypeError('Tool store requires finite capacity and byte budgets')
+  }
   const directory = resolve(options.directory)
   await mkdir(directory, { recursive: true, mode: 0o700 })
   const path = resolve(directory, 'library.sqlite')
@@ -50,7 +51,9 @@ export const createLocalToolStore = async (
   })
   let closed = false
   const transaction = <T>(work: () => T): T => {
-    if (closed) throw new Error('Tool store is closed')
+    if (closed) {
+      throw new Error('Tool store is closed')
+    }
     database.exec('BEGIN IMMEDIATE')
     try {
       const result = work()
@@ -76,15 +79,18 @@ export const createLocalToolStore = async (
           database
             .prepare("SELECT name FROM sqlite_schema WHERE type='table'")
             .all().length
-        )
+        ) {
           throw new Error('Unknown tool store version')
+        }
         database.exec(`CREATE TABLE tool_library (
           key TEXT PRIMARY KEY,
           version TEXT NOT NULL,
           record TEXT NOT NULL,
           bytes INTEGER NOT NULL CHECK(bytes >= 0)
         ) STRICT; PRAGMA user_version=1`)
-      } else if (format !== 1) throw new Error('Unknown tool store version')
+      } else if (format !== 1) {
+        throw new Error('Unknown tool store version')
+      }
       database
         .prepare('SELECT key,version,record,bytes FROM tool_library LIMIT 0')
         .all()
@@ -94,7 +100,9 @@ export const createLocalToolStore = async (
     throw error
   }
   const active = () => {
-    if (closed) throw new Error('Tool store is closed')
+    if (closed) {
+      throw new Error('Tool store is closed')
+    }
   }
   const decode = (row: Record<string, unknown>): AiToolStoreEntry => {
     if (
@@ -105,8 +113,9 @@ export const createLocalToolStore = async (
       typeof row.record !== 'string' ||
       Buffer.byteLength(row.record) !== row.bytes ||
       Number(row.bytes) > options.recordBytes
-    )
+    ) {
       throw new Error('Invalid tool store record')
+    }
     return {
       key: row.key,
       version: row.version,
@@ -128,48 +137,60 @@ export const createLocalToolStore = async (
   return {
     async read(key) {
       active()
-      if (!keyValid(key)) throw new TypeError('Invalid tool store key')
+      if (!keyValid(key)) {
+        throw new TypeError('Invalid tool store key')
+      }
       const row = readRow.get(key)
       return row ? decode(row) : undefined
     },
     async list(limit) {
       active()
-      if (!positive(limit))
+      if (!positive(limit)) {
         throw new TypeError('Invalid tool store inventory limit')
+      }
       const total = usage.get()
       if (
         Number(total?.count) > options.capacity ||
         Number(total?.bytes) > options.totalBytes
-      )
+      ) {
         throw new Error('Tool store inventory exceeds its capacity')
+      }
       return inventory.all(Math.min(limit, options.capacity + 1)).map(decode)
     },
     async write(input) {
       active()
-      if (!keyValid(input.key)) throw new TypeError('Invalid tool store key')
+      if (!keyValid(input.key)) {
+        throw new TypeError('Invalid tool store key')
+      }
       const serialized = JSON.stringify(input.record)
-      if (typeof serialized !== 'string')
+      if (typeof serialized !== 'string') {
         throw new TypeError('Tool store accepts JSON records only')
+      }
       const bytes = Buffer.byteLength(serialized)
-      if (bytes > options.recordBytes)
+      if (bytes > options.recordBytes) {
         throw new Error('Tool store record exceeds its byte budget')
+      }
       const record: AiJsonValue = JSON.parse(serialized)
-      if (!isDeepStrictEqual(input.record, record))
+      if (!isDeepStrictEqual(input.record, record)) {
         throw new TypeError('Tool store accepts JSON records only')
+      }
       return transaction(() => {
         const prior = readRow.get(input.key)
         if (
           (prior ? decode(prior).version : undefined) !== input.expectedVersion
-        )
+        ) {
           throw new Error('Tool store version conflict')
+        }
         const total = usage.get()
-        if (!prior && Number(total?.count) >= options.capacity)
+        if (!prior && Number(total?.count) >= options.capacity) {
           throw new Error('Tool store capacity reached')
+        }
         if (
           Number(total?.bytes) - Number(prior?.bytes ?? 0) + bytes >
           options.totalBytes
-        )
+        ) {
           throw new Error('Tool store total bytes budget reached')
+        }
         const version = randomUUID()
         write.run(input.key, version, serialized, bytes)
         return { key: input.key, version, record }
@@ -191,12 +212,16 @@ export const createLocalToolStoreSession = (
   let connection: Promise<LocalToolStore> | undefined
   let closed = false
   const openConnection = () => {
-    if (closed) return Promise.reject(new Error('Tool store session is closed'))
+    if (closed) {
+      return Promise.reject(new Error('Tool store session is closed'))
+    }
     if (!connection) {
       const pending = Promise.resolve().then(connect)
       connection = pending
       void pending.catch(() => {
-        if (connection === pending) connection = undefined
+        if (connection === pending) {
+          connection = undefined
+        }
       })
     }
     return connection

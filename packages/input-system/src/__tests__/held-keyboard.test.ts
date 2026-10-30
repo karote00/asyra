@@ -122,7 +122,9 @@ it('finishes runtime cleanup when a held cancellation callback throws', () => {
   const { system, receive } = setup()
   key('keydown', 'KeyW')
   receive.mockImplementation((raw: RawInputEvent) => {
-    if (raw.keyboard?.phase === 'cancel') throw new Error('Cancellation failed')
+    if (raw.keyboard?.phase === 'cancel') {
+      throw new Error('Cancellation failed')
+    }
   })
   expect(() => system.resetRuntime()).toThrow('Cancellation failed')
   expect(system.registry.getEventNames()).toEqual([])

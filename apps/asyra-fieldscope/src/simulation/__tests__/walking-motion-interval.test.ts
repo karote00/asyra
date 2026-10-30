@@ -167,14 +167,16 @@ describe('walking motion interval FK', () => {
       load: { crate, carried: { kind: 'none' } }
     })
     const cavityPoint = [0, 0.5, 0]
-    for (const segment of stationary.segments)
-      for (const { bounds } of segment.carriedEnvelopes)
+    for (const segment of stationary.segments) {
+      for (const { bounds } of segment.carriedEnvelopes) {
         expect(
           cavityPoint.some(
             (value, axis) =>
               value < bounds.min[axis] || value > bounds.max[axis]
           )
         ).toBe(true)
+      }
+    }
   })
   it('encloses every W2 body part at a singleton pose', () => {
     const { source, path } = fixture()
@@ -218,7 +220,9 @@ describe('walking motion interval FK', () => {
         ({ id }) => id === envelope.body.id
       )
       expect(body).toBeDefined()
-      if (!body) throw new Error('Missing test body')
+      if (!body) {
+        throw new Error('Missing test body')
+      }
       const bodyPosition = new Vector3(...body.transform.position)
       const bodyRotation = new Quaternion(...body.transform.rotation)
       const partPosition = new Vector3(...envelope.part.localFrame.position)
@@ -308,7 +312,9 @@ describe('walking motion interval FK', () => {
             const bodyTransform = pose.bodyTransforms.find(
               ({ id }) => id === body.id
             )
-            if (!bodyTransform) throw new Error('Missing test body')
+            if (!bodyTransform) {
+              throw new Error('Missing test body')
+            }
             const frame = bodyTransform.transform
             const rotation = new Quaternion(...frame.rotation),
               position = new Vector3(...part.localFrame.position)

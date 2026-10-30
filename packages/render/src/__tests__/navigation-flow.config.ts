@@ -13,7 +13,9 @@ const scenario = manifest.scenarios.find(
   (entry: { id: string }) =>
     entry.id === (process.env.FLOW_PROOF_SCENARIO ?? 'baseline')
 )
-if (!scenario) throw new Error('Unknown navigation proof scenario')
+if (!scenario) {
+  throw new Error('Unknown navigation proof scenario')
+}
 // Resolve only the public source entries consumed by this test closure.
 const sourceAliases = [
   {
@@ -39,15 +41,19 @@ export default {
         config.resolve?.alias?.unshift(...sourceAliases)
       },
       resolveId(id: string) {
-        if (id.startsWith('@asyra/'))
+        if (id.startsWith('@asyra/')) {
           throw new Error('Uncaptured source dependency: ' + id)
+        }
       },
       enforce: 'pre' as const,
       transform(code: string, id: string) {
         const mutation = scenario.mutation
-        if (!mutation || id !== resolve(sourceRoot, mutation.file)) return
-        if (code.split(mutation.from).length !== 2)
+        if (!mutation || id !== resolve(sourceRoot, mutation.file)) {
+          return
+        }
+        if (code.split(mutation.from).length !== 2) {
           throw new Error('Navigation mutation site changed')
+        }
         return { code: code.replace(mutation.from, mutation.to), map: null }
       }
     }

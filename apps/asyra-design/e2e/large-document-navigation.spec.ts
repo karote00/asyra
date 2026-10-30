@@ -45,8 +45,9 @@ test('reuses incremental membership after loading the saved large document', asy
       const first = create(400)
       stage = 'repeat'
       const second = create(420)
-      if (!first || !second)
+      if (!first || !second) {
         throw new Error('Large-document edit did not create both elements')
+      }
       const created = [...flat()]
       stage = 'undo'
       await historyApis.undo()
@@ -150,9 +151,11 @@ test('preserves the full document while profiling navigation work', async ({
       for (const phase of ['pan', 'zoom'] as const) {
         for (let index = 0; index < 12; index++) {
           const start = performance.now()
-          if (phase === 'pan')
+          if (phase === 'pan') {
             viewportApis.panTo(origin.x + index * 8, origin.y + index * 3)
-          else viewportApis.zoomToCenter(scale * (1 + index * 0.025), 800, 500)
+          } else {
+            viewportApis.zoomToCenter(scale * (1 + index * 0.025), 800, 500)
+          }
           await settle()
           samples.push({ phase, durationMs: performance.now() - start })
         }
@@ -193,7 +196,9 @@ test('preserves the full document while profiling navigation work', async ({
   const bounds = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
     const result = core.getAllElementsBounds()
-    if (!result) throw new Error('Loaded fixture has no bounds')
+    if (!result) {
+      throw new Error('Loaded fixture has no bounds')
+    }
     return result
   })
   for (const fraction of [0.15, 0.5, 0.85]) {

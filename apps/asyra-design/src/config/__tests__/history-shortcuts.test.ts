@@ -33,7 +33,9 @@ const definition = mocks.defineFeature.mock.calls.find(
   exclusive: boolean
   execution: (snapshot: SystemContextSnapshotWithDetail) => Promise<unknown>
 }
-if (!definition) throw new Error('Missing history feature')
+if (!definition) {
+  throw new Error('Missing history feature')
+}
 const snapshot = (detail: Record<string, unknown>, keyShift: boolean) =>
   ({ detail, keyShift }) as SystemContextSnapshotWithDetail
 
@@ -49,7 +51,9 @@ describe('history shortcut intent handoff', () => {
         const combo = keyCombinations[
           InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
         ].find((item) => item.modifiers.includes(modifier))
-        if (!combo) throw new Error('Missing history shortcut')
+        if (!combo) {
+          throw new Error('Missing history shortcut')
+        }
         const raw = {
           type: InputType.KEYBOARD,
           keys: ['z'],
@@ -90,7 +94,9 @@ describe('history shortcut intent handoff', () => {
         const combo = keyCombinations[
           InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
         ].find((item) => item.modifiers.includes(modifier))
-        if (!combo) throw new Error('Missing shortcut')
+        if (!combo) {
+          throw new Error('Missing shortcut')
+        }
         const raw = {
           type: InputType.KEYBOARD,
           keys: ['z'],

@@ -31,8 +31,9 @@ it('contains a separate static water volume with a level surface and an air spac
       ?.components.find((p) => p.partId === 'bottle'),
     'bottle profile'
   )
-  if (!('profileZR' in source) || !source.profileZR || !('rings' in source))
+  if (!('profileZR' in source) || !source.profileZR || !('rings' in source)) {
     throw new Error('Missing bottle profile')
+  }
   const volume = (mesh: Mesh) => {
     let sum = 0
     for (let i = 0; i < mesh.indices.length; i += 3) {
@@ -66,9 +67,11 @@ it('matches the owner photo with a long narrow inverted neck, broad shoulder and
   ).mesh
   const near = (z: number) => {
     const radii: number[] = []
-    for (let i = 0; i < mesh.positions.length; i += 3)
-      if (Math.abs(mesh.positions[i + 2] - z) < 0.003)
+    for (let i = 0; i < mesh.positions.length; i += 3) {
+      if (Math.abs(mesh.positions[i + 2] - z) < 0.003) {
         radii.push(Math.hypot(mesh.positions[i], mesh.positions[i + 1]))
+      }
+    }
     expect(radii.length).toBeGreaterThan(0)
     return Math.max(...radii)
   }
@@ -77,9 +80,11 @@ it('matches the owner photo with a long narrow inverted neck, broad shoulder and
   expect(near(0.76)).toBeLessThan(0.115)
   expect(near(0.94)).toBeCloseTo(0.123, 3)
   const radiusAt = (z: number) => {
-    for (let i = 0; i < mesh.positions.length; i += 3)
-      if (Math.abs(mesh.positions[i + 2] - z) < 1e-6)
+    for (let i = 0; i < mesh.positions.length; i += 3) {
+      if (Math.abs(mesh.positions[i + 2] - z) < 1e-6) {
         return Math.hypot(mesh.positions[i], mesh.positions[i + 1])
+      }
+    }
     throw new Error(`Missing shoulder section at ${z}`)
   }
   // The photo shoulder slopes continuously, without a ledge at its middle station.

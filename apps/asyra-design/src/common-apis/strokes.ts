@@ -276,8 +276,9 @@ export const strokeApis = {
         Object.keys(patch).some(
           (key) => !(STROKE_PATCH_KEYS as readonly string[]).includes(key)
         )
-      )
+      ) {
         throw new Error('Invalid Stroke patch field')
+      }
       if (!targets.has(elementId)) {
         const strokes = core.getElementComputedData(elementId, [
           'strokes'
@@ -289,9 +290,12 @@ export const strokeApis = {
           )
         )
       }
-      if (!strokeId || !targets.get(elementId)?.has(strokeId))
+      if (!strokeId || !targets.get(elementId)?.has(strokeId)) {
         throw new Error(`Missing Stroke ${strokeId} on ${elementId}`)
-      if (!Object.values(patch).some((value) => value !== undefined)) continue
+      }
+      if (!Object.values(patch).some((value) => value !== undefined)) {
+        continue
+      }
       let values: Record<string, DataTypes> | undefined
       if (hasGeometryAffectingStrokePatch(patch) && !bounds.has(elementId)) {
         const repair = getVectorBoundsRepairPatch(elementId)
@@ -300,11 +304,12 @@ export const strokeApis = {
       }
       patches.push(createStrokeRecordPatch(elementId, strokeId, patch, values))
     }
-    if (!patches.length)
+    if (!patches.length) {
       return mutationReceipt(null, {
         acceptedIds: [...new Set(updates.map(({ elementId }) => elementId))],
         changed: false
       })
+    }
     const evidence = transactionApis.runTransaction(() =>
       core.patchElementProperties(patches, options)
     )

@@ -16,8 +16,9 @@ export function setCameraDistance(
   camera: SpatialCamera,
   distance: number
 ): SpatialCamera {
-  if (!Number.isFinite(distance) || distance <= camera.near)
+  if (!Number.isFinite(distance) || distance <= camera.near) {
     throw new Error('Invalid camera distance')
+  }
   return dollySpatialCamera(camera, distance)
 }
 /** Site framing keeps its nonempty-scene policy; Preset owns presentation bounds. */
@@ -35,10 +36,14 @@ export function measureScene(
           ) as import('@asyra/preset/spatial').SpatialMesh
       )
     )
-    if (!result) throw new Error('Empty site bounds')
+    if (!result) {
+      throw new Error('Empty site bounds')
+    }
     return result
   } finally {
-    if (!owner) bounds.dispose()
+    if (!owner) {
+      bounds.dispose()
+    }
   }
 }
 

@@ -6,9 +6,13 @@ async function download(page: Page, name: string): Promise<Buffer> {
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing download stream')
+  if (!stream) {
+    throw new Error('Missing download stream')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   return Buffer.concat(chunks)
 }
 
@@ -24,8 +28,9 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
       /^https?:/.test(request.url()) &&
       new URL(request.url()).origin !==
         new URL(info.project.use.baseURL ?? '').origin
-    )
+    ) {
       external.push(request.url())
+    }
   })
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')

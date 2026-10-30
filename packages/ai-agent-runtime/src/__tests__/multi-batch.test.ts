@@ -23,7 +23,9 @@ describe('one invocation with dependent prepared batches', () => {
     const runtime = createAiAgentRuntime({
       provider: {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch) throw new Error('Missing batch executor')
+          if (!options.executeBatch) {
+            throw new Error('Missing batch executor')
+          }
           receipts.push(
             await options.executeBatch({
               batchId: 'partial',
@@ -51,8 +53,9 @@ describe('one invocation with dependent prepared batches', () => {
           },
           inputSchema: {},
           execute: async (args: { id: string }) => {
-            if (args.id === 'broken')
+            if (args.id === 'broken') {
               throw new AiActionExecutionError('Target unavailable')
+            }
             writes.push(args.id)
             return { id: args.id }
           }
@@ -96,7 +99,9 @@ describe('one invocation with dependent prepared batches', () => {
     const runtime = createAiAgentRuntime({
       provider: {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch) throw new Error('Missing batch executor')
+          if (!options.executeBatch) {
+            throw new Error('Missing batch executor')
+          }
           const first = await options.executeBatch(batch('first'))
           expect(first).toMatchObject({
             actionResults: [{ actionId: 'first' }],
@@ -130,8 +135,9 @@ describe('one invocation with dependent prepared batches', () => {
       contextProvider: {
         getContext: async () => {
           contextReads++
-          if (contextReads === 2 || contextReads === 3)
+          if (contextReads === 2 || contextReads === 3) {
             throw new Error('Context temporarily unavailable')
+          }
           return { count: writes.length }
         }
       },
@@ -220,7 +226,9 @@ describe('one invocation with dependent prepared batches', () => {
             },
             inputSchema: {},
             execute: async () => {
-              if (mode === 'stop') controller.abort()
+              if (mode === 'stop') {
+                controller.abort()
+              }
               throw new Error('A later slice failed')
             }
           }
@@ -264,9 +272,13 @@ describe('one invocation with dependent prepared batches', () => {
     const runtime = createAiAgentRuntime({
       provider: {
         requestActionBatch: async (input, options) => {
-          if (!options.executeBatch) throw new Error('Expected batch executor')
+          if (!options.executeBatch) {
+            throw new Error('Expected batch executor')
+          }
           await options.executeBatch(batch(input.intent + '-first'))
-          if (++arrivals === 2) release()
+          if (++arrivals === 2) {
+            release()
+          }
           await gate
           return batch(input.intent + '-second')
         }
@@ -298,7 +310,9 @@ describe('one invocation with dependent prepared batches', () => {
       confirmationHandler: { confirm: async () => true },
       transactionRunner: {
         run: async (_label, execute, options) => {
-          if (!options) throw new Error('Expected request signal')
+          if (!options) {
+            throw new Error('Expected request signal')
+          }
           const signal = options.signal
           const own = String(scopes.size)
           scopes.set(signal, own)
@@ -376,7 +390,9 @@ describe('one invocation with dependent prepared batches', () => {
             history.push([...writes])
             return result
           } catch (error) {
-            if (rollbackFails) throw new Error('Rollback failed')
+            if (rollbackFails) {
+              throw new Error('Rollback failed')
+            }
             writes.length = 0
             throw error
           } finally {
@@ -391,7 +407,9 @@ describe('one invocation with dependent prepared batches', () => {
   it('returns actual execution receipts before the next batch and commits once', async () => {
     const state = setup({
       requestActionBatch: async (_input, options) => {
-        if (!options.executeBatch) throw new Error('Missing batch executor')
+        if (!options.executeBatch) {
+          throw new Error('Missing batch executor')
+        }
         const receipt = await options.executeBatch(batch('first'))
         expect(receipt.actionResults[0]?.result).toEqual({
           status: 'complete',
@@ -410,8 +428,9 @@ describe('one invocation with dependent prepared batches', () => {
     expect(result.status).toBe('executed')
     expect(state.history).toEqual([['first', 'second']])
     expect(state.permission).toHaveBeenCalledTimes(2)
-    if (result.status === 'executed')
+    if (result.status === 'executed') {
       expect(result.actionResults).toHaveLength(2)
+    }
     expect(state.isOpen()).toBe(false)
   })
 
@@ -419,7 +438,9 @@ describe('one invocation with dependent prepared batches', () => {
     let applied = false
     const request = vi.fn<AiProvider['requestActionBatch']>(
       async (_input, options) => {
-        if (!options.executeBatch) throw new Error('Missing batch executor')
+        if (!options.executeBatch) {
+          throw new Error('Missing batch executor')
+        }
         await options.executeBatch(batch('first'))
         applied = true
         throw new AiProviderError({
@@ -446,7 +467,9 @@ describe('one invocation with dependent prepared batches', () => {
     const state = setup(
       {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch) throw new Error('Missing batch executor')
+          if (!options.executeBatch) {
+            throw new Error('Missing batch executor')
+          }
           await options.executeBatch(batch('first'))
           throw new AiProviderError({
             code: 'AI_PROVIDER_TRANSPORT_FAILED',
@@ -472,7 +495,9 @@ describe('one invocation with dependent prepared batches', () => {
   it('rejects a repeated batch rather than applying it twice', async () => {
     const state = setup({
       requestActionBatch: async (_input, options) => {
-        if (!options.executeBatch) throw new Error('Missing batch executor')
+        if (!options.executeBatch) {
+          throw new Error('Missing batch executor')
+        }
         await options.executeBatch(batch('first'))
         return batch('first')
       }
@@ -490,7 +515,9 @@ describe('one invocation with dependent prepared batches', () => {
     let applied = false
     const state = setup({
       requestActionBatch: async (_input, options) => {
-        if (!options.executeBatch) throw new Error('Missing batch executor')
+        if (!options.executeBatch) {
+          throw new Error('Missing batch executor')
+        }
         await options.executeBatch(batch('first'))
         applied = true
         controller.abort()
@@ -515,7 +542,9 @@ it('preserves a rejected output and known settlement in the recoverable batch re
   const runtime = createAiAgentRuntime({
     provider: {
       requestActionBatch: async (_input, options) => {
-        if (!options.executeBatch) throw new Error('Batch executor unavailable')
+        if (!options.executeBatch) {
+          throw new Error('Batch executor unavailable')
+        }
         failedReceipt = await options.executeBatch(batch('invalid-output'))
         return batch('finish')
       }
@@ -536,7 +565,7 @@ it('preserves a rejected output and known settlement in the recoverable batch re
         },
         execute: async (args: { id: string }) => {
           writes.push(args.id)
-          if (args.id === 'invalid-output')
+          if (args.id === 'invalid-output') {
             throw new AiToolContractError('output', 'Missing changed field', {
               status: 'invalid',
               reportedStatus: 'success',
@@ -544,6 +573,7 @@ it('preserves a rejected output and known settlement in the recoverable batch re
               issue: 'Missing changed field',
               value: { actualId: 'created' }
             })
+          }
           return { changed: true }
         }
       }
@@ -592,7 +622,9 @@ it.each(
       expect(received).toBe(value)
       expect(events).toEqual(['write', 'published'])
       events.push('settled')
-      if (mode === 'settlement-failure') throw new Error('Settlement failed')
+      if (mode === 'settlement-failure') {
+        throw new Error('Settlement failed')
+      }
     })
     const runtime = createAiAgentRuntime({
       ...(recording
@@ -623,8 +655,9 @@ it.each(
               context,
               () => {
                 events.push('write')
-                if (mode === 'mutation-failure')
+                if (mode === 'mutation-failure') {
                   throw new Error('Mutation failed')
+                }
                 return value
               },
               settled
@@ -637,7 +670,9 @@ it.each(
       transactionRunner: {
         run: async (_label, execute) =>
           execute(async (write, callback) => {
-            if (mode === 'cancelled') controller.abort()
+            if (mode === 'cancelled') {
+              controller.abort()
+            }
             controller.signal.throwIfAborted()
             const result = write()
             events.push('published')
@@ -691,7 +726,9 @@ it.each([
     const runtime = createAiAgentRuntime({
       provider: {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch) throw new Error('Missing batch executor')
+          if (!options.executeBatch) {
+            throw new Error('Missing batch executor')
+          }
           receipts.push(await options.executeBatch(batch('rejected')))
           return {
             batchId: 'final-read',

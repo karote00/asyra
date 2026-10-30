@@ -57,17 +57,19 @@ function validateWorkspaceEntry(workspace) {
       (workspace.e2eSelection.inputs.length === 0 ||
         workspace.e2eSelection.runner?.command !== 'playwright')) ||
     (!workspace.e2eTask && workspace.e2eSelection.mode !== 'not-selected')
-  )
+  ) {
     throw new Error('Invalid workspace matrix entry')
+  }
   const expectedArtifactId = crypto
     .createHash('sha256')
     .update(workspace.name)
     .digest('hex')
     .slice(0, 16)
-  if (workspace.artifactId !== expectedArtifactId)
+  if (workspace.artifactId !== expectedArtifactId) {
     throw new Error(
       'Workspace matrix artifact identity does not match its name'
     )
+  }
   return workspace
 }
 
@@ -87,8 +89,9 @@ async function executeWorkspaceChecks(
   { identity, relationshipMapDigest, runTask }
 ) {
   validateWorkspaceEntry(workspace)
-  if (typeof runTask !== 'function')
+  if (typeof runTask !== 'function') {
     throw new Error('Workspace task runner is required')
+  }
   const record = {
     version: 1,
     identity,
@@ -174,7 +177,9 @@ async function executeWorkspaceChecks(
     if (workspace.e2eSelection.mode === 'not-selected') {
       record.e2eStatus = 'not-selected'
     } else {
-      if (!workspace.e2eTask) throw new Error('Selected E2E task is missing')
+      if (!workspace.e2eTask) {
+        throw new Error('Selected E2E task is missing')
+      }
       record.taskSequence.push(workspace.e2eTask)
       const result = await runTask(
         workspace.name,
@@ -184,9 +189,13 @@ async function executeWorkspaceChecks(
       )
       record.e2eResult = result
       record.e2eStatus = result?.testCount > 0 ? 'passed' : 'zero-tests'
-      if (record.e2eStatus === 'zero-tests') record.status = 'failed'
+      if (record.e2eStatus === 'zero-tests') {
+        record.status = 'failed'
+      }
     }
-    if (record.status === 'pending') record.status = 'success'
+    if (record.status === 'pending') {
+      record.status = 'success'
+    }
   } catch {
     record.e2eStatus = 'failure'
     record.status = 'failed'
@@ -199,8 +208,9 @@ function resolveWorkspaceResultDirectory(
   configured = '.ci-workspace-results'
 ) {
   const directory = path.resolve(repositoryRoot, configured)
-  if (!directory.startsWith(`${path.resolve(repositoryRoot)}${path.sep}`))
+  if (!directory.startsWith(`${path.resolve(repositoryRoot)}${path.sep}`)) {
     throw new Error('Workspace results must stay inside the repository')
+  }
   return directory
 }
 
@@ -220,16 +230,18 @@ async function main() {
     JSON.parse(process.env.CI_WORKSPACE_MATRIX_ITEM ?? '')
   )
   const relationshipMapDigest = process.env.CI_RELATIONSHIP_MAP_DIGEST ?? ''
-  if (!/^[a-f0-9]{64}$/.test(relationshipMapDigest))
+  if (!/^[a-f0-9]{64}$/.test(relationshipMapDigest)) {
     throw new Error('Workspace relationship map digest is unavailable')
+  }
   const identity = runtimeIdentity(process.env)
   if (
     Object.values(identity).some((value) => !value) ||
     !['base', 'head', 'integration'].every((key) =>
       /^[a-f0-9]{40}$/.test(identity[key])
     )
-  )
+  ) {
     throw new Error('Workspace validation identity is incomplete')
+  }
   const repositoryRoot = process.cwd()
   const record = await executeWorkspaceChecks(workspace, {
     identity,
@@ -239,9 +251,12 @@ async function main() {
         const eslint = new ESLint({ cwd: repositoryRoot })
         const results = await eslint.lintFiles(workspace.directory)
         const output = (await eslint.loadFormatter('stylish')).format(results)
-        if (output) process.stdout.write(output)
-        if (results.some(({ errorCount }) => errorCount > 0))
+        if (output) {
+          process.stdout.write(output)
+        }
+        if (results.some(({ errorCount }) => errorCount > 0)) {
           throw new Error('Workspace lint failed')
+        }
         return {
           mode: 'full',
           executedFiles: results.map(({ filePath }) =>
@@ -343,9 +358,11 @@ async function main() {
             failedCount: observations.failedCount
           }
         } finally {
-          if (reportReadSuccessfully) fs.rmSync(reportPath, { force: true })
-          else
+          if (reportReadSuccessfully) {
+            fs.rmSync(reportPath, { force: true })
+          } else {
             console.error(`Preserving failed Playwright report: ${reportPath}`)
+          }
         }
       }
       execFileSync(
@@ -358,7 +375,9 @@ async function main() {
   })
   writeWorkspaceResult(record, workspace.artifactId, repositoryRoot)
   console.log(JSON.stringify(record))
-  if (record.status !== 'success') process.exitCode = 1
+  if (record.status !== 'success') {
+    process.exitCode = 1
+  }
 }
 
 function playwrightObservations(report) {
@@ -367,8 +386,8 @@ function playwrightObservations(report) {
   let failedCount = 0
   const visit = (suites) => {
     for (const suite of suites ?? []) {
-      for (const spec of suite.specs ?? [])
-        for (const test of spec.tests ?? [])
+      for (const spec of suite.specs ?? []) {
+        for (const test of spec.tests ?? []) {
           for (const result of test.results ?? []) {
             if (result.status === 'passed') {
               testCount++
@@ -378,11 +397,15 @@ function playwrightObservations(report) {
               failedCount++
             }
           }
+        }
+      }
       visit(suite.suites)
     }
   }
   visit(report?.suites)
-  if (report?.errors?.length) failedCount += report.errors.length
+  if (report?.errors?.length) {
+    failedCount += report.errors.length
+  }
   return { testCount, passedCount, failedCount }
 }
 
@@ -395,8 +418,9 @@ export {
 if (
   process.argv[1] &&
   fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
-)
+) {
   main().catch((error) => {
     console.error(error.message)
     process.exitCode = 1
   })
+}

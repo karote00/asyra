@@ -20,10 +20,14 @@ const visit = (directory, files = sourceFiles) => {
   for (const entry of readdirSync(directory)) {
     const absolutePath = path.join(directory, entry)
     if (statSync(absolutePath).isDirectory()) {
-      if (entry !== '__tests__') visit(absolutePath, files)
+      if (entry !== '__tests__') {
+        visit(absolutePath, files)
+      }
       continue
     }
-    if (/\.(?:ts|tsx|mjs)$/.test(entry)) files.push(absolutePath)
+    if (/\.(?:ts|tsx|mjs)$/.test(entry)) {
+      files.push(absolutePath)
+    }
   }
 }
 visit(sourceDirectory)
@@ -114,7 +118,9 @@ test('Asyra Design declares every production import as a direct runtime dependen
   for (const absolutePath of [...sourceFiles, ...backendSourceFiles]) {
     for (const specifier of collectExternalImports(absolutePath)) {
       const packageName = externalPackageName(specifier)
-      if (packageJson.dependencies[packageName] !== undefined) continue
+      if (packageJson.dependencies[packageName] !== undefined) {
+        continue
+      }
       const consumers = missingDependencies.get(packageName) ?? []
       consumers.push(path.relative(appDirectory, absolutePath))
       missingDependencies.set(packageName, consumers)
@@ -204,11 +210,12 @@ for (const specifier of [
       [],
       'Only the Node entry may retain built-in I/O dependencies'
     )
-    if (specifier === '@asyra/ai-agent-runtime')
+    if (specifier === '@asyra/ai-agent-runtime') {
       assert.deepEqual(
         chunks.flatMap((chunk) => chunk.imports),
         []
       )
+    }
   })
 }
 
@@ -282,8 +289,9 @@ test('the public Group bounds entrypoint loads only its canonical pure geometry 
     y: 20 + 15 / Math.sqrt(2) - radius,
     width: 2 * radius,
     height: 2 * radius
-  }))
+  })) {
     assert.ok(Math.abs(bounds[key] - expected) < 1e-10, key)
+  }
 })
 
 for (const configFileName of [
@@ -390,12 +398,15 @@ test('formal AI suites do not enable live model inference', () => {
   const failures = []
   for (const directory of directories) {
     for (const name of readdirSync(directory)) {
-      if (!/\.(test|spec)\.(ts|tsx|mjs)$/.test(name)) continue
+      if (!/\.(test|spec)\.(ts|tsx|mjs)$/.test(name)) {
+        continue
+      }
       const source = readFileSync(path.join(directory, name), 'utf8')
       if (
         /process\.env\.(E2E_LOCAL_AI|LOCAL_AI_DISCOVERY_PROBE)\b/.test(source)
-      )
+      ) {
         failures.push(path.relative(appDirectory, path.join(directory, name)))
+      }
     }
   }
   assert.deepEqual(

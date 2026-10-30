@@ -57,8 +57,9 @@ test('post-exit denial waits for an exiting group to disappear within cleanup gr
     return observations === 1 ? `${pid + 1} ${pid} ?E\n` : '1 1 S\n'
   })
   t.mock.method(process, 'kill', (target, signal) => {
-    if (target === -pid && signal === 'SIGKILL')
+    if (target === -pid && signal === 'SIGKILL') {
       throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    }
     return kill(target, signal)
   })
   const result = await execute('process.exit(7)', {
@@ -75,8 +76,9 @@ test('denied cleanup of a surviving owned group is non-passing', async (t) => {
   const kill = process.kill.bind(process)
   let pid
   t.mock.method(process, 'kill', (target, signal) => {
-    if (target === -pid && signal === 'SIGKILL')
+    if (target === -pid && signal === 'SIGKILL') {
       throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    }
     return kill(target, signal)
   })
   t.after(() => {
@@ -109,8 +111,9 @@ test('unavailable group observation cannot excuse a cleanup denial', async (t) =
     throw new Error('Process table unavailable')
   })
   t.mock.method(process, 'kill', (target, signal) => {
-    if (target === -pid && signal === 'SIGKILL')
+    if (target === -pid && signal === 'SIGKILL') {
       throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    }
     return kill(target, signal)
   })
   const result = await execute('process.exit(0)', {
@@ -128,8 +131,9 @@ for (const observation of ['', 'unreadable row']) {
     let pid
     t.mock.method(childProcess, 'execFileSync', () => observation)
     t.mock.method(process, 'kill', (target, signal) => {
-      if (target === -pid && signal === 'SIGKILL')
+      if (target === -pid && signal === 'SIGKILL') {
         throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+      }
       return kill(target, signal)
     })
     const result = await execute('process.exit(0)', {
@@ -482,7 +486,7 @@ function derivedRunnerFixture(authorityFormat = 1, createContract) {
   }
 }
 
-for (const authorityFormat of [1, 2])
+for (const authorityFormat of [1, 2]) {
   test(
     `contained derived runner executes authority ${authorityFormat} with real settlement`,
     { skip: process.platform !== 'darwin', timeout: 30000 },
@@ -511,7 +515,7 @@ for (const authorityFormat of [1, 2])
         1,
         'runner hashes only its report, not source descriptors'
       )
-      for (const entry of options.snapshot.files)
+      for (const entry of options.snapshot.files) {
         assert.equal(
           reads.mock.calls.filter(
             (call) =>
@@ -520,6 +524,7 @@ for (const authorityFormat of [1, 2])
           ).length,
           0
         )
+      }
       const [executable, args, actual] = spawnSpy.mock.calls[0].arguments
       assert.equal(executable, '/usr/bin/sandbox-exec')
       assert.ok(
@@ -590,6 +595,7 @@ for (const authorityFormat of [1, 2])
       assert.equal(spawnSpy.mock.callCount(), count)
     }
   )
+}
 
 test(
   'contained proof executes actual private App server and package integration sources',
@@ -744,7 +750,9 @@ test('a nested current action can inherit its outer owned process group', async 
     try {
       process.kill(pid, 'SIGKILL')
     } catch (error) {
-      if (error.code !== 'ESRCH') throw error
+      if (error.code !== 'ESRCH') {
+        throw error
+      }
     }
   })
   await new Promise((resolve) => setTimeout(resolve, 100))

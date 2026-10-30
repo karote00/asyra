@@ -90,7 +90,9 @@ export async function cloudflareBaseline(
     sourceSha,
     'Production marker differs from provider baseline'
   )
-  if (id !== 'asyra-framework') assert.equal(version.app, id)
+  if (id !== 'asyra-framework') {
+    assert.equal(version.app, id)
+  }
   return { id, sourceSha, deploymentId: deployed.id }
 }
 
@@ -111,13 +113,17 @@ function requireVerifiedBaseline(root, app, baseline) {
     ],
     { cwd: root }
   ).trim()
-  if (!usesGuidance) return
+  if (!usesGuidance) {
+    return
+  }
   const files = [
     app.evidenceFile,
     path.join(path.dirname(app.evidenceFile), 'baseline', `${app.id}.json`)
   ]
   for (const file of files) {
-    if (!fs.existsSync(file)) continue
+    if (!fs.existsSync(file)) {
+      continue
+    }
     const candidate = readGuidance(file)
     const result = publicationFor(file, candidate)
     const outcome = result?.outcomes[app.id]
@@ -130,8 +136,9 @@ function requireVerifiedBaseline(root, app, baseline) {
       outcome?.published === true &&
       outcome.verified === true &&
       outcome.deploymentId === baseline.deploymentId
-    )
+    ) {
       return
+    }
   }
   throw new Error(
     'Release coverage gap: restore the verified production guidance or recover and verify its original candidate first'
@@ -210,8 +217,9 @@ export async function restoreCloudflareGuidance(id, options = {}) {
       if (
         run.path !== `.github/workflows/${workflow}` ||
         run.event !== 'workflow_dispatch'
-      )
+      ) {
         continue
+      }
       const candidate = readGuidance(path.join(download(archive), `${id}.json`))
       assert.equal(
         candidate.owner,
@@ -223,14 +231,17 @@ export async function restoreCloudflareGuidance(id, options = {}) {
         sha,
         'Restored candidate source changed'
       )
-      if (!selected) selected = candidate
+      if (!selected) {
+        selected = candidate
+      }
       assert.deepEqual(
         candidate,
         selected,
         'Conflicting frozen candidates for the same source'
       )
-      if (sha === sourceSha && String(archive.workflow_run.id) === runId)
+      if (sha === sourceSha && String(archive.workflow_run.id) === runId) {
         retained = true
+      }
       const results = list(
         `actions/runs/${archive.workflow_run.id}/artifacts?per_page=100`
       )
@@ -239,7 +250,9 @@ export async function restoreCloudflareGuidance(id, options = {}) {
         )
         .sort((a, b) => b.id - a.id)
       for (const result of results) {
-        if (result.id <= latestResultId) break
+        if (result.id <= latestResultId) {
+          break
+        }
         const filename = `${id}.json.result.json.${guidanceHash(selected)}.json`
         const resultFile = path.join(
           download({ ...result, workflow_run: archive.workflow_run }),
@@ -260,18 +273,20 @@ export async function restoreCloudflareGuidance(id, options = {}) {
       }
     }
     if (selected) {
-      if (fs.existsSync(file))
+      if (fs.existsSync(file)) {
         assert.deepEqual(
           readGuidance(file),
           selected,
           'Local candidate differs from retained evidence'
         )
+      }
       writeGuidance(file, selected)
-      if (latestResult)
+      if (latestResult) {
         writeGuidance(
           `${file}.result.json.${guidanceHash(selected)}.json`,
           latestResult
         )
+      }
     }
   }
   restore(sourceSha, app.evidenceFile)
@@ -289,7 +304,9 @@ export async function restoreCloudflareGuidance(id, options = {}) {
     )
   }
   const output = options.output ?? process.env.GITHUB_OUTPUT
-  if (output) fs.appendFileSync(output, `candidate-retained=${retained}\n`)
+  if (output) {
+    fs.appendFileSync(output, `candidate-retained=${retained}\n`)
+  }
   return { retained }
 }
 
@@ -299,7 +316,9 @@ export async function cloudflareGuidance(mode, id, options = {}) {
   const evidence = fs.existsSync(app.evidenceFile)
     ? readGuidance(app.evidenceFile)
     : undefined
-  if (mode === 'check') assert.ok(evidence, 'Missing release guidance')
+  if (mode === 'check') {
+    assert.ok(evidence, 'Missing release guidance')
+  }
   const sourceSha =
     options.sourceSha ??
     process.env.SOURCE_SHA ??
@@ -313,8 +332,9 @@ export async function cloudflareGuidance(mode, id, options = {}) {
     sourceSha,
     'Candidate artifact source marker changed'
   )
-  if (id !== 'asyra-framework')
+  if (id !== 'asyra-framework') {
     assert.equal(marker.app, id, 'Candidate artifact owner changed')
+  }
   const artifact = { id, integrity: artifactIntegrity(app.directory) }
   const baseline = await cloudflareBaseline(id, { ...options, root })
   const inputs = {
@@ -378,11 +398,12 @@ export function recordCloudflareGuidance(
       attemptVerified: verified
     }
   )
-  if (process.env.GITHUB_STEP_SUMMARY)
+  if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(
       process.env.GITHUB_STEP_SUMMARY,
       `\nRelease guidance: \`${path.relative(root, app.evidenceFile)}\` (${result.guidance})\n\nLatest attempt - published: ${published}; verified: ${verified}.\n\nRecorded deployment - published: ${result.outcomes[id].published}; verified: ${result.outcomes[id].verified}.\n`
     )
+  }
   return result
 }
 
@@ -391,12 +412,15 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const [mode, id] = process.argv.slice(2)
-  if (mode === 'record')
+  if (mode === 'record') {
     recordCloudflareGuidance(id, {
       deploymentId: process.env.DEPLOYMENT_ID,
       published: process.env.DEPLOY_OUTCOME === 'success',
       verified: process.env.VERIFY_OUTCOME === 'success'
     })
-  else if (mode === 'restore') await restoreCloudflareGuidance(id)
-  else await cloudflareGuidance(mode, id)
+  } else if (mode === 'restore') {
+    await restoreCloudflareGuidance(id)
+  } else {
+    await cloudflareGuidance(mode, id)
+  }
 }

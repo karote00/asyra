@@ -126,7 +126,9 @@ class StarterItemRenderLayer {
   }
 
   resize(width: number, height: number): void {
-    if (this.viewportWidth === width && this.viewportHeight === height) return
+    if (this.viewportWidth === width && this.viewportHeight === height) {
+      return
+    }
     this.viewportWidth = width
     this.viewportHeight = height
     this.submit(this.currentItems)

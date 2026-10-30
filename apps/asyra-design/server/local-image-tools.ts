@@ -96,7 +96,9 @@ export const imageRegionSchema = {
   }
 }
 const readImageRegion = (value: unknown) => {
-  if (value === undefined) return undefined
+  if (value === undefined) {
+    return undefined
+  }
   if (
     !isRecord(value) ||
     Object.keys(value).length !== 4 ||
@@ -105,10 +107,11 @@ const readImageRegion = (value: unknown) => {
         Number.isSafeInteger(value[key]) &&
         Number(value[key]) >= (key === 'x' || key === 'y' ? 0 : 1)
     )
-  )
+  ) {
     throw new Error(
       'Image region must contain integer x, y, width and height within the oriented source image.'
     )
+  }
   return {
     x: Number(value.x),
     y: Number(value.y),
@@ -148,8 +151,9 @@ export const createLocalImageTools = (
       !isRecord(attachment) ||
       typeof attachment.dataUrl !== 'string' ||
       !/^data:image\/(png|jpeg|webp);base64,/.test(attachment.dataUrl)
-    )
+    ) {
       throw new Error('Select an existing reference attachment index.')
+    }
     let identity = identities.get(index)
     if (!identity) {
       const bytes = Buffer.from(attachment.dataUrl.split(',')[1], 'base64')
@@ -176,10 +180,11 @@ export const createLocalImageTools = (
   ) => {
     const retainedIndexes = referenceIds.map((referenceId) => {
       const index = referenceIndexes.get(referenceId)
-      if (index === undefined)
+      if (index === undefined) {
         throw new Error(
           'Unknown retained reference identity; import or validate the image first.'
         )
+      }
       return index
     })
     return [...new Set([...indexes, ...retainedIndexes])].map(referenceIdentity)
@@ -188,23 +193,26 @@ export const createLocalImageTools = (
     sources.map((source) => {
       if (source.startsWith('attachment:')) {
         const index = source.slice('attachment:'.length)
-        if (!/^(0|[1-9][0-9]*)$/.test(index))
+        if (!/^(0|[1-9][0-9]*)$/.test(index)) {
           throw new Error('Invalid reference attachment identity.')
+        }
         return referenceIdentity(Number(index)).referenceId
       }
       if (source.startsWith('reference:')) {
-        if (!referenceIndexes.has(source))
+        if (!referenceIndexes.has(source)) {
           throw new Error(
             'Unknown reference identity; import or validate the reference first.'
           )
+        }
         return source
       }
       // Non-image citations keep their existing assertion semantics. Only registered
       // image identities are mechanically resolved; this never verifies a claim.
       if (/^https?:\/\//i.test(source)) {
         const url = new URL(source)
-        if (url.username || url.password)
+        if (url.username || url.password) {
           throw new Error('Source URLs cannot contain credentials.')
+        }
       }
       return source
     })
@@ -254,8 +262,9 @@ export const createLocalImageTools = (
               admittedDimensions.set(identity.referenceId, validation)
               return { ...identity, reused, validation }
             } catch (error) {
-              if (validations.get(identity.referenceId) === pending)
+              if (validations.get(identity.referenceId) === pending) {
                 validations.delete(identity.referenceId)
+              }
               return {
                 ...identity,
                 reused,
@@ -303,7 +312,9 @@ export const createLocalImageTools = (
     }
     reportsByArtifact.delete(id)
     const key = conversionByArtifact.get(id)
-    if (key !== undefined) converted.delete(key)
+    if (key !== undefined) {
+      converted.delete(key)
+    }
     conversionByArtifact.delete(id)
   }
   const publishArtifact = (artifact: LocalVectorArtifact) => {
@@ -314,8 +325,9 @@ export const createLocalImageTools = (
         id,
         () => discardArtifact(id),
         () => {
-          if (!artifacts.has(id))
+          if (!artifacts.has(id)) {
             throw new Error('Image artifact has been released')
+          }
         }
       )
     } catch (error) {
@@ -327,7 +339,9 @@ export const createLocalImageTools = (
     try {
       ownership?.publishAliases([{ handle: id, ownerHandle: artifactId }])
       let reports = reportsByArtifact.get(artifactId)
-      if (!reports) reportsByArtifact.set(artifactId, (reports = new Set()))
+      if (!reports) {
+        reportsByArtifact.set(artifactId, (reports = new Set()))
+      }
       reports.add(id)
     } catch (error) {
       analyses.delete(id)
@@ -594,8 +608,12 @@ export const createLocalImageTools = (
   ]
   return {
     resultIssue: (name: string, value: unknown): string | undefined => {
-      if (!isRecord(value)) return 'Image tool returned no result object'
-      if (value.available === false) return
+      if (!isRecord(value)) {
+        return 'Image tool returned no result object'
+      }
+      if (value.available === false) {
+        return
+      }
       if (name === AiImageToolIds.VALIDATE_REFERENCE_IMAGES) {
         if (
           !Array.isArray(value.references) ||
@@ -610,36 +628,41 @@ export const createLocalImageTools = (
                 String(entry.validation.validity)
               )
           )
-        )
+        ) {
           return 'Reference validation omitted its identities or validation results'
+        }
         for (const entry of value.references) {
           if (
             referenceIdentity(entry.attachmentIndex).referenceId !==
             entry.referenceId
-          )
+          ) {
             return 'Reference validation identity is not retained in this request'
+          }
         }
         return
       }
       if (
         typeof value.imageArtifactId !== 'string' ||
         !artifacts.has(value.imageArtifactId)
-      )
+      ) {
         return 'Image tool omitted a retained imageArtifactId'
+      }
       if (
         name === AiImageToolIds.REVIEW_VECTOR_CONTOURS &&
         (typeof value.reviewId !== 'string' ||
           !contourReviews.has(value.reviewId) ||
           !Array.isArray(value.proposals))
-      )
+      ) {
         return 'Contour review omitted its retained review or proposals'
+      }
       if (
         name === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
         (typeof value.analysisId !== 'string' ||
           !analyses.has(value.analysisId) ||
           !Array.isArray(value.paths))
-      )
+      ) {
         return 'Component analysis omitted its retained analysis or paths'
+      }
     },
     validateReferences,
     prepareReferences,
@@ -655,8 +678,9 @@ export const createLocalImageTools = (
           index < 0 ||
           !isRecord(attachment) ||
           typeof attachment.dataUrl !== 'string'
-        )
+        ) {
           throw new Error('Select an existing reference attachment index.')
+        }
         return { role: 'reference' as const, dataUrl: attachment.dataUrl }
       })
     },
@@ -686,7 +710,7 @@ export const createLocalImageTools = (
     })),
     modelActions: (actions: AiProviderInput['actions']) =>
       actions.map((action) => {
-        if (action.name === AiActionNames.INSERT_VECTOR_COMPOSITION)
+        if (action.name === AiActionNames.INSERT_VECTOR_COMPOSITION) {
           return {
             ...action,
             description:
@@ -695,7 +719,8 @@ export const createLocalImageTools = (
               anyOf: [action.inputSchema, LOCAL_VECTOR_REFERENCE_SCHEMA]
             }
           }
-        if (action.name === AiActionNames.REPLACE_VECTOR_COMPOSITION)
+        }
+        if (action.name === AiActionNames.REPLACE_VECTOR_COMPOSITION) {
           return {
             ...action,
             description:
@@ -715,31 +740,42 @@ export const createLocalImageTools = (
               ]
             }
           }
+        }
         return action
       }),
     resolveBatch: (value: unknown) => {
-      if (!isRecord(value) || !Array.isArray(value.actions))
+      if (!isRecord(value) || !Array.isArray(value.actions)) {
         throw new Error('Invalid action batch')
+      }
       return {
         ...value,
         actions: value.actions.map((action: unknown) => {
-          if (!isRecord(action)) throw new Error('Invalid action')
+          if (!isRecord(action)) {
+            throw new Error('Invalid action')
+          }
           const replacing =
             action.name === AiActionNames.REPLACE_VECTOR_COMPOSITION
           if (
             !replacing &&
             action.name !== AiActionNames.INSERT_VECTOR_COMPOSITION
-          )
+          ) {
             return action
+          }
           const args = action.arguments
-          if (!isRecord(args)) throw new Error('Invalid image reference')
-          const reference = replacing ? args.drawing : args
-          if (!isRecord(reference) || !('imageArtifactId' in reference))
-            return action
-          if (typeof reference.imageArtifactId !== 'string')
+          if (!isRecord(args)) {
             throw new Error('Invalid image reference')
+          }
+          const reference = replacing ? args.drawing : args
+          if (!isRecord(reference) || !('imageArtifactId' in reference)) {
+            return action
+          }
+          if (typeof reference.imageArtifactId !== 'string') {
+            throw new Error('Invalid image reference')
+          }
           const artifact = artifacts.get(reference.imageArtifactId)
-          if (!artifact) throw new Error('Unknown image reference')
+          if (!artifact) {
+            throw new Error('Unknown image reference')
+          }
           if (
             replacing &&
             (typeof args.compositionId !== 'string' ||
@@ -747,11 +783,13 @@ export const createLocalImageTools = (
               Object.keys(args).some(
                 (key) => !['compositionId', 'drawing'].includes(key)
               ))
-          )
+          ) {
             throw new Error('Invalid replacement')
+          }
           const mappings = reference.componentMappings ?? []
-          if (!Array.isArray(mappings))
+          if (!Array.isArray(mappings)) {
             throw new Error('Invalid component selection')
+          }
           if (mappings.length || reference.analysisIds !== undefined) {
             const receiptIds = reference.analysisIds
             if (
@@ -760,15 +798,17 @@ export const createLocalImageTools = (
               receiptIds.length > limits.receiptIdsPerCall ||
               new Set(receiptIds).size !== receiptIds.length ||
               receiptIds.some((id) => typeof id !== 'string')
-            )
+            ) {
               throw new Error('Missing or mismatched component analysis')
+            }
             const evidence = receiptIds.map((id) => {
               const report = analyses.get(id)
               if (
                 !report ||
                 report.imageArtifactId !== artifact.imageArtifactId
-              )
+              ) {
                 throw new Error('Missing or mismatched component analysis')
+              }
               return report
             })
             for (const selection of mappings) {
@@ -785,10 +825,11 @@ export const createLocalImageTools = (
                       )
                   )
                 )
-              )
+              ) {
                 throw new Error(
                   'Component selection is not eligible in this analysis'
                 )
+              }
             }
           }
           const contour = contourSources.get(artifact.imageArtifactId)
@@ -801,10 +842,11 @@ export const createLocalImageTools = (
             if (
               contour.maxDisplacementPx >
               policy.maxSourceDisplacementPx + 1e-9
-            )
+            ) {
               throw new Error(
                 'Refined contour exceeds the final output budget; review at the intended size or use the original artifact'
               )
+            }
           }
           const { analysisIds: _analysisIds, ...preparedReference } = reference
           const drawing = prepareLocalVectorArtifact(
@@ -825,7 +867,9 @@ export const createLocalImageTools = (
       args: unknown,
       signal: AbortSignal
     ): Promise<string> => {
-      if (signal.aborted) throw new Error('Image tool cancelled')
+      if (signal.aborted) {
+        throw new Error('Image tool cancelled')
+      }
       if (name === AiImageToolIds.VALIDATE_REFERENCE_IMAGES) {
         if (
           !isRecord(args) ||
@@ -834,10 +878,11 @@ export const createLocalImageTools = (
           !args.attachmentIndexes.length ||
           args.attachmentIndexes.length > 24 ||
           new Set(args.attachmentIndexes).size !== args.attachmentIndexes.length
-        )
+        ) {
           throw new Error(
             'Provide unique existing reference attachmentIndexes.'
           )
+        }
         return prepareReferences(args.attachmentIndexes as number[], signal)
       }
       if (name === AiImageToolIds.REVIEW_VECTOR_CONTOURS) {
@@ -850,16 +895,18 @@ export const createLocalImageTools = (
           args.pathIds.length > ContourReviewLimits.pathsPerCall ||
           new Set(args.pathIds).size !== args.pathIds.length ||
           args.pathIds.some((id) => typeof id !== 'string')
-        )
+        ) {
           throw new Error('Invalid contour review request')
+        }
         const artifact = artifacts.get(args.imageArtifactId)
         if (
           !artifact ||
           args.pathIds.some(
             (id) => !artifact.paths.some((path) => path.id === id)
           )
-        )
+        ) {
           throw new Error('Unknown contour source')
+        }
         const quality = resolveContourQuality(artifact, args.quality)
         const pathIds = args.pathIds as string[]
         const task = analysisQueue.then(async () => {
@@ -930,12 +977,14 @@ export const createLocalImageTools = (
           typeof args.reviewId !== 'string' ||
           !Array.isArray(args.proposalIds) ||
           args.proposalIds.some((id) => typeof id !== 'string')
-        )
+        ) {
           throw new Error('Invalid contour refinement request')
+        }
         const review = contourReviews.get(args.reviewId)
         const source = review && artifacts.get(review.imageArtifactId)
-        if (!review || !source)
+        if (!review || !source) {
           throw new Error('Unknown contour review receipt')
+        }
         const lineage = contourSources.get(source.imageArtifactId) ?? {
           original: source,
           generation: 0
@@ -952,10 +1001,11 @@ export const createLocalImageTools = (
           review.quality.mode !== 'cleanup' ||
           result.maxDisplacementPx >
             review.quality.maxSourceDisplacementPx + 1e-9
-        )
+        ) {
           throw new Error(
             'Contour refinement exceeds the output quality budget'
           )
+        }
         publishArtifact(result.artifact)
         contourSources.set(result.artifact.imageArtifactId, {
           original: lineage.original,
@@ -980,16 +1030,20 @@ export const createLocalImageTools = (
           typeof args.imageArtifactId !== 'string' ||
           !Array.isArray(args.pathIds) ||
           args.pathIds.some((id) => typeof id !== 'string')
-        )
+        ) {
           throw new Error('Invalid component analysis request')
+        }
         const artifact = artifacts.get(args.imageArtifactId)
-        if (!artifact) throw new Error('Unknown image reference')
+        if (!artifact) {
+          throw new Error('Unknown image reference')
+        }
         if (
           !args.pathIds.length ||
           args.pathIds.length > limits.pathsPerCall ||
           new Set(args.pathIds).size !== args.pathIds.length
-        )
+        ) {
           throw new Error('Invalid analysis selection')
+        }
         const pathIds = [...args.pathIds] as string[]
         const task = analysisQueue.then(async () => {
           let report: ReturnType<typeof analyzeVectorComponents> | undefined
@@ -998,19 +1052,28 @@ export const createLocalImageTools = (
             offset < pathIds.length;
             offset += limits.pathsPerJob
           ) {
-            if (signal.aborted) throw new Error('Image tool cancelled')
+            if (signal.aborted) {
+              throw new Error('Image tool cancelled')
+            }
             // One bounded CPU job at a time; yield so Stop and I/O stay responsive.
             await yieldToEventLoop()
-            if (signal.aborted) throw new Error('Image tool cancelled')
+            if (signal.aborted) {
+              throw new Error('Image tool cancelled')
+            }
             const partial = analyzeVectorComponents(
               artifact,
               pathIds.slice(offset, offset + limits.pathsPerJob),
               signal
             )
-            if (report) report.paths.push(...partial.paths)
-            else report = partial
+            if (report) {
+              report.paths.push(...partial.paths)
+            } else {
+              report = partial
+            }
           }
-          if (!report || signal.aborted) throw new Error('Image tool cancelled')
+          if (!report || signal.aborted) {
+            throw new Error('Image tool cancelled')
+          }
           // Publish one complete receipt, never a partially analyzed package.
           analyses.set(report.analysisId, report)
           publishReport(report.analysisId, artifact.imageArtifactId)
@@ -1027,8 +1090,9 @@ export const createLocalImageTools = (
           name !== AiImageToolIds.VECTORIZE_IMAGE_LAYERS) ||
         !isRecord(args) ||
         !Number.isSafeInteger(args.attachmentIndex)
-      )
+      ) {
         throw new Error('Invalid image tool request')
+      }
       let representationPlan: Record<string, unknown> | undefined
       let layerArgs = args
       if (name === AiImageToolIds.VTRACER) {
@@ -1059,10 +1123,11 @@ export const createLocalImageTools = (
                     ]
               ).includes(key)
           )
-        )
+        ) {
           throw new Error(
             'An explicit image representation plan is required: choose separate-background with native base parameters, or preserve-vectors with a concrete reason.'
           )
+        }
         representationPlan = plan
         const { strategy: _strategy, reason: _reason, ...parameters } = plan
         layerArgs = { ...parameters, attachmentIndex: args.attachmentIndex }
@@ -1074,23 +1139,26 @@ export const createLocalImageTools = (
         !['image/png', 'image/jpeg', 'image/webp'].includes(
           String(attachment.mediaType)
         )
-      )
+      ) {
         throw new Error('Unavailable attachment')
+      }
       const prefix = `data:${attachment.mediaType};base64,`
       const encoded = attachment.dataUrl.slice(prefix.length)
       if (
         !attachment.dataUrl.startsWith(prefix) ||
         !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)
-      )
+      ) {
         throw new Error('Invalid attachment')
+      }
       const bytes = Buffer.from(encoded, 'base64')
       if (
         bytes.length === 0 ||
         bytes.length > 16 * 1024 * 1024 ||
         bytes.length !== attachment.size ||
         bytes.toString('base64') !== encoded
-      )
+      ) {
         throw new Error('Invalid attachment')
+      }
       if (
         name === AiImageToolIds.VECTORIZE_IMAGE_LAYERS ||
         representationPlan?.strategy === 'separate-background'
@@ -1119,13 +1187,16 @@ export const createLocalImageTools = (
             svg,
             args.attachmentIndex as number
           )
-          if (oversized) return oversized
+          if (oversized) {
+            return oversized
+          }
           artifact = parseLocalVectorArtifact(svg)
           if (
             artifact.width !== layers.width ||
             artifact.height !== layers.height
-          )
+          ) {
             throw new Error('Image layer coordinate frame mismatch')
+          }
         }
         artifact.background = layers.background
         artifact.sourceBounds = layers.sourceBounds
@@ -1163,10 +1234,11 @@ export const createLocalImageTools = (
           (metadata.pages ?? 1) !== 1 ||
           sourceRegion.x + sourceRegion.width > width ||
           sourceRegion.y + sourceRegion.height > height
-        )
+        ) {
           throw new Error(
             'Image region exceeds the oriented source image bounds.'
           )
+        }
         signal.throwIfAborted()
         selectedBytes = await decoder
           .autoOrient()
@@ -1192,14 +1264,17 @@ export const createLocalImageTools = (
         svg,
         args.attachmentIndex as number
       )
-      if (oversized) return oversized
+      if (oversized) {
+        return oversized
+      }
       const artifact = parseLocalVectorArtifact(svg)
       if (
         sourceRegion &&
         (artifact.width !== sourceRegion.width ||
           artifact.height !== sourceRegion.height)
-      )
+      ) {
         throw new Error('Image region coordinate frame mismatch')
+      }
       const summary = JSON.stringify({
         ...vectorArtifactSummary(artifact),
         ...(sourceRegion ? { sourceRegion } : {}),

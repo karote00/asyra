@@ -332,6 +332,7 @@
     },
     "release": {
       "patterns": [
+        "scripts/__tests__/release-template-artifacts.test.mjs",
         "scripts/release-*",
         "scripts/framework-release-*",
         ".changeset/config.json",

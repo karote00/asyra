@@ -16,7 +16,9 @@ vi.mock('../../contexts', () => ({
     {},
     {
       get: (_target, key) => {
-        if (!live.core) throw new Error('Core fixture not initialized')
+        if (!live.core) {
+          throw new Error('Core fixture not initialized')
+        }
         const value = Reflect.get(live.core, key)
         return typeof value === 'function' ? value.bind(live.core) : value
       }
@@ -152,7 +154,9 @@ it('delivers real Core results through App capture, runtime execution and native
     signal = new AbortController().signal
   ) => {
     const action = actions.find((item) => item.name === name)
-    if (!action) throw new Error('Missing Core action')
+    if (!action) {
+      throw new Error('Missing Core action')
+    }
     const definition = createAiToolContract(action)
     return invokeLocalTool(
       {
@@ -270,7 +274,9 @@ it('delivers real Core results through App capture, runtime execution and native
     expect(api.getElementData('a')?.name).toBe('Renamed')
     expect(calls.filter((call) => call === name)).toHaveLength(5)
     const prefixAction = actions.find((item) => item.name === name)
-    if (!prefixAction) throw new Error('Missing prefix action')
+    if (!prefixAction) {
+      throw new Error('Missing prefix action')
+    }
     let prefixCalls = 0
     await expect(
       runner.run('partial-prefix', async (runMutation) => {
@@ -304,8 +310,9 @@ it('delivers real Core results through App capture, runtime execution and native
     const runtime = createAiAgentRuntime({
       provider: {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch)
+          if (!options.executeBatch) {
             throw new Error('Missing runtime batch dispatcher')
+          }
           const missing = {
             id: 'missing',
             name,

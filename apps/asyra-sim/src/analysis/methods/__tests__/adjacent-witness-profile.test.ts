@@ -67,8 +67,9 @@ function transportBackward(
     source.shapes.some(
       (shape, side) => shape.geometry !== target.shapes[side].geometry
     )
-  )
+  ) {
     throw new Error('Invalid adjacent source provenance')
+  }
   tick()
   const a = localPoint(source.shapes[0].pose, source.evidence.witnessA)
   tick()
@@ -153,10 +154,14 @@ it('encloses exact source vertices and their rational squared distance while tra
   const bits = view.getBigUint64(0),
     exponent = Number((bits >> 52n) & 2047n)
   let n = bits & ((1n << 52n) - 1n)
-  if (exponent) n += 1n << 52n
+  if (exponent) {
+    n += 1n << 52n
+  }
   const shift = exponent ? exponent - 1075 : -1074,
     d = shift < 0 ? 1n << BigInt(-shift) : 1n
-  if (shift >= 0) n <<= BigInt(shift)
+  if (shift >= 0) {
+    n <<= BigInt(shift)
+  }
   expect(n * n * 64n).toBeGreaterThanOrEqual(d * d * 3n)
 })
 
@@ -169,7 +174,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (pair) =>
           pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
       )
-      if (!pair) throw new Error('Missing admitted pair')
+      if (!pair) {
+        throw new Error('Missing admitted pair')
+      }
       const sourceTime = snapshot.trajectory.keyframes[114].time,
         targetTime = snapshot.trajectory.keyframes[113].time
       const context = historicalContext()
@@ -197,8 +204,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             initialPoints.length === 2 &&
             ops.norm(ops.sub(initialPoints[0], initialPoints[1]))[1] <
               snapshot.rule.minimumClearance
-          )
+          ) {
             firstWarningWork = context.work - targetBefore
+          }
         }
         return result
       }
@@ -206,7 +214,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       vi.spyOn(projection, 'projectedBoundsGap').mockImplementation(
         (a, ap, b, bp, threshold, checkpoint) =>
           project(a, ap, b, bp, threshold, () => {
-            if (inTarget) targetAxes++
+            if (inTarget) {
+              targetAxes++
+            }
             checkpoint()
           })
       )
@@ -214,7 +224,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       vi.spyOn(membership, 'shapeMembership').mockImplementation(
         (point, shape, index, checkpoint) =>
           contains(point, shape, index, () => {
-            if (inTarget) targetMembership++
+            if (inTarget) {
+              targetMembership++
+            }
             checkpoint()
           })
       )
@@ -225,8 +237,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
         (...args) => {
           segment = args[1]
-          if (!Array.isArray(args[2]))
+          if (!Array.isArray(args[2])) {
             throw new Error('Expected actual interval input')
+          }
           time = [args[2][0], args[2][1]]
           return interpolate(...args)
         }
@@ -242,19 +255,23 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const solve = convex.convexDistance
       vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
         const result = solve(...args)
-        if (inTarget) targetConvex++
+        if (inTarget) {
+          targetConvex++
+        }
         if (
           inTarget &&
           firstWarningWork === undefined &&
           result.upper < snapshot.rule.minimumClearance
-        )
+        ) {
           firstWarningWork = context.work - targetBefore
+        }
         return result
       })
       const distance = context.distance.bind(context)
       context.distance = (a, b, threshold, tolerance, iterations) => {
-        if (!time || time[0] !== time[1])
+        if (!time || time[0] !== time[1]) {
           throw new Error('Expected actual static query')
+        }
         const actualTime = time[0],
           actualSegment = segment
         order.push({ segment: actualSegment, time: actualTime })
@@ -264,8 +281,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             !packet ||
             order[0].segment !== 114 ||
             order[0].time !== sourceTime
-          )
+          ) {
             throw new Error('Missing completed earlier segment source')
+          }
           transported = transportBackward(
             packet,
             {
@@ -298,8 +316,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           expect(result.upper).toBeLessThan(threshold)
           for (const shape of [a, b]) {
             expect(shape.geometry.kind).toBe('mesh')
-            if (shape.geometry.kind !== 'mesh')
+            if (shape.geometry.kind !== 'mesh') {
               throw new Error('Expected original mesh')
+            }
             expect(
               Object.isFrozen(shape.geometry) &&
                 Object.isFrozen(shape.geometry.positions) &&
@@ -326,7 +345,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             })
           })
         }
-        if (isTarget) targetResult = result
+        if (isTarget) {
+          targetResult = result
+        }
         return result
       }
       const result = queryOriginalPartPair(
@@ -363,8 +384,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       )
       expect(addedWork).toBe(7)
       expect(context.work).toBeLessThanOrEqual(500000)
-      if (!packet || !targetResult || !transported)
+      if (!packet || !targetResult || !transported) {
         throw new Error('Missing actual boundary evidence')
+      }
       // eslint-disable-next-line no-console -- passive upper eligibility and cost limit, never an actual saving
       console.info(
         JSON.stringify({
@@ -405,7 +427,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (pair) =>
           pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
       )
-      if (!pair) throw new Error('Missing admitted pair')
+      if (!pair) {
+        throw new Error('Missing admitted pair')
+      }
       const sourceTime = snapshot.trajectory.keyframes[114].time,
         targetTime = snapshot.trajectory.keyframes[113].time
       const run = (enabled: boolean) => {
@@ -433,15 +457,18 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
           (...args) => {
             segment = args[1]
-            if (!Array.isArray(args[2]))
+            if (!Array.isArray(args[2])) {
               throw new Error('Expected actual interval input')
+            }
             time = [args[2][0], args[2][1]]
             return interpolate(...args)
           }
         )
         const solve = convex.convexDistance
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
-          if (inTarget) targetConvex++
+          if (inTarget) {
+            targetConvex++
+          }
           return solve(...args)
         })
         for (const [key, add] of [
@@ -493,14 +520,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         }
         const distance = context.distance.bind(context)
         context.distance = (a, b, threshold, tolerance, iterations) => {
-          if (!time || time[0] !== time[1])
+          if (!time || time[0] !== time[1]) {
             throw new Error('Expected actual static query')
+          }
           const at = time[0],
             index = segment,
             isTarget = index === 113 && at === targetTime
           const beforeTransport = context.work
           if (enabled && isTarget) {
-            if (!packet) throw new Error('Expected actual completed source')
+            if (!packet) {
+              throw new Error('Expected actual completed source')
+            }
             transported = transportBackward(
               packet,
               {
@@ -524,7 +554,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 : distance(a, b, threshold, tolerance, iterations)
           } finally {
             distanceWork += context.work - before
-            if (isTarget) targetWork = context.work - beforeTransport
+            if (isTarget) {
+              targetWork = context.work - beforeTransport
+            }
             inTarget = false
           }
           samples.push({ segment: index, time: at, evidence })
@@ -537,8 +569,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               Number.isFinite(evidence.lower) && Number.isFinite(evidence.upper)
             ).toBe(true)
             for (const shape of [a, b]) {
-              if (shape.geometry.kind !== 'mesh')
+              if (shape.geometry.kind !== 'mesh') {
                 throw new Error('Expected original source mesh')
+              }
               expect(
                 Object.isFrozen(shape.geometry) &&
                   Object.isFrozen(shape.geometry.positions) &&
@@ -611,7 +644,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         candidate = run(true)
       const differences = candidate.samples.flatMap((sample, index) => {
         const baseline = control.samples[index]
-        if (JSON.stringify(sample) === JSON.stringify(baseline)) return []
+        if (JSON.stringify(sample) === JSON.stringify(baseline)) {
+          return []
+        }
         return [
           {
             segment: sample.segment,
@@ -657,8 +692,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const baselineTarget = control.samples.find(
         (sample) => sample.segment === 113 && sample.time === targetTime
       )
-      if (!target || !baselineTarget || !candidate.transported)
+      if (!target || !baselineTarget || !candidate.transported) {
         throw new Error('Missing injected target')
+      }
       // The original solver may improve the certified initial source upper.
       expect(target.evidence.upper).toBeLessThan(candidate.transported.upper)
       expect(target.evidence.witnessA).toEqual(baselineTarget.evidence.witnessA)

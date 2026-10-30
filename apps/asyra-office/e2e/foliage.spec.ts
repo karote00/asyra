@@ -21,8 +21,9 @@ test('reviews the same live foliage at overview and close range', async ({
   await page
     .getByRole('button', { name: 'Lounge Room to slow down', exact: true })
     .click()
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  }
   await painted()
   await page.screenshot({ path: info.outputPath('potted-leaves-near.png') })
   await page

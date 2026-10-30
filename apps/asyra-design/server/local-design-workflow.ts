@@ -71,7 +71,9 @@ export const createLocalDesignWorkflow = (
     selection: unknown,
     signal: AbortSignal
   ): Promise<Record<string, unknown>> => {
-    if (selection === undefined || !judgment) return value
+    if (selection === undefined || !judgment) {
+      return value
+    }
     // A partial block's last image may belong to an earlier part, not the intended target.
     const outcome = localToolOutcome(value)
     if (outcome.status !== 'success') {
@@ -84,8 +86,9 @@ export const createLocalDesignWorkflow = (
             )
           ]
         : []
-      if (outcome.settlement !== 'completed' || targets.length !== 1)
+      if (outcome.settlement !== 'completed' || targets.length !== 1) {
         return value
+      }
       return {
         ...value,
         visualReview: {
@@ -324,8 +327,9 @@ export const createLocalDesignWorkflow = (
   )
   const single = {
     projectModelResult(name: string, args: unknown, value: unknown): unknown {
-      if (!value || typeof value !== 'object' || Array.isArray(value))
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return value
+      }
       const source = value as Record<string, unknown>
       const projected = operations.projectModelResult(
         name,
@@ -353,14 +357,17 @@ export const createLocalDesignWorkflow = (
         !args ||
         typeof args !== 'object' ||
         Array.isArray(args)
-      )
+      ) {
         return
+      }
       const details = designs.rejectInput(
         AiDesignToolIds.PREPARE_DESIGN,
         args,
         issues
       )
-      if (!details?.repairGuide) return details
+      if (!details?.repairGuide) {
+        return details
+      }
       const {
         draft: _draft,
         repair: _repair,
@@ -439,10 +446,11 @@ export const createLocalDesignWorkflow = (
         !args ||
         typeof args !== 'object' ||
         Array.isArray(args)
-      )
+      ) {
         throw new LocalOperationPreparationError(
           'Combined preparation/application is unavailable.'
         )
+      }
       const input = args as Record<string, unknown>
       if (
         'draft' in input === 'repair' in input ||
@@ -470,54 +478,66 @@ export const createLocalDesignWorkflow = (
           (typeof input.message !== 'string' ||
             !input.message.trim() ||
             input.message.length > 1000))
-      )
+      ) {
         throw new LocalOperationPreparationError(
           'Provide draft or repair, and optional registered plan, reviewChecks, parentId, message, inspection, response only.'
         )
+      }
       if (input.reviewChecks !== undefined) {
         const issue = operationInputIssue(
           input.reviewChecks,
           reviewCaptureChecksSchema
         )
-        if (issue) throw new LocalOperationPreparationError(issue)
-        if (input.inspection === 'defer')
+        if (issue) {
+          throw new LocalOperationPreparationError(issue)
+        }
+        if (input.inspection === 'defer') {
           throw new LocalOperationPreparationError(deferredReviewIssue)
+        }
       }
       if (input.plan !== undefined) {
         const issue = operationInputIssue(input.plan, reviewPlanSchema)
-        if (issue) throw new LocalOperationPreparationError(issue)
+        if (issue) {
+          throw new LocalOperationPreparationError(issue)
+        }
       }
       const projectExecutionReceipt = (
         value: Record<string, unknown>
       ): Record<string, unknown> => {
         const delivered = { ...value }
-        if (Array.isArray(value.actionResults))
+        if (Array.isArray(value.actionResults)) {
           delivered.actionResults = value.actionResults.map((entry) => {
             if (
               entry?.actionName !== AiActionNames.APPLY_PREPARED_DESIGN ||
               !entry.result ||
               typeof entry.result !== 'object' ||
               Array.isArray(entry.result)
-            )
+            ) {
               return entry
+            }
             const { timing: _timing, ...result } = entry.result
             return { ...entry, result }
           })
+        }
         const record = (entry: unknown): entry is Record<string, unknown> =>
           !!entry && typeof entry === 'object' && !Array.isArray(entry)
         // Only existing execution-protocol containers, never user/recovery data.
-        if (record(value.executionResult))
+        if (record(value.executionResult)) {
           delivered.executionResult = projectExecutionReceipt(
             value.executionResult
           )
-        if (Array.isArray(value.batches))
+        }
+        if (Array.isArray(value.batches)) {
           delivered.batches = value.batches.map((batch) =>
             record(batch) ? projectExecutionReceipt(batch) : batch
           )
+        }
         return delivered
       }
       const deliver = (value: Record<string, unknown>) => {
-        if (input.response === 'full') return JSON.stringify(value)
+        if (input.response === 'full') {
+          return JSON.stringify(value)
+        }
         // Inner owner observations already retained the original diagnostic values.
         const { reuse: _reuse, sourceWork: _sourceWork, ...delivered } = value
         return JSON.stringify(projectExecutionReceipt(delivered))
@@ -574,8 +594,9 @@ export const createLocalDesignWorkflow = (
           executionScope ? [executionScope] : []
         )
         const result = JSON.parse(text)
-        if (localToolOutcome(result).status === 'success')
+        if (localToolOutcome(result).status === 'success') {
           completedSteps.push(step.name)
+        }
         return result
       }
       const preparationInput = {
@@ -593,8 +614,9 @@ export const createLocalDesignWorkflow = (
         completedSteps,
         failedStep: step
       })
-      if (prepared.available && prepared.retainedDraft?.partitions)
+      if (prepared.available && prepared.retainedDraft?.partitions) {
         return deliver(prepared)
+      }
       if (!prepared.available || !prepared.applicable) {
         if (prepared.repairGuide) {
           const {
@@ -614,11 +636,13 @@ export const createLocalDesignWorkflow = (
       signal.throwIfAborted()
       if (input.plan !== undefined && review) {
         const planned = await runStep(operations, review, input.plan)
-        if (localToolOutcome(planned).status !== 'success')
+        if (localToolOutcome(planned).status !== 'success') {
           return deliver(stoppedAt(planned, review.name))
+        }
       }
-      if (input.reviewChecks !== undefined)
+      if (input.reviewChecks !== undefined) {
         operations.validateReviewChecks(input.reviewChecks)
+      }
       const receipt = await runStep(operations, apply, {
         arguments: {
           artifactId: prepared.artifactId,
@@ -638,13 +662,18 @@ export const createLocalDesignWorkflow = (
       if (
         applicationOutcome.status !== 'success' &&
         !appliedWithIncompleteFollowup
-      )
+      ) {
         return deliver(stoppedAt(receipt, apply.name))
-      if (appliedWithIncompleteFollowup) completedSteps.push(apply.name)
+      }
+      if (appliedWithIncompleteFollowup) {
+        completedSteps.push(apply.name)
+      }
       if (input.response !== 'full') {
         delete receipt.context
         for (const entry of receipt.actionResults ?? []) {
-          if (entry.actionName !== AiActionNames.APPLY_PREPARED_DESIGN) continue
+          if (entry.actionName !== AiActionNames.APPLY_PREPARED_DESIGN) {
+            continue
+          }
           const result = entry.result
           result.appliedElementCount =
             result.appliedElementIds?.length ?? prepared.elementCount
@@ -658,7 +687,9 @@ export const createLocalDesignWorkflow = (
     }
   }
   const definition = single.definitions[0]
-  if (!definition) return single
+  if (!definition) {
+    return single
+  }
   const partSchema = {
     type: 'object',
     additionalProperties: false,
@@ -802,7 +833,9 @@ export const createLocalDesignWorkflow = (
         let partKey = key
         if (index) {
           partKey = `${key}:partition-${index}`
-          while (reserved.has(partKey)) partKey += ':'
+          while (reserved.has(partKey)) {
+            partKey += ':'
+          }
           reserved.add(partKey)
         }
         return {
@@ -831,10 +864,11 @@ export const createLocalDesignWorkflow = (
             'continueFromArtifact' in part.repair)) ||
         (part.parentPart !== undefined &&
           (part.parentId !== undefined || !keys.has(String(part.parentPart))))
-      )
+      ) {
         throw new LocalOperationPreparationError(
           'Parts require unique nonempty keys and either parentId or an earlier parentPart.'
         )
+      }
       keys.add(part.key)
     }
     return keys
@@ -872,27 +906,35 @@ export const createLocalDesignWorkflow = (
     resultIssue: (_name: string, value: unknown): string | undefined => {
       const record = (item: unknown): item is Record<string, unknown> =>
         !!item && typeof item === 'object' && !Array.isArray(item)
-      if (!record(value)) return 'Design workflow returned no result object'
+      if (!record(value)) {
+        return 'Design workflow returned no result object'
+      }
       const parts = Array.isArray(value.parts) ? value.parts : [value]
-      if (!parts.length && value.status === 'complete')
+      if (!parts.length && value.status === 'complete') {
         return 'Design workflow omitted completed parts'
+      }
       for (const part of parts) {
-        if (!record(part))
+        if (!record(part)) {
           return 'Design workflow returned an invalid part receipt'
+        }
         if (
           part.available === false ||
           part.applicable === false ||
           part.failedStep ||
           part.status === 'failed'
-        )
+        ) {
           continue
+        }
         const issue = designs.resultIssue(AiDesignToolIds.PREPARE_DESIGN, part)
-        if (issue) return issue
+        if (issue) {
+          return issue
+        }
         if (
           !Array.isArray(part.completedSteps) ||
           !Array.isArray(part.actionResults)
-        )
+        ) {
           return 'Design workflow omitted its completed steps or acknowledged actions'
+        }
         const applied = part.actionResults.find(
           (entry) =>
             record(entry) &&
@@ -903,8 +945,9 @@ export const createLocalDesignWorkflow = (
           !record(applied.result) ||
           typeof applied.result.compositionId !== 'string' ||
           !applied.result.compositionId
-        )
+        ) {
           return 'Design workflow omitted the acknowledged composition identity; inspect state before retrying'
+        }
       }
     },
     rejectInput: (
@@ -916,10 +959,15 @@ export const createLocalDesignWorkflow = (
         name !== AiDesignToolIds.PREPARE_AND_APPLY_DESIGN ||
         !args ||
         typeof args !== 'object'
-      )
+      ) {
         return
-      if (!('parts' in args)) return single.rejectInput(name, args, issues)
-      if (!Array.isArray(args.parts)) return
+      }
+      if (!('parts' in args)) {
+        return single.rejectInput(name, args, issues)
+      }
+      if (!Array.isArray(args.parts)) {
+        return
+      }
       const inputParts = args.parts
       const inputIssues =
         issues ?? operationInputIssues(args, inputSchema) ?? []
@@ -943,7 +991,9 @@ export const createLocalDesignWorkflow = (
           complete = false
           return part
         }
-        if (!('draft' in part)) return part
+        if (!('draft' in part)) {
+          return part
+        }
         if (!preparation) {
           complete = false
           return part
@@ -960,12 +1010,13 @@ export const createLocalDesignWorkflow = (
           { draft: part.draft },
           partIssues
         )
-        if (partIssues.length || !details?.draftId)
+        if (partIssues.length || !details?.draftId) {
           rejectedParts.push({
             index,
             ...(typeof part.key === 'string' ? { key: part.key } : {}),
             ...details
           })
+        }
         const repair =
           details?.repairGuide?.arguments.repair ??
           (!partIssues.length && details?.draftId
@@ -1007,7 +1058,7 @@ export const createLocalDesignWorkflow = (
       signal.throwIfAborted()
       if (!args || typeof args !== 'object' || !('parts' in args)) {
         const result = JSON.parse(await single.call(name, args, signal))
-        if (!result.available || !result.retainedDraft?.partitions)
+        if (!result.available || !result.retainedDraft?.partitions) {
           return JSON.stringify(
             await finishReview(
               result,
@@ -1015,6 +1066,7 @@ export const createLocalDesignWorkflow = (
               signal
             )
           )
+        }
         const input = args as Record<string, unknown>
         return call(
           name,
@@ -1036,12 +1088,15 @@ export const createLocalDesignWorkflow = (
           signal
         )
       }
-      if (name !== AiDesignToolIds.PREPARE_AND_APPLY_DESIGN)
+      if (name !== AiDesignToolIds.PREPARE_AND_APPLY_DESIGN) {
         throw new LocalOperationPreparationError(
           'Combined preparation/application is unavailable.'
         )
+      }
       const issue = operationInputIssue(args, inputSchema)
-      if (issue) throw new LocalOperationPreparationError(issue)
+      if (issue) {
+        throw new LocalOperationPreparationError(issue)
+      }
       const input = args as Record<string, unknown>
       const parts = [
         ...(input.parts as (Record<string, unknown> & { key: string })[])
@@ -1099,8 +1154,9 @@ export const createLocalDesignWorkflow = (
                 (!('partition' in part.repair) &&
                   !('replacements' in part.repair))
             )
-        )
+        ) {
           return
+        }
         const pendingKeys = new Set(parts.slice(start).map((part) => part.key))
         const remaining = parts.slice(start).map((part) => {
           const failed = completed.find((entry) => entry.key === part.key)
@@ -1113,7 +1169,9 @@ export const createLocalDesignWorkflow = (
               ? guide?.arguments
               : undefined
           const repair = preparationRecovery?.repair ?? part.repair
-          if (!repair || typeof repair !== 'object') return
+          if (!repair || typeof repair !== 'object') {
+            return
+          }
           let restored: Record<string, unknown> & {
             key: string
             repair: object
@@ -1132,13 +1190,17 @@ export const createLocalDesignWorkflow = (
             !pendingKeys.has(String(part.parentPart))
           ) {
             const parentId = parentIds.get(String(part.parentPart))
-            if (!parentId) return
+            if (!parentId) {
+              return
+            }
             const { parentPart: _parentPart, ...rest } = restored
             restored = { ...rest, parentId }
           }
           if (part.continueFromPart === undefined) {
             if ('continueFromArtifact' in repair) {
-              if (typeof repair.continueFromArtifact !== 'string') return
+              if (typeof repair.continueFromArtifact !== 'string') {
+                return
+              }
               try {
                 designs.resolveRecipe(repair.continueFromArtifact)
               } catch {
@@ -1148,10 +1210,11 @@ export const createLocalDesignWorkflow = (
             return restored
           }
           const artifactId = artifactIds.get(String(part.continueFromPart))
-          if (!artifactId)
+          if (!artifactId) {
             return pendingKeys.has(String(part.continueFromPart))
               ? restored
               : undefined
+          }
           try {
             designs.resolveRecipe(artifactId)
           } catch {
@@ -1163,7 +1226,9 @@ export const createLocalDesignWorkflow = (
             repair: { ...repair, continueFromArtifact: artifactId }
           }
         })
-        if (!remaining.length || remaining.some((part) => !part)) return
+        if (!remaining.length || remaining.some((part) => !part)) {
+          return
+        }
         return {
           name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
           arguments: {
@@ -1192,7 +1257,7 @@ export const createLocalDesignWorkflow = (
           part.parentPart === undefined
             ? part.parentId
             : parentIds.get(String(part.parentPart))
-        if (part.parentPart !== undefined && parentId === undefined)
+        if (part.parentPart !== undefined && parentId === undefined) {
           return finish({
             status: 'partial',
             complete: false,
@@ -1202,6 +1267,7 @@ export const createLocalDesignWorkflow = (
             message:
               'Earlier receipt did not supply a composition ID. Inspect acknowledged state before continuing; do not replay completed parts.'
           })
+        }
         const receipt = JSON.parse(
           await single.call(
             name,
@@ -1260,20 +1326,26 @@ export const createLocalDesignWorkflow = (
         if (
           typeof receipt.artifactId === 'string' &&
           receipt.completedSteps?.includes(apply?.name)
-        )
+        ) {
           artifactIds.set(part.key, receipt.artifactId)
+        }
         const identity = receipt.actionResults?.find(
           (entry: { actionName: string }) =>
             entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN
         )?.result?.compositionId
-        if (typeof identity === 'string' && identity)
+        if (typeof identity === 'string' && identity) {
           parentIds.set(part.key, identity)
+        }
         if (outcome.status !== 'success') {
           let status =
             index || outcome.status === 'partial' ? 'partial' : 'failed'
-          if (outcome.status === 'unknown') status = 'unknown'
+          if (outcome.status === 'unknown') {
+            status = 'unknown'
+          }
           let settlement = index ? 'partial' : outcome.settlement
-          if (outcome.settlement === 'unknown') settlement = 'unknown'
+          if (outcome.settlement === 'unknown') {
+            settlement = 'unknown'
+          }
           return finish({
             status,
             settlement,

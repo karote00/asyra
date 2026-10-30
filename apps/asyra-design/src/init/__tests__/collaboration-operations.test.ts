@@ -1088,7 +1088,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const harness = createHarness()
     const groupCreation = canonicalContainerCreationDeliveries('group-a')
     const sceneCreation = groupCreation[1]
-    if (!sceneCreation) throw new Error('Expected Group Scene creation')
+    if (!sceneCreation) {
+      throw new Error('Expected Group Scene creation')
+    }
     const hierarchy = {
       ...delivery(
         SharedDataChannelNames.SCENE_TREE,
@@ -1127,7 +1129,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const harness = createHarness()
     const removal = canonicalRemovalDeliveries(['group-a'], true)
     const sceneRemoval = removal[0]
-    if (!sceneRemoval) throw new Error('Expected Group Scene removal')
+    if (!sceneRemoval) {
+      throw new Error('Expected Group Scene removal')
+    }
     const hierarchy = {
       ...delivery(
         SharedDataChannelNames.SCENE_TREE,
@@ -1235,7 +1239,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const scene = deliveries.find(
       ({ channel }) => channel === SharedDataChannelNames.SCENE_TREE
     )
-    if (!scene) throw new Error('Missing Scene fixture')
+    if (!scene) {
+      throw new Error('Missing Scene fixture')
+    }
     const payload = scene.payload as {
       entries: {
         data: { id: string; parentId: string }
@@ -1244,7 +1250,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
       }[]
     }
     const [right, left] = payload.entries
-    if (!right || !left) throw new Error('Missing insertion entries')
+    if (!right || !left) {
+      throw new Error('Missing insertion entries')
+    }
     right.index = 2
     left.parentId = 'other-parent'
     left.data.parentId = 'other-parent'
@@ -1321,8 +1329,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const source = publication(restoreDeliveries(), 'restore-boundary', 'undo')
     const propertyBatch = source.slices[0]?.batches[0]
     const sceneBatch = source.slices[0]?.batches[1]
-    if (!propertyBatch || !sceneBatch)
+    if (!propertyBatch || !sceneBatch) {
       throw new Error('Missing restore batches')
+    }
     const sceneOnly = publication(
       restoreDeliveries().filter(
         ({ channel }) => channel === SharedDataChannelNames.SCENE_TREE
@@ -1870,7 +1879,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'trusted-duplicate-artifact'
     )
     const firstSlice = duplicateSource.slices[0]
-    if (!firstSlice) throw new Error('Expected publication slice')
+    if (!firstSlice) {
+      throw new Error('Expected publication slice')
+    }
     const duplicateHarness = createHarness()
 
     await expect(
@@ -1969,7 +1980,9 @@ const createMaterializationHarness = (
       const result = await execute(record, (candidate) => {
         next = candidate
       })
-      if (next) record = next
+      if (next) {
+        record = next
+      }
       return result
     }
   }
@@ -2060,7 +2073,9 @@ describe('Asyra Design backend document materialization', () => {
           const result = await execute(record, (value) => {
             next = value
           })
-          if (next) record = next
+          if (next) {
+            record = next
+          }
           return result
         }
       }
@@ -2257,8 +2272,9 @@ describe('Asyra Design backend document materialization', () => {
             )
           : []
       )
-      if (nextValues.includes(20))
+      if (nextValues.includes(20)) {
         throw new Error('backend canonical apply failed')
+      }
       return {
         appliedValues: [...document.appliedValues, ...nextValues]
       }

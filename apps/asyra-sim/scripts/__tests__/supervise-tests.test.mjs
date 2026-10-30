@@ -82,7 +82,9 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
     try {
       process.kill(pid, 0)
     } catch (error) {
-      if (error.code === 'ESRCH') return
+      if (error.code === 'ESRCH') {
+        return
+      }
       assert.fail(`PID liveness check did not prove exit: ${error.code}`)
     }
     if (process.platform === 'linux') {
@@ -90,9 +92,13 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
         const state = parseLinuxProcessState(
           readFileSync(`/proc/${pid}/stat`, 'utf8')
         )
-        if (state === 'Z') return
+        if (state === 'Z') {
+          return
+        }
       } catch (error) {
-        if (error.code === 'ENOENT') return
+        if (error.code === 'ENOENT') {
+          return
+        }
         assert.fail(`Linux PID state could not be verified: ${error.message}`)
       }
     }
@@ -220,7 +226,9 @@ print(json.dumps(dict(phases=phases, rejected=rejected)))
     phases.map((phase) => phase[2]),
     [0, 1, 4]
   )
-  for (const phase of phases) assert.ok(phase[1].includes('--maxWorkers=1'))
+  for (const phase of phases) {
+    assert.ok(phase[1].includes('--maxWorkers=1'))
+  }
   assert.ok(phases[0][1].includes('some.test.ts'))
   assert.equal(
     phases[0][1].filter((arg) => arg.includes('source-work')).length,

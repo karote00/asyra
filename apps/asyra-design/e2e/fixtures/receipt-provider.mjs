@@ -27,8 +27,9 @@ const call = (tool, args) =>
   new Promise((resolve, reject) => {
     const id = ++sequence
     pending.set(id, (result) => {
-      if (!result?.contentItems?.[0]?.text)
+      if (!result?.contentItems?.[0]?.text) {
         return reject(Error('Missing tool reply'))
+      }
       resolve({
         success: result.success,
         value: JSON.parse(result.contentItems[0].text)
@@ -76,7 +77,9 @@ async function run() {
   let repaired
   if (rejected?.draftId) {
     const children = input.parts[1].draft.children.flatMap((child) => {
-      if (child.type !== 'projected-face') return [child]
+      if (child.type !== 'projected-face') {
+        return [child]
+      }
       return child.vertices.slice(2).map((vertex, index) => ({
         ...child,
         key: `${child.key}-triangle-${index}`,
@@ -110,16 +113,24 @@ lines.on('line', async (line) => {
       accept(packet.result)
       return
     }
-    if (packet.id === undefined) return
-    let result = {}
-    if (packet.method === 'config/read') result = { config: {} }
-    if (packet.method === 'account/read')
-      result = { account: { type: 'chatgpt', email: 'fixture@example.test' } }
-    if (packet.method === 'thread/start') {
-      for (const group of packet.params.dynamicTools)
-        for (const tool of group.tools) namespaces.set(tool.name, group.name)
+    if (packet.id === undefined) {
+      return
     }
-    if (packet.method === 'thread/start')
+    let result = {}
+    if (packet.method === 'config/read') {
+      result = { config: {} }
+    }
+    if (packet.method === 'account/read') {
+      result = { account: { type: 'chatgpt', email: 'fixture@example.test' } }
+    }
+    if (packet.method === 'thread/start') {
+      for (const group of packet.params.dynamicTools) {
+        for (const tool of group.tools) {
+          namespaces.set(tool.name, group.name)
+        }
+      }
+    }
+    if (packet.method === 'thread/start') {
       result = {
         thread: { id: 'fixture-thread' },
         model: packet.params.model,
@@ -127,8 +138,10 @@ lines.on('line', async (line) => {
         instructionSources: [],
         runtimeWorkspaceRoots: []
       }
-    if (packet.method === 'turn/start')
+    }
+    if (packet.method === 'turn/start') {
       result = { turn: { id: 'fixture-turn' } }
+    }
     send({ id: packet.id, result })
     if (packet.method === 'turn/start') {
       const report = await run()

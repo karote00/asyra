@@ -27,8 +27,9 @@ export function vertexProjection(
   direction: Vec3,
   checkpoint: () => void
 ): Interval {
-  if (shape.geometry.kind !== 'mesh')
+  if (shape.geometry.kind !== 'mesh') {
     throw new Error('Expected complete original mesh')
+  }
   const q = shape.pose.rotation,
     d = ops.vector(direction)
   const local = ops.rotate([ineg(q[0]), ineg(q[1]), ineg(q[2]), q[3]], d)

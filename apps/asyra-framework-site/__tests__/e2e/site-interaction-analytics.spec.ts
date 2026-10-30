@@ -10,7 +10,9 @@ const configured = process.env.GOOGLE_SERVICES_TEST_ENABLED === '1'
 async function capture(page: Page) {
   const events: RecordedEvent[] = []
   await page.exposeFunction('recordSiteAnalytics', (entry: RecordedEvent) => {
-    if (entry[0] === 'event') events.push(entry)
+    if (entry[0] === 'event') {
+      events.push(entry)
+    }
   })
   await page.addInitScript(() => {
     const target = window as typeof window & {

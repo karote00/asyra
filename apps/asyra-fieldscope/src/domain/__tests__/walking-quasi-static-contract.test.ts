@@ -290,7 +290,9 @@ describe('walking quasi-static request admission', () => {
       },
       (r: typeof input) => {
         const centre = r.loadMasses.carried[0].properties.localCoM
-        if (!centre) throw Error('Expected known fixture mass')
+        if (!centre) {
+          throw Error('Expected known fixture mass')
+        }
         centre[1] = NaN
       }
     ]
@@ -303,12 +305,13 @@ describe('walking quasi-static request admission', () => {
       { ...contact, pathId: 'wrong' },
       { ...contact, loadCaseId: 'wrong' },
       { ...contact, from: 0.1 }
-    ])
+    ]) {
       expect(() =>
         readWalkingQuasiStaticRequest(input, {
           ...bound,
           contacts: [changed]
         } as unknown as WalkingMotionAdmission)
       ).toThrow()
+    }
   })
 })

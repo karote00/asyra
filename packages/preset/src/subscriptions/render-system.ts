@@ -12,7 +12,9 @@ export const registerDefaultRenderSystemSubscriptions = (
   const subscriptions: Subscription[] = []
   let disposed = false
   const dispose = (): void => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
     for (let index = subscriptions.length - 1; index >= 0; index--) {
       subscriptions[index].unsubscribe()
       subscriptions.splice(index, 1)
@@ -49,7 +51,9 @@ export const registerDefaultRenderSystemSubscriptions = (
     )
     cleanupReporter.report()
   } catch (error) {
-    if (!cleanupReporter.hasReported()) dispose()
+    if (!cleanupReporter.hasReported()) {
+      dispose()
+    }
     throw error
   }
 

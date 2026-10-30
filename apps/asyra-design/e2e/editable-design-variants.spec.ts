@@ -494,7 +494,7 @@ for (const [name, draft] of Object.entries({
     })
     for (const [i, entry] of design.entries.entries()) {
       expect(evidence.nodes[i].type).toBe(entry.descriptor.type)
-      if ((name === 'gradients' || name === 'vectorGradients') && i > 0)
+      if ((name === 'gradients' || name === 'vectorGradients') && i > 0) {
         expect(evidence.nodes[i].values?.fills).toEqual([
           expect.objectContaining({
             kind: 'gradient',
@@ -502,8 +502,10 @@ for (const [name, draft] of Object.entries({
             gradient: entry.descriptor.fills?.[0].gradient
           })
         ])
-      if (entry.descriptor.type === 'text')
+      }
+      if (entry.descriptor.type === 'text') {
         expect(evidence.nodes[i].values?.text).toBe(entry.descriptor.text)
+      }
     }
     expect(evidence.review.complete).toBe(true)
     expect(
@@ -552,11 +554,12 @@ for (const [name, draft] of Object.entries({
         const offset =
           (Math.round(point.y) * pixels.info.width + Math.round(point.x)) * 4
         const rgb = [...pixels.data.subarray(offset, offset + 3)]
-        for (const channel of rgb)
+        for (const channel of rgb) {
           expect(
             Math.abs(channel - point.fraction * 255),
             JSON.stringify({ point, rgb })
           ).toBeLessThan(25)
+        }
       }
     }
   })

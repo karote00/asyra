@@ -73,7 +73,9 @@ export function RunLibrary({
       aria-label="Runs and comparison"
       onCancel={onClose}
       onKeyDown={(event) => {
-        if (event.key !== 'Escape' || event.nativeEvent.isComposing) return
+        if (event.key !== 'Escape' || event.nativeEvent.isComposing) {
+          return
+        }
         event.preventDefault()
         event.stopPropagation()
         onClose()

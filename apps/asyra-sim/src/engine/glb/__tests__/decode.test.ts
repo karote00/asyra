@@ -156,10 +156,11 @@ it('rejects cyclic or multiply-parented nodes and invalid transforms', async () 
     [{ mesh: 0, scale: [-1, 1, 1] }],
     [{ mesh: 0, scale: [0, 1, 1] }],
     [{ mesh: 0, translation: [1001, 0, 0] }]
-  ])
+  ]) {
     await expect(
       decodeRestrictedGlb(encodeGlb({ ...json, nodes }, binary))
     ).rejects.toThrow()
+  }
 })
 it('checks byte, JSON depth, node and expanded instance budgets', async () => {
   await expect(
@@ -175,7 +176,9 @@ it('checks byte, JSON depth, node and expanded instance budgets', async () => {
     )
   ).rejects.toThrow('nodes')
   let nested: unknown = 0
-  for (let i = 0; i < 26; i++) nested = { child: nested }
+  for (let i = 0; i < 26; i++) {
+    nested = { child: nested }
+  }
   await expect(
     decodeRestrictedGlb(encodeGlb({ ...json, extras: nested }, binary))
   ).rejects.toThrow('JSON resource')

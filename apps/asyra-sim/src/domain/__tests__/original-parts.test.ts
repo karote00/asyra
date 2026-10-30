@@ -92,12 +92,16 @@ describe('complete original source resolution', () => {
       part = createMechanicalVisuals().find(
         (item) => item.body === 'fixture-table'
       )
-    if (!part) throw new Error('Missing sample table source')
+    if (!part) {
+      throw new Error('Missing sample table source')
+    }
     const asset = await decodeRestrictedGlb(part.bytes)
     const body = sample.workcell.bodies.find(
       (body) => body.id === 'example:fixture-table'
     )
-    if (!body) throw new Error('Missing sample table body')
+    if (!body) {
+      throw new Error('Missing sample table body')
+    }
     const workcell = {
       ...sample.workcell,
       bodies: sample.workcell.bodies.map((item) =>
@@ -123,11 +127,14 @@ describe('complete original source resolution', () => {
       new Map([[asset.source.sha256, asset]])
     )
     const table = resolved.bodies.find((item) => item.id === body.id)
-    if (!table) throw new Error('Missing resolved table')
+    if (!table) {
+      throw new Error('Missing resolved table')
+    }
     expect(table.colliders).toHaveLength(1)
     expect(table.colliders[0].geometry.kind).toBe('mesh')
-    if (table.colliders[0].geometry.kind !== 'mesh')
+    if (table.colliders[0].geometry.kind !== 'mesh') {
       throw new Error('Missing original mesh')
+    }
     expect(
       Math.min(
         ...table.colliders[0].geometry.positions.filter((_, i) => i % 3 === 1)
@@ -163,7 +170,9 @@ describe('complete original source resolution', () => {
         },
         asset
       )
-      if (collider.geometry.kind !== 'mesh') throw new Error('Missing mesh')
+      if (collider.geometry.kind !== 'mesh') {
+        throw new Error('Missing mesh')
+      }
       expect(inspectMeshTopology(collider.geometry).issue, part.body).toBeNull()
     }
   })

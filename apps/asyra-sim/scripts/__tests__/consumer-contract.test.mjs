@@ -92,7 +92,7 @@ test('consumer lock evidence rejects upgrades, checksum drift and workspace or p
     () => assertFrozenRegistryLock(lock(), lock('19.2.8', 'changed')),
     /drift/
   )
-  for (const protocol of ['workspace', 'link', 'portal', 'patch'])
+  for (const protocol of ['workspace', 'link', 'portal', 'patch']) {
     assert.throws(
       () =>
         assertFrozenRegistryLock(
@@ -101,6 +101,7 @@ test('consumer lock evidence rejects upgrades, checksum drift and workspace or p
         ),
       /private source/
     )
+  }
   assert.equal(
     assertFrozenRegistryLock(
       lock(),
@@ -122,11 +123,12 @@ test('consumer lock preserves exact existing Yarn builtin compatibility patches 
     record(locator, '10c0/changed'),
     record(locator.replace('379a07', 'abcdef')),
     record(locator.replaceAll('5.8.3', '5.8.4'))
-  ])
+  ]) {
     assert.throws(
       () => assertFrozenRegistryLock(source, `${lock()}\n${changed}`),
       /drift/
     )
+  }
   assert.throws(() => assertFrozenRegistryLock(lock(), source), /drift/)
   for (const identity of [
     'typescript@patch:typescript@npm%3A5.8.3#./custom.patch',
@@ -188,11 +190,12 @@ test('the consumer test subprocess preserves the supervisor cleanup window witho
       TEST_CLEANUP_MS: '60000'
     }
   })
-  for (const label of ['consumer-install', 'consumer-build', 'archive'])
+  for (const label of ['consumer-install', 'consumer-build', 'archive']) {
     assert.deepEqual(commandExecutionContract(label), {
       timeoutMs: 5 * 60 * 1000,
       environment: {}
     })
+  }
 })
 
 for (const [kind, base] of [
@@ -205,7 +208,7 @@ for (const [kind, base] of [
     'async factory',
     'async (env) => ({ plugins: [], worker: { format: "es" }, base: env.command === "build" ? "./" : "/dev/" })'
   ]
-])
+]) {
   test(`main and Worker build plugins preserve ${kind} configuration and reject escaping module evidence`, async (t) => {
     const parent = fileURLToPath(
       new URL('../../.artifacts/consumer-tests/', import.meta.url)
@@ -235,7 +238,9 @@ for (const [kind, base] of [
         ? exported({ command: 'build', mode: 'production' })
         : exported)
       assert.equal(configuration.worker.format, 'es')
-      if (kind !== 'object') assert.equal(configuration.base, './')
+      if (kind !== 'object') {
+        assert.equal(configuration.base, './')
+      }
       for (const plugin of [
         configuration.plugins[0],
         ...configuration.worker.plugins()
@@ -262,3 +267,4 @@ for (const [kind, base] of [
       process.chdir(previous)
     }
   })
+}

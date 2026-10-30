@@ -48,7 +48,7 @@ const runtimeMetadata = [
   ...sourcePackages.map((name) => 'packages/' + name + '/package.json')
 ]
 const runtimePath = (file, authority) => {
-  if (!authority)
+  if (!authority) {
     return (
       runtimeMetadata.includes(file) ||
       (sourcePackages.some((name) =>
@@ -56,6 +56,7 @@ const runtimePath = (file, authority) => {
       ) &&
         !file.split('/').includes('__tests__'))
     )
+  }
   return (
     file === 'package.json' ||
     file === 'yarn.lock' ||
@@ -94,11 +95,16 @@ function freezeAuthority(value) {
 
 function resolveRuntimeAuthority(contract, read, discover) {
   const scope = contract.runtimeScope
-  if (!scope) return
-  if (scope.format === 2)
+  if (!scope) {
+    return
+  }
+  if (scope.format === 2) {
     return freezeAuthority(resolveWorkspaceAuthority(contract, read, discover))
+  }
   const reject = (condition, message) => {
-    if (!condition) throw new Error('Runtime authority: ' + message)
+    if (!condition) {
+      throw new Error('Runtime authority: ' + message)
+    }
   }
   reject(
     sameKeys(scope, ['format', 'steps', 'digest']) &&
@@ -127,7 +133,9 @@ function resolveRuntimeAuthority(contract, read, discover) {
   const closures = new Map()
   const visiting = new Set()
   const visit = (name) => {
-    if (closures.has(name)) return closures.get(name)
+    if (closures.has(name)) {
+      return closures.get(name)
+    }
     reject(canonicalPackageName(name), 'unsupported package owner')
     reject(!visiting.has(name), 'cyclic workspace dependency')
     visiting.add(name)
@@ -153,13 +161,14 @@ function resolveRuntimeAuthority(contract, read, discover) {
         hasPublicPackageEntry(metadata),
       'missing public canonical package entry'
     )
-    for (const kind of ['optionalDependencies', 'peerDependencies'])
+    for (const kind of ['optionalDependencies', 'peerDependencies']) {
       reject(
         !Object.keys(metadata[kind] ?? {}).some((dependency) =>
           dependency.startsWith('@asyra/')
         ),
         'unsupported internal ' + kind
       )
+    }
     const directWorkspaceDependencies = Object.keys(metadata.dependencies ?? {})
       .filter((dependency) => dependency.startsWith('@asyra/'))
       .sort()
@@ -169,7 +178,9 @@ function resolveRuntimeAuthority(contract, read, discover) {
         metadata.dependencies[dependency] === 'workspace:*',
         'unbound workspace dependency'
       )
-      for (const member of visit(dependency)) packageNames.add(member)
+      for (const member of visit(dependency)) {
+        packageNames.add(member)
+      }
     }
     const entryPath = repositoryDirectory + '/src/index.ts'
     try {
@@ -216,7 +227,9 @@ function resolveRuntimeAuthority(contract, read, discover) {
 
 function validateRuntimeAuthority(authority, contract, fullFiles) {
   const reject = (condition, message) => {
-    if (!condition) throw new Error('Runtime authority: ' + message)
+    if (!condition) {
+      throw new Error('Runtime authority: ' + message)
+    }
   }
   reject(
     sameKeys(authority, [
@@ -300,22 +313,28 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
     }
     packages.set(entry.name, entry)
   }
-  for (const entry of packages.values())
+  for (const entry of packages.values()) {
     reject(
       entry.directWorkspaceDependencies.every((name) => packages.has(name)),
       'dependency outside package union'
     )
+  }
   const visiting = new Set()
   const closures = new Map()
   const closure = (name) => {
-    if (closures.has(name)) return closures.get(name)
+    if (closures.has(name)) {
+      return closures.get(name)
+    }
     reject(!visiting.has(name), 'cyclic package graph')
     const entry = packages.get(name)
     reject(entry, 'unknown step owner')
     visiting.add(name)
     const result = new Set([name])
-    for (const dependency of entry.directWorkspaceDependencies)
-      for (const member of closure(dependency)) result.add(member)
+    for (const dependency of entry.directWorkspaceDependencies) {
+      for (const member of closure(dependency)) {
+        result.add(member)
+      }
+    }
     visiting.delete(name)
     const value = [...result].sort()
     closures.set(name, value)
@@ -393,17 +412,19 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
   if (fullFiles) {
     const files = new Map(fullFiles.map((entry) => [entry.path, entry]))
     reject(files.size === fullFiles.length, 'duplicate full manifest path')
-    for (const entry of authority.packages)
+    for (const entry of authority.packages) {
       reject(
         files.get(entry.manifestPath)?.digest === entry.manifestDigest &&
           ((workspace && entry.entryPath === null) ||
             files.has(entry.entryPath)),
         'package manifest or entry is absent from runtime inventory'
       )
+    }
   }
   const validated = freezeAuthority(structuredClone(authority))
-  if (admittedRuntimeAuthorities.has(authority))
+  if (admittedRuntimeAuthorities.has(authority)) {
     admittedRuntimeAuthorities.add(validated)
+  }
   return validated
 }
 
@@ -428,12 +449,14 @@ function createVerificationSource(fullFiles, contract, authority) {
           .some((part) => !part || part === '.' || part === '..') ||
         runtimePath(file, authority)
     )
-  )
+  ) {
     throw new Error('Verification source: invalid or overlapping role path')
+  }
   const files = paths.sort().map((file) => {
     const entries = fullFiles.filter((entry) => entry.path === file)
-    if (entries.length !== 1)
+    if (entries.length !== 1) {
       throw new Error('Verification source: missing or duplicate role entry')
+    }
     const { path, size, digest } = entries[0]
     return Object.freeze({ path, size, digest })
   })
@@ -461,7 +484,9 @@ function executionRolesForAuthority(runtimeAuthority) {
 
 function createDerivedExecution(input, authorityAdmission) {
   const requireValue = (condition, message) => {
-    if (!condition) throw new Error('Execution source: ' + message)
+    if (!condition) {
+      throw new Error('Execution source: ' + message)
+    }
   }
   const scoped = Object.hasOwn(input ?? {}, 'runtimeAuthority')
   requireValue(
@@ -589,10 +614,12 @@ function validateSourceSnapshot(
   const present = Object.hasOwn(snapshot, 'verificationSource')
   const executionPresent = Object.hasOwn(snapshot, 'executionSource')
   const authorityPresent = Object.hasOwn(snapshot, 'runtimeAuthority')
-  if (executionPresent && !present)
+  if (executionPresent && !present) {
     throw new Error('Execution source: original verification identity required')
-  if (present && !Object.hasOwn(snapshot, 'runtimeSource'))
+  }
+  if (present && !Object.hasOwn(snapshot, 'runtimeSource')) {
     throw new Error('Verification source: runtime identity required')
+  }
   const runtimeAuthority = authorityPresent
     ? validateRuntimeAuthority(snapshot.runtimeAuthority, contract, fullFiles)
     : undefined
@@ -601,18 +628,20 @@ function validateSourceSnapshot(
     fullFiles,
     runtimeAuthority
   )
-  if (!present)
+  if (!present) {
     return Object.freeze({
       runtimeSource,
       ...(runtimeAuthority ? { runtimeAuthority } : {})
     })
+  }
   if (
     !runtimeSource ||
     snapshot.contractDigest !== contract.digest ||
     snapshot.mappingVersion !== contract.mappingVersion ||
     snapshot.architectureVersion !== contract.architectureVersion
-  )
+  ) {
     throw new Error('Verification source: admitted contract mismatch')
+  }
   const verificationSource = createVerificationSource(
     fullFiles,
     contract,
@@ -621,16 +650,18 @@ function validateSourceSnapshot(
   if (
     JSON.stringify(snapshot.verificationSource) !==
     JSON.stringify(verificationSource)
-  )
+  ) {
     throw new Error(
       'Verification source: descriptor does not bind captured role bytes'
     )
-  if (!executionPresent)
+  }
+  if (!executionPresent) {
     return Object.freeze({
       runtimeSource,
       ...(runtimeAuthority ? { runtimeAuthority } : {}),
       verificationSource
     })
+  }
   const { executionSource } = createDerivedExecution(
     {
       sourceRoot: executionContext?.sourceRoot,
@@ -660,10 +691,11 @@ function validateSourceSnapshot(
     JSON.stringify(snapshot.executionSource) !==
       JSON.stringify(executionSource) ||
     snapshot.configurationDigest !== executionSource.digest
-  )
+  ) {
     throw new Error(
       'Execution source: generated bytes, full inventory or configuration identity mismatch'
     )
+  }
   return Object.freeze({
     runtimeSource,
     ...(runtimeAuthority ? { runtimeAuthority } : {}),
@@ -674,21 +706,27 @@ function validateSourceSnapshot(
 
 function safePath(root, relative) {
   const resolved = path.resolve(root, relative)
-  if (!resolved.startsWith(path.resolve(root) + path.sep))
+  if (!resolved.startsWith(path.resolve(root) + path.sep)) {
     throw new Error('Source path escapes repository')
+  }
   let current = path.resolve(root)
   for (const part of path.relative(root, resolved).split(path.sep)) {
     current = path.join(current, part)
-    if (fs.existsSync(current) && fs.lstatSync(current).isSymbolicLink())
+    if (fs.existsSync(current) && fs.lstatSync(current).isSymbolicLink()) {
       throw new Error('Symlinked proof path: ' + relative)
+    }
   }
   return resolved
 }
 
 function validateRuntimeSourceWithAuthority(snapshot, fullFiles, authority) {
-  if (!Object.hasOwn(snapshot, 'runtimeSource')) return
+  if (!Object.hasOwn(snapshot, 'runtimeSource')) {
+    return
+  }
   const requireValue = (condition, message) => {
-    if (!condition) throw new Error('Runtime source: ' + message)
+    if (!condition) {
+      throw new Error('Runtime source: ' + message)
+    }
   }
   requireValue(
     Array.isArray(fullFiles) && fullFiles.length > 0,
@@ -781,13 +819,15 @@ function selectSourceEntries(
       path.basename(input.sourceRoot ?? '') !== 'source' ||
       path.basename(path.dirname(input.sourceRoot ?? '')) !==
         input.admission.attemptId
-    )
+    ) {
       throw new Error('Source composition repository or attempt mismatch')
+    }
     if (
       input.sourceRoot !==
       safePath(repository, path.relative(repository, input.sourceRoot))
-    )
+    ) {
       throw new Error('Source composition requires canonical source roots')
+    }
   }
   const runtimeScoped = Object.hasOwn(
     runtimeInput.admission,
@@ -797,10 +837,11 @@ function selectSourceEntries(
     verificationInput.admission,
     'runtimeAuthority'
   )
-  if (runtimeScoped !== verificationScoped)
+  if (runtimeScoped !== verificationScoped) {
     throw new Error(
       'Source composition cannot mix legacy and scoped runtime authority'
     )
+  }
   let runtimeAuthority
   if (runtimeScoped) {
     runtimeAuthority = validateRuntimeAuthority(
@@ -814,8 +855,9 @@ function selectSourceEntries(
       verificationInput.admission.runtimeAuthority,
       contract
     )
-    if (runtimeAuthority.format !== verificationAuthority.format)
+    if (runtimeAuthority.format !== verificationAuthority.format) {
       throw new Error('Source composition runtime scope formats differ')
+    }
   }
   const execution = runtimeInput.admission.executionSource
   if (
@@ -832,14 +874,16 @@ function selectSourceEntries(
         runtimeInput.admission.verificationSource?.digest ||
       (runtimeAuthority &&
         execution.runtimeAuthorityDigest !== runtimeAuthority.digest))
-  )
+  ) {
     throw new Error(
       'Source composition requires ordinary runtime or admitted derived execution'
     )
-  if (Object.hasOwn(verificationInput.admission, 'executionSource'))
+  }
+  if (Object.hasOwn(verificationInput.admission, 'executionSource')) {
     throw new Error(
       'Source composition requires ordinary verification without execution wrappers'
     )
+  }
   const runtime = runtimeInput.admission.runtimeSource
   const verification = verificationInput.admission.verificationSource
   if (
@@ -852,10 +896,11 @@ function selectSourceEntries(
     verificationInput.admission.configurationDigest !==
       verification.files.find((entry) => entry.path === contract.configFile)
         ?.digest
-  )
+  ) {
     throw new Error(
       'Source composition requires exact ordinary verification configuration'
     )
+  }
   const selected = [
     ...runtime.files.map((entry) => ({ entry, root: runtimeInput.sourceRoot })),
     ...verification.files.map((entry) => ({
@@ -865,8 +910,11 @@ function selectSourceEntries(
   ].sort((a, b) =>
     a.entry.path < b.entry.path ? -1 : Number(a.entry.path > b.entry.path)
   )
-  if (new Set(selected.map((item) => item.entry.path)).size !== selected.length)
+  if (
+    new Set(selected.map((item) => item.entry.path)).size !== selected.length
+  ) {
     throw new Error('Source composition inventories overlap')
+  }
   return {
     repository,
     runtime,
@@ -880,11 +928,13 @@ function readSourceEntries(selected, bytesByPath) {
   const files = []
   for (const { entry, root } of selected) {
     const input = safePath(root, entry.path)
-    if (!fs.lstatSync(input).isFile())
+    if (!fs.lstatSync(input).isFile()) {
       throw new Error('Source composition requires regular source files')
+    }
     const bytes = fs.readFileSync(input)
-    if (bytes.length !== entry.size || sha256(bytes) !== entry.digest)
+    if (bytes.length !== entry.size || sha256(bytes) !== entry.digest) {
       throw new Error('Source composition byte fingerprint mismatch')
+    }
     bytesByPath?.set(entry.path, bytes)
     files.push(
       Object.freeze({
@@ -903,9 +953,13 @@ function verifyCapturedRuntimeAuthority(
   fullFiles,
   fingerprintsVerified = false
 ) {
-  if (!authority) return
+  if (!authority) {
+    return
+  }
   const reject = (condition, message) => {
-    if (!condition) throw new Error('Runtime authority: ' + message)
+    if (!condition) {
+      throw new Error('Runtime authority: ' + message)
+    }
   }
   let rootManifest
   try {
@@ -981,8 +1035,9 @@ function admitRuntimeAuthoritySource(sourceRoot, snapshot, contract) {
     !path.isAbsolute(sourceRoot) ||
     sourceRoot !== path.resolve(sourceRoot) ||
     path.basename(sourceRoot) !== 'source'
-  )
+  ) {
     throw new Error('Runtime authority: trusted canonical source root required')
+  }
   const authority = validateRuntimeAuthority(
     snapshot.runtimeAuthority,
     contract,
@@ -996,11 +1051,13 @@ function admitRuntimeAuthoritySource(sourceRoot, snapshot, contract) {
   const bytesByPath = new Map()
   for (const entry of runtimeSource.files) {
     const input = safePath(sourceRoot, entry.path)
-    if (!fs.lstatSync(input).isFile())
+    if (!fs.lstatSync(input).isFile()) {
       throw new Error('Runtime authority: expected a regular source file')
+    }
     const bytes = fs.readFileSync(input)
-    if (bytes.length !== entry.size || sha256(bytes) !== entry.digest)
+    if (bytes.length !== entry.size || sha256(bytes) !== entry.digest) {
       throw new Error('Runtime authority: captured runtime bytes mismatch')
+    }
     bytesByPath.set(entry.path, bytes)
   }
   verifyCapturedRuntimeAuthority(authority, bytesByPath, snapshot.files, true)
@@ -1023,21 +1080,28 @@ function verifySourceDescriptors(
   if (
     runtimeSource.digest !== runtime.digest ||
     verificationSource.digest !== verification.digest
-  )
+  ) {
     throw new Error('Source composition descriptor mismatch')
+  }
   return { runtimeSource, verificationSource }
 }
 
 function verifyRetainedSnapshotBytes(repositoryRoot, sourceRoot, fullFiles) {
   const repository = fs.realpathSync(repositoryRoot)
-  if (typeof sourceRoot !== 'string' || path.basename(sourceRoot) !== 'source')
+  if (
+    typeof sourceRoot !== 'string' ||
+    path.basename(sourceRoot) !== 'source'
+  ) {
     throw new Error('Retained snapshot requires a source root')
+  }
   if (
     sourceRoot !== safePath(repository, path.relative(repository, sourceRoot))
-  )
+  ) {
     throw new Error('Retained snapshot requires a canonical source root')
-  if (!Array.isArray(fullFiles) || !fullFiles.length)
+  }
+  if (!Array.isArray(fullFiles) || !fullFiles.length) {
     throw new Error('Retained snapshot requires a full manifest')
+  }
   readSourceEntries(fullFiles.map((entry) => ({ entry, root: sourceRoot })))
 }
 
@@ -1059,19 +1123,23 @@ function verifyRetainedSource(repositoryRoot, input, contract) {
 // The retained runtime identity is bytes-only. A verifier may describe an older
 // owner layout, but must execute exactly these bytes and this package inventory.
 function resolveCompositionAuthority(authority, contract, bytesByPath, files) {
-  if (!authority) return undefined
-  if (authority.contractScopeDigest === contract.runtimeScope?.digest)
+  if (!authority) {
+    return undefined
+  }
+  if (authority.contractScopeDigest === contract.runtimeScope?.digest) {
     return authority
+  }
   const entries = new Map(files.map((entry) => [entry.path, entry]))
   const resolved = resolveRuntimeAuthority(
     contract,
     (relative) => {
       const bytes = bytesByPath.get(relative)
       const entry = entries.get(relative)
-      if (!bytes || !entry)
+      if (!bytes || !entry) {
         throw new Error(
           'Source composition required runtime input is absent: ' + relative
         )
+      }
       return { ...entry, bytes }
     },
     () => authority.packages.map((entry) => entry.manifestPath)
@@ -1082,10 +1150,11 @@ function resolveCompositionAuthority(authority, contract, bytesByPath, files) {
     JSON.stringify(resolved.packages) !== JSON.stringify(authority.packages) ||
     JSON.stringify(resolved.packageNames) !==
       JSON.stringify(authority.packageNames)
-  )
+  ) {
     throw new Error(
       'Source composition cannot change runtime package inventory or inputs'
     )
+  }
   validateRuntimeAuthority(resolved, contract, files)
   // Actual bytes and the manifest graph were verified before rebinding. Reuse
   // that admission only for an unchanged complete package inventory.
@@ -1122,15 +1191,17 @@ function composeSnapshot(
     repository,
     path.relative(repository, path.join(runDirectory, 'source-manifest.json'))
   )
-  if (fs.existsSync(sourceRoot) || fs.existsSync(manifestPath))
+  if (fs.existsSync(sourceRoot) || fs.existsSync(manifestPath)) {
     throw new Error('Immutable source snapshot already exists')
+  }
   for (const input of [runtimeInput, verificationInput]) {
     if (
       sourceRoot === input.sourceRoot ||
       sourceRoot.startsWith(input.sourceRoot + path.sep) ||
       input.sourceRoot.startsWith(sourceRoot + path.sep)
-    )
+    ) {
       throw new Error('Source composition destination overlaps retained source')
+    }
   }
   const bytesByPath = new Map()
   const files = readSourceEntries(selected, bytesByPath)
@@ -1246,14 +1317,18 @@ function captureSource(repositoryRoot, runDirectory, contract) {
       path.join(runDirectory, 'source-manifest.json')
     )
   )
-  if (fs.existsSync(sourceRoot) || fs.existsSync(manifestPath))
+  if (fs.existsSync(sourceRoot) || fs.existsSync(manifestPath)) {
     throw new Error('Snapshot already exists')
+  }
   const captured = new Map()
   const read = (relative) => {
-    if (captured.has(relative)) return captured.get(relative)
+    if (captured.has(relative)) {
+      return captured.get(relative)
+    }
     const input = safePath(repositoryRoot, relative)
-    if (!fs.lstatSync(input).isFile())
+    if (!fs.lstatSync(input).isFile()) {
       throw new Error('Expected a regular source file')
+    }
     const bytes = fs.readFileSync(input)
     const entry = {
       bytes,
@@ -1274,48 +1349,62 @@ function captureSource(repositoryRoot, runDirectory, contract) {
   const walk = (relative) => {
     const absolute = safePath(repositoryRoot, relative)
     for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
-      if (entry.isSymbolicLink())
+      if (entry.isSymbolicLink()) {
         throw new Error(
           'Symlinked proof source: ' + relative + '/' + entry.name
         )
-      if (entry.name === '__tests__') continue
+      }
+      if (entry.name === '__tests__') {
+        continue
+      }
       if (
         runtimeAuthority?.format === 2 &&
         (entry.name.startsWith('.') ||
           /\.(test|spec)\.[cm]?[jt]sx?$/.test(entry.name))
-      )
+      ) {
         continue
+      }
       const child = relative + '/' + entry.name
-      if (entry.isDirectory()) walk(child)
-      else if (entry.isFile()) paths.add(child)
-      else throw new Error('Unsupported source file: ' + child)
+      if (entry.isDirectory()) {
+        walk(child)
+      } else if (entry.isFile()) {
+        paths.add(child)
+      } else {
+        throw new Error('Unsupported source file: ' + child)
+      }
     }
   }
   if (runtimeAuthority?.format === 2) {
     for (const entry of runtimeAuthority.packages) {
       for (const input of entry.sourceInputs) {
         const relative = entry.repositoryDirectory + '/' + input
-        if (input.endsWith('/**')) walk(relative.slice(0, -3))
-        else {
-          if (!sourceInputPath(relative, entry))
+        if (input.endsWith('/**')) {
+          walk(relative.slice(0, -3))
+        } else {
+          if (!sourceInputPath(relative, entry)) {
             throw new Error('Invalid runtime source input: ' + relative)
+          }
           paths.add(relative)
         }
       }
       paths.add(entry.manifestPath)
     }
-  } else
+  } else {
     for (const directory of directories) {
       walk(directory + '/src')
       paths.add(directory + '/package.json')
     }
+  }
   paths.add('package.json')
   paths.add('yarn.lock')
   const runtimePaths = new Set(paths)
-  if (runtimeAuthority?.format === 2)
-    for (const scenario of contract.scenarios)
-      if (scenario.mutation && !runtimePaths.has(scenario.mutation.file))
+  if (runtimeAuthority?.format === 2) {
+    for (const scenario of contract.scenarios) {
+      if (scenario.mutation && !runtimePaths.has(scenario.mutation.file)) {
         throw new Error('Negative mutation is absent from runtime source')
+      }
+    }
+  }
   for (const relative of [
     contract.manifestPath,
     contract.architecturePath,
@@ -1323,11 +1412,14 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     contract.testFile,
     contract.configFile
   ]) {
-    if (runtimePaths.has(relative))
+    if (runtimePaths.has(relative)) {
       throw new Error('Verification input overlaps runtime source: ' + relative)
+    }
     paths.add(relative)
   }
-  for (const relative of [...paths].sort()) read(relative)
+  for (const relative of [...paths].sort()) {
+    read(relative)
+  }
   const manifest = JSON.parse(
     captured.get(contract.manifestPath).bytes.toString()
   )
@@ -1339,8 +1431,9 @@ function captureSource(repositoryRoot, runDirectory, contract) {
       if (
         dependency.startsWith('@asyra/') &&
         !sourcePackages.includes(dependency.slice('@asyra/'.length))
-      )
+      ) {
         throw new Error('Undeclared source dependency: ' + dependency)
+      }
     }
   }
   const sandbox = { module: { exports: {} }, globalThis: {} }
@@ -1355,10 +1448,11 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     (runtimeAuthority &&
       capturedContract.runtimeScope.digest !==
         runtimeAuthority.contractScopeDigest)
-  )
+  ) {
     throw new Error(
       'Contract changed during capture; retry with current contract'
     )
+  }
   const orderedPaths = [...paths].sort()
   const discoveredFiles = orderedPaths.map((relative) => {
     const entry = captured.get(relative)

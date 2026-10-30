@@ -67,8 +67,9 @@ const authorize = (actor, capability) => {
     !actor.id.trim() ||
     !Array.isArray(actor.capabilities) ||
     !actor.capabilities.includes(capability)
-  )
+  ) {
     throw new ActionError(403, 'Action is not authorized')
+  }
 }
 
 const {
@@ -189,8 +190,9 @@ function createService(
               retained.verificationSource,
               snapshot.verificationSource
             )))
-      )
+      ) {
         return retained
+      }
       sourceAdmissions.delete(record.id)
       verificationReferences.delete(record.id)
       throw new Error('Runtime source admission identity changed')
@@ -209,8 +211,9 @@ function createService(
       files &&
       Object.hasOwn(snapshot, 'sourceRoot') &&
       snapshot.sourceRoot !== sourceRoot
-    )
+    ) {
       throw new Error('Derived source location does not match the attempt')
+    }
     let sourceContract
     if (hasContract) {
       const saved = record.sourceContract
@@ -219,8 +222,9 @@ function createService(
         Object.keys(saved).length !== 2 ||
         !saved.definition ||
         !saved.architectureDefinition
-      )
+      ) {
         throw new Error('Invalid source contract')
+      }
       sourceContract =
         liveContract ??
         admitContract(saved.definition, saved.architectureDefinition)
@@ -229,8 +233,9 @@ function createService(
         sourceContract.digest !== snapshot.contractDigest ||
         sourceContract.mappingVersion !== snapshot.mappingVersion ||
         sourceContract.architectureVersion !== snapshot.architectureVersion
-      )
+      ) {
         throw new Error('Source contract identity mismatch')
+      }
     }
     let manifest = files
     if (!manifest) {
@@ -242,11 +247,13 @@ function createService(
         )
       )
       const stat = fs.statSync(file)
-      if (!stat.isFile() || stat.size > 2097152)
+      if (!stat.isFile() || stat.size > 2097152) {
         throw new Error('Source manifest artifact is invalid or oversized')
+      }
       const bytes = fs.readFileSync(file)
-      if (sha256(bytes) !== snapshot.digest)
+      if (sha256(bytes) !== snapshot.digest) {
         throw new Error('Source manifest artifact fingerprint mismatch')
+      }
       manifest = JSON.parse(bytes)
     }
     const sources = hasContract
@@ -266,8 +273,9 @@ function createService(
           : sources.verificationSource.files.find(
               (item) => item.path === sourceContract.configFile
             )?.digest !== snapshot.configurationDigest))
-    )
+    ) {
       throw new Error('Source execution configuration mismatch')
+    }
     if (derived) {
       try {
         sourceOwner.verifyRetainedSnapshotBytes(
@@ -278,7 +286,9 @@ function createService(
       } catch (error) {
         sourceAdmissions.delete(record.id)
         verificationReferences.delete(record.id)
-        if (!files && record.phase !== 'completed') return
+        if (!files && record.phase !== 'completed') {
+          return
+        }
         throw error
       }
     }
@@ -315,8 +325,9 @@ function createService(
     if (
       !admission?.verificationSource ||
       Object.hasOwn(admission, 'executionSource')
-    )
+    ) {
       return null
+    }
     return Object.freeze({
       attemptId: admission.attemptId,
       repository: admission.repository,
@@ -333,10 +344,13 @@ function createService(
       !entry?.contract ||
       !admission?.verificationSource ||
       Object.hasOwn(admission, 'executionSource')
-    )
+    ) {
       return null
+    }
     const reference = referenceIdentity(record)
-    if (expected && !isDeepStrictEqual(reference, expected)) return null
+    if (expected && !isDeepStrictEqual(reference, expected)) {
+      return null
+    }
     if (verificationReferences.has(record.id)) {
       const retained = verificationReferences.get(record.id)
       if (retained && !isDeepStrictEqual(retained, reference)) {
@@ -371,8 +385,9 @@ function createService(
       retained.baseRevision < 1 ||
       retained.baseRevision > history.versions.length ||
       !validId(retained.attemptId)
-    )
+    ) {
       invalid()
+    }
     const comparison =
       completed ??
       versionOwner.compareVersion(
@@ -388,29 +403,36 @@ function createService(
       !Object.entries(comparison).every(([key, value]) =>
         isDeepStrictEqual(retained[key], value)
       )
-    )
+    ) {
       invalid()
+    }
     const decision = history.decisions.find(
       (item) => item.reviewId === retained.id
     )
-    if (retained.status !== (decision?.decision ?? 'pending')) invalid()
+    if (retained.status !== (decision?.decision ?? 'pending')) {
+      invalid()
+    }
     const record = store.get(retained.attemptId)
     if (
       record &&
       (record.mode !== 'candidate' ||
         record.phase !== 'completed' ||
         record.contractDigest !== retained.candidate.contract.digest)
-    )
+    ) {
       invalid()
+    }
     const reference = retained.candidate.verificationSource
     if (Object.hasOwn(retained.candidate, 'verificationSource')) {
       if (
         reference.attemptId !== retained.attemptId ||
         reference.repository !== repository
-      )
+      ) {
         invalid()
+      }
       const identity = referenceIdentity(record)
-      if (identity && !isDeepStrictEqual(identity, reference)) invalid()
+      if (identity && !isDeepStrictEqual(identity, reference)) {
+        invalid()
+      }
     }
     return {
       comparison,
@@ -423,23 +445,26 @@ function createService(
     }
   }
   try {
-    if (!store.mapping())
+    if (!store.mapping()) {
       store.saveMapping({
         format: 1,
         revision: 1,
         accepted: contract,
         reviews: []
       })
+    }
     const accepted = store.mapping().accepted
     contract = accepted.architectureDefinition
       ? admitContract(accepted.definition, accepted.architectureDefinition)
       : loadContract(repositoryRoot, accepted.definition)
-    if (contract.manifestPath !== manifestPath)
+    if (contract.manifestPath !== manifestPath) {
       throw new Error('Retained product manifest differs from selected service')
-    if (contract.digest !== accepted.digest)
+    }
+    if (contract.digest !== accepted.digest) {
       throw new Error(
         'Accepted architecture changed; a new contract activation is required'
       )
+    }
     for (const record of store.list()) {
       const admission = admitRuntimeSource(record)
       const evidenceContract =
@@ -450,8 +475,9 @@ function createService(
         record.mode === 'target-proof' &&
         record.phase === 'completed' &&
         !evidenceContract
-      )
+      ) {
         throw new Error('Target proof contract authority is unavailable')
+      }
       evidenceOwner.validateStoredEvidence(
         evidenceContract ?? contract,
         record,
@@ -484,21 +510,24 @@ function createService(
         version.contract.definition,
         version.contract.architectureDefinition
       )
-      if (restored.digest !== version.contract.digest)
+      if (restored.digest !== version.contract.digest) {
         throw new Error('Invalid retained contract version')
+      }
     }
     for (const version of [
       ...history.versions,
       ...store.mapping().evolution.reviews.map((review) => review.candidate)
     ]) {
-      if (Object.hasOwn(version, 'verificationSource'))
+      if (Object.hasOwn(version, 'verificationSource')) {
         referenceFor(
           store.get(version.verificationSource?.attemptId),
           version.verificationSource
         )
+      }
     }
-    for (const review of store.mapping().evolution.reviews)
+    for (const review of store.mapping().evolution.reviews) {
       reviewAdmissions.set(review.id, admitReviewMetadata(review))
+    }
     for (const delivery of store.mapping().ciDeliveries ?? []) {
       const version = history.versions.find(
         (item) => item.contract.digest === delivery.contractDigest
@@ -507,19 +536,22 @@ function createService(
         !version ||
         sha256(JSON.stringify(delivery.envelope)) !== delivery.fingerprint ||
         !delivery.admission
-      )
+      ) {
         throw new Error('Invalid retained CI source identity')
+      }
       const assessed = assessCI(
         delivery.admission.accepted,
         version,
         delivery.admission.expected,
         delivery.envelope
       )
-      if (JSON.stringify(assessed) !== JSON.stringify(delivery.result))
+      if (JSON.stringify(assessed) !== JSON.stringify(delivery.result)) {
         throw new Error('Retained CI result differs from raw evidence')
+      }
     }
-    if (history.versions.at(-1).contract.digest !== contract.digest)
+    if (history.versions.at(-1).contract.digest !== contract.digest) {
       throw new Error('Accepted version history differs from mapping')
+    }
   } catch (error) {
     sourceAdmissions.clear()
     verificationReferences.clear()
@@ -576,17 +608,21 @@ function createService(
       }
     )
     let workStatus = 'untracked'
-    if (publicWork.some((item) => item.status === 'not-started'))
+    if (publicWork.some((item) => item.status === 'not-started')) {
       workStatus = 'not-started'
-    if (publicWork.some((item) => item.status === 'in-progress'))
+    }
+    if (publicWork.some((item) => item.status === 'in-progress')) {
       workStatus = 'in-progress'
-    if (publicWork.some((item) => item.status === 'blocked'))
+    }
+    if (publicWork.some((item) => item.status === 'blocked')) {
       workStatus = 'blocked'
+    }
     if (
       publicWork.length &&
       publicWork.every((item) => item.status === 'complete')
-    )
+    ) {
       workStatus = 'reported-complete'
+    }
     const deliveries = mapping.ciDeliveries ?? []
     publicCI = {
       deliveries: deliveries.map(projectDelivery)
@@ -671,15 +707,18 @@ function createService(
         next.mode === 'target-proof'
           ? sourceAdmissions.get(id)?.contract
           : contract
-      if (!evidenceContract)
+      if (!evidenceContract) {
         throw new Error('Target proof contract authority is unavailable')
+      }
       evidenceOwner.validateStoredEvidence(evidenceContract, next, admission)
     }
     store.save(next)
     return store.get(id)
   }
   const publicRecord = (record) => {
-    if (!record) throw new ActionError(404, 'Attempt not found')
+    if (!record) {
+      throw new ActionError(404, 'Attempt not found')
+    }
     const matchesCurrentContract =
       !['candidate', 'target-proof'].includes(record.mode) &&
       record.snapshot?.contractDigest === contract.digest &&
@@ -692,16 +731,20 @@ function createService(
     }
   }
   const requireIdle = (reviewAction = false) => {
-    if (!reviewAction && reviews?.active())
+    if (!reviewAction && reviews?.active()) {
       throw new ActionError(409, 'A delivery review is active')
-    if (closed) throw new ActionError(409, 'Service is closing')
+    }
+    if (closed) {
+      throw new ActionError(409, 'Service is closing')
+    }
     if (
       active ||
       activeAssessment ||
       tasks?.activeId() ||
       nodeInteractions?.isActive()
-    )
+    ) {
       throw new ActionError(409, 'An attempt or task is already running')
+    }
   }
   const objectRequest = (request, keys) => {
     if (
@@ -709,8 +752,9 @@ function createService(
       typeof request !== 'object' ||
       Array.isArray(request) ||
       Object.keys(request).some((key) => !keys.includes(key))
-    )
+    ) {
       throw new ActionError(400, 'Invalid action request')
+    }
   }
   const publicReview = (review) => {
     const { candidate, ...result } = review
@@ -737,18 +781,20 @@ function createService(
       directory: path.join(directory, 'tasks'),
       getBaseline: () => ({ contract, revision: store.mapping().revision }),
       requireIdle: () => {
-        if (reviews?.active())
+        if (reviews?.active()) {
           throw new ActionError(409, 'A delivery review is active')
+        }
         if (
           closed ||
           active ||
           activeAssessment ||
           nodeInteractions?.isActive()
-        )
+        ) {
           throw new ActionError(
             409,
             'An attempt is running or service is closing'
           )
+        }
       }
     })
   } catch (error) {
@@ -765,7 +811,9 @@ function createService(
       getBaseline: () => ({ contract, revision: store.mapping().revision }),
       changes: (id) => tasks.changes(id),
       candidateDirectory: (id) => {
-        if (!validId(id)) throw new ActionError(400, 'Invalid task identity')
+        if (!validId(id)) {
+          throw new ActionError(400, 'Invalid task identity')
+        }
         return path.join(directory, 'tasks', id, 'candidate')
       },
       getScopedWork: (taskId, attemptId, assessmentId, actor) =>
@@ -805,8 +853,9 @@ function createService(
           !Number.isInteger(selected) ||
           selected < 1 ||
           selected > history.versions.length
-        )
+        ) {
           return null
+        }
         return {
           revision: selected,
           contractDigest: history.versions[selected - 1].contract.digest
@@ -814,15 +863,18 @@ function createService(
       },
       getVersionReview: (id, { requireAvailable }) => {
         const pair = reviewAdmissions.get(id)?.pair
-        if (!pair) return null
+        if (!pair) {
+          return null
+        }
         if (
           requireAvailable &&
           !referenceFor(
             store.get(pair.attemptId),
             pair.candidate.verificationSource
           )
-        )
+        ) {
           return null
+        }
         return pair
       },
       getBaseline: () => ({
@@ -833,7 +885,9 @@ function createService(
         try {
           return tasks.get(id)
         } catch (error) {
-          if (error.message === 'Task not found') return null
+          if (error.message === 'Task not found') {
+            return null
+          }
           throw error
         }
       },
@@ -873,8 +927,9 @@ function createService(
       !Number.isInteger(selection.allocationRevision) ||
       selection.allocationRevision < 1 ||
       !['accepted', 'target'].includes(selection.role)
-    )
+    ) {
       throw new ActionError(400, 'Invalid target proof selection')
+    }
   }
   const taskRuntime = (selection, requireAvailable) => {
     if (requireAvailable) {
@@ -887,11 +942,12 @@ function createService(
         source.taskId !== selection.sourceTaskId ||
         source.admission.attemptId !== selection.sourceAttemptId ||
         source.admission.repository !== repository
-      )
+      ) {
         throw new ActionError(
           409,
           'Selected task source authority is unavailable'
         )
+      }
       return source
     }
     const task = tasks.get(selection.sourceTaskId)
@@ -917,8 +973,9 @@ function createService(
       verdict.configurationDigest !== verdict.executionSource.digest ||
       verdict.executionSource.verificationSourceDigest !==
         verdict.verificationSource.digest
-    )
+    ) {
       throw new Error('Invalid retained task source reference')
+    }
     return {
       admission: {
         attemptId: attempt.id,
@@ -965,13 +1022,17 @@ function createService(
   })
   const assessmentSourceFor = (id) => {
     const record = assessmentRecords.get(id)
-    if (!record) return null
+    if (!record) {
+      return null
+    }
     const request = record.request
     const source = request.sourceTaskId
       ? tasks.sourceFor(request.sourceTaskId, request.sourceAttemptId)
           ?.admission
       : sourceAdmissions.get(request.sourceAttemptId)?.admission
-    if (!source) return null
+    if (!source) {
+      return null
+    }
     const identity = targetRuntimeIdentity(source, request.sourceTaskId)
     return isDeepStrictEqual(identity, record.runtime) ? identity : null
   }
@@ -982,23 +1043,26 @@ function createService(
       !target.history.some(
         (entry) => entry.revision === selection.allocationRevision
       )
-    )
+    ) {
       throw new ActionError(409, 'Target allocation is unavailable')
+    }
     let version
     if (selection.role === 'accepted') {
       const pin = target.acceptedVersion
       version =
         pin && store.mapping().evolution.history.versions[pin.revision - 1]
-      if (!version || version.contract.digest !== pin.contractDigest)
+      if (!version || version.contract.digest !== pin.contractDigest) {
         throw new ActionError(
           409,
           'Accepted verification source is unavailable'
         )
+      }
     } else {
       const pin = target.targetVerification
       const pair = pin && reviewAdmissions.get(pin.reviewId)?.pair
-      if (!pair || pair.candidateDigest !== pin.candidateDigest)
+      if (!pair || pair.candidateDigest !== pin.candidateDigest) {
         throw new ActionError(409, 'Target verification source is unavailable')
+      }
       version = pair.candidate
     }
     const reference = version.verificationSource
@@ -1010,8 +1074,9 @@ function createService(
       !reference ||
       !admittedReference ||
       !isDeepStrictEqual(reference, admittedReference)
-    )
+    ) {
       throw new ActionError(409, 'Verification source is unavailable')
+    }
     const runtime = Object.hasOwn(selection, 'sourceTaskId')
       ? taskRuntime(selection, requireAvailable).admission
       : sourceAdmissions.get(selection.sourceAttemptId)?.admission
@@ -1020,8 +1085,9 @@ function createService(
       !runtime?.runtimeSource ||
       !selectedContract ||
       selectedContract.digest !== version.contract.digest
-    )
+    ) {
       throw new ActionError(409, 'Selected source authority is unavailable')
+    }
     return {
       contract: selectedContract,
       targetProof: immutable({
@@ -1033,7 +1099,9 @@ function createService(
   }
   try {
     for (const record of store.list()) {
-      if (record.mode !== 'target-proof') continue
+      if (record.mode !== 'target-proof') {
+        continue
+      }
       const resolved = resolveTargetProof(record.targetProof?.request, false)
       if (
         !isDeepStrictEqual(resolved.targetProof, record.targetProof) ||
@@ -1054,8 +1122,9 @@ function createService(
           record.flowIds,
           resolved.contract.flows.map((flow) => flow.id)
         )
-      )
+      ) {
         throw new Error('Invalid retained target proof selection')
+      }
     }
   } catch (error) {
     store.close()
@@ -1111,10 +1180,11 @@ function createService(
             ),
             targetProof.runtime
           )
-        )
+        ) {
           throw new Error(
             'Selected task source identity changed before composition'
           )
+        }
         const snapshot = targetProof
           ? (taskSource
               ? sourceOwner.composeDerivedSource
@@ -1146,8 +1216,9 @@ function createService(
         if (
           Object.hasOwn(snapshot, 'runtimeSource') &&
           !Array.isArray(snapshot.files)
-        )
+        ) {
           throw new Error('Runtime source: full live manifest required')
+        }
         const runtimeAdmission = admitRuntimeSource(
           { ...store.get(id), snapshot },
           snapshot.files,
@@ -1257,8 +1328,9 @@ function createService(
           ci.blockers.push(...ciContext.policyIssues)
           if (ciContext.policyIssues.length) {
             ci.deliveryStatus = 'blocked'
-            if (ci.verificationStatus === 'passed')
+            if (ci.verificationStatus === 'passed') {
               ci.verificationStatus = 'unknown'
+            }
           }
           const envelopePath = path.join(runDirectory, 'ci-envelope.json')
           writeAtomic(envelopePath, envelope)
@@ -1268,9 +1340,13 @@ function createService(
           }
         }
         let phase = 'completed'
-        if (result.reason === 'cancelled') phase = 'cancelled'
-        else if (result.reason === 'timeout') phase = 'timed-out'
-        else if (result.reason || result.reportError) phase = 'error'
+        if (result.reason === 'cancelled') {
+          phase = 'cancelled'
+        } else if (result.reason === 'timeout') {
+          phase = 'timed-out'
+        } else if (result.reason || result.reportError) {
+          phase = 'error'
+        }
         update(
           id,
           {
@@ -1294,7 +1370,9 @@ function createService(
           'attempt-error'
         )
       } finally {
-        if (active?.id === id) active = null
+        if (active?.id === id) {
+          active = null
+        }
         refreshShared()
       }
       return store.get(id)
@@ -1354,8 +1432,9 @@ function createService(
           ),
           selection.runtime
         )
-      )
+      ) {
         source = artifact.admission
+      }
     } else {
       source = sourceAdmissions.get(
         selection?.request.sourceAttemptId
@@ -1493,8 +1572,9 @@ function createService(
       ].includes(record.phase) ||
       (record.phase !== 'running' &&
         !Number.isFinite(Date.parse(record.finishedAt)))
-    )
+    ) {
       throw new Error('Invalid target assessment identity')
+    }
     if (
       record.result?.format !== record.format ||
       (record.format === 1 &&
@@ -1502,15 +1582,17 @@ function createService(
       (record.format >= 2 &&
         (!record.result?.targetContract ||
           record.result.targetContract.status === undefined))
-    )
+    ) {
       throw new Error('Invalid target assessment result format')
+    }
     if (
       Object.hasOwn(record, 'orchestrationError') &&
       (record.phase !== 'error' ||
         typeof record.orchestrationError !== 'string' ||
         !record.orchestrationError.trim())
-    )
+    ) {
       throw new Error('Invalid target assessment orchestration error')
+    }
     const resolved = resolveAssessment(record.request, false, record.format)
     if (
       !isDeepStrictEqual(record.pins, resolved.pins) ||
@@ -1519,12 +1601,14 @@ function createService(
       !Array.isArray(record.slots) ||
       !record.slots.length ||
       record.slots.length > 2
-    )
+    ) {
       throw new Error('Invalid target assessment selection')
+    }
     const roleNames = record.format === 3 ? ['target'] : ['accepted', 'target']
     objectRequest(record.roles, roleNames)
-    if (Object.keys(record.roles).length !== roleNames.length)
+    if (Object.keys(record.roles).length !== roleNames.length) {
       throw new Error('Invalid target assessment roles')
+    }
     for (const role of roleNames) {
       const saved = record.roles[role]
       if (
@@ -1534,8 +1618,9 @@ function createService(
           ...slotIdentity(resolved, role),
           slotId: saved.slotId
         })
-      )
+      ) {
         throw new Error('Invalid target assessment role')
+      }
     }
     const expectedSlots = [
       ...new Set(roleNames.map((role) => record.roles[role].slotId))
@@ -1549,11 +1634,13 @@ function createService(
       if (
         (record.roles.accepted.slotId === record.roles.target.slotId) !==
         equivalent
-      )
+      ) {
         throw new Error('Invalid target assessment sharing')
+      }
     }
-    if (record.slots.length !== expectedSlots.length)
+    if (record.slots.length !== expectedSlots.length) {
       throw new Error('Invalid target assessment sharing')
+    }
     for (let index = 0; index < record.slots.length; index++) {
       const slot = record.slots[index]
       objectRequest(slot, ['id', 'role', 'phase', 'reason'])
@@ -1571,16 +1658,18 @@ function createService(
           'error'
         ].includes(slot.phase) ||
         (slot.reason !== undefined && typeof slot.reason !== 'string')
-      )
+      ) {
         throw new Error('Invalid target assessment slot ownership')
+      }
       seen.add(slot.id)
       const producer = store.get(slot.id)
       if (
         !producer &&
         record.phase !== 'running' &&
         (typeof slot.reason !== 'string' || !slot.reason.trim())
-      )
+      ) {
         throw new Error('Target assessment slot terminal reason is missing')
+      }
       if (
         producer &&
         (producer.targetAssessmentId !== record.id ||
@@ -1590,29 +1679,34 @@ function createService(
             producer.targetProof,
             resolved[slot.role].targetProof
           ))
-      )
+      ) {
         throw new Error('Invalid target assessment producer binding')
+      }
       if (
         record.phase !== 'running' &&
         producer &&
         slot.phase !== producer.phase
-      )
+      ) {
         throw new Error(
           'Target assessment slot phase differs from its producer'
         )
-      if (slot.phase === 'completed' && producer?.phase !== 'completed')
+      }
+      if (slot.phase === 'completed' && producer?.phase !== 'completed') {
         throw new Error('Missing completed target assessment producer')
+      }
       if (
         record.phase !== 'running' &&
         ['requested', 'running'].includes(slot.phase)
-      )
+      ) {
         throw new Error('Unsettled terminal target assessment slot')
+      }
     }
     if (
       record.phase === 'completed' &&
       record.slots.some((slot) => slot.phase !== 'completed')
-    )
+    ) {
       throw new Error('Invalid completed target assessment lifecycle')
+    }
     if (
       ['cancelled', 'timed-out', 'error'].includes(record.phase) &&
       !record.orchestrationError &&
@@ -1620,31 +1714,37 @@ function createService(
         record.slots.some(
           (slot) => !['completed', record.phase].includes(slot.phase)
         ))
-    )
+    ) {
       throw new Error('Invalid terminal target assessment lifecycle')
+    }
     return resolved
   }
   const settledAssessmentSlot = (slot, fallback, reason) => {
     const producer = store.get(slot.id)
-    if (producer && producer.phase !== 'running')
+    if (producer && producer.phase !== 'running') {
       return { ...slot, phase: producer.phase }
+    }
     return { ...slot, phase: fallback, reason }
   }
   try {
     if (fs.existsSync(assessmentFile)) {
-      if (!fs.lstatSync(assessmentFile).isFile())
+      if (!fs.lstatSync(assessmentFile).isFile()) {
         throw new Error('Invalid target assessment store')
+      }
       const saved = JSON.parse(fs.readFileSync(assessmentFile, 'utf8'))
       objectRequest(saved, ['format', 'records'])
-      if (![1, 2].includes(saved.format) || !Array.isArray(saved.records))
+      if (![1, 2].includes(saved.format) || !Array.isArray(saved.records)) {
         throw new Error('Invalid target assessment store')
+      }
       const seen = new Set()
       let changed = false
       for (const retained of saved.records) {
-        if (assessmentRecords.has(retained.id))
+        if (assessmentRecords.has(retained.id)) {
           throw new Error('Duplicate target assessment identity')
-        if (saved.format === 1 && retained.format !== 1)
+        }
+        if (saved.format === 1 && retained.format !== 1) {
           throw new Error('Invalid target assessment format upgrade')
+        }
         validateAssessmentRecord(retained, seen)
         let record = retained
         selectedSources.set(record.request.targetId, {
@@ -1671,21 +1771,26 @@ function createService(
             assessRecord(record, record.evaluatedCurrent),
             record.result
           )
-        )
+        ) {
           throw new Error(
             'Retained target assessment differs from admitted observations'
           )
+        }
         assessmentRecords.set(record.id, immutable(record))
       }
-      for (const producer of store.list())
+      for (const producer of store.list()) {
         if (
           Object.hasOwn(producer, 'targetAssessmentId') &&
           !seen.has(producer.id)
-        )
+        ) {
           throw new Error('Orphan target assessment producer')
+        }
+      }
       const history = store.mapping().evolution.history
       for (const decision of history.decisions) {
-        if (!Object.hasOwn(decision, 'targetAcceptance')) continue
+        if (!Object.hasOwn(decision, 'targetAcceptance')) {
+          continue
+        }
         const reference = decision.targetAcceptance
         const review = store
           .mapping()
@@ -1712,15 +1817,20 @@ function createService(
             reference.acceptedBaseline
           ) ||
           !isDeepStrictEqual(target.acceptedVersion, reference.acceptedVersion)
-        )
+        ) {
           throw new Error('Invalid retained target acceptance binding')
+        }
       }
-      if (changed) saveAssessments()
-      else refreshAssessmentProjections()
+      if (changed) {
+        saveAssessments()
+      } else {
+        refreshAssessmentProjections()
+      }
     } else if (
       store.list().some((record) => Object.hasOwn(record, 'targetAssessmentId'))
-    )
+    ) {
       throw new Error('Missing target assessment inventory')
+    }
     targets.validateAssessmentAdmissions()
   } catch (error) {
     store.close()
@@ -1728,21 +1838,27 @@ function createService(
   }
   const readAssessment = (id) => {
     const value = assessmentViews.get(id)
-    if (!value) throw new ActionError(404, 'Target assessment is unavailable')
+    if (!value) {
+      throw new ActionError(404, 'Target assessment is unavailable')
+    }
     return value
   }
   const stopAssessment = async (id, actor) => {
     authorize(actor, 'cancel')
-    if (!activeAssessment || activeAssessment.id !== id)
+    if (!activeAssessment || activeAssessment.id !== id) {
       throw new ActionError(409, 'Target assessment is not active')
+    }
     activeAssessment.cancelled = true
-    if (active) active.controller.abort()
+    if (active) {
+      active.controller.abort()
+    }
     return activeAssessment.completion
   }
   const scopedWorkFor = (taskId, attemptId, assessmentId, actor) => {
     authorize(actor, REVIEW_POLICY.capability)
-    if (![taskId, attemptId, assessmentId].every(validId))
+    if (![taskId, attemptId, assessmentId].every(validId)) {
       throw new ActionError(400, 'Invalid scoped work selection')
+    }
     requireIdle(true)
     return taskResult(() => {
       const task = tasks.get(taskId)
@@ -1763,8 +1879,9 @@ function createService(
         record.request.sourceTaskId !== taskId ||
         record.request.sourceAttemptId !== attemptId ||
         record.request.targetId !== binding.targetId
-      )
+      ) {
         throw new Error('Scoped work selection is unavailable or stale')
+      }
       const admission = targets.checkTask(task.task, task.snapshot)
       const target = targets.get(binding.targetId)
       const work = record.result.works.find(
@@ -1788,26 +1905,29 @@ function createService(
         ) ||
         record.format !== 3 ||
         work?.status !== 'passed'
-      )
+      ) {
         throw new Error(
           'Scoped work preservation or commitment is not satisfied'
         )
+      }
       const source = taskRuntime(record.request, true)
       if (
         !isDeepStrictEqual(
           targetRuntimeIdentity(source.admission, taskId),
           record.runtime
         )
-      )
+      ) {
         throw new Error('Scoped work source identity mismatch')
+      }
       const roles = ['target']
       const ids = [...new Set(roles.map((role) => record.roles[role].slotId))]
       if (
         !ids.length ||
         ids.length !== record.slots.length ||
         record.slots.some((slot) => !ids.includes(slot.id))
-      )
+      ) {
         throw new Error('Scoped work proof inventory is incomplete')
+      }
       const producers = record.slots.map((slot) => {
         const producer = store.get(slot.id)
         const admitted = sourceAdmissions.get(slot.id)?.admission
@@ -1833,8 +1953,9 @@ function createService(
           admitted.contractDigest !== identity.contractDigest ||
           admitted.verificationSource?.digest !==
             identity.verificationSourceDigest
-        )
+        ) {
           throw new Error('Scoped work producer authority is unavailable')
+        }
         return Object.freeze({
           id: slot.id,
           roles: Object.freeze(
@@ -1915,8 +2036,9 @@ function createService(
         'sourceAttemptId',
         'sourceTaskId'
       ])
-      if (!validId(request.requestId))
+      if (!validId(request.requestId)) {
         throw new ActionError(400, 'Invalid target assessment request')
+      }
       const { requestId, ...selection } = request
       assessmentSelection(selection)
       const previous = assessmentRecords.get(requestId)
@@ -1924,8 +2046,9 @@ function createService(
         if (
           previous.actor !== actor.id ||
           !isDeepStrictEqual(previous.request, selection)
-        )
+        ) {
           throw new ActionError(409, 'Target assessment request conflicts')
+        }
         return previous.id
       }
       requireIdle()
@@ -1936,8 +2059,9 @@ function createService(
         [...assessmentRecords.values()].some((record) =>
           record.slots.some((slot) => slot.id === producerId)
         )
-      )
+      ) {
         producerId = randomUUID()
+      }
       const roles = {
         target: { ...slotIdentity(resolved, 'target'), slotId: producerId }
       }
@@ -1964,9 +2088,11 @@ function createService(
         saveAssessments()
       } catch (error) {
         assessmentRecords.delete(requestId)
-        if (previousSource === undefined)
+        if (previousSource === undefined) {
           selectedSources.delete(selection.targetId)
-        else selectedSources.set(selection.targetId, previousSource)
+        } else {
+          selectedSources.set(selection.targetId, previousSource)
+        }
         throw error
       }
       const orchestration = { id: requestId, cancelled: false }
@@ -2019,8 +2145,11 @@ function createService(
             state = assessmentRecords.get(requestId)
             const stop = producer.phase !== 'completed'
             let phase = 'running'
-            if (stop) phase = producer.phase
-            else if (index === slots.length - 1) phase = 'completed'
+            if (stop) {
+              phase = producer.phase
+            } else if (index === slots.length - 1) {
+              phase = 'completed'
+            }
             state = {
               ...state,
               phase,
@@ -2028,19 +2157,24 @@ function createService(
                 ? { finishedAt: new Date().toISOString() }
                 : {}),
               slots: state.slots.map((item) => {
-                if (item.id === id) return { ...item, phase: producer.phase }
-                if (stop && item.phase === 'requested')
+                if (item.id === id) {
+                  return { ...item, phase: producer.phase }
+                }
+                if (stop && item.phase === 'requested') {
                   return {
                     ...item,
                     phase: producer.phase,
                     reason: 'Earlier producer terminated assessment'
                   }
+                }
                 return item
               })
             }
             assessmentRecords.set(requestId, evaluateAssessment(state))
             saveAssessments()
-            if (stop) break
+            if (stop) {
+              break
+            }
           }
         } catch (error) {
           const state = assessmentRecords.get(requestId)
@@ -2058,7 +2192,9 @@ function createService(
           )
           saveAssessments()
         } finally {
-          if (activeAssessment === orchestration) activeAssessment = null
+          if (activeAssessment === orchestration) {
+            activeAssessment = null
+          }
           refreshShared()
         }
         return readAssessment(requestId)
@@ -2069,7 +2205,9 @@ function createService(
     getTargetAssessment: readAssessment,
     targetAssessments: () => Object.freeze([...assessmentViews.values()]),
     async waitTargetAssessment(id) {
-      if (activeAssessment?.id === id) await activeAssessment.completion
+      if (activeAssessment?.id === id) {
+        await activeAssessment.completion
+      }
       return readAssessment(id)
     },
     cancelTargetAssessment: stopAssessment,
@@ -2083,8 +2221,9 @@ function createService(
         'sourceTaskId',
         'role'
       ])
-      if (!validId(request.requestId))
+      if (!validId(request.requestId)) {
         throw new ActionError(400, 'Invalid target proof request')
+      }
       const { requestId, ...selection } = request
       validateTargetProofSelection(selection)
       const previous = store.get(requestId)
@@ -2093,11 +2232,12 @@ function createService(
           previous.mode !== 'target-proof' ||
           previous.actor !== actor.id ||
           !isDeepStrictEqual(previous.targetProof?.request, selection)
-        )
+        ) {
           throw new ActionError(
             409,
             'Target proof request identity conflicts with an existing attempt'
           )
+        }
         return previous.id
       }
       requireIdle()
@@ -2155,16 +2295,20 @@ function createService(
       if (
         request.action !== 'confirm' &&
         (request.confirm !== undefined || request.previewDigest !== undefined)
-      )
+      ) {
         throw new ActionError(400, 'Invalid review action request')
+      }
       requireIdle(true)
       try {
-        if (request.action === 'prepare')
+        if (request.action === 'prepare') {
           return await reviews.prepare(id, actor.id)
-        if (request.action === 'confirm')
+        }
+        if (request.action === 'confirm') {
           return await reviews.confirm(id, request, actor.id)
-        if (request.action === 'refresh')
+        }
+        if (request.action === 'refresh') {
           return await reviews.refresh(id, actor.id)
+        }
         throw new ActionError(400, 'Unknown review action')
       } catch (error) {
         throw new ActionError(error.status ?? 409, error.message)
@@ -2178,24 +2322,27 @@ function createService(
     waitTask: (id) => tasks.wait(id),
     taskChanges: (id) => taskResult(() => tasks.changes(id)),
     async controlTask(id, request, actor) {
-      if (reviews?.active())
+      if (reviews?.active()) {
         throw new ActionError(409, 'A delivery review is active')
+      }
       authorize(actor, 'control-task')
       objectRequest(request, ['action', 'scenario'])
       if (
         activeAssessment &&
         assessmentRecords.get(activeAssessment.id)?.request.sourceTaskId === id
-      )
+      ) {
         throw new ActionError(
           409,
           'Source task belongs to an active assessment'
         )
+      }
       if (request.action === 'resume') {
         taskResult(() => tasks.resume(id, request.scenario, actor.id))
         return tasks.get(id)
       }
-      if (request.scenario !== undefined)
+      if (request.scenario !== undefined) {
         throw new ActionError(400, 'Scenario is only valid for resume')
+      }
       try {
         return await tasks.stop(id, request.action, actor.id)
       } catch (error) {
@@ -2216,11 +2363,12 @@ function createService(
         typeof request.reason !== 'string' ||
         !request.reason.trim() ||
         request.reason.length > 1000
-      )
+      ) {
         throw new ActionError(
           400,
           'Known step, work status and reason are required'
         )
+      }
       const state = store.mapping(),
         previous = state.work?.[request.stepId]
       const work = {
@@ -2246,27 +2394,31 @@ function createService(
       authorize(actor, 'ingest-ci')
       objectRequest(request, ['envelope'])
       requireIdle()
-      if (!ciAdmission?.expected)
+      if (!ciAdmission?.expected) {
         throw new ActionError(
           409,
           'No independently admitted CI run is configured'
         )
+      }
       const envelope = structuredClone(request.envelope)
       const expected = ciAdmission.expected
       if (
         !envelope ||
         envelope.runId !== expected.runId ||
         envelope.attempt !== expected.attempt
-      )
+      ) {
         throw new ActionError(
           409,
           'CI delivery is not the currently admitted run attempt'
         )
-      if (!/^[1-9][0-9]*$/.test(expected.runId))
+      }
+      if (!/^[1-9][0-9]*$/.test(expected.runId)) {
         throw new ActionError(400, 'Registered CI run id must be numeric')
+      }
       const bytes = JSON.stringify(envelope)
-      if (Buffer.byteLength(bytes) > 2097152)
+      if (Buffer.byteLength(bytes) > 2097152) {
         throw new ActionError(413, 'CI envelope exceeds size limit')
+      }
       const fingerprint = sha256(bytes),
         state = store.mapping(),
         deliveries = state.ciDeliveries ?? []
@@ -2275,11 +2427,12 @@ function createService(
           item.runId === expected.runId && item.attempt === expected.attempt
       )
       if (previous) {
-        if (previous.fingerprint !== fingerprint)
+        if (previous.fingerprint !== fingerprint) {
           throw new ActionError(
             409,
             'CI delivery conflicts with retained evidence'
           )
+        }
         return projectDelivery(previous)
       }
       if (
@@ -2287,8 +2440,9 @@ function createService(
           (item) =>
             item.runId === expected.runId && item.attempt > expected.attempt
         )
-      )
+      ) {
         throw new ActionError(409, 'CI delivery attempt is stale')
+      }
       if (
         deliveries.some(
           (item) =>
@@ -2297,8 +2451,9 @@ function createService(
             /^[1-9][0-9]*$/.test(item.runId) &&
             BigInt(item.runId) > BigInt(expected.runId)
         )
-      )
+      ) {
         throw new ActionError(409, 'CI delivery run is stale')
+      }
       const accepted = ciAdmission.accepted ?? contract
       const result = assessCI(accepted, contract, expected, envelope)
       const delivery = {
@@ -2322,11 +2477,13 @@ function createService(
       const delivery = store
         .mapping()
         .ciDeliveries?.find((item) => item.id === id)
-      if (!delivery || !['report', 'envelope'].includes(name))
+      if (!delivery || !['report', 'envelope'].includes(name)) {
         throw new ActionError(404, 'CI artifact not found')
+      }
       const bytes = JSON.stringify(delivery.envelope)
-      if (sha256(bytes) !== delivery.fingerprint)
+      if (sha256(bytes) !== delivery.fingerprint) {
         throw new ActionError(409, 'CI artifact fingerprint mismatch')
+      }
       return Buffer.from(name === 'report' ? delivery.envelope.report : bytes)
     },
     prepareEvolution(request, actor) {
@@ -2338,8 +2495,9 @@ function createService(
         !record ||
         record.mode !== 'candidate' ||
         record.phase !== 'completed'
-      )
+      ) {
         throw new ActionError(409, 'A completed candidate proof is required')
+      }
       const state = store.mapping(),
         evolution = state.evolution
       const sourceAware = Object.hasOwn(record, 'sourceContract')
@@ -2358,16 +2516,18 @@ function createService(
         if (
           !candidateContract ||
           record.contractDigest !== candidateContract.digest
-        )
+        ) {
           throw new ActionError(409, 'Candidate source contract is unavailable')
+        }
         const verificationSource = sourceAware
           ? referenceFor(record)
           : undefined
-        if (sourceAware && !verificationSource)
+        if (sourceAware && !verificationSource) {
           throw new ActionError(
             409,
             'Candidate verification source is unavailable'
           )
+        }
         const report = JSON.parse(this.readArtifact(record.id, 'report'))
         const contentDigest = sourceAware
           ? verificationSource.descriptor.files.find(
@@ -2397,12 +2557,15 @@ function createService(
         relations: request.relations ?? []
       })
       const existing = evolution.reviews.find((item) => item.id === review.id)
-      if (existing) return existing
-      if (sourceAware && !referenceFor(record, candidate.verificationSource))
+      if (existing) {
+        return existing
+      }
+      if (sourceAware && !referenceFor(record, candidate.verificationSource)) {
         throw new ActionError(
           409,
           'Candidate verification source is unavailable'
         )
+      }
       const retained = {
         ...review,
         candidate,
@@ -2425,7 +2588,9 @@ function createService(
       const state = store.mapping(),
         evolution = state.evolution
       const review = evolution.reviews.find((item) => item.id === request.id)
-      if (!review) throw new ActionError(404, 'Contract review not found')
+      if (!review) {
+        throw new ActionError(404, 'Contract review not found')
+      }
       if (request.decision === 'accept') {
         const current = loadCurrentContract()
         const digest = sha256(
@@ -2434,8 +2599,9 @@ function createService(
         if (
           current.digest !== review.candidate.contract.digest ||
           review.candidate.selectors.some((s) => s.contentDigest !== digest)
-        )
+        ) {
           throw new ActionError(409, 'Candidate changed after review')
+        }
       }
       const decision = {
         decision: request.decision,
@@ -2460,7 +2626,9 @@ function createService(
               )
         }
       )
-      if (history === evolution.history) return review
+      if (history === evolution.history) {
+        return review
+      }
       const accepted = history.versions.at(-1).contract
       store.saveMapping({
         ...state,
@@ -2499,8 +2667,9 @@ function createService(
         'reason',
         'retirement'
       ])
-      if (Array.isArray(request?.retirement) && request.retirement.length)
+      if (Array.isArray(request?.retirement) && request.retirement.length) {
         authorize(actor, 'retire-contract')
+      }
       if (
         !validId(request?.requestId) ||
         !validId(request?.targetId) ||
@@ -2509,8 +2678,9 @@ function createService(
         !request.reason.trim() ||
         request.reason.length > 1000 ||
         !Array.isArray(request?.retirement)
-      )
+      ) {
         throw new ActionError(400, 'Invalid target acceptance request')
+      }
       const state = store.mapping(),
         evolution = state.evolution
       const replay = evolution.history.decisions.find(
@@ -2567,17 +2737,19 @@ function createService(
           targetVerification: target.targetVerification
         }) ||
         !isDeepStrictEqual(assessmentSourceFor(assessment.id), retained.runtime)
-      )
+      ) {
         throw new ActionError(
           409,
           'Target assessment source authority is unavailable or stale'
         )
+      }
       if (
         !review ||
         review.status !== 'pending' ||
         review.candidate.contract.digest !== target.targetRevision
-      )
+      ) {
         throw new ActionError(409, 'Target review is unavailable or stale')
+      }
       const history = taskResult(() =>
         acceptTargetBaselineVersion(
           evolution.history,
@@ -2613,7 +2785,9 @@ function createService(
       requireIdle()
       const candidate = loadCurrentContract()
       const changes = mappingDiff(contract, candidate)
-      if (!changes.length) return { status: 'unchanged', changes: [] }
+      if (!changes.length) {
+        return { status: 'unchanged', changes: [] }
+      }
       const state = store.mapping()
       const existing = state.reviews.find(
         (review) =>
@@ -2621,7 +2795,9 @@ function createService(
           review.baseRevision === state.revision &&
           review.candidate.digest === candidate.digest
       )
-      if (existing) return publicReview(existing)
+      if (existing) {
+        return publicReview(existing)
+      }
       const review = {
         id: randomUUID(),
         status: 'pending',
@@ -2645,22 +2821,26 @@ function createService(
         typeof request.reason !== 'string' ||
         !request.reason.trim() ||
         request.reason.length > 1000
-      )
+      ) {
         throw new ActionError(
           400,
           'A review identity, decision and reason are required'
         )
+      }
       const state = store.mapping()
       const review = state.reviews.find((item) => item.id === request.id)
-      if (!review) throw new ActionError(404, 'Mapping review not found')
+      if (!review) {
+        throw new ActionError(404, 'Mapping review not found')
+      }
       const status = request.decision === 'accept' ? 'accepted' : 'rejected'
       if (review.status !== 'pending') {
         if (
           review.status === status &&
           review.reason === request.reason &&
           review.decidedBy === actor.id
-        )
+        ) {
           return publicReview(review)
+        }
         throw new ActionError(409, 'Mapping review is already decided')
       }
       let accepted = contract
@@ -2668,18 +2848,21 @@ function createService(
         if (
           review.baseRevision !== state.revision ||
           review.baseDigest !== contract.digest
-        )
+        ) {
           throw new ActionError(409, 'Mapping review base is stale')
+        }
         accepted = loadCurrentContract()
-        if (accepted.digest !== review.candidate.digest)
+        if (accepted.digest !== review.candidate.digest) {
           throw new ActionError(409, 'Mapping candidate changed after review')
+        }
         mappingDiff(contract, accepted)
-        for (const record of store.list())
+        for (const record of store.list()) {
           evidenceOwner.validateStoredEvidence(
             accepted,
             record,
             admitRuntimeSource(record)
           )
+        }
       }
       const decided = {
         ...review,
@@ -2814,27 +2997,33 @@ function createService(
         }
       }
       const artifact = artifacts[name]
-      if (!artifact?.digest)
+      if (!artifact?.digest) {
         throw new ActionError(404, 'Artifact is unavailable')
+      }
       const file = safePath(
         repositoryRoot,
         path.relative(repositoryRoot, path.join(directory, id, artifact.file))
       )
-      if (!fs.existsSync(file) || !fs.statSync(file).isFile())
+      if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
         throw new ActionError(404, 'Artifact is unavailable')
-      if (fs.statSync(file).size > 2097152)
+      }
+      if (fs.statSync(file).size > 2097152) {
         throw new ActionError(413, 'Artifact exceeds size limit')
+      }
       const bytes = fs.readFileSync(file)
-      if (sha256(bytes) !== artifact.digest)
+      if (sha256(bytes) !== artifact.digest) {
         throw new ActionError(
           409,
           'Artifact fingerprint differs from retained evidence'
         )
+      }
       return bytes
     },
     start(request, actor) {
       authorize(actor, 'verify')
-      if (closed) throw new ActionError(409, 'Service is closing')
+      if (closed) {
+        throw new ActionError(409, 'Service is closing')
+      }
       if (
         !request ||
         typeof request !== 'object' ||
@@ -2842,18 +3031,25 @@ function createService(
         Object.keys(request).some(
           (key) => !['scenario', 'flowIds', 'requestId', 'mode'].includes(key)
         )
-      )
+      ) {
         throw new ActionError(400, 'Invalid verification request')
+      }
       const mode = request.mode ?? 'verify'
-      if (!['verify', 'candidate', 'ci', 'ci-demo'].includes(mode))
+      if (!['verify', 'candidate', 'ci', 'ci-demo'].includes(mode)) {
         throw new ActionError(400, 'Unknown execution mode')
-      if (mode === 'candidate') authorize(actor, 'preview-contract')
-      if (mode === 'ci' || mode === 'ci-demo') authorize(actor, 'ci')
+      }
+      if (mode === 'candidate') {
+        authorize(actor, 'preview-contract')
+      }
+      if (mode === 'ci' || mode === 'ci-demo') {
+        authorize(actor, 'ci')
+      }
       const requestedContract =
         mode === 'candidate' ? loadCurrentContract() : contract
       const scenario = request.scenario ?? 'baseline'
-      if (!requestedContract.scenarios.some((item) => item.id === scenario))
+      if (!requestedContract.scenarios.some((item) => item.id === scenario)) {
         throw new ActionError(400, 'Unknown scenario')
+      }
       const requestedFlows =
         request.flowIds ?? requestedContract.flows.map((flow) => flow.id)
       const flowIds = Array.isArray(requestedFlows)
@@ -2867,23 +3063,26 @@ function createService(
         flowIds.some(
           (id) => !requestedContract.flows.some((flow) => flow.id === id)
         )
-      )
+      ) {
         throw new ActionError(
           400,
           'Unknown, duplicate, or empty flow selection'
         )
+      }
       if (
         (mode === 'ci' || mode === 'ci-demo') &&
         (flowIds.length !== requestedContract.flows.length ||
           (mode === 'ci' && scenario !== 'baseline') ||
           (mode === 'ci-demo' && scenario === 'baseline'))
-      )
+      ) {
         throw new ActionError(
           400,
           'CI requires all supported flows and baseline scenario'
         )
-      if (request.requestId !== undefined && !validId(request.requestId))
+      }
+      if (request.requestId !== undefined && !validId(request.requestId)) {
         throw new ActionError(400, 'Invalid request identity')
+      }
       if (request.requestId && store.get(request.requestId)) {
         const previous = store.get(request.requestId)
         if (
@@ -2891,31 +3090,36 @@ function createService(
           previous.actor !== actor.id ||
           previous.scenario !== scenario ||
           JSON.stringify(previous.flowIds) !== JSON.stringify(flowIds)
-        )
+        ) {
           throw new ActionError(
             409,
             'Request identity conflicts with an existing attempt'
           )
+        }
         return previous.id
       }
       requireIdle()
       const current =
         mode === 'candidate' ? requestedContract : loadCurrentContract()
-      if (mode !== 'candidate' && current.digest !== contract.digest)
+      if (mode !== 'candidate' && current.digest !== contract.digest) {
         throw new ActionError(
           409,
           'Working mapping differs from the accepted contract; prepare a mapping review before verification'
         )
+      }
       return beginAttempt(request, actor, current, mode, scenario, flowIds)
     },
     async wait(id) {
-      if (pending.has(id)) await pending.get(id)
+      if (pending.has(id)) {
+        await pending.get(id)
+      }
       return publicRecord(store.get(id))
     },
     async cancel(id, actor) {
       authorize(actor, 'cancel')
-      if (!active || active.id !== id)
+      if (!active || active.id !== id) {
         throw new ActionError(409, 'Attempt is not active')
+      }
       update(id, {}, 'cancel-requested')
       active.controller.abort()
       return pending.get(id)
@@ -2924,8 +3128,9 @@ function createService(
       closed = true
       try {
         await nodeInteractions.close()
-        if (activeAssessment)
+        if (activeAssessment) {
           await stopAssessment(activeAssessment.id, LOCAL_ACTOR)
+        }
         await reviews.close()
         await tasks.close()
         if (active) {

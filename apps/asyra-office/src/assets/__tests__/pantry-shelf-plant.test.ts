@@ -13,7 +13,9 @@ it('includes raised pale-yellow blooms with petals, centers and soil-connected s
     const stem = parts.find((q) => q.id === `flower-stem-${id}`)
     expect(center).toBeDefined()
     expect(stem).toBeDefined()
-    if (!center || !stem) throw new Error('Missing flower structure')
+    if (!center || !stem) {
+      throw new Error('Missing flower structure')
+    }
     expect(p.color).toBe(0xead48c)
     const bounds = meshBounds([p])
     expect(bounds[2][0]).toBeGreaterThan(0.16)
@@ -39,7 +41,9 @@ it('constructs the fifth shelf object as a blue pot with brown edging, fleshy le
   const parts = pantryShelfSucculent()
   const find = (id: string) => {
     const p = parts.find((p) => p.id === id)
-    if (!p) throw new Error('Missing succulent part: ' + id)
+    if (!p) {
+      throw new Error('Missing succulent part: ' + id)
+    }
     return p
   }
   expect(find('pot').color).toBe(0x596b7a)

@@ -77,9 +77,11 @@ test('the collaboration configuration inventory has exactly one declared case pe
     contract.cases.map((c) => [c.testFile, c.testName, c.projectName]).sort()
   )
   assert.equal(actual.length, 22)
-  for (const item of contract.cases)
-    for (const entry of item.implementationPaths)
+  for (const item of contract.cases) {
+    for (const entry of item.implementationPaths) {
       assert.ok(fs.existsSync(path.join(root, entry)))
+    }
+  }
 })
 
 function collaborationReport() {
@@ -350,7 +352,7 @@ for (const proof of [
     passed: 1,
     skipped: 0
   }
-])
+]) {
   test(
     proof.name,
     {
@@ -443,6 +445,7 @@ for (const proof of [
       )
     }
   )
+}
 
 const collaborationOwnerRoutes = [
   [
@@ -473,7 +476,7 @@ const collaborationOwnerRoutes = [
     }
   ]
 ]
-for (const [step, name, file, operation] of collaborationOwnerRoutes)
+for (const [step, name, file, operation] of collaborationOwnerRoutes) {
   test(
     'original collaboration owner route - ' + step,
     {
@@ -508,9 +511,11 @@ for (const [step, name, file, operation] of collaborationOwnerRoutes)
         )
       }
       verify(await fixture.run([item.id]), 'passed', 0)
-      if (typeof operation === 'string')
+      if (typeof operation === 'string') {
         fixture.faultOperation(item.id, file, operation)
-      else fixture.faultCase(item.id, { file, ...operation })
+      } else {
+        fixture.faultCase(item.id, { file, ...operation })
+      }
       const fault = await fixture.run([item.id])
       verify(fault, 'failed', 1)
       fixture.restore()
@@ -527,6 +532,7 @@ for (const [step, name, file, operation] of collaborationOwnerRoutes)
       )
     }
   )
+}
 
 test('the complete collaboration report fits its bounded producer budget while oversized reports remain unavailable', () => {
   const { begin, complete } = require('../playwright-results.cjs')
@@ -818,8 +824,11 @@ test(
     t.after(async () => {
       await browser?.close()
       await server?.close()
-      if (prior === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = prior
+      if (prior === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = prior
+      }
     })
     server = await startServer(root, {
       serviceOptions: {
@@ -1127,7 +1136,7 @@ for (const [termination, exitCode] of [
   ['signal', 143],
   ['success', 0],
   ['failure', 42]
-])
+]) {
   test(
     'collaboration wrapper settles owned descendants - ' + termination,
     { timeout: 15000 },
@@ -1198,3 +1207,4 @@ exit 0
       )
     }
   )
+}

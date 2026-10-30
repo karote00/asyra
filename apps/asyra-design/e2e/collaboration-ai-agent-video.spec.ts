@@ -295,9 +295,13 @@ const startWebSocketPayloadProfile = async (
     } catch {
       return
     }
-    if (!frame) return
+    if (!frame) {
+      return
+    }
     const value = frame.value
-    if (!value || typeof value !== 'object') return
+    if (!value || typeof value !== 'object') {
+      return
+    }
     const message = value as {
       type?: unknown
       publication?: unknown
@@ -312,11 +316,15 @@ const startWebSocketPayloadProfile = async (
     ) {
       publications = message.publications
     }
-    if (!publications) return
+    if (!publications) {
+      return
+    }
     publicationFrameCount += 1
     totalFrameWireBytes += frame.wireByteLength
     publications.forEach((publicationValue) => {
-      if (!publicationValue || typeof publicationValue !== 'object') return
+      if (!publicationValue || typeof publicationValue !== 'object') {
+        return
+      }
       const publication = publicationValue as {
         publicationId?: unknown
         slices?: unknown
@@ -329,18 +337,28 @@ const startWebSocketPayloadProfile = async (
         }
         publicationIds.add(publication.publicationId)
       }
-      if (!Array.isArray(publication.slices)) return
+      if (!Array.isArray(publication.slices)) {
+        return
+      }
       const routedDeliveries = publication.slices.flatMap((sliceValue) => {
-        if (!sliceValue || typeof sliceValue !== 'object') return []
+        if (!sliceValue || typeof sliceValue !== 'object') {
+          return []
+        }
         const slice = sliceValue as { batches?: unknown }
-        if (!Array.isArray(slice.batches)) return []
+        if (!Array.isArray(slice.batches)) {
+          return []
+        }
         return slice.batches.flatMap((batchValue) => {
-          if (!batchValue || typeof batchValue !== 'object') return []
+          if (!batchValue || typeof batchValue !== 'object') {
+            return []
+          }
           const batch = batchValue as {
             channel?: unknown
             deliveries?: unknown
           }
-          if (!Array.isArray(batch.deliveries)) return []
+          if (!Array.isArray(batch.deliveries)) {
+            return []
+          }
           return batch.deliveries.map((deliveryValue) => ({
             channel: batch.channel,
             deliveryValue
@@ -348,7 +366,9 @@ const startWebSocketPayloadProfile = async (
         })
       })
       routedDeliveries.forEach(({ channel, deliveryValue }) => {
-        if (!deliveryValue || typeof deliveryValue !== 'object') return
+        if (!deliveryValue || typeof deliveryValue !== 'object') {
+          return
+        }
         const delivery = deliveryValue as {
           deliveryId?: unknown
           eventName?: unknown
@@ -376,7 +396,9 @@ const startWebSocketPayloadProfile = async (
               data.length
             )
             data.forEach((snapshotValue) => {
-              if (!snapshotValue || typeof snapshotValue !== 'object') return
+              if (!snapshotValue || typeof snapshotValue !== 'object') {
+                return
+              }
               const snapshot = snapshotValue as {
                 id?: unknown
                 type?: unknown
@@ -546,7 +568,9 @@ const captureProgressiveRuntimeEvidence = async (page: Page) => {
     const serializeError = (
       value: unknown
     ): DiagnosticErrorEvidence | string | undefined => {
-      if (value === undefined) return undefined
+      if (value === undefined) {
+        return undefined
+      }
       if (value instanceof Error) {
         return {
           message: value.message,
@@ -651,7 +675,9 @@ const captureProgressiveRuntimeEvidence = async (page: Page) => {
         transactionId: number
         undoableChangeCount: number
       }) => {
-        if (status.status !== 'committed') return
+        if (status.status !== 'committed') {
+          return
+        }
         factoryCommits.push({
           capturedAtMs: status.timestamp,
           origin: status.origin,
@@ -906,7 +932,9 @@ const installHistoryReplayPhaseCapture = (page: Page): Promise<void> =>
       undo: new Map()
     })
     subscribeToBrowserDragPhases((name, durationMs) => {
-      if (!capture.active) return
+      if (!capture.active) {
+        return
+      }
       const totals = capture[capture.active]
       const current = totals.get(name) ?? {
         count: 0,
@@ -1077,8 +1105,12 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
         type: String(element.get('type'))
       }))
     const normalize = (value: unknown): unknown => {
-      if (Array.isArray(value)) return value.map(normalize)
-      if (!value || typeof value !== 'object') return value
+      if (Array.isArray(value)) {
+        return value.map(normalize)
+      }
+      if (!value || typeof value !== 'object') {
+        return value
+      }
       return Object.fromEntries(
         Object.entries(value)
           .sort(([left], [right]) => left.localeCompare(right))
@@ -1099,10 +1131,16 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
 
     for (const element of canonicalElements) {
       const { id, type } = element
-      if (type === 'workspace') continue
+      if (type === 'workspace') {
+        continue
+      }
       ids.push(id)
-      if (type === 'group') groupCount += 1
-      if (type !== 'vector') continue
+      if (type === 'group') {
+        groupCount += 1
+      }
+      if (type !== 'vector') {
+        continue
+      }
       vectorCount += 1
       const computed = element.computed as {
         fills?: readonly { color?: string }[]
@@ -1113,7 +1151,9 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
       }
       pointCount += Object.keys(computed.points ?? {}).length
       const primaryFill = computed.fills?.[0]
-      if (primaryFill?.color === '#DC2626') redFillIds.push(id)
+      if (primaryFill?.color === '#DC2626') {
+        redFillIds.push(id)
+      }
       if (
         primaryFill?.color === '#FFFFFF' &&
         computed.width === 1672 &&
@@ -1179,8 +1219,12 @@ const getCanonicalElementFingerprints = (
         type: String(element.get('type'))
       }))
     const normalize = (value: unknown): unknown => {
-      if (Array.isArray(value)) return value.map(normalize)
-      if (!value || typeof value !== 'object') return value
+      if (Array.isArray(value)) {
+        return value.map(normalize)
+      }
+      if (!value || typeof value !== 'object') {
+        return value
+      }
       return Object.fromEntries(
         Object.entries(value)
           .sort(([left], [right]) => left.localeCompare(right))
@@ -1237,10 +1281,16 @@ const getCanonicalElementDetail = (
         type: String(element.get('type'))
       }))
     const element = canonicalElements.find(({ id }) => id === targetId)
-    if (!element) return null
+    if (!element) {
+      return null
+    }
     const normalize = (value: unknown): unknown => {
-      if (Array.isArray(value)) return value.map(normalize)
-      if (!value || typeof value !== 'object') return value
+      if (Array.isArray(value)) {
+        return value.map(normalize)
+      }
+      if (!value || typeof value !== 'object') {
+        return value
+      }
       return Object.fromEntries(
         Object.entries(value)
           .sort(([left], [right]) => left.localeCompare(right))
@@ -1256,7 +1306,9 @@ const getCanonicalElementDetail = (
   }, elementId)
 
 const summarizeDifferenceValue = (value: unknown): unknown => {
-  if (value === undefined) return '<undefined>'
+  if (value === undefined) {
+    return '<undefined>'
+  }
   if (value === null || typeof value !== 'object') {
     return typeof value === 'string' && value.length > 160
       ? `${value.slice(0, 160)}…`
@@ -1288,7 +1340,9 @@ const findFirstValueDifference = (
       path: string
     }>
   | undefined => {
-  if (Object.is(actorA, actorB)) return
+  if (Object.is(actorA, actorB)) {
+    return
+  }
   if (
     actorA === null ||
     actorB === null ||
@@ -1322,7 +1376,9 @@ const findFirstValueDifference = (
         actorB[index],
         `${path}[${index}]`
       )
-      if (difference) return difference
+      if (difference) {
+        return difference
+      }
     }
     return
   }
@@ -1346,7 +1402,9 @@ const findFirstValueDifference = (
       actorBRecord[key],
       `${path}.${key}`
     )
-    if (difference) return difference
+    if (difference) {
+      return difference
+    }
   }
 }
 
@@ -1365,7 +1423,9 @@ const getFirstCanonicalDifference = async (actorA: Page, actorB: Page) => {
   for (let index = 0; index < actorAFingerprints.length; index += 1) {
     const actorAFingerprint = actorAFingerprints[index]
     const actorBFingerprint = actorBFingerprints[index]
-    if (!actorAFingerprint || !actorBFingerprint) continue
+    if (!actorAFingerprint || !actorBFingerprint) {
+      continue
+    }
     if (actorAFingerprint.id !== actorBFingerprint.id) {
       return {
         actorAId: actorAFingerprint.id,
@@ -1726,7 +1786,9 @@ const getPersistedAiDrawingEvidence = async (
       }
     | null
     | undefined
-  if (!saved) return null
+  if (!saved) {
+    return null
+  }
 
   const properties = saved.props ?? {}
   const elements = Object.entries(saved.sceneTree?.elements ?? {})
@@ -1756,16 +1818,24 @@ const getPersistedAiDrawingEvidence = async (
   }
   while (pendingPropertyIds.length > 0) {
     const propertyId = pendingPropertyIds.shift()
-    if (!propertyId || reachablePropertyIds.has(propertyId)) continue
+    if (!propertyId || reachablePropertyIds.has(propertyId)) {
+      continue
+    }
     const property = properties[propertyId]
-    if (!property) continue
+    if (!property) {
+      continue
+    }
     reachablePropertyIds.add(propertyId)
     discoverPropertyIds(property)
   }
 
   const normalize = (value: unknown): unknown => {
-    if (Array.isArray(value)) return value.map(normalize)
-    if (!value || typeof value !== 'object') return value
+    if (Array.isArray(value)) {
+      return value.map(normalize)
+    }
+    if (!value || typeof value !== 'object') {
+      return value
+    }
     return Object.fromEntries(
       Object.entries(value)
         .sort(([left], [right]) => left.localeCompare(right))
@@ -1797,7 +1867,9 @@ const getPersistedAiDrawingEvidence = async (
       groupCount += 1
       continue
     }
-    if (element.type !== 'vector') continue
+    if (element.type !== 'vector') {
+      continue
+    }
     vectorCount += 1
     const elementProperties = element.props ?? {}
     const points = properties[elementProperties.points] as
@@ -1869,7 +1941,9 @@ const waitForPersistedAiDrawingEvidence = async (
         totalCount: evidence?.totalCount ?? null
       })}`
     )
-    if (evidence && predicate(evidence)) return evidence
+    if (evidence && predicate(evidence)) {
+      return evidence
+    }
     await page.waitForTimeout(1_000)
   }
   throw new Error(`Persisted AI drawing evidence timed out for ${fileId}`)
@@ -1884,7 +1958,9 @@ const waitForLiveAiDrawingEvidence = async (
   let latest: LiveAiDrawingEvidence | undefined
   while (Date.now() < deadline) {
     latest = await getLiveAiDrawingEvidence(page)
-    if (predicate(latest)) return latest
+    if (predicate(latest)) {
+      return latest
+    }
     await page.waitForTimeout(500)
   }
   throw new Error(
@@ -1940,7 +2016,9 @@ const expectLivePeerEvidence = async (
         totalCount: latestPeerSnapshot.totalCount
       })}`
     )
-    if (canonicalMatches && digestMatches) return expected
+    if (canonicalMatches && digestMatches) {
+      return expected
+    }
     const [actorADiagnostics, actorBDiagnostics] = await Promise.all([
       getCollaborationDiagnostics(actorA),
       getCollaborationDiagnostics(actorB)

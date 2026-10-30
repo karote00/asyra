@@ -18,7 +18,9 @@ export function glyphTriangles(
         continue
       }
       const x0 = x
-      while (x < resolution && rgba[(y * resolution + x) * 4 + 3] >= 128) x++
+      while (x < resolution && rgba[(y * resolution + x) * 4 + 3] >= 128) {
+        x++
+      }
       rows.push({ x0, x1: x, y })
       minX = Math.min(minX, x0)
       maxX = Math.max(maxX, x)
@@ -26,7 +28,9 @@ export function glyphTriangles(
       maxY = Math.max(maxY, y + 1)
     }
   }
-  if (!rows.length) throw new Error('Lettering has no visible glyph coverage')
+  if (!rows.length) {
+    throw new Error('Lettering has no visible glyph coverage')
+  }
   const positions: number[] = [],
     indices: number[] = []
   for (const row of rows) {

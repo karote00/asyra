@@ -107,7 +107,9 @@ describe('shared pose algebra enclosures', () => {
           { joint: interval(q) },
           intervalAlgebra
         ).get('tool')
-      if (!pose) throw new Error('Missing test tool')
+      if (!pose) {
+        throw new Error('Missing test tool')
+      }
       const expected = [2 * Math.cos(q), 2 * Math.sin(q), 0]
       pose.position.forEach((bound, index) => {
         expect(bound[0]).toBeLessThanOrEqual(expected[index])
@@ -126,13 +128,17 @@ describe('shared pose algebra enclosures', () => {
     const tool = evaluateKinematics(workcell, values, intervalAlgebra).get(
       'tool'
     )
-    if (!tool) throw new Error('Missing test tool')
+    if (!tool) {
+      throw new Error('Missing test tool')
+    }
     for (let n = 0; n <= 100; n++) {
       const actual = forwardKinematics(
         workcell,
         jointValuesAt(trajectory, n / 100)
       ).get('tool')
-      if (!actual) throw new Error('Missing ordinary test tool')
+      if (!actual) {
+        throw new Error('Missing ordinary test tool')
+      }
       tool.position.forEach((bound, index) => {
         expect(bound[0]).toBeLessThanOrEqual(actual.position[index])
         expect(bound[1]).toBeGreaterThanOrEqual(actual.position[index])
@@ -162,7 +168,9 @@ describe('shared pose algebra enclosures', () => {
     const actual = forwardKinematics(model, { joint: 0.7 })
     for (const [id, pose] of actual) {
       const bound = bounds.get(id)
-      if (!bound) throw new Error('Missing bound')
+      if (!bound) {
+        throw new Error('Missing bound')
+      }
       pose.position.forEach((value, index) => {
         expect(bound.position[index][0]).toBeLessThanOrEqual(value)
         expect(bound.position[index][1]).toBeGreaterThanOrEqual(value)

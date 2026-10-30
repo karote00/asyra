@@ -19,8 +19,9 @@ it('retains the original lamp and constructs a distinct framed lamp with a botto
     'depth-frame'
   ])
   const bounds = meshBounds(parts)
-  for (const axis of [0, 1])
+  for (const axis of [0, 1]) {
     expect(bounds[axis][1] - bounds[axis][0]).toBeCloseTo(0.148, 6)
+  }
   expect(bounds[2]).toEqual([0, 0.3])
   const core = parts.filter((p) => p.id === 'light-core')
   expect(meshBounds(core)[2][1]).toBeCloseTo(0.09, 6)
@@ -35,14 +36,16 @@ it('retains the original lamp and constructs a distinct framed lamp with a botto
     expect(b[2]).toEqual([0.059, axis === 0 ? 0.294 : 0.3])
     for (let i = 0; i < frame[0].mesh.positions.length; i += 3) {
       const position = frame[0].mesh.positions.slice(i, i + 3)
-      if (position[2] < 0.27)
+      if (position[2] < 0.27) {
         expect(Math.abs(position[axis])).toBeGreaterThanOrEqual(0.051 - 1e-8)
+      }
     }
   }
   for (const p of parts) {
     expect(p.mesh.positions.every(Number.isFinite)).toBe(true)
-    for (const index of p.mesh.indices)
+    for (const index of p.mesh.indices) {
       expect(index).toBeLessThan(p.mesh.positions.length / 3)
+    }
   }
 })
 

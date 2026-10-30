@@ -14,7 +14,9 @@ const freeze = (value) => {
   return value
 }
 const requireValue = (condition, message) => {
-  if (!condition) throw new Error('Contract evolution: ' + message)
+  if (!condition) {
+    throw new Error('Contract evolution: ' + message)
+  }
 }
 const authorized = (actor, capability) =>
   requireValue(
@@ -33,7 +35,9 @@ const targetAcceptanceRequestIdentity = (actorId, request) =>
     retirement: request.retirement
   })
 function validateVerificationReference(version) {
-  if (!Object.hasOwn(version, 'verificationSource')) return
+  if (!Object.hasOwn(version, 'verificationSource')) {
+    return
+  }
   const reference = version.verificationSource
   const descriptor = reference?.descriptor
   const contract = version.contract
@@ -167,8 +171,9 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
   const observed = new Map(candidate.selectors.map((s) => [s.caseId, s]))
   const changes = [],
     blockers = []
-  if (base.verificationSource && !candidate.verificationSource)
+  if (base.verificationSource && !candidate.verificationSource) {
     blockers.push({ kind: 'missing-verification-source' })
+  }
   const verificationIdentity = (version) =>
     version.verificationSource
       ? {
@@ -178,7 +183,9 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
       : null
   const beforeVerification = verificationIdentity(base),
     afterVerification = verificationIdentity(candidate)
-  if (JSON.stringify(beforeVerification) !== JSON.stringify(afterVerification))
+  if (
+    JSON.stringify(beforeVerification) !== JSON.stringify(afterVerification)
+  ) {
     changes.push({
       kind: 'content-change',
       subject: 'verification-source',
@@ -192,65 +199,75 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
         )
       ]
     })
+  }
   for (const item of candidate.contract.cases) {
     const observation = observed.get(item.id)
-    if (!observation || observation.testName !== item.testName)
+    if (!observation || observation.testName !== item.testName) {
       blockers.push({ kind: 'missing-selector', caseId: item.id })
+    }
     const old = before.get(item.id),
       selector = previous.get(item.id)
-    if (!old)
+    if (!old) {
       changes.push({
         kind: 'addition',
         caseId: item.id,
         before: null,
         after: item
       })
-    else {
-      if (old.testName !== item.testName)
+    } else {
+      if (old.testName !== item.testName) {
         changes.push({
           kind: 'rename',
           caseId: item.id,
           before: old.testName,
           after: item.testName
         })
-      if (selector && observation && selector.file !== observation.file)
+      }
+      if (selector && observation && selector.file !== observation.file) {
         changes.push({
           kind: 'move',
           caseId: item.id,
           before: selector.file,
           after: observation.file
         })
+      }
       if (
         selector &&
         observation &&
         selector.contentDigest !== observation.contentDigest
-      )
+      ) {
         changes.push({
           kind: 'content-change',
           caseId: item.id,
           before: selector.contentDigest,
           after: observation.contentDigest
         })
-      if (old.stepId !== item.stepId || old.flowId !== item.flowId)
+      }
+      if (old.stepId !== item.stepId || old.flowId !== item.flowId) {
         changes.push({
           kind: 'content-change',
           caseId: item.id,
           before: old,
           after: item
         })
+      }
     }
   }
-  for (const item of base.contract.cases)
-    if (!after.has(item.id))
+  for (const item of base.contract.cases) {
+    if (!after.has(item.id)) {
       changes.push({
         kind: 'deletion',
         caseId: item.id,
         before: item,
         after: null
       })
-  for (const observation of candidate.selectors)
-    if (!after.has(observation.caseId))
+    }
+  }
+  for (const observation of candidate.selectors) {
+    if (!after.has(observation.caseId)) {
       blockers.push({ kind: 'unknown-evidence', caseId: observation.caseId })
+    }
+  }
   requireValue(Array.isArray(relations), 'invalid successor relations')
   const related = new Set()
   for (const relation of relations) {
@@ -277,7 +294,7 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
     }
     changes.push(structuredClone(relation))
   }
-  if (base.contract.digest !== candidate.contract.digest)
+  if (base.contract.digest !== candidate.contract.digest) {
     changes.push({
       kind: 'content-change',
       before: base.contract.digest,
@@ -288,6 +305,7 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
         )
       ]
     })
+  }
   const result = {
     baseRevision: history.revision,
     baseDigest: hash(base),
@@ -359,8 +377,12 @@ function decideVersion(
         removed.every((id) => retirement.includes(id)),
       'explicit exact retirement set is required'
     )
-    if (retirement.length) authorized(actor, 'retire-contract')
-  } else requireValue(!retirement.length, 'rejection cannot retire obligations')
+    if (retirement.length) {
+      authorized(actor, 'retire-contract')
+    }
+  } else {
+    requireValue(!retirement.length, 'rejection cannot retire obligations')
+  }
   const decision = {
     reviewId: review.id,
     identity,
@@ -419,7 +441,9 @@ function acceptTargetBaseline(
       request.retirement.every((id) => typeof id === 'string'),
     'invalid target acceptance request'
   )
-  if (request.retirement.length) authorized(actor, 'retire-contract')
+  if (request.retirement.length) {
+    authorized(actor, 'retire-contract')
+  }
   const requestIdentity = targetAcceptanceRequestIdentity(actor.id, request)
   const replay = history.decisions.find(
     (item) => item.targetAcceptance?.requestId === request.requestId

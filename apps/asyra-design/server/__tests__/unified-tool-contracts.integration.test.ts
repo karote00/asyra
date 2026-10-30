@@ -26,7 +26,9 @@ const preparation = () => {
   const definition = owner.definitions.find(
     (entry) => entry.name === 'prepare_design'
   )
-  if (!definition) throw new Error('Missing preparation definition')
+  if (!definition) {
+    throw new Error('Missing preparation definition')
+  }
   return {
     owner,
     definition,
@@ -51,12 +53,16 @@ it('declares every supported native field from the preparation owner', () => {
   const node = schema.$defs.node.anyOf.find((entry) =>
     Array.isArray((entry.properties.type as { enum?: unknown[] })?.enum)
   )
-  if (!node) throw new Error('Missing native node schema')
-  for (const type of DesignNodeTypes)
-    for (const field of designNodeInputFields(type))
+  if (!node) {
+    throw new Error('Missing native node schema')
+  }
+  for (const type of DesignNodeTypes) {
+    for (const field of designNodeInputFields(type)) {
       expect(Object.hasOwn(node.properties, field), `${type}.${field}`).toBe(
         true
       )
+    }
+  }
 })
 
 it('prepares the saved brief without treating omitted advisory checks as a drawing prerequisite', async () => {
@@ -298,24 +304,31 @@ it('shares repeated parents without retaining more costly child indirections', (
   const definitions = delivered.$defs as Record<string, unknown>
   const references = new Map<string, number>()
   const walk = (value: unknown) => {
-    if (Array.isArray(value)) return value.forEach(walk)
-    if (!value || typeof value !== 'object') return
+    if (Array.isArray(value)) {
+      return value.forEach(walk)
+    }
+    if (!value || typeof value !== 'object') {
+      return
+    }
     const object = value as Record<string, unknown>
-    if (typeof object.$ref === 'string')
+    if (typeof object.$ref === 'string') {
       references.set(object.$ref, (references.get(object.$ref) ?? 0) + 1)
+    }
     Object.values(object).forEach(walk)
   }
   walk(delivered)
-  for (const name of Object.keys(definitions))
+  for (const name of Object.keys(definitions)) {
     expect(references.get('#/$defs/' + name), name).toBeGreaterThan(1)
+  }
   for (const input of [
     { point0: { coordinate: 1 } },
     { point3: { coordinate: 10001 } },
     { point5: { coordinate: 1, extra: 1 } }
-  ])
+  ]) {
     expect(Boolean(operationInputIssue(input, delivered))).toBe(
       Boolean(operationInputIssue(input, schema))
     )
+  }
 })
 
 it('keeps root conditions isolated from child-only field exclusions', () => {
@@ -328,9 +341,11 @@ it('keeps root conditions isolated from child-only field exclusions', () => {
     }
   }
   const root = schema.properties.draft
-  for (const condition of root.anyOf)
-    for (const field of Object.keys(condition.properties))
+  for (const condition of root.anyOf) {
+    for (const field of Object.keys(condition.properties)) {
       expect(Object.hasOwn(root.properties, field), field).toBe(true)
+    }
+  }
 })
 
 it('advertises fully validated missing-field repair through the actual preparation contract', () => {
@@ -410,7 +425,9 @@ it('preserves each face mode identity limits and geometry admission', async () =
     ).toBe(allowed)
     const reply = await run.call(input)
     expect(reply.available, JSON.stringify(reply)).toBe(allowed)
-    if (!allowed) expect(reply.toolOutcome.settlement).toBe('not-started')
+    if (!allowed) {
+      expect(reply.toolOutcome.settlement).toBe('not-started')
+    }
   }
 })
 
@@ -420,7 +437,9 @@ it.each(['single', 'parts', 'parts-failure'])(
   'executes the delivered %s missing-field correction through the real main dispatcher and rejects foreign retained corrections without replay',
   async (mode) => {
     const hadWindow = 'window' in globalThis
-    if (!hadWindow) vi.stubGlobal('window', {})
+    if (!hadWindow) {
+      vi.stubGlobal('window', {})
+    }
     const { default: core } = await import('../../src/contexts')
     const { applyPreset, PresetProfiles, PresetDefaults } =
       await import('@asyra/preset')
@@ -517,8 +536,9 @@ it.each(['single', 'parts', 'parts-failure'])(
           }
         ]
       }
-      if (mode === 'parts-failure')
+      if (mode === 'parts-failure') {
         draft.children.push({ ...draft.children[0] })
+      }
       const request =
         mode === 'single'
           ? {
@@ -548,8 +568,9 @@ it.each(['single', 'parts', 'parts-failure'])(
       expect(await core.save()).toEqual(initial)
       expect(rejected.repairGuide, JSON.stringify(rejected)).toBeDefined()
       const correction = structuredClone(rejected.repairGuide.arguments)
-      if (mode === 'single') correction.repair.replacements[0].value = 100
-      else {
+      if (mode === 'single') {
+        correction.repair.replacements[0].value = 100
+      } else {
         expect(correction.parts).toHaveLength(2)
         expect(correction.parts[0]).toMatchObject({
           key: 'outer',
@@ -622,11 +643,13 @@ it.each(['single', 'parts', 'parts-failure'])(
         )
       ).toMatchObject({ width: 100, height: 100 })
       expect(factory.getUndoHistoryDepth()).toBe(expectedDispatches)
-      for (let index = 0; index < expectedDispatches; index++)
+      for (let index = 0; index < expectedDispatches; index++) {
         await factory.undo()
+      }
       expect(await core.save()).toEqual(initial)
-      for (let index = 0; index < expectedDispatches; index++)
+      for (let index = 0; index < expectedDispatches; index++) {
         await factory.redo()
+      }
       expect(await core.save()).toEqual(saved)
       await core.load(saved)
       expect(await core.save()).toEqual(saved)
@@ -660,7 +683,9 @@ it.each(['single', 'parts', 'parts-failure'])(
     } finally {
       await core.load(initial)
       factory.transact.reset()
-      if (!hadWindow) vi.unstubAllGlobals()
+      if (!hadWindow) {
+        vi.unstubAllGlobals()
+      }
     }
   }
 )
@@ -692,8 +717,9 @@ it('retains inline gradients and both reference forms in the canonical composed 
     { shared: '' },
     { ...gradient, extra: true },
     { ...gradient, gradientStops: [] }
-  ])
+  ]) {
     expect(operationInputIssue(value, designFillSchema)).toBeDefined()
+  }
 })
 
 it.each(['capacity', 'outer-field', 'parent-order'])(
@@ -711,10 +737,11 @@ it.each(['capacity', 'outer-field', 'parent-order'])(
     if (failure === 'capacity') {
       const { DesignPreparationLimits } =
         await import('../../src/ai/prepared-design')
-      for (let i = 0; i < DesignPreparationLimits.retainedDrafts; i++)
+      for (let i = 0; i < DesignPreparationLimits.retainedDrafts; i++) {
         designs.rejectInput('prepare_design', {
           draft: { type: 'group', name: 'Retained' }
         })
+      }
     }
     const input = {
       parts: [
@@ -742,8 +769,9 @@ it.each(['capacity', 'outer-field', 'parent-order'])(
       settlement: 'not-started'
     })
     expect(reply.repairGuide).toBeUndefined()
-    if (failure === 'capacity')
+    if (failure === 'capacity') {
       expect(reply.rejectedParts[0].retention).toBe('unavailable')
+    }
     expect(execute).not.toHaveBeenCalled()
   }
 )
@@ -765,13 +793,14 @@ it('keeps the canonical and delivered recursive contracts executable at the owne
       width: 10,
       height: 10
     }
-    for (let index = 0; index < depth; index++)
+    for (let index = 0; index < depth; index++) {
       draft = {
         type: 'group',
         key: `level-${index}`,
         name: `Level ${index}`,
         children: [draft]
       }
+    }
     const run = preparation()
     // The owner counts the root and the leaf, not only container edges.
     if (depth === DesignPreparationLimits.depth) {
@@ -872,7 +901,9 @@ it.each([
       const definition = designs.definitions.find(
         (entry) => entry.name === retained.repairGuide.tool
       )
-      if (!definition) throw new Error('Missing preparation recovery owner')
+      if (!definition) {
+        throw new Error('Missing preparation recovery owner')
+      }
       const prepared = JSON.parse(
         (
           await invokeLocalTool(
@@ -884,7 +915,9 @@ it.each([
         ).text
       )
       expect(prepared).toMatchObject({ available: true, applicable: true })
-    } else expect(retained.repairGuide).toBeUndefined()
+    } else {
+      expect(retained.repairGuide).toBeUndefined()
+    }
     expect(execute).not.toHaveBeenCalled()
     expect(draft).toEqual(before)
   }
@@ -956,10 +989,11 @@ it('omits only default open-object keywords while retaining closed nested constr
     { closed: { count: -1 } },
     {},
     { closed: { count: 1 }, open: { extra: true } }
-  ])
+  ]) {
     expect(operationInputIssue(value, compact) === undefined).toBe(
       operationInputIssue(value, canonical) === undefined
     )
+  }
 })
 
 it('compacts repeated result alternatives without changing constraints or addressed branches', () => {
@@ -1047,14 +1081,17 @@ it('declares common host outcome constraints once across open result alternative
   }).outputSchema
   let annotations = 0
   const visit = (value: unknown): void => {
-    if (!value || typeof value !== 'object') return
+    if (!value || typeof value !== 'object') {
+      return
+    }
     if (
       'properties' in value &&
       value.properties &&
       typeof value.properties === 'object' &&
       'toolOutcome' in value.properties
-    )
+    ) {
       annotations++
+    }
     Object.values(value).forEach(visit)
   }
   visit(projected)
@@ -1112,10 +1149,11 @@ it('preserves closed forbidden fields, singleton constraints and indexed referen
     {},
     null,
     []
-  ])
+  ]) {
     expect(Boolean(operationInputIssue(value, compact))).toBe(
       Boolean(operationInputIssue(value, schema))
     )
+  }
   const contradiction = {
     type: 'object',
     additionalProperties: false,
@@ -1169,10 +1207,11 @@ it('shares identical union context while retaining independent alternatives and 
     { ids: [] },
     { count: 1, status: 'invalid' },
     null
-  ])
+  ]) {
     expect(Boolean(operationInputIssue(value, compact))).toBe(
       Boolean(operationInputIssue(value, schema))
     )
+  }
 })
 
 it.each(['draft', 'capture'] as const)(

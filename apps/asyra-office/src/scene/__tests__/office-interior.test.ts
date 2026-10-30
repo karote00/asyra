@@ -39,18 +39,20 @@ it('compares geometric evidence at micrometre precision while retaining visible 
 })
 function bounds(id: string, partId?: string) {
   const parts = pieces.get(id)?.filter((p) => !partId || p.id === partId)
-  if (!parts?.length)
+  if (!parts?.length) {
     throw new Error(`Missing assembly or part: ${id}/${partId ?? '*'}`)
+  }
   const result = [
     [Infinity, -Infinity],
     [Infinity, -Infinity],
     [Infinity, -Infinity]
   ]
-  for (const p of parts)
+  for (const p of parts) {
     p.mesh.positions.forEach((n, i) => {
       result[i % 3][0] = Math.min(result[i % 3][0], n)
       result[i % 3][1] = Math.max(result[i % 3][1], n)
     })
+  }
   return result
 }
 describe('accepted structural composition', () => {
@@ -58,13 +60,20 @@ describe('accepted structural composition', () => {
     const hash = createHash('sha256')
     let count = 0
     for (const a of scene.assemblies) {
-      if (scene.interiorAssemblyIds.has(a.id)) continue
+      if (scene.interiorAssemblyIds.has(a.id)) {
+        continue
+      }
       hash.update(serializeGeometry(a))
-      for (const p of pieces.get(a.id) ?? []) hash.update(serializeGeometry(p))
+      for (const p of pieces.get(a.id) ?? []) {
+        hash.update(serializeGeometry(p))
+      }
       count++
     }
-    for (const l of scene.labels)
-      if (!scene.interiorLabels.has(l)) hash.update(serializeGeometry(l))
+    for (const l of scene.labels) {
+      if (!scene.interiorLabels.has(l)) {
+        hash.update(serializeGeometry(l))
+      }
+    }
     expect({ count, digest: hash.digest('hex') }).toMatchSnapshot()
   })
 })
@@ -84,9 +93,11 @@ it('retains three contiguous horizontal lounge crowns', () => {
       for (const mesh of [part.mesh, part.distant?.mesh ?? part.mesh]) {
         const top = [0, 1].map((side) => {
           const heights: number[] = []
-          for (let n = 0; n < mesh.positions.length; n += 3)
-            if (Math.abs(mesh.positions[n] - cap[0][side]) < 1e-8)
+          for (let n = 0; n < mesh.positions.length; n += 3) {
+            if (Math.abs(mesh.positions[n] - cap[0][side]) < 1e-8) {
               heights.push(mesh.positions[n + 2])
+            }
+          }
           return Math.max(...heights)
         })
         expect(top[0]).toBeCloseTo(top[1], 8)

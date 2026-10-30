@@ -51,15 +51,17 @@ export function mug(color = 0xeee8d9, filled = false): AssetPart[] {
             ]
           })
         : (segment.line ?? [])
-      for (const point of points)
+      for (const point of points) {
         if (
           !profile.length ||
           Math.hypot(
             point[0] - profile[profile.length - 1][0],
             point[1] - profile[profile.length - 1][1]
           ) > 1e-10
-        )
+        ) {
           profile.push(point)
+        }
+      }
     }
     return lathe(profile, Math.round(vessel.radialSegments * quality))
   }
@@ -98,14 +100,16 @@ export function laptop(): AssetPart[] {
     ),
     part('lid', lid, 0xbfc1c4, 'metal')
   ]
-  for (let j = 0; j < 5; j++)
-    for (let i = 0; i < 14; i++)
+  for (let j = 0; j < 5; j++) {
+    for (let i = 0; i < 14; i++) {
       p.push(
         ...placeParts(
           [part(`key-${i}-${j}`, box([0.015, 0.014, 0.001]), 0x303236)],
           [-0.117 + i * 0.018, 0.063 - j * 0.021, 0.0125]
         )
       )
+    }
+  }
   const source = requiredSpecValue(
     modules.find((m) => m.moduleId === 'laptop'),
     'laptop'
@@ -121,7 +125,7 @@ export function laptop(): AssetPart[] {
     spacebarSize: number[]
     centreZ: number
   }
-  for (const [i, x] of bottom.smallKeyCentresX.entries())
+  for (const [i, x] of bottom.smallKeyCentresX.entries()) {
     p.push(
       ...placeParts(
         [
@@ -134,6 +138,7 @@ export function laptop(): AssetPart[] {
         [x, bottom.rowY, bottom.centreZ]
       )
     )
+  }
   p.push(
     ...placeParts(
       [part('spacebar', box(vec(bottom.spacebarSize), 0.0002), 0x303236)],

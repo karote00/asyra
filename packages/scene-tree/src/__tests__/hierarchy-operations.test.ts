@@ -508,7 +508,9 @@ describe('Scene Tree restore preflight', () => {
     snapshot.removed.forEach(({ data }) => {
       Object.values(data.props ?? {}).forEach((componentId) => {
         const component = manager.getRestoreComponentById(componentId)
-        if (component) manager.addToMap(component)
+        if (component) {
+          manager.addToMap(component)
+        }
       })
     })
     manager.cleanChanges()
@@ -603,7 +605,9 @@ describe('Scene Tree restore preflight', () => {
     const invalidChild = invalidRegistration.removed.find(
       ({ elementId }) => elementId === childId
     )
-    if (invalidChild) invalidChild.data.type = 'unregistered-element'
+    if (invalidChild) {
+      invalidChild.data.type = 'unregistered-element'
+    }
     expectRejected(invalidRegistration, /unregistered/i)
 
     expect(snapshot.rootParentChildrenAfter).toEqual([

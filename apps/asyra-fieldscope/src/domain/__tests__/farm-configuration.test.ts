@@ -101,12 +101,16 @@ it.each([
 it('keeps both exterior barriers at the outer boundaries when side margins exceed two metres', () => {
   const meshes = buildSiteMeshes(validateConfiguration(config))
   const shape = meshes.find((mesh) => mesh.id === 'barriers')?.descriptor.shape
-  if (shape?.kind !== 'triangles') throw new Error('Expected triangle geometry')
+  if (shape?.kind !== 'triangles') {
+    throw new Error('Expected triangle geometry')
+  }
   const xs = shape.positions.filter((_, i) => i % 3 === 0)
   expect(Math.min(...xs)).toBeCloseTo(0)
   expect(Math.max(...xs)).toBeCloseTo(32)
   const film = meshes.find((mesh) => mesh.id === 'film')?.descriptor.shape
-  if (film?.kind !== 'triangles') throw new Error('Expected film geometry')
+  if (film?.kind !== 'triangles') {
+    throw new Error('Expected film geometry')
+  }
   expect(Math.max(...film.positions.filter((_, i) => i % 3 === 1))).toBeCloseTo(
     4.5
   )

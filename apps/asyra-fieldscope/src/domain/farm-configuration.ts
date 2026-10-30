@@ -85,13 +85,14 @@ export function validateConfiguration(
     min: number,
     max: number
   ) => {
-    if (!Number.isFinite(n) || n < min || n > max)
+    if (!Number.isFinite(n) || n < min || n > max) {
       throw new ConfigurationError(
         'range',
         name,
         Number(min.toFixed(3)),
         Number(max.toFixed(3))
       )
+    }
   }
   range('length', value.length, 2, 200)
   range('width', value.width, 2, 20)
@@ -100,19 +101,22 @@ export function validateConfiguration(
     !Array.isArray(value.strips) ||
     !value.strips.length ||
     value.strips.length > 32
-  )
+  ) {
     throw new ConfigurationError('stripCount')
+  }
   const identities = new Set<string>()
   value.strips.forEach((strip) => {
     if (
       typeof strip.id !== 'string' ||
       !strip.id.trim() ||
       identities.has(strip.id)
-    )
+    ) {
       throw new ConfigurationError('stripIdentity')
+    }
     identities.add(strip.id)
-    if (strip.kind !== 'soil' && strip.kind !== 'drain')
+    if (strip.kind !== 'soil' && strip.kind !== 'drain') {
       throw new ConfigurationError('stripKind')
+    }
     range('stripWidth', strip.width, 0.05, 20)
   })
   const site = configurationSite(value)
@@ -120,18 +124,22 @@ export function validateConfiguration(
   if (
     value.width <
     value.strips.reduce((sum, strip) => sum + strip.width, 0) + 0.04
-  )
+  ) {
     throw new ConfigurationError('clearance')
-  if (value.height - site.eave > site.width / 2)
+  }
+  if (value.height - site.eave > site.width / 2) {
     throw new ConfigurationError('arch')
+  }
   range('soilInset', value.soilInset, 0.01, 5)
   range('startInset', value.startInset, 0, value.length)
   range('endInset', value.endInset, 0, value.length)
-  if (value.startInset + value.endInset > value.length - 0.6)
+  if (value.startInset + value.endInset > value.length - 0.6) {
     throw new ConfigurationError('inset')
+  }
   range('topExtension', value.topExtension, 0, 2)
-  if (site.eave + value.topExtension >= site.height)
+  if (site.eave + value.topExtension >= site.height) {
     throw new ConfigurationError('poleTop')
+  }
   range('netBottom', value.netBottom, 0, site.eave + value.topExtension)
   range(
     'netTop',
@@ -145,8 +153,9 @@ export function validateConfiguration(
       (value.strips[i - 1]?.kind === 'drain' ||
         value.strips[i + 1]?.kind === 'drain') &&
       strip.width < value.soilInset + 0.05
-    )
+    ) {
       throw new ConfigurationError('roots')
+    }
   })
   const sides = value.strips.reduce(
     (sum, strip, i) =>
@@ -163,8 +172,9 @@ export function validateConfiguration(
       (Math.floor((value.length - value.startInset - value.endInset) / 0.6) +
         1) >
     20000
-  )
+  ) {
     throw new ConfigurationError('capacity')
+  }
   return Object.freeze({
     ...value,
     strips: Object.freeze(

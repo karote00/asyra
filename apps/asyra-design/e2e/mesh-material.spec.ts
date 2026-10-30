@@ -65,7 +65,9 @@ for (const renderer of ['default', 'software'] as const) {
       }
       const errors: string[] = []
       page.on('console', (message) => {
-        if (message.type() === 'error') errors.push(message.text())
+        if (message.type() === 'error') {
+          errors.push(message.text())
+        }
       })
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto(createTestDocumentURL())
@@ -120,8 +122,9 @@ for (const renderer of ['default', 'software'] as const) {
             maxDimension: 256,
             nativeResolution: true
           })
-          if (snapshot.type !== 'snapshot')
+          if (snapshot.type !== 'snapshot') {
             throw new Error('Missing material snapshot')
+          }
           const bitmap = await createImageBitmap(
             await (await fetch(snapshot.dataUrl)).blob()
           )
@@ -129,7 +132,9 @@ for (const renderer of ['default', 'software'] as const) {
           canvas.width = bitmap.width
           canvas.height = bitmap.height
           const context = canvas.getContext('2d')
-          if (!context) throw new Error('Missing pixel observation context')
+          if (!context) {
+            throw new Error('Missing pixel observation context')
+          }
           context.drawImage(bitmap, 0, 0)
           bitmap.close()
           return [
@@ -214,7 +219,9 @@ for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
           maxDimension: 256,
           nativeResolution: true
         })
-        if (snapshot.type !== 'snapshot') throw new Error('No snapshot')
+        if (snapshot.type !== 'snapshot') {
+          throw new Error('No snapshot')
+        }
         const bitmap = await createImageBitmap(
           await (await fetch(snapshot.dataUrl)).blob()
         )
@@ -222,7 +229,9 @@ for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
         canvas.width = 200
         canvas.height = 200
         const ctx = canvas.getContext('2d')
-        if (!ctx) throw new Error('Missing pixel observation context')
+        if (!ctx) {
+          throw new Error('Missing pixel observation context')
+        }
         ctx.drawImage(bitmap, 0, 0)
         bitmap.close()
         return [
@@ -377,7 +386,9 @@ test('batches mixed materials and retains the batch across camera changes', asyn
       const adapter = await gpu?.requestAdapter()
       const shaderErrors: string[] = []
       if (adapter) {
-        if (!gpuProgram) throw new Error('Missing submitted GPU program')
+        if (!gpuProgram) {
+          throw new Error('Missing submitted GPU program')
+        }
         const device = await adapter.requestDevice()
         try {
           for (const source of [
@@ -482,7 +493,9 @@ test('preserves hard stops, ordered alpha layers, and empty or degenerate materi
           maxDimension: 256,
           nativeResolution: true
         })
-        if (snapshot.type !== 'snapshot') throw new Error('No snapshot')
+        if (snapshot.type !== 'snapshot') {
+          throw new Error('No snapshot')
+        }
         const bitmap = await createImageBitmap(
           await (await fetch(snapshot.dataUrl)).blob()
         )
@@ -490,7 +503,9 @@ test('preserves hard stops, ordered alpha layers, and empty or degenerate materi
         canvas.width = 200
         canvas.height = 100
         const ctx = canvas.getContext('2d')
-        if (!ctx) throw new Error('Missing pixel observation context')
+        if (!ctx) {
+          throw new Error('Missing pixel observation context')
+        }
         ctx.drawImage(bitmap, 0, 0)
         bitmap.close()
         output.push(
@@ -601,7 +616,9 @@ test('rebuilds batch boundaries after explicit mesh batching changes', async ({
       } catch {
         rejected = true
       }
-      if (!rejected) throw new Error('Invalid material accepted')
+      if (!rejected) {
+        throw new Error('Invalid material accepted')
+      }
       engine.execute({ type: 'flush' })
       return result
     } finally {
@@ -713,8 +730,9 @@ test('preserves every material across texture overflow and ordinary-program tran
         nativeResolution: true,
         maxDimension: 128
       })
-      if (snapshot.type !== 'snapshot')
+      if (snapshot.type !== 'snapshot') {
         throw new Error('Missing overflow snapshot')
+      }
       const bitmap = await createImageBitmap(
         await (await fetch(snapshot.dataUrl)).blob()
       )
@@ -722,7 +740,9 @@ test('preserves every material across texture overflow and ordinary-program tran
       canvas.width = bitmap.width
       canvas.height = bitmap.height
       const context = canvas.getContext('2d')
-      if (!context) throw new Error('Missing pixel context')
+      if (!context) {
+        throw new Error('Missing pixel context')
+      }
       context.drawImage(bitmap, 0, 0)
       bitmap.close()
       const pixels = meshes.map((_, i) => [

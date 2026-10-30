@@ -87,14 +87,17 @@ const finiteInterval = (value: Interval) =>
   Number.isFinite(value.low) && Number.isFinite(value.high)
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) freeze(child)
+    for (const child of Object.values(value)) {
+      freeze(child)
+    }
     Object.freeze(value)
   }
   return value
 }
 function required<T>(value: T | undefined): T {
-  if (value === undefined)
+  if (value === undefined) {
     throw Error('Walking mechanics source identity is incomplete')
+  }
   return value
 }
 const emptyWork = () => ({
@@ -137,10 +140,13 @@ export class WalkingQuasiStaticOwner {
   }
   prepare(raw: unknown): WalkingQuasiStaticAssessment {
     const motion = this.dependencies.getCurrentWalkingMotion()
-    if (!motion) throw Error('Walking motion owner is unavailable')
+    if (!motion) {
+      throw Error('Walking motion owner is unavailable')
+    }
     const request = readWalkingQuasiStaticRequest(raw, motion)
-    if (request === this.lastRequest && this.current?.motion === motion)
+    if (request === this.lastRequest && this.current?.motion === motion) {
       return this.current
+    }
     const work = emptyWork(),
       reasons: string[] = [],
       source = motion.source,
@@ -227,17 +233,21 @@ export class WalkingQuasiStaticOwner {
       centreOfMass.kind === 'known' &&
       (!finiteInterval(centreOfMass.totalMass) ||
         !centreOfMass.worldCoM.every(finiteInterval))
-    )
+    ) {
       centreOfMass = unknown()
-    if (centreOfMass.kind === 'unknown')
+    }
+    if (centreOfMass.kind === 'unknown') {
       reasons.push('mass-or-centre-of-mass-unknown')
+    }
     const parent = new Map(
       source.rig.bodies.map((body) => [body.id, body.parentBodyId])
     )
     const descendant = (bodyId: string, rootId: string) => {
       let id: string | null | undefined = bodyId
       while (id) {
-        if (id === rootId) return true
+        if (id === rootId) {
+          return true
+        }
         id = parent.get(id)
       }
       return false
@@ -261,11 +271,12 @@ export class WalkingQuasiStaticOwner {
           entry.loadId === undefined ? [] : [entry.loadId]
         )
       work.momentMassVisits += members.length
-      if (members.some((entry) => entry.properties.kind === 'unknown'))
+      if (members.some((entry) => entry.properties.kind === 'unknown')) {
         return { kind: 'unknown', bodyIds, loadIds }
+      }
       let vector = mechanicsVector([0, 0, 0])
-      for (const member of members)
-        if (member.properties.kind === 'known')
+      for (const member of members) {
+        if (member.properties.kind === 'known') {
           vector = mechanicsAdd(
             vector,
             mechanicsTorque(
@@ -274,9 +285,12 @@ export class WalkingQuasiStaticOwner {
               interval(member.properties.massKg)
             ).vector
           )
+        }
+      }
       const magnitude = mechanicsMagnitude(vector)
-      if (!vector.every(finiteInterval) || !finiteInterval(magnitude))
+      if (!vector.every(finiteInterval) || !finiteInterval(magnitude)) {
         return { kind: 'unknown', bodyIds, loadIds }
+      }
       return {
         kind: 'known',
         bodyIds,
@@ -294,8 +308,9 @@ export class WalkingQuasiStaticOwner {
       armMoments.some(
         (arm) => arm.root.kind === 'unknown' || arm.shoulder.kind === 'unknown'
       )
-    )
+    ) {
       reasons.push('arm-moment-unknown')
+    }
     const points: MechanicsPlanePoint[] = []
     let contactsComplete = request.support.contacts.length > 0
     for (const contact of request.support.contacts) {
@@ -312,20 +327,28 @@ export class WalkingQuasiStaticOwner {
         bound.status !== 'admitted' ||
         bound.assessment.coverage !== 'complete' ||
         contact.position.kind === 'unknown'
-      )
+      ) {
         contactsComplete = false
-      if (contact.position.kind === 'plane-point')
+      }
+      if (contact.position.kind === 'plane-point') {
         points.push(contact.position.coordinates)
+      }
     }
-    if (!contactsComplete) reasons.push('support-contact-evidence-unknown')
+    if (!contactsComplete) {
+      reasons.push('support-contact-evidence-unknown')
+    }
     const slope = motion.terrain.observations.slope
-    if ('kind' in slope || slope.coverage !== 'complete')
+    if ('kind' in slope || slope.coverage !== 'complete') {
       reasons.push('slope-evidence-unknown')
+    }
     const plane = request.support.plane,
       reserve = request.support.lineOfActionReserve
-    if (plane.kind === 'unknown') reasons.push('support-plane-unknown')
-    if (reserve.kind === 'unknown')
+    if (plane.kind === 'unknown') {
+      reasons.push('support-plane-unknown')
+    }
+    if (reserve.kind === 'unknown') {
       reasons.push('line-of-action-reserve-unknown')
+    }
     let supportResult: Support | undefined
     let hull: readonly MechanicsPlanePoint[] | undefined
     if (contactsComplete) {
@@ -339,7 +362,9 @@ export class WalkingQuasiStaticOwner {
           reserve.kind === 'bounded' ? reserve.metres : undefined
         )
         hull = supportResult.hull
-      } else hull = mechanicsHull(points)
+      } else {
+        hull = mechanicsHull(points)
+      }
     }
     const supportPolygon = hull
       ? known(
@@ -356,10 +381,12 @@ export class WalkingQuasiStaticOwner {
       : unknown()
     const status =
       reasons.length === 0 && supportResult ? supportResult.status : 'unknown'
-    if (supportResult?.status === 'unknown')
+    if (supportResult?.status === 'unknown') {
       reasons.push('support-sign-unresolved')
-    if (supportResult?.status === 'blocked')
+    }
+    if (supportResult?.status === 'blocked') {
       reasons.push('support-or-overturning-blocked')
+    }
     const result: WalkingQuasiStaticAssessment = freeze({
       identity: {},
       revision: ++this.revision,
@@ -397,8 +424,9 @@ export class WalkingQuasiStaticOwner {
     this.current = result
     this.lastRequest = request
     this.totals.preparations++
-    for (const key of Object.keys(work) as (keyof WalkingQuasiStaticWork)[])
+    for (const key of Object.keys(work) as (keyof WalkingQuasiStaticWork)[]) {
       this.totals[key] += work[key]
+    }
     return result
   }
 }

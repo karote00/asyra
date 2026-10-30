@@ -73,7 +73,9 @@ before(async () => {
         request.url?.endsWith('/persistence-batches')
       ) {
         const chunks = []
-        for await (const chunk of request) chunks.push(chunk)
+        for await (const chunk of request) {
+          chunks.push(chunk)
+        }
         const batch = JSON.parse(Buffer.concat(chunks).toString('utf8'))
         response.end(JSON.stringify({ durableSequence: batch.lastSequence }))
         return
@@ -217,7 +219,9 @@ const waitForServer = (child) =>
       stderr += chunk.toString()
     })
     child.stdout.on('data', (chunk) => {
-      if (!chunk.toString().includes('[collaboration]')) return
+      if (!chunk.toString().includes('[collaboration]')) {
+        return
+      }
       clearTimeout(timeout)
       resolve()
     })
@@ -425,7 +429,9 @@ const waitForStdoutLine = (child, prefix) =>
       const lines = buffered.split(/\r?\n/)
       buffered = lines.pop() ?? ''
       const line = lines.find((candidate) => candidate.startsWith(prefix))
-      if (!line) return
+      if (!line) {
+        return
+      }
       clearTimeout(timeout)
       child.stdout.off('data', onData)
       resolve(line)
@@ -465,7 +471,9 @@ const releasePeerCloseCleanup = async (child, actorId) => {
 }
 
 const stopServer = async (child) => {
-  if (child.exitCode !== null || child.signalCode !== null) return
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return
+  }
   child.kill('SIGTERM')
   await new Promise((resolve) => child.once('exit', resolve))
 }
@@ -480,9 +488,13 @@ const waitForMessage = (socket, predicate, description) =>
       5_000
     )
     const onMessage = (data, isBinary) => {
-      if (isBinary) return
+      if (isBinary) {
+        return
+      }
       const message = JSON.parse(rawDataToBuffer(data).toString('utf8'))
-      if (!predicate(message)) return
+      if (!predicate(message)) {
+        return
+      }
       clearTimeout(timeout)
       socket.off('message', onMessage)
       resolve(message)
@@ -497,7 +509,9 @@ const waitForBinaryMessage = (socket, description) =>
       5_000
     )
     const onMessage = (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
       clearTimeout(timeout)
       socket.off('message', onMessage)
       resolve(rawDataToBuffer(data))
@@ -517,9 +531,13 @@ const waitForBinaryMessages = (socket, count, description) =>
       )
     }, 5_000)
     const onMessage = (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
       messages.push(rawDataToBuffer(data))
-      if (messages.length !== count) return
+      if (messages.length !== count) {
+        return
+      }
       clearTimeout(timeout)
       socket.off('message', onMessage)
       resolve(messages)
@@ -534,7 +552,9 @@ const expectNoBinaryMessage = (socket, durationMs = 100) =>
       resolve()
     }, durationMs)
     const onMessage = (_data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
       clearTimeout(timeout)
       socket.off('message', onMessage)
       reject(new Error('unexpected binary message'))
@@ -557,7 +577,9 @@ const requestPublicClient = async ({ port, origin, fileId, actorId }) => {
   })
   const bootstrapTypes = []
   const observeBootstrap = (data, isBinary) => {
-    if (!isBinary) bootstrapTypes.push(JSON.parse(data.toString()).type)
+    if (!isBinary) {
+      bootstrapTypes.push(JSON.parse(data.toString()).type)
+    }
   }
   socket.on('message', observeBootstrap)
   const ready = waitForMessage(
@@ -613,9 +635,13 @@ const connectPublicClient = async (
   })
   if (autoSettleSourcePublications) {
     socket.on('message', (data, isBinary) => {
-      if (isBinary) return
+      if (isBinary) {
+        return
+      }
       const message = JSON.parse(rawDataToBuffer(data).toString('utf8'))
-      if (message.type !== 'source-publication-proposed') return
+      if (message.type !== 'source-publication-proposed') {
+        return
+      }
       socket.send(
         JSON.stringify({
           type: 'source-publication-settlement',
@@ -652,8 +678,12 @@ const encodeFrameString = (value) => {
 }
 
 const decodeFrameString = (bytes) => {
-  if (bytes.byteLength === 0) return ''
-  if (bytes[0] === 0) return new TextDecoder().decode(bytes.subarray(1))
+  if (bytes.byteLength === 0) {
+    return ''
+  }
+  if (bytes[0] === 0) {
+    return new TextDecoder().decode(bytes.subarray(1))
+  }
   assert.equal(bytes[0], 1)
   assert.equal((bytes.byteLength - 1) % 2, 0)
   let value = ''
@@ -845,7 +875,9 @@ const createCanonicalPublicationFrame = ({
     })
     assert.equal(frames.length, 1)
     const frame = new Uint8Array(frames[0])
-    if (targetRelayedFrameByteLength === undefined) return frame
+    if (targetRelayedFrameByteLength === undefined) {
+      return frame
+    }
     assert.ok(fromActorId)
     const view = new DataView(frame.buffer, frame.byteOffset, frame.byteLength)
     const relayedFrameByteLength =
@@ -853,7 +885,9 @@ const createCanonicalPublicationFrame = ({
       view.getUint32(32, true) +
       encodeFrameString(fromActorId).byteLength
     const delta = targetRelayedFrameByteLength - relayedFrameByteLength
-    if (delta === 0) return frame
+    if (delta === 0) {
+      return frame
+    }
     fillerLength = Math.max(0, (fillerLength ?? 0) + delta)
   }
   throw new Error('Unable to construct exact relayed publication frame')
@@ -1049,7 +1083,9 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
     )
   } finally {
     releaseRead()
-    for (const socket of sockets) socket.terminate()
+    for (const socket of sockets) {
+      socket.terminate()
+    }
     await stopServer(child)
     await new Promise((resolve) => backend.close(resolve))
   }
@@ -1083,7 +1119,9 @@ for (const { existingRoom, timedOut } of [
       })
       response.setHeader('content-type', 'application/json')
       const partialBody = existingRoom && reads === heldRead
-      if (partialBody) response.write(body.slice(0, 1))
+      if (partialBody) {
+        response.write(body.slice(0, 1))
+      }
       if (reads === heldRead) {
         response.once('close', reportCancellation)
         reportRead()
@@ -1108,10 +1146,11 @@ for (const { existingRoom, timedOut } of [
         fileId: 'cancelled-bootstrap',
         actorId: 'replacement'
       }
-      if (existingRoom)
+      if (existingRoom) {
         sockets.push(
           await connectPublicClient({ ...identity, actorId: 'survivor' })
         )
+      }
       const abandoned = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
         origin
       })
@@ -1149,7 +1188,9 @@ for (const { existingRoom, timedOut } of [
             }
           })
         })
-      } else await closeSocket(abandoned)
+      } else {
+        await closeSocket(abandoned)
+      }
       await Promise.race([
         cancelledRead,
         new Promise((_, reject) => {
@@ -1173,7 +1214,9 @@ for (const { existingRoom, timedOut } of [
       assert.match(duplicate.result.message, /already connected/)
     } finally {
       releaseRead()
-      for (const socket of sockets) socket.terminate()
+      for (const socket of sockets) {
+        socket.terminate()
+      }
       await stopServer(child)
       await new Promise((resolve) => backend.close(resolve))
     }
@@ -1259,7 +1302,9 @@ test('keeps shared checkpoint initialization while another live waiter remains',
     )
   } finally {
     releaseRead()
-    for (const socket of sockets) socket.terminate()
+    for (const socket of sockets) {
+      socket.terminate()
+    }
     await stopServer(child)
     await new Promise((resolve) => backend.close(resolve))
   }
@@ -1341,19 +1386,25 @@ test(
     const proxy = createHttpBackendServer((request, response) => {
       void (async () => {
         const chunks = []
-        for await (const chunk of request) chunks.push(chunk)
+        for await (const chunk of request) {
+          chunks.push(chunk)
+        }
         if (request.method === 'GET' && ++reads === 3) {
           reportRead()
           await readReleased
         }
         if (request.method === 'POST' && ++writes === 1) {
           response.once('close', () => {
-            if (!response.writableEnded) writeClosedEarly = true
+            if (!response.writableEnded) {
+              writeClosedEarly = true
+            }
           })
           reportWrite()
           await writeReleased
         }
-        if (response.destroyed) return
+        if (response.destroyed) {
+          return
+        }
         const result = await globalThis.fetch(
           `http://127.0.0.1:${address.port}${request.url}`,
           {
@@ -1492,7 +1543,9 @@ test(
     } finally {
       releaseRead()
       releaseWrite()
-      for (const socket of sockets) socket.terminate()
+      for (const socket of sockets) {
+        socket.terminate()
+      }
       await stopServer(child)
       await new Promise((resolve) => proxy.close(resolve))
       await backend.close()
@@ -1579,7 +1632,9 @@ test('retains one room while the last peer leaves during a replacement bootstrap
     )
   } finally {
     releaseRead()
-    for (const socket of sockets) socket.terminate()
+    for (const socket of sockets) {
+      socket.terminate()
+    }
     await stopServer(child)
     await new Promise((resolve) => backend.close(resolve))
   }
@@ -1632,7 +1687,9 @@ test('document Reset discards the accepted room tail before the next bootstrap',
       request.url?.endsWith('/persistence-batches')
     ) {
       const chunks = []
-      for await (const chunk of request) chunks.push(Buffer.from(chunk))
+      for await (const chunk of request) {
+        chunks.push(Buffer.from(chunk))
+      }
       const batch = JSON.parse(Buffer.concat(chunks).toString('utf8'))
       durableSequence = batch.lastSequence
       response.end(JSON.stringify({ durableSequence }))
@@ -2406,7 +2463,9 @@ test('socket server retries the exact ordered backend batch after a non-success 
       return
     }
     const chunks = []
-    for await (const chunk of request) chunks.push(Buffer.from(chunk))
+    for await (const chunk of request) {
+      chunks.push(Buffer.from(chunk))
+    }
     requestBodies.push(Buffer.concat(chunks).toString('utf8'))
     if (requestBodies.length === 1) {
       response.writeHead(503)
@@ -2572,7 +2631,9 @@ test('socket server waits for durable persistence capacity without disconnecting
       return
     }
     const chunks = []
-    for await (const chunk of request) chunks.push(Buffer.from(chunk))
+    for await (const chunk of request) {
+      chunks.push(Buffer.from(chunk))
+    }
     const batch = JSON.parse(Buffer.concat(chunks).toString('utf8'))
     persistenceRequestCount += 1
     if (persistenceRequestCount === 1) {
@@ -2622,7 +2683,9 @@ test('socket server waits for durable persistence capacity without disconnecting
         ok: true,
         acceptedSequences: [suffix === 'a' ? 1 : 2]
       })
-      if (suffix === 'a') await firstRequestStarted
+      if (suffix === 'a') {
+        await firstRequestStarted
+      }
     }
 
     const waitingRequestId = 'durable-capacity-c'
@@ -2924,7 +2987,9 @@ test('a second uncredited source frame fails closed and never reaches a peer', a
     )
     const relayedPublicationIds = []
     peer.on('message', (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
       relayedPublicationIds.push(
         inspectOpaquePublicationFrame(rawDataToBuffer(data)).publicationId
       )
@@ -3390,11 +3455,15 @@ test('a request-start peer disconnect drops only that peer and releases healthy 
       resolveFastComplete = resolve
     })
     fast.on('message', (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
       const frame = inspectOpaquePublicationFrame(rawDataToBuffer(data))
       fastPublicationIds.push(frame.publicationId)
       sendFrameConsumed(fast, frame)
-      if (fastPublicationIds.length === 5) resolveFastComplete()
+      if (fastPublicationIds.length === 5) {
+        resolveFastComplete()
+      }
     })
 
     const payload = new Uint8Array(600 * 1024)

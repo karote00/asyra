@@ -22,7 +22,9 @@ test('native text stays editable and survives undo, redo and save', async ({
     const { selectionApis } = await import('../src/common-apis/selection')
     const { transactionApis } = await import('../src/common-apis/transaction')
     const parent = hierarchyApis.getWorkspaceId()
-    if (!parent) throw new Error('Missing workspace')
+    if (!parent) {
+      throw new Error('Missing workspace')
+    }
     transactionApis.runTransaction(() =>
       elementApis.createElementsInParent(
         [
@@ -68,8 +70,9 @@ test('native text stays editable and survives undo, redo and save', async ({
       )
     )
     selectionApis.selectElements(['native-text-example'])
-    if (!core.getElementData('native-text-example'))
+    if (!core.getElementData('native-text-example')) {
       throw new Error('Text creation failed')
+    }
   })
   const measure = () =>
     page.evaluate(async () => {

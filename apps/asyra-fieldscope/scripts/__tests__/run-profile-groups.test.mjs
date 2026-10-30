@@ -396,14 +396,20 @@ except KeyboardInterrupt:
     { cwd: app, stdio: 'pipe' }
   )
   t.after(() => {
-    if (child.exitCode === null) child.kill('SIGKILL')
+    if (child.exitCode === null) {
+      child.kill('SIGKILL')
+    }
   })
   const deadline = Date.now() + 3000
   while (Date.now() < deadline) {
     try {
-      if (readFileSync(started, 'utf8') === 'started') break
+      if (readFileSync(started, 'utf8') === 'started') {
+        break
+      }
     } catch (error) {
-      if (error.code !== 'ENOENT') throw error
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
     }
     await delay(10)
   }
@@ -481,7 +487,9 @@ except owner.ProfileGroupInterrupted as error:
     try {
       process.kill(spawnedPid, 'SIGKILL')
     } catch (error) {
-      if (error.code !== 'ESRCH') throw error
+      if (error.code !== 'ESRCH') {
+        throw error
+      }
     }
   })
   assert.equal(result.status, 0, result.stderr)
@@ -584,8 +592,9 @@ test('each walking motion profile isolates one scenario in its own worker file',
         ts.isCallExpression(node) &&
         ts.isIdentifier(node.expression) &&
         ['it', 'test'].includes(node.expression.text)
-      )
+      ) {
         cases.push(node)
+      }
       ts.forEachChild(node, visit)
     }
     visit(source)

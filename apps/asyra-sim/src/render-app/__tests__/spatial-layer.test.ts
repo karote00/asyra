@@ -38,14 +38,16 @@ describe('Spatial projection owner', () => {
     layer.registration.update?.()
     const update = vi.spyOn(RenderMesh.prototype, 'update')
     invalidate.mockClear()
-    for (let i = 1; i <= 60; i++)
+    for (let i = 1; i <= 60; i++) {
       layer.submitCamera({ ...frame.camera, position: [i, 0, 5] })
+    }
     expect(invalidate).toHaveBeenCalledTimes(1)
     layer.registration.update?.()
     expect(update).not.toHaveBeenCalled()
     const container = layer.registration.layer
-    if (!(container instanceof RenderContainer))
+    if (!(container instanceof RenderContainer)) {
       throw new Error('Missing spatial container')
+    }
     expect(
       container.children[0].getEngineProperties()[SPATIAL_PROPERTY]
     ).toMatchObject({ position: [60, 0, 5] })

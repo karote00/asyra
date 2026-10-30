@@ -12,7 +12,9 @@ const {
 const fingerprint = (value) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const requireValue = (condition, message) => {
-  if (!condition) throw new Error('Runtime authority: ' + message)
+  if (!condition) {
+    throw new Error('Runtime authority: ' + message)
+  }
 }
 
 function workspacePatterns(manifest) {
@@ -38,9 +40,13 @@ function discoverWorkspaceManifests(root, manifest, safePath) {
   for (const pattern of workspacePatterns(manifest)) {
     for (const directory of fs.globSync(pattern, { cwd: root })) {
       const absolute = safePath(root, directory)
-      if (!fs.lstatSync(absolute).isDirectory()) continue
+      if (!fs.lstatSync(absolute).isDirectory()) {
+        continue
+      }
       const file = directory + '/package.json'
-      if (!fs.existsSync(safePath(root, file))) continue
+      if (!fs.existsSync(safePath(root, file))) {
+        continue
+      }
       requireValue(!files.has(file), 'overlapping workspace declarations')
       files.add(file)
     }
@@ -58,7 +64,9 @@ function workspaceDependencies(metadata, names) {
     for (const [name, range] of Object.entries(metadata[kind] ?? {})) {
       const workspace =
         typeof range === 'string' && range.startsWith('workspace:')
-      if (!workspace && !names.has(name)) continue
+      if (!workspace && !names.has(name)) {
+        continue
+      }
       requireValue(
         workspace && range.length > 'workspace:'.length && names.has(name),
         'unbound workspace dependency ' + name
@@ -71,7 +79,9 @@ function workspaceDependencies(metadata, names) {
 
 function sourceInputPath(file, entry) {
   const prefix = entry.repositoryDirectory + '/'
-  if (!file.startsWith(prefix)) return false
+  if (!file.startsWith(prefix)) {
+    return false
+  }
   const relative = file.slice(prefix.length)
   return (
     !relative
@@ -126,7 +136,9 @@ function resolveWorkspaceAuthority(contract, read, discover) {
     closures = new Map(),
     visiting = new Set()
   const visit = (name) => {
-    if (closures.has(name)) return closures.get(name)
+    if (closures.has(name)) {
+      return closures.get(name)
+    }
     requireValue(!visiting.has(name), 'cyclic workspace dependency')
     const record = records.get(name)
     requireValue(record, 'unknown workspace owner ' + name)
@@ -137,14 +149,19 @@ function resolveWorkspaceAuthority(contract, read, discover) {
     }
     const entryPath =
       source.entry === null ? null : record.directory + '/' + source.entry
-    if (entryPath) read(entryPath)
+    if (entryPath) {
+      read(entryPath)
+    }
     const directWorkspaceDependencies = workspaceDependencies(
       record.metadata,
       records
     )
     const members = new Set([name])
-    for (const dependency of directWorkspaceDependencies)
-      for (const member of visit(dependency)) members.add(member)
+    for (const dependency of directWorkspaceDependencies) {
+      for (const member of visit(dependency)) {
+        members.add(member)
+      }
+    }
     packages.set(name, {
       name,
       repositoryDirectory: record.directory,

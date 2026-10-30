@@ -51,7 +51,9 @@ it('name edits retain unchanged mount controls, but pose changes refresh them', 
     act(() => {
       source.publish(body)
 
-      if (mounted) return
+      if (mounted) {
+        return
+      }
 
       mounted = true
 
@@ -74,7 +76,9 @@ it('name edits retain unchanged mount controls, but pose changes refresh them', 
         ([props]) => props.axisLabel === 'Rotation axis'
       )?.[0].onChange
 
-    if (!retainedMountChange) throw new Error('Missing mount rotation control')
+    if (!retainedMountChange) {
+      throw new Error('Missing mount rotation control')
+    }
 
     vi.mocked(RotationFields).mockClear()
 

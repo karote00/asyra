@@ -38,8 +38,9 @@ const statuses = new Set<ActivityStatus>([
 const bounded = (value: unknown, limit: number): value is string =>
   typeof value === 'string' && value.length > 0 && value.length <= limit
 export function readActivityEvent(value: unknown): ActivityEvent {
-  if (!value || typeof value !== 'object')
+  if (!value || typeof value !== 'object') {
     throw new Error('Invalid activity event')
+  }
   const event = value as ActivityEvent
   if (
     event.version !== 1 ||
@@ -57,8 +58,9 @@ export function readActivityEvent(value: unknown): ActivityEvent {
     !(event.taskId === null || bounded(event.taskId, 120)) ||
     (['working', 'waiting', 'completed', 'failed'].includes(event.status) &&
       (!event.taskId || event.attempt < 1))
-  )
+  ) {
     throw new Error('Invalid activity event')
+  }
   return Object.freeze({
     version: 1,
     source: event.source,
@@ -94,7 +96,9 @@ export class ActivityProjection {
       queueMicrotask(flush)
   ) {}
   connect(connection: ActivityConnection): void {
-    if (this.closed) throw new Error('Activity projection is closed')
+    if (this.closed) {
+      throw new Error('Activity projection is closed')
+    }
     if (
       !bounded(connection.id, 120) ||
       !bounded(connection.label, 120) ||
@@ -102,17 +106,20 @@ export class ActivityProjection {
         connection.fidelity
       ) ||
       this.connections.has(connection.id)
-    )
+    ) {
       throw new Error('Invalid or duplicate activity connection')
+    }
     this.connections.set(connection.id, Object.freeze({ ...connection }))
   }
   ingest(input: readonly unknown[]): Promise<void> {
-    if (this.closed)
+    if (this.closed) {
       return Promise.reject(new Error('Activity projection is closed'))
-    if (!Array.isArray(input) || input.length > 1000)
+    }
+    if (!Array.isArray(input) || input.length > 1000) {
       return Promise.reject(
         new Error('Activity batch must contain at most 1000 events')
       )
+    }
     let events: ActivityEvent[]
     try {
       events = input.map(readActivityEvent)
@@ -120,21 +127,31 @@ export class ActivityProjection {
       return Promise.reject(error)
     }
     const operation = this.queue.then(async () => {
-      if (this.closed) throw new Error('Activity projection is closed')
+      if (this.closed) {
+        throw new Error('Activity projection is closed')
+      }
       const sequences = new Map(this.watermarks)
       const accepted: AgentActivity[] = []
       for (const event of events) {
         const connection = this.connections.get(event.source)
-        if (!connection) throw new Error('Unknown activity connection')
-        if (event.sequence <= (sequences.get(event.source) ?? 0)) continue
+        if (!connection) {
+          throw new Error('Unknown activity connection')
+        }
+        if (event.sequence <= (sequences.get(event.source) ?? 0)) {
+          continue
+        }
         sequences.set(event.source, event.sequence)
         accepted.push(
           Object.freeze({ ...event, fidelity: connection.fidelity })
         )
       }
-      if (!accepted.length) return
+      if (!accepted.length) {
+        return
+      }
       await this.archive.append(Object.freeze(accepted))
-      if (this.closed) return
+      if (this.closed) {
+        return
+      }
       for (const event of accepted) {
         this.watermarks.set(event.source, event.sequence)
         this.history.push(event)
@@ -149,9 +166,12 @@ export class ActivityProjection {
             (event.attempt === previous.attempt &&
               ['completed', 'failed'].includes(previous.status) &&
               ['working', 'waiting'].includes(event.status)))
-        )
+        ) {
           continue
-        if (!previous) this.listChanged = true
+        }
+        if (!previous) {
+          this.listChanged = true
+        }
         this.agents.set(key, event)
         this.pending.add(key)
       }
@@ -190,7 +210,9 @@ export class ActivityProjection {
     listeners.add(listener)
     return () => {
       listeners.delete(listener)
-      if (!listeners.size) this.agentListeners.delete(key)
+      if (!listeners.size) {
+        this.agentListeners.delete(key)
+      }
     }
   }
   subscribeAgents(listener: () => void): () => void {
@@ -207,7 +229,9 @@ export class ActivityProjection {
   }
   flush(): void {
     this.scheduled = false
-    if (this.closed) return
+    if (this.closed) {
+      return
+    }
     if (this.listChanged) {
       this.identities = Object.freeze([...this.agents.keys()])
       this.listChanged = false

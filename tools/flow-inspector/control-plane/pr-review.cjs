@@ -18,7 +18,9 @@ const REVIEW_POLICY = freeze({
   capability: 'review-pr'
 })
 const need = (condition, message) => {
-  if (!condition) throw new Error('PR review: ' + message)
+  if (!condition) {
+    throw new Error('PR review: ' + message)
+  }
 }
 const gitDigest = (bytes) =>
   createHash('sha1')
@@ -349,11 +351,12 @@ function reviewFormat(record) {
         ),
       'invalid scoped preview identity'
     )
-  } else
+  } else {
     need(
       !Object.hasOwn(record.preview ?? {}, 'scopedWork'),
       'scoped review requires format 2'
     )
+  }
 }
 function prepareMetadata(input) {
   const ownership = input.packageOwnership
@@ -436,8 +439,9 @@ function sourceDifference(changes) {
         start < endBefore &&
         start < endAfter &&
         before[start] === after[start]
-      )
+      ) {
         start++
+      }
       while (
         endBefore > start &&
         endAfter > start &&
@@ -544,7 +548,9 @@ function createReviewOwner(
     return next
   }
   for (const file of fs.readdirSync(directory)) {
-    if (!file.endsWith('.json')) continue
+    if (!file.endsWith('.json')) {
+      continue
+    }
     const value = JSON.parse(fs.readFileSync(safePath(directory, file), 'utf8'))
     reviewFormat(value)
     need(
@@ -556,11 +562,12 @@ function createReviewOwner(
       'invalid retained delivery'
     )
     records.set(value.taskId, freeze(value))
-    if (value.state === 'submitting')
+    if (value.state === 'submitting') {
       save(
         { ...value, state: 'uncertain', error: 'interrupted' },
         'interrupted-effect'
       )
+    }
   }
   const get = (id) => records.get(id) ?? null
   const authorize = (id, actor) => {
@@ -583,7 +590,7 @@ function createReviewOwner(
           )
         )
       : null
-    if (scopedWork)
+    if (scopedWork) {
       need(
         scopedWork.taskId === id &&
           scopedWork.attemptId === attempt?.id &&
@@ -591,6 +598,7 @@ function createReviewOwner(
           scopedWork.assessmentId === selection.assessmentId,
         'scoped review identity mismatch'
       )
+    }
     need(
       !task.revoked &&
         task.phase !== 'running' &&
@@ -645,11 +653,12 @@ function createReviewOwner(
           'verification/' + attempt.id
         )
       : path.dirname(verdict.runner.reportPath)
-    if (scopedWork)
+    if (scopedWork) {
       need(
         verdict.runner.reportPath === safePath(reportRoot, 'vitest.json'),
         'scoped report location mismatch'
       )
+    }
     safePath(
       repositoryRoot,
       path.relative(repositoryRoot, verdict.runner.reportPath)
@@ -659,8 +668,9 @@ function createReviewOwner(
       path.basename(verdict.runner.reportPath),
       verdict.runner.reportDigest
     )
-    for (const item of verdict.files)
+    for (const item of verdict.files) {
       read(path.join(reportRoot, 'source'), item.path, item.digest)
+    }
     const authority = task.snapshot.runtimeAuthority
     const ownerPackage = task.task.step?.ownerPackage
     const scopedAuthority = authority
@@ -679,12 +689,13 @@ function createReviewOwner(
                 authority.contractScopeDigest)),
         'invalid runtime package authority'
       )
-    } else
+    } else {
       need(
         !scopedWork ||
           !Object.hasOwn(scopedWork.runtime, 'runtimeAuthorityDigest'),
         'runtime package authority is missing'
       )
+    }
     const selectedPackage = authority
       ? scopedAuthority[0]
       : {
@@ -768,12 +779,13 @@ function createReviewOwner(
         'candidate verification differs'
       )
     }
-    for (const item of files)
+    for (const item of files) {
       need(
         verified.get(item.path) ===
           (diff.find((c) => c.path === item.path)?.afterDigest ?? item.digest),
         'unauthorized verified source difference'
       )
+    }
     const candidateRoot = candidateDirectory(id),
       actual = []
     const walk = (dir) => {
@@ -783,8 +795,9 @@ function createReviewOwner(
           path.relative(candidateRoot, path.join(dir, entry.name))
         )
         need(!entry.isSymbolicLink(), 'candidate symlink')
-        if (entry.isDirectory()) walk(absolute)
-        else {
+        if (entry.isDirectory()) {
+          walk(absolute)
+        } else {
           need(entry.isFile(), 'invalid candidate entry')
           actual.push(path.relative(candidateRoot, absolute))
         }
@@ -796,7 +809,9 @@ function createReviewOwner(
         JSON.stringify([...task.task.allowedFiles].sort()),
       'extra or missing candidate file'
     )
-    for (const item of actual) read(candidateRoot, item, verified.get(item))
+    for (const item of actual) {
+      read(candidateRoot, item, verified.get(item))
+    }
     return {
       ...(scopedWork
         ? { scopedWork, candidateVerification: task.verificationStatus }
@@ -854,7 +869,9 @@ function createReviewOwner(
         const remote = await adapter.inspect(prepared)
         const preview = { ...prepared, ...remote }
         const previewDigest = sha256(JSON.stringify(preview))
-        if (previous?.previewDigest === previewDigest) return previous
+        if (previous?.previewDigest === previewDigest) {
+          return previous
+        }
         return save(
           {
             format: selection ? 2 : 1,
@@ -890,7 +907,9 @@ function createReviewOwner(
       )
       return serial(id, 'confirm:' + request.previewDigest, async () => {
         let current = get(id)
-        if (current.state === 'submitted-for-review') return current
+        if (current.state === 'submitted-for-review') {
+          return current
+        }
         need(
           current.state !== 'uncertain',
           'uncertain effect requires reconciliation'
@@ -913,11 +932,12 @@ function createReviewOwner(
           input.attemptId === current.preview.attemptId,
           'candidate attempt changed'
         )
-        for (const key of Object.keys(input))
+        for (const key of Object.keys(input)) {
           need(
             JSON.stringify(input[key]) === JSON.stringify(current.preview[key]),
             'preview source changed'
           )
+        }
         need(
           adapter.repository === current.preview.repository &&
             adapter.base === current.preview.base,

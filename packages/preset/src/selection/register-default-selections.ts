@@ -52,7 +52,9 @@ export const registerSelections = (
   let disposed = false
 
   const dispose = (): void => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
     for (let index = registeredChannels.length - 1; index >= 0; index--) {
       core.unregisterSelection(registeredChannels[index])
       registeredChannels.splice(index, 1)
@@ -71,7 +73,9 @@ export const registerSelections = (
       }
     })
   } catch (error) {
-    if (!cleanupReporter.hasReported()) dispose()
+    if (!cleanupReporter.hasReported()) {
+      dispose()
+    }
     throw error
   }
 

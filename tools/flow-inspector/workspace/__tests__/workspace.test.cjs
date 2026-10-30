@@ -83,7 +83,9 @@ const createRenderedTarget = (entry) => {
             : fs.readFileSync(legacyViewerPath, 'utf8')
         dom.window.eval(source)
         node.dispatchEvent(new dom.window.Event('load'))
-      } else originalAppend(node)
+      } else {
+        originalAppend(node)
+      }
     }
   }
   dom.window.FLOW_INSPECTOR_WORKSPACE_BUNDLE = loadBundle()
@@ -540,13 +542,19 @@ test('every rendered link resolves to an existing file and specification section
   const invalid = []
   for (const link of renderedLinks) {
     const url = new URL(link.href)
-    if (url.protocol !== 'file:') continue
+    if (url.protocol !== 'file:') {
+      continue
+    }
+
     const file = fileURLToPath(url)
     if (!fs.existsSync(file)) {
       invalid.push(link.href)
       continue
     }
-    if (path.extname(file) !== '.md' || !url.hash) continue
+    if (path.extname(file) !== '.md' || !url.hash) {
+      continue
+    }
+
     const headings = [
       ...fs.readFileSync(file, 'utf8').matchAll(/^#{1,6}\s+(.+)$/gm)
     ].map((match) =>
@@ -558,8 +566,9 @@ test('every rendered link resolves to an existing file and specification section
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
     )
-    if (!headings.includes(decodeURIComponent(url.hash.slice(1))))
+    if (!headings.includes(decodeURIComponent(url.hash.slice(1)))) {
       invalid.push(link.href)
+    }
   }
   assert.deepEqual([...new Set(invalid)], [])
 })

@@ -76,7 +76,9 @@ it('delivers every typography value constraint from the property owner, includin
   const schema = createDesignEditAction().inputSchema
   for (const field of TEXT_PROPERTY_SCHEMA.fields) {
     expect(samples[field.key], field.key).toBeDefined()
-    if (!field.validate) throw new Error(`Missing ${field.key} validator`)
+    if (!field.validate) {
+      throw new Error(`Missing ${field.key} validator`)
+    }
     for (const value of [field.defaultValue, ...samples[field.key]]) {
       const accepted = !operationInputIssue(
         { elementId: 'text', properties: { [field.key]: value } },

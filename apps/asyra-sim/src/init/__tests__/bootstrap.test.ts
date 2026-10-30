@@ -117,7 +117,9 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
     ).toBe(true)
   }
   const experiment = experiments[0]
-  if (!experiment) throw new Error('Expected synthetic experiment')
+  if (!experiment) {
+    throw new Error('Expected synthetic experiment')
+  }
   expect(experiment.definition.trajectory.keyframes).toHaveLength(3)
   const preflight = runtime.preflightExperiment(experiment.id)
   expect(preflight.blockers).toEqual([])
@@ -133,7 +135,9 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   const convertInput = vi.spyOn(trajectoryImport, 'previewTrajectoryCsv')
   try {
     const preview = runtime.experimentInputs.previewTrajectory(authored, model)
-    if (!preview.value) throw new Error('Expected valid authored input')
+    if (!preview.value) {
+      throw new Error('Expected valid authored input')
+    }
     await runtime.features.edit.updateExperiment(experiment.id, 1, {
       ...definitionToDraft(experiment.definition),
       trajectoryInput: authored
@@ -269,17 +273,22 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   expect(
     new Set(publications.mock.calls.map(([value]) => value.publicationId)).size
   ).toBe(3)
-  for (const [publication] of publications.mock.calls)
-    for (const slice of publication.slices)
-      for (const batch of slice.batches)
+  for (const [publication] of publications.mock.calls) {
+    for (const slice of publication.slices) {
+      for (const batch of slice.batches) {
         expect([
           SharedDataChannelNames.SCENE_TREE,
           SharedDataChannelNames.PROPS
         ]).toContain(batch.channel)
+      }
+    }
+  }
   const currentBody = runtime
     .getWorkcell(candidate.id)
     .bodies.find((body) => body.id === originalBody.id)
-  if (!currentBody) throw new Error('Expected retained body')
+  if (!currentBody) {
+    throw new Error('Expected retained body')
+  }
   await runtime.features.edit.upsert(candidate.id, currentBody)
   expect(publications).toHaveBeenCalledTimes(3)
   expect(() =>

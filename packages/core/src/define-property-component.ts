@@ -130,7 +130,9 @@ export const getPropertyChildRelations = (
   }
   const children =
     getPropertyComponentConfigDefinition(parentPropertyType)?.children
-  if (!children) return []
+  if (!children) {
+    return []
+  }
 
   return [
     {

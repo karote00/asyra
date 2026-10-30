@@ -19,7 +19,9 @@ const isLocalEnvironmentOverride = (name) =>
 
 const shouldCopyPath = (sourceRoot, sourcePath) => {
   const relativePath = path.relative(sourceRoot, sourcePath)
-  if (!relativePath) return true
+  if (!relativePath) {
+    return true
+  }
 
   const pathSegments = relativePath.split(path.sep)
   if (pathSegments.some((segment) => excludedDirectoryNames.has(segment))) {
@@ -27,8 +29,12 @@ const shouldCopyPath = (sourceRoot, sourcePath) => {
   }
 
   const name = path.basename(sourcePath)
-  if (isLocalEnvironmentOverride(name)) return false
-  if (name === '.DS_Store' || name.startsWith('.pnp.')) return false
+  if (isLocalEnvironmentOverride(name)) {
+    return false
+  }
+  if (name === '.DS_Store' || name.startsWith('.pnp.')) {
+    return false
+  }
   if (
     pathSegments[0] === '.yarn' &&
     ['cache', 'install-state.gz', 'unplugged'].includes(pathSegments[1])
@@ -54,7 +60,9 @@ export const createReleaseValidationWorkspace = ({
   try {
     for (const entry of readdirSync(resolvedSourceRoot)) {
       const sourcePath = path.join(resolvedSourceRoot, entry)
-      if (!shouldCopyPath(resolvedSourceRoot, sourcePath)) continue
+      if (!shouldCopyPath(resolvedSourceRoot, sourcePath)) {
+        continue
+      }
 
       cpSync(sourcePath, path.join(validationRoot, entry), {
         recursive: true,

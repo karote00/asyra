@@ -22,7 +22,9 @@ describe('multilevel region index', () => {
         height: id % 19 === 0 ? 2000 : 10
       }
     }))
-    for (const { id, bounds } of entries) index.set(id, bounds)
+    for (const { id, bounds } of entries) {
+      index.set(id, bounds)
+    }
     for (let i = 0; i < 100; i++) {
       const region = {
         x: i * 37 - 2100,
@@ -43,8 +45,9 @@ describe('multilevel region index', () => {
   })
   it('visits local candidates rather than all 20000 entries on repeated queries', () => {
     const index = new RegionIndex<number>()
-    for (let i = 0; i < 20000; i++)
+    for (let i = 0; i < 20000; i++) {
       index.set(i, { x: i * 50, y: 0, width: 10, height: 10 })
+    }
     for (let i = 0; i < 10; i++) {
       const result = index.query({ x: 5000, y: 0, width: 10, height: 10 })
       expect(result.values).toEqual([100])

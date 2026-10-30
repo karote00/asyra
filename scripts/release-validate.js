@@ -28,11 +28,15 @@ let printPlan = false
 let preserveWorkspace = false
 
 for (const arg of args) {
-  if (arg.startsWith('--prod=')) appName = arg.split('=')[1]
-  else if (arg === '--framework') frameworkOnly = true
-  else if (arg === '--preserve') preserveWorkspace = true
-  else if (arg === '--plan') printPlan = true
-  else {
+  if (arg.startsWith('--prod=')) {
+    appName = arg.split('=')[1]
+  } else if (arg === '--framework') {
+    frameworkOnly = true
+  } else if (arg === '--preserve') {
+    preserveWorkspace = true
+  } else if (arg === '--plan') {
+    printPlan = true
+  } else {
     console.error(`Unknown argument: ${arg}`)
     process.exit(1)
   }
@@ -59,13 +63,14 @@ const commands = [
   'yarn gen:turbo:check',
   'yarn clean',
   'yarn react:build',
-  'yarn lint:workspaces:ci',
+  'yarn lint',
   'yarn test:workspaces:ci',
   'yarn deps:validate',
   ...(!frameworkOnly
     ? [
         'yarn workspace @asyra/asyra-design test:e2e:collaboration',
         `yarn release:app:check --prod=${appName}`,
+        ...(appName === 'asyra-design' ? ['yarn test:release-artifacts'] : []),
         `yarn release:app:build --prod=${appName} --prebuilt`
       ]
     : [])
@@ -93,8 +98,11 @@ const findAvailablePort = () =>
 
       const { port } = address
       server.close((error) => {
-        if (error) reject(error)
-        else resolve(port)
+        if (error) {
+          reject(error)
+        } else {
+          resolve(port)
+        }
       })
     })
   })
@@ -102,7 +110,9 @@ const findAvailablePort = () =>
 let validationRoot
 let keepValidationWorkspace = false
 const cleanup = () => {
-  if (!validationRoot || keepValidationWorkspace) return
+  if (!validationRoot || keepValidationWorkspace) {
+    return
+  }
   removeReleaseValidationWorkspace(validationRoot, validationParent)
   validationRoot = undefined
 }

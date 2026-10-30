@@ -32,16 +32,23 @@ export function OfficeScene() {
     [drawer, setDrawer] = useState<'left' | 'right' | null>(null)
   const drag = useRef<{ x: number; y: number } | null>(null)
   useEffect(() => {
-    if (!host.current) return
+    if (!host.current) {
+      return
+    }
     let retired = false
     const pending = startReferenceScene(host.current)
     pending
       .then((value) => {
-        if (retired) void value.dispose()
-        else setRuntime(value)
+        if (retired) {
+          void value.dispose()
+        } else {
+          setRuntime(value)
+        }
       })
       .catch((e) => {
-        if (!retired) setError(e instanceof Error ? e.message : String(e))
+        if (!retired) {
+          setError(e instanceof Error ? e.message : String(e))
+        }
       })
     return () => {
       retired = true
@@ -120,8 +127,11 @@ export function OfficeScene() {
                   <button
                     key={r.id + i}
                     onClick={() => {
-                      if (r.type === 'place') focus(r.id)
-                      else follow(r.id)
+                      if (r.type === 'place') {
+                        focus(r.id)
+                      } else {
+                        follow(r.id)
+                      }
                       setQuery('')
                     }}
                   >
@@ -203,12 +213,16 @@ export function OfficeScene() {
             className="world-viewport"
             aria-label="Office 3D scene"
             onPointerDown={(e) => {
-              if (e.button !== 0) return
+              if (e.button !== 0) {
+                return
+              }
               drag.current = { x: e.clientX, y: e.clientY }
               e.currentTarget.setPointerCapture(e.pointerId)
             }}
             onPointerMove={(e) => {
-              if (!drag.current || !runtime) return
+              if (!drag.current || !runtime) {
+                return
+              }
               const p = drag.current
               runtime.orbit(
                 (p.x - e.clientX) * 0.005,

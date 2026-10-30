@@ -23,7 +23,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured source pair')
+        if (!pair) {
+          throw new Error('Missing measured source pair')
+        }
         const context = new OriginalMeshQuery()
         const rows: {
           kind: string
@@ -69,7 +71,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 )
             const ac = centroidBoxes.get(a),
               bc = centroidBoxes.get(b)
-            if (!ac || !bc) throw new Error('Missing complete centroid summary')
+            if (!ac || !bc) {
+              throw new Error('Missing complete centroid summary')
+            }
             const centroids = ac.map((axis, i) => [
               Math.min(axis[0], bc[i][0]),
               Math.max(axis[1], bc[i][1])
@@ -148,7 +152,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
             const row = nodes.get(bounds)
-            if (row) row.visits++
+            if (row) {
+              row.visits++
+            }
             return world(bounds, pose)
           }
         )
@@ -156,7 +162,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const interpolate = kinematics.interpolateSegment
         vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
           (...args) => {
-            if (Array.isArray(args[2])) queryTime = [args[2][0], args[2][1]]
+            if (Array.isArray(args[2])) {
+              queryTime = [args[2][0], args[2][1]]
+            }
             return interpolate(...args)
           }
         )

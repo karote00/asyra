@@ -6,8 +6,13 @@ import './workspace.css'
 const root = document.getElementById('flow-inspector-workspace-root')
 const bundle = globalThis.FLOW_INSPECTOR_WORKSPACE_BUNDLE
 
-if (!root) throw new Error('Missing Flow Inspector workspace root.')
-if (!bundle) throw new Error('Missing Flow Inspector workspace bundle.')
+if (!root) {
+  throw new Error('Missing Flow Inspector workspace root.')
+}
+
+if (!bundle) {
+  throw new Error('Missing Flow Inspector workspace bundle.')
+}
 
 createRoot(root).render(
   <StrictMode>

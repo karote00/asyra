@@ -36,7 +36,9 @@ const box: SpatialDescriptor = {
 }
 const hit = (engine: ThreeEngine, x = 320, y = 240) => {
   const result = engine.query({ type: 'hit-test', point: { x, y } })
-  if (result.type !== 'hit') throw new Error('Expected a hit-query result')
+  if (result.type !== 'hit') {
+    throw new Error('Expected a hit-query result')
+  }
   return result.target
 }
 const setup = (
@@ -101,7 +103,9 @@ const setup = (
       objectType: spatial.kind === 'camera' ? 'container' : 'mesh',
       properties: { [SPATIAL_PROPERTY]: spatial }
     }).object
-    if (!handle) throw new Error('Expected an object handle')
+    if (!handle) {
+      throw new Error('Expected an object handle')
+    }
     engine.execute({ type: 'append-child', parent: root, child: handle })
     return handle
   }
@@ -166,13 +170,15 @@ describe('CUSTOM Three engine', () => {
     const key = scene.children.find(
       (value) => value instanceof THREE.DirectionalLight
     )
-    if (!(key instanceof THREE.DirectionalLight))
+    if (!(key instanceof THREE.DirectionalLight)) {
       throw new Error('Missing key light')
+    }
     const ambient = scene.children.find(
       (value) => value instanceof THREE.HemisphereLight
     )
-    if (!(ambient instanceof THREE.HemisphereLight))
+    if (!(ambient instanceof THREE.HemisphereLight)) {
       throw new Error('Missing ambient light')
+    }
     // Generic lighting has no App-specific daylight policy.
     expect(ambient.intensity).toBe(1)
     expect(key.castShadow).toBe(true)
@@ -199,8 +205,9 @@ describe('CUSTOM Three engine', () => {
           )
         )?.[0]
       const mesh = scene?.getObjectsByProperty('isMesh', true)[0]
-      if (!(mesh instanceof THREE.Mesh))
+      if (!(mesh instanceof THREE.Mesh)) {
         throw new Error('Missing rendered mesh')
+      }
       return mesh as THREE.Mesh<
         THREE.BufferGeometry,
         THREE.MeshStandardMaterial
@@ -258,8 +265,9 @@ describe('CUSTOM Three engine', () => {
       { skewY: 0.1 },
       { alpha: 0.5 },
       { filters: [] }
-    ])
+    ]) {
       expect(() => create(properties)).toThrow('Unsupported screen')
+    }
     expect(() =>
       engine.execute({
         type: 'create-object',
@@ -269,7 +277,9 @@ describe('CUSTOM Three engine', () => {
       })
     ).toThrow('spatial descriptor')
     const object = create()
-    if (!object) throw new Error('Missing graphic')
+    if (!object) {
+      throw new Error('Missing graphic')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',
@@ -349,12 +359,16 @@ describe('CUSTOM Three engine', () => {
     const object = add(box)
     const first = engine.query({ type: 'get-bounds', object })
     expect(first.type).toBe('bounds')
-    if (first.type !== 'bounds') throw new Error('Expected bounds')
+    if (first.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
     expect(first.bounds.x).toBeLessThan(320)
     expect(first.bounds.x + first.bounds.width).toBeGreaterThan(320)
     engine.execute({ type: 'resize', width: 1280, height: 960 })
     const resized = engine.query({ type: 'get-bounds', object })
-    if (resized.type !== 'bounds') throw new Error('Expected bounds')
+    if (resized.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
     expect(resized.bounds.width).toBeCloseTo(first.bounds.width * 2, 8)
     engine.execute({
       type: 'update-object',
@@ -362,7 +376,9 @@ describe('CUSTOM Three engine', () => {
       properties: { [SPATIAL_PROPERTY]: { ...camera, position: [0, 0, 10] } }
     })
     const distant = engine.query({ type: 'get-bounds', object })
-    if (distant.type !== 'bounds') throw new Error('Expected bounds')
+    if (distant.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
     expect(distant.bounds.width).toBeLessThan(resized.bounds.width)
     engine.destroy()
   })
@@ -415,7 +431,9 @@ describe('CUSTOM Three engine', () => {
         objectType: 'container',
         requestId: 'group'
       }).object
-      if (!handle) throw new Error('Expected an object handle')
+      if (!handle) {
+        throw new Error('Expected an object handle')
+      }
       return handle
     }
     const parent = create(),
@@ -437,7 +455,9 @@ describe('CUSTOM Three engine', () => {
       objectType: 'graphics',
       requestId: 'screen'
     }).object
-    if (!object) throw new Error('Expected an object handle')
+    if (!object) {
+      throw new Error('Expected an object handle')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',
@@ -580,7 +600,9 @@ it('initializes the real deferred adapter and retains its resource lifetime', as
       objectType: descriptor.kind === 'mesh' ? 'mesh' : 'container',
       properties: { [SPATIAL_PROPERTY]: descriptor }
     }).object
-    if (!object) throw new Error('Missing spatial object')
+    if (!object) {
+      throw new Error('Missing spatial object')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
   }
   expect(
@@ -600,7 +622,9 @@ it('rejects foreign and retired paint handles without consuming the owning resou
     requestId: 'paint',
     descriptor: { kind: 'paint', data: { color: 0x123456 } }
   }).resource
-  if (!resource) throw new Error('Missing paint resource')
+  if (!resource) {
+    throw new Error('Missing paint resource')
+  }
   expect(() =>
     b.engine.execute({ type: 'destroy-resource', resource })
   ).toThrow(/Foreign/)
@@ -854,7 +878,9 @@ it('updates transmissive optical materials without rebuilding geometry and reset
   const handle = add({ ...box, optics })
   engine.execute({ type: 'flush' })
   const scene = vi.mocked(driver.render).mock.calls[0]?.[0]
-  if (!scene) throw new Error('Missing render scene')
+  if (!scene) {
+    throw new Error('Missing render scene')
+  }
   const mesh = scene.getObjectsByProperty('isMesh', true)[0] as THREE.Mesh
   const material = mesh.material as THREE.MeshPhysicalMaterial
   expect(material.isMeshPhysicalMaterial).toBe(true)
@@ -912,7 +938,9 @@ it('uploads authored normals and invalidates geometry only when their values cha
     engine.execute({ type: 'flush' })
     for (const [scene] of vi.mocked(driver.render).mock.calls) {
       const item = scene.getObjectsByProperty('isMesh', true)[0]
-      if (item instanceof THREE.Mesh) return item
+      if (item instanceof THREE.Mesh) {
+        return item
+      }
     }
     throw new Error('Missing mesh')
   }
@@ -983,16 +1011,18 @@ it('shares invariant shadows across optical passes and the scene, but refreshes 
         target = value
       },
       render: vi.fn((scene: THREE.Scene) => {
-        if (!scene.getObjectsByProperty('isDirectionalLight', true).length)
+        if (!scene.getObjectsByProperty('isDirectionalLight', true).length) {
           return
+        }
         scene.traverseVisible((object) => {
           if (
             object instanceof THREE.Mesh &&
             object.castShadow &&
             !Array.isArray(object.material) &&
             object.material.visible
-          )
+          ) {
             opaquePasses++
+          }
         })
         const shadow = (driver as unknown as THREE.WebGLRenderer).shadowMap
         if (shadow.enabled && (shadow.autoUpdate || shadow.needsUpdate)) {
@@ -1004,7 +1034,7 @@ it('shares invariant shadows across optical passes and the scene, but refreshes 
   })
   fixture.add(camera)
   fixture.add({ ...box, castShadow: true })
-  for (const captureLayer of [0, 1, 2])
+  for (const captureLayer of [0, 1, 2]) {
     fixture.add({
       ...box,
       castShadow: false,
@@ -1017,6 +1047,7 @@ it('shares invariant shadows across optical passes and the scene, but refreshes 
         captureLayer
       }
     })
+  }
   fixture.engine.execute({ type: 'flush' })
   expect(shadowPasses).toBe(1)
   expect(opaquePasses).toBe(1)

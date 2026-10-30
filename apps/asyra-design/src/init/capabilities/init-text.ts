@@ -50,9 +50,13 @@ export const initText = (
         onSelectionChange: true
       },
       compute: ({ selectedIds, elements }) => {
-        if (selectedIds.size !== 1 || elements.length !== 1) return null
+        if (selectedIds.size !== 1 || elements.length !== 1) {
+          return null
+        }
         const element = elements[0] as unknown as Record<string, unknown>
-        if (typeof element?.text !== 'string') return null
+        if (typeof element?.text !== 'string') {
+          return null
+        }
         return Object.fromEntries(
           Object.keys(DEFAULT_TEXT_DATA).map((key) => [key, element[key]])
         ) as TextData & Record<string, unknown>

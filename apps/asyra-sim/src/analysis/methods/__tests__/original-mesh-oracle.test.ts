@@ -33,16 +33,24 @@ function cube(halfWidth: number): MeshGeometry {
 type Rational = readonly [bigint, bigint]
 const zero: Rational = [0n, 1n]
 function rational(value: number): Rational {
-  if (!Number.isFinite(value)) throw new Error('Nonfinite oracle input')
+  if (!Number.isFinite(value)) {
+    throw new Error('Nonfinite oracle input')
+  }
   const bits = new DataView(new ArrayBuffer(8))
   bits.setFloat64(0, value)
   const encoded = bits.getBigUint64(0)
   const exponent = Number((encoded >> 52n) & 2047n)
   let numerator = encoded & ((1n << 52n) - 1n)
-  if (exponent !== 0) numerator += 1n << 52n
-  if (encoded >> 63n) numerator = -numerator
+  if (exponent !== 0) {
+    numerator += 1n << 52n
+  }
+  if (encoded >> 63n) {
+    numerator = -numerator
+  }
   const power = exponent === 0 ? -1074 : exponent - 1075
-  if (power >= 0) return [numerator << BigInt(power), 1n]
+  if (power >= 0) {
+    return [numerator << BigInt(power), 1n]
+  }
   return [numerator, 1n << BigInt(-power)]
 }
 const add = (a: Rational, b: Rational): Rational => [
@@ -76,7 +84,9 @@ function minimumSquared(start: number, end: number, offset: number): Rational {
   let nearest = zero
   if (a[0] > 0n || b[0] < 0n) {
     nearest = absolute(a)
-    if (compare(absolute(b), nearest) < 0n) nearest = absolute(b)
+    if (compare(absolute(b), nearest) < 0n) {
+      nearest = absolute(b)
+    }
   }
   const gap = (coordinate: Rational) => {
     const result = add(coordinate, [-3n, 16n])
@@ -169,8 +179,9 @@ it.each([
           compare(square(rational(leaf.upper)), exact)
         ).toBeGreaterThanOrEqual(0n)
       }
-      if (leaf.state === 'clear')
+      if (leaf.state === 'clear') {
         expect(compare(exact, square(rational(threshold)))).toBeGreaterThan(0n)
+      }
       if (leaf.witnessTime !== null) {
         expect(leaf.witnessTime).toBeGreaterThanOrEqual(leaf.start)
         expect(leaf.witnessTime).toBeLessThanOrEqual(leaf.end)
@@ -184,9 +195,9 @@ it.each([
       }
     }
     expect(cursor).toBe(1)
-    if (offset === 0)
+    if (offset === 0) {
       expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
-    else {
+    } else {
       expect(result.coverage).toBe('complete')
       expect(result.leaves.every((leaf) => leaf.state === 'clear')).toBe(true)
       const exact = square([5n, 16n])
@@ -241,7 +252,9 @@ it.each([
     query.workcell = {
       ...query.workcell,
       bodies: query.workcell.bodies.map((body) => {
-        if (body.id === 'base') return body
+        if (body.id === 'base') {
+          return body
+        }
         return {
           ...body,
           pose: {

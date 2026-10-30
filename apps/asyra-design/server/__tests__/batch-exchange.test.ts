@@ -18,7 +18,9 @@ describe('request-owned batch receipts', () => {
       })
     await Promise.resolve()
     expect(settled).toBe(false)
-    if (!frame) throw new Error('Missing frame')
+    if (!frame) {
+      throw new Error('Missing frame')
+    }
     expect(exchange.accept('foreign', receipt)).toBe(false)
     expect(exchange.accept(frame.receiptToken, receipt)).toBe(true)
     expect(await result).toEqual(receipt)
@@ -31,7 +33,9 @@ describe('request-owned batch receipts', () => {
     const result = exchange.execute(batch, controller.signal, (value) => {
       frame = value
     })
-    if (!frame) throw new Error('Missing frame')
+    if (!frame) {
+      throw new Error('Missing frame')
+    }
     controller.abort()
     await expect(result).rejects.toThrow()
     expect(exchange.accept(frame.receiptToken, receipt)).toBe(false)
@@ -48,7 +52,9 @@ it('accepts an admitted large canonical ID receipt without a smaller hidden tran
       frame = value
     }
   )
-  if (!frame) throw new Error('Missing frame')
+  if (!frame) {
+    throw new Error('Missing frame')
+  }
   const admitted = {
     actionResults: [
       {

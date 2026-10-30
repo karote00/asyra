@@ -114,7 +114,9 @@ it('hands App-only method examples from real Knowledge reads to current discover
     const definition = owner.definitions.find(
       (item) => item.name === sample.tool
     )
-    if (!definition) throw new Error(`Unknown documented tool ${sample.tool}`)
+    if (!definition) {
+      throw new Error(`Unknown documented tool ${sample.tool}`)
+    }
     expect(
       operationInputIssue(sample.arguments, definition.inputSchema)
     ).toBeUndefined()
@@ -132,7 +134,9 @@ it('hands App-only method examples from real Knowledge reads to current discover
       expect(admitPreparedDesign(structuredClone(prepared))).toEqual(prepared)
       const panes = ['pane-a', 'pane-b'].map((key) => {
         const entry = prepared.entries.find((item) => item.key === key)
-        if (!entry) throw new Error(`Missing documented material part ${key}`)
+        if (!entry) {
+          throw new Error(`Missing documented material part ${key}`)
+        }
         return entry.descriptor
       })
       expect(
@@ -250,7 +254,9 @@ it('carries the recorded material decision into initial preparation without chan
     checks: []
   }
   for (const child of candidate.children) {
-    if (targetKeys.has(child.key)) child.fill = { template: 'selectedMetal' }
+    if (targetKeys.has(child.key)) {
+      child.fill = { template: 'selectedMetal' }
+    }
   }
   const before = prepareDesign(original, 'material-role')
   const after = prepareDesign(candidate, 'material-role')
@@ -304,8 +310,9 @@ it('carries the recorded material decision into initial preparation without chan
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
-    ])
+    ]) {
       registry.register(action)
+    }
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(registry.list(), session)
     const dispatch = vi.fn()
@@ -523,8 +530,9 @@ it('routes recorded local material edits through actual discovery and artifact t
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
-    ])
+    ]) {
       registry.register(action)
+    }
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(registry.list(), session)
     const prepared = JSON.parse(
@@ -664,18 +672,21 @@ it('preserves every recorded reflection through template preparation and admissi
   let palettes = 0
   for (const child of compact.draft.children) {
     for (const motif of child.motifs ?? []) {
-      if (!motif.fills) continue
+      if (!motif.fills) {
+        continue
+      }
       palettes++
       const paints = motif.fills.map((fill: unknown) => JSON.stringify(fill))
       // Exhaust every shorter prefix; row-major cycling cannot reproduce this
       // saved palette. This is input evidence, not a visual quality judgment.
       expect(paints).toHaveLength(224)
-      for (let period = 1; period < paints.length; period++)
+      for (let period = 1; period < paints.length; period++) {
         expect(
           paints.every(
             (paint: string, index: number) => paint === paints[index % period]
           )
         ).toBe(false)
+      }
       motif.fills = motif.fills.map((fill: unknown) => {
         const serialized = JSON.stringify(fill)
         let key = materials.get(serialized)
@@ -715,7 +726,9 @@ it('preserves every recorded reflection through template preparation and admissi
   expect(new Set(fills.map((fill) => fill.id)).size).toBe(fills.length)
   const broken = structuredClone(compact.draft)
   const first = materials.values().next().value
-  if (!first) throw new Error('Missing recorded material template')
+  if (!first) {
+    throw new Error('Missing recorded material template')
+  }
   Reflect.deleteProperty(broken.fillTemplates, first)
   const rejected = JSON.parse(
     await designs.call('prepare_design', { draft: broken }, signal())
@@ -808,7 +821,9 @@ it('hands a declared color-only method through exact discovery to retained mappi
       selectedIds.map((elementId) => {
         const fills = entries.get(elementId)?.descriptor.fills as
           { id: string }[] | undefined
-        if (!fills?.[0]?.id) throw new Error('Missing recorded Fill')
+        if (!fills?.[0]?.id) {
+          throw new Error('Missing recorded Fill')
+        }
         return { elementId, fillId: fills[0].id }
       }),
     update
@@ -900,8 +915,9 @@ it('hands a declared color-only method through exact discovery to retained mappi
         (entry: { elementId: string }) => entry.elementId
       )
     ).toEqual(ids)
-    for (const entry of update.mock.calls[0][0])
+    for (const entry of update.mock.calls[0][0]) {
       expect(Object.keys(entry.patch)).toEqual(['color'])
+    }
     expect(JSON.stringify(selected)).toBe(original)
     const retained = queries.read(
       { scope: 'ids', elementIds: ids, fields: ['x'], delivery: 'reference' },
@@ -1040,8 +1056,9 @@ it.each([false, true])(
         review.correctionContext().referenceDecisions[0].uses[0].receipt
       const whole = review.inspect('composition', true, true)?.inspectionId
       const detail = review.inspect('entrance', true, false)?.inspectionId
-      if (!whole || !detail)
+      if (!whole || !detail) {
         throw new Error('Expected controlled capture receipts')
+      }
       const submit = (bound: ReturnType<typeof review.bindReview>) =>
         review.recordBoundReview({
           ...bound,
@@ -1196,7 +1213,9 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
       region?: unknown
     ) => {
       const receipt = review.inspect(elementId, true, overview, region)
-      if (!receipt) throw new Error('Expected controlled image capture')
+      if (!receipt) {
+        throw new Error('Expected controlled image capture')
+      }
       return receipt.inspectionId
     }
     const overview = capture(artifact.rootId, true)
@@ -1405,8 +1424,9 @@ it('uses the current qualified route across partial, full and recovery retrieval
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
-    ])
+    ]) {
       registry.register(action)
+    }
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(registry.list(), session)
     const dispatch = vi.fn()
@@ -1452,7 +1472,9 @@ it('uses the current qualified route across partial, full and recovery retrieval
     const canonical = workflow.definitions.find(
       (definition) => definition.name === 'prepare_and_apply_design'
     )
-    if (!canonical) throw new Error('Expected canonical workflow contract')
+    if (!canonical) {
+      throw new Error('Expected canonical workflow contract')
+    }
     expect(full.inputSchema).toEqual(canonical.inputSchema)
     expect(full.outputSchema).toEqual(canonical.outputSchema)
     expect(full.partialOutputSchema).toEqual(canonical.partialOutputSchema)
@@ -1589,8 +1611,11 @@ it('executes documented exclusive direct and retained target inputs through cano
     expect(expected).toBeDefined()
     for (const sample of examples) {
       const operation = structuredClone(sample.arguments.operations[0])
-      if (operation.target) operation.target.artifactId = partId
-      else operation.arguments.elementIds = [expected]
+      if (operation.target) {
+        operation.target.artifactId = partId
+      } else {
+        operation.arguments.elementIds = [expected]
+      }
       const resolve = vi.fn(designs.resolveTargets)
       const actions = prepareOperationBatch(
         [operation],
@@ -1619,7 +1644,9 @@ it('executes documented exclusive direct and retained target inputs through cano
 
 it('executes the documented representative review through recorded wrong-crop recovery and independent result reuse', async () => {
   const present = <T>(value: T | null | undefined): T => {
-    if (value == null) throw new Error('Missing required review receipt')
+    if (value == null) {
+      throw new Error('Missing required review receipt')
+    }
     return value
   }
   const saved = JSON.parse(
@@ -1668,15 +1695,18 @@ it('executes the documented representative review through recorded wrong-crop re
     const match = app.text.match(
       /```json representative-review\n([\s\S]*?)\n```/
     )
-    if (!match)
+    if (!match) {
       throw new Error('Missing executable representative review example')
+    }
     const example = JSON.parse(match[1])
     const { designEvidenceDefinitions } =
       await import('../../../server/local-design-review')
     const definition = designEvidenceDefinitions.find(
       (item) => item.name === example.tool
     )
-    if (!definition) throw new Error('Unknown documented declaration')
+    if (!definition) {
+      throw new Error('Unknown documented declaration')
+    }
     expect(
       operationInputIssue(example.arguments, definition.inputSchema)
     ).toBeUndefined()
@@ -1695,7 +1725,9 @@ it('executes the documented representative review through recorded wrong-crop re
           receiptId: `sample-${revision}`
         }
       )
-      if (!result) throw new Error('Missing image receipt')
+      if (!result) {
+        throw new Error('Missing image receipt')
+      }
       return result.inspectionId
     }
     const roof = crop(0, 1)
@@ -1903,7 +1935,9 @@ it.each(['unverified', 'fail'] as const)(
         const match = text.match(
           new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
         )
-        if (!match) throw new Error(`Missing ${label} example`)
+        if (!match) {
+          throw new Error(`Missing ${label} example`)
+        }
         return JSON.parse(match[1])
       }
       const declaration = example('representative-review')

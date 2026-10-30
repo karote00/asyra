@@ -262,8 +262,12 @@ it.each(['duplicate', 'wrong time', 'contradiction', 'deadline'])(
     }
     worker.emit(progress)
 
-    if (failure === 'duplicate') worker.emit(progress)
-    if (failure === 'wrong time') worker.emit({ ...progress, time: 3 })
+    if (failure === 'duplicate') {
+      worker.emit(progress)
+    }
+    if (failure === 'wrong time') {
+      worker.emit({ ...progress, time: 3 })
+    }
     if (failure === 'contradiction') {
       const changed = structuredClone(evidence)
       changed.pairs[0].evidence.leaves[0].reason =
@@ -275,7 +279,9 @@ it.each(['duplicate', 'wrong time', 'contradiction', 'deadline'])(
         evidence: changed
       })
     }
-    if (failure === 'deadline') await vi.advanceTimersByTimeAsync(1000)
+    if (failure === 'deadline') {
+      await vi.advanceTimersByTimeAsync(1000)
+    }
 
     await rejected
     expect(runner.getRecords()).toHaveLength(0)
@@ -323,7 +329,9 @@ it('publishes progress before completion without recording or freeing the in-fli
   const pair = evidence.pairs.find((pair) =>
     pair.evidence.leaves.some((leaf) => leaf.state === 'finding')
   )
-  if (!pair) throw new Error('Missing collision fixture')
+  if (!pair) {
+    throw new Error('Missing collision fixture')
+  }
 
   try {
     worker.emit({ type: 'progress', id: 1, time: 4, pairs: [pair] })
@@ -399,7 +407,9 @@ it('rechecks an incomplete exact pose while retaining its accepted pair evidence
 
   const complete = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = complete.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
   worker.emit({
     type: LiveMessages.ERROR,
     id: 1,
@@ -426,7 +436,9 @@ it('rechecks an incomplete exact pose while retaining its accepted pair evidence
   ])
 
   const additionalPair = complete.pairs[1]
-  if (!additionalPair) throw new Error('Missing additional pair fixture')
+  if (!additionalPair) {
+    throw new Error('Missing additional pair fixture')
+  }
   worker.emit({
     type: LiveMessages.ERROR,
     id: 2,
@@ -458,7 +470,9 @@ it('continues an incomplete latest exact sample without another playback request
 
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = evidence.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
   worker.emit({
     type: LiveMessages.ERROR,
     id: 1,
@@ -501,7 +515,9 @@ it('stops automatic continuations when a retry adds no accepted evidence', async
   worker.emit({ type: LiveMessages.READY })
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = evidence.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
 
   worker.emit({
     type: LiveMessages.ERROR,
@@ -586,7 +602,9 @@ it('stops automatic continuations when the aggregate evaluation budget is exhaus
   worker.emit({ type: LiveMessages.READY })
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = evidence.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
 
   worker.emit({
     type: LiveMessages.ERROR,
@@ -820,7 +838,9 @@ it('shows an interval witness without treating missing pair coverage as a cached
   vi.useFakeTimers()
   const input = liveFixture()
   const witnessPairId = input.pairs[0]?.id
-  if (!witnessPairId) throw new Error('Missing witness pair fixture')
+  if (!witnessPairId) {
+    throw new Error('Missing witness pair fixture')
+  }
   const worker = new WorkerStub()
   const runner = new LivePlaybackRunner(
     () => worker as unknown as Worker,
@@ -1320,7 +1340,9 @@ it('sends geometry once, retains latest time and caches valid pre-seek output wi
 
   worker.emit({ type: LiveMessages.READY })
 
-  for (let i = 1; i <= 100; i++) runner.sample(i / 100)
+  for (let i = 1; i <= 100; i++) {
+    runner.sample(i / 100)
+  }
 
   expect(worker.postMessage).toHaveBeenCalledTimes(2)
 
@@ -1387,14 +1409,18 @@ it.each([
 
   worker.emit({ type: LiveMessages.READY })
 
-  if (failure === 'timeout') await vi.advanceTimersByTimeAsync(1000)
-  else if (failure === 'message error') worker.onmessageerror?.()
-  else {
+  if (failure === 'timeout') {
+    await vi.advanceTimersByTimeAsync(1000)
+  } else if (failure === 'message error') {
+    worker.onmessageerror?.()
+  } else {
     const evidence = structuredClone(
       runOfficialClearanceMethod(sampleSnapshot(input, 0))
     )
 
-    if (failure === 'wrong source') evidence.snapshotId = 'foreign'
+    if (failure === 'wrong source') {
+      evidence.snapshotId = 'foreign'
+    }
 
     worker.emit({
       type: LiveMessages.RESULT,

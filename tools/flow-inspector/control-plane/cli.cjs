@@ -31,13 +31,20 @@ function describe(record, write) {
         record.mappingRevision
     )
   }
-  for (const flow of evidence?.flows ?? []) write(flow.id + ': ' + flow.status)
+  for (const flow of evidence?.flows ?? []) {
+    write(flow.id + ': ' + flow.status)
+  }
   for (const item of evidence?.cases.filter(
     (item) => item.status !== 'passed'
-  ) ?? [])
+  ) ?? []) {
     write(item.id + ' - ' + item.stepId + ' - ' + item.status)
-  for (const issue of evidence?.issues ?? []) write(issue)
-  if (record.error) write(record.error)
+  }
+  for (const issue of evidence?.issues ?? []) {
+    write(issue)
+  }
+  if (record.error) {
+    write(record.error)
+  }
   write(
     'Artifacts: ' +
       (record.artifactDirectory ?? 'tmp/flow-inspector/runs/' + record.id)
@@ -49,11 +56,12 @@ function serviceOptions(repositoryRoot, manifestPath) {
     acceptedBase: process.env.FLOW_CI_BASE ?? 'origin/main',
     ...(manifestPath === undefined ? {} : { manifestPath })
   }
-  if (process.env.FLOW_REVIEW_REPOSITORY)
+  if (process.env.FLOW_REVIEW_REPOSITORY) {
     options.deliveryAdapter = createGitHubDelivery(repositoryRoot, {
       repository: process.env.FLOW_REVIEW_REPOSITORY,
       base: process.env.FLOW_REVIEW_BASE ?? 'main'
     })
+  }
   if (process.env.FLOW_AGENT_AUTHORIZATION) {
     const authorization = JSON.parse(
       fs.readFileSync(
@@ -64,10 +72,11 @@ function serviceOptions(repositoryRoot, manifestPath) {
     if (
       !process.env.FLOW_AGENT_EXECUTABLE ||
       !process.env.FLOW_AGENT_CREDENTIAL_FILE
-    )
+    ) {
       throw new Error(
         'Explicit provider executable and read-only credential reference required'
       )
+    }
     options.agentOptions = {
       providerAuthorization: authorization,
       providerComplete: createProviderTransport({
@@ -81,13 +90,14 @@ function serviceOptions(repositoryRoot, manifestPath) {
       })
     }
   }
-  if (process.env.FLOW_CI_ADMISSION)
+  if (process.env.FLOW_CI_ADMISSION) {
     options.ciAdmission = JSON.parse(
       fs.readFileSync(
         safePath(repositoryRoot, process.env.FLOW_CI_ADMISSION),
         'utf8'
       )
     )
+  }
   return options
 }
 async function connect(repositoryRoot, origin, manifestPath) {
@@ -150,8 +160,9 @@ async function connect(repositoryRoot, origin, manifestPath) {
     }
     const response = await fetch(new URL(route, origin), options)
     const value = await response.json()
-    if (!response.ok)
+    if (!response.ok) {
       throw new Error(value.error ?? 'Proof service request failed')
+    }
     return value
   }
   capability = (await request('/api/session')).capability
@@ -171,7 +182,9 @@ async function connect(repositoryRoot, origin, manifestPath) {
     async waitTargetAssessment(id) {
       for (;;) {
         const record = await getTargetAssessment(id)
-        if (record.phase !== 'running') return record
+        if (record.phase !== 'running') {
+          return record
+        }
         await new Promise((resolve) => setTimeout(resolve, 250))
       }
     },
@@ -197,7 +210,9 @@ async function connect(repositoryRoot, origin, manifestPath) {
     async waitTask(id) {
       for (;;) {
         const record = await request('/api/tasks/' + encodeURIComponent(id))
-        if (record.phase !== 'running') return record
+        if (record.phase !== 'running') {
+          return record
+        }
         await new Promise((resolve) => setTimeout(resolve, 250))
       }
     },
@@ -217,7 +232,9 @@ async function connect(repositoryRoot, origin, manifestPath) {
       const deadline = Date.now() + 45000
       while (Date.now() < deadline) {
         const record = await get(id)
-        if (record.phase !== 'running') return record
+        if (record.phase !== 'running') {
+          return record
+        }
         await new Promise((resolve) => setTimeout(resolve, 250))
       }
       throw new Error(
@@ -304,26 +321,30 @@ async function main(
     !Object.hasOwn(arity, command) ||
     !arity[command].includes(parameters.length) ||
     (command === 'serve' && origin)
-  )
+  ) {
     throw new Error(
       'Usage: cli.cjs [--manifest product-proof.json | --url loopback-origin] serve | test-results [run-id] | node-context run-id case-id [summary] | node-preview request.json | node-rerun request.json | node-comment request.json | node-cancel request-id | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
     )
+  }
   if (command.startsWith('node-')) {
-    if (!origin)
+    if (!origin) {
       throw new Error(
         'Node interactions require --url for the running local action service'
       )
+    }
     const address = parseLocalUrl(origin)
     let route, body
     if (command === 'node-context') {
       const [runId, caseId, mode] = parameters
-      if (mode !== undefined && mode !== 'summary')
+      if (mode !== undefined && mode !== 'summary') {
         throw new Error('Invalid node context mode')
+      }
       if (
         !caseId.startsWith(runId + ':') ||
         !/^\d+$/.test(caseId.slice(runId.length + 1))
-      )
+      ) {
         throw new Error('Invalid node context')
+      }
       route =
         '/api/node-context/' +
         encodeURIComponent(runId) +
@@ -347,7 +368,9 @@ async function main(
     const options = { signal: AbortSignal.timeout(10000) }
     if (body !== undefined) {
       const session = await fetch(address.origin + '/api/session')
-      if (!session.ok) throw new Error('Node action session unavailable')
+      if (!session.ok) {
+        throw new Error('Node action session unavailable')
+      }
       options.method = 'POST'
       options.headers = {
         'content-type': 'application/json',
@@ -357,7 +380,9 @@ async function main(
     }
     const response = await fetch(address.origin + route, options)
     const result = await response.json()
-    if (!response.ok) throw new Error(result.error ?? 'Node interaction failed')
+    if (!response.ok) {
+      throw new Error(result.error ?? 'Node interaction failed')
+    }
     write(JSON.stringify(result, null, 2))
     return 0
   }
@@ -374,8 +399,9 @@ async function main(
           '/api/test-results' +
           (parameters[0] ? '/' + encodeURIComponent(parameters[0]) : '')
       )
-      if (!response.ok)
+      if (!response.ok) {
         throw new Error('Observation read failed: ' + response.status)
+      }
       result = await response.json()
     } else {
       const reader = createObservationReader(
@@ -394,25 +420,29 @@ async function main(
     write('Local trusted workspace - Ctrl+C stops and settles active work.')
     let stopping = false
     const stop = async () => {
-      if (stopping) return
+      if (stopping) {
+        return
+      }
       stopping = true
       await server.close()
     }
-    for (const signal of ['SIGINT', 'SIGTERM'])
+    for (const signal of ['SIGINT', 'SIGTERM']) {
       process.once(signal, () =>
         stop().catch((error) => {
           console.error(error.message)
           process.exitCode = 1
         })
       )
+    }
     return 0
   }
   const client = await connect(repositoryRoot, origin, manifestPath)
   try {
     const inputFile = (filename) => {
       const file = safePath(repositoryRoot, filename)
-      if (fs.statSync(file).size > 2097152)
+      if (fs.statSync(file).size > 2097152) {
         throw new Error('Input artifact exceeds size limit')
+      }
       return JSON.parse(fs.readFileSync(file, 'utf8'))
     }
     if (
@@ -429,20 +459,25 @@ async function main(
         const id = await client.startTargetAssessment(inputFile(parameters[0]))
         value = await client.waitTargetAssessment(id)
       }
-      if (command === 'target-assessments')
+      if (command === 'target-assessments') {
         value = await client.targetAssessments()
-      if (command === 'target-assessment-show')
+      }
+      if (command === 'target-assessment-show') {
         value = await client.getTargetAssessment(parameters[0])
-      if (command === 'target-assessment-wait')
+      }
+      if (command === 'target-assessment-wait') {
         value = await client.waitTargetAssessment(parameters[0])
-      if (command === 'target-assessment-cancel')
+      }
+      if (command === 'target-assessment-cancel') {
         value = await client.cancelTargetAssessment(parameters[0])
+      }
       write(JSON.stringify(value, null, 2))
-      if (['target-assess', 'target-assessment-wait'].includes(command))
+      if (['target-assess', 'target-assessment-wait'].includes(command)) {
         return value.phase === 'completed' &&
           value.projection?.eligible === true
           ? 0
           : 1
+      }
       return 0
     }
     if (
@@ -451,30 +486,37 @@ async function main(
       )
     ) {
       let value
-      if (command === 'targets') value = await client.targets()
-      if (command === 'target-show')
+      if (command === 'targets') {
+        value = await client.targets()
+      }
+      if (command === 'target-show') {
         value = await client.getTarget(parameters[0])
-      if (command === 'target-decide')
+      }
+      if (command === 'target-decide') {
         value = await client.decideTarget(inputFile(parameters[0]))
-      if (command === 'target-accept')
+      }
+      if (command === 'target-accept') {
         value = await client.acceptTargetBaseline(inputFile(parameters[0]))
+      }
       write(JSON.stringify(value, null, 2))
       return 0
     }
     if (command.startsWith('pr-')) {
       let value
-      if (command === 'pr-show') value = await client.getReview(parameters[0])
-      else if (command === 'pr-prepare-scoped')
+      if (command === 'pr-show') {
+        value = await client.getReview(parameters[0])
+      } else if (command === 'pr-prepare-scoped') {
         value = await client.prepareScopedReview(parameters[0], {
           attemptId: parameters[1],
           assessmentId: parameters[2]
         })
-      else {
+      } else {
         const action = command.slice(3)
-        if (action === 'confirm' && parameters[2] !== 'confirm')
+        if (action === 'confirm' && parameters[2] !== 'confirm') {
           throw new Error(
             'Explicit confirm literal required after preview digest'
           )
+        }
         value = await client.reviewTask(parameters[0], {
           action,
           ...(action === 'confirm'
@@ -491,27 +533,31 @@ async function main(
         const id = await client.startTask(inputFile(parameters[0]))
         value = { id }
         // A detached task needs a live service owner. Direct CLI waits before closing.
-        if (!origin) value = await client.waitTask(id)
-      } else if (command === 'task-show')
+        if (!origin) {
+          value = await client.waitTask(id)
+        }
+      } else if (command === 'task-show') {
         value = await client.getTask(parameters[0])
-      else if (command === 'task-changes')
+      } else if (command === 'task-changes') {
         value = await client.taskChanges(parameters[0])
-      else if (command === 'task-wait')
+      } else if (command === 'task-wait') {
         value = await client.waitTask(parameters[0])
-      else {
+      } else {
         value = await client.controlTask(parameters[0], {
           action: command.slice(5),
           ...(command === 'task-resume' ? { scenario: parameters[1] } : {})
         })
-        if (!origin && command === 'task-resume')
+        if (!origin && command === 'task-resume') {
           value = await client.waitTask(parameters[0])
+        }
       }
       write(JSON.stringify(value, null, 2))
       if (
         command === 'task-wait' ||
         (!origin && ['task-start', 'task-resume'].includes(command))
-      )
+      ) {
         return value.verificationStatus === 'passed' ? 0 : 1
+      }
       return 0
     }
     if (command === 'work') {
@@ -579,7 +625,9 @@ async function main(
         })
       )
       describe(record, write)
-      if (record.ci) write(JSON.stringify(record.ci, null, 2))
+      if (record.ci) {
+        write(JSON.stringify(record.ci, null, 2))
+      }
       if (command === 'ci-trial') {
         write(
           'CI trial - behavioral proof only, not a required or protected delivery check'
@@ -587,20 +635,22 @@ async function main(
         if (
           process.env.FLOW_CI_EMIT_EVIDENCE === '1' &&
           record.ciEnvelopeDigest
-        )
+        ) {
           write(
             'FLOW_CI_ENVELOPE=' +
               gzipSync(
                 await client.artifact(record.id, 'ci-envelope')
               ).toString('base64')
           )
+        }
         return record.phase === 'completed' &&
           record.evidence?.status === 'passed'
           ? 0
           : 1
       }
-      if (command === 'ci' || command === 'ci-demo')
+      if (command === 'ci' || command === 'ci-demo') {
         return record.ci?.deliveryStatus === 'eligible' ? 0 : 1
+      }
       return record.evidence?.status === 'passed' ? 0 : 1
     }
     if (command === 'status') {
@@ -652,7 +702,9 @@ async function main(
     const contract = (await client.state()).contract
     const run = async (scenario, flowId) => {
       const request = { scenario }
-      if (flowId) request.flowIds = [flowId]
+      if (flowId) {
+        request.flowIds = [flowId]
+      }
       const record = await client.wait(await client.start(request))
       describe(record, write)
       return record
@@ -660,8 +712,9 @@ async function main(
     if (command === 'prove') {
       const started = Date.now()
       const baseline = await run('baseline')
-      if (baseline.evidence?.status !== 'passed')
+      if (baseline.evidence?.status !== 'passed') {
         throw new Error('Baseline proof failed')
+      }
       const negatives = contract.scenarios.filter(
         (scenario) => scenario.id !== 'baseline'
       )
@@ -680,20 +733,22 @@ async function main(
           negative.evidence.passedCount !==
             contract.cases.length - scenario.expectedFailedCaseIds.length ||
           negative.snapshot.digest !== baseline.snapshot.digest
-        )
+        ) {
           throw new Error(
             'Negative proof did not produce the exact expected violation: ' +
               scenario.id
           )
+        }
       }
       const recovered = await run('baseline')
       if (
         recovered.evidence?.status !== 'passed' ||
         baseline.snapshot.digest !== recovered.snapshot.digest
-      )
+      ) {
         throw new Error(
           'Baseline recovery failed or source changed during proof'
         )
+      }
       write(
         'Core proof passed - ' +
           contract.flows.length +
@@ -709,7 +764,9 @@ async function main(
     }
     let scenario = 'baseline'
     let flowId = parameters[0]
-    if (command === 'negative') scenario = contract.defaultNegativeScenario
+    if (command === 'negative') {
+      scenario = contract.defaultNegativeScenario
+    }
     if (command === 'scenario') {
       scenario = parameters[0]
       flowId = parameters[1]
@@ -722,7 +779,7 @@ async function main(
     await client.close()
   }
 }
-if (require.main === module)
+if (require.main === module) {
   main()
     .then((code) => {
       process.exitCode = code
@@ -731,4 +788,5 @@ if (require.main === module)
       console.error(error.message)
       process.exitCode = 1
     })
+}
 module.exports = { main }

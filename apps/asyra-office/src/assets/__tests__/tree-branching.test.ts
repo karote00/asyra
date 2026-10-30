@@ -12,8 +12,9 @@ it.each([606, 1607, 2608, 3609, 4610, 5611])(
     const curves = new Map<string, TreeCurve>()
     curves.set('trunk', { at: (t) => [0, 0, 2.55 * t], radius: () => 0.08 })
     // Straight primary fixtures isolate growth ownership from the scaffold deformation.
-    for (const branch of spec.branches.entries.filter((b) => b.level === 1))
+    for (const branch of spec.branches.entries.filter((b) => b.level === 1)) {
       curves.set(branch.id, { at: (t) => [t, 0, 1 + t], radius: () => 0.04 })
+    }
     const added = growTreeBranches(seed, curves),
       levels = new Map(spec.branches.entries.map((b) => [b.id, b.level]))
     levels.set('trunk', 0)

@@ -168,7 +168,9 @@ describe('Factory complete runtime reset', () => {
     const factory = new Factory()
     factory.startTransaction()
     const old = factory.getActiveStagedDeliveryController()
-    if (!old) throw new Error('Missing active delivery controller')
+    if (!old) {
+      throw new Error('Missing active delivery controller')
+    }
     factory.endTransaction()
     factory.resetRuntime()
     factory.startTransaction()

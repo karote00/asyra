@@ -238,7 +238,9 @@ describe('scene demand preparation', () => {
       ],
       indices: [0, 1, 2]
     })
-    if (shape.kind !== 'triangles') throw new Error('Missing triangle fixture')
+    if (shape.kind !== 'triangles') {
+      throw new Error('Missing triangle fixture')
+    }
     const regions = readSourceRegions(
       [{ id: 'source-face', kind: 'sheet', indexStart: 0, indexCount: 3 }],
       3
@@ -255,7 +257,9 @@ describe('scene demand preparation', () => {
       wireframe: false,
       selectable: false
     })
-    if (descriptor.kind !== 'mesh') throw new Error('Missing mesh fixture')
+    if (descriptor.kind !== 'mesh') {
+      throw new Error('Missing mesh fixture')
+    }
     const mesh: SiteMesh = {
       id: 'rotated-source',
       layer: 'supports',
@@ -287,10 +291,13 @@ describe('scene demand preparation', () => {
     const source = demand.freePassage.exclusions.find(
       (exclusion) => exclusion.relation === 'conservative-source-envelope'
     )
-    if (!source || source.relation !== 'conservative-source-envelope')
+    if (!source || source.relation !== 'conservative-source-envelope') {
       throw new Error('Missing conservative source envelope')
+    }
     const placement = descriptor.instances?.[0]
-    if (!placement) throw new Error('Missing installed source fixture')
+    if (!placement) {
+      throw new Error('Missing installed source fixture')
+    }
     const c = Math.cos(placement.yaw),
       s = Math.sin(placement.yaw)
     const points = Array.from(
@@ -310,11 +317,12 @@ describe('scene demand preparation', () => {
         return transformRobotPoint(descriptor, installed)
       }
     )
-    for (const point of points)
+    for (const point of points) {
       point.forEach((value, axis) => {
         expect(source.bounds.min[axis]).toBeLessThanOrEqual(value)
         expect(source.bounds.max[axis]).toBeGreaterThanOrEqual(value)
       })
+    }
     expect(
       source.bounds.min.some(
         (value, axis) => value < Math.min(...points.map((point) => point[axis]))
@@ -338,7 +346,9 @@ describe('scene demand preparation', () => {
       positions: [-1, 1, 0.1, 1, 1.2, 0.1, -1, 1.1, 0.2],
       indices: [0, 1, 2]
     })
-    if (shape.kind !== 'triangles') throw new Error('Missing target fixture')
+    if (shape.kind !== 'triangles') {
+      throw new Error('Missing target fixture')
+    }
     const region = readSourceRegions(
       [
         { id: 'wide-fruit-source', kind: 'sheet', indexStart: 0, indexCount: 3 }
@@ -405,7 +415,9 @@ describe('scene demand preparation', () => {
       wireframe: false,
       selectable: false
     })
-    if (descriptor.kind !== 'mesh') throw new Error('Missing target mesh')
+    if (descriptor.kind !== 'mesh') {
+      throw new Error('Missing target mesh')
+    }
     const mesh: SiteMesh = {
       id: 'wide-target-mesh',
       layer: 'cucumbers',

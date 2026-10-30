@@ -34,7 +34,9 @@ export function useProjectControls({
   const actionPending = useRef(false)
 
   const beginAction = (action: NonNullable<typeof pendingAction>) => {
-    if (actionPending.current) return false
+    if (actionPending.current) {
+      return false
+    }
     actionPending.current = true
     setPendingAction(action)
     setProblem('')
@@ -46,7 +48,9 @@ export function useProjectControls({
   }
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      return
+    }
 
     const element = dialog.current
 
@@ -67,7 +71,9 @@ export function useProjectControls({
     try {
       const result = await session.list()
 
-      if (id !== request.current) return
+      if (id !== request.current) {
+        return
+      }
 
       setProjects(result.projects)
 
@@ -75,14 +81,20 @@ export function useProjectControls({
 
       setProblem('')
     } catch (error) {
-      if (id === request.current) setProblem(errorMessage(error))
+      if (id === request.current) {
+        setProblem(errorMessage(error))
+      }
     } finally {
-      if (id === request.current) setListing(false)
+      if (id === request.current) {
+        setListing(false)
+      }
     }
   }
 
   const copy = async () => {
-    if (!beginAction({ kind: 'copy' })) return
+    if (!beginAction({ kind: 'copy' })) {
+      return
+    }
     try {
       await session.start()
       await session.copy(`${state.project?.name ?? name} - Copy`)
@@ -100,15 +112,20 @@ export function useProjectControls({
   }
 
   const choose = async (project: ProjectSummary) => {
-    if (actionPending.current) return
+    if (actionPending.current) {
+      return
+    }
     if (
       !window.confirm(
         `Open “${project.name}”? This starts a new document with empty Undo/Redo. ${unsavedRunCount} unretained results will be lost.`
       )
-    )
+    ) {
       return
+    }
 
-    if (!beginAction({ kind: 'open', projectId: project.id })) return
+    if (!beginAction({ kind: 'open', projectId: project.id })) {
+      return
+    }
     try {
       await session.start()
       await session.open(project.id, true)
@@ -127,13 +144,17 @@ export function useProjectControls({
 
   let caption = 'Unsaved changes'
 
-  if (state.busy === 'open') caption = 'Opening…'
-  else if (state.busy === 'export') caption = 'Preparing export…'
-  else if (state.status === 'saving') caption = 'Saving…'
-  else if (state.status === 'saved')
+  if (state.busy === 'open') {
+    caption = 'Opening…'
+  } else if (state.busy === 'export') {
+    caption = 'Preparing export…'
+  } else if (state.status === 'saving') {
+    caption = 'Saving…'
+  } else if (state.status === 'saved') {
     caption = `Saved locally - ${state.project?.name}`
-  else if (state.status === 'error')
+  } else if (state.status === 'error') {
     caption = 'Save/open error - changes not acknowledged'
+  }
 
   const rename = (value: string) => {
     try {
@@ -146,14 +167,18 @@ export function useProjectControls({
   }
 
   const retry = async () => {
-    if (!beginAction({ kind: 'retry' })) return
+    if (!beginAction({ kind: 'retry' })) {
+      return
+    }
     try {
-      if (!session.getState().project)
+      if (!session.getState().project) {
         await session.start(
           new URL(window.location.href).searchParams.get('projectId') ??
             undefined
         )
-      else await session.flush()
+      } else {
+        await session.flush()
+      }
       setProblem('')
     } catch (error) {
       setProblem(errorMessage(error))

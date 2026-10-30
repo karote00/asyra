@@ -100,7 +100,9 @@ const GUARD_ENVIRONMENT_KEYS = Object.freeze([
 ])
 
 const normalizeRequiredProcessRoles = (value) => {
-  if (!Array.isArray(value)) return []
+  if (!Array.isArray(value)) {
+    return []
+  }
   return [
     ...new Set(
       value.filter(
@@ -301,10 +303,18 @@ export const parseCpuTimeToMilliseconds = (value) => {
 }
 
 const classifyBrowserProcessType = (lowerCommand) => {
-  if (lowerCommand.includes('--type=gpu-process')) return 'gpu-process'
-  if (lowerCommand.includes('--type=renderer')) return 'renderer-or-worker'
-  if (lowerCommand.includes('--type=utility')) return 'utility'
-  if (!lowerCommand.includes('--type=')) return 'root-browser'
+  if (lowerCommand.includes('--type=gpu-process')) {
+    return 'gpu-process'
+  }
+  if (lowerCommand.includes('--type=renderer')) {
+    return 'renderer-or-worker'
+  }
+  if (lowerCommand.includes('--type=utility')) {
+    return 'utility'
+  }
+  if (!lowerCommand.includes('--type=')) {
+    return 'root-browser'
+  }
   return 'other-browser'
 }
 
@@ -515,7 +525,9 @@ const sanitizeCpuContributors = (value) => {
 }
 
 const sanitizeTrackedProcessGroups = (value) => {
-  if (!Array.isArray(value)) return []
+  if (!Array.isArray(value)) {
+    return []
+  }
   const roles = new Set()
   const pgids = new Set()
   const groups = []
@@ -1397,7 +1409,9 @@ const processIdentityMatches = (left, right) =>
   (left.browserProcessType ?? null) === (right.browserProcessType ?? null)
 
 const haveExactProcessIdentitySet = (leftEntries, rightEntries) => {
-  if (leftEntries.length !== rightEntries.length) return false
+  if (leftEntries.length !== rightEntries.length) {
+    return false
+  }
   const leftByPid = new Map(leftEntries.map((entry) => [entry.pid, entry]))
   return rightEntries.every((entry) => {
     const left = leftByPid.get(entry.pid)
@@ -2532,7 +2546,9 @@ export const installTrackedProcessLifecycleGuard = ({
   const signalHandlers = new Map()
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     const handler = () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       try {
         void Promise.resolve(startTermination(signal)).catch(() => undefined)
       } catch {
@@ -2543,7 +2559,9 @@ export const installTrackedProcessLifecycleGuard = ({
     runtimeProcess.on(signal, handler)
   }
   const handleExit = () => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
     const groups = sanitizeTrackedProcessGroups(getProcessGroups())
     for (const group of groups) {
       try {
@@ -2558,7 +2576,9 @@ export const installTrackedProcessLifecycleGuard = ({
   runtimeProcess.on('exit', handleExit)
 
   return () => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
     disposed = true
     signalHandlers.forEach((handler, signal) => {
       runtimeProcess.removeListener(signal, handler)
@@ -3041,9 +3061,13 @@ const parseDarwinCurrentCpuByPid = (stdout) => {
       tables.push(currentTable)
       continue
     }
-    if (!currentTable) continue
+    if (!currentTable) {
+      continue
+    }
     const match = trimmed.match(/^(\d+)\s+(\d+(?:\.\d+)?)$/u)
-    if (!match) continue
+    if (!match) {
+      continue
+    }
     currentTable.set(Number(match[1]), Number(match[2]))
   }
   if (tables.length < 2) {
@@ -3098,10 +3122,14 @@ export const sampleTrackedProcessGroupsCpu = async (
             .match(
               /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+(?:\.\d+)?)\s+(\S+)(?:\s+(.*))?$/u
             )
-    if (!match) continue
+    if (!match) {
+      continue
+    }
     const pgid = Number(match[3])
     const group = groupByPgid.get(pgid)
-    if (!group) continue
+    if (!group) {
+      continue
+    }
     trackedProcesses.push({
       command: match[platform === 'darwin' ? 5 : 6]?.trim() ?? '',
       cpuPercent: platform === 'darwin' ? null : Number(match[4]),
@@ -3243,7 +3271,9 @@ const readTrackedProcessIdentity = async (
     }
   )
   const match = stdout.trim().match(/^(\d+)\s+(\d+)\s+(\d+)$/u)
-  if (!match) return null
+  if (!match) {
+    return null
+  }
   return {
     pid: Number(match[1]),
     parentPid: Number(match[2]),
@@ -3267,9 +3297,15 @@ export const verifyTrackedProcessDescendant = async (
   let currentPid = pid
   for (let depth = 0; depth < 32; depth += 1) {
     const identity = await readIdentity(currentPid)
-    if (!identity || identity.pid !== currentPid) return false
-    if (depth === 0 && identity.pgid !== pgid) return false
-    if (identity.pid === rootPgid) return true
+    if (!identity || identity.pid !== currentPid) {
+      return false
+    }
+    if (depth === 0 && identity.pgid !== pgid) {
+      return false
+    }
+    if (identity.pid === rootPgid) {
+      return true
+    }
     if (
       !Number.isSafeInteger(identity.parentPid) ||
       identity.parentPid <= 1 ||
@@ -3661,7 +3697,9 @@ export const runResourceGuardCli = async (
   let evaluationRunning = false
   let terminationStarted = false
   const markCleanupFailure = () => {
-    if (state.stopDecision) return
+    if (state.stopDecision) {
+      return
+    }
     state = {
       ...state,
       stopDecision: stopDecision('tracked-process-cleanup-failed', now())
@@ -3777,7 +3815,9 @@ export const runResourceGuardCli = async (
 
   let serverClosed = false
   const closeGuardServer = async () => {
-    if (serverClosed) return
+    if (serverClosed) {
+      return
+    }
     serverClosed = true
     await close(server)
   }

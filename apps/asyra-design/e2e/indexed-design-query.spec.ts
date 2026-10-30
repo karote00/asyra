@@ -33,7 +33,9 @@ test('queries current regions and composes relative edits with Undo', async ({
       )
     )
     const [a, b, c] = ids
-    if (!a || !b || !c) throw new Error('Query fixture creation failed')
+    if (!a || !b || !c) {
+      throw new Error('Query fixture creation failed')
+    }
     const bounds = { x: 11, y: 21, width: 1, height: 1 }
     const query = () =>
       readDesignContext({
@@ -106,10 +108,16 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
       (id) => core.getElementMetadata(id)?.childCount === 0
     )
     const node = leafId ? core.deps.render.getElementById(leafId) : undefined
-    if (!node) throw new Error('Missing document projection')
+    if (!node) {
+      throw new Error('Missing document projection')
+    }
     let workspace = node
-    while (workspace.parent && workspace.label !== core.getCurrentWorkspaceId())
+    while (
+      workspace.parent &&
+      workspace.label !== core.getCurrentWorkspaceId()
+    ) {
       workspace = workspace.parent
+    }
     const bounds = node.getBoundsRelativeTo(workspace)
     const region = {
       x: bounds.x + bounds.width / 2,
@@ -119,29 +127,41 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
     }
     const counts: Record<string, number> = {}
     const unsubscribe = subscribeToDiagnosticCounters((name, value) => {
-      if (name.startsWith('region-query:'))
+      if (name.startsWith('region-query:')) {
         counts[name] = (counts[name] ?? 0) + value
+      }
     })
     try {
       const first = core.getElementIdsInBounds(region)
       const build = { ...counts }
-      for (const key of Object.keys(counts)) Reflect.deleteProperty(counts, key)
+      for (const key of Object.keys(counts)) {
+        Reflect.deleteProperty(counts, key)
+      }
       const repeats = []
-      for (let i = 0; i < 10; i++)
+      for (let i = 0; i < 10; i++) {
         repeats.push(core.getElementIdsInBounds(region))
+      }
       const repeat = { ...counts }
-      for (const key of Object.keys(counts)) Reflect.deleteProperty(counts, key)
+      for (const key of Object.keys(counts)) {
+        Reflect.deleteProperty(counts, key)
+      }
       const position = viewportApis.getPosition()
       viewportApis.panTo(position.x + 40, position.y + 20)
       const afterPan = core.getElementIdsInBounds(region)
       const pan = { ...counts }
       const oracle = ids.filter((id) => {
         const element = core.deps.render.getElementById(id)
-        if (!element) return false
+        if (!element) {
+          return false
+        }
         let current = element
         while (current !== workspace) {
-          if (!current.visible || !current.renderable) return false
-          if (!current.parent) return false
+          if (!current.visible || !current.renderable) {
+            return false
+          }
+          if (!current.parent) {
+            return false
+          }
           current = current.parent
         }
         const b = element.getBoundsRelativeTo(workspace)
@@ -163,8 +183,9 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
           result: 'ids',
           offset
         })
-        if (page.elements.length)
+        if (page.elements.length) {
           throw new Error('Identity query returned element summaries')
+        }
         compactIds.push(...(page.elementIds ?? []))
         offset = page.nextOffset
       }
@@ -248,7 +269,9 @@ test('edits a bounded part of one tier without reading its shared parent childre
       const action = runtime.actionDefinitions.find(
         (item) => item.name === name
       )
-      if (!action) throw new Error(`Missing registered action: ${name}`)
+      if (!action) {
+        throw new Error(`Missing registered action: ${name}`)
+      }
       return runner.run(name, (runMutation) =>
         action.execute(input, { signal, runMutation })
       )
@@ -280,8 +303,9 @@ test('edits a bounded part of one tier without reading its shared parent childre
       }
     } finally {
       core.getElementChildren = original
-      for (const resource of runtime.ownedResources ?? [])
+      for (const resource of runtime.ownedResources ?? []) {
         await resource.dispose()
+      }
     }
   })
   expect(result.candidates).toEqual([result.ids[4]])
@@ -317,7 +341,9 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         workspace
       )
     )
-    if (ids.some((id) => !id)) throw new Error('Missing retained fixture')
+    if (ids.some((id) => !id)) {
+      throw new Error('Missing retained fixture')
+    }
     const targets = ids as string[]
     transactionApis.runTransaction(() =>
       fillApis.updateFillsAtIndex(targets, 0, { color: '#123456' })
@@ -488,7 +514,9 @@ test('retained regions invalidate on ancestor moves, new matches and Undo', asyn
         workspace
       )
     )[0]
-    if (!group) throw new Error('Missing group fixture')
+    if (!group) {
+      throw new Error('Missing group fixture')
+    }
     transactionApis.runTransaction(() =>
       core.createElementsInParent(
         [{ type: 'rect', x: 0, y: 0, width: 20, height: 20 }],
@@ -582,7 +610,9 @@ test('recovers a rejected recorded query through explicit refinement, local edit
         workspace
       )
     )
-    if (!ids[0] || !ids[1]) throw new Error('Missing query fixture')
+    if (!ids[0] || !ids[1]) {
+      throw new Error('Missing query fixture')
+    }
     const targets = ids as string[]
     transactionApis.runTransaction(() =>
       fillApis.updateFillsAtIndex(targets, 0, { color: '#123456' })
@@ -623,7 +653,9 @@ test('recovers a rejected recorded query through explicit refinement, local edit
         { scope: 'children', parentId: workspace, delivery: 'reference' },
         signal
       )
-      if (!parent.snapshotId) throw new Error('Missing parent reference')
+      if (!parent.snapshotId) {
+        throw new Error('Missing parent reference')
+      }
       const filtered = store.read(
         {
           scope: 'snapshot',

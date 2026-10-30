@@ -20,8 +20,9 @@ const memoryStore = () => {
     read: async (key) => entries.get(key),
     list: async (limit) => [...entries.values()].slice(0, limit),
     write: vi.fn(async ({ key, expectedVersion, record }) => {
-      if (entries.get(key)?.version !== expectedVersion)
+      if (entries.get(key)?.version !== expectedVersion) {
         throw new Error('Storage conflict')
+      }
       const entry = { key, version: String(++serial), record }
       entries.set(key, entry)
       return entry
@@ -135,7 +136,9 @@ it('recipe proof rejects ineligible dependencies before registration', () => {
   const { store } = memoryStore()
   const host = setup(store)
   const primitive = host.registry.get('set')
-  if (!primitive) throw new Error('Missing primitive')
+  if (!primitive) {
+    throw new Error('Missing primitive')
+  }
   host.registry.register({
     ...primitive,
     name: 'manage',
@@ -351,8 +354,9 @@ it('recipe proof saves nested candidates dependency-first without replay', async
   const request = { name: 'nested', revision: 1, requestId: 'author', receipt }
   const write = store.write
   store.write = vi.fn(async (input) => {
-    if (input.key === JSON.stringify(['reusable', 1]))
+    if (input.key === JSON.stringify(['reusable', 1])) {
       throw new Error('Child store unavailable')
+    }
     return write(input)
   })
   expect(await host.persistence.save(request)).toMatchObject({
@@ -390,7 +394,9 @@ it('recipe proof saves nested candidates dependency-first without replay', async
   ).toMatchObject({ status: 'success', value: 12 })
   expect(fresh.writes).toEqual([12])
   const child = entries.get(JSON.stringify(['reusable', 1]))
-  if (!child) throw new Error('Missing saved child')
+  if (!child) {
+    throw new Error('Missing saved child')
+  }
   expect(
     await createAiToolStoreManagement({ store, capacity: 32 }).setState({
       name: 'reusable',
@@ -504,10 +510,11 @@ it('recipe proof admits bounded state repair only from domain verification contr
 const boundedHost = (store: AiToolStore) => {
   const host = setup(store, (value, schema) => {
     const type = (schema as { type: string }).type
-    if (type === 'number')
+    if (type === 'number') {
       return typeof value === 'number' && Number.isFinite(value)
         ? undefined
         : 'Expected number'
+    }
     const check = value as
       { status?: unknown; progress?: unknown; remaining?: unknown } | undefined
     return check &&
@@ -522,7 +529,7 @@ const boundedHost = (store: AiToolStore) => {
   })
   const proposal = boundedProposal(host)
   host.execute.mockImplementation(async (call) => {
-    if (call.name === 'verify')
+    if (call.name === 'verify') {
       return {
         status: 'success',
         settlement: 'completed',
@@ -532,6 +539,7 @@ const boundedHost = (store: AiToolStore) => {
           remaining: Number(call.input) - 1
         }
       }
+    }
     host.writes.push(call.input)
     return { status: 'success', settlement: 'completed', value: call.input }
   })
@@ -673,7 +681,9 @@ it('recipe proof saves and reloads the complete bounded iteration without replay
   })
   const changed = boundedHost(store)
   const verifier = changed.registry.get('verify')
-  if (!verifier) throw new Error('Missing verifier')
+  if (!verifier) {
+    throw new Error('Missing verifier')
+  }
   changed.registry.remove('verify', 1)
   changed.registry.register({
     ...verifier,
@@ -757,10 +767,14 @@ it('recipe proof confirms durable authority after asynchronous preparation witho
       })
       let changed = false
       const retireSnapshot = async () => {
-        if (changed) return
+        if (changed) {
+          return
+        }
         changed = true
         const entry = await management.read('reusable', 1)
-        if (!entry) throw new Error('Missing current durable revision')
+        if (!entry) {
+          throw new Error('Missing current durable revision')
+        }
         expect(
           await management.setState({
             name: 'reusable',
@@ -772,12 +786,16 @@ it('recipe proof confirms durable authority after asynchronous preparation witho
       }
       store.read = async (key) => {
         const snapshot = await read(key)
-        if (mode !== 'load') await retireSnapshot()
+        if (mode !== 'load') {
+          await retireSnapshot()
+        }
         return snapshot
       }
       store.list = async (limit) => {
         const snapshot = await list(limit)
-        if (mode === 'load') await retireSnapshot()
+        if (mode === 'load') {
+          await retireSnapshot()
+        }
         return snapshot
       }
       const next = setup(store)

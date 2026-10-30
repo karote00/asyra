@@ -28,7 +28,9 @@ const box: SpatialDescriptor = {
 }
 const hit = (engine: ThreeEngine, x = 320, y = 240) => {
   const result = engine.query({ type: 'hit-test', point: { x, y } })
-  if (result.type !== 'hit') throw new Error('Expected a hit-query result')
+  if (result.type !== 'hit') {
+    throw new Error('Expected a hit-query result')
+  }
   return result.target
 }
 const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
@@ -79,7 +81,9 @@ const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
       objectType: spatial.kind === 'camera' ? 'container' : 'mesh',
       properties: { [SPATIAL_PROPERTY]: spatial }
     }).object
-    if (!handle) throw new Error('Expected an object handle')
+    if (!handle) {
+      throw new Error('Expected an object handle')
+    }
     engine.execute({ type: 'append-child', parent: root, child: handle })
     return handle
   }
@@ -142,8 +146,9 @@ describe('CUSTOM Three engine', () => {
     const key = scene.children.find(
       (value) => value instanceof THREE.DirectionalLight
     )
-    if (!(key instanceof THREE.DirectionalLight))
+    if (!(key instanceof THREE.DirectionalLight)) {
       throw new Error('Missing key light')
+    }
     expect(key.castShadow).toBe(true)
     expect(key.shadow.mapSize.toArray()).toEqual([1024, 1024])
     const mesh = scene.getObjectsByProperty('isMesh', true)[0]
@@ -168,8 +173,9 @@ describe('CUSTOM Three engine', () => {
           )
         )?.[0]
       const mesh = scene?.getObjectsByProperty('isMesh', true)[0]
-      if (!(mesh instanceof THREE.Mesh))
+      if (!(mesh instanceof THREE.Mesh)) {
         throw new Error('Missing rendered mesh')
+      }
       return mesh as THREE.Mesh<
         THREE.BufferGeometry,
         THREE.MeshStandardMaterial
@@ -227,8 +233,9 @@ describe('CUSTOM Three engine', () => {
       { skewY: 0.1 },
       { alpha: 0.5 },
       { filters: [] }
-    ])
+    ]) {
       expect(() => create(properties)).toThrow('Unsupported screen')
+    }
     expect(() =>
       engine.execute({
         type: 'create-object',
@@ -238,7 +245,9 @@ describe('CUSTOM Three engine', () => {
       })
     ).toThrow('spatial descriptor')
     const object = create()
-    if (!object) throw new Error('Missing graphic')
+    if (!object) {
+      throw new Error('Missing graphic')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',
@@ -284,12 +293,16 @@ describe('CUSTOM Three engine', () => {
     const object = add(box)
     const first = engine.query({ type: 'get-bounds', object })
     expect(first.type).toBe('bounds')
-    if (first.type !== 'bounds') throw new Error('Expected bounds')
+    if (first.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
     expect(first.bounds.x).toBeLessThan(320)
     expect(first.bounds.x + first.bounds.width).toBeGreaterThan(320)
     engine.execute({ type: 'resize', width: 1280, height: 960 })
     const resized = engine.query({ type: 'get-bounds', object })
-    if (resized.type !== 'bounds') throw new Error('Expected bounds')
+    if (resized.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
     expect(resized.bounds.width).toBeCloseTo(first.bounds.width * 2, 8)
     engine.execute({
       type: 'update-object',
@@ -297,7 +310,9 @@ describe('CUSTOM Three engine', () => {
       properties: { [SPATIAL_PROPERTY]: { ...camera, position: [0, 0, 10] } }
     })
     const distant = engine.query({ type: 'get-bounds', object })
-    if (distant.type !== 'bounds') throw new Error('Expected bounds')
+    if (distant.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
     expect(distant.bounds.width).toBeLessThan(resized.bounds.width)
     engine.destroy()
   })
@@ -350,7 +365,9 @@ describe('CUSTOM Three engine', () => {
         objectType: 'container',
         requestId: 'group'
       }).object
-      if (!handle) throw new Error('Expected an object handle')
+      if (!handle) {
+        throw new Error('Expected an object handle')
+      }
       return handle
     }
     const parent = create(),
@@ -372,7 +389,9 @@ describe('CUSTOM Three engine', () => {
       objectType: 'graphics',
       requestId: 'screen'
     }).object
-    if (!object) throw new Error('Expected an object handle')
+    if (!object) {
+      throw new Error('Expected an object handle')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',

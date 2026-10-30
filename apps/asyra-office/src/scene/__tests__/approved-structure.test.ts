@@ -27,24 +27,31 @@ function preExpansionVertices(name: string, vertices: number[][]) {
         'lounge rear right',
         'lounge T return'
       ].includes(name)
-    )
+    ) {
       return [x, y + shift, z]
+    }
     if (['lounge left low', 'lounge left return'].includes(name)) {
       const oldEnd = approved.parameters.loungeY
       const ratio =
         (oldEnd - datum.frontInnerY + shift) / (oldEnd - datum.frontInnerY)
       // Keep the terminal abutment depth unchanged; only the clear wall run grows.
-      if (y >= oldEnd) return [x, y + shift, z]
+      if (y >= oldEnd) {
+        return [x, y + shift, z]
+      }
       return [x, datum.frontInnerY + (y - datum.frontInnerY) * ratio, z]
     }
-    if (name === 'white pantry floor band' && y < 0) return [x, y + shift, z]
+    if (name === 'white pantry floor band' && y < 0) {
+      return [x, y + shift, z]
+    }
     return [x, y, z]
   })
 }
 
 function revisedVertices(name: string, vertices: number[][]) {
   return preExpansionVertices(name, vertices).map(([x, y, z]) => {
-    if (['discussion rear', 'pantry rear'].includes(name)) return [x, y + 1, z]
+    if (['discussion rear', 'pantry rear'].includes(name)) {
+      return [x, y + 1, z]
+    }
     if (
       [
         'A - cream divider',
@@ -54,12 +61,18 @@ function revisedVertices(name: string, vertices: number[][]) {
         'lounge rear right',
         'lounge T return'
       ].includes(name)
-    )
+    ) {
       return [x, y + 0.5, z]
-    if (name === 'west wall') return [x, y > 2 ? y + 1 : y, z]
-    if (name === 'pantry divider' || name === 'white pantry floor band')
+    }
+    if (name === 'west wall') {
+      return [x, y > 2 ? y + 1 : y, z]
+    }
+    if (name === 'pantry divider' || name === 'white pantry floor band') {
       return [x, y + (y > 2 ? 1 : 0.5), z]
-    if (name === 'lounge left return') return [x, y > -0.1 ? y + 0.5 : y, z]
+    }
+    if (name === 'lounge left return') {
+      return [x, y > -0.1 ? y + 0.5 : y, z]
+    }
     return [x, y, z]
   })
 }
@@ -108,12 +121,16 @@ describe('owner-approved building construction', () => {
         const expected = approved.solids.find(
           (s) => s.id === name + (cap ? '-cap' : '')
         )
-        if (!expected) throw new Error('Missing approved solid')
+        if (!expected) {
+          throw new Error('Missing approved solid')
+        }
         const actual = assemblies.flatMap((id) => {
           const group = parts.get(
             id === 'entry-header' ? id : id + (cap ? '-cap' : '')
           )
-          if (!group) throw new Error(`Missing composed wall ${id}`)
+          if (!group) {
+            throw new Error(`Missing composed wall ${id}`)
+          }
           return id === 'entry-header'
             ? group.filter((p) => (p.id === 'top-cap') === cap)
             : group
@@ -132,8 +149,11 @@ describe('owner-approved building construction', () => {
             )
             if (name === 'B - green divider' && axis === 2) {
               const top = approved.parameters.greenTop
-              if (cap) wanted[0] = top - 0.02
-              else wanted[1] = top - 0.02
+              if (cap) {
+                wanted[0] = top - 0.02
+              } else {
+                wanted[1] = top - 0.02
+              }
             }
             expect(bounds[0]).toBeCloseTo(wanted[0], 6)
             expect(bounds[1]).toBeCloseTo(wanted[1], 6)
@@ -148,8 +168,9 @@ describe('owner-approved building construction', () => {
     expect(door).toBeDefined()
     for (const component of approved.entryAssembly.components) {
       const actual = door?.find((p) => p.id === component.partId)
-      if (!actual)
+      if (!actual) {
         throw new Error(`Missing entrance component ${component.partId}`)
+      }
       for (let axis = 0; axis < 3; axis++) {
         const bounds = extent(actual.mesh.positions, axis)
         expect(bounds[0]).toBeCloseTo(
@@ -169,7 +190,9 @@ describe('owner-approved building construction', () => {
     expect(parts.has('pantry-east-wall')).toBe(false)
     const band = approved.solids.find((s) => s.id === 'white pantry floor band')
     const actual = parts.get('pantry-floor-band')
-    if (!band || !actual) throw new Error('Missing approved floor band')
+    if (!band || !actual) {
+      throw new Error('Missing approved floor band')
+    }
     for (let axis = 0; axis < 3; axis++) {
       expect(
         extent(
@@ -190,7 +213,9 @@ describe('owner-approved building construction', () => {
     const x = extent(revisedBand, 0),
       y = extent(revisedBand, 1)
     for (const [id, group] of parts) {
-      if (!id.startsWith('floor-')) continue
+      if (!id.startsWith('floor-')) {
+        continue
+      }
       for (const p of group) {
         const bx = extent(p.mesh.positions, 0),
           by = extent(p.mesh.positions, 1)

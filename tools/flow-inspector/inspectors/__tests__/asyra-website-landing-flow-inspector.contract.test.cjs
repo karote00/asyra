@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '../../../..')
 
 test('homepage authority resolves the current accepted story instead of an old visual reference', () => {
   for (const file of Object.values(data.authority))
-    assert.ok(fs.existsSync(path.join(root, file)), file)
+    {assert.ok(fs.existsSync(path.join(root, file)), file)}
   assert.equal(
     data.authority.specPath,
     'apps/asyra-framework-site/docs/spatial-story.md'
@@ -20,7 +20,7 @@ test('homepage authority resolves the current accepted story instead of an old v
     'removed-preview-route',
     'canonical-discovery'
   ])
-    assert.ok(data.caseIds.includes(id))
+    {assert.ok(data.caseIds.includes(id))}
 })
 test('the three existing owner steps retain explicit handoffs and fail at their owning step', () => {
   assert.deepEqual(
@@ -42,7 +42,7 @@ test('the three existing owner steps retain explicit handoffs and fail at their 
       'implementationBoundary',
       'specRefs'
     ])
-      assert.ok(step[key].length > 0, `${step.id}: ${key}`)
+      {assert.ok(step[key].length > 0, `${step.id}: ${key}`)}
     assert.deepEqual(step.cacheDimensions, [])
   }
   assert.deepEqual(data.steps[1].inputs, data.steps[0].outputs)
@@ -85,7 +85,7 @@ test('render and verification boundaries protect continuity, static reading and 
     /server-owned/i,
     /noopener noreferrer/i
   ])
-    assert.match(render, pattern)
+    {assert.match(render, pattern)}
   const verify = JSON.stringify(data.steps[2])
   assert.match(verify, /404/)
   assert.match(verify, /exact submitted head/)

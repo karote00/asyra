@@ -10,15 +10,15 @@
         },
         {
           "path": "packages/ai-agent-runtime/src/knowledge.ts",
-          "sha256": "9d71ef24cdf0ff8410280f1a084bbf7671384105d66285d82421280062e93102"
+          "sha256": "acf92d1d72c198409fe8e7bdf5117c9d5f4436390f5c619e48e8f890d1015523"
         },
         {
           "path": "apps/asyra-design/server/local-knowledge.ts",
-          "sha256": "1e86e586bc1666564e92afe7af8d8cc1e398dbfe476121d7c4601dd501697dd8"
+          "sha256": "6ccfdf5111d9d51ff0079e8fb22625cbc630b03730b8c7387f9a72a0f8de158d"
         },
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "54b9771fdb781cfd59e7702d2d56b3bc4779682e410b8862666f6d20e37ab568"
+          "sha256": "6f61cad0f6273be1306ec58681b3d542421a0c7a045145008f89254c046859dd"
         }
       ]
     },
@@ -56,7 +56,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "69ee5d895be783a3e47241a344b43309b99aa7ae500e09ad42fe042b14be993f"
+          "sha256": "228ce8d797faf1eca22a0b4805074c82eedcb9e6bb917b0891971b5208bf1f88"
         },
         {
           "path": "docs/ai/apps/asyra-design/golden-paths/README.md",
@@ -128,7 +128,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "69ee5d895be783a3e47241a344b43309b99aa7ae500e09ad42fe042b14be993f"
+          "sha256": "228ce8d797faf1eca22a0b4805074c82eedcb9e6bb917b0891971b5208bf1f88"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -448,7 +448,7 @@
         },
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "bcf5cd26e5a62d4521e1753a768f0ff798c2208045e0e640ea76ebfc4daac3a6"
+          "sha256": "30a589420c8af4e6ac7fbc17366abed0f38061f336e1039b9c1d0b907bec9089"
         },
         {
           "path": "packages/preset/src/index.ts",
@@ -464,11 +464,11 @@
         },
         {
           "path": "apps/asyra-design/src/init/capabilities/init-text.ts",
-          "sha256": "8da839f530c8f94ad97e09fdc309b76dfc58031501725ee8b035fbfe5d3ec97d"
+          "sha256": "3b91babb33e0f41c3a3e6b3d80606b6f3347d76ee6c63753b675c79c65242b7a"
         },
         {
           "path": "apps/asyra-design/src/properties/text.tsx",
-          "sha256": "e56fb50a7889ff488d44dd5fc2c511867e976fe026f3588eaf66541b0797fce8"
+          "sha256": "efc3d34ddde85b30643e8fba46f5f2bc3c3c1b390278e322d5ac70212fe0313f"
         }
       ]
     },
@@ -494,7 +494,7 @@
         },
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "bcf5cd26e5a62d4521e1753a768f0ff798c2208045e0e640ea76ebfc4daac3a6"
+          "sha256": "30a589420c8af4e6ac7fbc17366abed0f38061f336e1039b9c1d0b907bec9089"
         },
         {
           "path": "packages/preset/src/index.ts",
@@ -510,11 +510,11 @@
         },
         {
           "path": "apps/asyra-design/src/init/capabilities/init-text.ts",
-          "sha256": "8da839f530c8f94ad97e09fdc309b76dfc58031501725ee8b035fbfe5d3ec97d"
+          "sha256": "3b91babb33e0f41c3a3e6b3d80606b6f3347d76ee6c63753b675c79c65242b7a"
         },
         {
           "path": "apps/asyra-design/src/properties/text.tsx",
-          "sha256": "e56fb50a7889ff488d44dd5fc2c511867e976fe026f3588eaf66541b0797fce8"
+          "sha256": "efc3d34ddde85b30643e8fba46f5f2bc3c3c1b390278e322d5ac70212fe0313f"
         }
       ]
     },
@@ -524,7 +524,7 @@
       "sources": [
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "bcf5cd26e5a62d4521e1753a768f0ff798c2208045e0e640ea76ebfc4daac3a6"
+          "sha256": "30a589420c8af4e6ac7fbc17366abed0f38061f336e1039b9c1d0b907bec9089"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",
@@ -546,7 +546,7 @@
       "sources": [
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "bcf5cd26e5a62d4521e1753a768f0ff798c2208045e0e640ea76ebfc4daac3a6"
+          "sha256": "30a589420c8af4e6ac7fbc17366abed0f38061f336e1039b9c1d0b907bec9089"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",
@@ -868,7 +868,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "81d67c2b4e5062f71263124fa7e99cde1ec551c981af557fb94509ac1bc17047"
+          "sha256": "d73e1528b79c291a437375630bd6f6a6aed01a30009918b499a1a0cb6f009d92"
         }
       ]
     },
@@ -904,11 +904,11 @@
         },
         {
           "path": "packages/ai-agent-runtime/src/provider.ts",
-          "sha256": "3635d4af27639d0fab8fa312b5c5bd8111fd06330c9d4c9a4de1fc58266aea2e"
+          "sha256": "6c9362c1a06f6d10821cfafc03bffecc1f956602ef21e95dbc1296cfc8101f6d"
         },
         {
           "path": "packages/utils/src/render/geometry-bounds.ts",
-          "sha256": "56a98c58a1543db246dfed313fe3d900423044d5bab769b1e532dcf5825d06ef"
+          "sha256": "6a34d3afdd026ddc50fa2c0efd6069ef9325a76ef3e4a50691065c678a9c2989"
         }
       ]
     },
@@ -918,15 +918,15 @@
       "sources": [
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "54b9771fdb781cfd59e7702d2d56b3bc4779682e410b8862666f6d20e37ab568"
+          "sha256": "6f61cad0f6273be1306ec58681b3d542421a0c7a045145008f89254c046859dd"
         },
         {
           "path": "apps/asyra-design/server/local-design-workflow.ts",
-          "sha256": "aaf0040791e3f62e152711d74d0b0de743192c5a55085c33204b2cdfd6e3ab79"
+          "sha256": "0147942cd10e03425c65944ca88048ca968889f3d85ebff2d23e4fc38ea7b931"
         },
         {
           "path": "packages/ai-agent-runtime/src/recipe-schema.ts",
-          "sha256": "1e253cd4db86050783e17c7901b3040b4f056468a33d221a91fdf6994024be94"
+          "sha256": "94736180dfb33f7c86985b3c76baceca0e7ec96cd7224f118c116265d6b8fba5"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",
@@ -934,11 +934,11 @@
         },
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "bcf5cd26e5a62d4521e1753a768f0ff798c2208045e0e640ea76ebfc4daac3a6"
+          "sha256": "30a589420c8af4e6ac7fbc17366abed0f38061f336e1039b9c1d0b907bec9089"
         },
         {
           "path": "packages/utils/src/sid/idCounter.ts",
-          "sha256": "e6350b5fd02e6f5c6569b13b21eed1ee364c384dcb67b00695cd193310fe4c09"
+          "sha256": "810db3e30d0bc0d6a22769fe1f698a175a5005d165dab07d4c9847f7b70e449a"
         }
       ]
     }

@@ -128,7 +128,9 @@ const partialCounts = (
 
 export const formatElapsedTime = (durationMs: number): string => {
   const seconds = Math.max(0, durationMs) / 1_000
-  if (seconds < 0.05) return '0s'
+  if (seconds < 0.05) {
+    return '0s'
+  }
   if (seconds < 10) {
     return `${seconds.toFixed(1)}s`
   }
@@ -161,21 +163,26 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
   let message = 'The request failed. Review the canvas before trying again.'
   if (isPlainObject(turn.result) && turn.result.stage === 'provider') {
     message = 'Could not complete the AI request. Your drawing is unchanged.'
-    if (turn.result.code === 'AI_PROVIDER_INVALID_CONFIGURATION')
+    if (turn.result.code === 'AI_PROVIDER_INVALID_CONFIGURATION') {
       message =
         'The AI provider is unavailable or not configured. Your drawing is unchanged.'
+    }
     if (
       turn.result.message ===
       'Image conversion failed. Your drawing is unchanged.'
-    )
+    ) {
       message = turn.result.message
-    if (turn.result.code === 'AI_PROVIDER_TIMEOUT')
+    }
+    if (turn.result.code === 'AI_PROVIDER_TIMEOUT') {
       message = 'The request timed out before any changes were applied.'
-    if (turn.result.code === 'AI_PROVIDER_TRANSPORT_FAILED')
+    }
+    if (turn.result.code === 'AI_PROVIDER_TRANSPORT_FAILED') {
       message = 'The AI connection was interrupted. Your drawing is unchanged.'
-    if (turn.result.code === 'AI_PROVIDER_MALFORMED_RESPONSE')
+    }
+    if (turn.result.code === 'AI_PROVIDER_MALFORMED_RESPONSE') {
       message =
         'The AI returned an invalid drawing response. Your drawing is unchanged.'
+    }
   }
   if (
     isPlainObject(turn.result) &&
@@ -310,13 +317,18 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
 
 /** Only pre-execution failures are admitted for replay. Unknown transaction state is never guessed. */
 export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
-  if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') return false
-  if (!isPlainObject(turn.result)) return false
+  if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') {
+    return false
+  }
+  if (!isPlainObject(turn.result)) {
+    return false
+  }
   if (
     isPlainObject(turn.result.transaction) &&
     turn.result.transaction.status === 'unknown'
-  )
+  ) {
     return false
+  }
   return [
     'context',
     'provider',
@@ -333,33 +345,37 @@ export const projectAiQuestion = (
   readonly choices: readonly AiDrawingDetailChoice[]
 } | null => {
   const detail = projectAiDrawingDetailChoice(turn)
-  if (detail)
+  if (detail) {
     return {
       message: 'Choose a drawing detail level.',
       choices: detail.choices
     }
+  }
   if (
     turn.outcome !== 'no-change' ||
     !isPlainObject(turn.result) ||
     !Array.isArray(turn.result.actionResults) ||
     turn.result.actionResults.length !== 1
-  )
+  ) {
     return null
+  }
   const action = turn.result.actionResults[0]
   if (
     !isPlainObject(action) ||
     action.actionName !== AiActionNames.REQUEST_CLARIFICATION ||
     !isPlainObject(action.result) ||
     !isPlainObject(action.result.clarification)
-  )
+  ) {
     return null
+  }
   const { question, kind } = action.result.clarification
   if (
     kind !== 'question' ||
     typeof question !== 'string' ||
     !question.trim() ||
     question.length > 1000
-  )
+  ) {
     return null
+  }
   return { message: question, choices: [] }
 }

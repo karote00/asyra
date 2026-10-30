@@ -115,8 +115,9 @@ it.each(['missing', 'chain'])(
       await new Promise<void>((resolve, reject) => {
         const tx = database.transaction('publications', 'readwrite')
         const store = tx.objectStore('publications')
-        if (damage === 'missing') store.delete([project.id, 1])
-        else {
+        if (damage === 'missing') {
+          store.delete([project.id, 1])
+        } else {
           const request = store.get([project.id, 1])
           request.onsuccess = () =>
             store.put({ ...request.result, previousRevision: 'wrong' }, [
@@ -196,7 +197,9 @@ it('reopens exact reverse-ordered sparse creation entries without changing their
     await repository.append({ ...project, revision: 'b' }, 'a', creation)
     const stored = await repository.read(project.id)
     const restored = restoreJournal(snapshot, stored.journal ?? [])
-    if (!restored.replay) throw new Error('Expected persisted canonical replay')
+    if (!restored.replay) {
+      throw new Error('Expected persisted canonical replay')
+    }
     expect(restored.replay[0].slices).toEqual([
       [
         {

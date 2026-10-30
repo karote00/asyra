@@ -41,8 +41,9 @@ describe('Activity projection', () => {
     vi.stubGlobal(
       'queueMicrotask',
       function (this: unknown, callback: VoidFunction) {
-        if (this !== undefined && this !== globalThis)
+        if (this !== undefined && this !== globalThis) {
           throw new TypeError('Illegal invocation')
+        }
         pending.push(callback)
       }
     )

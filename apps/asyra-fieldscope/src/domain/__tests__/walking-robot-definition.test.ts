@@ -116,7 +116,9 @@ describe('walking robot definition admission', () => {
       id: 'tripod-authored-range',
       label: 'Tripod range - synthetic feasibility assumption'
     }
-    for (const leg of raw.legs) leg.jointRanges.knee[0] = -alpha
+    for (const leg of raw.legs) {
+      leg.jointRanges.knee[0] = -alpha
+    }
     const candidate = readWalkingRobotDefinition(raw)
     expect(classifyWalkingRobotDefinition(candidate)).toBe('walking-v2')
     expect(
@@ -228,26 +230,31 @@ describe('walking robot definition admission', () => {
     expect(definition.geometryEvidence).toMatchObject({ kind: 'synthetic' })
     expect(definition.jointEvidence).toMatchObject({ kind: 'synthetic' })
     expect(definition.massEvidence).toMatchObject({ kind: 'synthetic' })
-    for (const arm of definition.presets.stowed.arms)
+    for (const arm of definition.presets.stowed.arms) {
       expect(arm).toMatchObject({
         rootYaw: 0,
         shoulderPitch: 0,
         elbowPitch: 0,
         wristPitch: 0
       })
+    }
     for (const [side, preset] of [
       ['left', definition.presets.leftWorking],
       ['right', definition.presets.rightWorking]
-    ] as const)
-      for (const arm of preset.arms)
+    ] as const) {
+      for (const arm of preset.arms) {
         expect(arm).toMatchObject(
           arm.side === side
             ? { shoulderPitch: -0.25, elbowPitch: 0.75, wristPitch: -0.35 }
             : { shoulderPitch: 0, elbowPitch: 0, wristPitch: 0 }
         )
-    for (const preset of Object.values(definition.presets))
-      for (const leg of preset.legs)
+      }
+    }
+    for (const preset of Object.values(definition.presets)) {
+      for (const leg of preset.legs) {
         expect(leg).toMatchObject({ abduction: 0, hip: 0, knee: 0 })
+      }
+    }
   })
 
   it('admits measured provenance, detaches caller bytes and preserves complete poses', () => {
@@ -311,8 +318,9 @@ describe('walking robot definition admission', () => {
     }
     extraPreset.presets.stowed.surprise = 1
     invalid.push(extraPreset)
-    for (const candidate of invalid)
+    for (const candidate of invalid) {
       expect(() => readWalkingRobotDefinition(candidate)).toThrow()
+    }
   })
 
   it('classifies legacy bytes without mutation or implicit conversion', () => {
@@ -341,10 +349,11 @@ describe('walking robot definition admission', () => {
         ),
         topology: 'four-arm-four-wheel'
       }
-    ])
+    ]) {
       expect(classifyWalkingRobotDefinition(malformed)).toBe(
         'unsupported-version'
       )
+    }
     expect(
       classifyWalkingRobotDefinition({ format: 'walking-robot-definition/9' })
     ).toBe('unsupported-version')

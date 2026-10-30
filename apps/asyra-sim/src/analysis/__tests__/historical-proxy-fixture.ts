@@ -8,8 +8,9 @@ import {
 export function historicalProxyFixture(input: CreateExperimentSnapshotInput) {
   const definition = input.definition
   const report = inspectHistoricalExperiment(input.workcell, definition)
-  if (report.blockers.length)
+  if (report.blockers.length) {
     throw new Error('Invalid historical fixture scope')
+  }
   const descriptor = input.methods.find(
     (method) =>
       method.id === definition.method.id &&

@@ -94,7 +94,9 @@ const native = owners.flatMap((owner) =>
 )
 afterAll(async () => {
   await host.dispose()
-  for (const owner of runtime.ownedResources ?? []) await owner.dispose()
+  for (const owner of runtime.ownedResources ?? []) {
+    await owner.dispose()
+  }
   knowledge.dispose()
 })
 
@@ -106,11 +108,12 @@ it.each(runtime.actionDefinitions)(
     expect(action.outputSchema, action.name).toBeDefined()
     expect(action.description.trim().length).toBeGreaterThan(0)
     const schema = action.inputSchema as { examples?: unknown[] }
-    for (const example of schema.examples ?? [])
+    for (const example of schema.examples ?? []) {
       expect(
         operationInputIssue(example, action.inputSchema),
         action.name
       ).toBeUndefined()
+    }
   }
 )
 
@@ -124,11 +127,12 @@ it.each(native)(
     expect(reply.toolOutcome.settlement).toBe('not-started')
     expect(execute).not.toHaveBeenCalled()
     for (const example of (definition.inputSchema as { examples?: unknown[] })
-      .examples ?? [])
+      .examples ?? []) {
       expect(
         operationInputIssue(example, definition.inputSchema),
         definition.name
       ).toBeUndefined()
+    }
   }
 )
 
@@ -138,7 +142,9 @@ it.each(basicApiContracts)(
     const definition = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!definition) throw new Error('Missing discovery owner')
+    if (!definition) {
+      throw new Error('Missing discovery owner')
+    }
     let response = JSON.parse(
       (
         await invokeLocalTool(
@@ -153,7 +159,9 @@ it.each(basicApiContracts)(
     while (response.contentDelivery) {
       serialized += response.contentDelivery.text
       const next = response.contentDelivery.next
-      if (!next) break
+      if (!next) {
+        break
+      }
       response = JSON.parse(
         (await invokeLocalTool(operations, definition, next.arguments, signal))
           .text
@@ -169,7 +177,9 @@ it.each(basicApiContracts)(
       const target = operations.definitions.find(
         (d) => d.name === invocation.tool
       )
-      if (!target) throw new Error('Missing invocation owner')
+      if (!target) {
+        throw new Error('Missing invocation owner')
+      }
       expect(target).toBeDefined()
       expect(
         operationInputIssue(invocation.arguments, target.inputSchema)
@@ -179,7 +189,9 @@ it.each(basicApiContracts)(
 )
 
 it('retains an explicit per-API audit inventory from actual registrations when requested', () => {
-  if (!process.env.API_DELIVERY_AUDIT) return
+  if (!process.env.API_DELIVERY_AUDIT) {
+    return
+  }
   writeFileSync(
     resolve('../../tmp/api-delivery-audit.json'),
     JSON.stringify(
@@ -212,16 +224,19 @@ const unionAlternatives = (schema: unknown): unknown[] => {
     // Distribute shared parent constraints before comparing alternatives; never
     // discard them when a compact result shares host metadata at the parent.
     const value = nativeToolInputSchema(schema) as Record<string, unknown>
-    if (Object.keys(value).length === 1 && Array.isArray(value.anyOf))
+    if (Object.keys(value).length === 1 && Array.isArray(value.anyOf)) {
       return value.anyOf.flatMap(unionAlternatives)
+    }
     return [value]
   }
   return [schema]
 }
 
 const canonicalShape = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(canonicalShape)
-  if (value && typeof value === 'object')
+  if (Array.isArray(value)) {
+    return value.map(canonicalShape)
+  }
+  if (value && typeof value === 'object') {
     return expect.objectContaining(
       Object.fromEntries(
         Object.entries(value).map(([key, child]) => [
@@ -232,6 +247,7 @@ const canonicalShape = (value: unknown): unknown => {
         ])
       )
     )
+  }
   return value
 }
 
@@ -241,21 +257,26 @@ const resolvedSchema = (
   root: unknown = schema,
   references: readonly unknown[] = []
 ): unknown => {
-  if (Array.isArray(schema))
+  if (Array.isArray(schema)) {
     return schema.map((entry) => resolvedSchema(entry, root, references))
-  if (!schema || typeof schema !== 'object') return schema
+  }
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
   const value = schema as Record<string, unknown>
   const { $ref, $defs: _definitions, ...rest } = value
   if (typeof $ref === 'string') {
     let target = root as Record<string, unknown>
-    for (const token of $ref.slice(2).split('/'))
+    for (const token of $ref.slice(2).split('/')) {
       target = target[token.replace(/~1/g, '/').replace(/~0/g, '~')] as Record<
         string,
         unknown
       >
+    }
     expect(target, $ref).toBeDefined()
-    if (references.includes(target))
+    if (references.includes(target)) {
       return { recursive: references.indexOf(target) }
+    }
     return {
       ...(resolvedSchema(target, root, [...references, target]) as object),
       ...(resolvedSchema(rest, root, references) as object)
@@ -280,7 +301,9 @@ it.each(native)(
     const query = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!query) throw new Error('Missing discovery definition')
+    if (!query) {
+      throw new Error('Missing discovery definition')
+    }
     const namespace = operations.definitions.includes(definition)
       ? 'design_operations'
       : 'design'
@@ -300,7 +323,9 @@ it.each(native)(
     const registeredDefinition = host
       .definitions()
       .find((d) => d.registeredName === `${namespace}.${definition.name}`)
-    if (!registeredDefinition) throw new Error('Missing host registration')
+    if (!registeredDefinition) {
+      throw new Error('Missing host registration')
+    }
     const scopes = workflowInputScopes(registeredDefinition.inputSchema)
     if (scopes) {
       expect(entry.inputScopes).toEqual(scopes)
@@ -323,7 +348,7 @@ it.each(native)(
           )
         ).tools[0]
         const invocation = selected.invocationExample?.invocation
-        if (invocation)
+        if (invocation) {
           expect(
             operationInputIssue(
               invocation.arguments,
@@ -331,6 +356,7 @@ it.each(native)(
             ),
             `${definition.name}:${operation}`
           ).toBeUndefined()
+        }
         const params =
           selected.execution.kind === 'registered-tool'
             ? selected.usageGuide.parameters.properties.input
@@ -401,10 +427,11 @@ it.each(native)(
           ).outputSchema
         )
       )
-      for (const alternative of unionAlternatives(canonical))
+      for (const alternative of unionAlternatives(canonical)) {
         expect(delivered, definition.name).toEqual(
           expect.arrayContaining([canonicalShape(alternative)])
         )
+      }
     }
     expect(execute).not.toHaveBeenCalled()
   }
@@ -416,7 +443,9 @@ it.each(runtime.actionDefinitions)(
     const query = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!query) throw new Error('Missing discovery definition')
+    if (!query) {
+      throw new Error('Missing discovery definition')
+    }
     const args = { names: [action.name], view: 'usage' }
     const text = await readCompleteInformation(
       async (input) =>
@@ -434,7 +463,9 @@ it.each(runtime.actionDefinitions)(
     const admitted = designs
       .modelActions(actions)
       .find((entry) => entry.name === action.name)
-    if (!admitted) throw new Error('Missing admitted action')
+    if (!admitted) {
+      throw new Error('Missing admitted action')
+    }
     expect(
       entry.usageGuide.operationParameters ?? entry.usageGuide.parameters
     ).toEqual(workflowUsageParameters(admitted.inputSchema))
@@ -468,7 +499,9 @@ it.each(runtime.actionDefinitions)(
       const canonical = basicApiContracts.find(
         (contract) => contract.name === action.name
       )
-      if (canonical) expect(entry.result).toEqual(canonical.result)
+      if (canonical) {
+        expect(entry.result).toEqual(canonical.result)
+      }
     }
     expect(entry.definition.nextAction).toBe('execute-with-delivered-contract')
     expect(execute).not.toHaveBeenCalled()
@@ -479,7 +512,9 @@ it('executes a delivered final-response contract through its real control owner 
   const definition = operations.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   const args = { names: ['report_outcome'], view: 'usage' }
   const text = await readCompleteInformation(
     async (input) =>
@@ -502,7 +537,9 @@ it('executes a delivered final-response contract through its real control owner 
   const owner = runtime.actionDefinitions.find(
     (d) => d.name === tool.execution.action
   )
-  if (!owner) throw new Error('Missing final response owner')
+  if (!owner) {
+    throw new Error('Missing final response owner')
+  }
   const reply = await owner.execute(input as never, { signal } as never)
   expect(reply).toMatchObject({
     status: 'no-change',

@@ -23,6 +23,5 @@ export interface WorkspaceBundle {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var FLOW_INSPECTOR_WORKSPACE_BUNDLE: WorkspaceBundle | undefined
 }

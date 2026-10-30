@@ -42,8 +42,9 @@ export const recordedOrnaments = () => {
   if (
     sha256 !==
     '011187034701cd42cee3eb849ddbccae3741704997910bf5934b11ca0d9aa9ed'
-  )
+  ) {
     throw new Error('Recorded ornament input changed')
+  }
   const outputBytes = readFileSync(
     new URL(
       './fixtures/recorded-101/ornament-output-20261019.json',
@@ -53,8 +54,9 @@ export const recordedOrnaments = () => {
   if (
     createHash('sha256').update(outputBytes).digest('hex') !==
     '893b7e1261c85af28aa35490e8e2eac8681a43a9641da0fc39cfe006d4c319f7'
-  )
+  ) {
     throw new Error('Recorded ornament output changed')
+  }
   const output = JSON.parse(outputBytes.toString()) as {
     elementCount: number
     sourceWork: { projectionCalls: number; pathCommands: number }

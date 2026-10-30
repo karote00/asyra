@@ -121,7 +121,7 @@ export function createRobotModel(
   box('battery-case', [0, r + 0.035, 0], [w * 0.69, 0.13, l * 0.76], dark)
   box('chassis', [0, r + 0.12, 0], [w * 0.76, 0.1, l * 0.86], green)
   box('deck', [0, r + 0.182, 0], [w * 0.77, 0.025, l * 0.88], steel, 0.7)
-  for (const side of [-1, 1])
+  for (const side of [-1, 1]) {
     for (const end of [-1, 1]) {
       const center: Point3 = [side * w * 0.415, r, end * l * 0.32]
       cylinder(`tire-${side}-${end}`, center, r, w * 0.17, rubber)
@@ -162,6 +162,7 @@ export function createRobotModel(
         green
       )
     }
+  }
   for (const end of [-1, 1]) {
     box(
       `bumper-${end}`,
@@ -169,7 +170,7 @@ export function createRobotModel(
       [w * 0.77, 0.07, l * 0.025],
       rubber
     )
-    for (const side of [-1, 1])
+    for (const side of [-1, 1]) {
       cylinder(
         `lamp-${side}-${end}`,
         [side * w * 0.24, r + 0.14, end * l * 0.471],
@@ -178,6 +179,7 @@ export function createRobotModel(
         0xd8eaba,
         'z'
       )
+    }
   }
   const mastZ = -l * 0.3,
     top = h - 0.045
@@ -337,16 +339,19 @@ export function createDockModel(): readonly RobotPart[] {
   box('charger-foot', [0, 0.035, -0.85], [0.45, 0.07, 0.24], 0x33463e)
   box('charger', [0, 0.38, -0.87], [0.29, 0.66, 0.16], 0xdde5d7)
   box('charger-screen', [0, 0.58, -0.782], [0.2, 0.11, 0.008], 0x264b52)
-  for (const side of [-1, 1])
+  for (const side of [-1, 1]) {
     box(
       `charge-contact-${side}`,
       [side * 0.072, 0.24, -0.772],
       [0.035, 0.085, 0.018],
       0xc7a157
     )
+  }
   box('exchange-shelf', [1.08, 0.59, 0], [0.55, 0.025, 0.7], 0xb9c4c7)
-  for (const x of [0.85, 1.31])
-    for (const z of [-0.27, 0.27])
+  for (const x of [0.85, 1.31]) {
+    for (const z of [-0.27, 0.27]) {
       box(`exchange-leg-${x}-${z}`, [x, 0.3, z], [0.025, 0.58, 0.025], 0x9ca8a6)
+    }
+  }
   return parts
 }

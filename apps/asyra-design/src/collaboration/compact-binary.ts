@@ -78,11 +78,15 @@ const isWellFormedUtf16 = (value: string): boolean => {
     const code = value.charCodeAt(index)
     if (code >= 0xd800 && code <= 0xdbff) {
       const next = value.charCodeAt(index + 1)
-      if (next < 0xdc00 || next > 0xdfff) return false
+      if (next < 0xdc00 || next > 0xdfff) {
+        return false
+      }
       index += 1
       continue
     }
-    if (code >= 0xdc00 && code <= 0xdfff) return false
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return false
+    }
   }
   return true
 }
@@ -136,7 +140,9 @@ const readArrayValues = (value: unknown[]): unknown[] => {
   }
   const values = new Array<unknown>(value.length)
   for (const key of keys) {
-    if (key === 'length') continue
+    if (key === 'length') {
+      continue
+    }
     if (typeof key !== 'string') {
       throw new TypeError('[collaboration] invalid binary transport key')
     }
@@ -714,10 +720,18 @@ const readNode = (
   dictionary: readonly string[]
 ): DecodedNode => {
   const tag = reader.readByte()
-  if (tag === ValueTag.NULL) return { value: null }
-  if (tag === ValueTag.FALSE) return { value: false }
-  if (tag === ValueTag.TRUE) return { value: true }
-  if (tag === ValueTag.FLOAT64) return { value: reader.readFloat64() }
+  if (tag === ValueTag.NULL) {
+    return { value: null }
+  }
+  if (tag === ValueTag.FALSE) {
+    return { value: false }
+  }
+  if (tag === ValueTag.TRUE) {
+    return { value: true }
+  }
+  if (tag === ValueTag.FLOAT64) {
+    return { value: reader.readFloat64() }
+  }
   if (tag === ValueTag.INTEGER) {
     const encoded = reader.readVarUint()
     return {
@@ -781,7 +795,9 @@ const readValue = (
   dictionary: readonly string[]
 ): unknown => {
   const root = readNode(reader, dictionary)
-  if (!root.frame) return root.value
+  if (!root.frame) {
+    return root.value
+  }
   const frames: DecodeFrame[] = [root.frame]
   while (frames.length > 0) {
     const frame = frames[frames.length - 1]
@@ -817,15 +833,21 @@ const readValue = (
     }
     const child = readNode(reader, dictionary)
     attach(child.value)
-    if (child.frame) frames.push(child.frame)
+    if (child.frame) {
+      frames.push(child.frame)
+    }
     while (frames.length > 0) {
       const current = frames[frames.length - 1]
-      if (!current) break
+      if (!current) {
+        break
+      }
       const complete =
         current.kind === 'array'
           ? current.index >= current.value.length
           : current.remaining === 0
-      if (!complete) break
+      if (!complete) {
+        break
+      }
       frames.pop()
     }
   }
@@ -883,7 +905,9 @@ export const encodeCompactBinaryIfSmaller = (
   text: string
 ): string | Uint8Array => {
   const textByteLength = utf8ByteLength(text)
-  if (textByteLength < COMPACT_BINARY_MIN_TEXT_BYTES) return text
+  if (textByteLength < COMPACT_BINARY_MIN_TEXT_BYTES) {
+    return text
+  }
   const binary = encodeCompactBinary(value)
   return binary.byteLength < textByteLength ? binary : text
 }

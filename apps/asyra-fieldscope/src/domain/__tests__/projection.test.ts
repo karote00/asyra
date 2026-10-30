@@ -11,8 +11,9 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
   const meshes = buildSiteMeshes()
   const points = (id: string) => {
     const shape = meshes.find((m) => m.id === id)?.descriptor.shape
-    if (!shape || shape.kind !== 'triangles')
+    if (!shape || shape.kind !== 'triangles') {
       throw new Error('Missing triangle projection')
+    }
     return {
       x: shape.positions.filter((_, i) => i % 3 === 0),
       y: shape.positions.filter((_, i) => i % 3 === 1)
@@ -33,8 +34,9 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
   ).toBe(2256)
   for (const clip of clips) {
     const shape = clip.descriptor.shape
-    if (shape.kind !== 'triangles')
+    if (shape.kind !== 'triangles') {
       throw new Error('Expected batched wire geometry')
+    }
     expect(shape.positions.length).toBeLessThan(3_000_000)
     expect(shape.indices.length).toBeLessThan(3_000_000)
   }
@@ -54,8 +56,9 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
   changed.forEach((m, i) =>
     expect(m.descriptor.shape).toBe(meshes[i].descriptor.shape)
   )
-  for (const mode of ['overview', 'top', 'front', 'inside'] as const)
+  for (const mode of ['overview', 'top', 'front', 'inside'] as const) {
     expect(cameraPreset(mode).far).toBeGreaterThan(100)
+  }
 })
 
 it.each([358 / 440, 1090 / 610])(
@@ -67,12 +70,13 @@ it.each([358 / 440, 1090 / 610])(
     camera.position.fromArray(base.position)
     camera.lookAt(...base.target)
     camera.updateMatrixWorld(true)
-    for (const x of [-3, 31])
+    for (const x of [-3, 31]) {
       for (const z of [-3, 53]) {
         const projected = new Vector3(x, -0.35, z).project(camera)
         expect(Math.abs(projected.x)).toBeLessThan(0.95)
         expect(Math.abs(projected.y)).toBeLessThan(0.95)
       }
+    }
   }
 )
 
@@ -94,8 +98,9 @@ it('covers every bay roof and exterior wall with a visible translucent film whil
   expect(film?.descriptor.opacity).toBeGreaterThanOrEqual(0.55)
   expect(film?.descriptor.opacity).toBeLessThan(1)
   const shape = film?.descriptor.shape
-  if (!shape || shape.kind !== 'triangles')
+  if (!shape || shape.kind !== 'triangles') {
     throw new Error('Missing membrane surface')
+  }
   const geometry = new BufferGeometry()
   geometry.setAttribute(
     'position',
@@ -115,10 +120,11 @@ it('covers every bay roof and exterior wall with a visible translucent film whil
   try {
     for (let bay = 0; bay < 4; bay++) {
       for (const offset of [0.1, 1.75, 3.5, 5.25, 6.9]) {
-        for (const z of [0.1, 25, 49.9])
+        for (const z of [0.1, 25, 49.9]) {
           expect(
             hit([bay * 7 + offset, 10, z], [0, -1, 0]).length
           ).toBeGreaterThan(0)
+        }
       }
       for (const x of [bay * 7 + 1, bay * 7 + 6]) {
         expect(hit([x, 1, -1], [0, 0, 1])[0].point.z).toBeCloseTo(0)

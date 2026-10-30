@@ -1,5 +1,7 @@
 function architectureFor(doc) {
-  if (doc.definition.architecture) return doc.definition.architecture
+  if (doc.definition.architecture) {
+    return doc.definition.architecture
+  }
   const steps = doc.definition.nodes.map((node, index) => ({
     id: node.id,
     order: index + 1,

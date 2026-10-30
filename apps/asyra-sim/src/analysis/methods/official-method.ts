@@ -58,9 +58,13 @@ const unresolved = (
 })
 
 function deepFreeze<T>(input: T, seen = new WeakSet<object>()): T {
-  if (!input || typeof input !== 'object' || seen.has(input)) return input
+  if (!input || typeof input !== 'object' || seen.has(input)) {
+    return input
+  }
   seen.add(input)
-  for (const value of Object.values(input)) deepFreeze(value, seen)
+  for (const value of Object.values(input)) {
+    deepFreeze(value, seen)
+  }
   return Object.freeze(input)
 }
 
@@ -89,14 +93,18 @@ export function runClearanceQueries(
   if (
     snapshot.method.id !== descriptor.id ||
     snapshot.method.version !== descriptor.version
-  )
+  ) {
     throw new Error('Snapshot requests a different method or version')
-  if (!snapshot.pairs.length) throw new Error('Snapshot has no analysis pairs')
+  }
+  if (!snapshot.pairs.length) {
+    throw new Error('Snapshot has no analysis pairs')
+  }
   if (
     snapshot.pairs.length > EXPERIMENT_RESOURCE_PROFILE.maxPairs ||
     snapshot.pairs.length > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves
-  )
+  ) {
     throw new Error('Snapshot exceeds the analysis pair or evidence capacity')
+  }
   const settings: Omit<QuerySettings, 'maxIntervals'> = {
     threshold: snapshot.rule.minimumClearance,
     distanceTolerance: snapshot.method.settings.distanceTolerance,
@@ -110,13 +118,13 @@ export function runClearanceQueries(
   for (const pair of snapshot.pairs) {
     checkpoint()
     let evidence: PairEvidence
-    if (remaining <= 0)
+    if (remaining <= 0) {
       evidence = unresolved(
         snapshot.interval[0],
         snapshot.interval[1],
         'The global interval budget was exhausted before this pair was evaluated.'
       )
-    else {
+    } else {
       evidence = queryPair(
         {
           workcell: snapshot.workcell,

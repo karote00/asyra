@@ -34,17 +34,25 @@ export const loadEnvironment = (
   environment = process.env,
   environmentPath = defaultEnvironmentPath
 ) => {
-  if (!existsSync(environmentPath)) return environment
+  if (!existsSync(environmentPath)) {
+    return environment
+  }
 
   for (const rawLine of readFileSync(environmentPath, 'utf8').split(/\r?\n/)) {
     const line = rawLine.trim()
-    if (!line || line.startsWith('#')) continue
+    if (!line || line.startsWith('#')) {
+      continue
+    }
 
     const separatorIndex = line.indexOf('=')
-    if (separatorIndex <= 0) continue
+    if (separatorIndex <= 0) {
+      continue
+    }
 
     const key = line.slice(0, separatorIndex).trim()
-    if (!/^[A-Z_][A-Z0-9_]*$/.test(key)) continue
+    if (!/^[A-Z_][A-Z0-9_]*$/.test(key)) {
+      continue
+    }
     environment[key] ??= normalizeEnvValue(line.slice(separatorIndex + 1))
   }
 

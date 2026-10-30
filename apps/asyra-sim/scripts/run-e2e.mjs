@@ -23,8 +23,9 @@ const child = spawn(process.execPath, command, {
   env: { ...process.env, TMPDIR: temporary, TMP: temporary, TEMP: temporary },
   stdio: 'inherit'
 })
-for (const signal of ['SIGINT', 'SIGTERM'])
+for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => child.kill(signal))
+}
 child.on('error', (error) => {
   process.stderr.write(`${error.message}\n`)
   process.exitCode = 1

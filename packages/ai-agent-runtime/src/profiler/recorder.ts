@@ -276,10 +276,16 @@ const summarizeEvidence = (
   depth = 0,
   budget = { nodes: 128 }
 ): unknown => {
-  if (--budget.nodes < 0) return '[evidence budget exhausted]'
-  if (depth > 6) return '[nested evidence omitted]'
+  if (--budget.nodes < 0) {
+    return '[evidence budget exhausted]'
+  }
+  if (depth > 6) {
+    return '[nested evidence omitted]'
+  }
   if (typeof value === 'string') {
-    if (/data:|base64|<svg|Bearer\s/i.test(value)) return '[payload omitted]'
+    if (/data:|base64|<svg|Bearer\s/i.test(value)) {
+      return '[payload omitted]'
+    }
     return (
       value
         .replace(/https?:\/\/[^\s"<>]+/g, (address) => {
@@ -293,9 +299,14 @@ const summarizeEvidence = (
         .slice(0, 500) + (value.length > 500 ? ' [truncated]' : '')
     )
   }
-  if (typeof value === 'boolean' || typeof value === 'number' || value === null)
+  if (
+    typeof value === 'boolean' ||
+    typeof value === 'number' ||
+    value === null
+  ) {
     return value
-  if (Array.isArray(value))
+  }
+  if (Array.isArray(value)) {
     return {
       count: value.length,
       items: value
@@ -303,12 +314,15 @@ const summarizeEvidence = (
         .map((item) => summarizeEvidence(item, depth + 1, budget)),
       truncated: value.length > 12
     }
-  if (!isRecord(value)) return undefined
+  }
+  if (!isRecord(value)) {
+    return undefined
+  }
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => evidenceKeys.has(key))
       .map(([key, item]) => {
-        if (key === 'part' && isRecord(item))
+        if (key === 'part' && isRecord(item)) {
           return [
             key,
             {
@@ -321,6 +335,7 @@ const summarizeEvidence = (
                   : null
             }
           ]
+        }
         return [
           key,
           ['fillColor', 'strokeColor'].includes(key) &&
@@ -345,8 +360,12 @@ const summarizeEvidence = (
 // Persist the structured diagnostic projection, not echoed briefs or arbitrary
 // exception text. Console compatibility remains separate from local retention.
 const persistedEvidence = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(persistedEvidence)
-  if (!isRecord(value)) return value
+  if (Array.isArray(value)) {
+    return value.map(persistedEvidence)
+  }
+  if (!isRecord(value)) {
+    return value
+  }
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => [
       key,
@@ -358,18 +377,23 @@ const persistedEvidence = (value: unknown): unknown => {
 }
 
 const payloadShape = (value: unknown) => {
-  if (Array.isArray(value)) return 'array'
-  if (value === null) return 'null'
+  if (Array.isArray(value)) {
+    return 'array'
+  }
+  if (value === null) {
+    return 'null'
+  }
   return typeof value
 }
 const diagnosticSummary = (value: unknown) => {
   const summary = persistedEvidence(summarizeEvidence(value))
-  if (JSON.stringify(summary ?? null).length > 4000)
+  if (JSON.stringify(summary ?? null).length > 4000) {
     return {
       truncated: true,
       reason:
         'Diagnostic summary exceeds its display budget; inspect the local payload reference.'
     }
+  }
   return summary
 }
 // Shape and omissions are explicit; this is not a raw-payload recorder.
@@ -415,9 +439,11 @@ const outputDiagnostic = (
     ].includes(String(outcome.status))
   ) {
     usability = String(outcome.status)
-    if (outcome.status === 'unavailable' || outcome.status === 'failed')
+    if (outcome.status === 'unavailable' || outcome.status === 'failed') {
       usability = 'unusable'
-    else if (outcome.status === 'success') usability = 'usable'
+    } else if (outcome.status === 'success') {
+      usability = 'usable'
+    }
     basis =
       'The App invocation owner classified execution output; this does not certify visual correctness.'
   } else if (
@@ -488,8 +514,11 @@ const outputDiagnostic = (
     )
   ) {
     let status = 'unverified'
-    if (checks.some((check) => check.status === 'fail')) status = 'failed'
-    else if (checks.every((check) => check.status === 'pass')) status = 'passed'
+    if (checks.some((check) => check.status === 'fail')) {
+      status = 'failed'
+    } else if (checks.every((check) => check.status === 'pass')) {
+      status = 'passed'
+    }
     correctness = {
       status,
       source: 'model-review',
@@ -498,12 +527,15 @@ const outputDiagnostic = (
     }
   }
   let executionStatus: string = usability
-  if (usability === 'unusable')
+  if (usability === 'unusable') {
     executionStatus =
       result.stage === 'admission' || result.code === 'PREPARATION_REJECTED'
         ? 'rejected'
         : 'failed'
-  if (failed) executionStatus = 'failed'
+  }
+  if (failed) {
+    executionStatus = 'failed'
+  }
   return {
     ...payloadDiagnostic(value),
     correctness,
@@ -636,7 +668,9 @@ export const createAiExecutionProfiler = (
     purpose:
       options.purpose ?? 'Compose, execute and settle this provider invocation'
   }
-  if (options.lifecycle) lifecycle('lifecycle_started', root, 0)
+  if (options.lifecycle) {
+    lifecycle('lifecycle_started', root, 0)
+  }
   return {
     requestId,
     span(evidence: {
@@ -645,11 +679,15 @@ export const createAiExecutionProfiler = (
       purpose: string
       parentCallId?: string
     }): () => void {
-      if (finished) return () => undefined
+      if (finished) {
+        return () => undefined
+      }
       lifecycle('lifecycle_started', evidence)
       let closed = false
       return () => {
-        if (closed || finished) return
+        if (closed || finished) {
+          return
+        }
         closed = true
         lifecycle('lifecycle_completed', evidence)
       }
@@ -659,9 +697,13 @@ export const createAiExecutionProfiler = (
       bytes: number,
       stream: 'protocol' | 'diagnostic' = 'protocol'
     ): void {
-      if (finished || !Number.isSafeInteger(bytes) || bytes < 0) return
+      if (finished || !Number.isSafeInteger(bytes) || bytes < 0) {
+        return
+      }
       const key = direction === 'sent' ? 'sentBytes' : 'receivedBytes'
-      if (stream === 'protocol') transport[key] += bytes
+      if (stream === 'protocol') {
+        transport[key] += bytes
+      }
       persist({
         event: 'ai_request_trace',
         schemaVersion: 2,
@@ -703,25 +745,30 @@ export const createAiExecutionProfiler = (
         | 'provider_item_completed',
       evidence: unknown
     ): void {
-      if (finished) return
+      if (finished) {
+        return
+      }
       const observedElapsedMs = Math.max(0, now() - startedAt)
       try {
         if (isRecord(evidence) && typeof evidence.callId === 'string') {
           const research = stage.startsWith('research_')
           const key = `${research ? 'research' : 'tool'}:${evidence.callId}`
           if (stage === 'tool_started' || stage === 'research_started') {
-            if (!activeIntervals.size) intervalStartedAt = now()
+            if (!activeIntervals.size) {
+              intervalStartedAt = now()
+            }
             activeIntervals.add(key)
           } else if (
             stage === 'tool_completed' ||
             stage === 'tool_failed' ||
             stage === 'research_completed'
           ) {
-            if (activeIntervals.delete(key) && !activeIntervals.size)
+            if (activeIntervals.delete(key) && !activeIntervals.size) {
               observedToolAndResearchMs += Math.max(
                 0,
                 now() - intervalStartedAt
               )
+            }
           }
         }
         let diagnostic:
@@ -769,19 +816,22 @@ export const createAiExecutionProfiler = (
               }
             }
           }
-          if (stage === 'visual_assessment_context')
+          if (stage === 'visual_assessment_context') {
             diagnostic = {
               input: { payload: payload('input', evidence.arguments) }
             }
-          if (stage === 'provider_notifications')
+          }
+          if (stage === 'provider_notifications') {
             diagnostic = {
               output: {
                 payload: payload('output', evidence.notificationCounts)
               }
             }
-          if (stage === 'capabilities_advertised')
+          }
+          if (stage === 'capabilities_advertised') {
             diagnostic = { contracts: payload('input', evidence.definitions) }
-          if (stage === 'tool_started' || stage === 'action_started')
+          }
+          if (stage === 'tool_started' || stage === 'action_started') {
             diagnostic = {
               attribution: {
                 actor: evidence.actor ?? null,
@@ -803,6 +853,7 @@ export const createAiExecutionProfiler = (
                 payload: payload('input', evidence.arguments)
               }
             }
+          }
           if (
             [
               'tool_completed',
@@ -869,7 +920,9 @@ export const createAiExecutionProfiler = (
       }
     },
     update(value: unknown): void {
-      if (finished) return
+      if (finished) {
+        return
+      }
       const total = isRecord(value) ? value.total : undefined
       if (
         !isRecord(total) ||
@@ -897,12 +950,15 @@ export const createAiExecutionProfiler = (
       if (
         previous &&
         tokenFields.some((field) => snapshot[field] < previous[field])
-      )
+      ) {
         return
+      }
       tokens = snapshot
     },
     finish(outcome: UsageOutcome): void {
-      if (finished) return
+      if (finished) {
+        return
+      }
       finished = true
       let usageStatus = 'unavailable'
       if (tokens !== null) {
@@ -910,7 +966,9 @@ export const createAiExecutionProfiler = (
           outcome === 'completed' && !invalidSnapshot ? 'reported' : 'partial'
       }
       const durationMs = Math.max(0, now() - startedAt)
-      if (options.lifecycle) lifecycle('lifecycle_completed', root, durationMs)
+      if (options.lifecycle) {
+        lifecycle('lifecycle_completed', root, durationMs)
+      }
       const observedMs = Math.min(
         durationMs,
         observedToolAndResearchMs +

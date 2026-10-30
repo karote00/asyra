@@ -43,7 +43,9 @@ function fixture() {
       callbacks.forEach((callback) => callback(time))
     },
     run(frames: number, ms = 1000 / 60) {
-      for (let i = 0; i < frames; i++) this.frame(ms)
+      for (let i = 0; i < frames; i++) {
+        this.frame(ms)
+      }
     }
   }
 }
@@ -53,7 +55,7 @@ function key(
   options: KeyboardEventInit = {},
   target: EventTarget = window
 ) {
-  if (options.shiftKey)
+  if (options.shiftKey) {
     document.body.dispatchEvent(
       new KeyboardEvent('keydown', {
         code: 'ShiftLeft',
@@ -62,6 +64,7 @@ function key(
         shiftKey: true
       })
     )
+  }
   target.dispatchEvent(
     new KeyboardEvent(type, {
       key: value,
@@ -94,17 +97,21 @@ it('moves continuously without key repeat, eases start/release and schedules no 
   const distances = f.move.mock.calls.map(([, z]) => z)
   expect(distances[0]).toBeGreaterThan(0)
   expect(distances[0]).toBeLessThan(distances[11] / 3)
-  for (let i = 1; i < distances.length; i++)
+  for (let i = 1; i < distances.length; i++) {
     expect(distances[i]).toBeGreaterThan(distances[i - 1])
-  for (let i = 0; i < 10; i++) key('keydown', 'w', { repeat: true })
+  }
+  for (let i = 0; i < 10; i++) {
+    key('keydown', 'w', { repeat: true })
+  }
   expect(f.move).toHaveBeenCalledTimes(12)
   expect(f.pending.size).toBe(1)
   key('keyup', 'w')
   f.run(60)
   const released = f.move.mock.calls.slice(12).map(([, z]) => z)
   expect(released.length).toBeGreaterThan(1)
-  for (let i = 1; i < released.length; i++)
+  for (let i = 1; i < released.length; i++) {
     expect(released[i]).toBeLessThan(released[i - 1])
+  }
   expect(f.pending.size).toBe(0)
   const count = f.move.mock.calls.length
   f.run(10)

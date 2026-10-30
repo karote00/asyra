@@ -32,7 +32,9 @@ let runtimeIdentity = Symbol('feature-runtime')
 let disposal: Promise<void> | null = null
 
 const assertRuntimeOpen = (): void => {
-  if (runtimeState !== 'open') throw new FeatureRuntimeClosedError()
+  if (runtimeState !== 'open') {
+    throw new FeatureRuntimeClosedError()
+  }
 }
 
 let corePackages: CorePackages = {}
@@ -210,7 +212,9 @@ const registerExecutionEventBinding = (
         : manager.runAfterCancellingActiveSessions.bind(manager)
     await run(
       () => {
-        if (binding.cleanupRequested) throw new FeatureRuntimeClosedError()
+        if (binding.cleanupRequested) {
+          throw new FeatureRuntimeClosedError()
+        }
         return createInputSnapshot(systemContext, raw)
       },
       (mergedSnapshot) =>
@@ -342,8 +346,9 @@ export function defineFeature<
           entry.definition.execution &&
           (entry.definition.executionMode ?? 'queued') !== mode
       )
-    if (conflicts)
+    if (conflicts) {
       throw new Error(`Execution event ${keyConfig} cannot mix execution modes`)
+    }
   }
 
   const api = featureRegistry.register(
@@ -454,8 +459,9 @@ export function invokeFeatureTask<Input, Result>(
   input: Input,
   options?: InvokeFeatureTaskOptions
 ): Promise<Result> {
-  if (runtimeState !== 'open')
+  if (runtimeState !== 'open') {
     return Promise.reject(new FeatureRuntimeClosedError())
+  }
   return featureTaskRegistry.invoke<Input, Result>(featureName, input, options)
 }
 
@@ -470,7 +476,9 @@ export function cancelFeatureTask(
 export function disposeFeatureSystem(
   getSnapshot: () => SystemContextSnapshot
 ): Promise<void> {
-  if (disposal) return disposal
+  if (disposal) {
+    return disposal
+  }
   let complete!: () => void
   let fail!: (error: unknown) => void
   disposal = new Promise<void>((resolve, reject) => {
@@ -521,7 +529,9 @@ export function disposeFeatureSystem(
 
 /** Core calls this only after every old runtime owner has completed cleanup. */
 export function beginFeatureSystemRuntime(): void {
-  if (runtimeState !== 'closed') throw new FeatureRuntimeClosedError()
+  if (runtimeState !== 'closed') {
+    throw new FeatureRuntimeClosedError()
+  }
   interactionQueue.beginRuntime()
   featureTaskRegistry.beginRuntime()
   sessionManager = new SessionManager()

@@ -23,7 +23,10 @@ export const parseWorkspaceRoute = (
     const entry = bundle.entries.find(
       (candidate) => pathname === `/${candidate.slug}`
     )
-    if (entry) return { kind: 'selected', entry }
+    if (entry) {
+      return { kind: 'selected', entry }
+    }
+
     const id = pathname.slice(1)
     return {
       kind: 'error',
@@ -34,9 +37,15 @@ export const parseWorkspaceRoute = (
     }
   }
   const id = new URLSearchParams(hash.replace(/^#/, '')).get('inspector')
-  if (!id) return { kind: 'overview' }
+  if (!id) {
+    return { kind: 'overview' }
+  }
+
   const entry = bundle.entries.find((candidate) => candidate.id === id)
-  if (entry) return { kind: 'selected', entry }
+  if (entry) {
+    return { kind: 'selected', entry }
+  }
+
   return {
     kind: 'error',
     id,

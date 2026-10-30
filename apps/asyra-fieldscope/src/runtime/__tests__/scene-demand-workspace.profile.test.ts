@@ -117,15 +117,18 @@ it('owns versioned scene demand settings, history and stable reads', async () =>
       second = vi.fn()
     const stopFirst = runtime.subscribeSceneDemand(first)
     const stopSecond = runtime.subscribeSceneDemand(second)
-    for (let index = 0; index < 100; index++)
+    for (let index = 0; index < 100; index++) {
       expect(runtime.getSceneDemand()).toBe(initial)
+    }
     expect(preparations).toHaveBeenCalledTimes(1)
     expect(sources).not.toHaveBeenCalled()
     expect(wholeBounds).not.toHaveBeenCalled()
     expect(inventories).not.toHaveBeenCalled()
     const sourceOwner = preparations.mock.calls[0][3]
     expect(sourceOwner).toBeInstanceOf(sceneDemand.SceneDemandSourceBoundsOwner)
-    if (!sourceOwner) throw new Error('Missing shared source preparation owner')
+    if (!sourceOwner) {
+      throw new Error('Missing shared source preparation owner')
+    }
     expect(Object.values(sourceOwner.work).every((value) => value === 0)).toBe(
       true
     )
@@ -274,8 +277,9 @@ it('lazily reuses observation inventory and retires it with its source scene', a
   )
   try {
     const result = workspaces.mock.results[0]
-    if (result?.type !== 'return')
+    if (result?.type !== 'return') {
       throw new Error('Missing production scene demand workspace')
+    }
     const workspace = result.value
     // Observation lifecycle setup must not prepare the unrelated default route.
     expect(

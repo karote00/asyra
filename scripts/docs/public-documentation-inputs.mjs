@@ -39,8 +39,12 @@ const freeze = (value) => {
 }
 
 const publicEntriesFor = (exportsValue) => {
-  if (typeof exportsValue === 'string') return ['.']
-  if (!exportsValue || typeof exportsValue !== 'object') return []
+  if (typeof exportsValue === 'string') {
+    return ['.']
+  }
+  if (!exportsValue || typeof exportsValue !== 'object') {
+    return []
+  }
   return Object.keys(exportsValue).sort()
 }
 

@@ -82,17 +82,19 @@ export function runStaticSphereMethod(
     snapshot.trajectory.keyframes.length !== 1 ||
     snapshot.interval[0] !== snapshot.interval[1] ||
     !snapshot.pairs.length
-  )
+  ) {
     throw new Error(
       'Static-sphere method requires its exact version and a static sphere scope'
     )
+  }
   if (
     !validParameterValues(
       STATIC_SPHERE_METHOD.parameterSchema,
       snapshot.method.settings.parameters ?? {}
     )
-  )
+  ) {
     throw new Error('Invalid static-sphere method parameters')
+  }
   checkpoint()
   const extra = snapshot.method.settings.parameters?.additionalError as number,
     ops = poseOperations(intervalAlgebra),
@@ -111,8 +113,9 @@ export function runStaticSphereMethod(
         (item) => item.id === reference.colliderId
       ),
       pose = poses.get(reference.bodyId)
-    if (!pose || collider?.geometry.kind !== 'sphere')
+    if (!pose || collider?.geometry.kind !== 'sphere') {
       throw new Error('Static-sphere method received unsupported geometry')
+    }
     return {
       center: ops.compose(pose, ops.fromPose(collider.pose)).position,
       radius: interval(collider.geometry.radius)

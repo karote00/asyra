@@ -110,8 +110,9 @@ export function discussionTree(
   if (
     Object.values(dimensions).some((n) => !Number.isFinite(n) || n <= 0) ||
     height <= potHeight
-  )
+  ) {
     throw new Error('Invalid discussion conifer dimensions')
+  }
   const stems = emptyMesh(),
     groups: GeometryInstance[][] = [[], [], []],
     prototype = coniferSpray()
@@ -347,12 +348,13 @@ export function discussionStorage(closed: boolean): AssetPart[] {
   if (closed) {
     panel('base', [w - t * 2, d - t, t], [0, 0, 0.035])
     panel('back', [w - t * 2, t, h - t], [0, (d - t) / 2, (h - t) / 2])
-    for (const side of [-1, 1])
+    for (const side of [-1, 1]) {
       panel(
         'side-' + side,
         [t, d, h - t],
         [(side * (w - t)) / 2, 0, (h - t) / 2]
       )
+    }
     panel(
       'door-inset',
       [w - 0.09, 0.014, h - 0.12],
@@ -372,14 +374,16 @@ export function discussionStorage(closed: boolean): AssetPart[] {
       )
     }
   } else {
-    for (const x of [-1, 1])
-      for (const y of [-1, 1])
+    for (const x of [-1, 1]) {
+      for (const y of [-1, 1]) {
         panel(
           `leg-${x}-${y}`,
           [0.03, 0.03, h - t],
           [x * 0.24, y * 0.13, (h - t) / 2],
           0x705739
         )
+      }
+    }
     // One open rectangular fabric basket stands on the floor between the legs.
     const basket = emptyMesh()
     append(basket, box([0.3, 0.23, 0.012], 0.003), [0, 0, 0.006])

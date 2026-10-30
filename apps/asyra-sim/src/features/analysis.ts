@@ -45,8 +45,9 @@ export function installAnalysisFeature(
     exclusive: true,
     api,
     task: (input: unknown, { signal }) => {
-      if (!input || typeof input !== 'object' || !('snapshot' in input))
+      if (!input || typeof input !== 'object' || !('snapshot' in input)) {
         throw new Error('Invalid analysis Feature input')
+      }
       return service.run(
         (input as { snapshot: ExperimentSnapshot }).snapshot,
         signal

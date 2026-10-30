@@ -33,7 +33,9 @@ const updateKeyState = (raw: RawInputEvent) => {
 
 const updateHistoryShortcutState = (raw: RawInputEvent) => {
   updateKeyState(raw)
-  if (core.isInUndoRedo()) return false
+  if (core.isInUndoRedo()) {
+    return false
+  }
   raw.detail = {
     ...raw.detail,
     historyDirection: raw.modifiers.shift ? 'redo' : 'undo'
@@ -55,7 +57,9 @@ export const isEditableShortcutTarget = (target: Element | null): boolean => {
 }
 
 const updateToolShortcutState = (raw: RawInputEvent) => {
-  if (isEditableShortcutTarget(document.activeElement)) return false
+  if (isEditableShortcutTarget(document.activeElement)) {
+    return false
+  }
   updateKeyState(raw)
 }
 

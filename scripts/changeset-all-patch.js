@@ -48,7 +48,9 @@ export const parseReleaseType = (args) => {
 
 const readPendingChangesets = (repositoryRoot) => {
   const changesetDirectory = path.join(repositoryRoot, '.changeset')
-  if (!fs.existsSync(changesetDirectory)) return []
+  if (!fs.existsSync(changesetDirectory)) {
+    return []
+  }
   return fs
     .readdirSync(changesetDirectory)
     .filter((entry) => entry.endsWith('.md') && entry !== 'README.md')

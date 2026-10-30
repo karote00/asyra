@@ -22,7 +22,9 @@ function setup() {
       ) {
         const names: string[] = []
         scene.traverseVisible((object) => {
-          if (object.castShadow) names.push(object.uuid)
+          if (object.castShadow) {
+            names.push(object.uuid)
+          }
         })
         shadows.push(names)
         shadowMap.needsUpdate = false

@@ -17,17 +17,20 @@ beforeAll(() => {
 })
 function bounds(id: string, region?: string) {
   const items = parts.get(id)
-  if (!items) throw new Error(`Missing room furnishing: ${id}`)
+  if (!items) {
+    throw new Error(`Missing room furnishing: ${id}`)
+  }
   const b = [
     [Infinity, -Infinity],
     [Infinity, -Infinity],
     [Infinity, -Infinity]
   ]
-  for (const part of items.filter((p) => !region || p.id === region))
+  for (const part of items.filter((p) => !region || p.id === region)) {
     part.mesh.positions.forEach((n, i) => {
       b[i % 3][0] = Math.min(b[i % 3][0], n)
       b[i % 3][1] = Math.max(b[i % 3][1], n)
     })
+  }
   return b
 }
 it('places the open laptop on the desk with a source-relative lid width', () => {
@@ -53,8 +56,9 @@ it('uses an oval work rug and three separate wall-mounted shelves', () => {
     'work-shelf-lower',
     'work-shelf-middle',
     'work-shelf-upper'
-  ])
+  ]) {
     expect(parts.has(id), id).toBe(true)
+  }
   const m = requiredSpecValue(parts.get('work-rug'), 'rug')[0].mesh
   expect(m.positions.length).toBeGreaterThan(100)
 })
@@ -68,8 +72,9 @@ it('keeps the rejected chair, sofa and indoor occupants absent', () => {
     'actor-mina',
     'actor-leo',
     'actor-sage'
-  ])
+  ]) {
     expect(parts.has(id), id).toBe(false)
+  }
 })
 it('preserves each existing table, structural and exterior mesh', () => {
   const baseline = createReferenceScene('tables-and-chairs')
@@ -103,8 +108,9 @@ it('adds lounge floor, wall and tabletop details without changing the accepted t
     expect(rug[axis][0]).toBeLessThan(table[axis][0])
     expect(rug[axis][1]).toBeGreaterThan(table[axis][1])
   }
-  for (const id of ['lounge-table-mug', 'lounge-table-plant'])
+  for (const id of ['lounge-table-mug', 'lounge-table-plant']) {
     expect(bounds(id)[2][0], id).toBeCloseTo(table[2][1], 5)
+  }
   expect(parts.has('lounge-sconce')).toBe(true)
   expect(parts.has('lounge-console-top')).toBe(true)
 })
@@ -121,8 +127,9 @@ it('places the rotated fridge behind the dispenser with its door facing the aisl
   expect(bounds('fridge', 'upper-door')[1][0]).toBeLessThan(
     bounds('fridge', 'cabinet')[1][0]
   )
-  for (const id of ['fridge', 'water-dispenser', 'sink'])
+  for (const id of ['fridge', 'water-dispenser', 'sink']) {
     expect(bounds(id)[2][0], id).toBeCloseTo(0.38, 5)
+  }
   expect(bounds('pantry-wallpaper-17')[0][1]).toBeLessThan(
     bounds('pantry-print')[0][0]
   )
@@ -130,19 +137,24 @@ it('places the rotated fridge behind the dispenser with its door facing the aisl
 it('grounds shelf objects and keeps source printed artwork bounded to real frames', () => {
   for (const level of ['middle', 'upper']) {
     const top = bounds('work-shelf-' + level)[2][1]
-    for (const suffix of ['', '-right'])
+    for (const suffix of ['', '-right']) {
       expect(bounds('work-shelf-plant-' + level + suffix)[2][0]).toBeCloseTo(
         top,
         5
       )
+    }
   }
   for (const label of scene.labels.filter((l) => l.artwork)) {
     const discussionPrint = label.text === 'Better\nAgents\nHappier\nPeople'
     expect(label.width).toBeLessThan(discussionPrint ? 1.15 : 0.6)
     const workPrint = label.text === 'A\nBrighter\nDay'
     let frameHeight = 0.6
-    if (discussionPrint) frameHeight = 1.5
-    if (workPrint) frameHeight = 0.74
+    if (discussionPrint) {
+      frameHeight = 1.5
+    }
+    if (workPrint) {
+      frameHeight = 0.74
+    }
     expect(label.height).toBeLessThan(frameHeight)
     expect(requiredSpecValue(label.artwork, 'artwork').corners).toHaveLength(4)
   }
@@ -195,8 +207,9 @@ it('uses a compact leafy crown above the refrigerator rather than a sparse uprig
 })
 it('attaches fridge notes directly to the upper door and grounds the right floor jar', () => {
   const door = bounds('fridge', 'upper-door')
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     expect(bounds('pantry-fridge-note-' + i)[1][1]).toBeCloseTo(door[1][0], 5)
+  }
   const jar = bounds('pantry-floor-jar'),
     band = bounds('pantry-floor-band')
   expect(jar[2][0]).toBeCloseTo(band[2][1], 5)
@@ -271,8 +284,9 @@ it('fits the shortened cabinet and shelf beside the recessed fridge', () => {
     'coffee-counter-top',
     'coffee-counter-body',
     'coffee-counter-door'
-  ])
+  ]) {
     expect(bounds(id)[0][0]).toBeGreaterThan(fridge[0][1])
+  }
   expect(bounds('coffee-counter-body')[0][0] - top[0][0]).toBeCloseTo(0.02, 6)
   const sink = bounds('sink', 'countertop')
   expect(sink[0][0] - top[0][1]).toBeCloseTo(0.0075, 6)
@@ -458,8 +472,9 @@ it('keeps work shelf foliage below the next shelf and outside the wall', () => {
   )) {
     const plant = bounds(id)
     expect(plant[0][0], id).toBeGreaterThanOrEqual(wallFace)
-    if (id.startsWith('work-shelf-plant-middle'))
+    if (id.startsWith('work-shelf-plant-middle')) {
       expect(plant[2][1], id).toBeLessThan(bounds('work-shelf-upper')[2][0])
+    }
   }
 })
 

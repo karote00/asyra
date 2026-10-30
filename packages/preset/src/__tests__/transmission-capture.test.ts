@@ -37,7 +37,9 @@ function setup() {
     const object = new THREE.Mesh(new THREE.BoxGeometry(), material)
     object.name = name
     scene.add(object)
-    if (layer !== undefined) capture.apply(material, layer)
+    if (layer !== undefined) {
+      capture.apply(material, layer)
+    }
     return object
   }
   const render = () =>
@@ -242,8 +244,9 @@ it('reuses enclosing materials, synchronizes optical values and releases removed
   const source = glass.material
   const backFaces: THREE.MeshPhysicalMaterial[] = []
   f.renderer.render.mockImplementation(() => {
-    if (glass.visible && glass.material.side === THREE.BackSide)
+    if (glass.visible && glass.material.side === THREE.BackSide) {
       backFaces.push(glass.material)
+    }
   })
   f.render()
   const back = backFaces[0]
@@ -274,11 +277,14 @@ it('releases retained enclosing materials when the original material is disposed
   f.mesh('ice', 0)
   let back: THREE.MeshPhysicalMaterial | undefined
   f.renderer.render.mockImplementation(() => {
-    if (glass.visible && glass.material.side === THREE.BackSide)
+    if (glass.visible && glass.material.side === THREE.BackSide) {
       back = glass.material
+    }
   })
   f.render()
-  if (!back) throw new Error('Missing enclosing material')
+  if (!back) {
+    throw new Error('Missing enclosing material')
+  }
   const release = vi.spyOn(back, 'dispose')
   glass.material.dispose()
   expect(release).toHaveBeenCalledTimes(1)

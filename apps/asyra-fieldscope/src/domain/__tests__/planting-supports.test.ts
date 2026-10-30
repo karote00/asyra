@@ -8,7 +8,7 @@ it('places 1992 tube centrelines 15cm into the soil on both sides of all twelve 
   expect(SUPPORT_LAYOUT.diameter).toBe(0.02)
   expect(supports).toHaveLength(1992)
   expect(new Set(supports.map((support) => support.x)).size).toBe(24)
-  for (const [row, drain] of drains.entries())
+  for (const [row, drain] of drains.entries()) {
     for (const side of ['left', 'right'] as const) {
       const line = supports.filter(
         (support) => support.row === row && support.side === side
@@ -24,7 +24,9 @@ it('places 1992 tube centrelines 15cm into the soil on both sides of all twelve 
             ? drain.x - support.x
             : support.x - (drain.x + drain.width)
         expect(inset).toBeCloseTo(0.15)
-        if (index > 0) expect(support.z - line[index - 1].z).toBeCloseTo(0.6)
+        if (index > 0) {
+          expect(support.z - line[index - 1].z).toBeCloseTo(0.6)
+        }
         const soil = createLayout().strips.find(
           (strip) =>
             strip.kind === 'soil' &&
@@ -40,6 +42,7 @@ it('places 1992 tube centrelines 15cm into the soil on both sides of all twelve 
         )
       })
     }
+  }
 })
 
 it('uses the supplied above-ground height and burial depth without changing placement', async () => {
@@ -72,7 +75,9 @@ it('connects buried uprights to all transverse beams through tangent longitudina
         Math.abs(Math.abs(candidate.points[0][0] - tube.x) - 0.02) < 1e-9
     )
     expect(rail).toBeDefined()
-    if (!rail) throw new Error('Missing support rail')
+    if (!rail) {
+      throw new Error('Missing support rail')
+    }
     expect(rail.points[0][1] + rail.diameter / 2).toBeCloseTo(
       SITE.eave - SITE.tubeDiameter / 2
     )
@@ -136,7 +141,7 @@ it('locks the second pipe at both ends while both arms bear on the opposite side
       )
     ).toBe(true)
     // Both parallel arms bear behind the first pipe instead of putting the hooks around it.
-    for (const side of [-1, 1])
+    for (const side of [-1, 1]) {
       expect(
         local.some(
           (p) =>
@@ -145,5 +150,6 @@ it('locks the second pipe at both ends while both arms bear on the opposite side
             p[2] < -clip.firstDiameter / 2
         )
       ).toBe(true)
+    }
   }
 })

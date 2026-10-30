@@ -54,7 +54,9 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
     snapshot: SystemContextSnapshot
   ): Promise<boolean> {
     const handlers = this.executionHandlers.get(eventName)
-    if (!handlers || handlers.length === 0) return false
+    if (!handlers || handlers.length === 0) {
+      return false
+    }
 
     return runTransaction(
       async () => {

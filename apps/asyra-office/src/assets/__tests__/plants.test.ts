@@ -53,10 +53,11 @@ it('grows distinct repeatable foliage without changing the vessel across seeds',
   ).toBe(seeds.length)
   expect(planter(1, 0xe8dbc3, seeds[0])).toEqual(variants[0])
   for (const parts of variants) {
-    for (const id of ['pot', 'soil', 'stem'])
+    for (const id of ['pot', 'soil', 'stem']) {
       expect(parts.find((p) => p.id === id)).toEqual(
         variants[0].find((p) => p.id === id)
       )
+    }
     const blades = parts.filter((p) => p.id.startsWith('leaf-'))
     expect(blades.length).toBeGreaterThanOrEqual(6)
     expect(blades.length).toBeLessThanOrEqual(9)
@@ -118,10 +119,11 @@ it('keeps the pantry shrub dense, bounded and below its small-crown triangle bud
   for (const [axis, limit] of [
     [0, 0.14],
     [1, 0.14]
-  ] as const)
+  ] as const) {
     expect(
       Math.max(...positions.filter((_, i) => i % 3 === axis).map(Math.abs))
     ).toBeLessThan(limit)
+  }
   expect(Math.max(...positions.filter((_, i) => i % 3 === 2))).toBeLessThan(
     0.33
   )

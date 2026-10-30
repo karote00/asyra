@@ -46,13 +46,14 @@ for (let mask = 1; mask < 8; mask++) {
       '--concurrency=2'
     ])
     assert.equal(builds.length, selected.includes('asyra-design') ? 3 : 2)
-    if (selected.includes('asyra-design'))
+    if (selected.includes('asyra-design')) {
       assert.deepEqual(builds[2], [
         'yarn',
         'workspace',
         '@asyra/asyra-design',
         'typecheck'
       ])
+    }
     const checks = capture('test', input)
     assert.equal(checks.length, 1)
     assert.equal(checks[0][0], process.execPath)

@@ -32,7 +32,9 @@ for (const name of sources) {
     let opaqueChannels = 0
     for (let pixel = 0; pixel < source.data.length; pixel += 4) {
       assert.equal(delivered.data[pixel + 3], source.data[pixel + 3])
-      if (source.data[pixel + 3] < 250) continue
+      if (source.data[pixel + 3] < 250) {
+        continue
+      }
       for (let channel = 0; channel < 3; channel++) {
         colorError += Math.abs(
           delivered.data[pixel + channel] - source.data[pixel + channel]
@@ -58,8 +60,12 @@ for (const name of sources.filter(
     let transparent = 0
     let opaque = 0
     for (let index = 3; index < data.length; index += info.channels) {
-      if (data[index] === 0) transparent++
-      if (data[index] >= 250) opaque++
+      if (data[index] === 0) {
+        transparent++
+      }
+      if (data[index] >= 250) {
+        opaque++
+      }
     }
     const pixels = info.width * info.height
     assert.ok(

@@ -3,9 +3,11 @@ import { prepareArtwork, sampleArtwork } from '../artwork'
 
 it('maps only the selected picture corners and rejects out-of-source regions', () => {
   const source = { width: 4, height: 4, data: new Uint8ClampedArray(64) }
-  for (let y = 0; y < 4; y++)
-    for (let x = 0; x < 4; x++)
+  for (let y = 0; y < 4; y++) {
+    for (let x = 0; x < 4; x++) {
       source.data.set([x * 50, y * 50, 20, 255], (y * 4 + x) * 4)
+    }
+  }
   const result = sampleArtwork(
     source,
     [
@@ -65,8 +67,10 @@ it('decodes one shared source once for six printed surfaces during scene prepara
     expect(decode).toHaveBeenCalledOnce()
     expect(drawImage).toHaveBeenCalledOnce()
     const prepared = result.get('/approved.jpg')
-    if (!prepared) throw new Error('Missing prepared artwork')
-    for (let i = 0; i < 6; i++)
+    if (!prepared) {
+      throw new Error('Missing prepared artwork')
+    }
+    for (let i = 0; i < 6; i++) {
       sampleArtwork(
         prepared,
         [
@@ -77,6 +81,7 @@ it('decodes one shared source once for six printed surfaces during scene prepara
         ],
         2
       )
+    }
     expect(decode).toHaveBeenCalledOnce()
   } finally {
     spy.mockRestore()

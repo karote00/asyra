@@ -121,7 +121,9 @@ describe('ephemeral awareness ownership', () => {
     })
     const removed = vi.fn()
     runtime.observe((event) => {
-      if (event.type === 'removed') removed(event)
+      if (event.type === 'removed') {
+        removed(event)
+      }
     })
     const apply = (actorId: string) =>
       runtime.applyRemote({
@@ -153,7 +155,9 @@ describe('ephemeral awareness ownership', () => {
     const runtime = new Awareness({ actorId: 'actor-local' })
     const removed = vi.fn()
     runtime.observe((event) => {
-      if (event.type === 'removed') removed(event)
+      if (event.type === 'removed') {
+        removed(event)
+      }
     })
     runtime.applyRemote({
       actorId: 'actor-a',

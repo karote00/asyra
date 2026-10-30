@@ -23,8 +23,9 @@ describe('available font catalog', () => {
     expect(options).not.toContain('Georgia')
     const measurements = context.measureText.mock.calls.length
     expect(measurements).toBeGreaterThan(0)
-    for (let edit = 0; edit < 10; edit++)
+    for (let edit = 0; edit < 10; edit++) {
       expect(getAvailableFontFamilies(owner)).toBe(options)
+    }
     expect(context.measureText.mock.calls.length).toBe(measurements)
     fonts.dispatchEvent(new Event('loadingdone'))
     expect(getAvailableFontFamilies(owner)).toEqual(options)

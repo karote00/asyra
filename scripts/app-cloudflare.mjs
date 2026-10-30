@@ -48,8 +48,9 @@ async function inspectFiles(directory) {
       `Forbidden deployment file: ${entry.name}`
     )
     const file = path.join(directory, entry.name)
-    if (entry.isDirectory()) files.push(...(await inspectFiles(file)))
-    else {
+    if (entry.isDirectory()) {
+      files.push(...(await inspectFiles(file)))
+    } else {
       assert.ok(
         (await stat(file)).size <= 25 * 1024 * 1024,
         `File exceeds Pages upload limit: ${file}`
@@ -161,7 +162,9 @@ export async function waitForDeploymentVersion(
     if (response?.status === 200) {
       const version = await response.json()
       assert.equal(version.app, id, 'Unexpected deployed App')
-      if (version.sourceSha === sha) return
+      if (version.sourceSha === sha) {
+        return
+      }
     } else if (response) {
       assert.ok(
         response.status === 404 || response.status >= 500,
@@ -169,7 +172,9 @@ export async function waitForDeploymentVersion(
       )
       await response.body?.cancel()
     }
-    if (attempt + 1 < attempts) await wait(2000)
+    if (attempt + 1 < attempts) {
+      await wait(2000)
+    }
   }
   throw new Error(`Production ${id} did not become ready at revision ${sha}`)
 }
@@ -190,8 +195,9 @@ export async function verifyDeployment(id, sha = process.env.SOURCE_SHA) {
     assets.some((url) => url.endsWith('.js')),
     'Missing production script'
   )
-  for (const asset of assets)
+  for (const asset of assets) {
     assert.equal((await fetch(asset)).status, 200, asset)
+  }
   for (const missing of ['/api/ai/action-batch', '/missing-worker.js']) {
     assert.equal((await fetch(`${origin}${missing}`)).status, 404, missing)
   }
@@ -201,8 +207,9 @@ export async function verifyDeployment(id, sha = process.env.SOURCE_SHA) {
       'utf8'
     )
   )
-  for (const [key, value] of Object.entries(headers))
+  for (const [key, value] of Object.entries(headers)) {
     assert.equal(response.headers.get(key), value, key)
+  }
   console.log(`Production verified: ${id} at ${origin} (${sha})`)
 }
 
@@ -215,7 +222,11 @@ if (
     ['prepare', 'ensure-project', 'verify'].includes(mode),
     'Expected prepare, ensure-project or verify'
   )
-  if (mode === 'prepare') await prepareApps()
-  else if (mode === 'ensure-project') await ensureProject(process.argv[3])
-  else await verifyDeployment(process.argv[3])
+  if (mode === 'prepare') {
+    await prepareApps()
+  } else if (mode === 'ensure-project') {
+    await ensureProject(process.argv[3])
+  } else {
+    await verifyDeployment(process.argv[3])
+  }
 }

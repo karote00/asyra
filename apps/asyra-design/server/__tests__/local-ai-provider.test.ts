@@ -241,8 +241,9 @@ const fakeServer = (
       }
     }
     let call = request.method === 'item/tool/call' ? request.params : undefined
-    if (request.params?.item?.type === 'dynamicToolCall')
+    if (request.params?.item?.type === 'dynamicToolCall') {
       call = request.params.item
+    }
     if (call) {
       const groups = packets.find(({ method }) => method === 'thread/start')
         ?.params.dynamicTools as { name: string; tools?: { name: string }[] }[]
@@ -262,7 +263,9 @@ const fakeServer = (
     })
   let finished = false
   const finish = () => {
-    if (finished) return
+    if (finished) {
+      return
+    }
     finished = true
     notify('item/started', {
       item: { id: 'public-purpose', type: 'agentMessage', phase: 'commentary' }
@@ -289,8 +292,9 @@ const fakeServer = (
   child.stdout = new PassThrough()
   child.stderr = new PassThrough()
   child.kill = vi.fn(() => {
-    if (!options.delayedClose)
+    if (!options.delayedClose) {
       queueMicrotask(() => child.emit('close', null, 'SIGKILL'))
+    }
     return true
   })
   child.stdin = new Writable({
@@ -329,7 +333,9 @@ const fakeServer = (
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
-          if (options.manualToolReplies) return
+          if (options.manualToolReplies) {
+            return
+          }
           if (
             options.repeatedImageCalls &&
             ++imageReplies < options.repeatedImageCalls
@@ -387,7 +393,7 @@ const fakeServer = (
                 let index = 0;
                 index < (options.parallelAnalyses ?? 1);
                 index++
-              )
+              ) {
                 send({
                   id: 100 + index,
                   method: 'item/tool/call',
@@ -402,7 +408,8 @@ const fakeServer = (
                     }
                   }
                 })
-              if (options.overlapTool)
+              }
+              if (options.overlapTool) {
                 send({
                   id: 500,
                   method: 'item/tool/call',
@@ -421,6 +428,7 @@ const fakeServer = (
                     }
                   }
                 })
+              }
             })
             return
           }
@@ -430,7 +438,9 @@ const fakeServer = (
             packet.id >= 100
           ) {
             analysisReplies++
-            if (analysisReplies < options.parallelAnalyses) return
+            if (analysisReplies < options.parallelAnalyses) {
+              return
+            }
           }
           if (options.toolResultOutput) {
             const response = packet.result as {
@@ -454,24 +464,30 @@ const fakeServer = (
           finish()
           return
         }
-        if (packet.id === undefined) return
+        if (packet.id === undefined) {
+          return
+        }
         options.onRequest?.(packet)
-        if (packet.method === options.holdMethod) return
+        if (packet.method === options.holdMethod) {
+          return
+        }
         if (packet.method === options.responseError?.method) {
           send({ id: packet.id, error: options.responseError.error })
           return
         }
         let result: unknown = {}
-        if (packet.method === 'config/read')
+        if (packet.method === 'config/read') {
           result = options.effectiveConfig ?? { config: {} }
-        if (packet.method === 'account/read')
+        }
+        if (packet.method === 'account/read') {
           result = {
             account:
               options.account === undefined
                 ? { type: 'chatgpt', email: 'private@example.test' }
                 : options.account
           }
-        if (packet.method === 'thread/start')
+        }
+        if (packet.method === 'thread/start') {
           result = {
             thread: { id: 'thread-1' },
             model: 'selected-model',
@@ -482,10 +498,13 @@ const fakeServer = (
             instructionSources: options.instructionSources ?? [],
             runtimeWorkspaceRoots: []
           }
-        if (packet.method === 'turn/start') result = { turn: { id: 'turn-1' } }
+        }
+        if (packet.method === 'turn/start') {
+          result = { turn: { id: 'turn-1' } }
+        }
         send({ id: packet.id, result })
         if (packet.method === 'turn/start' && !options.hold) {
-          if (options.commentary)
+          if (options.commentary) {
             notify('item/completed', {
               item: {
                 id: 'current-stage',
@@ -494,6 +513,7 @@ const fakeServer = (
                 text: options.commentary
               }
             })
+          }
           if (options.research) {
             notify('item/started', {
               item: {
@@ -512,7 +532,7 @@ const fakeServer = (
               }
             })
           }
-          if (options.toolCall)
+          if (options.toolCall) {
             send({
               id: 99,
               method: 'item/tool/call',
@@ -530,7 +550,9 @@ const fakeServer = (
                 }
               }
             })
-          else finish()
+          } else {
+            finish()
+          }
         }
       })
       done()
@@ -611,7 +633,9 @@ describe('local subscription AI backend', () => {
       }
     })
     const hadWindow = typeof window !== 'undefined'
-    if (!hadWindow) vi.stubGlobal('window', {})
+    if (!hadWindow) {
+      vi.stubGlobal('window', {})
+    }
     const { createAiActions } = await import('../../src/ai/actions')
     const report = createAiActions(undefined, {
       confirmPersistence: async () => ({
@@ -622,7 +646,9 @@ describe('local subscription AI backend', () => {
         durableSequence: 0
       })
     }).find((action) => action.name === AiActionNames.REPORT_OUTCOME)
-    if (!report) throw new Error('Missing canonical report action')
+    if (!report) {
+      throw new Error('Missing canonical report action')
+    }
     const runtime = createAiAgentRuntime({
       provider: transport,
       actionDefinitions: [report],
@@ -680,7 +706,9 @@ describe('local subscription AI backend', () => {
         const started = server.packets.find(
           (packet) => packet.method === 'thread/start'
         )
-        if (!started) throw new Error('Missing native thread start')
+        if (!started) {
+          throw new Error('Missing native thread start')
+        }
         const thread = started.params
         expect(thread.ephemeral).toBe(true)
         if (server === secondServer) {
@@ -707,8 +735,9 @@ describe('local subscription AI backend', () => {
         'imageAttachments',
         'evaluationWindow',
         'savedBatch'
-      ])
+      ]) {
         expect(wire).not.toContain(excluded)
+      }
       expect(Buffer.byteLength(wire)).toBeLessThanOrEqual(
         AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
       )
@@ -717,7 +746,9 @@ describe('local subscription AI backend', () => {
       unregisterFeature(FeatureNames.AI_AGENT)
       await runtime.dispose()
       transport.dispose()
-      if (!hadWindow) vi.unstubAllGlobals()
+      if (!hadWindow) {
+        vi.unstubAllGlobals()
+      }
     }
   })
 
@@ -729,8 +760,9 @@ describe('local subscription AI backend', () => {
         read: async (key) => entries.get(key),
         list: async () => [...entries.values()],
         write: async (value) => {
-          if (entries.get(value.key)?.version !== value.expectedVersion)
+          if (entries.get(value.key)?.version !== value.expectedVersion) {
             throw new Error('Conflict')
+          }
           const entry = {
             key: value.key,
             version: String(++version),
@@ -812,7 +844,9 @@ describe('local subscription AI backend', () => {
         }
       })
       const deliver = (value: unknown) => {
-        if (!streamController) throw new Error('Missing transport stream')
+        if (!streamController) {
+          throw new Error('Missing transport stream')
+        }
         streamController.enqueue(
           new TextEncoder().encode(JSON.stringify(value) + '\n')
         )
@@ -835,7 +869,7 @@ describe('local subscription AI backend', () => {
             message: event.message,
             activity: event.activity
           })
-          if (event.activity)
+          if (event.activity) {
             activity.push({
               id: event.activity.callId,
               parent: event.activity.parentCallId,
@@ -845,6 +879,7 @@ describe('local subscription AI backend', () => {
               phase: event.activity.phase,
               message: projection.result().current.message
             })
+          }
         }
       })
       const server = fakeServer({ hold: true, manualToolReplies: true })
@@ -933,10 +968,11 @@ describe('local subscription AI backend', () => {
             )
           ).toBe(false)
         }
-        if (submit)
+        if (submit) {
           expect(
             await call('submit_tool', { submissionId: 'prepare', proposal })
           ).toMatchObject({ ok: true })
+        }
         const found = await call('describe_design_apis', {
           names: ['prepare-part', 'design_preparation.prepare_design']
         })
@@ -995,11 +1031,14 @@ describe('local subscription AI backend', () => {
         ).toBe(true)
         const started = new Set<string>()
         for (const event of activity) {
-          if (event.status === 'running') started.add(event.id)
-          else if (event.parent)
+          if (event.status === 'running') {
+            started.add(event.id)
+          } else if (event.parent) {
             expect(started.has(event.id), JSON.stringify(event)).toBe(true)
-          if (event.parent && event.status === 'running')
+          }
+          if (event.parent && event.status === 'running') {
             expect(event.message).toBe('Prepare the editable facade panel')
+          }
         }
         expect(projection.result().current).toEqual({
           label: 'Completed operation',
@@ -1095,8 +1134,9 @@ describe('local subscription AI backend', () => {
           throw new Error('No save expected')
         },
         close: vi.fn(() => {
-          if (component === 'tool-store')
+          if (component === 'tool-store') {
             throw new Error('Teardown unavailable')
+          }
         })
       }
       vi.mocked(toolStorage.createLocalToolStore).mockResolvedValueOnce(store)
@@ -1202,7 +1242,9 @@ describe('local subscription AI backend', () => {
     const action = basicApiContracts.find(
       (item) => item.name === 'api_element_createElements'
     )
-    if (!action) throw new Error('Missing canonical creation contract')
+    if (!action) {
+      throw new Error('Missing canonical creation contract')
+    }
     await requestLocalAiActionBatch(
       {
         ...input,
@@ -1409,8 +1451,9 @@ describe('local subscription AI backend', () => {
       expect(executeBatch).not.toHaveBeenCalled()
       for (const definition of nativeToolDefinitions(
         server.packets.find(({ method }) => method === 'thread/start')?.params
-      ))
+      )) {
         expect(definition).not.toHaveProperty('executionAccess')
+      }
     } finally {
       resume()
       server.finish()
@@ -1447,8 +1490,9 @@ describe('local subscription AI backend', () => {
           ],
           args[2]
         )
-        if (!child.stdin || !child.stdout)
+        if (!child.stdin || !child.stdout) {
           throw new Error('Missing native protocol pipes')
+        }
         const stdin = child.stdin
         const stdout = child.stdout
         const write = stdin.write.bind(stdin)
@@ -1474,8 +1518,9 @@ describe('local subscription AI backend', () => {
                   Array.isArray(config?.notify) && config.notify.length === 0
               }
             }
-            if (packet.method === 'mcpServer/startupStatus/updated')
+            if (packet.method === 'mcpServer/startupStatus/updated') {
               notifications.push(packet.params.name)
+            }
           }
         })
         children.push(child)
@@ -1483,8 +1528,9 @@ describe('local subscription AI backend', () => {
       })
       try {
         const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
-        if (!executable)
+        if (!executable) {
           throw new Error('Missing native registration probe configuration')
+        }
         await checkLocalAiProvider({
           model: 'gpt-6-astra',
           executable,
@@ -1515,9 +1561,11 @@ describe('local subscription AI backend', () => {
           children[0].exitCode !== null || children[0].signalCode !== null
         ).toBe(true)
       } finally {
-        for (const child of children)
-          if (child.exitCode === null && child.signalCode === null)
+        for (const child of children) {
+          if (child.exitCode === null && child.signalCode === null) {
             child.kill('SIGKILL')
+          }
+        }
       }
     },
     35_000
@@ -1645,11 +1693,12 @@ describe('local subscription AI backend', () => {
     const preparedTools = definitions
     for (const name of ['prepare_design', 'prepare_and_apply_design']) {
       const definition = preparedTools.find((tool) => tool.name === name)
-      for (const example of designPreparationExamples)
+      for (const example of designPreparationExamples) {
         expect(definition?.inputSchema).toHaveProperty(
           'examples',
           expect.arrayContaining([example])
         )
+      }
     }
     const instructions = thread?.developerInstructions as string
     expect(instructions).toContain(
@@ -1667,8 +1716,9 @@ describe('local subscription AI backend', () => {
       'store(',
       'text(result)',
       'load(deliveryKey)'
-    ])
+    ]) {
       expect(delivered).not.toContain(obsolete)
+    }
     expect(thread?.config).toMatchObject({})
     const base = String(thread?.baseInstructions)
     expect(base).toContain('First frame is optional')
@@ -1696,13 +1746,16 @@ describe('local subscription AI backend', () => {
       }) + '\n'
     )
     expect(Buffer.byteLength(base)).toBeLessThanOrEqual(30327)
-    for (const example of designPreparationExamples)
+    for (const example of designPreparationExamples) {
       expect(base).not.toContain(JSON.stringify(example))
+    }
     const scopeLine = base
       .split('\n')
       .find((line) => line.startsWith('Main tool scope: '))
     expect(scopeLine).toBeDefined()
-    if (!scopeLine) throw new Error('Missing startup scope guidance')
+    if (!scopeLine) {
+      throw new Error('Missing startup scope guidance')
+    }
     const scope = JSON.parse(scopeLine.slice('Main tool scope: '.length))
     expect(scope.inputScopes.operations).toEqual(['draft', 'repair', 'parts'])
     expect(scope.operationUsage.draft).toContain('10000 expanded objects')
@@ -1758,8 +1811,9 @@ describe('local subscription AI backend', () => {
       'mechanicalSelection',
       'verify_design_checks',
       'repair_design_checks'
-    ])
+    ]) {
       expect(base).toContain(name)
+    }
     expect(base).toContain('returned requestId/checks')
     expect(instructions).not.toContain(
       'Discover the relevant tools before composing calls'
@@ -2033,8 +2087,9 @@ describe('local subscription AI backend', () => {
                 event.tool === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
                 (event.status === 'completed' ||
                   event.activity?.phase === 'admission')
-              )
+              ) {
                 progress.push(event.status)
+              }
             }
           }
         )
@@ -2316,7 +2371,9 @@ describe('local subscription AI backend', () => {
     const args = spawn.mock.calls[0][1] as string[]
     const launchConfig = Object.fromEntries(
       args.flatMap((arg, index) => {
-        if (arg !== '-c') return []
+        if (arg !== '-c') {
+          return []
+        }
         const entry = args[index + 1]
         const split = entry.indexOf('=')
         return [[entry.slice(0, split), JSON.parse(entry.slice(split + 1))]]
@@ -2394,7 +2451,7 @@ describe('local subscription AI backend', () => {
     const server = fakeServer({
       hold: true,
       onRequest: ({ method }) => {
-        if (method === 'initialize')
+        if (method === 'initialize') {
           server.send({
             method: 'warning',
             params: {
@@ -2402,6 +2459,7 @@ describe('local subscription AI backend', () => {
                 'Invalid configuration token=private-secret private@example.test'
             }
           })
+        }
       }
     })
     const completion = requestConfiguredAiActionBatch(input, { environment })
@@ -2449,8 +2507,9 @@ describe('local subscription AI backend', () => {
       'private@example.test',
       'private.example',
       'unrelated'
-    ])
+    ]) {
       expect(evidence).not.toContain(secret)
+    }
   })
 
   it('records native retry reasons while allowing successful recovery without replay', async () => {
@@ -2500,8 +2559,9 @@ describe('local subscription AI backend', () => {
       'private-credential',
       'unrelated',
       'unauthorized'
-    ])
+    ]) {
       expect(JSON.stringify(retainedRecords)).not.toContain(secret)
+    }
   })
 
   it.each(['usageLimitExceeded', 'unknown-private-error-kind'])(
@@ -2795,8 +2855,9 @@ describe('local subscription AI backend', () => {
     async (phase) => {
       const server = fakeServer({ toolCall: true, research: true })
       const onProgress = vi.fn((event) => {
-        if (phase === 'research' || event.status === phase)
+        if (phase === 'research' || event.status === phase) {
           throw new Error('private observer exception')
+        }
       })
       await expect(
         requestConfiguredAiActionBatch(
@@ -2835,9 +2896,11 @@ describe('local subscription AI backend', () => {
       const server = fakeServer({
         holdMethod: 'turn/start',
         onRequest: (packet) => {
-          if (packet.method !== 'turn/start') return
+          if (packet.method !== 'turn/start') {
+            return
+          }
           const frames: unknown[] = []
-          if (mode !== 'missing-ack')
+          if (mode !== 'missing-ack') {
             frames.push({
               id: packet.id,
               result:
@@ -2845,6 +2908,7 @@ describe('local subscription AI backend', () => {
                   ? { turn: {} }
                   : { turn: { id: 'turn-1' } }
             })
+          }
           frames.push({
             id: 99,
             method: 'item/tool/call',
@@ -2908,8 +2972,9 @@ describe('local subscription AI backend', () => {
   it('accepts process close immediately after the admitted readiness response', async () => {
     const server = fakeServer({
       onRequest: (packet) => {
-        if (packet.method === 'thread/start')
+        if (packet.method === 'thread/start') {
           queueMicrotask(() => server.child.emit('close', 0, null))
+        }
       }
     })
     await expect(
@@ -2970,12 +3035,14 @@ describe('local subscription AI backend', () => {
       const checked = expect(result).resolves.toEqual(batch)
       await untilTurn(server.packets)
       server.finish()
-      if (event === 'process-close') server.child.emit('close', 0, null)
-      else
+      if (event === 'process-close') {
+        server.child.emit('close', 0, null)
+      } else {
         server.child.stdin.emit(
           event.slice(6),
           new Error('private stdin exception')
         )
+      }
       await checked
     }
   )
@@ -3093,20 +3160,28 @@ describe('local subscription AI backend', () => {
       const checked = expect(promise).rejects.toThrow(/^The local AI provider/)
       await untilTurn(server.packets)
       server.child.stderr.write('private@example.test Bearer sensitive-token')
-      if (kind === 'request')
+      if (kind === 'request') {
         server.send({
           id: 999,
           method: 'item/tool/call',
           params: { secret: 'sensitive-token' }
         })
-      if (kind === 'tool')
+      }
+      if (kind === 'tool') {
         server.notify('item/completed', { item: { type: 'commandExecution' } })
-      if (kind === 'malformed') server.child.stdout.write('sensitive-token\n')
-      if (kind === 'oversized')
+      }
+      if (kind === 'malformed') {
+        server.child.stdout.write('sensitive-token\n')
+      }
+      if (kind === 'oversized') {
         server.child.stdout.write('x'.repeat(32 * 1024 * 1024 + 1))
-      if (kind === 'exit') server.child.emit('close')
-      if (kind === 'spawn-error')
+      }
+      if (kind === 'exit') {
+        server.child.emit('close')
+      }
+      if (kind === 'spawn-error') {
         server.child.emit('error', new Error('sensitive-token'))
+      }
       await checked
       expect(server.child.kill).toHaveBeenCalledOnce()
     }
@@ -3286,8 +3361,9 @@ it('correlates bounded diagnostic evidence with usage without logging credential
   expect(records[0].requestId).toBe(records[2].requestId)
   const serialized = JSON.stringify(records)
   expect(serialized).toContain('https://example.com/logo.png')
-  for (const secret of ['secret', 'private-key', 'private prompt', 'base64'])
+  for (const secret of ['secret', 'private-key', 'private prompt', 'base64']) {
     expect(serialized).not.toContain(secret)
+  }
   log.mockRestore()
 })
 
@@ -3385,15 +3461,17 @@ describe('local AI usage accounting', () => {
     usage.finish('completed')
     const serialized = log.mock.calls[0][0]
     const record = JSON.parse(serialized)
-    for (const key of ['metadata', 'conversationId', 'turnId', 'secret'])
+    for (const key of ['metadata', 'conversationId', 'turnId', 'secret']) {
       expect(record).not.toHaveProperty(key)
+    }
     expect(record.tokens).toEqual(total)
     for (const value of [
       'private@example.test',
       'bad\nvalue',
       'Bearer private'
-    ])
+    ]) {
       expect(serialized).not.toContain(JSON.stringify(value))
+    }
   })
 })
 
@@ -3555,7 +3633,7 @@ describe('native semantic design handoff', () => {
         }
       }
       expect(a.arguments).toEqual({ elementId: 'actual-root' })
-      if (a.name === 'review_design')
+      if (a.name === 'review_design') {
         return {
           actionResults: [
             {
@@ -3571,6 +3649,7 @@ describe('native semantic design handoff', () => {
           ],
           context: {}
         }
+      }
       return {
         actionResults: [
           {
@@ -4098,8 +4177,9 @@ it('exposes review planning to the model and traces the operation without certif
   const trace = records.filter((entry) => entry.event === 'ai_request_trace')
   for (const entry of trace.filter((event) =>
     event.stage.startsWith('provider_request_')
-  ))
+  )) {
     expect(entry.callId).toEqual(expect.any(String))
+  }
   expect(
     trace
       .filter(
@@ -4211,10 +4291,11 @@ it('returns executor failure and continues queued calls without replaying the fa
   let rejectWrite!: (error: Error) => void
   const executeBatch = vi.fn(
     async (value: AiActionBatch): Promise<AiBatchReceipt> => {
-      if (executeBatch.mock.calls.length === 1)
+      if (executeBatch.mock.calls.length === 1) {
         return new Promise((_resolve, reject) => {
           rejectWrite = reject
         })
+      }
       return {
         context: {},
         actionResults: value.actions.map((action) => ({
@@ -4240,7 +4321,7 @@ it('returns executor failure and continues queued calls without replaying the fa
   )
   const completed = expect(promise).resolves.toEqual(batch)
   await untilTurn(server.packets)
-  for (let i = 0; i < 2; i++)
+  for (let i = 0; i < 2; i++) {
     server.send({
       id: 90 + i,
       method: 'item/tool/call',
@@ -4252,6 +4333,7 @@ it('returns executor failure and continues queued calls without replaying the fa
         arguments: { arguments: { elementIds: ['shape'] } }
       }
     })
+  }
   await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledTimes(1))
   rejectWrite(new Error('Canonical execution failed'))
   await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledTimes(2))
@@ -4287,10 +4369,11 @@ it('accepts native sleep lifecycle without executing actions or completing the t
     }
   )
   await untilTurn(server.packets)
-  for (const method of ['item/started', 'item/completed'])
+  for (const method of ['item/started', 'item/completed']) {
     server.notify(method, {
       item: { type: 'sleep', id: 'native-pause', durationMs: 1000 }
     })
+  }
   await new Promise((resolve) => setImmediate(resolve))
   expect(settled).toBe(false)
   expect(executeBatch).not.toHaveBeenCalled()
@@ -4413,11 +4496,12 @@ it('retains public activity from native notifications through the recorder into 
   server.notify('item/started', {
     item: { id: 'public-message', type: 'agentMessage' }
   })
-  for (const delta of ['Preparing ', 'the facade.'])
+  for (const delta of ['Preparing ', 'the facade.']) {
     server.notify('item/agentMessage/delta', {
       itemId: 'public-message',
       delta
     })
+  }
   server.notify('item/completed', {
     item: {
       id: 'public-message',
@@ -4476,8 +4560,9 @@ it('retains public activity from native notifications through the recorder into 
     delta: 'FOREIGN_TEXT'
   })
   // Preserve partial streamed messages without inventing a completed item.
-  for (let i = 0; i < 128; i++)
+  for (let i = 0; i < 128; i++) {
     server.notify('item/agentMessage/delta', { itemId: 'partial', delta: 'x' })
+  }
   server.finish()
   await expect(completion).resolves.toMatchObject(batch)
   const payloads = retainedPayloads
@@ -4571,7 +4656,7 @@ it('records reported provider item intervals without retaining reasoning content
   try {
     const completion = requestConfiguredAiActionBatch(input, { environment })
     await untilTurn(server.packets)
-    for (const method of ['item/started', 'item/completed'])
+    for (const method of ['item/started', 'item/completed']) {
       server.notify(method, {
         item: {
           id: 'reasoning-1',
@@ -4580,6 +4665,7 @@ it('records reported provider item intervals without retaining reasoning content
           summary: ['Public progress summary']
         }
       })
+    }
     server.finish()
     await completion
     const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
@@ -4614,7 +4700,7 @@ it('records native discovery lifecycle metadata without private output', async (
   try {
     const completion = requestConfiguredAiActionBatch(input, { environment })
     await untilTurn(server.packets)
-    for (const method of ['item/started', 'item/completed'])
+    for (const method of ['item/started', 'item/completed']) {
       server.notify(method, {
         item: {
           id: 'discovery-1',
@@ -4625,6 +4711,7 @@ it('records native discovery lifecycle metadata without private output', async (
           output: 'PRIVATE OUTPUT'
         }
       })
+    }
     server.finish()
     await completion
     const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
@@ -4720,7 +4807,7 @@ it('records native discovery lifecycle and counts unseen notifications without r
   try {
     const completion = requestConfiguredAiActionBatch(input, { environment })
     await untilTurn(server.packets)
-    for (const method of ['item/started', 'item/completed'])
+    for (const method of ['item/started', 'item/completed']) {
       server.notify(method, {
         item: {
           id: 'discovery',
@@ -4731,6 +4818,7 @@ it('records native discovery lifecycle and counts unseen notifications without r
           content: 'PRIVATE_BODY'
         }
       })
+    }
     server.notify('item/newPublicEvent', { content: 'PRIVATE_BODY' })
     server.finish()
     await completion
@@ -4817,7 +4905,9 @@ it.each(['completed', 'cancelled'] as const)(
       )
       controller.abort()
       await expect(request).rejects.toBeDefined()
-    } else await request
+    } else {
+      await request
+    }
     const run = parseExecutionRecord(
       retainedRecords.map((record) => JSON.stringify(record)).join('\n')
     )
@@ -4828,10 +4918,11 @@ it.each(['completed', 'cancelled'] as const)(
       run.steps.find((step) => step.callId === 'provider-turn')
     ).toMatchObject({ status: 'completed', kind: 'lifecycle' })
     expect(run.timing.breakdown.providerWaitMs).toBeGreaterThanOrEqual(0)
-    if (outcome === 'completed')
+    if (outcome === 'completed') {
       expect(
         run.records.some((record) => record.stage === 'provider_notification')
       ).toBe(true)
+    }
   }
 )
 
@@ -4863,7 +4954,9 @@ it.each(['execution', 'delivery'] as const)(
     const call = vi
       .fn()
       .mockImplementationOnce(async () => {
-        if (stage === 'execution') throw new Error('Reference decode failed')
+        if (stage === 'execution') {
+          throw new Error('Reference decode failed')
+        }
         const broken = structuredClone(receipt)
         broken.actionResults[0].result.image.dataUrl = 'broken'
         return JSON.stringify(broken)
@@ -5008,12 +5101,13 @@ it('retires authored stage context at root dispatch without claiming objective e
           message: event.message,
           activity: event.activity
         })
-        if (event.tool === 'prepare_design')
+        if (event.tool === 'prepare_design') {
           observations.push({
             status: event.status,
             phase: event.activity?.phase,
             ...projection.result().current
           })
+        }
       }
     }
   )
@@ -5026,9 +5120,11 @@ it('retires authored stage context at root dispatch without claiming objective e
         : undefined
     )
     let label = 'Preparing the design'
-    if (entry.status === 'completed') label = 'Failed operation'
-    else if (['queued', 'admission'].includes(entry.phase ?? ''))
+    if (entry.status === 'completed') {
+      label = 'Failed operation'
+    } else if (['queued', 'admission'].includes(entry.phase ?? '')) {
       label = 'Processing your request'
+    }
     expect(entry.label).toBe(label)
   }
 })
@@ -5042,7 +5138,9 @@ it.each(['success', 'failure'] as const)(
     const executeBatch = vi.fn(
       async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
         await new Promise<void>((resolve) => releases.push(resolve))
-        if (outcome === 'failure') throw new Error('Recorded operation failed')
+        if (outcome === 'failure') {
+          throw new Error('Recorded operation failed')
+        }
         return {
           context: {},
           actionResults: batch.actions.map((action) => ({
@@ -5138,10 +5236,11 @@ it.each(['success', 'failure'] as const)(
     expect(projection.result().current).toEqual({
       label: 'Researching design context'
     })
-    for (const id of [801, 802])
+    for (const id of [801, 802]) {
       expect(server.packets.find((packet) => packet.id === id)).toMatchObject({
         result: { success: outcome === 'success' }
       })
+    }
     server.notify('item/completed', {
       item: {
         id: 'overlapping-research',
@@ -5170,13 +5269,14 @@ it.each(['success', 'failure'] as const)(
         )
         .map((event) => event.activity?.callId)
     ).toEqual([])
-    for (const callId of ['cohort-801', 'cohort-802', 'cohort-803'])
+    for (const callId of ['cohort-801', 'cohort-802', 'cohort-803']) {
       expect(
         events.filter(
           (event) =>
             event.activity?.callId === callId && event.status === 'completed'
         )
       ).toHaveLength(1)
+    }
     expect(projection.result().current).toEqual({
       label: outcome === 'success' ? 'Completed operation' : 'Failed operation',
       message: 'Selecting elements'
@@ -5343,7 +5443,9 @@ it.each(['active', 'settled'] as const)(
     })
     const executeBatch = vi.fn(
       async (value: AiActionBatch): Promise<AiBatchReceipt> => {
-        if (phase === 'active') await held
+        if (phase === 'active') {
+          await held
+        }
         return {
           context: {},
           actionResults: value.actions.map((action) => ({
@@ -5380,10 +5482,11 @@ it.each(['active', 'settled'] as const)(
     }
     server.send({ id: 190, method: 'item/tool/call', params: { ...params } })
     await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledOnce())
-    if (phase === 'settled')
+    if (phase === 'settled') {
       await vi.waitFor(() =>
         expect(server.packets.some((packet) => packet.id === 190)).toBe(true)
       )
+    }
     server.send({ id: 191, method: 'item/tool/call', params: { ...params } })
     release()
     await rejected
@@ -5516,13 +5619,17 @@ it('delivers attachment identity and prepares selected uses before capture and c
       detailRequired: false
     })
     const turn = server.packets.find((packet) => packet.method === 'turn/start')
-    if (!turn) throw new Error('Missing initial turn')
+    if (!turn) {
+      throw new Error('Missing initial turn')
+    }
     const items = turn.params.input as {
       type: string
       text?: string
       url?: string
     }[]
-    if (!items[0].text) throw new Error('Missing initial text')
+    if (!items[0].text) {
+      throw new Error('Missing initial text')
+    }
     const attachment = JSON.parse(items[0].text).input.metadata
       .imageAttachments[0]
     expect(attachment.referenceId).toBe(
@@ -5546,13 +5653,17 @@ it('delivers attachment identity and prepares selected uses before capture and c
     const thread = server.packets.find(
       (packet) => packet.method === 'thread/start'
     )
-    if (!thread) throw new Error('Missing thread instructions')
+    if (!thread) {
+      throw new Error('Missing thread instructions')
+    }
     const instructions = thread.params.baseInstructions as string
     expect(instructions).toContain('select_design_references prepares')
     const guidance = instructions
       .split('\n')
       .find((line) => line.startsWith('Attachment metadata already'))
-    if (!guidance) throw new Error('Missing attachment guidance')
+    if (!guidance) {
+      throw new Error('Missing attachment guidance')
+    }
     const baselineBytes = recordedAttachmentHandoff.calls.reduce(
       (bytes, call) => bytes + call.input.bytes + call.output.bytes,
       0
@@ -6073,8 +6184,9 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
     // Split each recorded face into planar triangles; only the unexecuted part is repaired.
     const children = recorded.input.parts[1].draft.children.flatMap<unknown>(
       (child) => {
-        if (child.type !== 'projected-face' || !('vertices' in child))
+        if (child.type !== 'projected-face' || !('vertices' in child)) {
           return [child]
+        }
         const vertices = child.vertices as { x: number; y: number; z: number }[]
         return vertices.slice(2).map((vertex, index) => ({
           ...child,
@@ -6128,9 +6240,11 @@ it.each(['malformed', 'unavailable'] as const)(
     ): Promise<AiBatchReceipt> => {
       const action = batch.actions[0]
       actionIds.push(action.id)
-      if (actionIds.length === 1) await held
-      else if (mode === 'unavailable')
+      if (actionIds.length === 1) {
+        await held
+      } else if (mode === 'unavailable') {
         throw new Error('Second write receipt unavailable')
+      }
       return {
         context: {},
         actionResults: [
@@ -6244,7 +6358,7 @@ it.each(['malformed', 'unavailable'] as const)(
       expect(
         batches.every((e) => e.activity?.parentCallId !== 'concurrent-850')
       ).toBe(true)
-      for (const batch of batches)
+      for (const batch of batches) {
         expect(
           progress.some(
             (e) =>
@@ -6252,6 +6366,7 @@ it.each(['malformed', 'unavailable'] as const)(
               e.activity?.parentCallId === 'concurrent-850'
           )
         ).toBe(true)
+      }
     } finally {
       release()
       server.finish()
@@ -6300,8 +6415,9 @@ it('retains the actual provider prefix on cancellation without dispatching the n
       signal: controller.signal,
       onProgress: (event) => {
         progress.push(event)
-        if (event.tool === 'app-batch' && event.status === 'completed')
+        if (event.tool === 'app-batch' && event.status === 'completed') {
           controller.abort()
+        }
       }
     }
   )
@@ -6400,8 +6516,9 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
     executeBatch: firstWrites,
     signal: controller.signal,
     onProgress: (event) => {
-      if (event.tool === 'app-batch' && event.status === 'completed')
+      if (event.tool === 'app-batch' && event.status === 'completed') {
         controller.abort()
+      }
     }
   })
   const cancelled = expect(firstRequest).rejects.toMatchObject({
@@ -6638,7 +6755,9 @@ it('delivers canonical compact usage through the provider and consumes its actua
   const action = basicApiContracts.find(
     (item) => item.operation === 'hierarchy.moveElementsRelative'
   )
-  if (!action) throw new Error('Missing canonical anchor operation')
+  if (!action) {
+    throw new Error('Missing canonical anchor operation')
+  }
   const followup = vi.fn((reply: Record<string, unknown>) => {
     const usage = (
       reply.apis as {
@@ -6751,8 +6870,9 @@ it.each([
         expect(usage.invocationExample.illustrative).toBe(true)
         const invocation = usage.invocationExample.invocation
         expect(invocation.tool).toBe(name)
-        if (name !== 'define_design_criteria')
+        if (name !== 'define_design_criteria') {
           expect(usage.inputFields).toContain('/properties/draft')
+        }
         return {
           name: invocation.tool,
           args: {
@@ -7000,8 +7120,9 @@ it.each([
         ]
       })
     }
-    if (_name === 'invalid-text')
+    if (_name === 'invalid-text') {
       expect(JSON.stringify(saved)).not.toContain('opaque secret text')
+    }
     expect(executeBatch).not.toHaveBeenCalled()
   }
 )
@@ -7125,11 +7246,15 @@ it.each(['complete', 'abort', 'disconnect'] as const)(
     if (ending === 'complete') {
       server.child.stderr.write(line('thread-1', 'turn-1', 'ctc_pending', true))
       server.finish()
-    } else if (ending === 'abort') controller.abort()
-    else server.child.stdout.end()
+    } else if (ending === 'abort') {
+      controller.abort()
+    } else {
+      server.child.stdout.end()
+    }
     const outcome = await result
-    if (ending === 'complete') expect(outcome).toEqual({ value: batch })
-    else {
+    if (ending === 'complete') {
+      expect(outcome).toEqual({ value: batch })
+    } else {
       const code =
         ending === 'abort'
           ? 'AI_MODEL_BACKEND_ABORTED'
@@ -7231,12 +7356,14 @@ describe('bounded evaluation reporting', () => {
   it.each(['saved', 'storage-failed'])(
     'interrupts work and reports in the same thread with %s evidence',
     async (mode) => {
-      if (mode === 'storage-failed')
+      if (mode === 'storage-failed') {
         vi.spyOn(retainedPayloads, 'push').mockImplementation((entry) => {
-          if (entry.callId === 'evaluation-report')
+          if (entry.callId === 'evaluation-report') {
             throw new Error('Storage unavailable')
+          }
           return Array.prototype.push.call(retainedPayloads, entry)
         })
+      }
       const controller = new AbortController()
       const executeBatch = vi.fn()
       const report = {
@@ -7290,12 +7417,13 @@ describe('bounded evaluation reporting', () => {
               })
             }
           }
-          if (packet.method === 'turn/interrupt')
+          if (packet.method === 'turn/interrupt') {
             queueMicrotask(() =>
               server.notify('turn/completed', {
                 turn: { id: 'turn-1', status: 'interrupted' }
               })
             )
+          }
         }
       })
       const result = requestLocalAiActionBatch(
@@ -7426,12 +7554,16 @@ it.each([
             })
           }
         }
-        if (packet.method === 'turn/interrupt' && mode !== 'interrupt-timeout')
+        if (
+          packet.method === 'turn/interrupt' &&
+          mode !== 'interrupt-timeout'
+        ) {
           queueMicrotask(() =>
             server.notify('turn/completed', {
               turn: { id: 'turn-1', status: 'interrupted' }
             })
           )
+        }
       }
     })
     const executeBatch = vi.fn()
@@ -7461,8 +7593,12 @@ it.each([
       )
     } else {
       let code = 'AI_MODEL_BACKEND_TIMEOUT'
-      if (mode === 'invalid-report') code = 'AI_MODEL_BACKEND_INVALID_RESPONSE'
-      if (mode === 'cancel-report') code = 'AI_MODEL_BACKEND_ABORTED'
+      if (mode === 'invalid-report') {
+        code = 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+      }
+      if (mode === 'cancel-report') {
+        code = 'AI_MODEL_BACKEND_ABORTED'
+      }
       await expect(result).rejects.toMatchObject({ code })
     }
     expect(executeBatch).not.toHaveBeenCalled()
@@ -7747,7 +7883,7 @@ it.each([1, 40])(
           turns++
           const turnId = turns === 1 ? 'turn-1' : 'report-turn'
           server.send({ id: packet.id, result: { turn: { id: turnId } } })
-          if (turns === 1)
+          if (turns === 1) {
             server.send({
               id: 701,
               method: 'item/tool/call',
@@ -7764,7 +7900,7 @@ it.each([1, 40])(
                 }
               }
             })
-          else {
+          } else {
             server.notify('item/completed', {
               turnId,
               item: {
@@ -7779,13 +7915,14 @@ it.each([1, 40])(
             })
           }
         }
-        if (packet.method === 'turn/interrupt')
+        if (packet.method === 'turn/interrupt') {
           queueMicrotask(() => {
             server.notify('turn/completed', {
               turn: { id: 'turn-1', status: 'interrupted' }
             })
             finishOwner()
           })
+        }
       }
     })
     spawn.mockReturnValue(server.child)
@@ -7908,13 +8045,17 @@ it('delivers real interrupted Core results through Runtime and the native report
   let yields = 0
   const action = observeAiAction(
     createPreparedDesignAction(undefined, async () => {
-      if (++yields === 2) await interrupted
+      if (++yields === 2) {
+        await interrupted
+      }
     })
   )
   const reportAction = createAiActions().find(
     (entry) => entry.name === AiActionNames.REPORT_OUTCOME
   )
-  if (!reportAction) throw new Error('Missing report owner')
+  if (!reportAction) {
+    throw new Error('Missing report owner')
+  }
   let turns = 0
   let ownerReceipt: AiBatchReceipt | undefined
   let dispatchedBatches = 0
@@ -7938,7 +8079,7 @@ it('delivers real interrupted Core results through Runtime and the native report
       if (packet.method === 'turn/start') {
         const turnId = ++turns === 1 ? 'turn-1' : 'report-turn'
         server.send({ id: packet.id, result: { turn: { id: turnId } } })
-        if (turns === 1)
+        if (turns === 1) {
           server.send({
             id: 901,
             method: 'item/tool/call',
@@ -7967,7 +8108,7 @@ it('delivers real interrupted Core results through Runtime and the native report
               }
             }
           })
-        else {
+        } else {
           const evidence = (packet.params.input as { text: string }[])[1].text
           facts = JSON.parse(evidence.slice(evidence.indexOf('{')))
           reportSnapshot = snapshot()
@@ -8029,8 +8170,9 @@ it('delivers real interrupted Core results through Runtime and the native report
             signal: options.signal,
             executeBatch: async (batch) => {
               dispatchedBatches++
-              if (!options.executeBatch)
+              if (!options.executeBatch) {
                 throw new Error('Missing Runtime dispatcher')
+              }
               const receipt = await options.executeBatch(batch)
               ownerReceipt = receipt as AiBatchReceipt
               return ownerReceipt
@@ -8064,7 +8206,9 @@ it('delivers real interrupted Core results through Runtime and the native report
         }
       ]
     })
-    if (!ownerReceipt) throw new Error('Missing owner receipt')
+    if (!ownerReceipt) {
+      throw new Error('Missing owner receipt')
+    }
     const owner = ownerReceipt.actionResults[0].result as {
       compositionId: string
     }
@@ -8114,8 +8258,9 @@ it('cancels attachment identity preparation before starting the native provider'
           if (
             event.tool === 'reference_attachment_context' &&
             event.status === 'running'
-          )
+          ) {
             controller.abort()
+          }
         }
       }
     )

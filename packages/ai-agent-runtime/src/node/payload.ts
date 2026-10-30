@@ -14,11 +14,13 @@ export const serializeToolPayload = (value: unknown) => {
       /password|secret|credential|authorization|api.?key|access.?token|refresh.?token|private.?key|^(token|cookie|set-cookie|headers|base64|imageBytes|imageData|dataUrl|prompt|instructions|reasoning|thoughts?)$/i.test(
         key
       )
-    )
+    ) {
       return redact(path, 'redacted')
+    }
     if (typeof input === 'string') {
-      if (/^data:|^Bearer\s/i.test(input))
+      if (/^data:|^Bearer\s/i.test(input)) {
         return redact(path, 'binary or credential omitted')
+      }
       if (/^https?:\/\//i.test(input)) {
         try {
           const url = new URL(input)
@@ -42,10 +44,15 @@ export const serializeToolPayload = (value: unknown) => {
         redact(path, 'credential omitted')
       )
     }
-    if (!input || typeof input !== 'object') return input ?? null
-    if (ArrayBuffer.isView(input) || input instanceof ArrayBuffer)
+    if (!input || typeof input !== 'object') {
+      return input ?? null
+    }
+    if (ArrayBuffer.isView(input) || input instanceof ArrayBuffer) {
       return redact(path, 'binary omitted')
-    if (seen.has(input)) return redact(path, 'cycle omitted')
+    }
+    if (seen.has(input)) {
+      return redact(path, 'cycle omitted')
+    }
     seen.add(input)
     const result = Array.isArray(input)
       ? input.map((item, index) => visit(item, `${path}[${index}]`))

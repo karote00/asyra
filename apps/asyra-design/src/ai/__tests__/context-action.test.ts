@@ -125,8 +125,9 @@ it('keeps transient and retained contracts disjoint through native conversion', 
       { offset: 0 },
       { fields: ['x'] },
       { scope: 'snapshot', snapshotId: 'saved' }
-    ])
+    ]) {
       expect(operationInputIssue({ ...query, ...patch }, schema)).toBeDefined()
+    }
   }
   const result = {
     delivery: 'transient',
@@ -180,16 +181,18 @@ it('advertises scope-correct selectors and complete result constraints in both c
   ]
   const schema = createDocumentContextAction().inputSchema
   for (const definition of [schema, nativeToolInputSchema(schema)]) {
-    for (const query of valid)
+    for (const query of valid) {
       expect(
         operationInputIssue(query, definition),
         JSON.stringify(query)
       ).toBeUndefined()
-    for (const query of invalid)
+    }
+    for (const query of invalid) {
       expect(
         operationInputIssue(query, definition),
         JSON.stringify(query)
       ).toBeDefined()
+    }
   }
 })
 
@@ -201,9 +204,9 @@ it('preserves canonical scope, result and page admission through native schema c
     { scope: 'ids', elementIds: ['part'] },
     { scope: 'region', bounds: { x: 0, y: 0, width: 10, height: 10 } }
   ]) {
-    for (const result of [undefined, 'elements', 'ids'])
-      for (const fields of [undefined, [], ['x']])
-        for (const allMatches of [undefined, false, true])
+    for (const result of [undefined, 'elements', 'ids']) {
+      for (const fields of [undefined, [], ['x']]) {
+        for (const allMatches of [undefined, false, true]) {
           for (const page of [{}, { offset: 0, limit: 1 }, { offset: -1 }]) {
             const query = {
               ...selector,
@@ -218,11 +221,15 @@ it('preserves canonical scope, result and page admission through native schema c
             } catch {
               accepted = false
             }
-            for (const schema of [documentContextSchema, native])
+            for (const schema of [documentContextSchema, native]) {
               expect(
                 operationInputIssue(query, schema) === undefined,
                 JSON.stringify(query)
               ).toBe(accepted)
+            }
           }
+        }
+      }
+    }
   }
 })

@@ -34,7 +34,7 @@ test('manages saved metadata in the conversation panel without a drawing request
       availability = 'retired'
       version = 'changed'
       await route.fulfill({ json: { status: 'saved', availability, version } })
-    } else
+    } else {
       await route.fulfill({
         json: {
           entries: [
@@ -51,6 +51,7 @@ test('manages saved metadata in the conversation panel without a drawing request
           truncated: false
         }
       })
+    }
   })
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
@@ -66,8 +67,9 @@ test('manages saved metadata in the conversation panel without a drawing request
   ).toBeVisible()
   const bounds = await panel.boundingBox()
   const viewport = page.viewportSize()
-  if (!bounds || !viewport)
+  if (!bounds || !viewport) {
     throw new Error('Expected visible saved tools panel')
+  }
   expect(bounds.x).toBeGreaterThanOrEqual(0)
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width)
   await page.screenshot({ path: testInfo.outputPath('saved-tools.png') })

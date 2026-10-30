@@ -84,7 +84,9 @@ it('exposes document export instead of raw serializers that can overflow tool de
     expect(names).not.toContain('api_core_sceneTreeSaveData')
     expect(names).toContain('api_core_getElementData')
   } finally {
-    for (const owner of input.ownedResources ?? []) await owner.dispose()
+    for (const owner of input.ownedResources ?? []) {
+      await owner.dispose()
+    }
   }
 })
 
@@ -129,8 +131,9 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
   )
   const context = { signal: new AbortController().signal } as never
   try {
-    if (!inspect || !validate || !input.ownedResources)
+    if (!inspect || !validate || !input.ownedResources) {
       throw new Error('Missing inspection ownership')
+    }
     const result = (await inspect.execute(
       { elementId: 'drawing' },
       context
@@ -247,13 +250,18 @@ it.each([false, true])(
     const result = input.transactionRunner.run(
       'request',
       async () => {
-        if (failed) throw new Error('failed')
+        if (failed) {
+          throw new Error('failed')
+        }
         return 42
       },
       { signal }
     )
-    if (failed) await expect(result).rejects.toThrow('failed')
-    else await expect(result).resolves.toBe(42)
+    if (failed) {
+      await expect(result).rejects.toThrow('failed')
+    } else {
+      await expect(result).resolves.toBe(42)
+    }
     expect(release).toHaveBeenCalledExactlyOnceWith(signal)
     await Promise.all(
       (input.ownedResources ?? []).map((resource) => resource.dispose())
@@ -278,8 +286,9 @@ it('advertises one complete contract for every browser tool without exposing exe
       expect(Number.isSafeInteger(action.revision) && action.revision > 0).toBe(
         true
       )
-      if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+      if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
         expect(action.revision).toBe(5)
+      }
       expect(action.lifecycle.retry).not.toBe('read-only')
       registry.register(action)
     }
@@ -309,7 +318,9 @@ it('hands canonical flat contracts to the host provider and preserves request op
   const action = input.actionDefinitions.find(
     (item) => item.name === AiActionNames.READ_DESIGN_CONTEXT
   )
-  if (!action) throw new Error('Missing context action')
+  if (!action) {
+    throw new Error('Missing context action')
+  }
   const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
   const options = {
     signal: new AbortController().signal,
@@ -475,10 +486,14 @@ it.each(['frame', 'group', 'rectangle'] as const)(
     )
     const context = { signal: new AbortController().signal }
     const emit = (channel: string, value: unknown) => {
-      for (const listener of listeners.get(channel) ?? []) listener(value)
+      for (const listener of listeners.get(channel) ?? []) {
+        listener(value)
+      }
     }
     try {
-      if (!review) throw new Error('Missing registered review')
+      if (!review) {
+        throw new Error('Missing registered review')
+      }
       expect(
         await review.execute({ elementId: 'root' }, context)
       ).toMatchObject({

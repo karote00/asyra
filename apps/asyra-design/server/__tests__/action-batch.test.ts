@@ -326,8 +326,9 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
   }
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch: async (_input, options) => {
-      if (!options.executeBatch)
+      if (!options.executeBatch) {
         throw new Error('Missing batch execution transport')
+      }
       const receipt = await options.executeBatch(prepared)
       expect(receipt.context).toEqual({ actual: true })
       acknowledged = true
@@ -356,12 +357,15 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
         attempt: 1
       })
     })
-    if (!response.body) throw new Error('Missing stream')
+    if (!response.body) {
+      throw new Error('Missing stream')
+    }
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let text = ''
-    while (!text.includes('\n'))
+    while (!text.includes('\n')) {
       text += decoder.decode((await reader.read()).value)
+    }
     const frame = JSON.parse(text.trim())
     expect(frame.type).toBe('batch')
     expect(acknowledged).toBe(false)
@@ -382,7 +386,9 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
     text = ''
     while (true) {
       const part = await reader.read()
-      if (part.done) break
+      if (part.done) {
+        break
+      }
       text += decoder.decode(part.value)
     }
     expect(JSON.parse(text.trim()).batch.batchId).toBe('final')
@@ -408,7 +414,9 @@ it('delivers a real browser failure through HTTP before closing the execution st
   }
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch: async (_input, options) => {
-      if (!options.executeBatch) throw new Error('Missing execution transport')
+      if (!options.executeBatch) {
+        throw new Error('Missing execution transport')
+      }
       try {
         await options.executeBatch(prepared)
       } catch (error) {
@@ -515,8 +523,9 @@ it.each(['completed', 'partial', 'unknown'] as const)(
     }))
     const middleware = createActionBatchMiddleware({
       requestModelActionBatch: async (_input, options) => {
-        if (!options.executeBatch)
+        if (!options.executeBatch) {
           throw new Error('Missing execution transport')
+        }
         const receipt = await options.executeBatch(prepared)
         try {
           requireBatchSuccess(prepared, receipt, 1)
@@ -547,9 +556,12 @@ it.each(['completed', 'partial', 'unknown'] as const)(
             },
             origin
           )
-          if (identity) capturedIdentities.push(identity)
-          if ((init.headers as Record<string, string>)['x-ai-batch-receipt'])
+          if (identity) {
+            capturedIdentities.push(identity)
+          }
+          if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
             postedBytes = Buffer.byteLength(String(init.body))
+          }
           return fetch(origin + String(url), {
             ...init,
             headers: { ...init.headers, origin }
@@ -588,7 +600,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
           }
         }
       })
-      if (settlement !== 'completed')
+      if (settlement !== 'completed') {
         expect(failure).toMatchObject({
           receipt: {
             failure: {
@@ -598,6 +610,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
             }
           }
         })
+      }
     } finally {
       provider?.dispose()
       server.closeAllConnections()
@@ -625,7 +638,9 @@ it('preserves activity provenance and order through the HTTP progress handoff', 
   ]
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch: async (_input, options) => {
-      for (const event of events) options.onProgress?.(event)
+      for (const event of events) {
+        options.onProgress?.(event)
+      }
       return { batchId: 'final', actions: [] }
     }
   })

@@ -35,10 +35,11 @@ export class WorkerEvidenceDelivery {
       this.leafCount + pair.evidence.leaves.length >
         EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves ||
       this.pairCount + 1 > EXPERIMENT_RESOURCE_PROFILE.maxPairs
-    )
+    ) {
       throw new Error(
         'Analysis worker evidence exceeds its global payload or count budget'
       )
+    }
     this.totalBytes += bytes
     this.leafCount += pair.evidence.leaves.length
     this.pairCount++
@@ -51,8 +52,9 @@ export class WorkerEvidenceDelivery {
     if (
       !this.pending.length ||
       now - this.lastSent < EXPERIMENT_RESOURCE_PROFILE.progressIntervalMs
-    )
+    ) {
       return
+    }
     this.send({
       type: AnalysisWorkerMessages.PROGRESS,
       runId: this.runId,

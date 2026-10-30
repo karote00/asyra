@@ -31,10 +31,16 @@ const readCanonicalDrawingSummary = async (
     let vectorCount = 0
     for (const element of sceneTree.getAllElements().values()) {
       const type = String(element.get('type'))
-      if (type === 'workspace') continue
+      if (type === 'workspace') {
+        continue
+      }
       totalCount += 1
-      if (type === 'group') groupCount += 1
-      if (type === 'vector') vectorCount += 1
+      if (type === 'group') {
+        groupCount += 1
+      }
+      if (type === 'vector') {
+        vectorCount += 1
+      }
     }
     return {
       groupCount,
@@ -54,12 +60,16 @@ const selectFirstEditableFill = async (
     }
 
     for (const element of sceneTree.getAllElements().values()) {
-      if (element.get('type') !== 'vector') continue
+      if (element.get('type') !== 'vector') {
+        continue
+      }
       const computed = element.getAllComputedData() as {
         fills?: readonly { readonly color?: unknown }[]
       }
       const color = computed.fills?.[0]?.color
-      if (typeof color !== 'string') continue
+      if (typeof color !== 'string') {
+        continue
+      }
       const elementId = String(element.get('id'))
       core.selectElements([elementId], { undoable: false })
       return { color, elementId }

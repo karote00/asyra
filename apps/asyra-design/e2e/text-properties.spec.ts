@@ -25,7 +25,9 @@ const createTextFixture = async (page: Page) => {
     const { selectionApis } = await import('../src/common-apis/selection')
     const { viewportApis } = await import('../src/common-apis/viewport')
     const parent = hierarchyApis.getWorkspaceId()
-    if (!parent) throw new Error('Missing workspace')
+    if (!parent) {
+      throw new Error('Missing workspace')
+    }
     transactionApis.runTransaction(() =>
       elementApis.createElementsInParent(
         [
@@ -112,8 +114,9 @@ const captureText = async (page: Page) => {
     page.getByTestId('toolbar').boundingBox()
   ])
   const viewport = page.viewportSize()
-  if (!left || !right || !toolbar || !viewport)
+  if (!left || !right || !toolbar || !viewport) {
     throw new Error('Missing canvas viewport bounds')
+  }
   const x = left.x + left.width
   const y = toolbar.y + toolbar.height
   // Canvas spans the window behind the DOM panels; sample only its visible area.
@@ -299,14 +302,17 @@ test('Typography controls match the compact geometry rows', async ({
   expect(size).not.toBeNull()
   expect(spacing).not.toBeNull()
   expect(height).not.toBeNull()
-  if (!geometry || !size || !spacing || !height)
+  if (!geometry || !size || !spacing || !height) {
     throw new Error('Missing property controls')
+  }
   for (const label of ['Line height', 'Letter spacing']) {
     const offset = await page
       .getByLabel(label, { exact: true })
       .evaluate((input) => {
         const icon = input.parentElement?.querySelector('svg')
-        if (!icon) throw new Error('Missing spacing prefix icon')
+        if (!icon) {
+          throw new Error('Missing spacing prefix icon')
+        }
         const iconBounds = icon.getBoundingClientRect()
         const inputBounds = input.getBoundingClientRect()
         return Math.abs(
@@ -325,7 +331,9 @@ test('Typography controls match the compact geometry rows', async ({
   const style = await page
     .getByRole('combobox', { name: 'Font style', exact: true })
     .boundingBox()
-  if (!style) throw new Error('Missing font style selector')
+  if (!style) {
+    throw new Error('Missing font style selector')
+  }
   expect(Math.abs(style.y - size.y)).toBeLessThan(1)
   expect(spacing.y).toBeGreaterThan(size.y + size.height)
   const typography = page.getByRole('region', {
@@ -563,8 +571,9 @@ for (const gradientType of ['linear', 'radial', 'angular', 'diamond']) {
         (gradientPixels[i] > baselinePixels[i] + 3 ||
           gradientPixels[i + 1] > baselinePixels[i + 1] + 3 ||
           gradientPixels[i + 2] > baselinePixels[i + 2] + 3)
-      )
+      ) {
         outsideGlyphs++
+      }
     }
     expect(outsideGlyphs, 'Fill must remain inside native glyph coverage').toBe(
       0
@@ -594,8 +603,9 @@ test('Old text color documents load into complete Fill data without losing their
     const fillsId = element.props.fills
     const typographyId = element.props.typography
     const list = document.props[fillsId] as unknown as { fills: string[] }
-    for (const fillId of list.fills)
+    for (const fillId of list.fills) {
       Reflect.deleteProperty(document.props, fillId)
+    }
     Reflect.deleteProperty(document.props, fillsId)
     delete element.props.fills
     Object.assign(document.props[typographyId], { textColor: '#ffffff' })

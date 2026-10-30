@@ -200,9 +200,11 @@ test('CI check selection narrows changed test inputs and declares E2E suites', (
     ).tests.inputs,
     ['packages/core/src/index.ts']
   )
-  assert.deepEqual(source.relationshipMap.executionPlan.checks.lint.inputs, [
-    'packages/core/src/index.ts'
-  ])
+  assert.deepEqual(source.relationshipMap.executionPlan.checks.lint, {
+    mode: 'full',
+    inputs: [],
+    reason: 'repository-wide-lint-required'
+  })
   assert.equal(
     source.relationshipMap.executionPlan.checks.workspaces.find(
       ({ workspace }) => workspace === '@asyra/asyra-design'
@@ -607,7 +609,7 @@ test('first-level apps, packages, and tools are discovered without named owner l
     assert.equal(atlas.lintSelection.mode, 'full')
     assert.equal(atlas.e2eSelection.mode, 'full')
 
-    for (const entry of entries)
+    for (const entry of entries) {
       await executeWorkspaceChecks(entry, {
         relationshipMapDigest: scope.relationshipMapDigest,
         identity: {
@@ -623,6 +625,7 @@ test('first-level apps, packages, and tools are discovered without named owner l
           task === 'test:e2e:ci' ? { testCount: 1 } : undefined
         )
       })
+    }
     assert.deepEqual(
       commands,
       entries.flatMap(({ name, lintTask, buildTask, testTask, e2eTask }) => [
@@ -722,7 +725,9 @@ test('a failed workspace build prevents its test task from running', async () =>
     identity: {},
     runTask: async (_workspace, task) => {
       commands.push(task)
-      if (task === entry.buildTask) throw new Error('build failed')
+      if (task === entry.buildTask) {
+        throw new Error('build failed')
+      }
     }
   })
   assert.deepEqual(commands, ['eslint', 'build:failed-build'])
@@ -754,7 +759,9 @@ test('a selected guarded workspace with no tests is recorded as zero-tests', asy
     identity: {},
     runTask: async (_workspace, task) => {
       calls.push(task)
-      if (task === 'has:test') throw new Error('No test files found')
+      if (task === 'has:test') {
+        throw new Error('No test files found')
+      }
     }
   })
   assert.deepEqual(calls, ['eslint', 'build:empty-tests', 'has:test'])
@@ -1252,8 +1259,9 @@ test('plan documents do not select dependency audits or graph builders', () => {
     'securityAudit',
     'dependencyValidation',
     'turboValidation'
-  ])
+  ]) {
     assert.equal(checks[name].mode, 'not-selected', name)
+  }
 })
 
 test('root toolchain changes still select all product owners', () => {
@@ -1329,6 +1337,41 @@ test('full script command covers every registered contract exactly once and seri
   const all = [...tests, ...policy.repositoryScriptGroups.buildExecution.tests]
   assert.equal(new Set(all).size, all.length)
   assert.deepEqual(all.sort(), [...policy.registeredScriptTests].sort())
+})
+
+test('release artifact inputs select tooling contracts without running generated artifact checks', () => {
+  const file = 'scripts/__tests__/release-template-artifacts.test.mjs'
+  const scope = classifyChanges([file], manifests)
+
+  assert.deepEqual(scope.unknownPaths, [])
+  assert.ok(
+    scope.executionPlan.checks.repositoryScripts.tests.includes(
+      'scripts/__tests__/release-automation.test.mjs'
+    )
+  )
+  assert.equal(
+    scope.executionPlan.checks.repositoryScripts.tests.includes(file),
+    false
+  )
+  const full = classifyChanges(
+    [file],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    [],
+    [],
+    { fullValidation: true }
+  )
+  assert.equal(full.executionPlan.checks.repositoryScripts.mode, 'full')
+  assert.equal(
+    full.executionPlan.checks.repositoryScripts.command,
+    'test:scripts'
+  )
+  const root = JSON.parse(
+    fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
+  )
+  assert.equal(root.scripts['test:scripts'].includes(file), false)
 })
 
 const dependencyLock = (version, { remove = false, override = false } = {}) => {
@@ -1597,11 +1640,12 @@ test('mixed material delivery retains shared spatial consumers without unrelated
     'walking-constrained-kinematics-midpoint-profile-one.profile.test.ts',
     'walking-constrained-kinematics-midpoint-profile-two-phase-zero.profile.test.ts',
     'walking-constrained-kinematics-midpoint-profile-two-phase-one.profile.test.ts'
-  ])
+  ]) {
     assert.ok(
       owner.profileSelection.files.includes('src/domain/__tests__/' + file),
       file
     )
+  }
   assert.ok(
     !owner.profileSelection.files.includes(
       'src/domain/__tests__/kinematic-trigonometry.profile.test.ts'
@@ -1752,8 +1796,9 @@ test('unregistered browser specs stay selected and unknown proof inputs retain c
     'apps/new-owner/src',
     'apps/new-owner/e2e',
     'packages/new-owner/src'
-  ])
+  ]) {
     fs.mkdirSync(path.join(root, folder), { recursive: true })
+  }
   fs.writeFileSync(
     path.join(root, directory, 'src/math.ts'),
     'export const x = 1'
@@ -1930,8 +1975,9 @@ test('Flow Inspector archive contracts have one workspace owner in incremental a
   )
   assert.equal(policy.registeredScriptTests.includes(archiveTest), false)
   assert.equal(root.scripts['test:scripts'].includes(archiveTest), false)
-  for (const group of Object.values(policy.repositoryScriptGroups))
+  for (const group of Object.values(policy.repositoryScriptGroups)) {
     assert.equal(group.tests.includes(archiveTest), false)
+  }
   const tool = JSON.parse(
     fs.readFileSync(
       path.join(repositoryRoot, 'tools/flow-inspector/package.json'),
@@ -2028,16 +2074,25 @@ test('shared-check CLI reads a plan larger than Linux environment limits and rej
   }
   const evidenceFile = path.join(directory, 'scope.json')
   const output = path.join(directory, 'result.json')
+  const trace = path.join(directory, 'commands.log')
+  fs.writeFileSync(
+    path.join(directory, 'yarn'),
+    '#!/bin/sh\nprintf "%s\\n" "$*" >> "$CHECK_TRACE"\n',
+    { mode: 0o700 }
+  )
   fs.writeFileSync(evidenceFile, JSON.stringify(evidence))
   const env = {
     ...process.env,
+    PATH: directory + path.delimiter + process.env.PATH,
+    CHECK_TRACE: trace,
     CI_SCOPE_EVIDENCE_FILE: evidenceFile,
     CI_CHECK_RESULTS_FILE: output,
     CI_RELATIONSHIP_MAP_DIGEST: scope.relationshipMapDigest
   }
   delete env.CI_EXECUTION_PLAN
-  for (const [key, value] of Object.entries(identity))
+  for (const [key, value] of Object.entries(identity)) {
     env[`CI_SCOPE_${key.toUpperCase()}`] = value
+  }
   const run = () =>
     spawnSync(process.execPath, ['scripts/run-ci-checks.mjs'], {
       cwd: repositoryRoot,
@@ -2047,6 +2102,7 @@ test('shared-check CLI reads a plan larger than Linux environment limits and rej
     })
   const result = run()
   assert.equal(result.status, 0, result.stderr || result.stdout)
+  assert.equal(fs.readFileSync(trace, 'utf8'), 'lint\n')
   const receipt = JSON.parse(fs.readFileSync(output, 'utf8'))
   assert.equal(
     receipt.executionPlanDigest,
@@ -2054,6 +2110,7 @@ test('shared-check CLI reads a plan larger than Linux environment limits and rej
   )
   assert.deepEqual(receipt.identity, identity)
   fs.rmSync(output)
+  fs.rmSync(trace)
   for (const stale of [
     { ...evidence, identity: { ...identity, head: 'c'.repeat(40) } },
     { ...evidence, relationshipMapDigest: '0'.repeat(64) }
@@ -2063,6 +2120,7 @@ test('shared-check CLI reads a plan larger than Linux environment limits and rej
     assert.notEqual(rejected.status, 0)
     assert.match(rejected.stderr, /scope evidence does not match/)
     assert.equal(fs.existsSync(output), false)
+    assert.equal(fs.existsSync(trace), false)
   }
 })
 
@@ -2089,6 +2147,7 @@ test('plan flow documents select public Flow admission without runtime or contro
   for (const input of [
     'docs/ai/framework/plans/review/runtime.json',
     'docs/ai/framework/review.flow.json'
-  ])
+  ]) {
     assert.ok(classifyChanges([input], manifests).unknownPaths.includes(input))
+  }
 })

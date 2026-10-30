@@ -65,8 +65,9 @@ test('reopens the existing database and migrates a legacy full model before resa
       const project = projects.find(
         (item: { name: string }) => item.name === 'Legacy project'
       )
-      if (!project)
+      if (!project) {
         throw new Error('The App did not retain its existing database identity')
+      }
       const stored = await repository.read(project.id)
       const snapshot = decodeProject(stored.payload)
       await repository.write(
@@ -125,7 +126,9 @@ test('local project A/B/A replacement resets history and view without duplicatin
   await save(page, 'Project B', true)
   await renameFixture(page, 'fixture post', 'B fixture')
   const bounds = await canvas.boundingBox()
-  if (!bounds) throw new Error('Missing canvas')
+  if (!bounds) {
+    throw new Error('Missing canvas')
+  }
   await page.mouse.move(bounds.x + 100, bounds.y + 100)
   await page.mouse.down()
   await page.mouse.move(bounds.x + 260, bounds.y + 180, { steps: 5 })
@@ -222,7 +225,9 @@ test('cancel and invalid target preserve the editable current document', async (
       payload = JSON.parse(stored.payload)
     const elements = payload.document.sceneTree.elements
     const id = Object.keys(elements).find((key) => elements[key].parentId)
-    if (!id) throw new Error('Missing parented canonical element')
+    if (!id) {
+      throw new Error('Missing parented canonical element')
+    }
     elements[id].parentId = 'missing-parent'
     await repository.write(
       {
@@ -302,9 +307,13 @@ test('failed successor startup exposes recovery and never presents A as editable
   const file = await download
   await file.saveAs(info.outputPath('recovered-project.json'))
   const stream = await file.createReadStream()
-  if (!stream) throw new Error('Missing recovery download')
+  if (!stream) {
+    throw new Error('Missing recovery download')
+  }
   let content = ''
-  for await (const chunk of stream) content += String(chunk)
+  for await (const chunk of stream) {
+    content += String(chunk)
+  }
   const recovered = JSON.parse(content)
   expect(recovered.format).toBe('sim-project')
   expect(JSON.stringify(recovered.document)).toContain(

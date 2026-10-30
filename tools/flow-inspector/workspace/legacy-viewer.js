@@ -18,9 +18,13 @@
       .replaceAll("'", '&#039;')
 
   const summarize = (value) => {
-    if (Array.isArray(value)) return `${value.length} records`
-    if (value && typeof value === 'object')
+    if (Array.isArray(value)) {
+      return `${value.length} records`
+    }
+    if (value && typeof value === 'object') {
       return `${Object.keys(value).length} fields`
+    }
+
     return String(value)
   }
 

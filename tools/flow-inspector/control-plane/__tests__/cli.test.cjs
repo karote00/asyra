@@ -204,9 +204,12 @@ test('CI trial uses captured candidate proof while protected CI retains its acce
     }
     globalThis.fetch = async (input) => {
       const pathname = new URL(input).pathname
-      if (pathname === '/api/session')
+      if (pathname === '/api/session') {
         return Response.json({ capability: 'test' })
-      if (pathname === '/api/runs') return Response.json({ id: record.id })
+      }
+      if (pathname === '/api/runs') {
+        return Response.json({ id: record.id })
+      }
       assert.equal(pathname, '/api/runs/' + record.id)
       return Response.json(record)
     }
@@ -839,8 +842,9 @@ async function runAssessmentCliLifecycle() {
       assert.equal(taskRemote.value.result.targetContract.status, 'failed')
       assert.equal(taskRemote.value.result.integration.status, 'failed')
       assert.equal(taskRemote.value.runtime.taskId, task.id)
-      for (const slot of taskRemote.value.slots)
+      for (const slot of taskRemote.value.slots) {
         assert.equal(service.get(slot.id).format, 3)
+      }
       await service.controlTask(task.id, { action: 'revoke' }, LOCAL_ACTOR)
       const taskReplay = await invoke(
         ['target-assess', 'assessment.json'],
@@ -931,8 +935,11 @@ async function runAssessmentCliLifecycle() {
     assert.deepEqual(remoteReplay, localAcceptance)
     await assert.rejects(() => invoke(['target-accept'], true), /Usage/)
   } finally {
-    if (server) await server.close()
-    else await service.close()
+    if (server) {
+      await server.close()
+    } else {
+      await service.close()
+    }
     fs.rmSync(directory, { recursive: true, force: true })
   }
 }

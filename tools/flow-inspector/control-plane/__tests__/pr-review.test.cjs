@@ -93,7 +93,9 @@ function fixture({
     async deliver(preview, checkpoint) {
       counts.deliver++
       await checkpoint('create-branch')
-      if (failure) throw failure
+      if (failure) {
+        throw failure
+      }
       remote = {
         number: 1,
         state: 'open',
@@ -123,8 +125,9 @@ function fixture({
   const packageDirectory = packageName.slice('@asyra/'.length)
   const manifestPath = 'packages/' + packageDirectory + '/package.json'
   const manifest = JSON.stringify({ name: packageName, version: '1.0.0' })
-  for (const dir of [sourceRoot, verifiedRoot])
+  for (const dir of [sourceRoot, verifiedRoot]) {
     fs.writeFileSync(path.join(dir, manifestPath), manifest)
+  }
   const manifestFile = {
     path: manifestPath,
     digest: sha256(manifest),
@@ -264,13 +267,14 @@ for (const [name, change] of [
     'extra candidate file',
     (f) => fs.writeFileSync(path.join(f.candidateRoot, 'extra.ts'), 'extra')
   ]
-])
+]) {
   test(name + ' refuses before external effects', async () => {
     const f = fixture()
     change(f)
     await assert.rejects(() => prepare(f))
     assert.equal(f.counts.deliver, 0)
   })
+}
 test('changed remote base or attempt refuses exact confirmation', async () => {
   const f = fixture(),
     p = await prepare(f)
@@ -289,8 +293,9 @@ test('duplicate clicks and restart retain one delivery and zero-work reads', asy
   assert.equal(f.counts.deliver, 1)
   const next = createReviewOwner(root, f.options)
   const counts = { ...f.counts }
-  for (let i = 0; i < 30; i++)
+  for (let i = 0; i < 30; i++) {
     assert.equal(next.get(f.record.id).previewDigest, p.previewDigest)
+  }
   assert.deepEqual(f.counts, counts)
   await next.confirm(
     f.record.id,
@@ -475,13 +480,14 @@ for (const [name, mutate] of [
     'ambiguous package ownership',
     (f) => f.record.snapshot.files.push(f.record.snapshot.files[1])
   ]
-])
+]) {
   test(name + ' prevents preparation', async () => {
     const f = fixture()
     mutate(f)
     await assert.rejects(() => prepare(f), /ownership/)
     assert.equal(f.counts.deliver, 0)
   })
+}
 for (const [name, mutate] of [
   ['release type', (p) => (p.metadata.releaseType = 'minor')],
   ['package name', (p) => (p.metadata.packageName = '@asyra/core')],
@@ -491,7 +497,7 @@ for (const [name, mutate] of [
   ['title', (p) => (p.title += 'unapproved')],
   ['body', (p) => (p.body += 'unapproved')],
   ['all files', (p) => p.deliveryFiles.push('package.json')]
-])
+]) {
   test(
     'changed ' + name + ' cannot use a retained confirmation after restart',
     async () => {
@@ -508,11 +514,12 @@ for (const [name, mutate] of [
       assert.equal(f.counts.deliver, 0)
     }
   )
+}
 for (const forbidden of [
   '.changeset/escape.md',
   'packages/factory/src/__tests__/escape.ts',
   '.github/workflows/escape.yml'
-])
+]) {
   test('candidate cannot contribute ' + forbidden, async () => {
     const f = fixture()
     fs.mkdirSync(path.dirname(path.join(f.candidateRoot, forbidden)), {
@@ -522,6 +529,7 @@ for (const forbidden of [
     await assert.rejects(() => prepare(f), /candidate/)
     assert.equal(f.counts.deliver, 0)
   })
+}
 
 test('strict review entry cannot accept a third scoped argument or upgrade a failed candidate', async () => {
   const f = fixture()

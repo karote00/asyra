@@ -205,10 +205,14 @@ class InputSystem {
 
   private browserListener(listener: EventListener): EventListener {
     const existing = this.browserListeners.get(listener)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
     const generation = this.runtimeGeneration
     const guarded: EventListener = (event) => {
-      if (generation === this.runtimeGeneration) listener(event)
+      if (generation === this.runtimeGeneration) {
+        listener(event)
+      }
     }
     this.browserListeners.set(listener, guarded)
     return guarded
@@ -264,7 +268,9 @@ class InputSystem {
 
     const generation = this.runtimeGeneration
     const timer = setTimeout(() => {
-      if (generation !== this.runtimeGeneration) return
+      if (generation !== this.runtimeGeneration) {
+        return
+      }
       this.activeKeys.delete(key)
       this.timers.delete(key)
     }, CLEAR_KEY_TIME)
@@ -299,11 +305,15 @@ class InputSystem {
   private handleKeyDown = (event: KeyboardEvent) => {
     const key = this.keyMap.mapKey(event.code)
     const interested = this.hasHeldInterest(key)
-    if (event.isComposing) this.cancelHeldKeyboard()
-    else {
-      if (key && !this.keyMap.isModifierKeys(key))
+    if (event.isComposing) {
+      this.cancelHeldKeyboard()
+    } else {
+      if (key && !this.keyMap.isModifierKeys(key)) {
         this.heldKeyboardKeys.add(key)
-      if (this.dispatchHeldKeyboard(event, key, 'down')) event.preventDefault()
+      }
+      if (this.dispatchHeldKeyboard(event, key, 'down')) {
+        event.preventDefault()
+      }
     }
     if (
       !interested &&
@@ -396,23 +406,30 @@ class InputSystem {
     }
     for (const name of this.registry.getEventNames()) {
       for (const combo of this.registry.getCombinations(name) ?? []) {
-        if (combo.type !== InputType.KEYBOARD || combo.keyboardMode !== 'held')
+        if (
+          combo.type !== InputType.KEYBOARD ||
+          combo.keyboardMode !== 'held'
+        ) {
           continue
+        }
         if (
           phase !== 'cancel' &&
           !combo.keys.some(
             (candidate) =>
               candidate === key || this.heldKeyboardKeys.has(candidate)
           )
-        )
+        ) {
           continue
+        }
         const snapshot = {
           ...raw,
           keys: [...raw.keys],
           modifiers: { ...raw.modifiers },
           detail: combo.detail
         }
-        if (combo.callback?.(snapshot) === false) continue
+        if (combo.callback?.(snapshot) === false) {
+          continue
+        }
         accepted = true
         this.triggerAction(name, snapshot)
       }
@@ -421,13 +438,17 @@ class InputSystem {
   }
 
   private cancelHeldKeyboard = () => {
-    if (!this.heldKeyboardKeys.size) return
+    if (!this.heldKeyboardKeys.size) {
+      return
+    }
     this.heldKeyboardKeys.clear()
     this.dispatchHeldKeyboard(null, undefined, 'cancel')
   }
 
   private hiddenKeyboard = () => {
-    if (this.browserHost?.document.hidden) this.cancelHeldKeyboard()
+    if (this.browserHost?.document.hidden) {
+      this.cancelHeldKeyboard()
+    }
   }
 
   private handleMouseDown = (event: MouseEvent) => {
@@ -541,7 +562,9 @@ class InputSystem {
     button: MouseButton,
     state: string
   ): string | undefined {
-    if (button === MouseButton.NONE) return
+    if (button === MouseButton.NONE) {
+      return
+    }
 
     return `${button}Mouse${state}`
   }
@@ -566,10 +589,14 @@ class InputSystem {
     const allModifiers = this.getAllModifiers(activeModifiers)
     for (const eventName of this.registry.getEventNames()) {
       const combos = this.registry.getCombinations(eventName)
-      if (!combos) continue
+      if (!combos) {
+        continue
+      }
 
       for (const combo of combos) {
-        if (combo.keyboardMode === 'held') continue
+        if (combo.keyboardMode === 'held') {
+          continue
+        }
         if (this.isExactMatch(type, currentKeys, combo, activeModifiers)) {
           const raw: RawInputEvent = {
             type,
@@ -582,7 +609,9 @@ class InputSystem {
           }
 
           // Admission happens before any downstream queue or session receives input.
-          if (combo.callback?.(raw) === false) continue
+          if (combo.callback?.(raw) === false) {
+            continue
+          }
 
           this.triggerAction(eventName, raw)
         }
@@ -597,7 +626,9 @@ class InputSystem {
     modifiers: ModifierKey[]
   ): boolean {
     const isKeysMatch = arrEqual(keys, combo.keys)
-    if (type !== combo.type || !isKeysMatch) return false
+    if (type !== combo.type || !isKeysMatch) {
+      return false
+    }
     if (isKeysMatch && (!combo.modifiers || !combo.modifiers.length)) {
       return true
     }
@@ -645,10 +676,18 @@ class InputSystem {
       // Trackpad pinch supplies ctrlKey on the wheel event without a keydown.
       // Keep these modifiers local to this event; never latch them into keys.
       const modifiers = new Set(this.getActiveModifiers(this.activeKeys))
-      if (event.ctrlKey) modifiers.add(ModifierKey.CTRL)
-      if (event.metaKey) modifiers.add(ModifierKey.META)
-      if (event.shiftKey) modifiers.add(ModifierKey.SHIFT)
-      if (event.altKey) modifiers.add(ModifierKey.ALT)
+      if (event.ctrlKey) {
+        modifiers.add(ModifierKey.CTRL)
+      }
+      if (event.metaKey) {
+        modifiers.add(ModifierKey.META)
+      }
+      if (event.shiftKey) {
+        modifiers.add(ModifierKey.SHIFT)
+      }
+      if (event.altKey) {
+        modifiers.add(ModifierKey.ALT)
+      }
       this.checkCombinations(InputType.WHEEL, wheelData, [...modifiers])
 
       // Remove wheel key immediately as scrolling is continuous
@@ -754,16 +793,20 @@ class InputSystem {
         failures.push(error)
       }
     }
-    if (this.pointerTarget)
+    if (this.pointerTarget) {
       this.removePointerListeners(this.pointerTarget, attempt)
-    if (this.browserHost)
+    }
+    if (this.browserHost) {
       this.removeKeyboardListeners(this.browserHost, attempt)
+    }
     this.pointerTarget = null
     this.browserHost = null
     this.browserListeners.clear()
     this.clearTransientState()
     this.registry.clear()
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 }
 

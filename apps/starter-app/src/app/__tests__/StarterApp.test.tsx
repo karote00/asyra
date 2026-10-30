@@ -54,7 +54,9 @@ describe('StarterApp storage failures', () => {
       })
       const buttons = [...host.querySelectorAll('button')]
       const redo = buttons.find((button) => button.textContent === 'Redo')
-      if (!redo) throw new Error('Redo control missing')
+      if (!redo) {
+        throw new Error('Redo control missing')
+      }
       expect(host.textContent).toContain('Ready')
       expect(redo.disabled).toBe(false)
       await act(async () => {
@@ -95,7 +97,9 @@ describe('StarterApp storage failures', () => {
         root.unmount()
       })
       host.remove()
-      if (descriptor) Object.defineProperty(window, 'localStorage', descriptor)
+      if (descriptor) {
+        Object.defineProperty(window, 'localStorage', descriptor)
+      }
     }
   })
   it('supports React strict effects without duplicate App registrations', async () => {

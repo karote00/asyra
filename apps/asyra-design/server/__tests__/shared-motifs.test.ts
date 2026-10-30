@@ -167,7 +167,9 @@ it('counts reference output and retains definitions in source-selected parts', (
   ).toMatchObject({ sourcePathCommands: 20, expandedNodes: 25 })
   // Small deterministic partition exercises reference retention, not a live capacity experiment.
   const partitions = partitionDesignBudget(input, 15).partitions
-  if (!partitions) throw new Error('Missing partitions')
+  if (!partitions) {
+    throw new Error('Missing partitions')
+  }
   expect(partitions).toHaveLength(2)
   for (const part of partitions) {
     const selected = selectDesignSource(input, part.selections)
@@ -225,7 +227,9 @@ it('admits both public forms and rejects reference overrides in the same dispatc
     }
   ])
   const definition = owner.definitions.find((d) => d.name === 'prepare_design')
-  if (!definition) throw new Error('Missing preparation definition')
+  if (!definition) {
+    throw new Error('Missing preparation definition')
+  }
   expect(
     operationInputIssue({ draft: generic() }, definition.inputSchema)
   ).toBeUndefined()
@@ -335,7 +339,9 @@ it('reduces complete selected delivery and saved invocation without another page
     )
     contractBytes += Buffer.byteLength(pageText)
     const page = JSON.parse(pageText).contentDelivery
-    if (!page || page.lastPage) break
+    if (!page || page.lastPage) {
+      break
+    }
     budgetQuery = page.next.arguments
   }
   expect(contractBytes).toBeLessThanOrEqual(

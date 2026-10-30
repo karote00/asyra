@@ -16,7 +16,7 @@ for (const [x, y] of [
   for (const t of [0.28, 0.48, 0.68, 0.85]) {
     const bx = 0.5 + (x - 0.5) * t,
       by = 0.015 + (y - 0.015) * t
-    for (const sign of [-1, 1])
+    for (const sign of [-1, 1]) {
       cucumberSegments.push([
         bx,
         by,
@@ -24,11 +24,12 @@ for (const [x, y] of [
         by + 0.12,
         0.004
       ])
+    }
   }
 }
 const tomatoSegments: number[][] = [[0.5, 0.015, 0.5, 1, 0.01]]
-for (const t of [0.15, 0.3, 0.45, 0.6, 0.75])
-  for (const sign of [-1, 1])
+for (const t of [0.15, 0.3, 0.45, 0.6, 0.75]) {
+  for (const sign of [-1, 1]) {
     tomatoSegments.push([
       0.5,
       t,
@@ -36,6 +37,8 @@ for (const t of [0.15, 0.3, 0.45, 0.6, 0.75])
       t + 0.18,
       0.004
     ])
+  }
+}
 function relief(u: number, v: number, cucumber: boolean) {
   const segments = cucumber ? cucumberSegments : tomatoSegments
   let vein = 0
@@ -53,7 +56,7 @@ function relief(u: number, v: number, cucumber: boolean) {
     y = v * 28
   let first = Infinity,
     second = Infinity
-  for (let dx = -1; dx <= 1; dx++)
+  for (let dx = -1; dx <= 1; dx++) {
     for (let dy = -1; dy <= 1; dy++) {
       const cx = Math.floor(x) + dx,
         cy = Math.floor(y) + dy
@@ -64,8 +67,11 @@ function relief(u: number, v: number, cucumber: boolean) {
       if (d < first) {
         second = first
         first = d
-      } else second = Math.min(second, d)
+      } else {
+        second = Math.min(second, d)
+      }
     }
+  }
   const fine = Math.exp(-(second - first) * 24)
   const bulge = Math.min(1, (second - first) * 3)
   return {
@@ -78,7 +84,7 @@ function createSurface(cucumber: boolean) {
   const heights: number[] = [],
     albedo: number[] = [],
     normals: number[] = []
-  for (let y = 0; y < size; y++)
+  for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const p = relief(x / (size - 1), y / (size - 1), cucumber)
       heights.push(p.height)
@@ -90,7 +96,8 @@ function createSurface(cucumber: boolean) {
         255
       )
     }
-  for (let y = 0; y < size; y++)
+  }
+  for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const at = (a: number, b: number) =>
         heights[
@@ -107,6 +114,7 @@ function createSurface(cucumber: boolean) {
         255
       )
     }
+  }
   return Object.freeze({
     width: size,
     height: size,

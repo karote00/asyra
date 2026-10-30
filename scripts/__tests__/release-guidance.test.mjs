@@ -373,16 +373,20 @@ test('create-app publishes the packed candidate and rejects missing or changed g
   const mutations = []
   let packedPath
   const runCommand = (command, args) => {
-    if (command === 'git' && args[0] === 'rev-parse') return sourceSha
-    if (command === 'git' && args[0] === 'tag' && args[1] === '--list')
+    if (command === 'git' && args[0] === 'rev-parse') {
+      return sourceSha
+    }
+    if (command === 'git' && args[0] === 'tag' && args[1] === '--list') {
       return ''
+    }
     if (command === 'npm' && args[0] === 'view') {
-      if (args[1].endsWith('@latest'))
+      if (args[1].endsWith('@latest')) {
         return JSON.stringify({
           version: '1.0.0',
           'dist.integrity': 'old-cli',
           gitHead: f.baselineSha
         })
+      }
       const error = new Error('E404')
       error.code = 'E404'
       throw error
@@ -691,7 +695,9 @@ test('unchanged npm members use the earlier published source without requiring a
         sourceSha,
         f.evidencePath,
         (command) => {
-          if (command === 'git') throw new Error('Missing verified tag')
+          if (command === 'git') {
+            throw new Error('Missing verified tag')
+          }
           return JSON.stringify({
             version: artifact.version,
             'dist.integrity': artifact.integrity
@@ -723,15 +729,17 @@ function archivedCloudflareRun(f, candidate, result) {
     calls.push([command, ...args])
     assert.equal(command, 'gh')
     if (args[0] === 'api') {
-      if (args[1].endsWith('actions/runs/101'))
+      if (args[1].endsWith('actions/runs/101')) {
         return JSON.stringify([
           {
             path: '.github/workflows/app-cloudflare.yml',
             event: 'workflow_dispatch'
           }
         ])
-      if (args[1].includes('actions/runs/101/artifacts'))
+      }
+      if (args[1].includes('actions/runs/101/artifacts')) {
         return JSON.stringify([{ artifacts: [resultArchive] }])
+      }
       return JSON.stringify([
         { artifacts: args[1].includes(`name=${name}&`) ? [archive] : [] }
       ])

@@ -11,25 +11,38 @@ export function readLockGraph(text) {
   let record
   let dependencies = false
   for (const line of text.split(/\r?\n/)) {
-    if (!line || line.startsWith('#')) continue
+    if (!line || line.startsWith('#')) {
+      continue
+    }
     if (!line.startsWith(' ')) {
-      if (!line.endsWith(':')) throw new Error('Malformed Yarn lock record')
+      if (!line.endsWith(':')) {
+        throw new Error('Malformed Yarn lock record')
+      }
       const key = scalar(line.slice(0, -1))
       record = { body: [], dependencies: [], keys: key.split(', ') }
-      for (const descriptor of record.keys) entries.set(descriptor, record)
+      for (const descriptor of record.keys) {
+        entries.set(descriptor, record)
+      }
       dependencies = false
     } else {
-      if (!record) throw new Error('Yarn lock entry without owner')
+      if (!record) {
+        throw new Error('Yarn lock entry without owner')
+      }
       record.body.push(line)
-      if (/^ {2}\S/.test(line)) dependencies = line === '  dependencies:'
-      else if (dependencies && /^ {4}\S/.test(line)) {
+      if (/^ {2}\S/.test(line)) {
+        dependencies = line === '  dependencies:'
+      } else if (dependencies && /^ {4}\S/.test(line)) {
         const match = line.match(/^ {4}("(?:[^"\\]|\\.)+"|[^:]+): (.+)$/)
-        if (!match) throw new Error('Malformed Yarn dependency')
+        if (!match) {
+          throw new Error('Malformed Yarn dependency')
+        }
         record.dependencies.push(`${scalar(match[1])}@${scalar(match[2])}`)
       }
     }
   }
-  if (!entries.has('__metadata')) throw new Error('Missing Yarn lock metadata')
+  if (!entries.has('__metadata')) {
+    throw new Error('Missing Yarn lock metadata')
+  }
   return entries
 }
 
@@ -40,10 +53,13 @@ function applyResolutions(graph, root) {
       const name = descriptor.slice(0, separator)
       const override =
         root.resolutions?.[descriptor] ?? root.resolutions?.[name]
-      if (!override) continue
+      if (!override) {
+        continue
+      }
       const target = `${name}@${override.includes(':') ? override : `npm:${override}`}`
-      if (!graph.has(target))
+      if (!graph.has(target)) {
         throw new Error(`Unresolved Yarn resolution override: ${target}`)
+      }
       graph.set(descriptor, graph.get(target))
     }
   }
@@ -53,13 +69,21 @@ function applyResolutions(graph, root) {
 function closure(graph, starts) {
   const result = new Set()
   const visit = (key) => {
-    if (result.has(key)) return
+    if (result.has(key)) {
+      return
+    }
     const entry = graph.get(key)
-    if (!entry) throw new Error(`Unresolved Yarn dependency: ${key}`)
+    if (!entry) {
+      throw new Error(`Unresolved Yarn dependency: ${key}`)
+    }
     result.add(key)
-    for (const dependency of entry.dependencies) visit(dependency)
+    for (const dependency of entry.dependencies) {
+      visit(dependency)
+    }
   }
-  for (const start of starts) visit(start)
+  for (const start of starts) {
+    visit(start)
+  }
   return result
 }
 
@@ -77,8 +101,9 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
           file
         ) || file.startsWith('.yarn/patches/')
     )
-  )
+  ) {
     return result
+  }
   const root = options.repositoryRoot ?? process.cwd()
   const readBase = (file) =>
     options.baseRevision
@@ -94,7 +119,9 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
     changes.headRoot ??
     JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
   for (const file of ['turbo.json', 'turbo.base.json']) {
-    if (!changedPaths.includes(file)) continue
+    if (!changedPaths.includes(file)) {
+      continue
+    }
     const before = JSON.parse(readBase(file))
     const after = JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'))
     for (const key of new Set([
@@ -104,8 +131,9 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
       if (
         key === 'tasks' ||
         JSON.stringify(before[key]) === JSON.stringify(after[key])
-      )
+      ) {
         continue
+      }
       result.all = true
       result.reasons.push(`${file}:${key}`)
     }
@@ -116,14 +144,17 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
       if (
         JSON.stringify(before.tasks?.[task]) ===
         JSON.stringify(after.tasks?.[task])
-      )
+      ) {
         continue
+      }
       const relevant = [...manifests.values()].filter(
         (workspace) =>
           task.startsWith(`${workspace.name}#`) ||
           [workspace.buildTask, workspace.testTask].includes(task)
       )
-      for (const workspace of relevant) result.workspaces.add(workspace.name)
+      for (const workspace of relevant) {
+        result.workspaces.add(workspace.name)
+      }
       result.reasons.push(`${file}:tasks.${task}`)
     }
   }
@@ -155,8 +186,9 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
         ...Object.keys(baseRoot[key] ?? {}),
         ...Object.keys(headRoot[key] ?? {})
       ])) {
-        if (baseRoot[key]?.[name] !== headRoot[key]?.[name])
+        if (baseRoot[key]?.[name] !== headRoot[key]?.[name]) {
           result.rootDependencies.push(name)
+        }
       }
     }
   }
@@ -179,15 +211,18 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
     )
     const changed = new Set(
       [...new Set([...base.keys(), ...head.keys()])].filter((key) => {
-        if (key === '__metadata') return false
+        if (key === '__metadata') {
+          return false
+        }
         if (
           changedPaths.some(
             (file) =>
               file.startsWith('.yarn/patches/') &&
               decodeURIComponent(key).includes(file)
           )
-        )
+        ) {
           return true
+        }
         return (
           JSON.stringify(base.get(key)?.body) !==
           JSON.stringify(head.get(key)?.body)
@@ -199,10 +234,13 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
         const starts = [...graph.keys()].filter(
           (key) => key === `${workspace.name}@workspace:${workspace.directory}`
         )
-        if (!starts.length) continue // Added/removed workspaces are visited in the other snapshot.
+        if (!starts.length) {
+          continue
+        } // Added/removed workspaces are visited in the other snapshot.
         const dependencies = closure(graph, starts)
-        if ([...dependencies].some((key) => changed.has(key)))
+        if ([...dependencies].some((key) => changed.has(key))) {
           result.workspaces.add(workspace.name)
+        }
       }
     }
     for (const graph of [base, head]) {
@@ -221,12 +259,14 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
         if (
           starts.length &&
           [...closure(graph, starts)].some((key) => changed.has(key))
-        )
+        ) {
           result.rootDependencies.push(name)
+        }
       }
     }
-    if (changed.size)
+    if (changed.size) {
       result.reasons.push('yarn.lock:resolved-dependency-closure')
+    }
   }
   // Compiler/build runner changes really affect every workspace. Test/lint-only
   // root dependencies select repository contracts, not browser product suites.
@@ -234,8 +274,9 @@ export function rootInputImpact(changedPaths, manifests, options = {}) {
     result.rootDependencies.some((name) =>
       ['typescript', 'turbo'].includes(name)
     )
-  )
+  ) {
     result.all = true
+  }
   result.rootDependencies = [...new Set(result.rootDependencies)].sort()
   return result
 }

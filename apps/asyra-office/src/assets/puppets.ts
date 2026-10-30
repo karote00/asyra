@@ -60,16 +60,17 @@ export function puppet(
   )
   for (const c of spec.bodyAndFaceParts as BodyPart[]) {
     let mesh = emptyMesh()
-    if (c.recipe === 'ellipsoid')
+    if (c.recipe === 'ellipsoid') {
       append(mesh, ellipsoid(vec(c.radii ?? [])), vec(c.centre ?? []))
-    else if (c.recipe === 'z-loft') mesh = loft(smoothRows(c.rings ?? []))
-    else if (c.recipe === 'tapered-limb')
+    } else if (c.recipe === 'z-loft') {
+      mesh = loft(smoothRows(c.rings ?? []))
+    } else if (c.recipe === 'tapered-limb') {
       mesh = tube(
         [vec(c.start ?? []), vec(c.end ?? [])],
         [(c.startRadii ?? [])[0], (c.endRadii ?? [])[0]],
         12
       )
-    else if (c.recipe === 'face-ellipse' || c.recipe === 'face-ellipsoid') {
+    } else if (c.recipe === 'face-ellipse' || c.recipe === 'face-ellipsoid') {
       const [x, z] = c.centreXZ ?? [0, 0],
         r = c.radii ?? [(c.radiiXZ ?? [])[0], 0.004, (c.radiiXZ ?? [])[1]]
       if (c.recipe === 'face-ellipse') {
@@ -83,13 +84,14 @@ export function puppet(
             c.surfaceOffset ?? 0.001
           )
         }
-      } else
+      } else {
         append(mesh, ellipsoid(vec(r), 16, 10), [
           x,
           faceY(x, z, c.surfaceOffset ?? 0.001),
           z
         ])
-    } else if (c.recipe === 'face-curve')
+      }
+    } else if (c.recipe === 'face-curve') {
       mesh = tube(
         bezier(
           (c.pointsXZ ?? []).map(([x, z]) => [x, faceY(x, z), z]),
@@ -98,7 +100,9 @@ export function puppet(
         c.radius ?? 0.002,
         6
       )
-    else throw new Error(`Unsupported puppet part ${c.id}`)
+    } else {
+      throw new Error(`Unsupported puppet part ${c.id}`)
+    }
     p.push(
       part(
         c.id,
@@ -120,7 +124,7 @@ export function puppet(
       hair.scalpCentre[2] + hair.scalpRadii[2] * Math.cos(t)
     ]
   }
-  for (let j = 0; j <= rows; j++)
+  for (let j = 0; j <= rows; j++) {
     for (let i = 0; i <= columns; i++) {
       const phi = -180 + (i / columns) * 360,
         a = Math.abs(phi),
@@ -135,7 +139,8 @@ export function puppet(
       cap.positions.push(...scalp((j / rows) * limit, phi))
       cap.uvs.push(i / columns, j / rows)
     }
-  for (let j = 0; j < rows; j++)
+  }
+  for (let j = 0; j < rows; j++) {
     for (let i = 0; i < columns; i++) {
       const a = j * (columns + 1) + i,
         b = a + 1,
@@ -143,18 +148,21 @@ export function puppet(
         d = c + 1
       cap.indices.push(a, c, d, a, d, b)
     }
+  }
   const hairColor = profile === 'man' ? 0x403026 : 0x292c2a
   p.push(part('hair-cap', cap, hairColor))
   for (const lock of hair.locks) {
     let points: Vec[]
-    if ('controlAnglesDegrees' in lock && lock.controlAnglesDegrees)
+    if ('controlAnglesDegrees' in lock && lock.controlAnglesDegrees) {
       points = bezier(
         lock.controlAnglesDegrees.map((a) => [a[0], a[1], 0]),
         20
       ).map((a) => scalp(a[0], a[1]))
-    else if ('points' in lock && lock.points)
+    } else if ('points' in lock && lock.points) {
       points = bezier(lock.points.map(vec), 20)
-    else throw new Error('Missing hair lock path')
+    } else {
+      throw new Error('Missing hair lock path')
+    }
     const m = emptyMesh(),
       sections = 8
     for (let j = 0; j < points.length; j++) {
@@ -208,7 +216,7 @@ export function puppet(
         m.uvs.push(i / sections, t)
       }
     }
-    for (let j = 0; j < points.length - 1; j++)
+    for (let j = 0; j < points.length - 1; j++) {
       for (let i = 0; i < sections; i++) {
         const a = j * (sections + 1) + i,
           b = a + 1,
@@ -216,6 +224,7 @@ export function puppet(
           d = c + 1
         m.indices.push(a, b, d, a, d, c)
       }
+    }
     p.push(part(lock.id, m, hairColor))
   }
   const clothing = spec.clothing
@@ -227,8 +236,9 @@ export function puppet(
       'fabric'
     )
   )
-  for (const s of clothing.shirt.sleeves)
+  for (const s of clothing.shirt.sleeves) {
     p.push(part(s.id, loft(smoothRows(s.rings)), shirt, 'fabric'))
+  }
   p.push(
     part(
       'trousers-pelvis',
@@ -237,10 +247,12 @@ export function puppet(
       'fabric'
     )
   )
-  for (const leg of clothing.trousers.legs)
+  for (const leg of clothing.trousers.legs) {
     p.push(part(leg.id, loft(smoothRows(leg.rings)), 0x756f5c, 'fabric'))
-  for (const shoe of clothing.shoes)
+  }
+  for (const shoe of clothing.shoes) {
     p.push(part(shoe.id, loft(smoothRows(shoe.outerRings)), 0x584333, 'wood'))
+  }
   p.push(...garmentDetails(clothing.shirt, shirt, materials))
   if (eyewear) {
     const g = male.glasses
@@ -254,7 +266,7 @@ export function puppet(
         )
       )
     )
-    for (const [i, c] of g.ringCentres.entries())
+    for (const [i, c] of g.ringCentres.entries()) {
       p.push(
         part(
           `rim-${i}`,
@@ -271,6 +283,7 @@ export function puppet(
           'metal'
         )
       )
+    }
     p.push(
       part(
         'bridge',
@@ -281,8 +294,9 @@ export function puppet(
     )
   }
   if (seatHeight !== undefined) {
-    if (!Number.isFinite(seatHeight) || seatHeight <= 0)
+    if (!Number.isFinite(seatHeight) || seatHeight <= 0) {
       throw new Error('Invalid seat height')
+    }
     const body = spec.bodyAndFaceParts as BodyPart[],
       thigh = requiredSpecValue(
         body.find((c) => c.id === 'thigh-left'),

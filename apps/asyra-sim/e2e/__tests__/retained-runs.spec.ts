@@ -3,9 +3,13 @@ import { expect, test, type Download, type Page } from '@playwright/test'
 
 async function downloadText(download: Download): Promise<string> {
   const stream = await download.createReadStream()
-  if (!stream) throw new Error('Download stream unavailable')
+  if (!stream) {
+    throw new Error('Download stream unavailable')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   return Buffer.concat(chunks).toString('utf8')
 }
 async function download(page: Page, name: string) {

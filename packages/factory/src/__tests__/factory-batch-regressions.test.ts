@@ -489,7 +489,9 @@ describe('Factory batch regression contracts', () => {
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       () => {
-        if (!firstProjection) return
+        if (!firstProjection) {
+          return
+        }
         firstProjection = false
         factory.unregisterSharedDataChannel(SharedDataChannelNames.SCENE_TREE)
       }
@@ -508,7 +510,9 @@ describe('Factory batch regression contracts', () => {
     )
     const actionPublications: SharedPublication[] = []
     factory.subscribeToSharedPublication((publication) => {
-      if (publication.origin === 'action') actionPublications.push(publication)
+      if (publication.origin === 'action') {
+        actionPublications.push(publication)
+      }
     })
 
     factory.startTransaction()
@@ -554,7 +558,9 @@ describe('Factory batch regression contracts', () => {
     )
     const undoPublications: SharedPublication[] = []
     factory.subscribeToSharedPublication((publication) => {
-      if (publication.origin === 'undo') undoPublications.push(publication)
+      if (publication.origin === 'undo') {
+        undoPublications.push(publication)
+      }
     })
 
     factory.undo()
@@ -1024,7 +1030,9 @@ describe('Factory batch regression contracts', () => {
       ...activeSequence,
       slices: new Proxy(activeSequence.slices, {
         get(target, property, receiver) {
-          if (property === 'filter') fullSequenceFilterCalls += 1
+          if (property === 'filter') {
+            fullSequenceFilterCalls += 1
+          }
           return Reflect.get(target, property, receiver)
         }
       })

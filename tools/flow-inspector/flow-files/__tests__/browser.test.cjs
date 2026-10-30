@@ -37,7 +37,9 @@ test(
     const errors = []
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text())
+      if (message.type() === 'error') {
+        errors.push(message.text())
+      }
     })
     await page.goto(server.origin)
     await page

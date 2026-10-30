@@ -61,15 +61,30 @@ test('resource evidence bounds inspected processes, output rows and serialized b
     readDirectory: async () => entries,
     readLink: async () => root + '/a-very-long-project-directory/'.repeat(8),
     readFile: async (file) => {
-      if (file === '/proc/stat') return 'cpu  10 1 5 80 2 1 1 3 0 0\n'
-      if (file === '/proc/self/cgroup') return '0::/actions-job\n'
-      if (file.endsWith('/stat')) return '1000 (node) S 999 0 0 0 0\n'
-      if (file.endsWith('/comm')) return 'node-with-a-very-long-process-name\n'
-      if (file.endsWith('/cpu.max')) return '200000 100000\n'
-      if (file.endsWith('/cpu.stat'))
+      if (file === '/proc/stat') {
+        return 'cpu  10 1 5 80 2 1 1 3 0 0\n'
+      }
+      if (file === '/proc/self/cgroup') {
+        return '0::/actions-job\n'
+      }
+      if (file.endsWith('/stat')) {
+        return '1000 (node) S 999 0 0 0 0\n'
+      }
+      if (file.endsWith('/comm')) {
+        return 'node-with-a-very-long-process-name\n'
+      }
+      if (file.endsWith('/cpu.max')) {
+        return '200000 100000\n'
+      }
+      if (file.endsWith('/cpu.stat')) {
         return 'usage_usec 5000\nnr_periods 10\nnr_throttled 2\nthrottled_usec 700\n'
-      if (file.endsWith('/memory.current')) return '1048576\n'
-      if (file.endsWith('/memory.max')) return '2097152\n'
+      }
+      if (file.endsWith('/memory.current')) {
+        return '1048576\n'
+      }
+      if (file.endsWith('/memory.max')) {
+        return '2097152\n'
+      }
       throw Object.assign(new Error('absent'), { code: 'ENOENT' })
     }
   }

@@ -51,13 +51,16 @@ function reject(): never {
   throw new Error('Invalid synthetic joint segment')
 }
 function keys(value: unknown, expected: readonly string[]) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) reject()
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    reject()
+  }
   const actual = Object.keys(value)
   if (
     actual.length !== expected.length ||
     actual.some((key) => !expected.includes(key))
-  )
+  ) {
     reject()
+  }
 }
 function read(raw: JointSegmentInput, joints: readonly (keyof RobotJoints)[]) {
   const input = structuredClone(raw)
@@ -70,11 +73,14 @@ function read(raw: JointSegmentInput, joints: readonly (keyof RobotJoints)[]) {
     !Number.isFinite(input.until) ||
     input.from < 0 ||
     input.until <= input.from
-  )
+  ) {
     reject()
+  }
   for (const values of [input.start, input.end]) {
     keys(values, joints)
-    if (joints.some((key) => !Number.isFinite(values[key]))) reject()
+    if (joints.some((key) => !Number.isFinite(values[key]))) {
+      reject()
+    }
     Object.freeze(values)
   }
   return Object.freeze(input)
@@ -110,8 +116,9 @@ function readWindow(raw: JointDomainWindow) {
     value.queryFrom > value.queryUntil ||
     value.validFrom > value.queryFrom ||
     value.queryUntil >= value.validUntil
-  )
+  ) {
     reject()
+  }
   return Object.freeze(value)
 }
 function pointAt(
@@ -121,10 +128,16 @@ function pointAt(
 ): Readonly<RobotJoints> {
   work.pointEvaluations++
   const input = segment.input
-  if (time === input.from) return input.start
-  if (time === input.until) return input.end
+  if (time === input.from) {
+    return input.start
+  }
+  if (time === input.until) {
+    return input.end
+  }
   const observe = (bits: number) => {
-    if (bits > 24000) throw new Error('Joint domain arithmetic budget exceeded')
+    if (bits > 24000) {
+      throw new Error('Joint domain arithmetic budget exceeded')
+    }
     work.maxBigIntBits = Math.max(work.maxBigIntBits, bits)
   }
   const width = (value: bigint) => {
@@ -137,22 +150,25 @@ function pointAt(
       !Number.isSafeInteger(count) ||
       count < 0 ||
       width(value) + count > 24000
-    )
+    ) {
       throw new Error('Joint domain shift budget exceeded')
+    }
     const result = value << BigInt(count)
     width(result)
     return result
   }
   const product = (a: bigint, b: bigint) => {
-    if (width(a) + width(b) > 24000)
+    if (width(a) + width(b) > 24000) {
       throw new Error('Joint domain product budget exceeded')
+    }
     const result = a * b
     width(result)
     return result
   }
   const sum = (a: bigint, b: bigint) => {
-    if (Math.max(width(a), width(b)) + 1 > 24000)
+    if (Math.max(width(a), width(b)) + 1 > 24000) {
       throw new Error('Joint domain sum budget exceeded')
+    }
     const result = a + b
     width(result)
     return result
@@ -175,8 +191,11 @@ function pointAt(
       product(shift(b.significand, b.exponent - e), right)
     )
     let denominator = duration
-    if (e < 0) denominator = shift(denominator, -e)
-    else numerator = shift(numerator, e)
+    if (e < 0) {
+      denominator = shift(denominator, -e)
+    } else {
+      numerator = shift(numerator, e)
+    }
     work.conversions++
     result[key] = roundFraction(numerator, denominator, 'nearest-even', observe)
   }
@@ -198,8 +217,9 @@ export class JointSegments {
       segment.status !== 'admissible' ||
       window.queryFrom < segment.input.from ||
       window.queryUntil > segment.input.until
-    )
+    ) {
       reject()
+    }
     const work: DomainWork = {
       pointEvaluations: 0,
       conversions: 0,
@@ -236,7 +256,9 @@ export class JointSegments {
     this.geometry.read(source)
     const rig = source.receipt.robot.rig
     // The upstream owner never issues geometry without a rig.
-    if (!rig) reject()
+    if (!rig) {
+      reject()
+    }
     const joints = Object.keys(rig.limits) as (keyof RobotJoints)[]
     const input = read(raw, joints)
     const checks = {} as Record<keyof RobotJoints, JointCheck>
@@ -262,7 +284,9 @@ export class JointSegments {
       work.joints++
       work.exactComparisons++
       checks[key] = Object.freeze({ limits, speed })
-      if (limits === 'outside' || speed === 'outside') status = 'invalid'
+      if (limits === 'outside' || speed === 'outside') {
+        status = 'invalid'
+      }
     }
     this.geometry.read(source)
     return Object.freeze({

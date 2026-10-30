@@ -138,8 +138,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               sourceAction = 'consume'
               try {
                 const result = sample(a, b, origin, previous)
-                if (result?.source !== undefined)
+                if (result?.source !== undefined) {
                   sources.set(result.source, origin)
+                }
                 return result
               } finally {
                 sampleOrigin = undefined
@@ -176,11 +177,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           const pending = [index.root]
           while (pending.length) {
             const node = pending.pop()
-            if (!node) throw new Error('Missing measured node')
+            if (!node) {
+              throw new Error('Missing measured node')
+            }
             nodeBounds.add(node.bounds)
-            for (const triangle of node.triangles)
+            for (const triangle of node.triangles) {
               triangleBounds.add(triangle.bounds)
-            if (node.children) pending.push(...node.children)
+            }
+            if (node.children) {
+              pending.push(...node.children)
+            }
           }
         }
         const ops = kinematics.poseOperations(kinematics.intervalAlgebra)
@@ -191,12 +197,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             current.initialUpper !== undefined ||
             !currentShapes ||
             !currentContext
-          )
+          ) {
             return
+          }
           const [a, b] = currentShapes,
             ai = indices.get(a.geometry),
             bi = indices.get(b.geometry)
-          if (!ai || !bi) throw new Error('Missing exact measured source index')
+          if (!ai || !bi) {
+            throw new Error('Missing exact measured source index')
+          }
           const upper = ops.norm(
             ops.sub(
               meshIndex.worldPoint(a.pose, ai.representatives[0]),
@@ -205,8 +214,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           )[1]
           current.initialUpper = upper
           bestUpper = upper
-          if (upper < snapshot.rule.minimumClearance)
+          if (upper < snapshot.rule.minimumClearance) {
             current.firstWarningWork = currentContext.work - current.before
+          }
         }
         const identities = new WeakMap<object, number>()
         let nextIdentity = 0
@@ -248,8 +258,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (...args) => {
             if (active) {
               segment = args[1]
-              if (!Array.isArray(args[2]))
+              if (!Array.isArray(args[2])) {
                 throw new Error('Expected interval algebra input')
+              }
               time = [args[2][0], args[2][1]]
             }
             return interpolate(...args)
@@ -263,13 +274,19 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             | Parameters<typeof context.lowerOver>,
           call: () => T
         ): T => {
-          if (!active) return call()
-          if (kind === 'static' && !sampleOrigin)
+          if (!active) {
+            return call()
+          }
+          if (kind === 'static' && !sampleOrigin) {
             throw new Error('Missing actual static sampler origin')
+          }
           const origin = kind === 'static' ? sampleOrigin : undefined
           let sampleRole = 'middle'
-          if (origin?.time === origin?.start) sampleRole = 'first'
-          else if (origin?.time === origin?.end) sampleRole = 'end'
+          if (origin?.time === origin?.start) {
+            sampleRole = 'first'
+          } else if (origin?.time === origin?.end) {
+            sampleRole = 'end'
+          }
           const row: Row = {
             kind,
             origin: origin
@@ -328,23 +345,28 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           bestUpper = kind === 'static' ? (seededUpper ?? Infinity) : Infinity
           if (kind === 'static' && seededUpper !== undefined) {
             row.initialUpper = seededUpper
-            if (seededUpper < snapshot.rule.minimumClearance)
+            if (seededUpper < snapshot.rule.minimumClearance) {
               row.firstWarningWork = 0
+            }
           }
           try {
             const value = call()
             row.status = 'complete'
-            if (typeof value === 'number') row.lower = value
-            else
+            if (typeof value === 'number') {
+              row.lower = value
+            } else {
               Object.assign(row, {
                 lower: (value as convex.DistanceEvidence).lower,
                 upper: (value as convex.DistanceEvidence).upper,
                 penetration: (value as convex.DistanceEvidence).penetration,
                 converged: (value as convex.DistanceEvidence).converged
               })
+            }
             return value
           } catch (error) {
-            if (error instanceof MeshWorkLimit) row.status = 'exhausted'
+            if (error instanceof MeshWorkLimit) {
+              row.status = 'exhausted'
+            }
             throw error
           } finally {
             row.milliseconds = performance.now() - started
@@ -439,7 +461,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             const index = build(
               geometry,
               () => {
-                if (current) current.median++
+                if (current) {
+                  current.median++
+                }
                 checkpoint()
               },
               hierarchy,
@@ -454,7 +478,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
           (index, checkpoint) => {
             const completed = refine(index, () => {
-              if (current) current.refinement++
+              if (current) {
+                current.refinement++
+              }
               checkpoint()
             })
             register(completed)
@@ -467,24 +493,40 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             admitInitialWitness()
             const phase =
               current?.phases[threshold === 0 ? 'penetration' : 'clearance']
-            if (phase) phase.calls++
+            if (phase) {
+              phase.calls++
+            }
             let level: keyof Row['levels'] = 'other'
-            if (triangleBounds.has(a) && triangleBounds.has(b))
+            if (triangleBounds.has(a) && triangleBounds.has(b)) {
               level = 'triangle'
-            else if (nodeBounds.has(a) && nodeBounds.has(b)) level = 'node'
+            } else if (nodeBounds.has(a) && nodeBounds.has(b)) {
+              level = 'node'
+            }
             const cost = current?.levels[level]
-            if (cost) cost.calls++
+            if (cost) {
+              cost.calls++
+            }
             const started = performance.now()
             const gap = project(a, ap, b, bp, threshold, () => {
-              if (current) current.axes++
-              if (phase) phase.axes++
-              if (cost) cost.axes++
+              if (current) {
+                current.axes++
+              }
+              if (phase) {
+                phase.axes++
+              }
+              if (cost) {
+                cost.axes++
+              }
               checkpoint()
             })
-            if (phase && gap > threshold) phase.rejections++
+            if (phase && gap > threshold) {
+              phase.rejections++
+            }
             if (cost) {
               cost.milliseconds += performance.now() - started
-              if (gap > threshold) cost.rejections++
+              if (gap > threshold) {
+                cost.rejections++
+              }
             }
             return gap
           }
@@ -494,7 +536,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (point, shape, index, checkpoint) => {
             admitInitialWitness()
             return contains(point, shape, index, () => {
-              if (current) current.membership++
+              if (current) {
+                current.membership++
+              }
               checkpoint()
             })
           }
@@ -506,17 +550,23 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           if (current) {
             current.convexMilliseconds += performance.now() - started
             current.convexCalls++
-            if (value.penetration) current.convexPenetrations++
-            if (value.lower <= 0) current.convexZeroLower++
+            if (value.penetration) {
+              current.convexPenetrations++
+            }
+            if (value.lower <= 0) {
+              current.convexZeroLower++
+            }
             if (current.kind === 'static') {
-              if (value.penetration || value.upper < bestUpper)
+              if (value.penetration || value.upper < bestUpper) {
                 bestUpper = value.upper
+              }
               if (
                 current.firstWarningWork === undefined &&
                 bestUpper < snapshot.rule.minimumClearance &&
                 currentContext
-              )
+              ) {
                 current.firstWarningWork = currentContext.work - current.before
+              }
             }
           }
           return value
@@ -531,7 +581,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               pair.a.bodyId === 'example:joint-2' &&
               pair.b.bodyId === 'obstacle-11'
           )
-          if (!pair) throw new Error('Missing original frontier pair')
+          if (!pair) {
+            throw new Error('Missing original frontier pair')
+          }
           active = true
           target = queryOriginalPartPair(
             {
@@ -557,7 +609,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           evaluations = target.evaluations
           expect(target.coverage).toBe('complete')
         }
-        if (!target) throw new Error('Missing measured target')
+        if (!target) {
+          throw new Error('Missing measured target')
+        }
         const targetLeaves = target.leaves
         const exhausted = rows.filter((row) => row.status === 'exhausted')
         const frontier = exhausted[0]

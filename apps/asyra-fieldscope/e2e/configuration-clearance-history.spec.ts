@@ -42,15 +42,17 @@ test('edits crossbeam height and symmetric clearance with independent history', 
   await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
   await expect(height).toHaveValue('5')
   await expect(page.getByText(/已套用：/)).toHaveCount(0)
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('editable-structure-dimensions.png'),
       fullPage: true
     })
+  }
   await page.getByLabel('第 7 項寬度').scrollIntoViewIfNeeded()
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('editable-side-clearance.png'),
       fullPage: true
     })
+  }
 })

@@ -136,7 +136,7 @@ describe('backend canonical document reducer', () => {
         inheritance: { sourceId: 'source', overrides: {}, childBindings: {} }
       }
       let reads = 0
-      for (let i = 0; i < count; i++)
+      for (let i = 0; i < count; i++) {
         document.props[`unrelated-${i}`] = {
           id: `unrelated-${i}`,
           type: 'fill',
@@ -146,6 +146,7 @@ describe('backend canonical document reducer', () => {
             return undefined
           }
         }
+      }
       const next = apply(document, [
         {
           kind: 'property-components',
@@ -249,7 +250,7 @@ describe('backend canonical document reducer', () => {
       color: '#112233'
     }
     document.props.source = source
-    for (const id of ['a', 'b'])
+    for (const id of ['a', 'b']) {
       document.sceneTree.elements[id] = {
         id,
         type: 'rectangle',
@@ -259,6 +260,7 @@ describe('backend canonical document reducer', () => {
         parentId: 'workspace',
         props: { fill: 'source' }
       }
+    }
     const local = {
       id: 'local',
       type: 'fill',
@@ -489,7 +491,9 @@ describe('backend canonical document reducer', () => {
       { data: element('left', 'workspace'), parentId: 'workspace', index: 0 }
     ]
     const [right, , left] = entries
-    if (!right || !left) throw new Error('Missing exact insertion fixture')
+    if (!right || !left) {
+      throw new Error('Missing exact insertion fixture')
+    }
     const restored = apply(document, [
       { kind: 'element-creation', entries, properties: [] }
     ])

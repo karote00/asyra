@@ -197,13 +197,14 @@ it('blocks explicit release while another call borrows the same browser query an
     outputSchema: receiptSchema
   })
   await app.leases.release({ requestId: 'request', callId: 'producer' })
-  for (const id of ['borrower', 'releaser'])
+  for (const id of ['borrower', 'releaser']) {
     await app.leases.open({
       requestId: 'request',
       callId: id,
       input: receipt,
       inputSchema: receiptSchema
     })
+  }
   app.setCall('releaser')
   const batch = {
     batchId: 'release',
@@ -246,13 +247,14 @@ it('blocks explicit release while another call borrows the same browser query an
 it('recovers a lost browser release acknowledgement without reviving the handle or releasing a sibling', async () => {
   const app = fixture()
   try {
-    for (const callId of ['producer', 'sibling'])
+    for (const callId of ['producer', 'sibling']) {
       await app.leases.open({
         requestId: 'request',
         callId,
         input: null,
         inputSchema: { type: 'null' }
       })
+    }
     const receipt = app.read()
     await app.publish(receipt)
     app.setCall('sibling')
@@ -392,8 +394,9 @@ it.each([
         read: async (key) => stored.get(key),
         list: async () => [...stored.values()],
         write: async (input) => {
-          if (stored.get(input.key)?.version !== input.expectedVersion)
+          if (stored.get(input.key)?.version !== input.expectedVersion) {
             throw new Error('Store conflict')
+          }
           const entry = {
             key: input.key,
             record: input.record,
@@ -418,7 +421,9 @@ it.each([
               actionResults: await Promise.all(
                 batch.actions.map(async (call) => {
                   const action = actions.find((item) => item.name === call.name)
-                  if (!action) throw new Error('Unknown action')
+                  if (!action) {
+                    throw new Error('Unknown action')
+                  }
                   return {
                     actionId: call.id,
                     actionName: call.name,
@@ -447,7 +452,9 @@ it.each([
       const definition = host
         .definitions()
         .find((entry) => entry.registeredName === name)
-      if (!definition) throw new Error(`Missing exposed dependency: ${name}`)
+      if (!definition) {
+        throw new Error(`Missing exposed dependency: ${name}`)
+      }
       return definition.revision
     }
     const literal = (value: unknown) => ({ kind: 'literal', value })
@@ -735,8 +742,9 @@ it.each(['recipe', 'native', 'partial'] as const)(
         read: async (key) => stored.get(key),
         list: async () => [...stored.values()],
         write: async (input) => {
-          if (stored.get(input.key)?.version !== input.expectedVersion)
+          if (stored.get(input.key)?.version !== input.expectedVersion) {
             throw new Error('Store conflict')
+          }
           const entry = {
             key: input.key,
             record: input.record,
@@ -764,7 +772,9 @@ it.each(['recipe', 'native', 'partial'] as const)(
                 }
               for (const call of batch.actions) {
                 const action = actions.find((item) => item.name === call.name)
-                if (!action) throw new Error('Unknown action')
+                if (!action) {
+                  throw new Error('Unknown action')
+                }
                 try {
                   const actual = (await action.execute(
                     call.arguments as never,
@@ -777,7 +787,9 @@ it.each(['recipe', 'native', 'partial'] as const)(
                       }
                     }
                   )) as { retained?: { snapshotId: string } }
-                  if (actual.retained) deliveredId = actual.retained.snapshotId
+                  if (actual.retained) {
+                    deliveredId = actual.retained.snapshotId
+                  }
                   receipt.actionResults.push({
                     actionId: call.id,
                     actionName: call.name,

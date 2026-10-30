@@ -5,9 +5,15 @@ import { formatDistance } from './format-distance'
 import type { IntervalEvidence } from '../../analysis/methods/continuous-query'
 
 function intervalLabel(interval: IntervalEvidence): string {
-  if (interval.penetration) return 'Collision - established penetration'
-  if (interval.state === 'finding') return 'Clearance violation'
-  if (interval.state === 'unresolved') return 'Unresolved'
+  if (interval.penetration) {
+    return 'Collision - established penetration'
+  }
+  if (interval.state === 'finding') {
+    return 'Clearance violation'
+  }
+  if (interval.state === 'unresolved') {
+    return 'Unresolved'
+  }
   return 'No issue within interval'
 }
 
@@ -50,8 +56,9 @@ export function PairEvidenceView({
     (body) => body.id === source.b.bodyId
   )
 
-  if (!bodyA || !bodyB)
+  if (!bodyA || !bodyB) {
     throw new Error('Frozen pair body is missing from the snapshot')
+  }
 
   return (
     <details

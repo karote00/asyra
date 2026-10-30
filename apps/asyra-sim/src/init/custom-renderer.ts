@@ -22,7 +22,9 @@ export function installCustomRenderer(
   return {
     layer,
     dispose: () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       disposed = true
       core.unregisterRenderLayer(SPATIAL_LAYER_NAME)
       layer.dispose()

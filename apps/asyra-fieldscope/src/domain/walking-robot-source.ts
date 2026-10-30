@@ -145,7 +145,9 @@ const frame = (
 ): WalkingRigidTransform => Object.freeze({ position, rotation })
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) deepFreeze(child)
+    for (const child of Object.values(value)) {
+      deepFreeze(child)
+    }
     Object.freeze(value)
   }
   return value
@@ -180,13 +182,18 @@ interface SourceScalar {
   exponent: number
 }
 function requiredSource<T>(value: T | undefined): T {
-  if (value === undefined)
+  if (value === undefined) {
     throw new Error('Missing canonical source construction value')
+  }
   return value
 }
 function sourceScalar(value: number): SourceScalar {
-  if (!Number.isFinite(value)) throw new Error('Non-finite source arithmetic')
-  if (value === 0) return { significand: 0n, exponent: 0 }
+  if (!Number.isFinite(value)) {
+    throw new Error('Non-finite source arithmetic')
+  }
+  if (value === 0) {
+    return { significand: 0n, exponent: 0 }
+  }
   const bytes = new DataView(new ArrayBuffer(8))
   bytes.setFloat64(0, value)
   const bits = bytes.getBigUint64(0),
@@ -212,7 +219,9 @@ function sourceScalarCompare(a: SourceScalar, b: SourceScalar) {
     significand: -b.significand,
     exponent: b.exponent
   }).significand
-  if (delta < 0n) return -1
+  if (delta < 0n) {
+    return -1
+  }
   return delta > 0n ? 1 : 0
 }
 function sourceScalarMultiply(a: SourceScalar, b: SourceScalar): SourceScalar {
@@ -249,8 +258,9 @@ function sourceDirected(value: SourceScalar, direction: -1 | 1) {
   const remainder = magnitude - (quotient << BigInt(shift))
   const rounded = quotient + (remainder !== 0n && direction === sign ? 1n : 0n)
   const result = sign * Number(rounded) * 2 ** (value.exponent + shift)
-  if (!Number.isFinite(result))
+  if (!Number.isFinite(result)) {
     throw new Error('Unrepresentable source endpoint')
+  }
   return result
 }
 function sourceSupport(vertices: readonly Point3[], direction: Point3) {
@@ -261,7 +271,7 @@ function sourceSupport(vertices: readonly Point3[], direction: Point3) {
 }
 function builderVertices(builder: TriangleBuilder): Point3[] {
   const vertices: Point3[] = []
-  for (let offset = 0; offset < builder.positions.length; offset += 3)
+  for (let offset = 0; offset < builder.positions.length; offset += 3) {
     vertices.push(
       point(
         builder.positions[offset],
@@ -269,13 +279,15 @@ function builderVertices(builder: TriangleBuilder): Point3[] {
         builder.positions[offset + 2]
       )
     )
+  }
   return vertices
 }
 const sourceDot = (a: Point3, b: Point3) =>
   a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 function sourcePoint(values: readonly number[]): Point3 {
-  if (values.length !== 3 || !values.every(Number.isFinite))
+  if (values.length !== 3 || !values.every(Number.isFinite)) {
     throw new Error('Invalid articulation source coordinate')
+  }
   return point(values[0], values[1], values[2])
 }
 const pointQuaternionConjugate = (value: Quaternion4): Quaternion4 =>
@@ -301,8 +313,9 @@ function sourceRotate(q: Quaternion4, value: Point3): Point3 {
     yw = y * w,
     zw = z * w
   const norm = xx + yy + zz + ww
-  if (!(norm > 0) || !Number.isFinite(norm))
+  if (!(norm > 0) || !Number.isFinite(norm)) {
     throw new Error('Invalid source rotation')
+  }
   return point(
     ((ww + xx - yy - zz) * value[0] +
       2 * (xy - zw) * value[1] +
@@ -340,8 +353,12 @@ function requireMaterialCell(faces: SolidCell) {
   const bytes = new DataView(new ArrayBuffer(8))
   const coefficients = vertices.map((p) =>
     p.map((value) => {
-      if (!Number.isFinite(value)) throw new Error('Non-finite material cell')
-      if (value === 0) return { significand: 0n, exponent: 0 }
+      if (!Number.isFinite(value)) {
+        throw new Error('Non-finite material cell')
+      }
+      if (value === 0) {
+        return { significand: 0n, exponent: 0 }
+      }
       bytes.setFloat64(0, value)
       const bits = bytes.getBigUint64(0),
         exponent = Number((bits >> 52n) & 2047n)
@@ -387,8 +404,9 @@ function requireMaterialCell(faces: SolidCell) {
         difference(points[ids[index]], origin),
         difference(points[ids[index + 1]], origin)
       )
-      if (normal.every((value) => value === 0n))
+      if (normal.every((value) => value === 0n)) {
         throw new Error('Degenerate emitted material face')
+      }
       let positive = false,
         negative = false
       for (const p of points) {
@@ -396,24 +414,28 @@ function requireMaterialCell(faces: SolidCell) {
         positive ||= side > 0n
         negative ||= side < 0n
       }
-      if (positive && negative)
+      if (positive && negative) {
         throw new Error('Nonconvex emitted material cell')
+      }
       dimensional ||= positive || negative
     }
   }
   if (
     !dimensional ||
     [...edges.values()].some((edge) => edge.count !== 2 || edge.balance !== 0)
-  )
+  ) {
     throw new Error('Unclosed or lower-dimensional emitted material cell')
+  }
 }
 
 function appendCell(builder: TriangleBuilder, faces: SolidCell) {
   requireMaterialCell(faces)
   const start = builder.indices.length
-  for (const face of faces)
-    for (let index = 1; index + 1 < face.length; index++)
+  for (const face of faces) {
+    for (let index = 1; index + 1 < face.length; index++) {
       builder.triangle(face[0], face[index], face[index + 1])
+    }
+  }
   builder.region('closed-solid', start)
 }
 function boxBuilder(min: Point3, max: Point3) {
@@ -465,8 +487,9 @@ function requireBearingConnection(
       const inside = indices
         .map((index) => dot(normal, subtract(points[index], origin)))
         .find((side) => side !== 0n)
-      if (inside === undefined)
+      if (inside === undefined) {
         throw new Error('Unproved bearing connection cell')
+      }
       planes.push({ origin, normal, inside })
     }
     if (
@@ -476,8 +499,9 @@ function requireBearingConnection(
           return side === 0n || side > 0n === inside > 0n
         })
       )
-    )
+    ) {
       return
+    }
   }
   throw new Error('Disconnected canonical neck and sleeve')
 }
@@ -486,8 +510,12 @@ function clipCell(cell: SolidCell, plane: CuttingPlane): SolidCell | undefined {
   const values = cell
     .flat()
     .map((p) => sourceDot(plane.normal, p) - plane.offset)
-  if (values.every((value) => value <= 0)) return cell
-  if (values.every((value) => value >= 0)) return undefined
+  if (values.every((value) => value <= 0)) {
+    return cell
+  }
+  if (values.every((value) => value >= 0)) {
+    return undefined
+  }
   const faces: Point3[][] = [],
     cap = new Map<string, Point3>(),
     intersections = new Map<string, Point3>()
@@ -499,8 +527,12 @@ function clipCell(cell: SolidCell, plane: CuttingPlane): SolidCell | undefined {
         b = face[(index + 1) % face.length]
       const da = sourceDot(plane.normal, a) - plane.offset
       const db = sourceDot(plane.normal, b) - plane.offset
-      if (da <= 0) output.push(a)
-      if (da === 0) cap.set(key(a), a)
+      if (da <= 0) {
+        output.push(a)
+      }
+      if (da === 0) {
+        cap.set(key(a), a)
+      }
       if ((da < 0 && db > 0) || (da > 0 && db < 0)) {
         const ak = key(a),
           bk = key(b),
@@ -541,12 +573,15 @@ function clipCell(cell: SolidCell, plane: CuttingPlane): SolidCell | undefined {
     if (
       distinct.length > 2 &&
       key(distinct[0]) === key(distinct[distinct.length - 1])
-    )
+    ) {
       distinct.pop()
-    if (distinct.length >= 3) faces.push(distinct)
+    }
+    if (distinct.length >= 3) {
+      faces.push(distinct)
+    }
   }
   const rim = [...cap.values()]
-  if (rim.length < 3)
+  if (rim.length < 3) {
     throw new Error(
       `Invalid articulation housing cut: ${JSON.stringify({
         plane,
@@ -554,6 +589,7 @@ function clipCell(cell: SolidCell, plane: CuttingPlane): SolidCell | undefined {
         signedDistances: [...new Set(values)]
       })}`
     )
+  }
   const centre = sourcePoint(
     [0, 1, 2].map(
       (axis) => rim.reduce((sum, p) => sum + p[axis], 0) / rim.length
@@ -585,20 +621,28 @@ function subtractVolumes(
     for (const original of cells) {
       let remainder: SolidCell | undefined = original
       for (const plane of planes) {
-        if (!remainder) break
+        if (!remainder) {
+          break
+        }
         const outside = clipCell(remainder, {
           normal: point(-plane.normal[0], -plane.normal[1], -plane.normal[2]),
           offset: -plane.offset
         })
-        if (outside) retained.push(outside)
+        if (outside) {
+          retained.push(outside)
+        }
         remainder = clipCell(remainder, plane)
       }
     }
     cells = retained
   }
-  if (!cells.length) throw new Error('Articulation removes its parent housing')
+  if (!cells.length) {
+    throw new Error('Articulation removes its parent housing')
+  }
   const builder = new TriangleBuilder()
-  for (const cell of cells) appendCell(builder, cell)
+  for (const cell of cells) {
+    appendCell(builder, cell)
+  }
   return builder
 }
 function boxPlanes(min: Point3, max: Point3): CuttingPlane[] {
@@ -624,8 +668,12 @@ function ringBuilder(
     const angle = (index * 2 * Math.PI) / count
     const u = radius * Math.cos(angle),
       v = radius * Math.sin(angle)
-    if (axis === 'x') return point(height, u, v)
-    if (axis === 'y') return point(v, height, u)
+    if (axis === 'x') {
+      return point(height, u, v)
+    }
+    if (axis === 'y') {
+      return point(v, height, u)
+    }
     return point(u, v, height)
   }
   const outerLow = Array.from({ length: count }, (_, i) => along(outer, i, low))
@@ -716,7 +764,9 @@ function buildWalkingRobotSource(
     geometry?: TriangleBuilder
   ) => {
     const builder = geometry ?? new TriangleBuilder()
-    if (!geometry) builder.box([0, 0, 0], size)
+    if (!geometry) {
+      builder.box([0, 0, 0], size)
+    }
     const regions = builder.regions()
     const declarations = Array.isArray(patch)
       ? patch
@@ -777,8 +827,9 @@ function buildWalkingRobotSource(
   const toolReferences: { bodyId: string; role: WalkingArmRole }[] = []
   const coreGeometry = (link: LinkDraft) => {
     const { size, axis, sign, length, start, end } = link
-    if (!(length > start + end))
+    if (!(length > start + end)) {
       throw new Error('No positive link core remains')
+    }
     const terminal = link.endRequirement ?? sourceScalar(end)
     const far = sourceDirected(
       sourceScalarAdd(sourceScalar(length), {
@@ -851,8 +902,9 @@ function buildWalkingRobotSource(
           if (
             root.mount.position[axis] < min[axis] - halfSection ||
             root.mount.position[axis] > max[axis] + halfSection
-          )
+          ) {
             throw new Error('Disconnected articulation root')
+          }
         } else {
           const a =
             (min[axis] - halfSection - root.mount.position[axis]) /
@@ -864,8 +916,9 @@ function buildWalkingRobotSource(
           exit = Math.min(exit, Math.max(a, b))
         }
       }
-      if (!(exit > Math.max(0, entry)) || exit >= root.length)
+      if (!(exit > Math.max(0, entry)) || exit >= root.length) {
         throw new Error('Articulation link cannot leave its parent housing')
+      }
       const transformPlanes = (planes: CuttingPlane[]) =>
         planes.map((plane) => {
           const normal = sourceRotate(root.mount.rotation, plane.normal)
@@ -888,9 +941,11 @@ function buildWalkingRobotSource(
       )
       const entranceMin = root.mount.position.map((value) => value - radius)
       const entranceMax = root.mount.position.map((value) => value + radius)
-      if (normalized[nearest] < 0)
+      if (normalized[nearest] < 0) {
         entranceMin[nearest] = min[nearest] - clearance
-      else entranceMax[nearest] = max[nearest] + clearance
+      } else {
+        entranceMax[nearest] = max[nearest] + clearance
+      }
       volumes.push(
         boxPlanes(sourcePoint(entranceMin), sourcePoint(entranceMax))
       )
@@ -1061,13 +1116,14 @@ function buildWalkingRobotSource(
                 carriageBuilder.indices[offset + corner] * 3 + 2
               ] === plane
           )
-        )
+        ) {
           carriageFaces.push({
             id: `carriage-rail-${sign}-${offset}`,
             indexStart: offset,
             indexCount: 3,
             regionIndex
           })
+        }
       }
     }
   })
@@ -1403,13 +1459,16 @@ function buildWalkingRobotSource(
   const buildArticulations = () => {
     const result: ArticulationDraft[] = []
     for (const entry of joints) {
-      if (entry.motion !== 'revolute') continue
+      if (entry.motion !== 'revolute') {
+        continue
+      }
       const parent = bodies.find(({ id }) => id === entry.parentBodyId)
       const child = bodies.find(({ id }) => id === entry.childBodyId)
       const childLink = linkGeometry.get(entry.childBodyId)
       const parentLink = linkGeometry.get(entry.parentBodyId)
-      if (!parent || !child || !childLink)
+      if (!parent || !child || !childLink) {
         throw new Error('Incomplete articulation owner')
+      }
       const bearingParts: BearingPart[] = []
       const addBearing = (
         role: BearingPart['role'],
@@ -1446,25 +1505,33 @@ function buildWalkingRobotSource(
           (value, index) => index === axisIndex || value === 0
         )
       let yokeSign = -1
-      if (parentAxial) yokeSign = Math.sign(parentDirection[axisIndex])
-      else if (childAxial) yokeSign = -Math.sign(childLink.direction[axisIndex])
+      if (parentAxial) {
+        yokeSign = Math.sign(parentDirection[axisIndex])
+      } else if (childAxial) {
+        yokeSign = -Math.sign(childLink.direction[axisIndex])
+      }
       let yokeInner = halfBand + gap
-      if (!parentLink) yokeInner = outer + gap
-      else if (parentAxial) yokeInner = Math.max(parentLink.end, s / 2) + gap
-      if (model.kind === 'solid-articulation/2' && parent === base)
+      if (!parentLink) {
+        yokeInner = outer + gap
+      } else if (parentAxial) {
+        yokeInner = Math.max(parentLink.end, s / 2) + gap
+      }
+      if (model.kind === 'solid-articulation/2' && parent === base) {
         yokeInner = sourceDirected(
           sourceScalarAdd(sourceScalar(outer), sourceScalar(gap)),
           1
         )
+      }
       let yokeOuter =
         !parentLink || parentAxial
           ? yokeInner + gap
           : Math.max(parentLink.section / 2, yokeInner + gap)
-      if (model.kind === 'solid-articulation/2' && parent === base)
+      if (model.kind === 'solid-articulation/2' && parent === base) {
         yokeOuter = sourceDirected(
           sourceScalarAdd(sourceScalar(yokeInner), sourceScalar(gap)),
           1
         )
+      }
       addBearing(
         'pin',
         parent,
@@ -1493,7 +1560,9 @@ function buildWalkingRobotSource(
       yokeMax[axisIndex] = yokeSign > 0 ? yokeOuter : -yokeInner
       if (parentLink && !parentAxial) {
         for (let axis = 0; axis < 3; axis++) {
-          if (axis === axisIndex) continue
+          if (axis === axisIndex) {
+            continue
+          }
           const departure = parentDirection[axis]
           if (departure === 0) {
             yokeMin[axis] = -pinRadius
@@ -1511,8 +1580,9 @@ function buildWalkingRobotSource(
           entry.frame.rotation.some((v, index) =>
             index < 3 ? v !== 0 : Math.abs(v) !== 1
           )
-        )
+        ) {
           throw new Error('Unsupported external root frame')
+        }
         const side = childLink.direction[0]
         const chassis = definition.base.chassis
         const face = chassis.centre[0] + (side * chassis.size[0]) / 2
@@ -1526,8 +1596,9 @@ function buildWalkingRobotSource(
             sourceScalar(face)
           ) !== 0 ||
           side * localFace >= -outer
-        )
+        ) {
           throw new Error('Unproved external root chassis face')
+        }
         // This single closed convex plate connects the chassis face and pin
         // within the already axially separated parent slab.
         yokeMin[0] = Math.min(localFace, -outer)
@@ -1551,8 +1622,9 @@ function buildWalkingRobotSource(
               sourceScalar(chassis.centre[axis] + chassis.size[axis] / 2)
             ) > 0 ||
             sourceScalarCompare(low, high) >= 0
-          )
+          ) {
             throw new Error('Disconnected external root chassis face')
+          }
         }
       }
       addBearing(
@@ -1585,7 +1657,9 @@ function buildWalkingRobotSource(
         neckMin[axisIndex] = -halfBand
         neckMax[axisIndex] = halfBand
         for (let axis = 0; axis < 3; axis++) {
-          if (childLink.direction[axis] === 0) continue
+          if (childLink.direction[axis] === 0) {
+            continue
+          }
           const sign = childLink.direction[axis]
           neckMin[axis] = sign > 0 ? inner + gap : -childLink.start - gap
           neckMax[axis] = sign > 0 ? childLink.start + gap : -inner - gap
@@ -1645,7 +1719,7 @@ function buildWalkingRobotSource(
         gap
       }
     ]
-    if (parentLink && parentDeparture)
+    if (parentLink && parentDeparture) {
       contexts.push({
         link: parentLink,
         endpoint: 'end',
@@ -1656,13 +1730,14 @@ function buildWalkingRobotSource(
         material: childMaterial,
         gap
       })
+    }
     return contexts
   }
   // Finite pivot cross-sections are construction keepouts, not published material.
   // Solve once from the bounded joint primitives, then regenerate connectors and
   // certify their final actual material without a fixed-point iteration.
   const initialArticulations = buildArticulations()
-  for (const articulation of initialArticulations)
+  for (const articulation of initialArticulations) {
     for (const context of endpointContexts(articulation)) {
       if (
         context.otherDeparture &&
@@ -1670,10 +1745,11 @@ function buildWalkingRobotSource(
           sourceExactDot(context.otherDeparture, context.u),
           sourceScalar(0)
         ) > 0
-      )
+      ) {
         throw new Error(
           'Endpoint cores depart into the same material halfspace'
         )
+      }
       const support = sourceSupport(
         [...context.profile, ...context.material],
         context.u
@@ -1685,8 +1761,11 @@ function buildWalkingRobotSource(
       const required =
         sourceScalarCompare(supported, nominal) > 0 ? supported : nominal
       context.link[context.endpoint] = sourceDirected(required, 1)
-      if (context.endpoint === 'end') context.link.endRequirement = required
+      if (context.endpoint === 'end') {
+        context.link.endRequirement = required
+      }
     }
+  }
   const cores = new Map(
     [...linkGeometry.values()].map((link) => [link, coreGeometry(link)])
   )
@@ -1694,7 +1773,9 @@ function buildWalkingRobotSource(
   for (const articulation of finalArticulations) {
     const { entry, parentLink } = articulation
     const projection = (link: LinkDraft, p: Point3, u: Point3) => {
-      if (link !== parentLink) return sourceExactDot(p, u)
+      if (link !== parentLink) {
+        return sourceExactDot(p, u)
+      }
       const bodyDirection = sourceRotate(entry.frame.rotation, u)
       const origin = sourceExactDot(entry.frame.position, bodyDirection)
       return sourceScalarAdd(sourceExactDot(p, bodyDirection), {
@@ -1705,31 +1786,36 @@ function buildWalkingRobotSource(
     for (const context of endpointContexts(articulation)) {
       const profileSupport = sourceSupport(context.profile, context.u)
       let otherSupport = sourceSupport(context.material, context.u)
-      if (context.other)
+      if (context.other) {
         for (const vertex of builderVertices(
           requiredSource(cores.get(context.other))
         )) {
           const actual = projection(context.other, vertex, context.u)
-          if (sourceScalarCompare(actual, profileSupport) > 0)
+          if (sourceScalarCompare(actual, profileSupport) > 0) {
             throw new Error(
               'Actual endpoint core exceeds its finite interface profile'
             )
-          if (sourceScalarCompare(actual, otherSupport) > 0)
+          }
+          if (sourceScalarCompare(actual, otherSupport) > 0) {
             otherSupport = actual
+          }
         }
+      }
       const required = sourceScalarAdd(otherSupport, sourceScalar(context.gap))
       for (const vertex of builderVertices(
         requiredSource(cores.get(context.link))
-      ))
+      )) {
         if (
           sourceScalarCompare(
             projection(context.link, vertex, context.u),
             required
           ) < 0
-        )
+        ) {
           throw new Error(
             `Unresolved physical endpoint gap: ${entry.id}/${context.endpoint}`
           )
+        }
+      }
     }
     requireBearingConnection(
       requiredSource(articulation.parts.find(({ role }) => role === 'sleeve'))
@@ -1741,7 +1827,9 @@ function buildWalkingRobotSource(
       ({ role }) => role === 'neck' || role === 'yoke'
     )) {
       const link = linkGeometry.get(connector.target.id)
-      if (!link) continue
+      if (!link) {
+        continue
+      }
       const core = builderVertices(requiredSource(cores.get(link)))
       const min = [0, 1, 2].map((axis) => Math.min(...core.map((p) => p[axis])))
       const max = [0, 1, 2].map((axis) => Math.max(...core.map((p) => p[axis])))
@@ -1754,11 +1842,12 @@ function buildWalkingRobotSource(
           (value, axis) => value >= min[axis] && value <= max[axis]
         )
       })
-      if (!connected)
+      if (!connected) {
         throw new Error(`Disconnected canonical connector: ${connector.id}`)
+      }
     }
   }
-  for (const link of linkGeometry.values())
+  for (const link of linkGeometry.values()) {
     addPart(
       link.target,
       link.id,
@@ -1768,8 +1857,9 @@ function buildWalkingRobotSource(
       link.patches,
       cores.get(link)
     )
-  for (const articulation of finalArticulations)
-    for (const part of articulation.parts)
+  }
+  for (const articulation of finalArticulations) {
+    for (const part of articulation.parts) {
       addPart(
         part.target,
         part.id,
@@ -1779,6 +1869,8 @@ function buildWalkingRobotSource(
         undefined,
         part.geometry
       )
+    }
+  }
   if (model.kind === 'solid-articulation/2') {
     const zero = sourceScalar(0)
     const absolute = (value: SourceScalar) =>
@@ -1790,8 +1882,9 @@ function buildWalkingRobotSource(
         part.localFrame.rotation.some((v, index) =>
           index < 3 ? v !== 0 : Math.abs(v) !== 1
         )
-      )
+      ) {
         throw new Error('Unsupported external root material frame')
+      }
       return Array.from(
         { length: part.shape.positions.length / 3 },
         (_, index) =>
@@ -1816,8 +1909,9 @@ function buildWalkingRobotSource(
       if (
         domain.low * 2 !== entry.domain[0] ||
         domain.high * 2 !== entry.domain[1]
-      )
+      ) {
         throw new Error('Unsupported external root abduction domain')
+      }
       // Existing polynomial owner bounds the entire real authored domain.
       // The normalized similarity has C²+S²=1 exactly.
       const sine = boundPolynomialTrig('sin', domain).bounds
@@ -1837,8 +1931,9 @@ function buildWalkingRobotSource(
       const smax = sourceScalar(
         divideInterval(multiplyInterval(sourceInterval(2), sm), cm2).high
       )
-      if (cosine.low <= 0 || sourceScalarCompare(cmin, zero) <= 0)
+      if (cosine.low <= 0 || sourceScalarCompare(cmin, zero) <= 0) {
         throw new Error('Unproved external root abduction domain')
+      }
       const material = child.parts.map((part) => ({
         part,
         vertices: exactPartVertices(part)
@@ -1856,8 +1951,9 @@ function buildWalkingRobotSource(
         ),
         sourceScalarNegative(gap)
       )
-      if (sourceScalarCompare(inward, zero) <= 0)
+      if (sourceScalarCompare(inward, zero) <= 0) {
         throw new Error('Insufficient external root mount clearance')
+      }
       const inward2 = square(inward)
       const articulation = requiredSource(
         finalArticulations.find((a) => a.entry === entry)
@@ -1885,12 +1981,13 @@ function buildWalkingRobotSource(
         if (
           sourceScalarCompare(radial2, inward2) > 0 &&
           sourceScalarCompare(outward, zero) <= 0
-        )
+        ) {
           throw new Error('Unproved external root child support')
+        }
       }
       // Each actual closed convex child region needs a radial supporting
       // halfspace outside the pin disk. Rotation preserves that disk exactly.
-      for (const { part, vertices } of material)
+      for (const { part, vertices } of material) {
         for (const region of part.regions) {
           const points = part.shape.indices
             .slice(region.indexStart, region.indexStart + region.indexCount)
@@ -1914,9 +2011,11 @@ function buildWalkingRobotSource(
               square(minimum),
               sourceScalarMultiply(pin2, norm2)
             ) <= 0
-          )
+          ) {
             throw new Error('Unproved external root pin cavity')
+          }
         }
+      }
       const childLow = vertices
         .map((p) => p[2])
         .reduce((a, b) => (sourceScalarCompare(a, b) < 0 ? a : b))
@@ -1961,34 +2060,39 @@ function buildWalkingRobotSource(
                 pin2
               ) <= 0
           )
-          if (!chassisSide && !below && !above && !pin)
+          if (!chassisSide && !below && !above && !pin) {
             throw new Error(
               'Unproved external root parent material: ' +
                 part.id +
                 ' - ' +
                 region.id
             )
+          }
         }
       }
     }
   }
   for (const reference of toolReferences) {
     const part = parts.find((candidate) => candidate.id === reference.bodyId)
-    if (!part) throw new Error('Missing canonical tool core')
+    if (!part) {
+      throw new Error('Missing canonical tool core')
+    }
     const patch = part.patches[0],
       sum = [0, 0, 0]
     let count = 0
-    for (const range of patch.ranges)
+    for (const range of patch.ranges) {
       for (
         let offset = range.indexStart;
         offset < range.indexStart + range.indexCount;
         offset++
       ) {
         const vertex = part.shape.indices[offset] * 3
-        for (let axis = 0; axis < 3; axis++)
+        for (let axis = 0; axis < 3; axis++) {
           sum[axis] += part.shape.positions[vertex + axis]
+        }
         count++
       }
+    }
     const centre = sourceRotate(
       part.localFrame.rotation,
       sourcePoint(sum.map((value) => value / count))
@@ -2067,9 +2171,12 @@ export class WalkingRobotSourceOwner {
   private revision = 0
 
   prepare(definition: WalkingRobotDefinition) {
-    if (!isAdmittedWalkingRobotDefinition(definition))
+    if (!isAdmittedWalkingRobotDefinition(definition)) {
       throw new Error('Walking definition was not admitted')
-    if (this.current?.definition === definition) return this.current
+    }
+    if (this.current?.definition === definition) {
+      return this.current
+    }
     this.work.builds++
     this.current = buildWalkingRobotSource(definition, ++this.revision)
     return this.current
@@ -2084,7 +2191,9 @@ export class WalkingRobotSourceOwner {
     source: WalkingRobotSource,
     pose: WalkingRobotPose
   ): WalkingRobotPoseResult {
-    if (!this.isCurrent(source)) throw new Error('Stale walking robot source')
+    if (!this.isCurrent(source)) {
+      throw new Error('Stale walking robot source')
+    }
     return evaluateWalkingRobotPose(source, pose)
   }
   clear() {

@@ -29,8 +29,11 @@ test('ordinary visual review uses the installed Chrome in and outside CI', async
     )
     assert.equal(ciChromium?.use?.channel, 'chrome')
   } finally {
-    if (previousCI === undefined) delete process.env.CI
-    else process.env.CI = previousCI
+    if (previousCI === undefined) {
+      delete process.env.CI
+    } else {
+      process.env.CI = previousCI
+    }
   }
 })
 

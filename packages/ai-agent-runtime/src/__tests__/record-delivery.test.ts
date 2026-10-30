@@ -47,7 +47,9 @@ const memoryOutbox = () => {
   >()
   return {
     reserve: async (requestId: string) => {
-      if (!gaps.has(requestId)) gaps.set(requestId, undefined)
+      if (!gaps.has(requestId)) {
+        gaps.set(requestId, undefined)
+      }
     },
     recordGap: async (gap: {
       requestId: string
@@ -319,7 +321,9 @@ it('resumes an active producer on reconnect without resending its acknowledged p
   const { collector } = harness()
   let offline = false
   const send = vi.fn(async (batch: readonly ExecutionRecord[]) => {
-    if (offline) throw new Error('offline')
+    if (offline) {
+      throw new Error('offline')
+    }
     return collector.accept(batch)
   })
   const host = createRecordDeliveryHost({ outbox, send })
@@ -363,7 +367,9 @@ it('does not recover a producer admitted while persisted requests are being enum
     send: async (batch) => {
       sent.push(...batch.map((entry) => entry.sequence))
       const last = batch[batch.length - 1]
-      if (!last) throw new Error('Expected a nonempty record batch')
+      if (!last) {
+        throw new Error('Expected a nonempty record batch')
+      }
       return {
         requestId: 'request-a',
         acknowledgedSequence: last.sequence,
@@ -386,8 +392,9 @@ it('retains a durable storage gap and refuses completion after restarting delive
   const outbox = memoryOutbox()
   const append = outbox.append
   outbox.append = async (value) => {
-    if (value.some((record) => record.sequence === 1))
+    if (value.some((record) => record.sequence === 1)) {
       throw new Error('quota exceeded')
+    }
     await append(value)
   }
   const send = vi.fn(async () => ({
@@ -449,8 +456,9 @@ it('coalesces a burst of refused captures into bounded control work', async () =
       throw new Error('No send')
     }
   })
-  for (let sequence = 0; sequence < 100; sequence++)
+  for (let sequence = 0; sequence < 100; sequence++) {
     expect(() => sink.write(record(sequence))).toThrow('capacity')
+  }
   await sink.flush()
   expect(outbox.reserve).toHaveBeenCalledOnce()
   expect(outbox.recordGap).toHaveBeenCalledOnce()
@@ -498,8 +506,12 @@ it('persists bursts in bounded atomic batches without increasing capture capacit
   })
   for (let i = 0; i < 1024; i++) {
     let event = 'ai_request_trace'
-    if (i === 0) event = 'ai_request_started'
-    if (i === 1023) event = 'ai_request_usage'
+    if (i === 0) {
+      event = 'ai_request_started'
+    }
+    if (i === 1023) {
+      event = 'ai_request_usage'
+    }
     sink.write(record(i, event))
   }
   expect(await sink.flush()).toMatchObject({ status: 'saved' })
@@ -518,7 +530,9 @@ it('delivers a durable prefix while the next storage batch is still pending', as
   })
   let batches = 0
   outbox.append = async (records) => {
-    if (++batches === 2) await blocked
+    if (++batches === 2) {
+      await blocked
+    }
     await append(records)
   }
   const target = harness()
@@ -532,8 +546,12 @@ it('delivers a durable prefix while the next storage batch is still pending', as
   })
   for (let i = 0; i < 64; i++) {
     let event = 'ai_request_trace'
-    if (i === 0) event = 'ai_request_started'
-    if (i === 63) event = 'ai_request_usage'
+    if (i === 0) {
+      event = 'ai_request_started'
+    }
+    if (i === 63) {
+      event = 'ai_request_usage'
+    }
     sink.write({ ...record(i, event), detail: 'x'.repeat(8080) })
   }
   try {

@@ -24,7 +24,9 @@ export function seededDistance(
   const owner = context as unknown as TestQueryOwner
   const before = context.work
   const seed = transport(source, target, () => owner.tick())
-  if (!seed) throw new Error('The controlled source witness is not eligible')
+  if (!seed) {
+    throw new Error('The controlled source witness is not eligible')
+  }
   const addedWork = context.work - before
   const evidence = withSourceWitness(context, target.shapes, seed, () =>
     OriginalMeshQuery.prototype.distance.call(
@@ -51,18 +53,26 @@ export function withSourceWitness(
   let calls = 0
   owner.witness = (shape) => {
     calls++
-    if (shape === shapes[0]) return seed.a
-    if (shape === shapes[1]) return seed.b
+    if (shape === shapes[0]) {
+      return seed.a
+    }
+    if (shape === shapes[1]) {
+      return seed.b
+    }
     throw new Error('Witness interception escaped the exact target shapes')
   }
   try {
     const evidence = solve()
-    if (calls !== 2)
+    if (calls !== 2) {
       throw new Error('Expected exactly two original seed witnesses')
+    }
     return evidence
   } finally {
-    if (descriptor) Object.defineProperty(owner, 'witness', descriptor)
-    else Reflect.deleteProperty(owner, 'witness')
+    if (descriptor) {
+      Object.defineProperty(owner, 'witness', descriptor)
+    } else {
+      Reflect.deleteProperty(owner, 'witness')
+    }
   }
 }
 export interface SourceWitness {
@@ -90,8 +100,9 @@ export function transport(
         shape.geometry !== target.shapes[side].geometry ||
         !Object.isFrozen(shape.geometry)
     )
-  )
+  ) {
     return undefined
+  }
   tick()
   const a = localPoint(source.shapes[0].pose, source.evidence.witnessA)
   tick()

@@ -33,8 +33,9 @@ export function createMechanicalVisuals(): {
         0.01,
         'z'
       )
-      if (side === 1)
+      if (side === 1) {
         m.bolts([0, y, depth / 2 + 0.016], radius * 0.61, 6, 'z', 0.006)
+      }
     }
   }
   part('base', (m) => {
@@ -183,15 +184,17 @@ export function createMechanicalVisuals(): {
     for (const side of [-1, 1]) {
       m.block(steel, [side * 0.072, 0.092, 0], [0.027, 0.065, 0.07], 0.003)
       m.block(dark, [side * 0.072, 0.15, 0], [0.027, 0.055, 0.07], 0.003)
-      for (const y of [0.078, 0.106])
+      for (const y of [0.078, 0.106]) {
         m.cylinder(dark, [side * 0.072, y, 0.036], 0.005, 0.003, 'z', 6)
-      for (let i = 0; i < 5; i++)
+      }
+      for (let i = 0; i < 5; i++) {
         m.block(
           steel,
           [side * 0.059, 0.13 + i * 0.009, 0],
           [0.001, 0.002, 0.061],
           0.0003
         )
+      }
     }
   })
   part('workpiece', (m) => {
@@ -201,18 +204,21 @@ export function createMechanicalVisuals(): {
   })
   part('fixture-table', (m) => {
     m.block(steel, [0, 0, 0], [0.75, 0.12, 0.6], 0.01)
-    for (let i = -3; i <= 3; i++)
+    for (let i = -3; i <= 3; i++) {
       m.block(dark, [i * 0.095, 0.0605, 0], [0.012, 0.001, 0.55], 0.0002)
-    for (const x of [-0.27, 0.27])
+    }
+    for (const x of [-0.27, 0.27]) {
       for (const z of [-0.21, 0.21]) {
         m.block(dark, [x, -0.31, z], [0.06, 0.5, 0.06], 0.004)
         m.block(steel, [x, -0.54, z], [0.105, 0.02, 0.105], 0.004)
       }
+    }
   })
   part('fixture-post', (m) => {
     m.block(steel, [0, 0, 0], [0.14, 1.3, 0.14], 0.005)
-    for (const x of [-0.041, 0.041])
+    for (const x of [-0.041, 0.041]) {
       m.block(dark, [x, 0, 0.0705], [0.009, 1.26, 0.001], 0.0002)
+    }
     m.block(dark, [0, -0.638, 0], [0.22, 0.024, 0.22], 0.008)
     m.block(accent, [0, 0.57, 0.073], [0.08, 0.075, 0.008], 0.002)
   })

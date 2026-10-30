@@ -13,7 +13,9 @@ it('gives both lower rooms the reference floor-depth allocation', () => {
   const depth = (rearInnerY - frontInnerY) * ratio
   const lounge = structure.walls.find((w) => w.id === 'lounge-divider')
   const work = structure.walls.find((w) => w.id === 'work-back-partition')
-  if (!lounge || !work) throw new Error('Missing lower-room boundary')
+  if (!lounge || !work) {
+    throw new Error('Missing lower-room boundary')
+  }
   expect(lounge.cross - lounge.thickness / 2 - frontInnerY).toBeCloseTo(
     depth + 0.5,
     6

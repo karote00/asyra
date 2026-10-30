@@ -156,7 +156,9 @@ describe('Factory journal-backed action history', () => {
             payload: { id: string; after: number }
           }
         ).payload
-        if (values.get(id) === after) return false
+        if (values.get(id) === after) {
+          return false
+        }
         values.set(id, after)
         return true
       }
@@ -180,13 +182,16 @@ describe('Factory journal-backed action history', () => {
     expect(factory.getUndoHistoryDepth()).toBe(1)
     publications.length = 0
     const replay = async (direction: 'undo' | 'redo') => {
-      if (mode === 'synchronous') factory[direction]()
-      else {
+      if (mode === 'synchronous') {
+        factory[direction]()
+      } else {
         factory.startTransaction()
         const owner = factory.getTransactionOwner()
-        if (direction === 'undo')
+        if (direction === 'undo') {
           await owner.undoProgressively(async () => undefined)
-        else await owner.redoProgressively(async () => undefined)
+        } else {
+          await owner.redoProgressively(async () => undefined)
+        }
         factory.endTransaction()
       }
       await Promise.resolve()
@@ -243,22 +248,26 @@ describe('Factory journal-backed action history', () => {
         const { id, after } = (
           event as AllEvent & { payload: { id: string; after: number } }
         ).payload
-        if (fail && mode === 'undo' && id === 'first')
+        if (fail && mode === 'undo' && id === 'first') {
           throw new Error('Owner refused replay')
-        if (values.get(id) === after) return false
+        }
+        if (values.get(id) === after) {
+          return false
+        }
         values.set(id, after)
         applied.push(`${mode}:${id}:${after}`)
         return true
       }
     )
     factory.startTransaction()
-    for (const id of ['first', 'second', 'unchanged'])
+    for (const id of ['first', 'second', 'unchanged']) {
       factory.updateTransaction(
         createUpdateEvent(id, {
           shared: SharedDataChannelNames.SCENE_TREE,
           sharedDelivery: 'immediate'
         })
       )
+    }
     await Promise.resolve()
     factory.endTransaction()
     publications.length = 0

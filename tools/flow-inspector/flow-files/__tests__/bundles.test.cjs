@@ -100,8 +100,9 @@ test('import rejects a revision changed between snapshot and backup capture', (t
   const original = fs.readFileSync
   let reads = 0
   fs.readFileSync = function (name, ...args) {
-    if (name === file && ++reads === 2)
+    if (name === file && ++reads === 2) {
       fs.writeFileSync(file, JSON.stringify(newer))
+    }
     return original.call(this, name, ...args)
   }
   try {
@@ -119,7 +120,9 @@ test('snapshot rejects a flow replacement during its read instead of caching mix
   const original = fs.readFileSync
   fs.readFileSync = function (name, ...args) {
     const value = original.call(this, name, ...args)
-    if (name === file) fs.writeFileSync(file, JSON.stringify(newer))
+    if (name === file) {
+      fs.writeFileSync(file, JSON.stringify(newer))
+    }
     return value
   }
   try {
@@ -178,7 +181,9 @@ test('replacing imported evidence removes only superseded tool attachments', (t)
   const before = exportCurrent(target)
   const unlink = fs.unlinkSync
   fs.unlinkSync = function (file, ...args) {
-    if (file === old) throw new Error('Injected cleanup failure')
+    if (file === old) {
+      throw new Error('Injected cleanup failure')
+    }
     return unlink.call(this, file, ...args)
   }
   try {

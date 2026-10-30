@@ -160,7 +160,9 @@ it('moves only the owned rigid chain and preserves link lengths and tool orienta
   ])
   expect(yawed.tool.approach).toEqual([0, -1, 0])
   const wrist = pose.parts.find((part) => part.source.id === 'tool-guard')
-  if (!wrist) throw new Error('Missing tool source')
+  if (!wrist) {
+    throw new Error('Missing tool source')
+  }
   expect(pose.tool.position).toEqual(
     transformRobotPoint(wrist.transform, rig.tool.position)
   )
@@ -188,10 +190,11 @@ it('admits exact approved bounds and rejects nonfinite joints or an incomplete l
     expect(() =>
       evaluateRobotPose(rig, { ...REST_JOINTS, [joint]: max })
     ).not.toThrow()
-    for (const invalid of [min - 1e-8, max + 1e-8, NaN, Infinity])
+    for (const invalid of [min - 1e-8, max + 1e-8, NaN, Infinity]) {
       expect(() =>
         evaluateRobotPose(rig, { ...REST_JOINTS, [joint]: invalid })
       ).toThrow()
+    }
   }
   const short = { ...DEFAULT_ROBOT, height: 0.6 }
   const source = createRobotModel(short)
@@ -243,7 +246,9 @@ it('rotates each pitch around its source pivot and leaves upstream bodies fixed'
       12
     )
     const upstreamPart = pose.parts.find((part) => part.source.id === upstream)
-    if (!upstreamPart) throw new Error('Missing upstream source')
+    if (!upstreamPart) {
+      throw new Error('Missing upstream source')
+    }
     expect(
       transformRobotPoint(upstreamPart.transform, rig.tool.position)
     ).toEqual(rig.tool.position)
@@ -257,11 +262,14 @@ function poseBits(value: unknown): string {
     bytes.setFloat64(0, value)
     return bytes.getBigUint64(0).toString(16).padStart(16, '0')
   }
-  if (Array.isArray(value)) return `[${value.map(poseBits).join(',')}]`
-  if (value && typeof value === 'object')
+  if (Array.isArray(value)) {
+    return `[${value.map(poseBits).join(',')}]`
+  }
+  if (value && typeof value === 'object') {
     return `{${Object.entries(value)
       .map(([key, entry]) => `${key}:${poseBits(entry)}`)
       .join(',')}}`
+  }
   return JSON.stringify(value)
 }
 
@@ -317,8 +325,9 @@ it('preserves pre-extraction Float64 pose outputs including signed zero and ever
 const scalarAlgebra: KinematicAlgebra<number> = {
   literal: (value) => value,
   range: (lower, upper) => {
-    if (!Object.is(lower, upper))
+    if (!Object.is(lower, upper)) {
       throw new Error('Singleton number domains only')
+    }
     return lower
   },
   add: (a, b) => a + b,
@@ -618,8 +627,9 @@ it('prepares final raw-quaternion affine coefficients matching installed Three w
             if (
               poseBits(applied) !==
               poseBits(k.transformRobotPoint(part.transform, point))
-            )
+            ) {
               associationDifferences++
+            }
           }
         }
       })

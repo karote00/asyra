@@ -63,8 +63,9 @@ function selectedCommand(root, { item, contract }) {
         '--no-file-parallelism',
         '--reporter=json'
       ]
-  if (!isPlaywright && item.projectName)
+  if (!isPlaywright && item.projectName) {
     args.push('--project', item.projectName)
+  }
   return { runner: isPlaywright ? 'playwright' : 'vitest', cwd, args }
 }
 
@@ -80,16 +81,20 @@ function createNodeInteractions(
     throw new ErrorType(status, message)
   }
   const read = () => {
-    if (!fs.existsSync(file)) return { format: 1, comments: [], actions: [] }
-    if (fs.statSync(file).size > 4 * 1024 * 1024)
+    if (!fs.existsSync(file)) {
+      return { format: 1, comments: [], actions: [] }
+    }
+    if (fs.statSync(file).size > 4 * 1024 * 1024) {
       fail(503, 'Interaction store exceeds its limit')
+    }
     const state = JSON.parse(fs.readFileSync(file, 'utf8'))
     if (
       state.format !== 1 ||
       !Array.isArray(state.comments) ||
       !Array.isArray(state.actions)
-    )
+    ) {
       fail(503, 'Interaction store is invalid')
+    }
     const validContext = (value) =>
       value &&
       validId(value.id) &&
@@ -125,14 +130,16 @@ function createNodeInteractions(
         state.comments.length ||
       new Set(state.actions.map((value) => value.id)).size !==
         state.actions.length
-    )
+    ) {
       fail(503, 'Interaction store is invalid')
+    }
     // A prior service cannot still own execution after its exclusive store lock ends.
     return state
   }
   const save = (state) => {
-    if (Buffer.byteLength(JSON.stringify(state, null, 2)) > 4 * 1024 * 1024)
+    if (Buffer.byteLength(JSON.stringify(state, null, 2)) > 4 * 1024 * 1024) {
       fail(503, 'Interaction store exceeds its limit')
+    }
     writeAtomic(file, state)
   }
   const object = (value, keys) => {
@@ -141,12 +148,14 @@ function createNodeInteractions(
       typeof value !== 'object' ||
       Array.isArray(value) ||
       Object.keys(value).some((key) => !keys.includes(key))
-    )
+    ) {
       fail(400, 'Invalid node interaction request')
+    }
   }
   const selected = (runId, caseId) => {
-    if (!validId(runId) || typeof caseId !== 'string')
+    if (!validId(runId) || typeof caseId !== 'string') {
       fail(400, 'Invalid node context')
+    }
     let record
     try {
       record = observations.get(runId)
@@ -154,9 +163,12 @@ function createNodeInteractions(
       fail(404, 'Observation unavailable')
     }
     const item = record.cases.find((item) => item.id === caseId)
-    if (!item) fail(404, 'Observed case unavailable')
-    if (item.resolution !== 'mapped' || item.locations.length !== 1)
+    if (!item) {
+      fail(404, 'Observed case unavailable')
+    }
+    if (item.resolution !== 'mapped' || item.locations.length !== 1) {
       fail(409, 'Node context is unresolved')
+    }
     return { record, item, location: item.locations[0] }
   }
   const resolve = (runId, caseId, supplied) => {
@@ -167,25 +179,31 @@ function createNodeInteractions(
         contract.digest === location.contractDigest &&
         registeredManifests.has(contract.manifestPath)
     )
-    if (candidates.length !== 1) fail(409, 'Mapping is unavailable')
+    if (candidates.length !== 1) {
+      fail(409, 'Mapping is unavailable')
+    }
     const contract = loadContract(root, undefined, candidates[0].manifestPath)
-    if (contract.digest !== location.contractDigest)
+    if (contract.digest !== location.contractDigest) {
       fail(409, 'Mapping changed; retain this context as history')
+    }
     const cases = contract.cases.filter(
       (candidate) =>
         (candidate.testFile ?? contract.testFile) === item.file &&
         candidate.testName === item.testName &&
         (candidate.projectName ?? '') === item.projectName
     )
-    if (cases.length !== 1 || cases[0].id !== location.caseId)
+    if (cases.length !== 1 || cases[0].id !== location.caseId) {
       fail(409, 'Exact test mapping is unavailable')
+    }
     return { ...selection, contract }
   }
   const commandFor = (selection) => selectedCommand(root, selection)
 
   const preview = (request) => {
     object(request, ['runId', 'caseId'])
-    if (closed) fail(409, 'Service is closing')
+    if (closed) {
+      fail(409, 'Service is closing')
+    }
     const selection = resolve(request.runId, request.caseId)
     const manifests =
       selection.contract.runner === 'playwright'
@@ -218,13 +236,17 @@ function createNodeInteractions(
     return { ...value, previewDigest: sha256(JSON.stringify(value)) }
   }
   const runnerAlive = (pid) => {
-    if (!Number.isSafeInteger(pid) || pid <= 0) return false
+    if (!Number.isSafeInteger(pid) || pid <= 0) {
+      return false
+    }
     for (const identity of [pid, -pid]) {
       try {
         process.kill(identity, 0)
         return true
       } catch (error) {
-        if (error.code !== 'ESRCH') return true
+        if (error.code !== 'ESRCH') {
+          return true
+        }
       }
     }
     return false
@@ -237,13 +259,14 @@ function createNodeInteractions(
         runnerAlive(action.runnerPid)
     )
   const actionView = (action) => {
-    if (storageErrors.has(action.id))
+    if (storageErrors.has(action.id)) {
       return {
         ...action,
         status: 'failed',
         error: storageErrors.get(action.id)
       }
-    if (action.status === 'running' && active?.id !== action.id)
+    }
+    if (action.status === 'running' && active?.id !== action.id) {
       return {
         ...action,
         status: 'interrupted',
@@ -251,6 +274,7 @@ function createNodeInteractions(
           ? 'Execution owner ended; recorded runner may still be alive and blocks new execution'
           : 'Execution owner ended; rerun requires a new request'
       }
+    }
     return action
   }
   const summary = (runId, caseId) => {
@@ -262,9 +286,12 @@ function createNodeInteractions(
       while (
         Buffer.byteLength(JSON.stringify(result)) > remainingBytes &&
         result.length
-      )
+      ) {
         result = result.slice(0, Math.floor(result.length / 2))
-      if (result !== value) truncatedFields.push(field)
+      }
+      if (result !== value) {
+        truncatedFields.push(field)
+      }
       remainingBytes = Math.max(
         0,
         remainingBytes - Buffer.byteLength(JSON.stringify(result))
@@ -273,7 +300,9 @@ function createNodeInteractions(
     }
     const boundedObject = (value, field, limit = 12000) => {
       const bytes = Buffer.byteLength(JSON.stringify(value))
-      if (value === null) return null
+      if (value === null) {
+        return null
+      }
       if (bytes <= Math.min(limit, remainingBytes)) {
         remainingBytes -= bytes
         return value
@@ -288,8 +317,9 @@ function createNodeInteractions(
     try {
       input = observations.caseContext(runId, caseId)
       const { record, item } = input
-      if (item.resolution !== 'mapped' || item.locations.length !== 1)
+      if (item.resolution !== 'mapped' || item.locations.length !== 1) {
         throw new Error('Node context is unresolved: ' + item.resolution)
+      }
       const resolved = resolve(runId, caseId, {
         record,
         item,
@@ -310,15 +340,20 @@ function createNodeInteractions(
         candidate.projectName === item.projectName
     )
     let status = 'unavailable'
-    if (item)
+    if (item) {
       status = sameTest.some((candidate) => candidate.id === caseId)
         ? 'current'
         : 'superseded'
-    if (item && !sameTest.length) status = 'historical'
+    }
+    if (item && !sameTest.length) {
+      status = 'historical'
+    }
     const errors = item?.failureDetails?.length
       ? item.failureDetails
       : (item?.failures ?? []).map((message) => ({ message }))
-    if (errors.length > 3) truncatedFields.push('errors')
+    if (errors.length > 3) {
+      truncatedFields.push('errors')
+    }
     const compactNode = boundedObject(node, 'node')
     const compactCommand = boundedObject(
       selectedCommand,
@@ -330,8 +365,9 @@ function createNodeInteractions(
       4000
     )
     const warnings = observations.warningContext(runId)
-    if (warnings.total > warnings.items.length)
+    if (warnings.total > warnings.items.length) {
       truncatedFields.push('warnings.items')
+    }
     const result = {
       format: 1,
       runId,
@@ -395,7 +431,9 @@ function createNodeInteractions(
       },
       truncatedFields
     }
-    if (sameTest.length > 10) truncatedFields.push('currentness.latest')
+    if (sameTest.length > 10) {
+      truncatedFields.push('currentness.latest')
+    }
     return result
   }
   const context = (runId, caseId, compact = false) => {
@@ -403,9 +441,12 @@ function createNodeInteractions(
       !validId(runId) ||
       typeof caseId !== 'string' ||
       !new RegExp('^' + runId + ':[0-9]+$').test(caseId)
-    )
+    ) {
       fail(400, 'Invalid node context')
-    if (compact) return summary(runId, caseId)
+    }
+    if (compact) {
+      return summary(runId, caseId)
+    }
     const state = read()
     let reference = 'available',
       node = null
@@ -430,14 +471,17 @@ function createNodeInteractions(
   }
   const comment = (request, actor) => {
     object(request, ['requestId', 'runId', 'caseId', 'text'])
-    if (closed) fail(409, 'Service is closing')
+    if (closed) {
+      fail(409, 'Service is closing')
+    }
     if (
       !validId(request.requestId) ||
       typeof request.text !== 'string' ||
       !request.text.trim() ||
       request.text.length > 2000
-    )
+    ) {
       fail(400, 'Comment must contain 1-2000 characters and a request UUID')
+    }
     const state = read()
     const prior = state.comments.find((item) => item.id === request.requestId)
     if (prior) {
@@ -446,8 +490,9 @@ function createNodeInteractions(
         prior.text !== request.text ||
         prior.runId !== request.runId ||
         prior.caseId !== request.caseId
-      )
+      ) {
         fail(409, 'Conflicting comment request')
+      }
       return prior
     }
     const { record, location } = selected(request.runId, request.caseId)
@@ -471,9 +516,12 @@ function createNodeInteractions(
     if (
       !validId(request.requestId) ||
       typeof request.previewDigest !== 'string'
-    )
+    ) {
       fail(400, 'Invalid rerun confirmation')
-    if (closed) fail(409, 'Service is closing')
+    }
+    if (closed) {
+      fail(409, 'Service is closing')
+    }
     const state = read()
     const prior = state.actions.find((item) => item.id === request.requestId)
     if (prior) {
@@ -482,14 +530,16 @@ function createNodeInteractions(
         prior.runId !== request.runId ||
         prior.caseId !== request.caseId ||
         prior.previewDigest !== request.previewDigest
-      )
+      ) {
         fail(409, 'Conflicting rerun request')
+      }
       return actionView(prior)
     }
     requireIdle()
     const current = preview({ runId: request.runId, caseId: request.caseId })
-    if (current.previewDigest !== request.previewDigest)
+    if (current.previewDigest !== request.previewDigest) {
       fail(409, 'Rerun preview is stale; preview again')
+    }
     const value = {
       ...current,
       id: request.requestId,
@@ -603,7 +653,9 @@ function createNodeInteractions(
           })
           throw new Error('Confirmed source changed before runner handoff')
         }
-        if (isPlaywright) env.FLOW_OBSERVATION_ID = observation.id
+        if (isPlaywright) {
+          env.FLOW_OBSERVATION_ID = observation.id
+        }
         let processResult
         try {
           processResult = await execute({
@@ -633,19 +685,22 @@ function createNodeInteractions(
           processResult = { code: null, reason: error.message, output: '' }
         }
         let retained
-        if (isPlaywright)
+        if (isPlaywright) {
           retained = playwright.complete(root, path.relative(root, report))
-        else {
+        } else {
           let parsed = null
           const errors = []
           try {
-            if (fs.statSync(report).size > 4 * 1024 * 1024)
+            if (fs.statSync(report).size > 4 * 1024 * 1024) {
               throw new Error('Report exceeds 4 MiB')
+            }
             parsed = JSON.parse(fs.readFileSync(report, 'utf8'))
           } catch (error) {
             errors.push('Rerun report unavailable: ' + error.message)
           }
-          if (processResult.reason) errors.push(processResult.reason)
+          if (processResult.reason) {
+            errors.push(processResult.reason)
+          }
           retained = localization.completeObservation(
             root,
             observation,
@@ -704,7 +759,9 @@ function createNodeInteractions(
     start,
     isActive: () => Boolean(active) || hasLiveInterruptedRunner(),
     async cancel(id) {
-      if (!validId(id) || active?.id !== id) fail(409, 'Rerun is not active')
+      if (!validId(id) || active?.id !== id) {
+        fail(409, 'Rerun is not active')
+      }
       active.controller.abort()
       await active.promise
       return actionView(read().actions.find((item) => item.id === id))

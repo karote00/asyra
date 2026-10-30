@@ -81,7 +81,9 @@ it('rejects a reference invalidated while queued and performs no write', async (
   const action = createRetainedFillAction(
     {
       get: () => {
-        if (stale) throw new Error('Retained query stale')
+        if (stale) {
+          throw new Error('Retained query stale')
+        }
         return snapshot
       }
     } as never,
@@ -103,7 +105,9 @@ it.each(['lock', 'missing', 'domain', 'nonfinite'])(
   async (reason) => {
     const update = vi.fn(changedReceipt)
     const data = structuredClone(snapshot)
-    if (reason === 'nonfinite') data.result.elements[2].properties.x = NaN
+    if (reason === 'nonfinite') {
+      data.result.elements[2].properties.x = NaN
+    }
     const action = createRetainedFillAction({ get: () => data } as never, {
       targets,
       metadata: (id) =>
@@ -113,7 +117,9 @@ it.each(['lock', 'missing', 'domain', 'nonfinite'])(
       update
     })
     const args = structuredClone(input)
-    if (reason === 'domain') args.mappings[0].domain = [1, 1]
+    if (reason === 'domain') {
+      args.mappings[0].domain = [1, 1]
+    }
     await expect(
       action.execute(args, { signal: new AbortController().signal })
     ).rejects.toThrow()
@@ -308,8 +314,11 @@ it.each([false, true])(
         signal: new AbortController().signal
       }
     )
-    if (locked) await expect(pending).rejects.toThrow(/lock/)
-    else await expect(pending).resolves.toMatchObject({ appliedCount: 3 })
+    if (locked) {
+      await expect(pending).rejects.toThrow(/lock/)
+    } else {
+      await expect(pending).resolves.toMatchObject({ appliedCount: 3 })
+    }
     expect(get).toHaveBeenCalledTimes(1)
     expect(releaseLease).not.toHaveBeenCalled()
   }
@@ -588,12 +597,16 @@ it.each(['capacity', 'cancel'] as const)(
   async (failure) => {
     const controller = new AbortController()
     const retainReceipt = vi.fn(() => {
-      if (failure === 'cancel') controller.signal.throwIfAborted()
+      if (failure === 'cancel') {
+        controller.signal.throwIfAborted()
+      }
       throw new Error('Retained query capacity reserved by pending consumers')
     })
     const get = vi.fn(() => snapshot)
     const update = vi.fn((updates: readonly { elementId: string }[]) => {
-      if (failure === 'cancel') controller.abort()
+      if (failure === 'cancel') {
+        controller.abort()
+      }
       return changedReceipt(updates)
     })
     const action = createRetainedFillAction({ get, retainReceipt } as never, {
@@ -659,7 +672,9 @@ it.each(['complete', 'locked', 'write-failure'])(
     )
     const released = vi.spyOn(queries, 'releaseLease')
     const update = vi.fn((updates: readonly { elementId: string }[]) => {
-      if (outcome === 'write-failure') throw new Error('Canonical write failed')
+      if (outcome === 'write-failure') {
+        throw new Error('Canonical write failed')
+      }
       return changedReceipt(updates)
     })
     const action = createRetainedFillAction(queries, {
@@ -673,12 +688,13 @@ it.each(['complete', 'locked', 'write-failure'])(
         { mappings: [{ ...mapping, query }] },
         { signal: controller.signal, runMutation: async (write) => write() }
       )
-      if (outcome === 'complete')
+      if (outcome === 'complete') {
         await expect(pending).resolves.toMatchObject({ appliedCount: 1 })
-      else
+      } else {
         await expect(pending).rejects.toThrow(
           outcome === 'locked' ? /locked/ : /Canonical write failed/
         )
+      }
       expect(update).toHaveBeenCalledTimes(outcome === 'locked' ? 0 : 1)
       expect(computed).toHaveBeenCalledTimes(1)
       expect(
@@ -769,7 +785,9 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
     { observe: () => () => undefined, resolve: () => 'live' },
     queries
   ).find((candidate) => candidate.name === 'api_fill_updateFillsAtIndex')
-  if (!action) throw new Error('Missing canonical fill action')
+  if (!action) {
+    throw new Error('Missing canonical fill action')
+  }
   const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
   const reference = {
     snapshotId: held.snapshotId,
@@ -857,10 +875,11 @@ it('advertises only executable inline query scopes for retained fill consumers',
         bounds: { x: 0, y: 0, width: 10, height: 10 },
         filter: { type: 'rect' }
       }
-    ])
+    ]) {
       expect(
         operationInputIssue({ mappings: [{ ...mapping, query }] }, schema)
       ).toBeUndefined()
+    }
     for (const query of [
       { scope: 'ids' },
       { scope: 'region' },
@@ -870,10 +889,11 @@ it('advertises only executable inline query scopes for retained fill consumers',
         elementIds: ['a'],
         bounds: { x: 0, y: 0, width: 10, height: 10 }
       }
-    ])
+    ]) {
       expect(
         operationInputIssue({ mappings: [{ ...mapping, query }] }, schema)
       ).toBeDefined()
+    }
   }
 })
 

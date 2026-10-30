@@ -22,7 +22,9 @@ export function pantryNightLight(
         colors[region.id] ?? Number.parseInt(region.emissive.slice(1), 16)
       result.emissiveIntensity = region.emissiveIntensity
     }
-    if (region.opacity < 1) result.opacity = region.opacity
+    if (region.opacity < 1) {
+      result.opacity = region.opacity
+    }
     return result
   })
   const loop = recipe.loop

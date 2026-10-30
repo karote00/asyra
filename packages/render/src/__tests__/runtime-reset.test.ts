@@ -75,7 +75,9 @@ describe('Render instance runtime reset', () => {
     render.start()
     render.requestRender()
     const oldFrame = vi.mocked(engine.requestFrame).mock.calls[0]?.[0]
-    if (!oldFrame) throw new Error('Missing scheduled frame')
+    if (!oldFrame) {
+      throw new Error('Missing scheduled frame')
+    }
     render.resetRuntime()
     const next = new RecordingRenderEngine({ name: 'runtime-reset' }),
       frame = vi.fn()
@@ -186,7 +188,9 @@ describe('Render instance runtime reset', () => {
     first.subscribeToInteraction = vi.fn(subscribe)
     await render.init(10, 10, 0)
     const old = vi.mocked(first.subscribeToInteraction).mock.calls[0]?.[0]
-    if (!old) throw new Error('Missing interaction subscription')
+    if (!old) {
+      throw new Error('Missing interaction subscription')
+    }
     render.resetRuntime()
     const next = new RecordingRenderEngine({ name: 'interaction-next' }),
       layer = new RenderContainer(),

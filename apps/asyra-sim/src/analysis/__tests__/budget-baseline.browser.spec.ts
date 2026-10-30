@@ -101,8 +101,11 @@ for (const maxIntervals of [2000, DEFAULT_EXPERIMENT_BUDGET.maxIntervals]) {
       expect(measured.receivedPairs).toBe(input.pairs.length)
       expect(measured.unresolvedPairs).toBe(0)
     }
-    if (measured.coverage === 'partial')
+    if (measured.coverage === 'partial') {
       expect(measured.verdict).not.toBe('meets')
-    if (measured.elapsedMs > 500) expect(measured.ticks).toBeGreaterThan(0)
+    }
+    if (measured.elapsedMs > 500) {
+      expect(measured.ticks).toBeGreaterThan(0)
+    }
   })
 }

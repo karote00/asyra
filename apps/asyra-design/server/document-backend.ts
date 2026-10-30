@@ -72,7 +72,9 @@ const parseDocumentRoute = (
     }>
   | undefined => {
   const url = new URL(request.url ?? '/', 'http://document-backend.local')
-  if (!url.pathname.startsWith(DOCUMENT_ENDPOINT_PREFIX)) return
+  if (!url.pathname.startsWith(DOCUMENT_ENDPOINT_PREFIX)) {
+    return
+  }
   const encoded = url.pathname.slice(DOCUMENT_ENDPOINT_PREFIX.length)
   let operation:
     'bootstrap-checkpoint' | 'persistence-batch' | 'reset' | undefined
@@ -243,8 +245,11 @@ export const createDocumentBackendServer = ({
     close: () =>
       new Promise<void>((resolveClose, rejectClose) => {
         server.close((error) => {
-          if (error) rejectClose(error)
-          else resolveClose()
+          if (error) {
+            rejectClose(error)
+          } else {
+            resolveClose()
+          }
         })
       })
   }

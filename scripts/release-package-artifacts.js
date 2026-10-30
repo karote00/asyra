@@ -64,8 +64,12 @@ const tarballText = (tarballPath, entryPath) =>
   })
 
 const exportedPaths = (exportsValue) => {
-  if (typeof exportsValue === 'string') return [exportsValue]
-  if (!exportsValue || typeof exportsValue !== 'object') return []
+  if (typeof exportsValue === 'string') {
+    return [exportsValue]
+  }
+  if (!exportsValue || typeof exportsValue !== 'object') {
+    return []
+  }
   return Object.values(exportsValue).flatMap(exportedPaths)
 }
 
@@ -413,10 +417,13 @@ if (isDirectInvocation) {
   let printPlan = false
 
   for (const arg of process.argv.slice(2)) {
-    if (arg.startsWith('--out=')) artifactDirectory = arg.slice('--out='.length)
-    else if (arg === '--prebuilt') prebuilt = true
-    else if (arg === '--plan') printPlan = true
-    else {
+    if (arg.startsWith('--out=')) {
+      artifactDirectory = arg.slice('--out='.length)
+    } else if (arg === '--prebuilt') {
+      prebuilt = true
+    } else if (arg === '--plan') {
+      printPlan = true
+    } else {
       throw new Error(`Unknown argument: ${arg}`)
     }
   }

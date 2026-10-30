@@ -14,8 +14,9 @@ self.addEventListener(
         !request ||
         !Number.isSafeInteger(request.id) ||
         !(request.bytes instanceof ArrayBuffer)
-      )
+      ) {
         throw new Error('Invalid GLB worker request')
+      }
       const asset = await decodeRestrictedGlb(new Uint8Array(request.bytes))
       self.postMessage({ id: request.id, ok: true, asset })
     } catch (error) {

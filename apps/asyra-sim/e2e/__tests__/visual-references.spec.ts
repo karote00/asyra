@@ -132,9 +132,13 @@ async function exportProject(page: Page) {
     .getByRole('button', { name: 'Export project', exact: true })
     .click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing portable download')
+  if (!stream) {
+    throw new Error('Missing portable download')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
 async function importProject(page: Page, payload: unknown) {
@@ -163,8 +167,9 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
       /^https?:/.test(request.url()) &&
       new URL(request.url()).origin !==
         new URL(String(info.project.use.baseURL)).origin
-    )
+    ) {
       external.push(request.url())
+    }
   })
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -220,10 +225,11 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
     name: 'Original part 2',
     exact: true
   })
-  for (const axis of ['X', 'Y', 'Z'])
+  for (const axis of ['X', 'Y', 'Z']) {
     await expect(
       reference.getByLabel(`Visual scale ${axis}`, { exact: true })
     ).toHaveValue('1')
+  }
   await reference.getByLabel('Visual scale X', { exact: true }).fill('0.5')
   await reference.getByLabel('Visual scale X', { exact: true }).press('Enter')
   await expect(

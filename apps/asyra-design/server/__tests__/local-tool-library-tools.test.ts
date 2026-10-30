@@ -51,9 +51,12 @@ const fixture = () => {
       read: async (key) => entries.get(key),
       list: async () => [...entries.values()],
       write: async (input) => {
-        if (storageUnavailable) throw new Error('Storage unavailable')
-        if (entries.get(input.key)?.version !== input.expectedVersion)
+        if (storageUnavailable) {
+          throw new Error('Storage unavailable')
+        }
+        if (entries.get(input.key)?.version !== input.expectedVersion) {
           throw Error('conflict')
+        }
         const entry = {
           key: input.key,
           version: String(++version),
@@ -82,7 +85,9 @@ const fixture = () => {
   )
   const call = async (name: string, input: unknown) => {
     const definition = owner.definitions.find((item) => item.name === name)
-    if (!definition) throw new Error('Missing control definition')
+    if (!definition) {
+      throw new Error('Missing control definition')
+    }
     return schedule(definition.executionAccess, () =>
       invokeLocalTool(owner, definition, input, signal)
     )
@@ -121,7 +126,9 @@ it('exposes canonical recursive bindings through native conversion and validates
   const definition = owner.definitions.find(
     (d) => d.name === AiDesignToolIds.SUBMIT_TOOL
   )
-  if (!definition) throw new Error('Missing submit definition')
+  if (!definition) {
+    throw new Error('Missing submit definition')
+  }
   const valid = { submissionId: 'one', proposal }
   expect(operationInputIssue(valid, definition.inputSchema)).toBeUndefined()
   expect(
@@ -239,8 +246,9 @@ it('does not promote a model-authored receipt or accept unknown controls', async
   await expect(
     owner.call('unknown', {}, new AbortController().signal)
   ).rejects.toThrow()
-  for (const definition of owner.definitions)
+  for (const definition of owner.definitions) {
     expect(definition.composition).toBe('control-plane')
+  }
 })
 
 it('retries failed storage through save_tool without repeating successful product work', async () => {

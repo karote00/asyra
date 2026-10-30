@@ -19,9 +19,11 @@ export function appendSurfaceHairs(
   observe?: (range: SurfaceHairRange) => void
 ): number {
   const originalIndices = builder.indices.length
-  if (!builder.colors.length)
-    for (let i = 0; i < builder.positions.length; i += 3)
+  if (!builder.colors.length) {
+    for (let i = 0; i < builder.positions.length; i += 3) {
       builder.colors.push(...baseColor)
+    }
+  }
   let count = 0,
     carry = 0
   const cross = (a: Point3, b: Point3): Point3 => [
@@ -41,7 +43,9 @@ export function appendSurfaceHairs(
     const ac = p[2].map((v, j) => v - p[0][j]) as unknown as Point3
     const n = cross(ab, ac),
       magnitude = Math.hypot(...n)
-    if (magnitude < 1e-12) continue
+    if (magnitude < 1e-12) {
+      continue
+    }
     carry += magnitude * 0.5 * density
     const samples = Math.floor(carry)
     carry -= samples
@@ -81,19 +85,22 @@ export function appendSurfaceHairs(
         )
       )
       builder.colors.push(0.56, 0.63, 0.4)
-      for (let side = 0; side < 3; side++)
+      for (let side = 0; side < 3; side++) {
         builder.indices.push(
           offset + side,
           offset + ((side + 1) % 3),
           offset + 3
         )
+      }
       if (builder.uvs.length)
-        // A tiny valid UV patch keeps normal-map tangent derivatives finite.
+      // A tiny valid UV patch keeps normal-map tangent derivatives finite.
+      {
         builder.uvs.push(0, 0, 0.001, 0, 0, 0.001, 0.001, 0.001)
+      }
       builder.region('open-shell', hairStart)
       count++
     }
-    if (samples && observe)
+    if (samples && observe) {
       observe({
         sourceTriangle: i,
         vertexStart,
@@ -101,6 +108,7 @@ export function appendSurfaceHairs(
         indexStart,
         indexCount: builder.indices.length - indexStart
       })
+    }
   }
   return count
 }

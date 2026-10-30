@@ -12,7 +12,9 @@ export class SurfaceTextureStore {
     if (!entry) {
       const texture = (values: readonly number[]) => {
         const bytes = new Uint8Array(values.length)
-        for (let i = 0; i < values.length; i++) bytes[i] = values[i]
+        for (let i = 0; i < values.length; i++) {
+          bytes[i] = values[i]
+        }
         const result = new THREE.DataTexture(
           bytes,
           surface.width,

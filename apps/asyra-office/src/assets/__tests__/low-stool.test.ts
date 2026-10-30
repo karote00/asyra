@@ -3,10 +3,11 @@ import { expect, it } from 'vitest'
 import { lowStool } from '../low-stool'
 it('joins four square legs to one closed cushion exterior at both detail levels', () => {
   const parts = lowStool()
-  for (const p of parts)
+  for (const p of parts) {
     expect(
       requiredSpecValue(p.distant, 'distant representation').maxError
     ).toBeGreaterThan(0)
+  }
   expect(parts.map((p) => p.id)).toEqual([
     'cushion',
     'leg-0-0',
@@ -52,8 +53,10 @@ it('joins four square legs to one closed cushion exterior at both detail levels'
       [0, [-0.18, 0.18]],
       [1, [-0.18, 0.18]],
       [2, [0, 0.3]]
-    ] as const)
-      for (const end of [0, 1])
+    ] as const) {
+      for (const end of [0, 1]) {
         expect(extrema[axis][end]).toBeCloseTo(expected[end], 8)
+      }
+    }
   }
 })

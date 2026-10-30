@@ -50,8 +50,9 @@ const materialHarness = async (page: Page) => {
       >
       const input = testRuntimeState.get<Input>('material-runtime')
       const request = testRuntimeState.get<AbortController>('material-request')
-      if (!input?.transactionRunner || !request)
+      if (!input?.transactionRunner || !request) {
         throw new Error('Missing runtime transaction owner')
+      }
       return input.transactionRunner
         .run('Material scenario', async (runMutation) => {
           const actionResults = []
@@ -59,7 +60,9 @@ const materialHarness = async (page: Page) => {
             const action = input.actionDefinitions.find(
               (d) => d.name === a.name
             )
-            if (!action) throw new Error('Unknown action')
+            if (!action) {
+              throw new Error('Unknown action')
+            }
             actionResults.push({
               actionId: a.id,
               actionName: a.name,
@@ -73,7 +76,9 @@ const materialHarness = async (page: Page) => {
         })
         .catch((error: unknown) => {
           let cause = error
-          while (cause instanceof Error && cause.cause) cause = cause.cause
+          while (cause instanceof Error && cause.cause) {
+            cause = cause.cause
+          }
           throw cause
         })
     }, batch)) as never
@@ -287,7 +292,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
           evidence: unknown
           image: { dataUrl: string; width: number; height: number }
         }
-        if (!capture.available) throw new Error('Rendered capture unavailable')
+        if (!capture.available) {
+          throw new Error('Rendered capture unavailable')
+        }
         stamps.push(capture.evidence)
         const image = capture.image
         images.push(image.dataUrl)
@@ -298,7 +305,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
         canvas.width = bitmap.width
         canvas.height = bitmap.height
         const ctx = canvas.getContext('2d')
-        if (!ctx) throw new Error('Missing image sampling context')
+        if (!ctx) {
+          throw new Error('Missing image sampling context')
+        }
         ctx.drawImage(bitmap, 0, 0)
         colors.push(
           Array.from(
@@ -320,11 +329,12 @@ test('recorded world material reaches real tools, local checks, history, peer an
         )
       }
     }, ids)
-    for (let i = 0; i < rendered.images.length; i++)
+    for (let i = 0; i < rendered.images.length; i++) {
       await testInfo.attach(`material-face-${i}`, {
         body: Buffer.from(rendered.images[i].split(',')[1], 'base64'),
         contentType: 'image/png'
       })
+    }
     const stops = recorded.draft.fillTemplates.glassL.gradientStops
     recorded.draft.children.forEach((face, i) => {
       const phase =
@@ -396,7 +406,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
     const match = method.match(
       /```json native-palette-correction\n([\s\S]*?)\n```/
     )
-    if (!match) throw new Error('Missing published material correction')
+    if (!match) {
+      throw new Error('Missing published material correction')
+    }
     const edit = JSON.parse(match[1]).arguments
     edit.operations[0].arguments = {
       elementIds: [ids[0]],
@@ -459,7 +471,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
       >
       const owner = testRuntimeState.get<Owner>('material-evidence')
       const stamps = testRuntimeState.get<unknown[]>('material-stamps')
-      if (!owner || !stamps) throw new Error('Missing visual evidence')
+      if (!owner || !stamps) {
+        throw new Error('Missing visual evidence')
+      }
       return stamps.map((s) => owner.isCurrent(s))
     })
     expect(currency).toEqual([false, true])
@@ -581,8 +595,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       for (const owner of testRuntimeState.get<Input>('material-runtime')
-        ?.ownedResources ?? [])
+        ?.ownedResources ?? []) {
         await owner.dispose()
+      }
       testRuntimeState.get<{ dispose(): void }>('material-evidence')?.dispose()
     })
     await page.reload()
@@ -734,7 +749,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
         ['author', page],
         ['peer', peer]
       ] as const) {
-        if (client.url() === 'about:blank' || client.isClosed()) continue
+        if (client.url() === 'about:blank' || client.isClosed()) {
+          continue
+        }
         await testInfo.attach(`material-failure-${name}`, {
           body: JSON.stringify(
             await client.evaluate(async () => {
@@ -815,8 +832,9 @@ test('native field sampling stays continuous across the rendered join of transla
       const action = input.actionDefinitions.find(
         (a) => a.name === 'apply_prepared_design'
       )
-      if (!action || !input.transactionRunner)
+      if (!action || !input.transactionRunner) {
         throw new Error('Missing actual apply owner')
+      }
       await input.transactionRunner.run(
         'Continuous panels',
         async (runMutation) =>
@@ -826,7 +844,9 @@ test('native field sampling stays continuous across the rendered join of transla
           )
       )
       const capture = core.captureElementSnapshot(prepared.rootId, 1024)
-      if (!capture) throw new Error('Missing actual rendered result')
+      if (!capture) {
+        throw new Error('Missing actual rendered result')
+      }
       const bitmap = await createImageBitmap(
         await (await fetch(capture.dataUrl)).blob()
       )
@@ -834,7 +854,9 @@ test('native field sampling stays continuous across the rendered join of transla
       canvas.width = bitmap.width
       canvas.height = bitmap.height
       const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('Missing sampling context')
+      if (!ctx) {
+        throw new Error('Missing sampling context')
+      }
       ctx.drawImage(bitmap, 0, 0)
       const rows = [
         Math.floor(bitmap.height / 2) - 2,
@@ -853,13 +875,16 @@ test('native field sampling stays continuous across the rendered join of transla
         }))
       }
     } finally {
-      for (const owner of input.ownedResources ?? []) await owner.dispose()
+      for (const owner of input.ownedResources ?? []) {
+        await owner.dispose()
+      }
     }
   }, prepared)
   for (const sample of result.samples) {
     const expected = 255 * (1 - (sample.y + 0.5) / result.height)
-    for (const channel of sample.rgba.slice(0, 3))
+    for (const channel of sample.rgba.slice(0, 3)) {
       expect(Math.abs(channel - expected)).toBeLessThanOrEqual(3)
+    }
     expect(sample.rgba[3]).toBe(255)
   }
   await testInfo.attach('continuous-native-join', {
@@ -1067,7 +1092,7 @@ test('source material revisions update original faces, extend coherently and sur
     expect(await read()).toEqual(after)
   } finally {
     await peer.close()
-    if (new URL(page.url()).protocol !== 'chrome-error:')
+    if (new URL(page.url()).protocol !== 'chrome-error:') {
       await page.evaluate(async () => {
         const { testRuntimeState } =
           await import('../src/testing/runtime-access')
@@ -1075,8 +1100,10 @@ test('source material revisions update original faces, extend coherently and sur
           typeof import('../src/ai/runtime-input').createAiRuntimeInput
         >
         for (const owner of testRuntimeState.get<Input>('material-runtime')
-          ?.ownedResources ?? [])
+          ?.ownedResources ?? []) {
           await owner.dispose()
+        }
       })
+    }
   }
 })

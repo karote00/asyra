@@ -111,11 +111,12 @@ test(
       runtimeAuthority: baseline.runtimeAuthority
     })
     assert.deepEqual(baseline.executionSource, generated.executionSource)
-    for (const file of generated.files)
+    for (const file of generated.files) {
       assert.equal(
         fs.readFileSync(path.join(frozenRoot, file.path), 'utf8'),
         file.content
       )
+    }
     assert.equal(baseline.evidence.cases.length, contract.cases.length)
     assert.equal(
       baseline.evidence.runtimeSourceDigest,
@@ -460,8 +461,9 @@ test(
     )
     t.mock.method(fs, 'readFileSync', (file, ...args) => {
       const value = originalRead(file, ...args)
-      if (String(file).startsWith(sourceRoot + path.sep))
+      if (String(file).startsWith(sourceRoot + path.sep)) {
         actualReads.push({ file: String(file), value })
+      }
       return value
     })
     const hash = t.mock.method(source, 'sha256')

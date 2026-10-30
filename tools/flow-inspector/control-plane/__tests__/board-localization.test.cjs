@@ -34,8 +34,11 @@ async function openBoard(t, fixture) {
     await browser?.close()
     await server?.close()
     fixture.restore()
-    if (previous === undefined) delete process.env.TMPDIR
-    else process.env.TMPDIR = previous
+    if (previous === undefined) {
+      delete process.env.TMPDIR
+    } else {
+      process.env.TMPDIR = previous
+    }
   })
   server = await startServer(fixture.repository, {
     url: process.env.FLOW_PROOF_URL,
@@ -43,7 +46,7 @@ async function openBoard(t, fixture) {
       directory: path.join(fixture.repository, 'tmp/proof-runs')
     }
   })
-  if (process.platform === 'linux')
+  if (process.platform === 'linux') {
     assert.ok(
       Buffer.byteLength(
         path.join(
@@ -53,6 +56,7 @@ async function openBoard(t, fixture) {
       ) < 108,
       'Chrome socket path exceeds the Linux limit'
     )
+  }
   // The proof store stays within its owning repository.
   browser = await chromium.launch({
     channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
@@ -172,8 +176,9 @@ test(
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     let requests = 0
     await page.route('**/api/test-results/' + fault.record.id, (route) => {
-      if (++requests === 1)
+      if (++requests === 1) {
         return route.fulfill({ status: 503, body: 'temporary outage' })
+      }
       return route.continue()
     })
     await frame.locator('#test-result-history').selectOption(fault.record.id)
@@ -211,8 +216,9 @@ test(
       '**/api/test-results/' + fault.record.id,
       async (route) => {
         reads++
-        if (reads === 1)
+        if (reads === 1) {
           return route.fulfill({ status: 503, body: 'temporary outage' })
+        }
         return route.continue()
       }
     )
@@ -257,7 +263,9 @@ test(
       await expect(errors).toHaveCount(4)
       for (const [errorIndex, error] of item.failureDetails.entries()) {
         for (const key of ['message', 'stack', 'expected', 'actual', 'diff']) {
-          if (!Object.hasOwn(error, key) || key === 'diff') continue
+          if (!Object.hasOwn(error, key) || key === 'diff') {
+            continue
+          }
           // Compare textContent exactly; assertion whitespace is evidence.
           assert.equal(
             await errors
@@ -405,8 +413,9 @@ test(
       'omit-registered-tools',
       'misclassify-combined-tool',
       'ignore-canonical-evidence'
-    ])
+    ]) {
       fixture.mutateExecution(scenario)
+    }
     const fault = await fixture.run('execution')
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
@@ -444,8 +453,9 @@ test(
           '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
         )
       ).toHaveCount(1)
-      for (const file of item.locations[0].implementationPaths)
+      for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
+      }
       await expect(details).toContainText(item.failures[0])
     }
     const machine = await (
@@ -499,8 +509,9 @@ test(
     ).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const details = frame.locator('#test-result-detail')
-    for (const file of failures[0].locations[0].implementationPaths)
+    for (const file of failures[0].locations[0].implementationPaths) {
       await expect(details).toContainText(file)
+    }
     await expect(details).toContainText(failures[0].failures[0])
     await expect(details).toContainText(
       'Contract: docs/ai/framework/plans/completed/render-engine-boundary-plan.md'
@@ -553,8 +564,9 @@ test(
       'copy-registration-receipt',
       'omit-invocation-calls',
       'omit-reload-name'
-    ])
+    ]) {
       fixture.mutateRecipe(scenario)
+    }
     const fault = await fixture.run('recipe')
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
@@ -593,12 +605,14 @@ test(
           '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
         )
       ).toHaveCount(1)
-      for (const file of item.locations[0].implementationPaths)
+      for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
+      }
       await expect(details).toContainText(item.failures[0])
       await expect(details).toContainText(item.locations[0].specPath)
-      for (const ref of item.locations[0].specRefs)
+      for (const ref of item.locations[0].specRefs) {
         await expect(details).toContainText(ref)
+      }
     }
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
@@ -638,8 +652,9 @@ test(
     fixture.mutateViewport()
     const engine = await fixture.run('pixi')
     const adapter = await fixture.run('viewport')
-    for (const fault of [engine, adapter])
+    for (const fault of [engine, adapter]) {
       assert.equal(fault.result.code, 1, fault.result.output)
+    }
     await page.goto(server.origin + '/render-engine-boundary')
     const frame = page.frameLocator('iframe')
     const buttons = frame.locator('#test-result-failures button')
@@ -658,11 +673,13 @@ test(
           '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
         )
       ).toHaveCount(1)
-      for (const file of item.locations[0].implementationPaths)
+      for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
+      }
       await expect(details).toContainText(item.locations[0].specPath)
-      for (const ref of item.locations[0].specRefs)
+      for (const ref of item.locations[0].specRefs) {
         await expect(details).toContainText(ref)
+      }
       await expect(details).toContainText(item.failures[0])
       const machine = await (
         await fetch(server.origin + '/api/test-results/' + fault.record.id)
@@ -739,8 +756,9 @@ test(
     ).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const details = frame.locator('#test-result-detail')
-    for (const file of failures[0].locations[0].implementationPaths)
+    for (const file of failures[0].locations[0].implementationPaths) {
       await expect(details).toContainText(file)
+    }
     await expect(details).toContainText(failures[0].failures[0])
     await expect(details).toContainText(
       'Contract: docs/ai/framework/packages/preset.md'
@@ -830,13 +848,14 @@ test(
         'packages/preset/src/components/vector-compound-fill.ts'
       )
       await expect(details).toContainText(item.failures[0])
-      for (const field of ['expected', 'actual'])
+      for (const field of ['expected', 'actual']) {
         assert.equal(
           await details
             .locator('[data-failure-field="' + field + '"]')
             .textContent(),
           item.failureDetails[0][field]
         )
+      }
     }
     assert.deepEqual(
       await (
@@ -899,7 +918,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
     stepId: 'move-elements',
     secondCaseId: 'functional.properties.ee7ea52ee1d0'
   }
-])
+]) {
   test(
     'original Design Playwright failure exposes identical source, attempts and retained artifacts on the Board - ' +
       caseId,
@@ -919,7 +938,9 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
           'apps/asyra-design/src/common-apis/fills.ts',
           'fillApis.addFills'
         )
-      } else fixture.fault()
+      } else {
+        fixture.fault()
+      }
       const fault = await fixture.run([caseId])
       assert.equal(fault.result.code, 1, fault.result.output)
       assert.equal(fault.record.cases[0].resolution, 'mapped')
@@ -939,8 +960,11 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       t.after(async () => {
         await browser?.close()
         await server?.close()
-        if (previous === undefined) delete process.env.TMPDIR
-        else process.env.TMPDIR = previous
+        if (previous === undefined) {
+          delete process.env.TMPDIR
+        } else {
+          process.env.TMPDIR = previous
+        }
       })
       server = await startServer(path.resolve(__dirname, '../../../..'), {
         url: process.env.FLOW_PROOF_URL,
@@ -1048,6 +1072,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       t.diagnostic('Playwright Board evidence: ' + fixture.repository)
     }
   )
+}
 
 test(
   'node interactions preserve drafts, literal notes and original evidence across API, CLI and Board rerun',

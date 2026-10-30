@@ -89,7 +89,9 @@ describe('Render', () => {
     render.viewport.view.addChild(element)
     render.viewport.view.addChild(second)
     render.viewport.getElementById = vi.fn((id) => {
-      if (id === 'missing') return undefined
+      if (id === 'missing') {
+        return undefined
+      }
       return id === 'b' ? second : element
     })
     Object.defineProperty(engine, 'capabilities', {

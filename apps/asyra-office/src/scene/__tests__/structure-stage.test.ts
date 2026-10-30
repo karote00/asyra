@@ -17,8 +17,9 @@ describe('single-storey structural review', () => {
     const ids = new Set(scene.assemblies.map((a) => a.id))
     expect(ids.has('office-slab')).toBe(true)
     expect(ids.has('desk')).toBe(true)
-    for (const id of ['lounge-sofa', 'desk-chair', 'actor-mina'])
+    for (const id of ['lounge-sofa', 'desk-chair', 'actor-mina']) {
       expect(ids.has(id), id).toBe(false)
+    }
   })
   it('keeps the fitted overview orbit pivot on the shared office floor', () => {
     const target = OFFICE_FIT.camera.target
@@ -47,8 +48,9 @@ describe('single-storey structural review', () => {
       'entry-pier',
       'entry-header',
       'entrance-door'
-    ])
+    ]) {
       expect(ids.has(id), id).toBe(true)
+    }
     for (const id of [
       'entrance-frame',
       'desk',
@@ -61,8 +63,9 @@ describe('single-storey structural review', () => {
       'actor-leo',
       'actor-sage',
       'room-edge-plant-0'
-    ])
+    ]) {
       expect(ids.has(id), id).toBe(false)
+    }
     expect(scene.labels.some((l) => l.artwork)).toBe(false)
     const entrance = scene.assemblies.filter((a) =>
       ['front-facade', 'entry-pier', 'entry-header'].includes(a.id)
@@ -90,8 +93,9 @@ describe('single-storey structural review', () => {
         assembly.asset !== 'floor-plank' &&
         assembly.asset !== 'wall-segment' &&
         assembly.id !== 'office-slab'
-      )
+      ) {
         continue
+      }
       const z = parts.flatMap((p) =>
         p.mesh.positions.filter((_, i) => i % 3 === 2)
       )
@@ -99,16 +103,22 @@ describe('single-storey structural review', () => {
     }
     const floor = elevations.get('floor-0-0'),
       foundation = elevations.get('office-slab')
-    if (!floor || !foundation) throw new Error('Missing structural support')
+    if (!floor || !foundation) {
+      throw new Error('Missing structural support')
+    }
     expect(floor[1]).toBeCloseTo(0.38, 6)
     expect(foundation[1]).toBeCloseTo(floor[0], 6)
     for (const assembly of scene.assemblies) {
       const z = elevations.get(assembly.id)
-      if (!z) continue
-      if (assembly.asset === 'floor-plank')
+      if (!z) {
+        continue
+      }
+      if (assembly.asset === 'floor-plank') {
         expect(z, assembly.id).toEqual(floor.map((n) => expect.closeTo(n, 6)))
-      if (assembly.asset === 'wall-segment' && !assembly.id.endsWith('-cap'))
+      }
+      if (assembly.asset === 'wall-segment' && !assembly.id.endsWith('-cap')) {
         expect(z[0], assembly.id).toBeCloseTo(floor[1], 6)
+      }
     }
   })
   it('keeps the full rectangular footprint beneath foreground decoration occlusions', () => {
@@ -118,8 +128,9 @@ describe('single-storey structural review', () => {
     for (const assembly of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + assembly.parts.length)
       offset += assembly.parts.length
-      if (assembly.id !== 'office-slab' && assembly.asset !== 'floor-plank')
+      if (assembly.id !== 'office-slab' && assembly.asset !== 'floor-plank') {
         continue
+      }
       for (const part of parts) {
         const { positions, indices } = part.mesh
         const top = Math.max(...positions.filter((_, i) => i % 3 === 2))
@@ -127,8 +138,9 @@ describe('single-storey structural review', () => {
           const vertices = indices
             .slice(i, i + 3)
             .map((j) => positions.slice(j * 3, j * 3 + 3))
-          if (vertices.every((p) => Math.abs(p[2] - top) < 1e-8))
+          if (vertices.every((p) => Math.abs(p[2] - top) < 1e-8)) {
             topFaces.push({ id: assembly.id, vertices })
+          }
         }
       }
     }
@@ -148,12 +160,14 @@ describe('single-storey structural review', () => {
       0
     )
     expect(area).toBeCloseTo((maxX - minX) * (maxY - minY), 6)
-    for (const x of [minX, maxX])
-      for (const y of [minY, maxY])
+    for (const x of [minX, maxX]) {
+      for (const y of [minY, maxY]) {
         expect(
           vertices.some((p) => Math.hypot(p[0] - x, p[1] - y) < 1e-8),
           `missing structural corner ${x},${y}`
         ).toBe(true)
+      }
+    }
     const point = [maxX - 0.12, minY + 0.12]
     expect(
       topFaces
@@ -243,11 +257,15 @@ it('keeps all four current room floor centres physically clear at both LoDs', ()
     for (const assembly of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + assembly.parts.length)
       offset += assembly.parts.length
-      if (!['wall-segment', 'wall-header'].includes(assembly.asset)) continue
-      for (const part of parts)
+      if (!['wall-segment', 'wall-header'].includes(assembly.asset)) {
+        continue
+      }
+      for (const part of parts) {
         for (const detail of ['near', 'distant'] as const) {
           const mesh = detail === 'near' ? part.mesh : part.distant?.mesh
-          if (!mesh) throw new Error('Missing wall representation')
+          if (!mesh) {
+            throw new Error('Missing wall representation')
+          }
           for (let i = 0; i < mesh.indices.length; i += 3) {
             const [a, b, c] = mesh.indices
               .slice(i, i + 3)
@@ -256,13 +274,19 @@ it('keeps all four current room floor centres physically clear at both LoDs', ()
               ac = subtract(c, a),
               h = cross(direction, ac),
               determinant = dot(ab, h)
-            if (Math.abs(determinant) < 1e-10) continue
+            if (Math.abs(determinant) < 1e-10) {
+              continue
+            }
             const relative = subtract(origin, a),
               u = dot(relative, h) / determinant
-            if (u < 0 || u > 1) continue
+            if (u < 0 || u > 1) {
+              continue
+            }
             const q = cross(relative, ab),
               v = dot(direction, q) / determinant
-            if (v < 0 || u + v > 1) continue
+            if (v < 0 || u + v > 1) {
+              continue
+            }
             const t = dot(ac, q) / determinant
             expect(
               t > 1e-8 && t < 1 - 1e-8,
@@ -270,6 +294,7 @@ it('keeps all four current room floor centres physically clear at both LoDs', ()
             ).toBe(false)
           }
         }
+      }
     }
   }
 })

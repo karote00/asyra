@@ -28,7 +28,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
     length = rear - start,
     height = p.rearTop - floor - 0.025
   // Original wood boards cover the left interior wall; the clock wall stays cream.
-  for (let i = 0; i < 10; i++)
+  for (let i = 0; i < 10; i++) {
     block(
       'discussion-board-' + i,
       [0.022, length / 10 - 0.003, height],
@@ -37,6 +37,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
       'wood',
       0.001
     )
+  }
   addPrint(
     c,
     'discussion-print',
@@ -98,8 +99,8 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
     'wood',
     0.004
   )
-  for (const x of [-1, 1])
-    for (const y of [-1, 1])
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
       block(
         `discussion-console-leg-${x}-${y}`,
         [0.033, 0.033, top - floor - 0.0175],
@@ -112,6 +113,8 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
         'wood',
         0.002
       )
+    }
+  }
   plant('discussion-console-plant', [-1.02, rear - 0.16, top + 0.0175], 0.95, {
     color: 0x956e47,
     form: 'lanceolate'

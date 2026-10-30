@@ -1,7 +1,7 @@
 
 const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value))
-    return value
+    {return value}
   Object.values(value).forEach(freeze)
   return Object.freeze(value)
 }

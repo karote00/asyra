@@ -176,7 +176,9 @@ function SceneWorkspace({
     return () => narrow.removeEventListener('change', closePanels)
   }, [])
   useEffect(() => {
-    if (!host.current) return
+    if (!host.current) {
+      return
+    }
     let retired = false
     let current: FarmRuntime | undefined
     void bootstrap(host.current)
@@ -190,21 +192,31 @@ function SceneWorkspace({
         onReady(value)
       })
       .catch((e) => {
-        if (!retired) setError(e)
+        if (!retired) {
+          setError(e)
+        }
       })
     return () => {
       retired = true
-      if (current) void current.dispose()
+      if (current) {
+        void current.dispose()
+      }
     }
   }, [onReady])
   useEffect(() => {
     const target = host.current
-    if (!target || !runtime) return
+    if (!target || !runtime) {
+      return
+    }
     const wheel = (event: WheelEvent) => {
       event.preventDefault()
       let unit = 1
-      if (event.deltaMode === 1) unit = 16
-      if (event.deltaMode === 2) unit = target.clientHeight
+      if (event.deltaMode === 1) {
+        unit = 16
+      }
+      if (event.deltaMode === 2) {
+        unit = target.clientHeight
+      }
       const delta = event.deltaY * unit
       if (previous.current?.button === 2) {
         runtime.setMovementSpeed(
@@ -213,8 +225,11 @@ function SceneWorkspace({
             Math.min(60, runtime.getMovementSpeed() * Math.exp(-delta * 0.002))
           )
         )
-      } else if (event.altKey) runtime.zoom(delta)
-      else runtime.dolly(delta * (event.shiftKey ? 4 : 1))
+      } else if (event.altKey) {
+        runtime.zoom(delta)
+      } else {
+        runtime.dolly(delta * (event.shiftKey ? 4 : 1))
+      }
     }
     target.addEventListener('wheel', wheel, { passive: false })
     return () => {
@@ -222,7 +237,9 @@ function SceneWorkspace({
     }
   }, [runtime])
   useEffect(() => {
-    if (!runtime) return
+    if (!runtime) {
+      return
+    }
     return core.registerInputKeyCombinations(
       createWorkbenchInputKeyCombinations({
         history: (redo) => {
@@ -254,7 +271,9 @@ function SceneWorkspace({
   }, [])
   const releasePointer = (event: { pointerId: number }) => {
     touches.current.delete(event.pointerId)
-    if (previous.current?.id === event.pointerId) previous.current = null
+    if (previous.current?.id === event.pointerId) {
+      previous.current = null
+    }
   }
   return (
     <div
@@ -268,7 +287,9 @@ function SceneWorkspace({
           open={leftOpen}
           onClick={() => {
             setLeftOpen(!leftOpen)
-            if (window.innerWidth < 1100) setRightOpen(false)
+            if (window.innerWidth < 1100) {
+              setRightOpen(false)
+            }
           }}
         />
         <div
@@ -284,7 +305,9 @@ function SceneWorkspace({
           open={rightOpen}
           onClick={() => {
             setRightOpen(!rightOpen)
-            if (window.innerWidth < 1100) setLeftOpen(false)
+            if (window.innerWidth < 1100) {
+              setLeftOpen(false)
+            }
           }}
         />
       </div>
@@ -319,7 +342,9 @@ function SceneWorkspace({
           tabIndex={0}
           className="h-[440px] outline-offset-[-3px] sm:h-[540px] xl:h-[610px]"
           onKeyDown={(event) => {
-            if (!runtime) return
+            if (!runtime) {
+              return
+            }
             const keys: Record<string, [number, number]> = {
               ArrowLeft: [-15, 0],
               ArrowRight: [15, 0],
@@ -330,11 +355,17 @@ function SceneWorkspace({
               event.preventDefault()
               runtime.look(...keys[event.key])
             }
-            if (event.key === '+' || event.key === '=') runtime.zoom(-100)
-            if (event.key === '-') runtime.zoom(100)
+            if (event.key === '+' || event.key === '=') {
+              runtime.zoom(-100)
+            }
+            if (event.key === '-') {
+              runtime.zoom(100)
+            }
           }}
           onPointerDown={(event) => {
-            if (event.button !== 0 && event.button !== 2) return
+            if (event.button !== 0 && event.button !== 2) {
+              return
+            }
             event.preventDefault()
             event.currentTarget.focus({ preventScroll: true })
             event.currentTarget.setPointerCapture(event.pointerId)
@@ -346,7 +377,9 @@ function SceneWorkspace({
               })
               return
             }
-            if (touches.current.size) return
+            if (touches.current.size) {
+              return
+            }
             previous.current = {
               x: event.clientX,
               y: event.clientY,
@@ -358,13 +391,17 @@ function SceneWorkspace({
             if (event.pointerType === 'touch') {
               const points = touches.current
               const old = points.get(event.pointerId)
-              if (!old) return
+              if (!old) {
+                return
+              }
               const before = [...points.values()]
               points.set(event.pointerId, {
                 x: event.clientX,
                 y: event.clientY
               })
-              if (!runtime) return
+              if (!runtime) {
+                return
+              }
               if (points.size === 1) {
                 runtime.look(event.clientX - old.x, event.clientY - old.y)
               } else if (points.size === 2) {
@@ -377,18 +414,23 @@ function SceneWorkspace({
                   Math.hypot(pair[1].x - pair[0].x, pair[1].y - pair[0].y)
                 const from = distance(before)
                 const to = distance(after)
-                if (from > 1 && to > 1 && from !== to)
+                if (from > 1 && to > 1 && from !== to) {
                   runtime.dolly(-1000 * Math.log(to / from))
+                }
               }
               return
             }
             const p = previous.current
-            if (!p || p.id !== event.pointerId || !runtime) return
-            if (p.button === 2)
+            if (!p || p.id !== event.pointerId || !runtime) {
+              return
+            }
+            if (p.button === 2) {
               runtime.look(event.clientX - p.x, event.clientY - p.y)
-            else if (event.shiftKey)
+            } else if (event.shiftKey) {
               runtime.pan(event.clientX - p.x, event.clientY - p.y)
-            else runtime.look(event.clientX - p.x, event.clientY - p.y)
+            } else {
+              runtime.look(event.clientX - p.x, event.clientY - p.y)
+            }
             previous.current = { ...p, x: event.clientX, y: event.clientY }
           }}
           onContextMenu={(event) => event.preventDefault()}

@@ -101,8 +101,9 @@ export const observeActionBatch = async (
           !Array.isArray(entry.result) &&
           'actionObservation' in entry.result
       )
-    )
+    ) {
       return receipt
+    }
     return {
       ...receipt,
       actionResults: receipt.actionResults.map((entry) => {
@@ -112,8 +113,9 @@ export const observeActionBatch = async (
           typeof value !== 'object' ||
           Array.isArray(value) ||
           !('actionObservation' in value)
-        )
+        ) {
           return entry
+        }
         const { actionObservation: _observation, ...result } = value
         return { ...entry, result }
       })
@@ -129,7 +131,7 @@ export const observeActionBatch = async (
       failure &&
       batch.actions.filter((action) => action.name === failure.actionName)
         .length === 1
-    for (const action of batch.actions)
+    for (const action of batch.actions) {
       emit('action_failed', {
         callId: `action:${batch.batchId}:${action.id}`,
         tool: action.name,
@@ -160,6 +162,7 @@ export const observeActionBatch = async (
             }
           : {})
       })
+    }
     throw error
   }
 }

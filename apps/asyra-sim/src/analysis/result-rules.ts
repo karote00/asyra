@@ -28,7 +28,9 @@ export function evaluateAcceptance(
       : 0
   const upper = pairs.reduce<number | null>((minimum, pair) => {
     const bound = pair.evidence.upper
-    if (bound === null) return minimum
+    if (bound === null) {
+      return minimum
+    }
     return minimum === null ? bound : Math.min(minimum, bound)
   }, null)
   const penetration = pairs.some((pair) =>
@@ -40,9 +42,11 @@ export function evaluateAcceptance(
       const decisive = node.kind === 'all' ? 'false' : 'true'
       const uniform = node.kind === 'all' ? 'true' : 'false'
       let value: RuleTruth = 'unknown'
-      if (children.some((child) => child.value === decisive)) value = decisive
-      else if (children.every((child) => child.value === uniform))
+      if (children.some((child) => child.value === decisive)) {
+        value = decisive
+      } else if (children.every((child) => child.value === uniform)) {
         value = uniform
+      }
       return {
         value,
         reason: `${node.kind === 'all' ? 'AND' : 'OR'} of retained child evaluations; unknown evidence is not discarded.`,
@@ -51,16 +55,22 @@ export function evaluateAcceptance(
     }
     if (node.kind === 'penetration') {
       let presence: RuleTruth = 'unknown'
-      if (penetration) presence = 'true'
-      else if (lower > 0) presence = 'false'
+      if (penetration) {
+        presence = 'true'
+      } else if (lower > 0) {
+        presence = 'false'
+      }
       let value = presence
-      if (node.expected === 'absent' && presence !== 'unknown')
+      if (node.expected === 'absent' && presence !== 'unknown') {
         value = presence === 'true' ? 'false' : 'true'
+      }
       let reason =
         'neither penetration nor separation is established for the full scope'
-      if (penetration) reason = 'a validated penetration witness exists'
-      else if (lower > 0)
+      if (penetration) {
+        reason = 'a validated penetration witness exists'
+      } else if (lower > 0) {
         reason = 'all queried pairs have strictly positive separation bounds'
+      }
       return {
         value,
         reason: `Penetration expected ${node.expected}; ${reason}.`
@@ -69,11 +79,17 @@ export function evaluateAcceptance(
     if (node.kind === 'clearance') {
       let value: RuleTruth = 'unknown'
       if (node.operator === 'above') {
-        if (lower > node.value) value = 'true'
-        else if (upper !== null && upper <= node.value) value = 'false'
+        if (lower > node.value) {
+          value = 'true'
+        } else if (upper !== null && upper <= node.value) {
+          value = 'false'
+        }
       } else {
-        if (upper !== null && upper < node.value) value = 'true'
-        else if (lower >= node.value) value = 'false'
+        if (upper !== null && upper < node.value) {
+          value = 'true'
+        } else if (lower >= node.value) {
+          value = 'false'
+        }
       }
       return {
         value,
@@ -104,15 +120,17 @@ export function validateRuleEvaluation(
       typeof value.reason !== 'string' ||
       value.reason.length === 0 ||
       value.reason.length > 1000
-    )
+    ) {
       throw new Error('Invalid retained rule evaluation')
+    }
     if (node.kind === 'all' || node.kind === 'any') {
       const children = value.children
       if (
         !Array.isArray(children) ||
         children.length !== node.conditions.length
-      )
+      ) {
         throw new Error('Invalid retained rule evaluation children')
+      }
       node.conditions.forEach((child, index) => visit(children[index], child))
     }
   }

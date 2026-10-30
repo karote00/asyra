@@ -130,7 +130,9 @@ export class SharedDataChannelRegistry {
         }
       }
     })
-    if (failed) throw firstError
+    if (failed) {
+      throw firstError
+    }
   }
 
   assertRuntimeResetAllowed(): void {

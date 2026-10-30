@@ -112,15 +112,17 @@ export function expectedInventory(source: ReturnType<typeof setup>['source']) {
   const robots = source.meshes.filter((mesh) => mesh.kind === 'robot'),
     environment = source.meshes.filter((mesh) => mesh.kind !== 'robot')
   const triangles = (mesh: (typeof robots)[number]) => {
-    if (mesh.shape.kind !== 'triangles')
+    if (mesh.shape.kind !== 'triangles') {
       throw new Error('Invalid fixture source')
+    }
     return mesh.shape.indices.length / 3
   }
   let meshPairs = 0,
     trianglePairs = 0,
     environmentInstances = 0
-  for (const mesh of environment)
+  for (const mesh of environment) {
     environmentInstances += mesh.descriptor?.instances?.length ?? 1
+  }
   for (let i = 0; i < robots.length; i++) {
     for (const mesh of environment) {
       const instances = mesh.descriptor?.instances?.length ?? 1

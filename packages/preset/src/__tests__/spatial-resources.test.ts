@@ -16,7 +16,9 @@ it('shares one GPU texture pair across materials and releases it only after the 
   store.apply(b, surface)
   expect(a.map).toBe(b.map)
   expect(a.normalMap).toBe(b.normalMap)
-  if (!a.map || !a.normalMap) throw new Error('Missing maps')
+  if (!a.map || !a.normalMap) {
+    throw new Error('Missing maps')
+  }
   const colorDispose = vi.spyOn(a.map, 'dispose'),
     normalDispose = vi.spyOn(a.normalMap, 'dispose')
   a.dispose()

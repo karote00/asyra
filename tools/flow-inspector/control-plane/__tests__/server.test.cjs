@@ -14,15 +14,18 @@ test('URL contract rejects remote hosts and missing configuration', () => {
     'http://0.0.0.0:4318',
     'https://127.0.0.1:4318',
     'http://127.0.0.1:4318/other'
-  ])
+  ]) {
     assert.throws(() => parseLocalUrl(url))
+  }
 })
 test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and arbitrary commands before execution', async (context) => {
   const originalEvaluate = vm.runInNewContext
   let catalogLoads = 0
   vm.runInNewContext = (...args) => {
     const result = originalEvaluate(...args)
-    if (args[1]?.FLOW_INSPECTOR_WORKSPACE_BUNDLE) catalogLoads++
+    if (args[1]?.FLOW_INSPECTOR_WORKSPACE_BUNDLE) {
+      catalogLoads++
+    }
     return result
   }
   context.after(() => {
@@ -299,10 +302,11 @@ test('HTTP target assessment actions retain service authority and cached results
     serviceOptions: {
       directory: path.join(captured.sourceRoot, 'runs'),
       runner: async (options) => {
-        if (holdCancellation && !options.signal.aborted)
+        if (holdCancellation && !options.signal.aborted) {
           await new Promise((resolve) =>
             options.signal.addEventListener('abort', resolve, { once: true })
           )
+        }
         return require('../runner.cjs').runVerification(options)
       }
     }
@@ -534,7 +538,7 @@ test('HTTP target assessment actions retain service authority and cached results
         [null, 400],
         ['bad-task', 400],
         [randomUUID(), 409]
-      ])
+      ]) {
         assert.equal(
           (
             await post('/api/target-assessments', {
@@ -544,6 +548,7 @@ test('HTTP target assessment actions retain service authority and cached results
           ).status,
           status
         )
+      }
       assert.equal(
         (
           await post('/api/target-assessments', taskRequest, {
@@ -742,8 +747,9 @@ test('ordinary test observations are readable without becoming accepted proof ev
       '&observation=' +
       selector,
     '/unknown-page?observation=' + selector
-  ])
+  ]) {
     assert.equal((await fetch(server.origin + route)).status, 400, route)
+  }
   assert.equal(
     (
       await fetch(

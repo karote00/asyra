@@ -82,8 +82,9 @@ describe('targeted canonical design edits', () => {
   ])('rejects the complete invalid request before writing: %j', (patch) => {
     const { edit, apis } = fixture()
     expect(() => edit({ elementId: 'title', ...patch } as never)).toThrow()
-    for (const fn of [apis.properties, apis.rename, apis.fill, apis.stroke])
+    for (const fn of [apis.properties, apis.rename, apis.fill, apis.stroke]) {
       expect(fn).not.toHaveBeenCalled()
+    }
   })
   it('checks inherited locks and missing ancestors', () => {
     const { edit, records, apis } = fixture()

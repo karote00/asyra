@@ -55,12 +55,13 @@ export default class LocalizationReporter extends JsonReporter {
   }
 
   async onFinished(files = this.ctx.state.getFiles(), errors = [], coverage) {
-    if (this.executedFiles)
+    if (this.executedFiles) {
       files = files.filter((file) =>
         this.executedFiles.has(
           JSON.stringify([file.filepath, file.projectName ?? ''])
         )
       )
+    }
     this.projects = files.map((file) => file.projectName ?? '')
     this.errors = errors.map((error) =>
       String(error?.stack ?? error?.message ?? error)
@@ -93,7 +94,9 @@ export default class LocalizationReporter extends JsonReporter {
           suiteName: suite.name
         })
       }
-      for (const child of suite.tasks ?? []) retainErrors(child, file, cases)
+      for (const child of suite.tasks ?? []) {
+        retainErrors(child, file, cases)
+      }
     }
     // Preserve file and depth-first test order used by JsonReporter. Names may collide.
     for (const file of files) {

@@ -94,8 +94,9 @@ function evidence(value: unknown): WalkingEvidence {
     !value.id.trim() ||
     typeof value.label !== 'string' ||
     !value.label.trim()
-  )
+  ) {
     return fail()
+  }
   return { kind: 'synthetic', id: value.id, label: value.label }
 }
 function readRequest(value: unknown): WalkingMountedCrateRequest {
@@ -113,8 +114,9 @@ function readRequest(value: unknown): WalkingMountedCrateRequest {
     !keys(value.dimensions, ['width', 'length', 'height']) ||
     !record(value.minimumClearance) ||
     !keys(value.minimumClearance, ['metres', 'evidence'])
-  )
+  ) {
     return fail()
+  }
   const { width, length, height } = value.dimensions,
     { metres } = value.minimumClearance
   if (
@@ -127,8 +129,9 @@ function readRequest(value: unknown): WalkingMountedCrateRequest {
     metres <= 0 ||
     typeof value.massIdentity !== 'string' ||
     !value.massIdentity.trim()
-  )
+  ) {
     return fail()
+  }
   return freeze({
     format: 'walking-mounted-crate-request/1',
     dimensions: { width, length, height },
@@ -145,9 +148,12 @@ function exact(significand: bigint, exponent: number): Dyadic {
     !Number.isSafeInteger(exponent) ||
     Math.abs(exponent) > 24000 ||
     (significand < 0n ? -significand : significand).toString(2).length > 24000
-  )
+  ) {
     return fail()
-  if (!significand) return { significand: 0n, exponent: 0 }
+  }
+  if (!significand) {
+    return { significand: 0n, exponent: 0 }
+  }
   while (significand % 2n === 0n) {
     significand /= 2n
     exponent++
@@ -155,13 +161,17 @@ function exact(significand: bigint, exponent: number): Dyadic {
   return { significand, exponent }
 }
 const scalar = (value: number) => {
-  if (!Number.isFinite(value)) return fail()
+  if (!Number.isFinite(value)) {
+    return fail()
+  }
   const v = dyadic(value)
   return exact(v.significand, v.exponent)
 }
 function plus(a: Dyadic, b: Dyadic) {
   const e = Math.min(a.exponent, b.exponent)
-  if (Math.max(a.exponent, b.exponent) - e > 24000) return fail()
+  if (Math.max(a.exponent, b.exponent) - e > 24000) {
+    return fail()
+  }
   return exact(
     (a.significand << BigInt(a.exponent - e)) +
       (b.significand << BigInt(b.exponent - e)),
@@ -174,7 +184,9 @@ const times = (a: Dyadic, b: Dyadic) =>
   exact(a.significand * b.significand, a.exponent + b.exponent)
 const compare = (a: Dyadic, b: Dyadic) => {
   const d = minus(a, b).significand
-  if (d < 0n) return -1
+  if (d < 0n) {
+    return -1
+  }
   return d > 0n ? 1 : 0
 }
 const minimum = (values: readonly Dyadic[]) =>
@@ -185,12 +197,15 @@ const vector = (f: (axis: number) => Dyadic): ExactVector => [f(0), f(1), f(2)]
 const zero: ExactVector = [scalar(0), scalar(0), scalar(0)]
 function identity(part: WalkingRobotPart) {
   const q = part.localFrame.rotation
-  if (q[0] !== 0 || q[1] !== 0 || q[2] !== 0 || Math.abs(q[3]) !== 1)
+  if (q[0] !== 0 || q[1] !== 0 || q[2] !== 0 || Math.abs(q[3]) !== 1) {
     return fail()
+  }
   return part.localFrame.position.map(scalar)
 }
 function shapeBounds(parts: readonly Pick<RobotPart, 'shape' | 'regions'>[]) {
-  if (!parts.length) return fail()
+  if (!parts.length) {
+    return fail()
+  }
   const points: ExactVector[] = []
   for (const part of parts) {
     const { shape } = part
@@ -203,10 +218,12 @@ function shapeBounds(parts: readonly Pick<RobotPart, 'shape' | 'regions'>[]) {
           i < 0 ||
           i * 3 + 2 >= shape.positions.length
       )
-    )
+    ) {
       return fail()
-    for (let i = 0; i < shape.positions.length; i += 3)
+    }
+    for (let i = 0; i < shape.positions.length; i += 3) {
       points.push(vector((k) => scalar(shape.positions[i + k])))
+    }
   }
   return {
     min: vector((k) => minimum(points.map((p) => p[k]))),
@@ -217,7 +234,9 @@ function openCavity(parts: readonly RobotPart[]) {
   const bounds = new Map(parts.map((part) => [part.id, shapeBounds([part])]))
   const bound = (id: string) => {
     const result = bounds.get(id)
-    if (!result) return fail()
+    if (!result) {
+      return fail()
+    }
     return result
   }
   const min: ExactVector = [
@@ -236,7 +255,9 @@ function openCavity(parts: readonly RobotPart[]) {
     ),
     minimum(['crate-end-1', 'crate-rim-end-1'].map((id) => bound(id).min[2]))
   ]
-  if (min.some((value, axis) => compare(value, max[axis]) >= 0)) return fail()
+  if (min.some((value, axis) => compare(value, max[axis]) >= 0)) {
+    return fail()
+  }
   // Every original material cell is contained in its source-vertex bounds.
   // The open X/Z column above the bottom face must avoid all eleven cells,
   // including the rim and latches, without an upper Y cutoff.
@@ -247,8 +268,9 @@ function openCavity(parts: readonly RobotPart[]) {
       compare(b.min[0], max[0]) >= 0 ||
       compare(b.max[2], min[2]) <= 0 ||
       compare(b.min[2], max[2]) >= 0
-    )
+    ) {
       continue
+    }
     return fail()
   }
   return { min, max, upwardOpen: true as const }
@@ -262,8 +284,9 @@ function rectangle(
     !part.regions.includes(patch.region) ||
     patch.ranges.length !== 1 ||
     patch.ranges[0].indexCount !== 6
-  )
+  ) {
     return fail()
+  }
   const start = patch.ranges[0].indexStart
   const triangles = [0, 3].map((offset) =>
     part.shape.indices
@@ -277,8 +300,9 @@ function rectangle(
   const key = (p: ExactVector) =>
     p.map((v) => v.significand + ':' + v.exponent).join(',')
   const points = [...new Map(triangles.flat().map((p) => [key(p), p])).values()]
-  if (points.length !== 4 || points.some((p) => compare(p[1], points[0][1])))
+  if (points.length !== 4 || points.some((p) => compare(p[1], points[0][1]))) {
     return fail()
+  }
   const minX = minimum(points.map((p) => p[0])),
     maxX = maximum(points.map((p) => p[0]))
   const minZ = minimum(points.map((p) => p[2])),
@@ -291,9 +315,12 @@ function rectangle(
         (compare(p[0], minX) && compare(p[0], maxX)) ||
         (compare(p[2], minZ) && compare(p[2], maxZ))
     )
-  )
+  ) {
     return fail()
-  if (triangles.some((t) => new Set(t.map(key)).size !== 3)) return fail()
+  }
+  if (triangles.some((t) => new Set(t.map(key)).size !== 3)) {
+    return fail()
+  }
   const shared = triangles[0].filter((p) =>
     triangles[1].some((q) => key(q) === key(p))
   )
@@ -301,8 +328,9 @@ function rectangle(
     shared.length !== 2 ||
     !compare(shared[0][0], shared[1][0]) ||
     !compare(shared[0][2], shared[1][2])
-  )
+  ) {
     return fail()
+  }
   return { minX, maxX, minZ, maxZ, planeY: points[0][1] }
 }
 const crateIds = [
@@ -325,14 +353,16 @@ export class WalkingMountedCrateOwner {
       this.current.source === source &&
       input === this.current.request &&
       this.sourceOwner.isCurrent(source)
-    )
+    ) {
       return this.current
+    }
     this.current = undefined
     if (
       !this.sourceOwner.isCurrent(source) ||
       source.definition.sourceModel.kind !== 'solid-articulation/2'
-    )
+    ) {
       return fail()
+    }
     const request = readRequest(input),
       d = request.dimensions
     if (
@@ -350,16 +380,21 @@ export class WalkingMountedCrateOwner {
       if (
         parts.length !== crateIds.length ||
         crateIds.some((id) => parts.filter((p) => p.id === id).length !== 1)
-      )
+      ) {
         return fail()
+      }
       for (const p of parts) {
         readSourceRegions(p.regions, p.shape.indices.length)
-        if (p.regions.some((r) => r.kind !== 'closed-solid')) return fail()
+        if (p.regions.some((r) => r.kind !== 'closed-solid')) {
+          return fail()
+        }
       }
       const cavity = openCavity(parts)
       const bounds = shapeBounds(parts),
         bottomPart = parts.find((p) => p.id === 'crate-bottom')
-      if (!bottomPart) return fail()
+      if (!bottomPart) {
+        return fail()
+      }
       const bottomPatch = readSourcePatches(
         [
           {
@@ -388,14 +423,18 @@ export class WalkingMountedCrateOwner {
     const trayPatch = tray?.patches.find(
       (p) => p.id === 'payload-tray-mounting-contact'
     )
-    if (!base || !tray || !rail || !trayPatch) return fail()
+    if (!base || !tray || !rail || !trayPatch) {
+      return fail()
+    }
     const trayFace = rectangle(tray, trayPatch, identity(tray))
     const bottomFace = rectangle(
       geometry.bottomPart,
       geometry.bottomPatch,
       zero
     )
-    if (compare(bottomFace.planeY, geometry.bounds.min[1])) return fail()
+    if (compare(bottomFace.planeY, geometry.bounds.min[1])) {
+      return fail()
+    }
     const railBounds = shapeBounds([rail]),
       railFrame = identity(rail)
     const railOuterZ = plus(railBounds.max[2], railFrame[2])
@@ -412,12 +451,16 @@ export class WalkingMountedCrateOwner {
       geometry.bottomPatch,
       translation
     )
-    if (compare(placedBottom.planeY, trayFace.planeY)) return fail()
+    if (compare(placedBottom.planeY, trayFace.planeY)) {
+      return fail()
+    }
     const minX = maximum([trayFace.minX, placedBottom.minX]),
       maxX = minimum([trayFace.maxX, placedBottom.maxX])
     const minZ = maximum([trayFace.minZ, placedBottom.minZ]),
       maxZ = minimum([trayFace.maxZ, placedBottom.maxZ])
-    if (compare(minX, maxX) >= 0 || compare(minZ, maxZ) >= 0) return fail()
+    if (compare(minX, maxX) >= 0 || compare(minZ, maxZ) >= 0) {
+      return fail()
+    }
     const bounds = {
       min: vector((k) => plus(geometry.bounds.min[k], translation[k])),
       max: vector((k) => plus(geometry.bounds.max[k], translation[k]))
@@ -427,8 +470,9 @@ export class WalkingMountedCrateOwner {
         minus(bounds.min[2], railOuterZ),
         scalar(request.minimumClearance.metres)
       )
-    )
+    ) {
       return fail()
+    }
     this.current = freeze({
       format: 'walking-mounted-crate/1',
       source,

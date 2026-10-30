@@ -16,8 +16,11 @@ export function composeOfficeSeating({ add }: Pick<OfficeComposer, 'add'>) {
   for (const item of OFFICE_SEATING) {
     let parts = assets.get(item.asset)
     if (!parts) {
-      if (item.asset === 'round-tea-table') parts = teaTable()
-      else parts = catalogAsset(item.asset)
+      if (item.asset === 'round-tea-table') {
+        parts = teaTable()
+      } else {
+        parts = catalogAsset(item.asset)
+      }
       assets.set(item.asset, parts)
     }
     tableTops.set(

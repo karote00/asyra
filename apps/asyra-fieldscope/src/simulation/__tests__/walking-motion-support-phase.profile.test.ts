@@ -30,7 +30,9 @@ it('phase-root proves the actual support pin and sleeve but cannot lend it to sw
   const sleeve = f.source.parts.find(
     (p) => p.id === 'left-front-abduction-sleeve'
   )
-  if (!pin || !sleeve) throw new Error('Missing original first pair')
+  if (!pin || !sleeve) {
+    throw new Error('Missing original first pair')
+  }
   expect(pin.regions[1]).toMatchObject({ indexStart: 24, indexCount: 24 })
   expect(sleeve.regions[1]).toMatchObject({ indexStart: 36, indexCount: 36 })
   expect(support.contains(sleeve)).toBe(true)

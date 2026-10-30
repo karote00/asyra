@@ -46,8 +46,9 @@ const readControl = (
       value.sequence !== controlSequence ||
       typeof value.padding !== 'string' ||
       (value.gap !== null && !validGap(value.gap)))
-  )
+  ) {
     throw new Error('Invalid recording control')
+  }
   return value
 }
 
@@ -61,7 +62,9 @@ export const createBrowserRecordOutbox = (
   let connection: Promise<IDBDatabase> | undefined
   let closed = false
   const open = (): Promise<IDBDatabase> => {
-    if (closed) return Promise.reject(new Error('Recording outbox is closed'))
+    if (closed) {
+      return Promise.reject(new Error('Recording outbox is closed'))
+    }
     connection ??= new Promise<IDBDatabase>((resolve, reject) => {
       const factory = options.factory ?? globalThis.indexedDB
       if (!factory) {
@@ -160,12 +163,15 @@ export const createBrowserRecordOutbox = (
   return {
     reserve: (requestId) =>
       control<undefined>(requestId, 'readwrite', (value, store) => {
-        if (!value) store.add(controlRecord(requestId, null))
+        if (!value) {
+          store.add(controlRecord(requestId, null))
+        }
       }),
     recordGap: ({ requestId, ...gap }) =>
       control<undefined>(requestId, 'readwrite', (value, store) => {
-        if (!value || !validGap(gap))
+        if (!value || !validGap(gap)) {
           throw new Error('Missing reservation or invalid gap')
+        }
         const previous = value.gap
         const merged: StoredGap = previous
           ? {
@@ -197,12 +203,15 @@ export const createBrowserRecordOutbox = (
             record.requestId !== first.requestId ||
             record.sequence !== first.sequence + index
         )
-      )
+      ) {
         return Promise.reject(
           new Error('Invalid payload batch sequence or ownership')
         )
+      }
       return transact<undefined>('readwrite', (store) => {
-        for (const record of records) store.add(record)
+        for (const record of records) {
+          store.add(record)
+        }
       })
     },
     read: (requestId, fromSequence, limit) => {
@@ -211,8 +220,9 @@ export const createBrowserRecordOutbox = (
         fromSequence < 0 ||
         !Number.isSafeInteger(limit) ||
         limit < 1
-      )
+      ) {
         return Promise.reject(new Error('Invalid payload sequence or limit'))
+      }
       return transact('readonly', (store, set) => {
         const request = store.getAll(range(requestId, fromSequence), limit)
         request.onsuccess = () => set(request.result)

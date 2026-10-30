@@ -45,8 +45,9 @@ for (const recoverInitialFailure of [false, true]) {
       'Explicit large saved-document gate'
     )
     test.setTimeout(180000)
-    if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL)
+    if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL) {
       throw new Error('Isolated test endpoints are required')
+    }
     expect(new URL(baseURL).port).not.toBe('3000')
     expect(new URL(process.env.E2E_DOCUMENT_BACKEND_URL).port).not.toBe('4201')
     const root = resolve('e2e/fixtures/recorded-101')
@@ -85,7 +86,9 @@ for (const recoverInitialFailure of [false, true]) {
     const initialErrors: string[] = []
     const errors: string[] = []
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text())
+      if (message.type() === 'error') {
+        errors.push(message.text())
+      }
     })
     page.on('pageerror', (error) => errors.push(error.message))
     await page.addInitScript(() => {
@@ -142,7 +145,9 @@ for (const recoverInitialFailure of [false, true]) {
           const session = (
             await import('../src/testing/runtime-access')
           ).getActiveCollaborationHandle()
-          if (!session) throw new Error('Missing failed document session')
+          if (!session) {
+            throw new Error('Missing failed document session')
+          }
           await session.reconnect()
         })
       }
@@ -183,18 +188,22 @@ for (const recoverInitialFailure of [false, true]) {
           const result = (await action.execute(inspections[index], {
             signal
           } as never)) as { available: boolean; evidence?: unknown }
-          if (!result.available || !result.evidence)
+          if (!result.available || !result.evidence) {
             throw new Error('Recorded scope capture unavailable')
+          }
           return result.evidence
         }
         try {
           const captured = []
-          for (let index = 0; index < inspections.length; index++)
+          for (let index = 0; index < inspections.length; index++) {
             captured.push(await capture(index))
+          }
           const [whole, crown, , , base] = captured
           const crownId = inspections[1].elementId
           const child = core.getElementData(crownId)?.children?.[0]
-          if (!child) throw new Error('Recorded crown child is missing')
+          if (!child) {
+            throw new Error('Recorded crown child is missing')
+          }
           fillApis.updatePrimaryFillColor(child, '#ee3355')
           const afterCrown = {
             whole: owner.isCurrent(whole),
@@ -209,7 +218,9 @@ for (const recoverInitialFailure of [false, true]) {
           await historyApis.redo()
           const afterRedo = owner.isCurrent(base)
           const session = getActiveCollaborationHandle()
-          if (!session) throw new Error('Missing document session')
+          if (!session) {
+            throw new Error('Missing document session')
+          }
           const receipt = await session.confirmPersistence(
             AbortSignal.timeout(15000)
           )
@@ -259,7 +270,9 @@ for (const recoverInitialFailure of [false, true]) {
           input.view === 'detail',
           stamp as Parameters<typeof retained.inspect>[5]
         )
-        if (!image) throw new Error('Missing delivered evidence')
+        if (!image) {
+          throw new Error('Missing delivered evidence')
+        }
         return image.inspectionId
       }
       const ids = result.captured.map((stamp, index) => publish(index, stamp))
@@ -431,8 +444,9 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
               message.type === 'timing' ||
               message.type === 'diagnostic-counter' ||
               message.type === 'bootstrap-progress'
-            )
+            ) {
               timings.push({ ...message, atMs: performance.now() - started })
+            }
             if (message.type === 'failure') {
               clearTimeout(timeout)
               reject(new Error(message.message))
@@ -486,8 +500,9 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
     'Explicit large saved-document gate'
   )
   test.setTimeout(180000)
-  if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL)
+  if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL) {
     throw new Error('Isolated test endpoints are required')
+  }
   expect(new URL(baseURL).port).not.toBe('3000')
   expect(new URL(process.env.E2E_DOCUMENT_BACKEND_URL).port).not.toBe('4201')
   const root = resolve('e2e/fixtures/recorded-101')
@@ -564,15 +579,18 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
     )
     try {
       const captured = await reviewer.capture(rootId)
-      if (!captured.complete || !captured.evidence)
+      if (!captured.complete || !captured.evidence) {
         throw new Error(
           JSON.stringify({
             complete: captured.complete,
             findings: captured.findings.slice(0, 4)
           })
         )
+      }
       const coverage = await reviewer.coverage(captured.evidence)
-      if (!coverage) throw new Error('Missing complete coverage')
+      if (!coverage) {
+        throw new Error('Missing complete coverage')
+      }
       const ids = coverage.checks
         .filter((check) => check.elementId !== rootId && check.inherited)
         .slice(0, 128)
@@ -586,7 +604,9 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
             captured.evidence,
             ids.slice(offset, offset + 64)
           )
-          if (!result.current) throw new Error('Coverage lost currency')
+          if (!result.current) {
+            throw new Error('Coverage lost currency')
+          }
           output.push(...result.measurements)
         }
       }

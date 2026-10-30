@@ -353,7 +353,9 @@ test.describe('Delete Selected Element', () => {
         propComponents: readonly unknown[]
         propIds: readonly string[]
       }>('delete-rollback-identity')
-      if (!identity) throw new Error('Delete rollback identity is unavailable')
+      if (!identity) {
+        throw new Error('Delete rollback identity is unavailable')
+      }
       const restoredElement = core.deps.sceneTree.getElementById(
         identity.elementId
       )

@@ -41,7 +41,9 @@ it('keeps every pair and its own label in expandable details, including unknowns
   )
   const details = host.querySelector('details')
 
-  if (!details) throw new Error('Missing complete pair details')
+  if (!details) {
+    throw new Error('Missing complete pair details')
+  }
 
   expect(details?.querySelector('summary')?.textContent).toBe(
     'Show all 3 pair issues'

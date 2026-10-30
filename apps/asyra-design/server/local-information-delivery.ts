@@ -73,10 +73,11 @@ export const deliverInformation = (
   const { contentPage, rehydrate: _rehydrate, ...query } = args
   const bytes = Buffer.from(text, 'utf8')
   if (bytes.length <= informationDeliveryBytes) {
-    if (contentPage !== undefined)
+    if (contentPage !== undefined) {
       throw new LocalToolInputError(
         'Content changed or no continuation exists; restart the original read.'
       )
+    }
     return text
   }
   const identity = JSON.stringify(
@@ -103,17 +104,20 @@ export const deliverInformation = (
       !Number.isSafeInteger(page.offset) ||
       Number(page.offset) < 0 ||
       Number(page.offset) >= bytes.length
-    )
+    ) {
       throw new LocalToolInputError(
         'Invalid or stale content continuation; restart the original read.'
       )
+    }
     start = Number(page.offset)
-    if ((bytes[start] & 0xc0) === 0x80)
+    if ((bytes[start] & 0xc0) === 0x80) {
       throw new LocalToolInputError('Content offset must be a UTF-8 boundary.')
+    }
   }
   const boundary = (end: number) => {
-    while (end > start && end < bytes.length && (bytes[end] & 0xc0) === 0x80)
+    while (end > start && end < bytes.length && (bytes[end] & 0xc0) === 0x80) {
       end--
+    }
     return end
   }
   const encode = (end: number) =>
@@ -145,11 +149,14 @@ export const deliverInformation = (
     if (Buffer.byteLength(encode(end)) <= informationDeliveryBytes) {
       best = end
       low = middle + 1
-    } else high = middle - 1
+    } else {
+      high = middle - 1
+    }
   }
-  if (best <= start)
+  if (best <= start) {
     throw new LocalToolInputError(
       'Selector metadata exceeds the delivery budget; narrow the read selector.'
     )
+  }
   return encode(best)
 }

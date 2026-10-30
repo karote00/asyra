@@ -70,14 +70,21 @@ function fixture({
   })
   const request = async (method, route, body) => {
     calls.push({ method, route, body })
-    if (method === 'POST') writes.push(route)
+    if (method === 'POST') {
+      writes.push(route)
+    }
     assert.ok(route.startsWith('repos/owner/repo/'))
     const tail = route.slice('repos/owner/repo/'.length)
-    if (tail === 'git/ref/heads/main') return { object: { sha: base } }
-    if (tail.startsWith('git/ref/heads/'))
+    if (tail === 'git/ref/heads/main') {
+      return { object: { sha: base } }
+    }
+    if (tail.startsWith('git/ref/heads/')) {
       return branch ? { object: { sha: branch } } : null
-    if (tail === 'git/commits/' + baseSha) return { tree: { sha: tree } }
-    if (tail === 'git/trees/' + tree + '?recursive=1')
+    }
+    if (tail === 'git/commits/' + baseSha) {
+      return { tree: { sha: tree } }
+    }
+    if (tail === 'git/trees/' + tree + '?recursive=1') {
       return {
         truncated: false,
         tree: [
@@ -89,6 +96,7 @@ function fixture({
           }
         ]
       }
+    }
     if (tail === 'git/trees' && method === 'POST') {
       assert.equal(body.base_tree, tree)
       assert.deepEqual(
@@ -113,7 +121,9 @@ function fixture({
       pr = makePR()
       return pr
     }
-    if (tail.startsWith('pulls?')) return pr ? [pr] : []
+    if (tail.startsWith('pulls?')) {
+      return pr ? [pr] : []
+    }
     if (tail === 'pulls/5') {
       if (headChanges) {
         pr = { ...pr, head: { ...pr.head, sha: 'e'.repeat(40) } }
@@ -122,7 +132,9 @@ function fixture({
       return pr
     }
     if (tail.includes('/check-runs')) {
-      if (checksError) throw new Error('secret')
+      if (checksError) {
+        throw new Error('secret')
+      }
       if (changeDuringChecks) {
         headChanges = true
         changeDuringChecks = false
@@ -139,8 +151,9 @@ function fixture({
         ]
       }
     }
-    if (tail.endsWith('/status?per_page=100'))
+    if (tail.endsWith('/status?per_page=100')) {
       return { total_count: 0, statuses: [] }
+    }
     throw new Error('Unexpected fixture request ' + tail)
   }
   const adapter = createGitHubDelivery('/unused', {
@@ -148,7 +161,9 @@ function fixture({
     base: 'main',
     request,
     local: () => {
-      if (dirty) throw new Error('dirty worktree')
+      if (dirty) {
+        throw new Error('dirty worktree')
+      }
     }
   })
   return {
@@ -214,8 +229,12 @@ test('dirty checkout and changed captured base inputs refuse before remote effec
     base: 'main',
     local: () => undefined,
     request: async (m, r) => {
-      if (r.includes('/ref/')) return { object: { sha: baseSha } }
-      if (r.includes('/commits/')) return { tree: { sha: tree } }
+      if (r.includes('/ref/')) {
+        return { object: { sha: baseSha } }
+      }
+      if (r.includes('/commits/')) {
+        return { tree: { sha: tree } }
+      }
       return {
         truncated: false,
         tree: [{ path: file, type: 'blob', mode: '100644', sha: 'other' }]
@@ -287,7 +306,7 @@ for (const [input, code, noEffect] of [
   ['HTTP 500 secret', 'transport-unknown', false],
   ['ETIMEDOUT private', 'transport-unknown', false],
   ['network secret', 'transport-unknown', false]
-])
+]) {
   test('transport classification ' + code + ' ' + input.split(' ')[1], () => {
     const error = transportError({ stderr: input })
     assert.equal(error.code, code)
@@ -295,6 +314,7 @@ for (const [input, code, noEffect] of [
     assert.equal(error.message.includes('private'), false)
     assert.equal(error.message.includes('secret'), false)
   })
+}
 
 test('HEAD changes during checks query discard the completed old HEAD result', async () => {
   const f = fixture()
@@ -375,7 +395,7 @@ for (const [name, mutate] of [
   ['changed metadata bytes', (p) => (p.metadata.content += 'forged')],
   ['wrong metadata digest', (p) => (p.metadata.digest = '0'.repeat(64))],
   ['extra delivery file', (p) => p.deliveryFiles.push('package.json')]
-])
+]) {
   test(name + ' cannot reach an external write', async () => {
     const f = fixture()
     mutate(f.preview)
@@ -385,6 +405,7 @@ for (const [name, mutate] of [
     )
     assert.equal(f.writes.length, 0)
   })
+}
 for (const [name, entry] of [
   [
     'existing Changeset',
@@ -403,7 +424,7 @@ for (const [name, entry] of [
       sha: head
     })
   ]
-])
+]) {
   test(name + ' refuses preparation without writes', async () => {
     const f = fixture()
     const adapter = createGitHubDelivery('/unused', {
@@ -411,8 +432,12 @@ for (const [name, entry] of [
       local: () => undefined,
       request: async (method, route) => {
         assert.equal(method, 'GET')
-        if (route.includes('/ref/')) return { object: { sha: baseSha } }
-        if (route.includes('/commits/')) return { tree: { sha: tree } }
+        if (route.includes('/ref/')) {
+          return { object: { sha: baseSha } }
+        }
+        if (route.includes('/commits/')) {
+          return { tree: { sha: tree } }
+        }
         return {
           truncated: false,
           tree: [
@@ -429,3 +454,4 @@ for (const [name, entry] of [
     })
     await assert.rejects(() => adapter.inspect(f.preview), /metadata|ownership/)
   })
+}

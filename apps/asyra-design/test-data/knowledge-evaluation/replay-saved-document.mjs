@@ -18,10 +18,11 @@ const root = path.resolve(
   fileURLToPath(new URL('../../../../', import.meta.url))
 )
 const [input, output] = process.argv.slice(2)
-if (!input || !output)
+if (!input || !output) {
   throw new Error(
     'Expected saved run.json and a new project-local output directory'
   )
+}
 const source = fs.realpathSync(path.resolve(input))
 const directory = path.resolve(output)
 const withinProject = (value) => value.startsWith(root + path.sep)
@@ -120,5 +121,6 @@ assert.equal(
 )
 assert.equal(meta.sourceUnchanged, true, 'Original evidence was modified')
 assert.deepEqual(meta.pageErrors, [])
-for (const [stage, evidence] of Object.entries(meta.evidence))
+for (const [stage, evidence] of Object.entries(meta.evidence)) {
   assert.equal(evidence.status, 'complete', `${stage}: ${evidence.error}`)
+}

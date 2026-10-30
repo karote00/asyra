@@ -26,8 +26,9 @@ export function wallClock(): AssetPart[] {
     )
   }
   for (const c of source.components) {
-    if (!('yMin' in c) || !('material' in c))
+    if (!('yMin' in c) || !('material' in c)) {
       throw new Error('Non-clock component in clock source')
+    }
     if (c.primitive === 'cylinder') {
       const radius = requiredSpecValue(c.radius, 'clock radius'),
         min = requiredSpecValue(c.yMin, 'clock yMin'),
@@ -100,7 +101,7 @@ export function wallClock(): AssetPart[] {
       for (const y of [
         requiredSpecValue(c.yMin, 'hand front'),
         requiredSpecValue(c.yMax, 'hand back')
-      ])
+      ]) {
         for (const [x, z] of vertices) {
           mesh.positions.push(
             x * Math.cos(angle) + z * Math.sin(angle),
@@ -109,14 +110,18 @@ export function wallClock(): AssetPart[] {
           )
           mesh.uvs.push(0, 0)
         }
-      for (let i = 1; i < n - 1; i++)
+      }
+      for (let i = 1; i < n - 1; i++) {
         mesh.indices.push(0, i, i + 1, n, n + i + 1, n + i)
+      }
       for (let i = 0; i < n; i++) {
         const j = (i + 1) % n
         mesh.indices.push(i, i + n, j + n, i, j + n, j)
       }
       add(c.partId, mesh, c.material)
-    } else throw new Error(`Unsupported clock part ${c.partId}`)
+    } else {
+      throw new Error(`Unsupported clock part ${c.partId}`)
+    }
   }
   return pieces
 }

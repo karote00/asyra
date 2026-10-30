@@ -24,8 +24,9 @@ export function wheelCamera(
     !Number.isFinite(height) ||
     height <= 0 ||
     ![event.deltaX, event.deltaY].every(Number.isFinite)
-  )
+  ) {
     return camera
+  }
 
   let dy = event.deltaY
 
@@ -35,7 +36,9 @@ export function wheelCamera(
     dy *= height
   }
 
-  if (!dy) return camera
+  if (!dy) {
+    return camera
+  }
 
   const radius = spatialCameraDistance(camera)
   const next = Math.max(
@@ -55,7 +58,9 @@ export function panCamera(
   dy: number,
   height: number
 ): SpatialCamera {
-  if (!Number.isFinite(height) || height <= 0) return camera
+  if (!Number.isFinite(height) || height <= 0) {
+    return camera
+  }
 
   return panSpatialCamera(camera, dx, dy, height, {
     distance: spatialCameraDistance(camera),
@@ -74,12 +79,15 @@ export function fitCameraToMeshes(
     ![width, height].every(
       (value) => Number.isFinite(value) && value > 2 * VIEWPORT_PADDING
     )
-  )
+  ) {
     return camera
+  }
 
   function* points(): IterableIterator<Vec3> {
     for (const { visible, descriptor } of meshes) {
-      if (!visible || !descriptor.selectable) continue
+      if (!visible || !descriptor.selectable) {
+        continue
+      }
       const shape = descriptor.shape
       if (shape.kind === 'triangles') {
         for (const index of shape.indices) {
@@ -92,14 +100,20 @@ export function fitCameraToMeshes(
         }
       } else {
         let half: Vec3
-        if (shape.kind === 'box') half = scale(shape.size, 0.5)
-        else if (shape.kind === 'capsule')
+        if (shape.kind === 'box') {
+          half = scale(shape.size, 0.5)
+        } else if (shape.kind === 'capsule') {
           half = [shape.radius, shape.length / 2 + shape.radius, shape.radius]
-        else half = [shape.radius, shape.radius, shape.radius]
-        for (const x of [-half[0], half[0]])
-          for (const y of [-half[1], half[1]])
-            for (const z of [-half[2], half[2]])
+        } else {
+          half = [shape.radius, shape.radius, shape.radius]
+        }
+        for (const x of [-half[0], half[0]]) {
+          for (const y of [-half[1], half[1]]) {
+            for (const z of [-half[2], half[2]]) {
               yield transformPoint(descriptor, [x, y, z])
+            }
+          }
+        }
       }
     }
   }

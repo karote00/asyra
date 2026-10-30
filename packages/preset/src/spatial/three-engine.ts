@@ -63,12 +63,16 @@ export interface GraphicsDriver {
 }
 
 const usesSoftwareRenderer = (driver: GraphicsDriver): boolean => {
-  if (!driver.getContext || !driver.shadowMap) return false
+  if (!driver.getContext || !driver.shadowMap) {
+    return false
+  }
   const gl = driver.getContext()
   const extension = gl.getExtension('WEBGL_debug_renderer_info') as {
     UNMASKED_RENDERER_WEBGL: number
   } | null
-  if (!extension) return false
+  if (!extension) {
+    return false
+  }
   const renderer = gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)
   return (
     typeof renderer === 'string' &&
@@ -124,9 +128,13 @@ const makeGeometry = (shape: SpatialShape): THREE.BufferGeometry => {
         ['normal', shape.normals],
         ['uv', shape.uvs]
       ] as const) {
-        if (!values) continue
+        if (!values) {
+          continue
+        }
         const array = new Float32Array(values.length)
-        for (let i = 0; i < values.length; i++) array[i] = values[i]
+        for (let i = 0; i < values.length; i++) {
+          array[i] = values[i]
+        }
         geometry.setAttribute(
           name,
           new THREE.BufferAttribute(array, name === 'uv' ? 2 : 3)
@@ -136,10 +144,13 @@ const makeGeometry = (shape: SpatialShape): THREE.BufferGeometry => {
         shape.positions.length / 3 > 65535
           ? new Uint32Array(shape.indices.length)
           : new Uint16Array(shape.indices.length)
-      for (let i = 0; i < shape.indices.length; i++)
+      for (let i = 0; i < shape.indices.length; i++) {
         indices[i] = shape.indices[i]
+      }
       geometry.setIndex(new THREE.BufferAttribute(indices, 1))
-      if (!shape.normals) geometry.computeVertexNormals()
+      if (!shape.normals) {
+        geometry.computeVertexNormals()
+      }
       return geometry
     }
   }
@@ -151,9 +162,12 @@ const numberProperty = (
   fallback: number
 ) => {
   const value = properties[key]
-  if (value === undefined) return fallback
-  if (typeof value !== 'number' || !Number.isFinite(value))
+  if (value === undefined) {
+    return fallback
+  }
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`Invalid render property: ${key}`)
+  }
   return value
 }
 
@@ -241,8 +255,9 @@ export class ThreeEngine implements RenderEngine {
   initialize(
     options: RenderEngineInitializeOptions
   ): RenderEngineInitializeResult {
-    if (this.destroyed || this.driver)
+    if (this.destroyed || this.driver) {
       throw new Error('Engine is not available for initialization')
+    }
     this.validateSize(options.width, options.height)
     const lighting = readSpatialLighting(
       this.options.lighting ?? DEFAULT_SPATIAL_LIGHTING
@@ -253,8 +268,9 @@ export class ThreeEngine implements RenderEngine {
       const softwareRenderer =
         this.options.softwareShadowFallback !== false &&
         usesSoftwareRenderer(this.driver)
-      if (softwareRenderer && this.driver.shadowMap)
+      if (softwareRenderer && this.driver.shadowMap) {
         this.driver.shadowMap.enabled = false
+      }
       this.pixelRatio = Math.min(
         options.resolution ?? globalThis.devicePixelRatio ?? 1,
         2
@@ -335,10 +351,13 @@ export class ThreeEngine implements RenderEngine {
           current;
           current = current.parent
         ) {
-          if (current === child) throw new Error('Render hierarchy cycle')
+          if (current === child) {
+            throw new Error('Render hierarchy cycle')
+          }
         }
-        if (child === this.root)
+        if (child === this.root) {
           throw new Error('Cannot reparent the engine root')
+        }
         this.detach(child)
         child.parent = parent
         parent.children.push(child)
@@ -347,8 +366,11 @@ export class ThreeEngine implements RenderEngine {
       case 'remove-child': {
         const parent = this.owned(command.parent),
           child = this.owned(command.child)
-        if (child.parent === parent) this.detach(child)
-        else status = 'noop'
+        if (child.parent === parent) {
+          this.detach(child)
+        } else {
+          status = 'noop'
+        }
         break
       }
       case 'set-child-index': {
@@ -359,16 +381,18 @@ export class ThreeEngine implements RenderEngine {
           !Number.isInteger(command.index) ||
           command.index < 0 ||
           command.index >= parent.children.length
-        )
+        ) {
           throw new Error('Invalid child index')
+        }
         parent.children.splice(parent.children.indexOf(child), 1)
         parent.children.splice(command.index, 0, child)
         break
       }
       case 'draw': {
         const record = this.owned(command.object)
-        if (record.type !== 'graphics')
+        if (record.type !== 'graphics') {
           throw new Error('Draw requires a graphics object')
+        }
         const content = drawGraphics(command.operations, (paint) =>
           this.paint(paint)
         )
@@ -376,8 +400,9 @@ export class ThreeEngine implements RenderEngine {
         break
       }
       case 'create-resource': {
-        if (command.descriptor.kind !== 'paint')
+        if (command.descriptor.kind !== 'paint') {
           throw new Error('Unsupported resource descriptor')
+        }
         const value = command.descriptor.data as RenderEnginePaint
         const paint = this.paint(value)
         resource = Object.freeze({}) as RenderEngineResourceHandle
@@ -385,8 +410,9 @@ export class ThreeEngine implements RenderEngine {
         break
       }
       case 'destroy-resource':
-        if (!this.resources.delete(command.resource))
+        if (!this.resources.delete(command.resource)) {
           throw new Error('Foreign or destroyed resource handle')
+        }
         break
       case 'resize':
         this.resize(command.width, command.height)
@@ -399,8 +425,9 @@ export class ThreeEngine implements RenderEngine {
             command.scale.x,
             command.scale.y
           ].every(Number.isFinite)
-        )
+        ) {
           throw new Error('Invalid screen viewport')
+        }
         this.screen.position.set(command.position.x, command.position.y, 0)
         this.screen.scale.set(command.scale.x, command.scale.y, 1)
         break
@@ -434,37 +461,48 @@ export class ThreeEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     this.assertActive()
-    if (query.type === 'measure-text')
+    if (query.type === 'measure-text') {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.TEXT_MEASUREMENT
       ])
-    if (query.type === 'snapshot')
+    }
+    if (query.type === 'snapshot') {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.SNAPSHOT
       ])
-    if (query.type === 'get-local-content-bounds')
+    }
+    if (query.type === 'get-local-content-bounds') {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
       ])
+    }
     this.syncProjection()
-    if (isSpatialQuery(query)) return this.spatialQuery(query)
-    if (query.type === 'hit-test')
+    if (isSpatialQuery(query)) {
+      return this.spatialQuery(query)
+    }
+    if (query.type === 'hit-test') {
       return { type: 'hit', target: this.pick(query.point), point: query.point }
+    }
     const record = this.owned(query.object)
     if (query.type === 'get-bounds') {
       const bounds = new THREE.Box3().setFromObject(record.visual)
-      if (bounds.isEmpty())
+      if (bounds.isEmpty()) {
         return { type: 'bounds', bounds: { x: 0, y: 0, width: 0, height: 0 } }
+      }
       const points: THREE.Vector3[] = []
-      for (const x of [bounds.min.x, bounds.max.x])
-        for (const y of [bounds.min.y, bounds.max.y])
-          for (const z of [bounds.min.z, bounds.max.z])
+      for (const x of [bounds.min.x, bounds.max.x]) {
+        for (const y of [bounds.min.y, bounds.max.y]) {
+          for (const z of [bounds.min.z, bounds.max.z]) {
             points.push(new THREE.Vector3(x, y, z))
-      if (record.spatial)
+          }
+        }
+      }
+      if (record.spatial) {
         points.forEach((p) => {
           p.project(this.camera)
           p.set(((p.x + 1) * this.width) / 2, ((1 - p.y) * this.height) / 2, 0)
         })
+      }
       const minX = Math.min(...points.map((p) => p.x)),
         minY = Math.min(...points.map((p) => p.y))
       return {
@@ -477,20 +515,26 @@ export class ThreeEngine implements RenderEngine {
         }
       }
     }
-    if (record.spatial)
+    if (record.spatial) {
       throw new Error(
         'Spatial local/global conversion requires an explicit 3D contract; screen queries are not 3D poses'
       )
+    }
     const point = new THREE.Vector3(query.point.x, query.point.y, 0)
-    if (query.type === 'to-local') record.visual.worldToLocal(point)
-    else record.visual.localToWorld(point)
+    if (query.type === 'to-local') {
+      record.visual.worldToLocal(point)
+    } else {
+      record.visual.localToWorld(point)
+    }
     return { type: 'point', point: { x: point.x, y: point.y } }
   }
 
   subscribeToInteraction(
     listener: RenderEngineInteractionListener
   ): () => void {
-    if (this.destroyed) throw new Error('Engine is not active')
+    if (this.destroyed) {
+      throw new Error('Engine is not active')
+    }
     this.listeners.add(listener)
     return () => {
       this.listeners.delete(listener)
@@ -499,8 +543,12 @@ export class ThreeEngine implements RenderEngine {
 
   dispatchInteraction(event: RenderEngineInteractionEvent): void {
     this.assertActive()
-    if (event.target) this.owned(event.target)
-    for (const listener of [...this.listeners]) listener(event)
+    if (event.target) {
+      this.owned(event.target)
+    }
+    for (const listener of [...this.listeners]) {
+      listener(event)
+    }
   }
 
   requestFrame(callback: RenderEngineFrameCallback): void {
@@ -511,7 +559,9 @@ export class ThreeEngine implements RenderEngine {
       globalThis.requestAnimationFrame.bind(globalThis)
     const generation = ++this.frameGeneration
     this.frame = request((time) => {
-      if (this.destroyed || generation !== this.frameGeneration) return
+      if (this.destroyed || generation !== this.frameGeneration) {
+        return
+      }
       this.frame = null
       this.frameGeneration++
       callback(time)
@@ -520,7 +570,9 @@ export class ThreeEngine implements RenderEngine {
 
   cancelFrame(): void {
     this.frameGeneration++
-    if (this.frame === null) return
+    if (this.frame === null) {
+      return
+    }
     const cancel =
       this.platform.cancelFrame ??
       globalThis.cancelAnimationFrame.bind(globalThis)
@@ -529,12 +581,13 @@ export class ThreeEngine implements RenderEngine {
   }
 
   destroy(): RenderEngineDestroyResult {
-    if (this.destroyed)
+    if (this.destroyed) {
       return {
         destroyedObjects: 0,
         destroyedResources: 0,
         alreadyDestroyed: true
       }
+    }
     this.cancelFrame()
     const result = {
       destroyedObjects: this.objects.size,
@@ -544,11 +597,15 @@ export class ThreeEngine implements RenderEngine {
     this.destroyed = true
     this.pointerDisposers.splice(0).forEach((dispose) => dispose())
     this.listeners.clear()
-    for (const record of this.objects.values()) disposeObject(record.visual)
+    for (const record of this.objects.values()) {
+      disposeObject(record.visual)
+    }
     this.objects.clear()
     this.resources.clear()
     this.scene.traverse((object) => {
-      if (object instanceof THREE.Light) object.dispose()
+      if (object instanceof THREE.Light) {
+        object.dispose()
+      }
     })
     this.scene.clear()
     this.screen.clear()
@@ -563,16 +620,22 @@ export class ThreeEngine implements RenderEngine {
   }
 
   private assertActive(): void {
-    if (this.destroyed || !this.driver) throw new Error('Engine is not active')
+    if (this.destroyed || !this.driver) {
+      throw new Error('Engine is not active')
+    }
   }
   private requireDriver(): GraphicsDriver {
     this.assertActive()
-    if (!this.driver) throw new Error('Engine driver is unavailable')
+    if (!this.driver) {
+      throw new Error('Engine driver is unavailable')
+    }
     return this.driver
   }
   private owned(handle: RenderEngineObjectHandle): ObjectRecord {
     const record = this.objects.get(handle)
-    if (!record) throw new Error('Foreign or destroyed object handle')
+    if (!record) {
+      throw new Error('Foreign or destroyed object handle')
+    }
     return record
   }
   private create(
@@ -602,29 +665,35 @@ export class ThreeEngine implements RenderEngine {
     patch: RenderEngineObjectProperties
   ): void {
     const properties = { ...record.properties, ...patch }
-    for (const key of Object.keys(properties))
-      if (!SCREEN_PROPERTIES.has(key))
+    for (const key of Object.keys(properties)) {
+      if (!SCREEN_PROPERTIES.has(key)) {
         throw new Error(`Unsupported screen property: ${key}`)
+      }
+    }
     if (
       numberProperty(properties, 'skewX', 0) !== 0 ||
       numberProperty(properties, 'skewY', 0) !== 0 ||
       numberProperty(properties, 'alpha', 1) !== 1
-    )
+    ) {
       throw new Error(
         'Unsupported screen skew or alpha; use spatial appearance for 3D meshes'
       )
+    }
     const spatial =
       properties[SPATIAL_PROPERTY] === undefined
         ? undefined
         : (this.options.readDescriptor ?? readSpatialDescriptor)(
             properties[SPATIAL_PROPERTY]
           )
-    if (spatial?.kind === 'camera' && record.type !== 'container')
+    if (spatial?.kind === 'camera' && record.type !== 'container') {
       throw new Error('Camera requires a spatial container')
-    if (spatial?.kind === 'mesh' && record.type !== 'mesh')
+    }
+    if (spatial?.kind === 'mesh' && record.type !== 'mesh') {
       throw new Error('Spatial geometry requires a mesh')
-    if (record.type === 'mesh' && spatial?.kind !== 'mesh')
+    }
+    if (record.type === 'mesh' && spatial?.kind !== 'mesh') {
       throw new Error('CUSTOM meshes require an explicit spatial descriptor')
+    }
     const x = numberProperty(properties, 'x', 0),
       y = numberProperty(properties, 'y', 0)
     const sx = numberProperty(properties, 'scaleX', 1),
@@ -661,8 +730,9 @@ export class ThreeEngine implements RenderEngine {
         : new THREE.Mesh(old.geometry, old.material)
       if (spatial.distant && spatial.instances) {
         const source = old.children[0]
-        if (!(source instanceof THREE.InstancedMesh))
+        if (!(source instanceof THREE.InstancedMesh)) {
           throw new Error('Missing instance detail geometry')
+        }
         const distant = new THREE.InstancedMesh(
           source.geometry,
           source.material,
@@ -674,7 +744,9 @@ export class ThreeEngine implements RenderEngine {
       }
       // Geometry/material ownership transfers; retire only superseded instance buffers.
       old.traverse((child) => {
-        if (child instanceof THREE.InstancedMesh) child.dispose()
+        if (child instanceof THREE.InstancedMesh) {
+          child.dispose()
+        }
       })
       old.clear()
       old.removeFromParent()
@@ -706,7 +778,9 @@ export class ThreeEngine implements RenderEngine {
         spatial.environmentIntensity ?? 0,
         this.requireDriver()
       )
-      if (spatial.surface) this.surfaceTextures.apply(material, spatial.surface)
+      if (spatial.surface) {
+        this.surfaceTextures.apply(material, spatial.surface)
+      }
       content = spatial.instances
         ? new THREE.InstancedMesh(geometry, material, spatial.instances.length)
         : new THREE.Mesh(geometry, material)
@@ -726,7 +800,9 @@ export class ThreeEngine implements RenderEngine {
       record.spatial?.kind === 'mesh' ? record.spatial.instances : undefined
     record.properties = properties
     record.spatial = spatial
-    if (content) this.replaceContent(record, content)
+    if (content) {
+      this.replaceContent(record, content)
+    }
     if (spatial?.kind === 'mesh') {
       if (
         record.content instanceof THREE.InstancedMesh &&
@@ -758,8 +834,9 @@ export class ThreeEngine implements RenderEngine {
         if (
           material.transparent !== transparent ||
           material.wireframe !== spatial.wireframe
-        )
+        ) {
           material.needsUpdate = true
+        }
         material.color.setHex(spatial.color)
         material.opacity = spatial.opacity
         material.transparent = transparent
@@ -769,7 +846,9 @@ export class ThreeEngine implements RenderEngine {
         material.metalness = spatial.metalness ?? 0.12
         const optics = spatial.optics
         const side = optics ? THREE.FrontSide : THREE.DoubleSide
-        if (material.side !== side) material.needsUpdate = true
+        if (material.side !== side) {
+          material.needsUpdate = true
+        }
         material.side = side
         material.transmission = optics?.transmission ?? 0
         this.transmissionCapture.apply(material, optics?.captureLayer)
@@ -784,7 +863,7 @@ export class ThreeEngine implements RenderEngine {
         )
         material.emissive.setHex(spatial.emissive ?? 0)
         material.emissiveIntensity = spatial.emissiveIntensity ?? 0
-        for (const child of record.content.children)
+        for (const child of record.content.children) {
           if (child instanceof THREE.InstancedMesh) {
             ;(child.material as THREE.MeshPhysicalMaterial).copy(material)
             this.transmissionCapture.apply(
@@ -794,6 +873,7 @@ export class ThreeEngine implements RenderEngine {
             child.receiveShadow = record.content.receiveShadow
             child.castShadow = record.content.castShadow
           }
+        }
       }
       record.visual.position.fromArray(spatial.position)
       record.visual.quaternion.fromArray(spatial.rotation)
@@ -833,14 +913,16 @@ export class ThreeEngine implements RenderEngine {
         !spatial.instances ||
         !(full instanceof THREE.InstancedMesh) ||
         !record.visual.visible
-      )
+      ) {
         continue
+      }
       const distant = full.children[0]
       if (
         !(distant instanceof THREE.InstancedMesh) ||
         !full.geometry.boundingSphere
-      )
+      ) {
         throw new Error('Missing instance detail geometry')
+      }
       const previous = this.instanceDetail.get(full)
       if (
         previous &&
@@ -853,8 +935,9 @@ export class ThreeEngine implements RenderEngine {
         previous.world.equals(record.visual.matrixWorld) &&
         previous.view.equals(this.camera.matrixWorldInverse) &&
         previous.projection.equals(this.camera.projectionMatrix)
-      )
+      ) {
         continue
+      }
       let fullCount = 0,
         distantCount = 0
       for (const instance of spatial.instances) {
@@ -865,7 +948,9 @@ export class ThreeEngine implements RenderEngine {
         )
         world.multiplyMatrices(record.visual.matrixWorld, matrix)
         sphere.copy(full.geometry.boundingSphere).applyMatrix4(world)
-        if (!frustum.intersectsSphere(sphere)) continue
+        if (!frustum.intersectsSphere(sphere)) {
+          continue
+        }
         center.copy(sphere.center).applyMatrix4(this.camera.matrixWorldInverse)
         const nearestDepth = Math.max(0.001, -center.z - sphere.radius)
         const errorPixels =
@@ -873,9 +958,11 @@ export class ThreeEngine implements RenderEngine {
             world.getMaxScaleOnAxis() *
             pixelsPerUnit) /
           nearestDepth
-        if (errorPixels <= (spatial.distant.pixelError ?? 2))
+        if (errorPixels <= (spatial.distant.pixelError ?? 2)) {
           distant.setMatrixAt(distantCount++, matrix)
-        else full.setMatrixAt(fullCount++, matrix)
+        } else {
+          full.setMatrixAt(fullCount++, matrix)
+        }
       }
       full.count = fullCount
       distant.count = distantCount
@@ -896,21 +983,27 @@ export class ThreeEngine implements RenderEngine {
   }
 
   private replaceContent(record: ObjectRecord, content: THREE.Object3D): void {
-    if (record.content) disposeObject(record.content)
+    if (record.content) {
+      disposeObject(record.content)
+    }
     record.content = content
     record.visual.add(content)
   }
   private detach(record: ObjectRecord): void {
-    if (record.parent)
+    if (record.parent) {
       record.parent.children.splice(record.parent.children.indexOf(record), 1)
+    }
     record.parent = null
     record.visual.removeFromParent()
   }
   private remove(record: ObjectRecord): void {
-    if (record === this.root)
+    if (record === this.root) {
       throw new Error('Use destroy to release the engine root')
+    }
     this.detach(record)
-    for (const child of [...record.children]) this.detach(child)
+    for (const child of [...record.children]) {
+      this.detach(child)
+    }
     disposeObject(record.visual)
     this.objects.delete(record.handle)
   }
@@ -922,8 +1015,9 @@ export class ThreeEngine implements RenderEngine {
       height <= 0 ||
       width > 16384 ||
       height > 16384
-    )
+    ) {
       throw new Error('Invalid surface size')
+    }
   }
   private resize(width: number, height: number): void {
     this.validateSize(width, height)
@@ -952,8 +1046,9 @@ export class ThreeEngine implements RenderEngine {
       if (record.spatial) {
         this.scene.add(record.visual)
         if (record.spatial.kind === 'camera' && shown) {
-          if (++cameraCount > 1)
+          if (++cameraCount > 1) {
             throw new Error('Only one active spatial camera is supported')
+          }
           const camera = record.spatial
           this.camera.position.fromArray(camera.position)
           this.camera.lookAt(...camera.target)
@@ -962,13 +1057,19 @@ export class ThreeEngine implements RenderEngine {
           this.camera.far = camera.far
           this.camera.updateProjectionMatrix()
         }
-      } else screenParent.add(record.visual)
+      } else {
+        screenParent.add(record.visual)
+      }
       record.children.forEach((child) =>
         walk(child, shown, record.spatial ? screenParent : record.visual)
       )
     }
-    for (const record of this.objects.values()) record.visual.removeFromParent()
-    if (this.root) walk(this.root, true, this.screen)
+    for (const record of this.objects.values()) {
+      record.visual.removeFromParent()
+    }
+    if (this.root) {
+      walk(this.root, true, this.screen)
+    }
     this.scene.updateMatrixWorld(true)
     this.screen.updateMatrixWorld(true)
     this.camera.updateMatrixWorld(true)
@@ -977,15 +1078,17 @@ export class ThreeEngine implements RenderEngine {
   private pickScreen(
     point: RenderEnginePoint
   ): RenderEngineObjectHandle | null {
-    if (!Number.isFinite(point.x) || !Number.isFinite(point.y))
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
       throw new Error('Invalid screen point')
+    }
     if (
       point.x < 0 ||
       point.y < 0 ||
       point.x >= this.width ||
       point.y >= this.height
-    )
+    ) {
       return null
+    }
     const ray = new THREE.Raycaster()
     const screenPoint = new THREE.Vector2(
       (point.x / this.width) * 2 - 1,
@@ -1011,15 +1114,18 @@ export class ThreeEngine implements RenderEngine {
         visual = visual.parent
       ) {
         const record = screenRecords.find((item) => item.visual === visual)
-        if (record) return record.handle
+        if (record) {
+          return record.handle
+        }
       }
     }
     return null
   }
   private pick(point: RenderEnginePoint): RenderEngineObjectHandle | null {
     const result = this.spatialQuery({ type: 'spatial-pick', point })
-    if (result.type !== 'spatial-pick')
+    if (result.type !== 'spatial-pick') {
       throw new Error('Invalid picking result')
+    }
     return result.overlay ?? result.hit?.object ?? null
   }
 
@@ -1031,8 +1137,9 @@ export class ThreeEngine implements RenderEngine {
       !Array.isArray(value) ||
       value.length !== 3 ||
       !value.every(Number.isFinite)
-    )
+    ) {
       throw new Error('Invalid spatial point')
+    }
     return new THREE.Vector3(...value)
   }
   private spatialRecords(): ObjectRecord[] {
@@ -1041,13 +1148,16 @@ export class ThreeEngine implements RenderEngine {
       records.push(record)
       record.children.forEach(visit)
     }
-    if (this.root) visit(this.root)
+    if (this.root) {
+      visit(this.root)
+    }
     return records
   }
   private spatialObject(handle: RenderEngineObjectHandle): ObjectRecord {
     const record = this.owned(handle)
-    if (!this.spatialRecords().includes(record))
+    if (!this.spatialRecords().includes(record)) {
       throw new Error('Detached spatial object')
+    }
     return record
   }
   private spatialMatrix(
@@ -1066,8 +1176,9 @@ export class ThreeEngine implements RenderEngine {
         index < 0 ||
         !instances ||
         index >= instances.length
-      )
+      ) {
         throw new Error('Invalid source instance index')
+      }
       const instance = instances[index]
       matrix.multiply(
         new THREE.Matrix4().compose(
@@ -1084,9 +1195,12 @@ export class ThreeEngine implements RenderEngine {
   ): RenderEngineSpatialResult {
     if (query.type === 'spatial-pick') {
       const ray = this.spatialQuery({ type: 'spatial-ray', point: query.point })
-      if (ray.type !== 'spatial-ray')
+      if (ray.type !== 'spatial-ray') {
         throw new Error('Invalid screen ray result')
-      if (!ray.ray) return { type: 'spatial-pick', overlay: null, hit: null }
+      }
+      if (!ray.ray) {
+        return { type: 'spatial-pick', overlay: null, hit: null }
+      }
       const overlay = this.pickScreen(query.point)
       return {
         type: 'spatial-pick',
@@ -1099,18 +1213,20 @@ export class ThreeEngine implements RenderEngine {
       const clip = new THREE.Vector4(point.x, point.y, point.z, 1)
         .applyMatrix4(this.camera.matrixWorldInverse)
         .applyMatrix4(this.camera.projectionMatrix)
-      if (clip.w === 0)
+      if (clip.w === 0) {
         return {
           type: 'spatial-projection',
           point: null,
           depth: null,
           inFrustum: false
         }
+      }
       const x = clip.x / clip.w,
         y = clip.y / clip.w,
         z = clip.z / clip.w
-      if (![x, y, z].every(Number.isFinite))
+      if (![x, y, z].every(Number.isFinite)) {
         throw new Error('Nonfinite spatial projection')
+      }
       return {
         type: 'spatial-projection',
         point: {
@@ -1124,10 +1240,12 @@ export class ThreeEngine implements RenderEngine {
     }
     if (query.type === 'spatial-ray') {
       const { x, y } = query.point
-      if (![x, y].every(Number.isFinite))
+      if (![x, y].every(Number.isFinite)) {
         throw new Error('Invalid surface point')
-      if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+      }
+      if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
         return { type: 'spatial-ray', ray: null }
+      }
       const ray = new THREE.Raycaster()
       ray.setFromCamera(
         new THREE.Vector2((x / this.width) * 2 - 1, 1 - (y / this.height) * 2),
@@ -1141,42 +1259,54 @@ export class ThreeEngine implements RenderEngine {
         }
       }
     }
-    if (query.type === 'spatial-raycast')
+    if (query.type === 'spatial-raycast') {
       return { type: 'spatial-hits', hits: this.spatialHits(query.ray) }
+    }
     const record = this.spatialObject(query.object)
     if (query.type === 'spatial-convert') {
       if (
         record.spatial?.kind !== 'mesh' ||
         !['local', 'world'].includes(query.to)
-      )
+      ) {
         throw new Error('Invalid spatial conversion')
+      }
       const matrix = this.spatialMatrix(record, query.instanceIndex, true)
-      if (query.to === 'local') matrix.invert()
+      if (query.to === 'local') {
+        matrix.invert()
+      }
       return {
         type: 'spatial-point',
         point: this.vector(this.point(query.point).applyMatrix4(matrix))
       }
     }
-    if (!['local', 'world'].includes(query.space))
+    if (!['local', 'world'].includes(query.space)) {
       throw new Error('Invalid bounds space')
-    if (query.instanceIndex !== undefined)
+    }
+    if (query.instanceIndex !== undefined) {
       this.spatialMatrix(record, query.instanceIndex, false)
+    }
     if (
       record.spatial?.kind !== 'mesh' ||
       !(record.content instanceof THREE.Mesh)
-    )
+    ) {
       return { type: 'spatial-bounds', bounds: null }
+    }
     const geometry = record.content.geometry
-    if (!geometry.boundingBox) geometry.computeBoundingBox()
+    if (!geometry.boundingBox) {
+      geometry.computeBoundingBox()
+    }
     const local = geometry.boundingBox
-    if (!local || local.isEmpty())
+    if (!local || local.isEmpty()) {
       return { type: 'spatial-bounds', bounds: null }
+    }
     const result = new THREE.Box3()
     let indices: (number | undefined)[] = [undefined]
-    if (query.instanceIndex !== undefined) indices = [query.instanceIndex]
-    else if (record.spatial.instances)
+    if (query.instanceIndex !== undefined) {
+      indices = [query.instanceIndex]
+    } else if (record.spatial.instances) {
       indices = record.spatial.instances.map((_, index) => index)
-    for (const index of indices)
+    }
+    for (const index of indices) {
       result.union(
         local
           .clone()
@@ -1184,6 +1314,7 @@ export class ThreeEngine implements RenderEngine {
             this.spatialMatrix(record, index, query.space === 'world')
           )
       )
+    }
     return {
       type: 'spatial-bounds',
       bounds: { min: this.vector(result.min), max: this.vector(result.max) }
@@ -1193,8 +1324,9 @@ export class ThreeEngine implements RenderEngine {
     const origin = this.point(input.origin),
       direction = this.point(input.direction)
     const length = direction.length()
-    if (!Number.isFinite(length) || length === 0)
+    if (!Number.isFinite(length) || length === 0) {
       throw new Error('Invalid spatial ray direction')
+    }
     direction.divideScalar(length)
     const ray = new THREE.Raycaster(origin, direction),
       hits: RenderEngineSpatialHit[] = []
@@ -1207,8 +1339,9 @@ export class ThreeEngine implements RenderEngine {
         !record.visual.visible ||
         record.visual.parent !== this.scene ||
         !(content instanceof THREE.Mesh)
-      )
+      ) {
         continue
+      }
       // Borrow the owned full geometry/material. No GPU resource or LoD slot is created.
       const mesh = new THREE.Mesh(content.geometry, content.material)
       const indices = spatial.instances
@@ -1220,7 +1353,9 @@ export class ThreeEngine implements RenderEngine {
         mesh.raycast(ray, intersections)
         intersections.sort((a, b) => a.distance - b.distance)
         const hit = intersections[0]
-        if (!hit) continue
+        if (!hit) {
+          continue
+        }
         hits.push({
           object: record.handle,
           ...(index === undefined
@@ -1243,15 +1378,20 @@ export class ThreeEngine implements RenderEngine {
     color: number | string
     alpha: number
   } {
-    if (!paint || typeof paint !== 'object') throw new Error('Invalid paint')
+    if (!paint || typeof paint !== 'object') {
+      throw new Error('Invalid paint')
+    }
     let base = { color: paint.color ?? 0xffffff, alpha: paint.alpha ?? 1 }
     if (paint.resource) {
       const stored = this.resources.get(paint.resource)
-      if (!stored) throw new Error('Foreign or destroyed resource handle')
+      if (!stored) {
+        throw new Error('Foreign or destroyed resource handle')
+      }
       base = { color: stored.color, alpha: paint.alpha ?? stored.alpha }
     }
-    if (!Number.isFinite(base.alpha) || base.alpha < 0 || base.alpha > 1)
+    if (!Number.isFinite(base.alpha) || base.alpha < 0 || base.alpha > 1) {
       throw new Error('Invalid paint opacity')
+    }
     return base
   }
   private attachPointerListeners(canvas: HTMLCanvasElement): void {
@@ -1265,10 +1405,14 @@ export class ThreeEngine implements RenderEngine {
     ] as const
     for (const type of types) {
       const handler = (event: Event) => {
-        if (this.destroyed) return
+        if (this.destroyed) {
+          return
+        }
         const pointer = event as PointerEvent,
           rect = canvas.getBoundingClientRect()
-        if (rect.width <= 0 || rect.height <= 0) return
+        if (rect.width <= 0 || rect.height <= 0) {
+          return
+        }
         const position = {
           x: ((pointer.clientX - rect.left) * this.width) / rect.width,
           y: ((pointer.clientY - rect.top) * this.height) / rect.height

@@ -13,8 +13,9 @@ export const assertRegionBounds = (bounds: Rect): void => {
     ].every(Number.isFinite) ||
     bounds.width < 0 ||
     bounds.height < 0
-  )
+  ) {
     throw new Error('Region bounds must be finite with nonnegative dimensions')
+  }
 }
 
 interface Cell<T> {
@@ -48,9 +49,13 @@ export class RegionIndex<T> {
     const key = `${x},${y}`
     this.delete(id)
     let level = this.levels.get(size)
-    if (!level) this.levels.set(size, (level = new Map()))
+    if (!level) {
+      this.levels.set(size, (level = new Map()))
+    }
     let cell = level.get(key)
-    if (!cell) level.set(key, (cell = { x, y, entries: new Map() }))
+    if (!cell) {
+      level.set(key, (cell = { x, y, entries: new Map() }))
+    }
     cell.entries.set(id, { ...bounds })
     this.locations.set(id, { size, key })
   }
@@ -61,14 +66,21 @@ export class RegionIndex<T> {
 
   delete(id: T): void {
     const location = this.locations.get(id)
-    if (!location) return
+    if (!location) {
+      return
+    }
     const level = this.levels.get(location.size)
     const cell = level?.get(location.key)
-    if (!level || !cell)
+    if (!level || !cell) {
       throw new Error('Region index location has no owning cell')
+    }
     cell.entries.delete(id)
-    if (!cell.entries.size) level.delete(location.key)
-    if (!level.size) this.levels.delete(location.size)
+    if (!cell.entries.size) {
+      level.delete(location.key)
+    }
+    if (!level.size) {
+      this.levels.delete(location.size)
+    }
     this.locations.delete(id)
   }
 
@@ -81,7 +93,9 @@ export class RegionIndex<T> {
     const result = { values: [] as T[], visitedCells: 0, checkedEntries: 0 }
     const visit = (cell: Cell<T> | undefined) => {
       result.visitedCells++
-      if (!cell) return
+      if (!cell) {
+        return
+      }
       for (const [id, entry] of cell.entries) {
         result.checkedEntries++
         if (
@@ -89,8 +103,9 @@ export class RegionIndex<T> {
           entry.x + entry.width >= bounds.x &&
           entry.y <= bounds.y + bounds.height &&
           entry.y + entry.height >= bounds.y
-        )
+        ) {
           result.values.push(id)
+        }
       }
     }
     for (const [size, cells] of this.levels) {
@@ -104,8 +119,11 @@ export class RegionIndex<T> {
         cellCount <= cells.size &&
         [minX, maxX, minY, maxY].every(Number.isSafeInteger)
       ) {
-        for (let x = minX; x <= maxX; x++)
-          for (let y = minY; y <= maxY; y++) visit(cells.get(`${x},${y}`))
+        for (let x = minX; x <= maxX; x++) {
+          for (let y = minY; y <= maxY; y++) {
+            visit(cells.get(`${x},${y}`))
+          }
+        }
       } else {
         for (const cell of cells.values()) {
           if (
@@ -113,9 +131,11 @@ export class RegionIndex<T> {
             cell.x <= maxX &&
             cell.y >= minY &&
             cell.y <= maxY
-          )
+          ) {
             visit(cell)
-          else result.visitedCells++
+          } else {
+            result.visitedCells++
+          }
         }
       }
     }

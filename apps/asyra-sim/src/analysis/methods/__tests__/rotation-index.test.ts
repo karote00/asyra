@@ -30,8 +30,9 @@ function inspect(root: MeshNode) {
   let cost = 0
   while (pending.length) {
     const node = pending.pop()
-    if (!node || seen.has(node))
+    if (!node || seen.has(node)) {
       throw new Error('Repeated source node or cycle')
+    }
     seen.add(node)
     if (!node.children) {
       leaves.push(node)

@@ -56,7 +56,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (pair) =>
             pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === target
         )
-        if (!pair) throw new Error('Missing measured representative pair')
+        if (!pair) {
+          throw new Error('Missing measured representative pair')
+        }
         const prepared = new WeakMap<MeshGeometry, Bounds>()
         const counts = {
           calls: 0,
@@ -78,7 +80,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             build(
               g,
               () => {
-                if (measuringCurrent) counts.currentPreparationWork++
+                if (measuringCurrent) {
+                  counts.currentPreparationWork++
+                }
                 checkpoint()
               },
               hierarchy,
@@ -87,8 +91,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         )
         function bounds(shape: ConvexShape): Bounds {
           const g = shape.geometry
-          if (g.kind !== 'mesh')
+          if (g.kind !== 'mesh') {
             throw new Error('Expected complete original geometry')
+          }
           let result = prepared.get(g)
           if (!result) {
             counts.preparationBuilds++
@@ -116,7 +121,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             return false
           }
           const started = performance.now()
-          for (const shape of [a, b])
+          for (const shape of [a, b]) {
             for (const axis of [
               [1, 0, 0],
               [0, 1, 0],
@@ -126,7 +131,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 .rotate(shape.pose.rotation, ops.vector(axis))
                 .map(imid) as unknown as Vec3
               const norm = ops.norm(ops.vector(direction))
-              if (norm[0] <= 0) continue
+              if (norm[0] <= 0) {
+                continue
+              }
               counts.projectionAxes++
               const pa = projection(ab, a.pose, direction),
                 pb = projection(bb, b.pose, direction)
@@ -136,12 +143,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 idiv(isub(interval(pa[0]), interval(pb[1])), norm)[0]
               )
               if (gap > threshold) {
-                if (temporal) counts.addedIntervalRejects++
-                else counts.addedStaticRejects++
+                if (temporal) {
+                  counts.addedIntervalRejects++
+                } else {
+                  counts.addedStaticRejects++
+                }
                 counts.projectionMs += performance.now() - started
                 return true
               }
             }
+          }
           counts.projectionMs += performance.now() - started
           return false
         }
@@ -157,7 +168,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               return distance.apply(this, args)
             } finally {
               measuringCurrent = false
-              if (rejected)
+              if (rejected) {
                 counts.avoidableStaticWork += Math.max(
                   0,
                   this.work -
@@ -165,6 +176,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                     (counts.currentPreparationWork - prep) -
                     1
                 )
+              }
             }
           }
         )
@@ -178,7 +190,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               return lower.apply(this, args)
             } finally {
               measuringCurrent = false
-              if (rejected)
+              if (rejected) {
                 counts.avoidableIntervalWork += Math.max(
                   0,
                   this.work -
@@ -186,6 +198,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                     (counts.currentPreparationWork - prep) -
                     1
                 )
+              }
             }
           }
         )

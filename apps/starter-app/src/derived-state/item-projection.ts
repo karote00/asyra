@@ -55,18 +55,24 @@ export class StarterProjectionStore {
   }
 
   subscribeItem(id: string, notify: () => void): () => void {
-    if (this.disposed) return () => undefined
+    if (this.disposed) {
+      return () => undefined
+    }
     const listeners = this.itemSubscribers.get(id) ?? new Set<() => void>()
     this.itemSubscribers.set(id, listeners)
     listeners.add(notify)
     return () => {
       listeners.delete(notify)
-      if (listeners.size === 0) this.itemSubscribers.delete(id)
+      if (listeners.size === 0) {
+        this.itemSubscribers.delete(id)
+      }
     }
   }
 
   subscribeChanges(subscriber: (change: ProjectionChange) => void): () => void {
-    if (this.disposed) return () => undefined
+    if (this.disposed) {
+      return () => undefined
+    }
     this.changeSubscribers.add(subscriber)
     return () => {
       this.changeSubscribers.delete(subscriber)
@@ -144,7 +150,9 @@ export class StarterProjectionStore {
     let membershipChanged = false
     elementIds.forEach((elementId) => {
       const existed = this.itemsById.has(elementId)
-      if (this.refreshElement(elementId)) changedIds.push(elementId)
+      if (this.refreshElement(elementId)) {
+        changedIds.push(elementId)
+      }
       membershipChanged ||= existed !== this.itemsById.has(elementId)
     })
     if (changedIds.length === 0) {

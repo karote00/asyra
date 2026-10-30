@@ -32,7 +32,9 @@ export function WorkbenchRuns() {
 
   const setShowRuns = useWorkbenchField('setShowRuns')
 
-  if (!showRuns || !ready || !runtime) return null
+  if (!showRuns || !ready || !runtime) {
+    return null
+  }
 
   return (
     <RunLibrary

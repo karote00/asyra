@@ -2303,10 +2303,11 @@ export const vectorApis = {
     options?: VectorOperationIntentOptions
   ): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null> => {
     const topology = getVectorTopologyStored(elementId)
-    if (topology.points[pointId]?.kind !== 'anchor')
+    if (topology.points[pointId]?.kind !== 'anchor') {
       return mutationReceipt(null, { acceptedIds: [], changed: false }, [
         elementId
       ])
+    }
     const nextTopology = setAnchorTypeInTopology(topology, pointId, type)
     const changed = commitVectorTopologyOperation(
       elementId,
@@ -2435,10 +2436,11 @@ export const vectorApis = {
       updates.some(
         (update) => previousTopology.points[update.pointId]?.kind !== 'anchor'
       )
-    )
+    ) {
       return mutationReceipt(null, { acceptedIds: [], changed: false }, [
         elementId
       ])
+    }
     let topology = previousTopology
     let projectionFailed = false
     updates.forEach((update) => {

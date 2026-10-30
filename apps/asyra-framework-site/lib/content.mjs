@@ -192,7 +192,9 @@ export async function loadVerifiedPublicContent() {
       }
       return page
     })
-    if (sectionPages.length === 0) continue
+    if (sectionPages.length === 0) {
+      continue
+    }
 
     const sectionTitle = sectionPages[0].section
     if (sectionPages.some((page) => page.section !== sectionTitle)) {

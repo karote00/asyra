@@ -66,7 +66,9 @@ export const nonlinearMul = (a: NonlinearFraction, b: NonlinearFraction) =>
 export const nonlinearDiv = (a: NonlinearFraction, b: NonlinearFraction) =>
   nonlinearFraction(a.numerator * b.denominator, a.denominator * b.numerator)
 export function nonlinearRequired<T>(v: T | undefined | null): T {
-  if (v == null) throw new Error('Missing current nonlinear fixture dependency')
+  if (v == null) {
+    throw new Error('Missing current nonlinear fixture dependency')
+  }
   return v
 }
 export function firstVisitedReason<
@@ -77,11 +79,17 @@ export function firstVisitedReason<
 >(rows: readonly T[]) {
   const selected = new Map<string, { row: T; proof: T['proofs'][number] }>()
   for (const row of rows) {
-    if (row.kind !== 'unknown' && row.kind !== 'blocked') continue
+    if (row.kind !== 'unknown' && row.kind !== 'blocked') {
+      continue
+    }
     for (const proof of row.proofs) {
-      if (proof.kind !== 'unknown' && proof.kind !== 'blocked') continue
+      if (proof.kind !== 'unknown' && proof.kind !== 'blocked') {
+        continue
+      }
       const reason = proof.reason ?? 'reason-unavailable'
-      if (!selected.has(reason)) selected.set(reason, { row, proof })
+      if (!selected.has(reason)) {
+        selected.set(reason, { row, proof })
+      }
     }
   }
   return [...selected.values()]
@@ -166,8 +174,9 @@ export function nonlinearFixture(
     4 * Math.max(...baseline.legs.map((l) => l.upper.length)) * alpha
   const length = zExtent + 2 * travel + xExtent
   const from = (farm.length - length) / 2
-  if (from < 0 || soil.width < xExtent)
+  if (from < 0 || soil.width < xExtent) {
     throw new Error('Current source route does not fit')
+  }
   const demand = prepareSceneDemand(
     farm,
     scene,

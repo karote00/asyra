@@ -109,8 +109,9 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         runtime.pan(20, 10)
         const secondPan = pan.mock.results.at(-1)?.value
         const secondInput = pan.mock.calls.at(-1)?.[0]
-        if (!firstInput || !secondInput)
+        if (!firstInput || !secondInput) {
           throw new Error('Missing camera commands')
+        }
         expect(secondInput.position).toEqual(firstPan.position)
         for (let axis = 0; axis < 3; axis++) {
           expect
@@ -130,7 +131,9 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         runtime.dolly(-Math.log(2) * 1000)
         runtime.pan(0, 0)
         const afterDolly = pan.mock.calls.at(-1)?.[0]
-        if (!beforeDolly || !afterDolly) throw new Error('Missing dolly camera')
+        if (!beforeDolly || !afterDolly) {
+          throw new Error('Missing dolly camera')
+        }
         expect(runtime.getZoom()).toBe(200)
         expect(afterDolly.fov).toBe(beforeDolly.fov)
         expect(afterDolly.target).toEqual(beforeDolly.target)
@@ -149,7 +152,9 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           runtime.move(0, 0, 1.5) // One second at the keyboard's base rate.
           runtime.pan(0, 0)
           const after = pan.mock.calls.at(-1)?.[0]
-          if (!before || !after) throw new Error('Missing movement camera')
+          if (!before || !after) {
+            throw new Error('Missing movement camera')
+          }
           expect(after.fov).toBe(before.fov)
           return Math.hypot(
             ...after.position.map((v, i) => v - before.position[i])
@@ -242,14 +247,16 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           const result = new Set<BufferGeometry>()
           const scene = vi.mocked(driver.render).mock.calls[0]?.[0]
           scene?.traverse((object) => {
-            if (object instanceof InstancedMesh) result.add(object.geometry)
+            if (object instanceof InstancedMesh) {
+              result.add(object.geometry)
+            }
           })
           return result
         }
         const renderedInstances = () => {
           const result: string[] = []
           vi.mocked(driver.render).mock.calls[0]?.[0].traverse((object) => {
-            if (object instanceof InstancedMesh)
+            if (object instanceof InstancedMesh) {
               result.push(
                 JSON.stringify([
                   object.geometry.uuid,
@@ -261,6 +268,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
                   )
                 ])
               )
+            }
           })
           return result.sort().join('\n')
         }
@@ -302,7 +310,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         expect(nextGpu.size).toBe(originalGpu.size)
         expect([...nextGpu].every((shape) => originalGpu.has(shape))).toBe(true)
         const next = build.mock.results.at(-1)?.value as projection.SiteMesh[]
-        if (process.env.FIELDSCOPE_PROFILE === '1')
+        if (process.env.FIELDSCOPE_PROFILE === '1') {
           // eslint-disable-next-line no-console -- Opt-in permanent timing evidence accompanies deterministic work assertions.
           console.log(
             JSON.stringify({
@@ -312,6 +320,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
               cropBuilds: cropBuild.mock.calls.length
             })
           )
+        }
         expect.soft(cropBuild).toHaveBeenCalledTimes(1)
         const before = previous.find((mesh) =>
           mesh.id.startsWith('cucumber-1914')
@@ -321,8 +330,9 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
             mesh.id ===
             previous.find((item) => item.id.startsWith('cucumber-1914'))?.id
         )?.descriptor
-        if (!before || !after)
+        if (!before || !after) {
           throw new Error('Missing planted crop descriptors')
+        }
         expect.soft(after.shape === before.shape).toBe(true)
         expect(after.instances).not.toEqual(before.instances)
         for (const layer of ['supports', 'net', 'ties', 'clips']) {
@@ -513,8 +523,9 @@ it('selects one walking runtime through Core history and keeps W2 work out of W1
     flush()
     const active = runtime.getWalkingOperatingReport()
     expect(active.status).not.toBe('legacy-view')
-    if (active.status === 'legacy-view' || !active.envelope)
+    if (active.status === 'legacy-view' || !active.envelope) {
       throw new Error('Missing active walking report')
+    }
     expect(active.selection).toEqual(selection)
     const source = active.source
     const envelope = active.envelope
@@ -535,8 +546,9 @@ it('selects one walking runtime through Core history and keeps W2 work out of W1
     })
     expect(submissions).toHaveBeenCalledTimes(farmFrames + 1)
     const refreshed = runtime.getWalkingOperatingReport()
-    if (refreshed.status === 'legacy-view' || !refreshed.envelope)
+    if (refreshed.status === 'legacy-view' || !refreshed.envelope) {
       throw new Error('Missing refreshed walking report')
+    }
     expect(refreshed.source).toBe(source)
     expect(refreshed.envelope).toBe(envelope)
     expect(refreshed.demand).not.toBe(demand)

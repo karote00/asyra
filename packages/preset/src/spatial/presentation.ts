@@ -32,10 +32,13 @@ export class SpatialCameraPresentation {
       !Number.isFinite(policy.tolerance) ||
       policy.tolerance < 0 ||
       typeof policy.reducedMotion !== 'boolean'
-    )
+    ) {
       throw new Error('Invalid camera interpolation')
+    }
     const target = this.target
-    if (!target) return original
+    if (!target) {
+      return original
+    }
     const t = policy.reducedMotion ? 1 : fraction
     const mix = (a: number, b: number) => a + (b - a) * t
     const next =
@@ -61,7 +64,9 @@ export class SpatialCameraPresentation {
       (['fov', 'near', 'far'] as const).some(
         (key) => Math.abs(next[key] - target[key]) > policy.tolerance
       )
-    if (!moving) this.target = null
+    if (!moving) {
+      this.target = null
+    }
     return next
   }
   dispose(): void {
@@ -69,6 +74,8 @@ export class SpatialCameraPresentation {
     this.disposed = true
   }
   private assertLive(): void {
-    if (this.disposed) throw new Error('Camera presentation is disposed')
+    if (this.disposed) {
+      throw new Error('Camera presentation is disposed')
+    }
   }
 }

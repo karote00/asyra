@@ -85,10 +85,13 @@ export function installRegisteredViews(
     }
   })
   const getSnapshot = (): WorkbenchSnapshot => {
-    if (disposed) throw new Error('Runtime views are closed')
+    if (disposed) {
+      throw new Error('Runtime views are closed')
+    }
     const value = core.getUIProperty<WorkbenchSnapshot>(WORKBENCH_PROPERTY)
-    if (!value)
+    if (!value) {
       throw new Error('Registered workbench projection is unavailable')
+    }
     return value
   }
   const refresh = (
@@ -103,15 +106,19 @@ export function installRegisteredViews(
       candidateId: selected,
       historyDepth: core.getUndoHistoryDepth()
     }
-    if (membership) next.candidates = candidates()
-    if (!next.candidates.some(({ id }) => id === selected))
+    if (membership) {
+      next.candidates = candidates()
+    }
+    if (!next.candidates.some(({ id }) => id === selected)) {
       next.candidateId = null
+    }
     if (workcell) {
       next.workcell = null
       next.modelError = ''
       try {
-        if (next.candidateId)
+        if (next.candidateId) {
           next.workcell = readWorkcell(core, next.candidateId)
+        }
       } catch (error) {
         next.modelError = `Cannot project this candidate: ${error instanceof Error ? error.message : String(error)}`
       }
@@ -119,8 +126,9 @@ export function installRegisteredViews(
     if (experiments) {
       next.experiments = []
       try {
-        if (next.candidateId)
+        if (next.candidateId) {
           next.experiments = readExperiments(core, next.candidateId)
+        }
       } catch (error) {
         next.modelError = `Cannot project experiments: ${error instanceof Error ? error.message : String(error)}`
       }
@@ -143,44 +151,74 @@ export function installRegisteredViews(
     let current: ElementIdentity | undefined = element
     const visited = new Set<string>()
     while (current) {
-      if (current.type === ComponentTypes.CANDIDATE) return current.id
-      if (visited.has(current.id)) throw new Error('Canonical hierarchy cycle')
+      if (current.type === ComponentTypes.CANDIDATE) {
+        return current.id
+      }
+      if (visited.has(current.id)) {
+        throw new Error('Canonical hierarchy cycle')
+      }
       visited.add(current.id)
       current = identities.get(current.parentId ?? '')
     }
   }
   const stopPublication = core.subscribeToSharedPublication((publication) => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
     const oldIndex = index
     const affected = new Set<string>()
     const propertyIds = new Set<string>()
     let topology = false
-    for (const slice of publication.slices)
-      for (const batch of slice.batches)
+    for (const slice of publication.slices) {
+      for (const batch of slice.batches) {
         for (const delivery of batch.deliveries) {
           if (batch.channel === SharedDataChannelNames.PROPS) {
             const change = delivery.payload as PropsChange
-            if ('id' in change) propertyIds.add(change.id)
-            else
-              for (const property of change.data) propertyIds.add(property.id)
+            if ('id' in change) {
+              propertyIds.add(change.id)
+            } else {
+              for (const property of change.data) {
+                propertyIds.add(property.id)
+              }
+            }
           }
-          if (batch.channel !== SharedDataChannelNames.SCENE_TREE) continue
+          if (batch.channel !== SharedDataChannelNames.SCENE_TREE) {
+            continue
+          }
           const change = delivery.payload as SceneTreeChange
-          if ('id' in change) affected.add(change.id)
-          if (change.action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA) continue
+          if ('id' in change) {
+            affected.add(change.id)
+          }
+          if (change.action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA) {
+            continue
+          }
           topology = true
-          if ('data' in change && change.data && 'id' in change.data)
+          if ('data' in change && change.data && 'id' in change.data) {
             affected.add(change.data.id)
-          if ('entries' in change)
-            for (const entry of change.entries) affected.add(entry.data.id)
-          if ('removed' in change)
-            for (const entry of change.removed) affected.add(entry.elementId)
-          if ('moves' in change)
-            for (const move of change.moves) affected.add(move.elementId)
+          }
+          if ('entries' in change) {
+            for (const entry of change.entries) {
+              affected.add(entry.data.id)
+            }
+          }
+          if ('removed' in change) {
+            for (const entry of change.removed) {
+              affected.add(entry.elementId)
+            }
+          }
+          if ('moves' in change) {
+            for (const move of change.moves) {
+              affected.add(move.elementId)
+            }
+          }
         }
+      }
+    }
     for (const id of propertyIds) {
       const owner = propertyOwners.get(id)
-      if (owner) affected.add(owner.id)
+      if (owner) {
+        affected.add(owner.id)
+      }
     }
     if (topology) {
       index = readIndex()
@@ -188,40 +226,54 @@ export function installRegisteredViews(
     }
     for (const id of propertyIds) {
       const owner = propertyOwners.get(id)
-      if (owner) affected.add(owner.id)
+      if (owner) {
+        affected.add(owner.id)
+      }
     }
     let workcell = false,
       experiments = false,
       runs = false,
       membership = false
     const selected = requestedCandidate
-    for (const id of affected)
+    for (const id of affected) {
       for (const identities of [oldIndex, index]) {
         const element = identities.get(id)
-        if (!element) continue
+        if (!element) {
+          continue
+        }
         const candidate = candidateOf(element, identities)
-        if (element.type === ComponentTypes.CANDIDATE) membership = true
-        if (element.type === ComponentTypes.RUN_REFERENCE) runs = true
-        if (candidate !== selected) continue
+        if (element.type === ComponentTypes.CANDIDATE) {
+          membership = true
+        }
+        if (element.type === ComponentTypes.RUN_REFERENCE) {
+          runs = true
+        }
+        if (candidate !== selected) {
+          continue
+        }
         if (
           element.type === ComponentTypes.BODY ||
           element.type === ComponentTypes.CANDIDATE
-        )
+        ) {
           workcell = true
+        }
         if (
           element.type === ComponentTypes.EXPERIMENT ||
           element.type === ComponentTypes.CANDIDATE
-        )
+        ) {
           experiments = true
+        }
       }
+    }
     refresh(workcell, experiments, runs, membership)
   })
   const stopHistory = core.subscribeToTransactionStatus(() => {
-    if (!disposed)
+    if (!disposed) {
       core.setUIProperty(WORKBENCH_PROPERTY, {
         ...getSnapshot(),
         historyDepth: core.getUndoHistoryDepth()
       })
+    }
   })
   refresh(true, true, true, false, initialCandidates[0]?.id ?? null)
   return {
@@ -240,9 +292,13 @@ export function installRegisteredViews(
       return core.onUIPropertyChange<WorkbenchSnapshot>(
         WORKBENCH_PROPERTY,
         (snapshot) => {
-          if (disposed) return
+          if (disposed) {
+            return
+          }
           const next = selector(snapshot)
-          if (Object.is(previous, next)) return
+          if (Object.is(previous, next)) {
+            return
+          }
           previous = next
           listener()
         }

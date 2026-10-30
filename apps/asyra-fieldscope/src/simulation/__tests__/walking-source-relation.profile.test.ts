@@ -211,15 +211,18 @@ describe('current whole walking source relations', () => {
       max = [-Infinity, -Infinity, -Infinity]
     for (const part of source.parts) {
       const body = frames.get(part.bodyId)
-      if (!body) throw new Error('Missing actual source body')
+      if (!body) {
+        throw new Error('Missing actual source body')
+      }
       for (const point of walkingSourcePointBounds(part.shape, [
         part.localFrame,
         body
-      ]))
+      ])) {
         for (let axis = 0; axis < 3; axis++) {
           min[axis] = Math.min(min[axis], point.min[axis])
           max[axis] = Math.max(max[axis], point.max[axis])
         }
+      }
     }
     robotExtent = max.map((value, axis) => value - min[axis])
     const farm = validateConfiguration(DEFAULT_CONFIGURATION),
@@ -228,11 +231,14 @@ describe('current whole walking source relations', () => {
     const soil = farm.strips
       .filter((strip) => strip.kind === 'soil')
       .sort((a, b) => b.width - a.width)[0]
-    if (!soil) throw new Error('Missing current soil strip')
+    if (!soil) {
+      throw new Error('Missing current soil strip')
+    }
     const routeLength = robotExtent[2] + robotExtent[2] / 2
     const routeFrom = (farm.length - routeLength) / 2
-    if (routeFrom < 0 || soil.width < robotExtent[0])
+    if (routeFrom < 0 || soil.width < robotExtent[0]) {
       throw new Error('Current source does not fit the chosen route envelope')
+    }
     demand = prepareSceneDemand(
       farm,
       scene,
@@ -260,8 +266,9 @@ describe('current whole walking source relations', () => {
       !route ||
       !demand.route ||
       demand.configuration.route.kind !== 'soil-strip'
-    )
+    ) {
       throw new Error('Missing actual W1 route')
+    }
     const center = route.min.map((value, axis) => (value + route.max[axis]) / 2)
     const usableLength = route.max[2] - route.min[2] - robotExtent[2]
     const travel =
@@ -371,8 +378,9 @@ describe('current whole walking source relations', () => {
       }
     }
     const admitted = readWalkingMotionRequest(raw, source, demand)
-    if (admitted.format !== 'walking-motion-request/2')
+    if (admitted.format !== 'walking-motion-request/2') {
       throw new Error('Missing current source request')
+    }
     return admitted
   }
   it.each(['evaluation', 'load'] as const)(
@@ -495,8 +503,9 @@ describe('current whole walking source relations', () => {
         source,
         demand
       )
-      if (input.format !== 'walking-motion-request/2')
+      if (input.format !== 'walking-motion-request/2') {
         throw new Error('Missing source request')
+      }
       const intervals = prepareWalkingMotionIntervals(source, input)
       const result = prepareWalkingSourceRelations(
         source,
@@ -506,14 +515,17 @@ describe('current whole walking source relations', () => {
       )
       expect(result.reasons).toContain('support-contact-motion-unproved')
       const route = demand.freePassage.route
-      if (!route) throw new Error('Missing source route')
-      for (const envelope of intervals.segments[0].envelopes)
+      if (!route) {
+        throw new Error('Missing source route')
+      }
+      for (const envelope of intervals.segments[0].envelopes) {
         for (const axis of [0, 2]) {
           expect(envelope.bounds.min[axis]).toBeGreaterThanOrEqual(
             route.min[axis]
           )
           expect(envelope.bounds.max[axis]).toBeLessThanOrEqual(route.max[axis])
         }
+      }
       expect(result.status).not.toBe('clear')
       expect(result.segments[0].self.blocked).toBe(0)
       expect(result.segments[0].self.unknown).toBe(0)
@@ -546,8 +558,9 @@ describe('current whole walking source relations', () => {
       source,
       demand
     )
-    if (input.format !== 'walking-motion-request/2')
+    if (input.format !== 'walking-motion-request/2') {
       throw new Error('Missing source request')
+    }
     const result = prepareWalkingSourceRelations(
       source,
       demand,
@@ -571,8 +584,9 @@ describe('current whole walking source relations', () => {
       source,
       demand
     )
-    if (input.format !== 'walking-motion-request/2')
+    if (input.format !== 'walking-motion-request/2') {
       throw new Error('Missing source request')
+    }
     const intervals = prepareWalkingMotionIntervals(source, input)
     const result = prepareWalkingSourceRelations(
       source,
@@ -598,13 +612,16 @@ describe('current whole walking source relations', () => {
       moving * (sourceExclusions + 1)
     )
     const route = demand.freePassage.route
-    if (!route) throw new Error('Missing current route')
-    for (const envelope of intervals.segments[0].envelopes)
+    if (!route) {
+      throw new Error('Missing current route')
+    }
+    for (const envelope of intervals.segments[0].envelopes) {
       for (const axis of [0, 2]) {
         expect(envelope.bounds.min[axis]).toBeGreaterThanOrEqual(
           route.min[axis]
         )
         expect(envelope.bounds.max[axis]).toBeLessThanOrEqual(route.max[axis])
       }
+    }
   }, 30000)
 })

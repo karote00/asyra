@@ -29,8 +29,9 @@ const compact = (index: number) => {
   for (const [path, face] of fixture.pairs[index]) {
     const keys = path as (string | number)[]
     let owner = input.draft as unknown as Record<PropertyKey, unknown>
-    for (const key of keys.slice(0, -1))
+    for (const key of keys.slice(0, -1)) {
       owner = owner[key] as Record<PropertyKey, unknown>
+    }
     owner[keys[keys.length - 1]] = { face }
   }
   return input
@@ -96,8 +97,9 @@ const inline = (source: unknown) => {
         const reference = child.boundary as { face: string }
         child.boundary = members.find((n) => n.key === reference.face)?.vertices
       }
-      if (child.type === 'pattern')
+      if (child.type === 'pattern') {
         scope(child.members as Record<string, unknown>[])
+      }
     }
   }
   scope(result.children)
@@ -225,7 +227,9 @@ it('selects a grid without recreating a face from another retained part and re-r
   source.children.reverse()
   const parts = partitionDesignBudget(source, 7).partitions
   expect(parts).toHaveLength(2)
-  if (!parts) throw new Error('Missing partition plan')
+  if (!parts) {
+    throw new Error('Missing partition plan')
+  }
   expect(parts).toEqual(partitionDesignBudget(inline(source), 7).partitions)
   const selected = selectDesignSource(source, parts[1].selections)
   expect(prepareDesign(selected, 'same')).toEqual(
@@ -252,7 +256,9 @@ it('selects a grid without recreating a face from another retained part and re-r
   expect(
     prepareDesign(store.repair({ draftId, partition: 1 }), 'same')
   ).toEqual(prepareDesign(selected, 'same'))
-  if (!draftId) throw new Error('Missing retained source')
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
   store.release(draftId)
   expect(() => store.repair({ draftId, partition: 1 })).toThrow(/unavailable/)
 })
@@ -417,8 +423,9 @@ it('continues only the failed retained part without resending geometry or recrea
   const session = createDesignPreparationSession(
     undefined,
     async (...args) => {
-      if (++preparations === 2)
+      if (++preparations === 2) {
         throw new Error('Injected preparation interruption')
+      }
       return prepareDesignAsync(...args)
     },
     undefined,
@@ -435,7 +442,7 @@ it('continues only the failed retained part without resending geometry or recrea
     ) => ({
       context: {},
       actionResults: batch.actions.map((a) => {
-        if (a.name === AiActionNames.REVIEW_DESIGN)
+        if (a.name === AiActionNames.REVIEW_DESIGN) {
           return {
             actionId: a.id,
             actionName: a.name,
@@ -446,6 +453,7 @@ it('continues only the failed retained part without resending geometry or recrea
               evidence: { sessionId: 'test', revision: 1 }
             }
           }
+        }
         calls++
         const design = admitPreparedDesignDelivery(
           (a.arguments as { design: unknown }).design
@@ -608,12 +616,14 @@ it('recovers recorded ambiguous face keys through returned field repair without 
   expect(result.toolOutcome.settlement).toBe('completed')
   expect(execute).toHaveBeenCalledTimes(1)
   const expected = structuredClone(collision.input.draft)
-  for (const node of expected.children)
+  for (const node of expected.children) {
     if (
       node.type === 'surface-grid' &&
       ['podium-x', 'podium-y'].includes(node.key)
-    )
+    ) {
       node.key += '-grid'
+    }
+  }
   expect(applied[0].entries).toEqual(
     prepareDesign(expected, result.artifactId).entries
   )

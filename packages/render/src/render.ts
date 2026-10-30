@@ -148,16 +148,22 @@ class Render {
   suspendElementPresentation(elementId: string): (() => void) | null {
     this.flushFrame()
     const element = this.viewport.getElementById(elementId)
-    if (!element) return null
+    if (!element) {
+      return null
+    }
     const generation = this.runtimeGeneration
     const resume = element.suspendPresentation()
     this.requestRender()
     let released = false
     return () => {
-      if (released) return
+      if (released) {
+        return
+      }
       released = true
       resume()
-      if (generation === this.runtimeGeneration) this.requestRender()
+      if (generation === this.runtimeGeneration) {
+        this.requestRender()
+      }
     }
   }
 
@@ -190,8 +196,9 @@ class Render {
       throw new Error('Invalid text measurement input')
     }
     const result = engine.query({ type: 'measure-text', layout: { ...layout } })
-    if (result.type !== 'text-measurement')
+    if (result.type !== 'text-measurement') {
       throw new Error('Invalid text measurement result')
+    }
     return result
   }
 
@@ -206,8 +213,9 @@ class Render {
       elementIds.some(
         (id) => typeof id !== 'string' || !id.length || id.length > 256
       )
-    )
+    ) {
       throw new Error('Content measurement requires 1..200 unique element IDs')
+    }
     const engine = this.requireEngine()
     assertRenderEngineCapabilities(engine, [
       RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
@@ -215,7 +223,9 @@ class Render {
     this.flushFrame()
     return elementIds.map((elementId) => {
       const node = this.viewport.getElementById(elementId)
-      if (!node?.getEngineHandle()) return { elementId, bounds: null }
+      if (!node?.getEngineHandle()) {
+        return { elementId, bounds: null }
+      }
       return { elementId, bounds: node.getPresentationLocalBounds() }
     })
   }
@@ -233,20 +243,26 @@ class Render {
     this.flushFrame()
     const target = this.viewport.getSnapshotTarget(elementId)
     if (target?.workspace) {
-      if (options?.nativeResolution || options?.region)
+      if (options?.nativeResolution || options?.region) {
         throw new Error('Workspace snapshot supports overview only')
-      if (!target.node.children.length)
+      }
+      if (!target.node.children.length) {
         throw new Error('Workspace snapshot is empty')
+      }
     }
     const object = target?.node.getEngineHandle()
-    if (!object) throw new Error('Snapshot target is unavailable')
+    if (!object) {
+      throw new Error('Snapshot target is unavailable')
+    }
     const result = engine.query({
       type: 'snapshot',
       object,
       maxDimension,
       ...options
     })
-    if (result.type !== 'snapshot') throw new Error('Invalid snapshot result')
+    if (result.type !== 'snapshot') {
+      throw new Error('Invalid snapshot result')
+    }
     return result
   }
 
@@ -316,7 +332,9 @@ class Render {
     const generation = this.runtimeGeneration
     this.frameCompleteSubscribers.add(subscriber)
     return () => {
-      if (generation !== this.runtimeGeneration) return
+      if (generation !== this.runtimeGeneration) {
+        return
+      }
       this.frameCompleteSubscribers.delete(subscriber)
     }
   }
@@ -369,7 +387,9 @@ class Render {
     if (completedFrame) {
       const generation = this.runtimeGeneration
       ;[...this.frameCompleteSubscribers].forEach((subscriber) => {
-        if (generation !== this.runtimeGeneration) return
+        if (generation !== this.runtimeGeneration) {
+          return
+        }
         try {
           subscriber()
         } catch {
@@ -432,7 +452,9 @@ class Render {
     const generation = this.runtimeGeneration
     this.teardownCleanups.add(cleanup)
     return () => {
-      if (generation !== this.runtimeGeneration) return
+      if (generation !== this.runtimeGeneration) {
+        return
+      }
       this.teardownCleanups.delete(cleanup)
     }
   }
@@ -497,8 +519,9 @@ class Render {
       const generation = this.runtimeGeneration
       this.unsubscribeEngineInteraction = engine.subscribeToInteraction(
         (event) => {
-          if (generation === this.runtimeGeneration)
+          if (generation === this.runtimeGeneration) {
             this.engineInteractionBridge.handle(event)
+          }
         }
       )
       if (isPointerSurface(initialized.inputTarget)) {
@@ -686,7 +709,9 @@ class Render {
     const nodes = () => {
       const result = new Set<import('./types/render-object.js').RenderNode>()
       const visit = (node: import('./types/render-object.js').RenderNode) => {
-        if (result.has(node)) return
+        if (result.has(node)) {
+          return
+        }
         result.add(node)
         node.children.forEach(visit)
       }
@@ -699,8 +724,9 @@ class Render {
       nodes,
       (handle) => this.runtime?.getObject(handle) ?? null,
       (point) => {
-        if (![point.x, point.y].every(Number.isFinite))
+        if (![point.x, point.y].every(Number.isFinite)) {
           throw new Error('Invalid client point')
+        }
         const bounds = this.app?.canvas?.getBoundingClientRect()
         if (
           !bounds ||
@@ -710,8 +736,9 @@ class Render {
           point.y < bounds.top ||
           point.x >= bounds.left + bounds.width ||
           point.y >= bounds.top + bounds.height
-        )
+        ) {
           return null
+        }
         return {
           x:
             ((point.x - bounds.left) * this.spatialSurfaceSize.width) /
@@ -1053,13 +1080,17 @@ class Render {
     } finally {
       this.resettingRuntime = false
     }
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 
   private createAnimateHandler(): () => void {
     const generation = this.runtimeGeneration
     return () => {
-      if (generation !== this.runtimeGeneration || !this.frameScheduled) return
+      if (generation !== this.runtimeGeneration || !this.frameScheduled) {
+        return
+      }
       this.frameScheduled = false
       this.flushFrame()
     }
@@ -1205,7 +1236,9 @@ class Render {
     this.providerToken = appliedToken
 
     return () => {
-      if (this.providerToken !== appliedToken) return
+      if (this.providerToken !== appliedToken) {
+        return
+      }
       this.assertProviderMutable()
       this.providedEngine = previousProvider.providedEngine
       this.engineProvider = previousProvider.engineProvider

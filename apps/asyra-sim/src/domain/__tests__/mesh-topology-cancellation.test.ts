@@ -28,14 +28,18 @@ it('observes cancellation during the initial complete vertex scan', () => {
   let reads = 0
   mesh.positions = new Proxy(mesh.positions, {
     get(target, key, receiver) {
-      if (typeof key === 'string' && /^\d+$/.test(key)) reads++
+      if (typeof key === 'string' && /^\d+$/.test(key)) {
+        reads++
+      }
       return Reflect.get(target, key, receiver)
     }
   })
   const cancelled = new Error('cancelled during vertex admission')
   expect(() =>
     inspectMeshTopology(mesh, () => {
-      if (reads >= 768) throw cancelled
+      if (reads >= 768) {
+        throw cancelled
+      }
     })
   ).toThrow(cancelled)
   expect(reads).toBeLessThanOrEqual(768)

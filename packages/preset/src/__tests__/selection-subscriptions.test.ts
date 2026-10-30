@@ -620,8 +620,9 @@ describe('Preset Selection Subscriptions', () => {
         // Each owner traverses once; pointer movement never rebuilds this index.
         expect(elements.get('leaf')?.save).toHaveBeenCalledTimes(2)
         rows[0].children = []
-        for (const id of ['outer', 'nested', 'leaf', 'sibling'])
+        for (const id of ['outer', 'nested', 'leaf', 'sibling']) {
           elements.delete(id)
+        }
         publishEventsToObservers([{ type: EventTypes.FILE_LOAD_COMPLETE }])
         expect(uiContext.get('flattenedElementIds')).toEqual([])
         expect(uiContext.get('elementDataMap')).toEqual({})
@@ -1460,7 +1461,9 @@ describe('Preset Selection Subscriptions', () => {
     const subject =
       uiContext.getSubject<Record<string, unknown>>('elementDataMap')
     const subscription = subject?.subscribe((value) => {
-      if (!reseed) return
+      if (!reseed) {
+        return
+      }
       reseed = false
       subject.next({ ...value })
     })
@@ -1559,8 +1562,9 @@ describe('Preset Selection Subscriptions', () => {
             observing &&
             typeof key === 'string' &&
             key.startsWith('unrelated-')
-          )
+          ) {
             unrelatedVisits++
+          }
           return originalGet.call(this, key)
         })
         try {
@@ -2896,8 +2900,12 @@ describe('Preset Selection Subscriptions', () => {
     const groupSet = vi.fn()
     const group = {
       get: (key: string) => {
-        if (key === 'type') return EntityTypes.GROUP
-        if (key === 'children') return childIds
+        if (key === 'type') {
+          return EntityTypes.GROUP
+        }
+        if (key === 'children') {
+          return childIds
+        }
         return undefined
       },
       set: groupSet,

@@ -19,9 +19,15 @@ export {
 // Distribute object constraints into each alternative before registration; local
 // admission still uses the original schema. Never alter the caller's registry.
 const intersectSchemas = (left: unknown, right: unknown): unknown => {
-  if (left === false || right === false) return false
-  if (!record(left)) return right
-  if (!record(right)) return left
+  if (left === false || right === false) {
+    return false
+  }
+  if (!record(left)) {
+    return right
+  }
+  if (!record(right)) {
+    return left
+  }
   // Each closed object constrains its own property set. Merging sets would
   // accidentally admit fields that its sibling explicitly excludes.
   for (const [closed, other] of [
@@ -34,8 +40,9 @@ const intersectSchemas = (left: unknown, right: unknown): unknown => {
         Object.keys(other.properties).some(
           (name) => !Object.hasOwn(allowed, name)
         )
-      )
+      ) {
         return { allOf: [left, right] }
+      }
     }
   }
   const result: Record<string, unknown> = { ...left }
@@ -52,11 +59,12 @@ const intersectSchemas = (left: unknown, right: unknown): unknown => {
       result[key] = [...new Set([...result[key], ...value])]
     } else if (key === 'properties' && record(result[key]) && record(value)) {
       const properties = { ...result[key] }
-      for (const [name, property] of Object.entries(value))
+      for (const [name, property] of Object.entries(value)) {
         properties[name] =
           name in properties
             ? intersectSchemas(properties[name], property)
             : property
+      }
       result[key] = properties
     } else {
       // Preserve less common overlapping constraints exactly instead of choosing
@@ -67,10 +75,14 @@ const intersectSchemas = (left: unknown, right: unknown): unknown => {
   return result
 }
 export const nativeToolInputSchema = (schema: unknown): unknown => {
-  if (!record(schema)) return schema
+  if (!record(schema)) {
+    return schema
+  }
   const result = { ...schema }
   for (const key of ['required', 'enum', 'type'] as const) {
-    if (Array.isArray(result[key])) result[key] = [...new Set(result[key])]
+    if (Array.isArray(result[key])) {
+      result[key] = [...new Set(result[key])]
+    }
   }
   // A compatible primitive const already expresses this enum. Keep incompatible
   // enums: their contradiction must not become an admitted value.
@@ -80,24 +92,32 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
       ['string', 'number', 'boolean'].includes(typeof result.const)) &&
     Array.isArray(result.enum) &&
     result.enum.includes(result.const)
-  )
+  ) {
     delete result.enum
+  }
   for (const key of ['properties', '$defs', 'definitions'] as const) {
-    if (record(result[key]))
+    if (record(result[key])) {
       result[key] = Object.fromEntries(
         Object.entries(result[key]).map(([name, child]) => [
           name,
           nativeToolInputSchema(child)
         ])
       )
+    }
   }
-  for (const key of ['items', 'additionalProperties'] as const)
-    if (record(result[key])) result[key] = nativeToolInputSchema(result[key])
-  if (Array.isArray(result.prefixItems))
+  for (const key of ['items', 'additionalProperties'] as const) {
+    if (record(result[key])) {
+      result[key] = nativeToolInputSchema(result[key])
+    }
+  }
+  if (Array.isArray(result.prefixItems)) {
     result.prefixItems = result.prefixItems.map(nativeToolInputSchema)
+  }
   for (const mode of ['oneOf', 'anyOf', 'allOf'] as const) {
     const branches = result[mode]
-    if (!Array.isArray(branches)) continue
+    if (!Array.isArray(branches)) {
+      continue
+    }
     if (mode !== 'allOf' && record(result.properties)) {
       const {
         [mode]: _branches,
@@ -142,8 +162,9 @@ const compactNativeAlternatives = (
   branches: unknown[]
 ): unknown[] => {
   // oneOf counts matching alternatives; even byte-identical branches matter.
-  if (mode === 'oneOf' || branches.some(hasReferenceValueConstraint))
+  if (mode === 'oneOf' || branches.some(hasReferenceValueConstraint)) {
     return branches
+  }
   return [
     ...new Map(
       branches.map((branch) => [JSON.stringify(branch), branch])
@@ -154,13 +175,20 @@ const compactNativeAlternatives = (
 // Admission currently compares object-valued const/enum choices by identity.
 // Keep those alternatives intact even when their JSON text is identical.
 const hasReferenceValueConstraint = (value: unknown): boolean => {
-  if (Array.isArray(value)) return value.some(hasReferenceValueConstraint)
-  if (!record(value)) return false
-  if (value.const !== null && typeof value.const === 'object') return true
+  if (Array.isArray(value)) {
+    return value.some(hasReferenceValueConstraint)
+  }
+  if (!record(value)) {
+    return false
+  }
+  if (value.const !== null && typeof value.const === 'object') {
+    return true
+  }
   if (
     Array.isArray(value.enum) &&
     value.enum.some((choice) => choice !== null && typeof choice === 'object')
-  )
+  ) {
     return true
+  }
   return Object.values(value).some(hasReferenceValueConstraint)
 }

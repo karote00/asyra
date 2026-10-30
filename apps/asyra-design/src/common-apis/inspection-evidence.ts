@@ -41,8 +41,9 @@ export const observeInspectionChanges = (
         if (
           mode === 'effective' &&
           change.action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS
-        )
+        ) {
           return
+        }
         if ('entries' in change) {
           listener({
             elementIds: change.entries.map((entry) => entry.data.id),
@@ -74,8 +75,11 @@ export const observeInspectionChanges = (
           })
         } else if ('id' in change) {
           const fields: { key: string; before: unknown; after: unknown }[] = []
-          if ('changes' in change) fields.push(...change.changes)
-          else if ('key' in change) fields.push(change)
+          if ('changes' in change) {
+            fields.push(...change.changes)
+          } else if ('key' in change) {
+            fields.push(change)
+          }
           const visible = fields.filter(
             (field) => !['name', 'lock', 'children'].includes(field.key)
           )
@@ -95,7 +99,9 @@ export const observeInspectionChanges = (
                 .map(() => change.id)
             ]
           })
-        } else listener()
+        } else {
+          listener()
+        }
       } catch {
         listener()
       }
@@ -137,8 +143,9 @@ export const observeInspectionChanges = (
             if (
               event.type !== EventTypes.UPDATE_COMPUTED_DATA &&
               event.type !== EventTypes.UPDATE_COMPUTED_DATA_PATCH
-            )
+            ) {
               continue
+            }
             try {
               if (!('payload' in event)) {
                 listener()
@@ -186,19 +193,23 @@ export const observeInspectionChanges = (
 
 const readAttachment = (parentId?: string) => {
   const workspaceId = core.getCurrentWorkspaceId()
-  if (!workspaceId) throw new Error('Attachment workspace is unavailable.')
+  if (!workspaceId) {
+    throw new Error('Attachment workspace is unavailable.')
+  }
   const target = parentId ?? workspaceId
   const visited = new Set<string>()
   const parentPath: string[] = []
   let id = target
   while (id !== workspaceId) {
-    if (!id || visited.has(id))
+    if (!id || visited.has(id)) {
       throw new Error('Attachment parent is not in the current workspace.')
+    }
     visited.add(id)
     parentPath.push(id)
     const item = core.getElementMetadata(id)
-    if (!item || !core.isContainerType(item.type) || item.lock)
+    if (!item || !core.isContainerType(item.type) || item.lock) {
       throw new Error('Attachment parent is not an editable container.')
+    }
     id = item.parentId ?? ''
   }
   const points = [
@@ -215,8 +226,9 @@ const readAttachment = (parentId?: string) => {
       (point) =>
         !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)
     )
-  )
+  ) {
     throw new Error('Attachment parent transform is unavailable.')
+  }
   const bounds =
     target === workspaceId
       ? null
@@ -227,8 +239,9 @@ const readAttachment = (parentId?: string) => {
       ['x', 'y', 'width', 'height'].some(
         (field) => !Number.isFinite(bounds[field])
       ))
-  )
+  ) {
     throw new Error('Attachment parent bounds are unavailable.')
+  }
   return {
     parentPath,
     result: { available: true, workspaceId, parentId: target, bounds, basis }
@@ -241,7 +254,9 @@ const dependencySource = {
   },
   parent(id: string) {
     const element = core.getElementMetadata(id)
-    if (!element) throw new Error('Inspection dependency no longer exists')
+    if (!element) {
+      throw new Error('Inspection dependency no longer exists')
+    }
     return element.parentId || undefined
   },
   region(target: string, region: InspectionRegion) {
@@ -267,8 +282,9 @@ const dependencySource = {
         (point) =>
           !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)
       )
-    )
+    ) {
       throw new Error('Inspection region transform is unavailable')
+    }
     const coordinates = points.filter(
       (point): point is { x: number; y: number } => !!point
     )
@@ -285,10 +301,16 @@ const dependencySource = {
       let id: string | undefined = candidate
       const seen = new Set<string>()
       while (id) {
-        if (id === target) return true
-        if (seen.has(id)) throw new Error('Cyclic inspection region')
+        if (id === target) {
+          return true
+        }
+        if (seen.has(id)) {
+          throw new Error('Cyclic inspection region')
+        }
         seen.add(id)
-        if (!parents.has(id)) parents.set(id, dependencySource.parent(id))
+        if (!parents.has(id)) {
+          parents.set(id, dependencySource.parent(id))
+        }
         id = parents.get(id)
       }
       return false
@@ -316,7 +338,9 @@ export const createInspectionEvidence = (
   let disposed = false
   const dependencies = createInspectionDependencies(dependencySource)
   const isCurrent = (value: unknown): value is InspectionEvidenceStamp => {
-    if (disposed || !stop || !value || typeof value !== 'object') return false
+    if (disposed || !stop || !value || typeof value !== 'object') {
+      return false
+    }
     const stamp = value as Partial<InspectionEvidenceStamp>
     return (
       stamp.sessionId === sessionId &&
@@ -330,7 +354,9 @@ export const createInspectionEvidence = (
     )
   }
   const startObserving = () => {
-    if (disposed) throw new Error('Inspection evidence is disposed.')
+    if (disposed) {
+      throw new Error('Inspection evidence is disposed.')
+    }
     stop ??= observe((change) => {
       revision++
       dependencies.change(change)
@@ -344,13 +370,16 @@ export const createInspectionEvidence = (
       startObserving()
       const start = revision
       const target = parentId ?? core.getCurrentWorkspaceId()
-      if (!target) throw new Error('Attachment workspace is unavailable.')
+      if (!target) {
+        throw new Error('Attachment workspace is unavailable.')
+      }
       const snapshot = readAttachment(target)
-      if (start !== revision)
+      if (start !== revision) {
         return {
           available: false,
           message: 'Attachment changed during capture.'
         }
+      }
       const stamp = dependencies.capture(target, undefined, revision, {
         signature: JSON.stringify(snapshot),
         chain: [...snapshot.parentPath, snapshot.result.workspaceId]
@@ -360,13 +389,17 @@ export const createInspectionEvidence = (
     validate: (stamp: unknown, scope?: InspectionScopeQuery) => {
       const current = isCurrent(stamp)
       const validatedAt = { sessionId, revision }
-      if (!scope) return { current, validatedAt }
+      if (!scope) {
+        return { current, validatedAt }
+      }
       const missingIds = new Set<string>()
       const parents = new Map<string, string | undefined>()
       const readParent = (id: string) => {
         if (!parents.has(id)) {
           const element = core.getElementData(id)
-          if (!element) missingIds.add(id)
+          if (!element) {
+            missingIds.add(id)
+          }
           parents.set(id, element?.parentId || undefined)
         }
         return parents.get(id)
@@ -374,7 +407,9 @@ export const createInspectionEvidence = (
       const overviews = new Set(scope.overviewIds)
       const uncoveredIds: string[] = []
       if (current) {
-        for (const id of overviews) readParent(id)
+        for (const id of overviews) {
+          readParent(id)
+        }
         for (const requiredId of new Set(scope.requiredIds)) {
           const visited = new Set<string>()
           let id: string | undefined = requiredId
@@ -394,9 +429,13 @@ export const createInspectionEvidence = (
             covered ||= overviews.has(id)
             id = parent
           }
-          if (!covered || !valid) uncoveredIds.push(requiredId)
+          if (!covered || !valid) {
+            uncoveredIds.push(requiredId)
+          }
         }
-      } else uncoveredIds.push(...scope.requiredIds)
+      } else {
+        uncoveredIds.push(...scope.requiredIds)
+      }
       return {
         current,
         validatedAt,
@@ -462,13 +501,17 @@ export const createInspectionEvidence = (
         }
       }
       const inspected = result as Record<string, unknown>
-      if (inspected.available !== true) dependencies.release(evidence)
+      if (inspected.available !== true) {
+        dependencies.release(evidence)
+      }
       return inspected.available === true
         ? { ...inspected, evidence }
         : inspected
     },
     dispose: () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       disposed = true
       dependencies.dispose()
       stop?.()

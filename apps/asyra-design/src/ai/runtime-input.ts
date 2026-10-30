@@ -91,8 +91,9 @@ export const observeAiAction = (
         )
         throw error
       }
-      if (!result || typeof result !== 'object' || Array.isArray(result))
+      if (!result || typeof result !== 'object' || Array.isArray(result)) {
         return result
+      }
       return {
         ...result,
         toolOutcome: designActionOutcome(result),
@@ -121,7 +122,9 @@ export const createAiRuntimeInput = (
     ...createAiActions(undefined, {
       confirmPersistence: async (signal) => {
         const session = getActiveCollaborationHandle()
-        if (!session) return { status: 'local-only' }
+        if (!session) {
+          return { status: 'local-only' }
+        }
         return {
           status: 'durable',
           ...(await session.confirmPersistence(signal))
@@ -176,11 +179,12 @@ export const createAiRuntimeInput = (
       async requestActionBatch(input, requestOptions) {
         const actions = input.actions.map((description) => {
           const contract = contracts.get(description.name)
-          if (!contract)
+          if (!contract) {
             throw new AiProviderError({
               code: 'AI_PROVIDER_INVALID_INPUT',
               message: 'An admitted action has no canonical App contract.'
             })
+          }
           return contract
         })
         return options.provider.requestActionBatch(

@@ -48,7 +48,9 @@ const fixture = (maximumBytes = 10000) => {
     signal = new AbortController().signal
   ) => {
     const action = owner.actions.find((entry) => entry.name === name)
-    if (!action) throw new Error(`Missing export action: ${name}`)
+    if (!action) {
+      throw new Error(`Missing export action: ${name}`)
+    }
     expect(operationInputIssue(input, action.inputSchema)).toBeUndefined()
     const result = await action.execute(input, { signal })
     expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
@@ -137,10 +139,18 @@ it.each(['change', 'replace', 'abort', 'dispose'] as const)(
     const f = fixture()
     const request = new AbortController()
     f.output.digest.mockImplementationOnce(async () => {
-      if (event === 'change') f.change()
-      if (event === 'replace') f.replace()
-      if (event === 'abort') request.abort()
-      if (event === 'dispose') f.owner.dispose()
+      if (event === 'change') {
+        f.change()
+      }
+      if (event === 'replace') {
+        f.replace()
+      }
+      if (event === 'abort') {
+        request.abort()
+      }
+      if (event === 'dispose') {
+        f.owner.dispose()
+      }
       return 'a'.repeat(64)
     })
     try {

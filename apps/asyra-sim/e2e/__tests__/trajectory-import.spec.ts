@@ -6,8 +6,9 @@ import { readHistoryDepth } from '../history-depth'
 async function openImport(page: Page) {
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   const details = page.locator('.trajectory-import')
-  if (!(await details.evaluate((node) => (node as HTMLDetailsElement).open)))
+  if (!(await details.evaluate((node) => (node as HTMLDetailsElement).open))) {
     await details.locator('summary').click()
+  }
   return details
 }
 
@@ -46,9 +47,13 @@ async function savedDefinition(
     .getByRole('button', { name: 'Export project', exact: true })
     .click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing portable project stream')
+  if (!stream) {
+    throw new Error('Missing portable project stream')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   const snapshot = JSON.parse(Buffer.concat(chunks).toString('utf8'))
   await page
     .getByRole('button', { name: 'Close projects', exact: true })
@@ -94,7 +99,9 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   ).toHaveCount(0)
   const units = page.locator('select[aria-label$=" CSV unit"]')
   await expect(units).toHaveCount(6)
-  for (const unit of await units.all()) await unit.selectOption('deg')
+  for (const unit of await units.all()) {
+    await unit.selectOption('deg')
+  }
   await preview(page)
   const review = page.getByLabel('Trajectory conversion preview')
   await expect(review).toContainText('2000 ms → 2 s')
@@ -108,7 +115,9 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await expect(
     page.getByRole('combobox', { name: 'Time unit', exact: true })
   ).toHaveValue('ms')
-  for (const unit of await units.all()) await expect(unit).toHaveValue('deg')
+  for (const unit of await units.all()) {
+    await expect(unit).toHaveValue('deg')
+  }
   await preview(page)
   await expect(review).toContainText('3000 ms → 3 s')
   await expect(page.locator('.accepted-preview')).toBeFocused()
@@ -303,7 +312,9 @@ test('editing initial canonical text retains units without a confirmation prompt
   const units = page.locator('select[aria-label$=" CSV unit"]')
   await input.fill(original.replace('\n8,', '\nㄉㄢ,'))
   await expect(timeUnit).toHaveValue('s')
-  for (const unit of await units.all()) await expect(unit).toHaveValue('rad')
+  for (const unit of await units.all()) {
+    await expect(unit).toHaveValue('rad')
+  }
   await expect(
     page.getByRole('button', { name: 'Confirm displayed units', exact: true })
   ).toHaveCount(0)
@@ -314,7 +325,9 @@ test('editing initial canonical text retains units without a confirmation prompt
   ).toHaveCount(0)
   await input.fill(original.replace('\n8,', '\n9,'))
   await expect(timeUnit).toHaveValue('s')
-  for (const unit of await units.all()) await expect(unit).toHaveValue('rad')
+  for (const unit of await units.all()) {
+    await expect(unit).toHaveValue('rad')
+  }
   await expect(
     page.getByRole('button', { name: 'Confirm displayed units', exact: true })
   ).toHaveCount(0)

@@ -9,7 +9,9 @@ import { architectureFiles } from './architecture-protocol.mjs'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../../../..')
 const [arm] = process.argv.slice(2)
-if (arm !== 'quality-knowledge') throw new Error('Invalid 101 arm')
+if (arm !== 'quality-knowledge') {
+  throw new Error('Invalid 101 arm')
+}
 const lock = path.join(root, 'tmp/knowledge-quality-writer.lock')
 const fd = fs.openSync(lock, 'wx')
 try {

@@ -26,34 +26,39 @@ try {
     )
   }
   let result
-  if (command === 'list') result = cases.map(({ id, title }) => ({ id, title }))
-  else if (command === 'prepare') {
+  if (command === 'list') {
+    result = cases.map(({ id, title }) => ({ id, title }))
+  } else if (command === 'prepare') {
     const prepared = runner.prepare(...args)
     result = {
       run: prepared.run,
       workspace: prepared.workspace,
       prompt: prepared.prompt
     }
-  } else if (command === 'review')
+  } else if (command === 'review') {
     result = runner.review(args[0], runner.readReview(args[1]))
-  else if (command === 'experiment')
+  } else if (command === 'experiment') {
     result = runner.experiment(args[0], runner.readReview(args[1]))
-  else if (command === 'summary') result = runner.summarize(args)
-  else result = runner[command](...args)
+  } else if (command === 'summary') {
+    result = runner.summarize(args)
+  } else {
+    result = runner[command](...args)
+  }
   console.log(JSON.stringify(result, null, 2))
   if (
     result.outcome === 'regressed' ||
     (command !== 'compare' &&
       (result.status === 'failed' ||
         result.reports?.some((item) => item.status === 'failed')))
-  )
+  ) {
     process.exitCode = 1
-  else if (
+  } else if (
     result.outcome === 'incomplete' ||
     result.status === 'needs-review' ||
     result.reports?.some((item) => item.status === 'needs-review')
-  )
+  ) {
     process.exitCode = 2
+  }
 } catch (error) {
   console.error(error.message)
   process.exitCode = 1

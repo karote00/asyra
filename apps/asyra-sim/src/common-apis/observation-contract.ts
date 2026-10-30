@@ -60,8 +60,9 @@ export function observationMediaType(filename: unknown): string | undefined {
         character === '\\'
       )
     })
-  )
+  ) {
     return undefined
+  }
   const extension = /\.([a-z]+)$/i.exec(filename)?.[1].toLowerCase()
   return extension && Object.hasOwn(MEDIA_TYPES, extension)
     ? MEDIA_TYPES[extension]

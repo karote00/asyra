@@ -75,7 +75,9 @@ export function queryOriginalPartPair(
     try {
       return operation()
     } catch (error) {
-      if (error instanceof MeshWorkLimit) return null
+      if (error instanceof MeshWorkLimit) {
+        return null
+      }
       throw error
     }
   }

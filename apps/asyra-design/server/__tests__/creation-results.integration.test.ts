@@ -89,7 +89,9 @@ const create = async (draft: unknown, response: 'compact' | 'full') => {
         intent: 'Create editable objects',
         signal: new AbortController().signal
       })
-      if (!receipt) throw new Error('Missing creation receipt')
+      if (!receipt) {
+        throw new Error('Missing creation receipt')
+      }
       return receipt
     }
   )
@@ -152,8 +154,9 @@ const observeResults = () => {
       !observation ||
       (this !== observation.source &&
         !observation.maps.some(({ result }) => result === this))
-    )
+    ) {
       return Reflect.apply(originalMap, this, [callback, thisArg])
+    }
     let visits = 0
     const result = Reflect.apply(originalMap, this, [
       (value: unknown, index: number, source: unknown[]) => {
@@ -190,7 +193,9 @@ const observeResults = () => {
       normalization = undefined
     }
     const result = originalScene.apply(scene, args)
-    if (insideApp) active = result
+    if (insideApp) {
+      active = result
+    }
     return result
   })
   const freezing = vi.spyOn(Object, 'freeze').mockImplementation(((
@@ -215,7 +220,9 @@ const observeResults = () => {
       insideApp = true
       try {
         const result = originalApp.apply(elementApis, args)
-        if (active) pairs.push({ owner: active, app: result })
+        if (active) {
+          pairs.push({ owner: active, app: result })
+        }
         return result
       } finally {
         insideApp = false
@@ -232,9 +239,11 @@ const observeResults = () => {
         normalizationVisits = 0
       for (const { source, delivered, maps } of normalizations) {
         for (const projection of maps) {
-          if (projection.source === source)
+          if (projection.source === source) {
             normalizationVisits += projection.visits
-          else secondPassVisits += projection.visits
+          } else {
+            secondPassVisits += projection.visits
+          }
           if (projection.result !== delivered) {
             intermediateArrays++
             envelopes += projection.result.length
@@ -311,7 +320,9 @@ it.each(saved.cases)(
       )
       expect(counts.arrays).toBe(0)
       expect(counts.entries).toBe(0)
-      for (const { owner, app } of work.pairs) expect(app).toBe(owner)
+      for (const { owner, app } of work.pairs) {
+        expect(app).toBe(owner)
+      }
       expect(inputCounts).toEqual({
         normalizationVisits: ids.length,
         envelopes: 0,
@@ -349,10 +360,11 @@ it.each(['compact', 'full'] as const)(
       }
       const { canonical, result } = await create(draft, response)
       const expected = canonical.entries.map((entry) => entry.descriptor.id)
-      if (response === 'full')
+      if (response === 'full') {
         expect(result).toMatchObject({ appliedElementIds: expected })
-      else
+      } else {
         expect(result).toMatchObject({ appliedElementCount: expected.length })
+      }
       const savedPairs = work.pairs.slice()
       const snapshots = savedPairs.map(({ owner }) => [...owner])
       expect(new Set(savedPairs.map(({ owner }) => owner)).size).toBe(
@@ -390,7 +402,9 @@ it.each(['compact', 'full'] as const)(
       ).toThrow()
       expect(await core.save()).toEqual(document)
       expect(work.counts().arrays).toBe(0)
-      for (const { owner, app } of savedPairs) expect(app).toBe(owner)
+      for (const { owner, app } of savedPairs) {
+        expect(app).toBe(owner)
+      }
     } finally {
       work.restore()
       factory.transact.reset()
@@ -430,7 +444,9 @@ it('executes the delivered small-part example without criteria or research and p
             actionName: a.name,
             result: (await (() => {
               const owner = actions.find((d) => d.name === a.name)
-              if (!owner) throw new Error('Missing action owner')
+              if (!owner) {
+                throw new Error('Missing action owner')
+              }
               return owner.execute(a.arguments, { signal })
             })()) as never
           }))
@@ -446,7 +462,9 @@ it('executes the delivered small-part example without criteria or research and p
     const discovery = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!discovery) throw new Error('Missing discovery')
+    if (!discovery) {
+      throw new Error('Missing discovery')
+    }
     let page = JSON.parse(
       (
         await invokeLocalTool(
@@ -465,7 +483,9 @@ it('executes the delivered small-part example without criteria or research and p
     while (page.contentDelivery) {
       text += page.contentDelivery.text
       const next = page.contentDelivery.next
-      if (!next) break
+      if (!next) {
+        break
+      }
       page = JSON.parse(
         (await invokeLocalTool(operations, discovery, next.arguments, signal))
           .text
@@ -498,7 +518,9 @@ it('executes the delivered small-part example without criteria or research and p
     const edit = actions.find(
       (d) => d.name === 'api_element_patchElementProperties'
     )
-    if (!edit) throw new Error('Missing edit owner')
+    if (!edit) {
+      throw new Error('Missing edit owner')
+    }
     const changed = (await edit.execute(
       {
         patches: [{ elementId: child, values: { x: 40, y: 50 }, records: [] }]

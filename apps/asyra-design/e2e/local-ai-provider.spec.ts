@@ -33,11 +33,12 @@ test.afterEach(async ({ page }, testInfo) => {
     testInfo.outputPath('browser-errors.json'),
     JSON.stringify(errors)
   )
-  if (errors.length)
+  if (errors.length) {
     await testInfo.attach('browser-errors', {
       body: JSON.stringify(errors),
       contentType: 'application/json'
     })
+  }
 })
 
 test('reference spline contours improve rendered fidelity and remain editable through one Undo', async ({
@@ -95,7 +96,9 @@ test('reference spline contours improve rendered fidelity and remain editable th
                 const out = start.outControl ?? start
                 const incoming = end.inControl ?? end
                 d += ` C${out.x},${out.y} ${incoming.x},${incoming.y} ${end.x},${end.y}`
-              } else d += ` L${end.x},${end.y}`
+              } else {
+                d += ` L${end.x},${end.y}`
+              }
             })
             return `${d} Z`
           })
@@ -148,10 +151,14 @@ test('reference spline contours improve rendered fidelity and remain editable th
     const state = await page.evaluate(
       async ({ groupId, childIds }) => {
         const core = (await import('../src/testing/runtime-access')).core
-        if (!core) throw new Error('App runtime unavailable')
+        if (!core) {
+          throw new Error('App runtime unavailable')
+        }
         const elements = childIds.map((id) => {
           const element = core.deps.sceneTree.getAllElements().get(id)
-          if (!element) throw new Error('Missing reference element')
+          if (!element) {
+            throw new Error('Missing reference element')
+          }
           return {
             id,
             points: element.get('points'),
@@ -196,7 +203,9 @@ test('reference spline contours improve rendered fidelity and remain editable th
         Object.values(e.points as Record<string, { kind: string }>)
       )
       .filter((p) => p.kind === 'control').length
-    if (index === 1) expect(controls).toBeGreaterThan(100)
+    if (index === 1) {
+      expect(controls).toBeGreaterThan(100)
+    }
     snapshots.push(state.snapshot.dataUrl)
     metrics.push({
       mode: index === 0 ? 'polygon' : 'spline',
@@ -231,7 +240,9 @@ test('reference spline contours improve rendered fidelity and remain editable th
         canvas.width = 250
         canvas.height = 250
         const context = canvas.getContext('2d')
-        if (!context) throw new Error('Canvas 2D context unavailable')
+        if (!context) {
+          throw new Error('Canvas 2D context unavailable')
+        }
         context.fillStyle = '#ffffff'
         context.fillRect(0, 0, 250, 250)
         context.drawImage(image, 0, 0, 250, 250)
@@ -243,8 +254,11 @@ test('reference spline contours improve rendered fidelity and remain editable th
       for (const image of images) {
         const data = await pixels(image)
         let error = 0
-        for (let i = 0; i < data.length; i++)
-          if (i % 4 !== 3) error += Math.abs(data[i] - reference[i])
+        for (let i = 0; i < data.length; i++) {
+          if (i % 4 !== 3) {
+            error += Math.abs(data[i] - reference[i])
+          }
+        }
         errors.push(error / (250 * 250 * 3))
       }
       return {
@@ -280,11 +294,12 @@ test('reference spline contours improve rendered fidelity and remain editable th
       2
     )
   )
-  for (const [index, dataUrl] of comparison.rasterized.entries())
+  for (const [index, dataUrl] of comparison.rasterized.entries()) {
     await writeFile(
       testInfo.outputPath(`diagnostic-${index}.png`),
       Buffer.from(dataUrl.split(',')[1], 'base64')
     )
+  }
   expect(comparison.normalizedToolErrors[0]).toBe(
     comparison.normalizedToolErrors[1]
   )
@@ -344,7 +359,9 @@ for (const contour of ['linear', 'cubic'] as const) {
     )
     const capture = await page.evaluate(async (id) => {
       const core = (await import('../src/testing/runtime-access')).core
-      if (!core) throw new Error('No App')
+      if (!core) {
+        throw new Error('No App')
+      }
       const image = core.captureElementSnapshot(id, 720)
       const bitmap = new Image()
       bitmap.src = image.dataUrl
@@ -353,7 +370,9 @@ for (const contour of ['linear', 'cubic'] as const) {
       canvas.width = image.width
       canvas.height = image.height
       const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('Canvas 2D context unavailable')
+      if (!ctx) {
+        throw new Error('Canvas 2D context unavailable')
+      }
       ctx.drawImage(bitmap, 0, 0)
       return {
         image,
@@ -419,7 +438,9 @@ test('backend-selected circles become native Ovals through the ordinary Agent ac
   )
   const elements = await page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
-    if (!core) throw new Error('App runtime unavailable')
+    if (!core) {
+      throw new Error('App runtime unavailable')
+    }
     return [...core.deps.sceneTree.getAllElements().values()]
       .filter(
         (element) =>
@@ -567,7 +588,9 @@ test('rendered inspection is fresh after repeated edits and remains one Undo', a
           canvas.width = image.width
           canvas.height = image.height
           const ctx = canvas.getContext('2d')
-          if (!ctx) throw new Error('Canvas context unavailable')
+          if (!ctx) {
+            throw new Error('Canvas context unavailable')
+          }
           ctx.drawImage(image, 0, 0)
           return [
             ...ctx.getImageData(
@@ -705,7 +728,9 @@ test('backend component mappings render native Rectangle and Oval with remaining
   )
   const types = await page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
-    if (!core) throw new Error('App unavailable')
+    if (!core) {
+      throw new Error('App unavailable')
+    }
     return [...core.deps.sceneTree.getAllElements().values()]
       .filter(
         (element) =>
@@ -817,10 +842,13 @@ test('pre-trace decomposition renders an editable oval below reference vectors i
   const snapshot = await page.evaluate(
     async ({ groupId, backgroundId }) => {
       const core = (await import('../src/testing/runtime-access')).core
-      if (!core) throw new Error('App unavailable')
+      if (!core) {
+        throw new Error('App unavailable')
+      }
       const background = core.deps.sceneTree.getAllElements().get(backgroundId)
-      if (background?.get('type') !== 'oval')
+      if (background?.get('type') !== 'oval') {
         throw new Error('Missing editable native background')
+      }
       return core.captureElementSnapshot(groupId, 1000)
     },
     { groupId: drawing.groupDescriptor.id, backgroundId: descriptors[0].id }
@@ -844,8 +872,9 @@ test('pre-trace decomposition renders an editable oval below reference vectors i
     .raw()
     .toBuffer()
   let error = 0
-  for (let index = 0; index < actual.length; index++)
+  for (let index = 0; index < actual.length; index++) {
     error += Math.abs(actual[index] - reference[index])
+  }
   const meanError = error / actual.length
   await writeFile(
     testInfo.outputPath('layered-reference-metrics.json'),
@@ -959,9 +988,13 @@ test('backend contour refinement renders the measured straight edge with one Und
   const drawing = prepared.actions[0].arguments
   const capture = await page.evaluate(async (id) => {
     const core = (await import('../src/testing/runtime-access')).core
-    if (!core) throw new Error('Missing App')
+    if (!core) {
+      throw new Error('Missing App')
+    }
     const group = core.deps.sceneTree.getAllElements().get(id)
-    if (!group) throw new Error('Missing group')
+    if (!group) {
+      throw new Error('Missing group')
+    }
     return core.captureElementSnapshot(id, 1000)
   }, drawing.groupDescriptor.id)
   const rendered = Buffer.from(capture.dataUrl.split(',')[1], 'base64')
@@ -977,7 +1010,9 @@ test('backend contour refinement renders the measured straight edge with one Und
   const firstRows = []
   for (const x of [100, 300, 500, 700, 900]) {
     let y = 0
-    while (y < info.height && data[(y * info.width + x) * 4 + 3] < 200) y++
+    while (y < info.height && data[(y * info.width + x) * 4 + 3] < 200) {
+      y++
+    }
     firstRows.push(y)
   }
   expect(Math.max(...firstRows) - Math.min(...firstRows)).toBeLessThanOrEqual(1)
@@ -1030,7 +1065,9 @@ for (const mode of ['explicit IDs', 'aligned rows'] as const) {
               ? 'api_fill_updateFillsAtIndex'
               : 'api_fill_updateFillFieldsBatch')
         )
-        if (!action) throw new Error('Missing registered Fill batch action')
+        if (!action) {
+          throw new Error('Missing registered Fill batch action')
+        }
         const result = await action.execute(
           mode === 'aligned rows'
             ? {
@@ -1088,7 +1125,9 @@ test('canonical fill reference edits and plural record patches have distinct con
     const elementId = core.getSelectedElementIds()[0]
     const before = core.getElementComputedData(elementId, ['fills'])
     const fill = (before.fills as { id: string; color: string }[])[0]
-    if (!fill) throw new Error('Missing rectangle fill')
+    if (!fill) {
+      throw new Error('Missing rectangle fill')
+    }
     let rejected = ''
     try {
       core.updateElementProperties([{ elementId, values: { fills: [fill] } }])
@@ -1173,7 +1212,9 @@ test('plural AI visibility uses one Undo and preserves target status', async ({
     const action = createBasicApiActions().find(
       (entry) => entry.name === 'api_element_setElementsVisible'
     )
-    if (!action) throw new Error('Missing plural visibility action')
+    if (!action) {
+      throw new Error('Missing plural visibility action')
+    }
     const read = () => ids.map((id) => core.getElementData(id)?.visible)
     const before = read()
     const result = await action.execute(
@@ -1398,8 +1439,9 @@ test('captures the admitted report after network body eviction without replaying
   })
   let networkId: string | undefined
   cdp.on('Network.responseReceived', (event) => {
-    if (event.response.mimeType === 'application/x-ndjson')
+    if (event.response.mimeType === 'application/x-ndjson') {
       networkId = event.requestId
+    }
   })
   try {
     await page.getByRole('button', { name: 'Open Agent' }).click()
@@ -1412,7 +1454,9 @@ test('captures the admitted report after network body eviction without replaying
     await expect(message).toContainText(
       fixture.batch.actions[0].arguments.message
     )
-    if (!networkId) throw new Error('Missing observed response identity')
+    if (!networkId) {
+      throw new Error('Missing observed response identity')
+    }
     await expect(
       cdp.send('Network.getResponseBody', { requestId: networkId })
     ).rejects.toThrow(/evicted|No resource with given identifier/)

@@ -108,7 +108,9 @@ it('preserves the committed receipt when provenance refresh fails and refuses a 
   })
   const owner = createPreparedMaterialApplication({
     read: () => {
-      if (written) throw new Error('read unavailable')
+      if (written) {
+        throw new Error('read unavailable')
+      }
       return { geometry: 'g', binding: 'b' }
     },
     update

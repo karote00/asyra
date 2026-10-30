@@ -55,18 +55,25 @@ export function createWalkingRuntimeSelection(
 export function readWalkingRuntimeSelection(
   raw: unknown
 ): WalkingRuntimeSelection {
-  if (record(raw) && admitted.has(raw)) return raw as WalkingRuntimeSelection
+  if (record(raw) && admitted.has(raw)) {
+    return raw as WalkingRuntimeSelection
+  }
   if (
     !record(raw) ||
     raw.format !== WALKING_RUNTIME_SELECTION_FORMAT ||
     (raw.mode !== 'legacy-view' && raw.mode !== 'walking-active')
-  )
+  ) {
     return invalid()
+  }
   if (raw.mode === 'legacy-view') {
-    if (!exact(raw, ['format', 'mode'])) return invalid()
+    if (!exact(raw, ['format', 'mode'])) {
+      return invalid()
+    }
     return DEFAULT_WALKING_RUNTIME_SELECTION
   }
-  if (!exact(raw, ['format', 'mode', 'definition'])) return invalid()
+  if (!exact(raw, ['format', 'mode', 'definition'])) {
+    return invalid()
+  }
   const selection = Object.freeze({
     format: WALKING_RUNTIME_SELECTION_FORMAT,
     mode: 'walking-active' as const,

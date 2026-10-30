@@ -4,6 +4,13 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
+## Code Readability Migration
+
+- [Code Readability Rule Migration](plans/code-readability-rule-migration-plan.md)
+  - ACTIVE. Manually migrate one rule at a time after PR #362, preserve behavior,
+    and adopt each rule only after complete scoped validation. Rule 1 is in
+    progress; no new readability rule is globally enabled yet.
+
 ## Reusable Tool Composition
 
 - [Reusable Tool Composition](plans/reusable-tool-composition-plan.md)

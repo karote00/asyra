@@ -28,7 +28,9 @@ describe('approved structural openings', () => {
       }
       const bounds = (id: string) => {
         const value = members.get(id)
-        if (!value) throw new Error(`Missing structure ${id}`)
+        if (!value) {
+          throw new Error(`Missing structure ${id}`)
+        }
         return value
       }
       const cream = bounds('work-back-partition')
@@ -39,8 +41,9 @@ describe('approved structural openings', () => {
       const greenSource = approved.walls.find(
         (w) => w.id === 'B - green divider'
       )
-      if (!creamSource || !greenSource)
+      if (!creamSource || !greenSource) {
         throw new Error('Missing approved dividers')
+      }
       const gap = green[0][0] - cream[0][1]
       expect(gap).toBeGreaterThan(0)
       expect(gap).toBeCloseTo(greenSource.start - creamSource.end, 8)
@@ -55,7 +58,9 @@ describe('approved structural openings', () => {
       const slab = bounds('office-slab')
       const frontY = slab[1][0]
       for (const assembly of scene.assemblies) {
-        if (assembly.asset !== 'wall-segment') continue
+        if (assembly.asset !== 'wall-segment') {
+          continue
+        }
         const b = bounds(assembly.id)
         const crossesFront = b[1][0] <= frontY && b[1][1] > frontY
         const overlapsLounge = b[0][1] > left[0][1] + 1e-8

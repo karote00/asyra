@@ -8,7 +8,9 @@ export function useHistoryShortcuts(
   onHistory: (direction: HistoryDirection) => void
 ) {
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      return
+    }
 
     let active = true
 
@@ -20,14 +22,19 @@ export function useHistoryShortcuts(
         event.code !== 'KeyZ' ||
         event.altKey ||
         event.metaKey === event.ctrlKey
-      )
+      ) {
         return
+      }
 
-      if (isEditableKeyboardEvent(event)) return
+      if (isEditableKeyboardEvent(event)) {
+        return
+      }
 
       event.preventDefault()
 
-      if (!event.repeat) onHistory(event.shiftKey ? 'redo' : 'undo')
+      if (!event.repeat) {
+        onHistory(event.shiftKey ? 'redo' : 'undo')
+      }
     }
     // Bubble after local controls, before the window-level browser input adapter.
     document.addEventListener('keydown', handleKeyDown)

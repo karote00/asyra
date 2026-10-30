@@ -125,8 +125,9 @@ function isLiveSampleDiagnostic(value: unknown): value is LiveSampleDiagnostic {
       (typeof value.errorMessage === 'string' &&
         value.errorMessage.length <= 240)
     )
-  )
+  ) {
     return false
+  }
 
   const validIds = (ids: unknown) =>
     Array.isArray(ids) &&
@@ -179,8 +180,12 @@ export class LivePlaybackRunner {
     const index = this.diagnostics.findIndex(
       (record) => record.diagnosticId === diagnosticId
     )
-    if (index < 0) return
-    if (this.diagnostics[index]?.previewPublication) return
+    if (index < 0) {
+      return
+    }
+    if (this.diagnostics[index]?.previewPublication) {
+      return
+    }
 
     this.diagnostics = Object.freeze(
       this.diagnostics.map((record, position) =>
@@ -218,11 +223,15 @@ export class LivePlaybackRunner {
   }
 
   prepare(key: string, create: () => ExperimentSnapshot) {
-    if (this.closed) throw new Error('Live playback is closed')
+    if (this.closed) {
+      throw new Error('Live playback is closed')
+    }
 
     const retained = this.records.getInput(key)
 
-    if (retained) return retained
+    if (retained) {
+      return retained
+    }
 
     this.invalidate()
 
@@ -244,8 +253,9 @@ export class LivePlaybackRunner {
       this.state.status === state.status &&
       this.state.error === state.error &&
       this.state.sample === state.sample
-    )
+    ) {
       return
+    }
 
     this.state = Object.freeze(state)
     this.publishStateRevision()
@@ -298,7 +308,9 @@ export class LivePlaybackRunner {
       this.diagnostics = Object.freeze([])
     }
 
-    if (changed) this.publishRecordsRevision()
+    if (changed) {
+      this.publishRecordsRevision()
+    }
   }
 
   sample(time: number, discontinuity = false) {
@@ -310,10 +322,11 @@ export class LivePlaybackRunner {
     initialTime: number,
     signal: AbortSignal
   ): Promise<void> {
-    if (this.closed || this.stop)
+    if (this.closed || this.stop) {
       return Promise.reject(
         new Error('Live playback is unavailable or already active')
       )
+    }
 
     let snapshot: ExperimentSnapshot
 
@@ -321,19 +334,24 @@ export class LivePlaybackRunner {
       snapshot = this.records.owns(input)
         ? input
         : admitSnapshotExecution(input, this.methods)
-      if (!this.records.owns(snapshot)) this.replaceRecords(snapshot)
+      if (!this.records.owns(snapshot)) {
+        this.replaceRecords(snapshot)
+      }
       sampleSnapshot(snapshot, initialTime)
 
       if (
         !this.methods.resolve(snapshot.method.id, snapshot.method.version)
           .descriptor.supportsStatic
-      )
+      ) {
         throw new Error('Selected method does not support live static checks')
+      }
     } catch (error) {
       return Promise.reject(error)
     }
 
-    if (signal.aborted) return Promise.resolve()
+    if (signal.aborted) {
+      return Promise.resolve()
+    }
 
     let worker: Worker | null = null
     let resolve: () => void = () => undefined
@@ -360,7 +378,9 @@ export class LivePlaybackRunner {
     let watchdog: ReturnType<typeof setTimeout> | undefined
 
     const finish = (error?: string) => {
-      if (retired) return
+      if (retired) {
+        return
+      }
 
       retired = true
       clearTimeout(pace)
@@ -380,8 +400,11 @@ export class LivePlaybackRunner {
         error: error ?? null
       })
 
-      if (error) reject(new Error(error))
-      else resolve()
+      if (error) {
+        reject(new Error(error))
+      } else {
+        resolve()
+      }
     }
 
     const cancel = () => finish()
@@ -416,8 +439,9 @@ export class LivePlaybackRunner {
         !this.methods.resolve(snapshot.method.id, snapshot.method.version)
           .descriptor.supportsMotion ||
         this.backgroundIntervalCount >= LIVE_LIMITS.maxBackgroundIntervals
-      )
+      ) {
         return
+      }
 
       const times = this.records
         .getAll()
@@ -427,10 +451,16 @@ export class LivePlaybackRunner {
       const before = times[index - 1]
       const after = times[index + 1]
       let neighbor: number | undefined
-      if (before === undefined) neighbor = after
-      else if (after === undefined) neighbor = before
-      else neighbor = time - before <= after - time ? before : after
-      if (neighbor === undefined || neighbor === time) return
+      if (before === undefined) {
+        neighbor = after
+      } else if (after === undefined) {
+        neighbor = before
+      } else {
+        neighbor = time - before <= after - time ? before : after
+      }
+      if (neighbor === undefined || neighbor === time) {
+        return
+      }
 
       const range = [
         Math.min(time, neighbor),
@@ -440,14 +470,17 @@ export class LivePlaybackRunner {
       if (
         this.attemptedIntervalGaps.has(key) ||
         this.records.hasInterval(range)
-      )
+      ) {
         return
+      }
 
       pendingInterval = range
     }
 
     const drain = () => {
-      if (retired) return
+      if (retired) {
+        return
+      }
 
       if (pending !== null) {
         const cached = this.records.getAt(pending)
@@ -455,30 +488,47 @@ export class LivePlaybackRunner {
         if (cached?.complete) {
           pending = null
           this.publish({ status: 'ready', sample: cached, error: cached.error })
-        } else if (cached)
+        } else if (cached) {
           this.publish({ status: 'checking', sample: cached, error: null })
+        }
       }
 
-      if (pending === null && pendingInterval === null) return
+      if (pending === null && pendingInterval === null) {
+        return
+      }
 
-      if (inFlight || pace) return
+      if (inFlight || pace) {
+        return
+      }
 
       if (!worker) {
         try {
           const createdWorker = this.workerFactory()
           worker = createdWorker
           createdWorker.onmessage = (event) => {
-            if (worker === createdWorker) receive(event)
+            if (worker === createdWorker) {
+              receive(event)
+            }
           }
           createdWorker.onerror = () => {
-            if (worker !== createdWorker) return
-            if (inFlight?.kind === 'interval') abandonBackgroundInterval()
-            else fail()
+            if (worker !== createdWorker) {
+              return
+            }
+            if (inFlight?.kind === 'interval') {
+              abandonBackgroundInterval()
+            } else {
+              fail()
+            }
           }
           createdWorker.onmessageerror = () => {
-            if (worker !== createdWorker) return
-            if (inFlight?.kind === 'interval') abandonBackgroundInterval()
-            else fail()
+            if (worker !== createdWorker) {
+              return
+            }
+            if (inFlight?.kind === 'interval') {
+              abandonBackgroundInterval()
+            } else {
+              fail()
+            }
           }
           watchdog = setTimeout(fail, LIVE_LIMITS.startupDurationMs)
           createdWorker.postMessage({ type: LiveMessages.OPEN, snapshot })
@@ -489,11 +539,15 @@ export class LivePlaybackRunner {
         return
       }
 
-      if (!ready) return
+      if (!ready) {
+        return
+      }
 
       if (pending === null) {
         const interval = pendingInterval
-        if (!interval) return
+        if (!interval) {
+          return
+        }
         const key = `${interval[0]}:${interval[1]}`
         if (
           this.attemptedIntervalGaps.has(key) ||
@@ -574,7 +628,9 @@ export class LivePlaybackRunner {
 
     this.stop = cancel
     this.request = (time, discontinuity) => {
-      if (retired) return
+      if (retired) {
+        return
+      }
 
       try {
         sampleSnapshot(snapshot, time)
@@ -585,7 +641,9 @@ export class LivePlaybackRunner {
 
       pending = time
       latestTime = time
-      if (time !== continuationTime || discontinuity) continuationTime = time
+      if (time !== continuationTime || discontinuity) {
+        continuationTime = time
+      }
 
       if (discontinuity) {
         minimumId = nextId + 1
@@ -600,7 +658,9 @@ export class LivePlaybackRunner {
     }
 
     const receive = (event: MessageEvent<unknown>) => {
-      if (retired) return
+      if (retired) {
+        return
+      }
 
       let responseMessage: unknown
       try {
@@ -613,8 +673,9 @@ export class LivePlaybackRunner {
           if (
             !hasExactOwnKeys(message, ['type']) ||
             message.type !== LiveMessages.READY
-          )
+          ) {
             throw new Error('Invalid live admission')
+          }
 
           clearTimeout(watchdog)
           ready = true
@@ -623,16 +684,18 @@ export class LivePlaybackRunner {
           return
         }
 
-        if (!inFlight || !message || typeof message !== 'object')
+        if (!inFlight || !message || typeof message !== 'object') {
           throw new Error('Unexpected live response')
+        }
 
         const response = message as LiveResponse
         if (inFlight.kind === 'interval') {
           if (
             response.type !== LiveMessages.INTERVAL_RESULT &&
             response.type !== LiveMessages.INTERVAL_ERROR
-          )
+          ) {
             throw new Error('Unknown live interval response')
+          }
           const keys =
             response.type === LiveMessages.INTERVAL_RESULT
               ? ['type', 'id', 'interval', 'evidence']
@@ -642,8 +705,9 @@ export class LivePlaybackRunner {
             response.id !== inFlight.id ||
             response.interval[0] !== inFlight.interval[0] ||
             response.interval[1] !== inFlight.interval[1]
-          )
+          ) {
             throw new Error('Mismatched live interval response')
+          }
 
           clearTimeout(watchdog)
           inFlight = null
@@ -665,16 +729,18 @@ export class LivePlaybackRunner {
             }
             if (
               this.records.recordInterval(snapshot, response.interval, admitted)
-            )
+            ) {
               this.publishRecordsRevision()
+            }
             if (pending === null) {
               const cached = this.records.getAt(latestTime)
-              if (cached)
+              if (cached) {
                 this.publish({
                   status: 'ready',
                   sample: cached,
                   error: cached.error
                 })
+              }
             }
           } else if (response.type !== LiveMessages.INTERVAL_ERROR) {
             throw new Error('Unknown live interval response')
@@ -683,14 +749,16 @@ export class LivePlaybackRunner {
           return
         }
 
-        if (!progress || inFlight.kind !== 'sample')
+        if (!progress || inFlight.kind !== 'sample') {
           throw new Error('Invalid live sample state')
+        }
         if (
           response.type !== LiveMessages.PROGRESS &&
           response.type !== LiveMessages.RESULT &&
           response.type !== LiveMessages.ERROR
-        )
+        ) {
           throw new Error('Unknown live sample response')
+        }
         const hasDiagnostic = Object.hasOwn(message, 'diagnostic')
         const keys =
           response.type === LiveMessages.RESULT
@@ -713,8 +781,9 @@ export class LivePlaybackRunner {
           !hasExactOwnKeys(message, keys) ||
           response.id !== inFlight.id ||
           response.time !== inFlight.time
-        )
+        ) {
           throw new Error('Mismatched live response')
+        }
 
         const workerDiagnostic =
           hasDiagnostic &&
@@ -727,8 +796,9 @@ export class LivePlaybackRunner {
           (!isLiveSampleDiagnostic(workerDiagnostic) ||
             workerDiagnostic.requestId !== response.id ||
             workerDiagnostic.sampleTime !== response.time)
-        )
+        ) {
           throw new Error('Invalid live sample diagnostic')
+        }
         const requestStartedAt = inFlight.startedAt
 
         let sample: LiveSample
@@ -738,37 +808,45 @@ export class LivePlaybackRunner {
             !Array.isArray(response.pairs) ||
             !response.pairs.length ||
             response.pairs.length > snapshot.pairs.length
-          )
+          ) {
             throw new Error('Invalid live progress batch')
+          }
 
-          for (const pair of response.pairs) progress.append(pair)
+          for (const pair of response.pairs) {
+            progress.append(pair)
+          }
 
-          if (response.id >= minimumId)
+          if (response.id >= minimumId) {
             this.publish({
               status: 'checking',
               sample: { ...progress.sample(), requestId: response.id },
               error: null
             })
+          }
 
           return
         }
 
-        if (response.type === LiveMessages.RESULT)
+        if (response.type === LiveMessages.RESULT) {
           sample = {
             ...validateLiveEvidence(snapshot, response.time, response.evidence),
             requestId: response.id
           }
-        else if (response.type === LiveMessages.ERROR)
+        } else if (response.type === LiveMessages.ERROR) {
           sample = {
             ...incompleteLiveSample(snapshot, response.time, response.pairs),
             requestId: response.id
           }
-        else throw new Error('Unknown live response')
+        } else {
+          throw new Error('Unknown live response')
+        }
 
         const diagnosticId = workerDiagnostic
           ? ++this.diagnosticSequence
           : undefined
-        if (diagnosticId !== undefined) sample = { ...sample, diagnosticId }
+        if (diagnosticId !== undefined) {
+          sample = { ...sample, diagnosticId }
+        }
 
         progress.assertConsistent(sample.pairs)
         clearTimeout(watchdog)
@@ -776,8 +854,10 @@ export class LivePlaybackRunner {
         progress = null
 
         const evidenceChanged = this.records.record(snapshot, sample)
-        if (evidenceChanged) this.publishRecordsRevision()
-        if (workerDiagnostic && diagnosticId !== undefined)
+        if (evidenceChanged) {
+          this.publishRecordsRevision()
+        }
+        if (workerDiagnostic && diagnosticId !== undefined) {
           this.recordDiagnostic(
             diagnosticId,
             workerDiagnostic,
@@ -785,6 +865,7 @@ export class LivePlaybackRunner {
             sample.complete ? 'complete' : 'incomplete',
             null
           )
+        }
         const accepted = this.records.get(sample.time) ?? sample
         const acceptedEvaluations = accepted.pairs.reduce(
           (total, pair) =>
@@ -833,7 +914,7 @@ export class LivePlaybackRunner {
             .requestId === inFlight.id &&
           (responseMessage as { diagnostic: LiveSampleDiagnostic }).diagnostic
             .sampleTime === inFlight.time
-        )
+        ) {
           this.recordDiagnostic(
             ++this.diagnosticSequence,
             (responseMessage as { diagnostic: LiveSampleDiagnostic })
@@ -845,6 +926,7 @@ export class LivePlaybackRunner {
               240
             )
           )
+        }
         fail()
       }
     }

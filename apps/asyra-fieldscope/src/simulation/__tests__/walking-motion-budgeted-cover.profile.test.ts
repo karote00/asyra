@@ -18,8 +18,9 @@ describe('canonical nonlinear budgeted canonical cover', () => {
     if (
       !('format' in product) ||
       product.format !== 'walking-motion-admission/3'
-    )
+    ) {
       throw new Error('Missing nonlinear cover result')
+    }
     const relations = product.sourceRelations
     expect(relations.work.groupPairs).toBe(1)
     expect(relations.work.leafPairs).toBe(0)
@@ -48,7 +49,7 @@ describe('canonical nonlinear budgeted canonical cover', () => {
         )
       }
     }
-    for (const exclusion of demand.freePassage.exclusions)
+    for (const exclusion of demand.freePassage.exclusions) {
       if (exclusion.kind === 'source') {
         const entry = nonlinearRequired(
           relations.inventory.find((input) => input.exclusion === exclusion)
@@ -56,6 +57,7 @@ describe('canonical nonlinear budgeted canonical cover', () => {
         expect(entry.shape).toBe(exclusion.mesh.descriptor.shape)
         expect(entry.region).toBe(exclusion.region)
       }
+    }
     for (const channel of demand.channels) {
       const entry = nonlinearRequired(
         relations.inventory.find((input) => input.owner === channel)

@@ -74,9 +74,13 @@ beforeEach(() => {
   mocks.draft = null
   mocks.listeners.clear()
   mocks.subscribe.mockImplementation((listener?: () => void) => {
-    if (listener) mocks.listeners.add(listener)
+    if (listener) {
+      mocks.listeners.add(listener)
+    }
     return vi.fn(() => {
-      if (listener) mocks.listeners.delete(listener)
+      if (listener) {
+        mocks.listeners.delete(listener)
+      }
     })
   })
   mocks.updateDraft.mockImplementation((text?: string) => {
@@ -109,7 +113,9 @@ it('uses the full affine transform and does no canonical validation on unchanged
   const input = screen.getByRole('textbox')
   expect(input.style.transform).toBe('matrix(0,2,-2,0,210,120)')
   act(() => {
-    for (let i = 0; i < 10; i++) mocks.frame?.()
+    for (let i = 0; i < 10; i++) {
+      mocks.frame?.()
+    }
   })
   expect(mocks.elementLocalToWorkspace).toHaveBeenCalledTimes(33)
   expect(mocks.isCurrent).not.toHaveBeenCalled()
@@ -174,7 +180,9 @@ it('uses measured draft bounds and does not measure again on viewport frames', (
   expect(input.style.width).toBe('40px')
   expect(input.style.height).toBe('20px')
   act(() => {
-    for (let i = 0; i < 10; i++) mocks.frame?.()
+    for (let i = 0; i < 10; i++) {
+      mocks.frame?.()
+    }
   })
   expect(mocks.updateDraft).toHaveBeenCalledExactlyOnceWith('Small')
 })

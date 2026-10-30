@@ -88,8 +88,9 @@ describe('canonical nonlinear first sheet witness', () => {
         if (
           bits > oracleWork.bitLimit ||
           oracleWork.arithmeticChecks > oracleWork.maxChecks
-        )
+        ) {
           throw new Error('Independent sheet witness arithmetic limit')
+        }
       }
     }
     const product = (a: bigint, b: bigint) => {
@@ -100,8 +101,9 @@ describe('canonical nonlinear first sheet witness', () => {
         (a < 0n ? -a : a).toString(2).length +
           (b < 0n ? -b : b).toString(2).length >
           oracleWork.bitLimit
-      )
+      ) {
         throw new Error('Independent sheet witness product limit')
+      }
       const result = a * b
       check(result)
       return result
@@ -125,7 +127,9 @@ describe('canonical nonlinear first sheet witness', () => {
       )
     }
     const quotient = (a: NonlinearFraction, b: NonlinearFraction) => {
-      if (!b.numerator) throw new Error('Singular witness inverse')
+      if (!b.numerator) {
+        throw new Error('Singular witness inverse')
+      }
       return times(a, nonlinearFraction(b.denominator, b.numerator))
     }
     const dot = (
@@ -193,8 +197,9 @@ describe('canonical nonlinear first sheet witness', () => {
         }))
       }
     }
-    if (selected.mesh.descriptor.shape.kind !== 'triangles')
+    if (selected.mesh.descriptor.shape.kind !== 'triangles') {
       throw new Error('Foreign sheet shape')
+    }
     const solid = original(
       robot.part.shape,
       robot.region.indexStart,
@@ -329,7 +334,9 @@ describe('canonical nonlinear first sheet witness', () => {
             b = polygon[(i + 1) % polygon.length]
           const da = dot(plane.normal, sub(a, plane.origin)),
             db = dot(plane.normal, sub(b, plane.origin))
-          if (da.numerator <= 0n) next.push(a)
+          if (da.numerator <= 0n) {
+            next.push(a)
+          }
           if (
             (da.numerator < 0n && db.numerator > 0n) ||
             (da.numerator > 0n && db.numerator < 0n)
@@ -451,7 +458,7 @@ describe('canonical nonlinear first sheet witness', () => {
       oracleWork,
       productWork: evaluator.work
     }
-    if (process.env.CAPTURE_SHEET_WITNESS === '1')
+    if (process.env.CAPTURE_SHEET_WITNESS === '1') {
       writeFileSync(
         new URL(
           '../../../.artifacts/first-blocked-sheet-witness.json',
@@ -464,6 +471,7 @@ describe('canonical nonlinear first sheet witness', () => {
         ) + '\n',
         { flag: 'wx' }
       )
+    }
     process.stdout.write(
       JSON.stringify({
         sheetWitness: {

@@ -7,8 +7,9 @@ function reportedUsage(value) {
       (key) => Number.isSafeInteger(value[key]) && value[key] >= 0
     ) ||
     value.totalTokens !== value.inputTokens + value.outputTokens
-  )
+  ) {
     return null
+  }
   return {
     inputTokens: value.inputTokens,
     outputTokens: value.outputTokens,
@@ -46,7 +47,9 @@ function providerAdapter(
   const history = []
   return {
     async next(observation) {
-      if (signal.aborted) throw new Error('Provider request cancelled')
+      if (signal.aborted) {
+        throw new Error('Provider request cancelled')
+      }
       const id = reserve()
       let response
       try {
@@ -72,15 +75,21 @@ function providerAdapter(
           ? { interruptionConfirmed: true }
           : {})
       })
-      if (signal.aborted) throw new Error('Provider request cancelled')
-      if (state !== 'settled')
+      if (signal.aborted) {
+        throw new Error('Provider request cancelled')
+      }
+      if (state !== 'settled') {
         throw new Error('Provider remote result unresolved')
-      if (!usage) throw new Error('Provider usage missing or invalid')
+      }
+      if (!usage) {
+        throw new Error('Provider usage missing or invalid')
+      }
       if (
         typeof response.text !== 'string' ||
         Buffer.byteLength(response.text) > TASK_POLICY.maxOutputBytes
-      )
+      ) {
         throw new Error('Provider output missing or oversized')
+      }
       let operation
       try {
         operation = JSON.parse(response.text)

@@ -108,10 +108,11 @@ it.each(['prepass', 'consumer'])(
   'restores source state after %s failure',
   (phase) => {
     const f = fixture()
-    if (phase === 'prepass')
+    if (phase === 'prepass') {
       f.draw.mockImplementation(() => {
         throw new Error('failure')
       })
+    }
     expect(() =>
       f.run(() => {
         throw new Error('failure')

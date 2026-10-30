@@ -12,7 +12,9 @@ describe('request tool scheduling', () => {
       })
       events.push('complete')
     })
-    for (let index = 0; index < 12; index++) await Promise.resolve()
+    for (let index = 0; index < 12; index++) {
+      await Promise.resolve()
+    }
     expect(events).toEqual(['parent', 'leaf', 'complete'])
     await parent
   })

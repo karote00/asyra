@@ -178,7 +178,9 @@ test.before(async () => {
   )
 })
 test.after(() => {
-  if (directory) fs.rmSync(directory, { recursive: true, force: true })
+  if (directory) {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
 })
 
 function input({
@@ -201,11 +203,12 @@ function input({
     allowedFiles: ['packages/factory/src/data-transact.ts'],
     prerequisites: []
   }))
-  if (prerequisites && works.length > 1)
+  if (prerequisites && works.length > 1) {
     works[1].prerequisites.push({
       workId: works[0].id,
       handoff: 'Use the admitted journal handoff'
     })
+  }
   const targetDirectory = path.join(repository, '.targets', randomUUID())
   fs.mkdirSync(targetDirectory, { recursive: true })
   const owner = createTargetOwner({
@@ -832,8 +835,9 @@ test('assessment consumes completed owner artifacts without file reads, source v
     forbidden
   )
   assert.equal(assessTargetSource(value).eligible, true)
-  for (const method of [reads, source, combined, raw, retained])
+  for (const method of [reads, source, combined, raw, retained]) {
     assert.equal(method.mock.callCount(), 0)
+  }
 })
 
 test('a real admitted bypass requires and consumes its current proving case', () => {
@@ -988,7 +992,9 @@ test('currentness projection reuses historical verdict objects with zero nested 
   const watch = (object, allowed = []) =>
     new Proxy(object, {
       get(target, key, receiver) {
-        if (!allowed.includes(key)) nestedReads++
+        if (!allowed.includes(key)) {
+          nestedReads++
+        }
         return Reflect.get(target, key, receiver)
       },
       ownKeys(target) {
@@ -1030,7 +1036,9 @@ test('currentness projection reuses historical verdict objects with zero nested 
   assert.equal(restored.eligible, true)
   assert.equal(original.current, true)
   assert.equal(nestedReads, 0)
-  for (const spy of spies) assert.equal(spy.mock.callCount(), 0)
+  for (const spy of spies) {
+    assert.equal(spy.mock.callCount(), 0)
+  }
 })
 
 test('registered source identity selects equivalent real evidence without repeating admission or granting missing proof authority', (t) => {
@@ -1064,8 +1072,9 @@ test('registered source identity selects equivalent real evidence without repeat
   })
   assert.equal(wrong.eligible, false)
   assert.notEqual(wrong.accepted.status, 'passed')
-  for (const spy of [reads, hashes, source, runtime, evidence])
+  for (const spy of [reads, hashes, source, runtime, evidence]) {
     assert.equal(spy.mock.callCount(), 0)
+  }
 })
 
 test('selected source inputs require exact own presence and complete identity instead of null or double-input fallback', () => {
@@ -1099,8 +1108,9 @@ test('selected source inputs require exact own presence and complete identity in
       ...selected,
       sourceIdentity: { ...sourceIdentity, runtimeSourceDigest: 'bad' }
     }
-  ])
+  ]) {
     assert.throws(() => assessTargetSource(invalid), /selected owner|source/i)
+  }
   const missing = { ...value }
   delete missing.sourceAdmission
   assert.throws(() => assessTargetSource(missing), /selected owner|source/i)
@@ -1129,8 +1139,9 @@ test('current contract missing or failing tests cannot pass with historical gree
     request.format = 3
     delete request.acceptedVerificationSourceDigest
     request.proofRequests = proof ? [proof] : []
-    if (proof)
+    if (proof) {
       request.targetVerificationSourceDigest = proof.verificationSourceDigest
+    }
     const result = assessTargetSource(request)
     assert.equal(result.eligible, false)
     assert.equal(result.targetContract.status, proof ? 'failed' : 'unknown')

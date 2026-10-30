@@ -75,18 +75,21 @@ export function createStructure(site: Site = SITE): Member[] {
     diameter: number = site.tubeDiameter
   ) => members.push({ kind, points, diameter })
   for (let bay = 0; bay < site.bays; bay++) {
-    for (const z of memberStations(site.length, site.frameSpacing))
+    for (const z of memberStations(site.length, site.frameSpacing)) {
       add(
         'arch',
         Array.from({ length: 49 }, (_, i) => roofPoint(bay, i / 48, z, site))
       )
-    for (const fraction of [0, 0.25, 0.5, 0.75, 1])
+    }
+    for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
       // Shared shoulders have one longitudinal member, not coincident duplicates.
-      if (fraction !== 0 || bay === 0)
+      if (fraction !== 0 || bay === 0) {
         add('purlin', [
           roofPoint(bay, fraction, 0, site),
           roofPoint(bay, fraction, site.length, site)
         ])
+      }
+    }
     for (const z of memberStations(site.length, site.postSpacing)) {
       add('tie', [
         [bay * site.width, site.eave, z],
@@ -117,7 +120,7 @@ export function createStructure(site: Site = SITE): Member[] {
   }
   for (let boundary = 0; boundary <= site.bays; boundary++) {
     const x = boundary * site.width
-    for (const z of memberStations(site.length, site.postSpacing))
+    for (const z of memberStations(site.length, site.postSpacing)) {
       add(
         'post',
         [
@@ -126,13 +129,15 @@ export function createStructure(site: Site = SITE): Member[] {
         ],
         site.postDiameter
       )
+    }
     // Bracing only on exterior walls; internal longitudinal passages stay open.
     if (boundary === 0 || boundary === site.bays) {
-      for (const y of [site.eave * 0.15, site.eave * 0.5])
+      for (const y of [site.eave * 0.15, site.eave * 0.5]) {
         add('purlin', [
           [x, y, 0],
           [x, y, site.length]
         ])
+      }
       for (const z of new Set([
         0,
         Math.max(0, site.length - site.postSpacing)

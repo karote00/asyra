@@ -47,7 +47,9 @@ it('routes focused held keys, applies Shift speed, and stops on release, blur an
     await act(async () => root.render(<Fixture />))
     const scene = container.querySelector('div')
     const input = container.querySelector('input')
-    if (!scene || !input) throw new Error('Missing fixture')
+    if (!scene || !input) {
+      throw new Error('Missing fixture')
+    }
     input.focus()
     key(input, 'keydown', 'KeyW')
     expect(move).not.toHaveBeenCalled()

@@ -41,8 +41,11 @@ export const withToolContractAssertions = <
 >(
   owner: T
 ): T => {
-  for (const definition of owner.definitions)
-    if (nativeNames.has(definition.name)) advertised.add(definition.name)
+  for (const definition of owner.definitions) {
+    if (nativeNames.has(definition.name)) {
+      advertised.add(definition.name)
+    }
+  }
   const call = (owner.callInternal ?? owner.call).bind(owner)
   const checked = new Set<string>()
   owner.call = async (name, input, signal) => {
@@ -111,8 +114,9 @@ export const withToolContractAssertions = <
             ...boundaryOwner,
             call: async () => {
               failedCalls++
-              if (failure === 'exception')
+              if (failure === 'exception') {
                 throw new Error('Owner failed before returning a receipt')
+              }
               return 'null'
             }
           },
@@ -145,7 +149,9 @@ export const withToolContractAssertions = <
       throw originalError
     }
     expect(original, `${name} owner response`).toBeDefined()
-    if (original === undefined) throw new Error(`${name} omitted its response`)
+    if (original === undefined) {
+      throw new Error(`${name} omitted its response`)
+    }
     const value = JSON.parse(original)
     const outcome =
       owner.resultOutcome?.(name, value) ?? localToolOutcome(value)
@@ -173,7 +179,9 @@ export const withToolContractAssertions = <
           selected: unknown,
           path: string
         ) => {
-          if (!original || typeof original !== 'object') return
+          if (!original || typeof original !== 'object') {
+            return
+          }
           for (const [key, child] of Object.entries(original)) {
             const next = `${path}/${Array.isArray(original) ? '*' : key}`
             if (
@@ -181,9 +189,12 @@ export const withToolContractAssertions = <
               typeof selected !== 'object' ||
               !Object.hasOwn(selected, key)
             ) {
-              if (!missing.includes(next)) missing.push(next)
-            } else
+              if (!missing.includes(next)) {
+                missing.push(next)
+              }
+            } else {
               compare(child, (selected as Record<string, unknown>)[key], next)
+            }
           }
         }
         compare(value, projected, '')
@@ -196,9 +207,13 @@ export const withToolContractAssertions = <
         JSON.parse(reply.text).toolOutcome.status,
         `${name} public result`
       ).toBe(outcome.status)
-      if (outcome.status === 'success') exercised.add(name)
+      if (outcome.status === 'success') {
+        exercised.add(name)
+      }
     }
-    if (!owner.projectModelResult) return original
+    if (!owner.projectModelResult) {
+      return original
+    }
     const beforeProjection = JSON.stringify(value)
     const projected = owner.projectModelResult(name, input, value)
     expect(
@@ -211,11 +226,12 @@ export const withToolContractAssertions = <
       deliveredOutcome.settlement,
       `${name} delivery preserves mutation settlement`
     ).toBe(outcome.settlement)
-    if (outcome.status !== 'success')
+    if (outcome.status !== 'success') {
       expect(
         deliveredOutcome.status,
         `${name} delivery cannot promote incomplete owner work`
       ).not.toBe('success')
+    }
     return JSON.stringify(projected)
   }
   return owner
@@ -227,7 +243,9 @@ export const recordAcquisitionCost = (
   text: string,
   pages: number[]
 ) => {
-  if (process.env.TOOL_DELIVERY_COST_REPORT !== '1') return
+  if (process.env.TOOL_DELIVERY_COST_REPORT !== '1') {
+    return
+  }
   const value = JSON.parse(text) as {
     apis?: Record<string, unknown>[]
     tools?: Record<string, unknown>[]
@@ -255,7 +273,9 @@ export const recordAcquisitionCost = (
       }
     }
   )
-  if (!entries.length) return
+  if (!entries.length) {
+    return
+  }
   const directory = resolve('tmp')
   mkdirSync(directory, { recursive: true })
   appendFileSync(

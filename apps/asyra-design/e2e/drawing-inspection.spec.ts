@@ -86,8 +86,9 @@ test('large composition overview covers every corner while native regions preser
     imageScope: 'region'
   })
   expect(captures.oversized.available).toBe(false)
-  if (!captures.overview.image || !captures.detail.image)
+  if (!captures.overview.image || !captures.detail.image) {
     throw new Error('Missing capture')
+  }
   expect(captures.overview.image.width).toBe(1024)
   expect(captures.overview.image.height).toBe(512)
   expect(captures.detail.image.width).toBe(1000)
@@ -353,7 +354,9 @@ test('workspace overview preserves independent roots, visual order and read-only
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
     const handle = getActiveCollaborationHandle()
-    if (!handle) throw new Error('Missing document persistence owner')
+    if (!handle) {
+      throw new Error('Missing document persistence owner')
+    }
     await handle.confirmPersistence(new AbortController().signal)
     return core.save()
   })

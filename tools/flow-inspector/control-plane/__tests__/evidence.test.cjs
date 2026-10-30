@@ -198,12 +198,13 @@ for (const [name, corrupt] of [
       runner.report.testResults[0].assertionResults[0] = null
     }
   ]
-])
+]) {
   test('rejects ' + name, () => {
     const runner = result()
     corrupt(runner)
     assert.notEqual(assess(runner).status, 'passed')
   })
+}
 test('a zero-exit wrapper cannot conceal real assertion failures', () => {
   const runner = result()
   runner.report.testResults[0].assertionResults[0].status = 'failed'
@@ -261,8 +262,8 @@ test('durable evidence admission checks the required inventory before consumers 
   )
 })
 
-for (const format of [2, 3])
-  for (const key of ['mappingVersion', 'architectureVersion'])
+for (const format of [2, 3]) {
+  for (const key of ['mappingVersion', 'architectureVersion']) {
     test(
       'durable format ' + format + ' evidence rejects a mismatched ' + key,
       () => {
@@ -279,6 +280,8 @@ for (const format of [2, 3])
         )
       }
     )
+  }
+}
 
 async function realRuntimeProof(t) {
   const root = path.resolve(__dirname, '../../../..')
@@ -984,8 +987,9 @@ test(
         ),
       /provenance|admission|derived|execution/i
     )
-    for (const spy of [combined, runtime, bytes, reads, hashes])
+    for (const spy of [combined, runtime, bytes, reads, hashes]) {
       assert.equal(spy.mock.callCount(), 0)
+    }
   }
 )
 
@@ -994,8 +998,9 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const proofs = []
-    for (const outcome of ['passed', 'failed', 'partial'])
+    for (const outcome of ['passed', 'failed', 'partial']) {
       proofs.push({ outcome, ...(await realDerivedProof(t, outcome)) })
+    }
     const crypto = require('node:crypto'),
       originalHash = crypto.createHash
     const hash = t.mock.method(crypto, 'createHash', (...args) =>
@@ -1060,12 +1065,13 @@ test(
         'runtimeAuthority',
         'verificationSource',
         'executionSource'
-      ])
+      ]) {
         assert.equal(
           source[key],
           admitted[key],
           'forward completed descriptor without cloning'
         )
+      }
       assert.equal(combined.mock.callCount(), index * 2 + 1)
       assert.equal(hash.mock.callCount(), (index * 2 + 1) * 7)
       assert.deepEqual(

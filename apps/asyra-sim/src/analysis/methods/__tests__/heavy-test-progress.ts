@@ -32,13 +32,17 @@ export function createTestProgress(send: (receipt: Receipt) => void) {
   emit('ready')
   return {
     stage(name: string) {
-      if (queryWork) throw new Error('Cannot advance an unfinished query')
+      if (queryWork) {
+        throw new Error('Cannot advance an unfinished query')
+      }
       label = name
       stage++
       emit('progress')
     },
     query(name: string, readWork: () => number) {
-      if (queryWork) throw new Error('Cannot overlap supervised queries')
+      if (queryWork) {
+        throw new Error('Cannot overlap supervised queries')
+      }
       label = name
       stage++
       // Do not read the new context before its constructor has returned.
@@ -47,39 +51,50 @@ export function createTestProgress(send: (receipt: Receipt) => void) {
       nextReceipt = 2048
       return () => {
         const current = readWork()
-        if (current < nextReceipt) return
+        if (current < nextReceipt) {
+          return
+        }
         nextReceipt = current + 2048
         emit('progress')
       }
     },
     endQuery() {
-      if (!queryWork) return
+      if (!queryWork) {
+        return
+      }
       work += queryWork()
       queryWork = undefined
       emit('progress')
     },
     complete() {
-      if (queryWork) throw new Error('Cannot complete an unfinished query')
+      if (queryWork) {
+        throw new Error('Cannot complete an unfinished query')
+      }
       completed++
       emit('progress')
     },
     finish(expected: number) {
-      if (queryWork || completed !== expected)
+      if (queryWork || completed !== expected) {
         throw new Error('Missing completed assertions')
+      }
       emit('final')
     }
   }
 }
 
 export function supervisedTestProgress() {
-  if (process.env.TEST_SUPERVISED !== '1') return
+  if (process.env.TEST_SUPERVISED !== '1') {
+    return
+  }
   const fd = Number(process.env.TEST_RECEIPT_FD)
-  if (!Number.isInteger(fd) || fd <= 2 || !fstatSync(fd).isFIFO())
+  if (!Number.isInteger(fd) || fd <= 2 || !fstatSync(fd).isFIFO()) {
     throw new Error('Supervised test requires its owned receipt pipe')
+  }
   return createTestProgress((receipt) => {
     const bytes = Buffer.from(JSON.stringify(receipt) + '\n')
     let offset = 0
-    while (offset < bytes.length)
+    while (offset < bytes.length) {
       offset += writeSync(fd, bytes, offset, bytes.length - offset)
+    }
   })
 }

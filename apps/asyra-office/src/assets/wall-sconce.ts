@@ -13,7 +13,9 @@ export function wallSconce() {
     spec.components.find((c) => c.partId === 'shade'),
     'shade'
   )
-  if (!('profileRZ' in shadePart)) throw new Error('Missing shade profile')
+  if (!('profileRZ' in shadePart)) {
+    throw new Error('Missing shade profile')
+  }
   const shade = requiredSpecValue(shadePart.profileRZ, 'shade profile')
   const path: Vec[] = bezier(
     [

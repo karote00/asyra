@@ -18,8 +18,9 @@ it('retains the source solid identity for every boolean output triangle', () => 
         points.every((p) => Math.abs(p[axis] - sign * extent) < 1e-8)
       )
     )
-    if (region === 0) expect(onOriginalFace).toBe(true)
-    else
+    if (region === 0) {
+      expect(onOriginalFace).toBe(true)
+    } else {
       expect(
         points.every(
           ([x, y, z]) =>
@@ -29,5 +30,6 @@ it('retains the source solid identity for every boolean output triangle', () => 
             z >= -0.5 - 1e-8
         )
       ).toBe(true)
+    }
   }
 })

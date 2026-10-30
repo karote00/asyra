@@ -44,7 +44,9 @@ export function transactionCompletion(
     transaction.addEventListener('complete', complete)
     transaction.addEventListener('abort', aborted)
     signal?.addEventListener('abort', cancel, { once: true })
-    if (signal?.aborted) cancel()
+    if (signal?.aborted) {
+      cancel()
+    }
   })
 }
 
@@ -59,19 +61,25 @@ export class IndexedProjectRepository implements ProjectRepository {
   ) {}
 
   private open(): Promise<IDBDatabase> {
-    if (this.closed)
+    if (this.closed) {
       return Promise.reject(
         new Error('Local storage is closed; reload the App')
       )
-    if (this.database) return Promise.resolve(this.database)
-    if (this.opening) return this.opening
+    }
+    if (this.database) {
+      return Promise.resolve(this.database)
+    }
+    if (this.opening) {
+      return this.opening
+    }
     const factory = this.factory
-    if (!factory)
+    if (!factory) {
       return Promise.reject(
         new Error(
           'IndexedDB is unavailable; enable browser storage to save or open projects'
         )
       )
+    }
     const opening = new Promise<IDBDatabase>((resolve, reject) => {
       const request = factory.open(this.name, 2)
       let settled = false
@@ -80,7 +88,9 @@ export class IndexedProjectRepository implements ProjectRepository {
         5000
       )
       const fail = (error: Error) => {
-        if (settled) return
+        if (settled) {
+          return
+        }
         settled = true
         clearTimeout(timeout)
         reject(error)
@@ -105,10 +115,11 @@ export class IndexedProjectRepository implements ProjectRepository {
           projects.createIndex('savedAt', 'savedAt')
           request.result.createObjectStore(DOCUMENTS)
         }
-        if (!request.result.objectStoreNames.contains(JOURNAL))
+        if (!request.result.objectStoreNames.contains(JOURNAL)) {
           request.result
             .createObjectStore(JOURNAL)
             .createIndex('publicationKey', 'publicationKey', { unique: true })
+        }
       }
       request.onsuccess = () => {
         if (settled || this.closed) {
@@ -128,7 +139,9 @@ export class IndexedProjectRepository implements ProjectRepository {
     this.opening = opening
     void opening
       .finally(() => {
-        if (this.opening === opening) this.opening = null
+        if (this.opening === opening) {
+          this.opening = null
+        }
       })
       .catch(() => undefined)
     return opening
@@ -142,7 +155,9 @@ export class IndexedProjectRepository implements ProjectRepository {
     signal?.throwIfAborted()
     const database = await this.open()
     signal?.throwIfAborted()
-    if (this.closed) throw new Error('Local storage is closed')
+    if (this.closed) {
+      throw new Error('Local storage is closed')
+    }
     const transaction = database.transaction(
       [PROJECTS, DOCUMENTS, JOURNAL],
       mode
@@ -164,8 +179,9 @@ export class IndexedProjectRepository implements ProjectRepository {
       } catch (error) {
         throw failure ?? error
       }
-      if (!output)
+      if (!output) {
         throw new Error('Storage transaction completed without a result')
+      }
       return output.value
     } finally {
       this.transactions.delete(transaction)
@@ -234,10 +250,13 @@ export class IndexedProjectRepository implements ProjectRepository {
     signal?: AbortSignal
   ): Promise<void> {
     validateSummary(project)
-    if (entry) validateJournalEntry(entry)
+    if (entry) {
+      validateJournalEntry(entry)
+    }
     const encoded = JSON.stringify(entry, (_key, value) => {
-      if (typeof value === 'number' && !Number.isFinite(value))
+      if (typeof value === 'number' && !Number.isFinite(value)) {
         throw new Error('Nonfinite journal value')
+      }
       return value
     })
     const bytes = entry ? new TextEncoder().encode(encoded).byteLength : 0
@@ -306,7 +325,9 @@ export class IndexedProjectRepository implements ProjectRepository {
                   new TextEncoder().encode(checkpoint.result as string)
                     .byteLength
                 )
-            } else appendEntry(0)
+            } else {
+              appendEntry(0)
+            }
           }
         },
         signal
@@ -355,29 +376,35 @@ export class IndexedProjectRepository implements ProjectRepository {
       },
       signal
     )
-    if (value.metadata === undefined)
+    if (value.metadata === undefined) {
       throw new Error('Saved project was not found')
+    }
     validateSummary(value.metadata)
-    if (typeof value.payload !== 'string')
+    if (typeof value.payload !== 'string') {
       throw new Error('Saved project document is missing')
+    }
     decodeProject(value.payload)
     const metadata = value.metadata as ProjectSummary & {
       journalLength?: number
       checkpointRevision?: string
       storedBytes?: number
     }
-    if ((metadata.journalLength ?? 0) !== value.journal.length)
+    if ((metadata.journalLength ?? 0) !== value.journal.length) {
       throw new Error('Incomplete local publication journal')
+    }
     let revision = metadata.checkpointRevision ?? metadata.revision
     for (const item of value.journal) {
-      if (item.previousRevision !== revision)
+      if (item.previousRevision !== revision) {
         throw new Error('Broken local publication revision chain')
-      if (item.entry && item.entry.version !== 1)
+      }
+      if (item.entry && item.entry.version !== 1) {
         throw new Error('Unsupported local journal entry')
+      }
       revision = item.revision
     }
-    if (revision !== metadata.revision)
+    if (revision !== metadata.revision) {
       throw new Error('Unacknowledged local publication tail')
+    }
     const {
       journalLength: _length,
       checkpointRevision: _checkpoint,
@@ -439,7 +466,9 @@ export class IndexedProjectRepository implements ProjectRepository {
   }
 
   close(): void {
-    if (this.closed) return
+    if (this.closed) {
+      return
+    }
     this.closed = true
     for (const transaction of this.transactions) {
       try {

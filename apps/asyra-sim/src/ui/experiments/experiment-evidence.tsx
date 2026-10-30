@@ -43,7 +43,9 @@ export function ExperimentPreflight() {
       setWarnings={(...args) => view.getSnapshot().setWarnings(...args)}
       changed={(draft) => {
         view.getSnapshot().changed(draft)
-        if (view.getSnapshot().canonical) void view.getSnapshot().save(draft)
+        if (view.getSnapshot().canonical) {
+          void view.getSnapshot().save(draft)
+        }
       }}
     />
   )
@@ -53,7 +55,7 @@ export function ExperimentPreflight() {
     !preflight.blockers.length &&
     !preflight.assumptions.length &&
     !preflight.resourceWarnings.length
-  )
+  ) {
     return (
       <details className="text-[10px] text-sim-muted">
         <summary>
@@ -63,6 +65,7 @@ export function ExperimentPreflight() {
         {content}
       </details>
     )
+  }
   return content
 }
 
@@ -82,7 +85,9 @@ export function ExperimentError() {
             className="block mt-2"
             onClick={(event) => {
               const panel = event.currentTarget.closest('.experiment-panel')
-              if (!panel) return
+              if (!panel) {
+                return
+              }
               reviewExperimentInput(panel, error.toLowerCase())
             }}
           >

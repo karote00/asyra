@@ -36,7 +36,9 @@ class FlowReporter {
   }
   onTestEnd(test, result) {
     const old = this.records.get(test)
-    if (old?.status === 'failed') return
+    if (old?.status === 'failed') {
+      return
+    }
     this.records.set(test, {
       selector: {
         ...this.scope,

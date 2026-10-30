@@ -177,7 +177,9 @@ it('rejects an unpaid warm refinement before traversal without discarding comple
   const cold = new OriginalMeshQuery(undefined, 500000, true, prepared)
   const result = query(cold)
   const artifact = prepared.get(geometry)
-  if (!artifact?.refinement) throw new Error('Missing completed refinement')
+  if (!artifact?.refinement) {
+    throw new Error('Missing completed refinement')
+  }
   const world = vi.spyOn(meshIndex, 'worldBounds')
   const limited = new OriginalMeshQuery(
     undefined,

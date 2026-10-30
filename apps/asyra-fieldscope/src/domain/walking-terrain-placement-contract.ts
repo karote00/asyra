@@ -114,7 +114,9 @@ function observation(v: unknown): boolean {
   )
 }
 function gcd(a: bigint, b: bigint): bigint {
-  if (b) return gcd(b, a % b)
+  if (b) {
+    return gcd(b, a % b)
+  }
   return a < 0n ? -a : a
 }
 export function readWalkingTerrainPlacementRequest(
@@ -126,10 +128,12 @@ export function readWalkingTerrainPlacementRequest(
     !current ||
     input.source !== current.source ||
     input.demand !== current.demand
-  )
+  ) {
     return invalid()
-  if (admitted.has(input))
+  }
+  if (admitted.has(input)) {
     return input as unknown as WalkingTerrainPlacementRequest
+  }
   if (
     !keys(input, [
       'format',
@@ -158,32 +162,39 @@ export function readWalkingTerrainPlacementRequest(
       'maxBits',
       'maxProjectionOperations'
     ])
-  )
+  ) {
     return invalid()
+  }
   const budget = input.budget
-  for (const [key, v] of Object.entries(budget))
+  for (const [key, v] of Object.entries(budget)) {
     if (
       !Number.isSafeInteger(v) ||
       Number(v) < 1 ||
       Number(v) > (key === 'maxBits' ? 24000 : 10000000)
-    )
+    ) {
       return invalid()
+    }
+  }
   let inputValues = 0
   const copy = (v: unknown): unknown => {
-    if (++inputValues > Number(budget.maxInputValues))
+    if (++inputValues > Number(budget.maxInputValues)) {
       throw new TerrainPlacementBudgetError('terrain-input-budget')
+    }
     if (
       typeof v === 'bigint' &&
       (v < 0n ? -v : v).toString(2).length > Number(budget.maxBits)
-    )
+    ) {
       throw new TerrainPlacementBudgetError('terrain-bit-budget')
+    }
     if (Array.isArray(v)) {
-      if (v.length > Number(budget.maxInputValues) - inputValues)
+      if (v.length > Number(budget.maxInputValues) - inputValues) {
         throw new TerrainPlacementBudgetError('terrain-input-budget')
+      }
       return Array.from(v, copy)
     }
-    if (record(v))
+    if (record(v)) {
       return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, copy(x)]))
+    }
     return v
   }
   const terrain = copy(input.terrain)
@@ -216,14 +227,16 @@ export function readWalkingTerrainPlacementRequest(
     !Object.values(terrain.observations).every(observation) ||
     !Array.isArray(terrain.regions) ||
     !Array.isArray(terrain.contactAssessments)
-  )
+  ) {
     return invalid()
+  }
   const route = current.demand.route
   if (
     route &&
     (terrain.route.bay !== route.bay || terrain.route.stripId !== route.stripId)
-  )
+  ) {
     return invalid()
+  }
   const regionIds = new Set<string>(),
     sourceIds = new Set<string>()
   for (const region of terrain.regions) {
@@ -253,8 +266,9 @@ export function readWalkingTerrainPlacementRequest(
       !region.frame.rotation.some((v) => v !== 0) ||
       !record(region.binding) ||
       !record(region.keepOut)
-    )
+    ) {
       return invalid()
+    }
     region.shape = readSpatialShape(region.shape)
     if (region.classification === 'soil') {
       if (
@@ -262,8 +276,9 @@ export function readWalkingTerrainPlacementRequest(
         region.binding.kind !== 'route-soil' ||
         region.binding.bay !== terrain.route.bay ||
         region.binding.stripId !== terrain.route.stripId
-      )
+      ) {
         return invalid()
+      }
     } else if (region.classification === 'channel') {
       const binding = region.binding
       if (
@@ -272,16 +287,20 @@ export function readWalkingTerrainPlacementRequest(
         !current.demand.channels.some(
           (c) => c.bay === binding.bay && c.stripId === binding.stripId
         )
-      )
+      ) {
         return invalid()
+      }
     } else if (
       !keys(region.binding, ['kind']) ||
       region.binding.kind !== 'debris'
-    )
+    ) {
       return invalid()
+    }
     const keepOut = region.keepOut
     if (region.keepOut.kind === 'none') {
-      if (!keys(region.keepOut, ['kind'])) return invalid()
+      if (!keys(region.keepOut, ['kind'])) {
+        return invalid()
+      }
     } else if (
       region.classification !== 'debris' ||
       !keys(region.keepOut, ['kind', 'min', 'max', 'evidence']) ||
@@ -290,8 +309,9 @@ export function readWalkingTerrainPlacementRequest(
       !vector(region.keepOut.max, 3) ||
       !region.keepOut.min.every((v, i) => v <= (keepOut.max as number[])[i]) ||
       !evidence(region.keepOut.evidence)
-    )
+    ) {
       return invalid()
+    }
     regionIds.add(region.id)
     sourceIds.add(region.sourceId)
   }
@@ -328,12 +348,15 @@ export function readWalkingTerrainPlacementRequest(
       a.from >= a.until ||
       !['complete', 'sampled'].includes(String(a.coverage)) ||
       ![a.geometry, a.friction, a.bearing, a.sinkage].every(relation)
-    )
+    ) {
       return invalid()
+    }
     assessments.set(a.id, a as unknown as WalkingContactAssessment)
   }
   const rawPartitions = copy(input.partitions)
-  if (!Array.isArray(rawPartitions)) return invalid()
+  if (!Array.isArray(rawPartitions)) {
+    return invalid()
+  }
   const partitionIds = new Set<string>()
   const partitions = rawPartitions.map((entry) => {
     if (
@@ -343,13 +366,16 @@ export function readWalkingTerrainPlacementRequest(
       partitionIds.has(entry.sourceId) ||
       !sourceIds.has(entry.sourceId) ||
       !Array.isArray(entry.regions)
-    )
+    ) {
       return invalid()
+    }
     partitionIds.add(entry.sourceId)
     const source = (terrain.regions as WalkingTerrainRegion[]).find(
       (r) => r.sourceId === entry.sourceId
     )
-    if (!source) return invalid()
+    if (!source) {
+      return invalid()
+    }
     let regions: readonly SourceRegion[] | null = null
     try {
       regions = readSourceRegions(entry.regions, source.shape.indices.length)
@@ -366,8 +392,9 @@ export function readWalkingTerrainPlacementRequest(
       typeof value.numerator !== 'bigint' ||
       typeof value.denominator !== 'bigint' ||
       value.denominator <= 0n
-    )
+    ) {
       return invalid()
+    }
     const divisor = gcd(value.numerator, value.denominator)
     return {
       numerator: value.numerator / divisor,
@@ -382,8 +409,9 @@ export function readWalkingTerrainPlacementRequest(
     !Object.values(current.source.rig.presets).includes(
       input.fixedJoints as WalkingConstrainedRecipe['fixedJoints']
     )
-  )
+  ) {
     return invalid()
+  }
   const seedIds = new Set<string>()
   const seeds = Array.from(input.seeds, (s) => {
     if (
@@ -408,8 +436,9 @@ export function readWalkingTerrainPlacementRequest(
       Number(s.triangleOffset) % 3 ||
       !Array.isArray(s.barycentric) ||
       s.barycentric.length !== 3
-    )
+    ) {
       return invalid()
+    }
     const chain = current.source.rig.legChains.find((c) => c.id === s.chainId),
       contact = current.source.rig.contacts.feet.find(
         (c) => c.part === s.footPart && c.patch === s.footPatch
@@ -424,13 +453,15 @@ export function readWalkingTerrainPlacementRequest(
       contact.part.bodyId !== chain.footBodyId ||
       !region ||
       Number(s.triangleOffset) + 3 > region.shape.indices.length
-    )
+    ) {
       return invalid()
+    }
     if (
       a &&
       (a.footPatchId !== contact.patch.id || a.terrainRegionId !== region.id)
-    )
+    ) {
       return invalid()
+    }
     const partition = partitions.find(
       (p) => p.sourceId === region.sourceId
     )?.regions
@@ -442,22 +473,29 @@ export function readWalkingTerrainPlacementRequest(
           Number(s.triangleOffset) >= p.indexStart &&
           Number(s.triangleOffset) + 3 <= p.indexStart + p.indexCount
       )
-    )
+    ) {
       return invalid()
+    }
     const bary = Array.from(s.barycentric, fraction)
     let n = 0n,
       d = 1n
     for (const v of bary) {
-      if (v.numerator < 0n) return invalid()
+      if (v.numerator < 0n) {
+        return invalid()
+      }
       n = n * v.denominator + v.numerator * d
       d *= v.denominator
     }
-    if (n !== d) return invalid()
+    if (n !== d) {
+      return invalid()
+    }
     seedIds.add(s.chainId)
     return { ...s, barycentric: bary }
   })
   const orientation = Array.from(input.baseOrientation, fraction)
-  if (!orientation.some((v) => v.numerator !== 0n)) return invalid()
+  if (!orientation.some((v) => v.numerator !== 0n)) {
+    return invalid()
+  }
   const span = copy(input.interval)
   if (
     !record(span) ||
@@ -465,8 +503,9 @@ export function readWalkingTerrainPlacementRequest(
     !finite(span.low) ||
     !finite(span.high) ||
     span.low > span.high
-  )
+  ) {
     return invalid()
+  }
   const result = {
     format: WALKING_TERRAIN_PLACEMENT_REQUEST_FORMAT,
     source: current.source,

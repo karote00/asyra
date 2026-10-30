@@ -21,8 +21,9 @@ const input = (): SpatialDescriptor => ({
 it('admits isolated immutable geometry once and reuses it through pose and appearance updates', () => {
   const source = input()
   const accepted = readSpatialDescriptor(source)
-  if (accepted.kind !== 'mesh' || accepted.shape.kind !== 'triangles')
+  if (accepted.kind !== 'mesh' || accepted.shape.kind !== 'triangles') {
     throw new Error('Expected triangles')
+  }
   const before = structuredClone(accepted)
   expect(Object.isFrozen(accepted)).toBe(true)
   expect(Object.isFrozen(accepted.shape.positions)).toBe(true)
@@ -37,8 +38,9 @@ it('admits isolated immutable geometry once and reuses it through pose and appea
   }
   expect(readSpatialDescriptor(accepted)).toBe(accepted)
   expect(accepted).toEqual(before)
-  if (source.kind === 'mesh' && source.shape.kind === 'triangles')
-    (source.shape.positions as number[])[0] = 999
+  if (source.kind === 'mesh' && source.shape.kind === 'triangles') {
+    ;(source.shape.positions as number[])[0] = 999
+  }
   expect(accepted.shape.positions[0]).toBe(0)
 })
 it('does not trust caller freezing and still rejects invalid geometry and changed poses', () => {
@@ -85,7 +87,9 @@ it('validates the detached values it will retain rather than earlier accessor re
 it('detaches instance transforms and reuses accepted transforms across presentation changes', () => {
   const instances = [{ position: [1, 0, 2], yaw: Math.PI }]
   const accepted = readSpatialDescriptor({ ...input(), instances })
-  if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
+  if (accepted.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
   instances[0].position[0] = 99
   expect(accepted.instances?.[0].position).toEqual([1, 0, 2])
   expect(Object.isFrozen(accepted.instances?.[0].position)).toBe(true)
@@ -95,16 +99,18 @@ it('detaches instance transforms and reuses accepted transforms across presentat
     [],
     [{ position: [NaN, 0, 0], yaw: 0 }],
     [{ position: [0, 0, 0], yaw: Infinity }]
-  ])
+  ]) {
     expect(() =>
       readSpatialDescriptor({ ...input(), instances: invalid })
     ).toThrow()
+  }
 })
 
 it('validates and detaches per-vertex surface colors', () => {
   const source = input()
-  if (source.kind !== 'mesh' || source.shape.kind !== 'triangles')
+  if (source.kind !== 'mesh' || source.shape.kind !== 'triangles') {
     throw new Error('Expected triangles')
+  }
   const colors = [0.2, 0.1, 0.05, 0.3, 0.1, 0.04, 0.4, 0.2, 0.03]
   const accepted = readSpatialDescriptor({
     ...source,
@@ -116,13 +122,14 @@ it('validates and detaches per-vertex surface colors', () => {
       accepted.shape.kind === 'triangles' &&
       accepted.shape.colors?.[0]
   ).toBe(0.2)
-  for (const invalid of [[1, 0, 0], colors, Array(9).fill(NaN)])
+  for (const invalid of [[1, 0, 0], colors, Array(9).fill(NaN)]) {
     expect(() =>
       readSpatialDescriptor({
         ...source,
         shape: { ...source.shape, colors: invalid }
       })
     ).toThrow()
+  }
 })
 
 it('admits flat triangle buffers without general object-graph cloning', () => {
@@ -141,16 +148,18 @@ it('keeps domain yaw while reusing the neutral projection receipt across consume
   const source = [{ position: [1, 0, 2], yaw: Math.PI / 2 }]
   const domain = readSpatialDescriptor({ ...input(), instances: source })
   const neutral = toSpatialProjection(domain)
-  if (domain.kind !== 'mesh' || neutral.kind !== 'mesh')
+  if (domain.kind !== 'mesh' || neutral.kind !== 'mesh') {
     throw new Error('Expected mesh')
+  }
   expect(domain.instances?.[0].yaw).toBe(Math.PI / 2)
   expect(neutral.instances?.[0]).toMatchObject({
     rotation: [0, expect.closeTo(Math.SQRT1_2), 0, expect.closeTo(Math.SQRT1_2)]
   })
   const clone = vi.spyOn(globalThis, 'structuredClone')
   try {
-    for (let i = 0; i < 20; i++)
+    for (let i = 0; i < 20; i++) {
       expect(toSpatialProjection(domain)).toBe(neutral)
+    }
     expect(clone).not.toHaveBeenCalled()
   } finally {
     clone.mockRestore()

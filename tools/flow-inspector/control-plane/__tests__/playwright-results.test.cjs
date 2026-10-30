@@ -88,9 +88,15 @@ test('expanded Design cases require exact file, full title and project while sib
     for (const change of ['file', 'title', 'project']) {
       const other = structuredClone(input)
       const changed = other.suites[0].suites[0].specs[0]
-      if (change === 'file') changed.file = 'selection.spec.ts'
-      if (change === 'title') changed.title += ' renamed'
-      if (change === 'project') changed.tests[0].projectName = 'firefox'
+      if (change === 'file') {
+        changed.file = 'selection.spec.ts'
+      }
+      if (change === 'title') {
+        changed.title += ' renamed'
+      }
+      if (change === 'project') {
+        changed.tests[0].projectName = 'firefox'
+      }
       const unresolved = locate(other)
       assert.equal(
         unresolved.cases[0].resolution,
@@ -175,8 +181,9 @@ test(
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.cases.length, ids.length)
     assert.deepEqual(failedIds(), [])
-    for (const record of failures)
+    for (const record of failures) {
       assert.deepEqual(reader.get(record.id), record)
+    }
     t.diagnostic('Expanded Design evidence: ' + fixture.repository)
   }
 )
@@ -300,11 +307,12 @@ test(
     const reader = createObservationReader(
       observationDirectory(fixture.repository)
     )
-    for (const { artifact, bytes } of retained)
+    for (const { artifact, bytes } of retained) {
       assert.deepEqual(
         fs.readFileSync(path.join(fixture.repository, artifact.retainedPath)),
         bytes
       )
+    }
     assert.deepEqual(reader.get(fault.record.id), fault.record)
     assert.equal(
       reader.list().currentCases.filter((c) => c.status === 'failed').length,
@@ -554,12 +562,21 @@ test('structurally incomplete reports cannot retire failures regardless of trave
       spec.tests[0].status = 'expected'
       const insert = (items, value) =>
         before ? items.unshift(value) : items.push(value)
-      if (damage === 'suite') insert(input.suites, null)
-      if (damage === 'spec') insert(suite.specs, { ...spec, tests: null })
-      if (damage === 'empty-spec') insert(suite.specs, { ...spec, tests: [] })
-      if (damage === 'case')
+      if (damage === 'suite') {
+        insert(input.suites, null)
+      }
+      if (damage === 'spec') {
+        insert(suite.specs, { ...spec, tests: null })
+      }
+      if (damage === 'empty-spec') {
+        insert(suite.specs, { ...spec, tests: [] })
+      }
+      if (damage === 'case') {
         insert(spec.tests, { ...spec.tests[0], results: null })
-      if (damage === 'children') suite.suites = {}
+      }
+      if (damage === 'children') {
+        suite.suites = {}
+      }
       const record = fixture.start().finish(input)
       assert.ok(record.issues.length)
       assert.equal(
@@ -753,8 +770,9 @@ test('functional and status producers select their complete exact contracts befo
   assert.deepEqual(sourceManifestPaths('status'), [
     'apps/asyra-design/playwright-status-flow-contracts.json'
   ])
-  for (const source of ['', 'unknown-producer', '../other', null])
+  for (const source of ['', 'unknown-producer', '../other', null]) {
     assert.throws(() => sourceManifestPaths(source), /source/)
+  }
 })
 
 test('status reports require the retained status configuration and cannot borrow functional ownership', () => {
@@ -792,23 +810,34 @@ function verifyOriginalFunctionalOutcomes(observation) {
   assert.deepEqual(observation.issues, [])
   const expected = []
   const walk = (suite) => {
-    for (const spec of suite.specs ?? [])
+    for (const spec of suite.specs ?? []) {
       for (const item of spec.tests ?? []) {
         assert.ok(['expected', 'skipped'].includes(item.status), spec.title)
         assert.ok(item.results.length > 0)
         const failed = item.results.some((result) =>
           ['failed', 'timedOut', 'interrupted'].includes(result.status)
         )
-        if (failed) assert.equal(item.expectedStatus, 'failed', spec.title)
+        if (failed) {
+          assert.equal(item.expectedStatus, 'failed', spec.title)
+        }
         let status = 'passed'
-        if (failed) status = 'failed'
-        else if (item.results.every((result) => result.status === 'skipped'))
+        if (failed) {
+          status = 'failed'
+        } else if (
+          item.results.every((result) => result.status === 'skipped')
+        ) {
           status = 'skipped'
+        }
         expected.push(status)
       }
-    for (const child of suite.suites ?? []) walk(child)
+    }
+    for (const child of suite.suites ?? []) {
+      walk(child)
+    }
   }
-  for (const suite of observation.report.suites) walk(suite)
+  for (const suite of observation.report.suites) {
+    walk(suite)
+  }
   assert.deepEqual(
     observation.cases.map((item) => item.status).sort(),
     expected.sort()
@@ -1254,9 +1283,11 @@ for (const [
       const file = /^(packages|apps)\//.test(relativeFile)
         ? relativeFile
         : 'apps/asyra-design/src/' + relativeFile
-      if (typeof operation === 'string')
+      if (typeof operation === 'string') {
         fixture.faultOperation(caseId, file, operation)
-      else fixture.faultCase(caseId, { file, ...operation })
+      } else {
+        fixture.faultCase(caseId, { file, ...operation })
+      }
       const failed = await fixture.run([caseId])
       const observed = verify(failed, 'failed', 1)
       assert.ok(observed.failures.length)
@@ -1381,16 +1412,20 @@ test('current flow publication retains Playwright attachments without an observa
     .map((manifest) => loadContract(fixture.repository, undefined, manifest))
   const directory = path.join(fixture.repository, 'flows')
   fs.mkdirSync(directory)
-  for (const doc of fromContracts(selected, 'example'))
+  for (const doc of fromContracts(selected, 'example')) {
     fs.writeFileSync(
       path.join(directory, doc.flowId + '.flow.json'),
       JSON.stringify(doc)
     )
+  }
   const prior = process.env.FLOW_FILE_DIRECTORY
   process.env.FLOW_FILE_DIRECTORY = directory
   t.after(() => {
-    if (prior === undefined) delete process.env.FLOW_FILE_DIRECTORY
-    else process.env.FLOW_FILE_DIRECTORY = prior
+    if (prior === undefined) {
+      delete process.env.FLOW_FILE_DIRECTORY
+    } else {
+      process.env.FLOW_FILE_DIRECTORY = prior
+    }
   })
   const invocation = fixture.start()
   const input = report()

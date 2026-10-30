@@ -21,7 +21,9 @@ export const getAvailableFontFamilies = (
       entry.values = null
     })
   }
-  if (catalog.values) return catalog.values
+  if (catalog.values) {
+    return catalog.values
+  }
   const context = owner.createElement('canvas').getContext('2d')
   const values: string[] = [...GENERIC_FONT_FAMILIES]
   if (context) {
@@ -37,8 +39,9 @@ export const getAvailableFontFamilies = (
           context.font = `72px "${family}", ${base}`
           return context.measureText(sample).width !== widths[index]
         })
-      )
+      ) {
         values.push(family)
+      }
     }
   }
   catalog.values = values

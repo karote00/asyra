@@ -59,8 +59,9 @@ it('reuses all-pair clear evidence throughout playback without preparing live in
     new RecordedPlaybackEvidence(run)
   )
 
-  for (const time of [0, 1.234, 4.1, 8])
+  for (const time of [0, 1.234, 4.1, 8]) {
     preview.sample(time, { discontinuity: false })
+  }
   await Promise.resolve()
 
   expect(publish.mock.lastCall?.[0]).toMatchObject({

@@ -36,7 +36,7 @@ test('cancellation also stops detached descendants while leaving unrelated proce
   )
   let descendant
   t.after(() => {
-    for (const pid of [descendant, unrelated.pid])
+    for (const pid of [descendant, unrelated.pid]) {
       if (pid) {
         try {
           process.kill(pid, 'SIGKILL')
@@ -44,6 +44,7 @@ test('cancellation also stops detached descendants while leaving unrelated proce
           // The cancellation assertion normally already reaped this process.
         }
       }
+    }
   })
   const code = `const {spawn}=require('node:child_process'); const fs=require('node:fs'); const child=spawn(process.execPath,['-e','setInterval(() => {},1000)'],{detached:true,stdio:'ignore'}); fs.writeFileSync(${JSON.stringify(pidPath)},String(child.pid)); setInterval(() => {},1000)`
   const pending = runLocalChecks({
@@ -53,8 +54,9 @@ test('cancellation also stops detached descendants while leaving unrelated proce
     signal: controller.signal,
     verifyInputs: () => true
   })
-  for (let attempt = 0; attempt < 100 && !fs.existsSync(pidPath); attempt++)
+  for (let attempt = 0; attempt < 100 && !fs.existsSync(pidPath); attempt++) {
     await new Promise((resolve) => setTimeout(resolve, 20))
+  }
   assert.ok(fs.existsSync(pidPath), 'fixture child must start')
   descendant = Number(fs.readFileSync(pidPath, 'utf8'))
   controller.abort()
@@ -65,7 +67,9 @@ test('cancellation also stops detached descendants while leaving unrelated proce
     state = spawnSync('ps', ['-p', String(descendant), '-o', 'stat='], {
       encoding: 'utf8'
     }).stdout.trim()
-    if (!state || state.startsWith('Z')) break
+    if (!state || state.startsWith('Z')) {
+      break
+    }
     await new Promise((resolve) => setTimeout(resolve, 20))
   }
   assert.ok(
@@ -164,7 +168,9 @@ test('missing and zero-test E2E reports fail even when the command exits zero', 
     ['failed', { suites: [], errors: ['runner failure'] }]
   ]) {
     const reportPath = path.join(root, `${name}.json`)
-    if (report) fs.writeFileSync(reportPath, JSON.stringify(report))
+    if (report) {
+      fs.writeFileSync(reportPath, JSON.stringify(report))
+    }
     const result = await runLocalChecks({
       repositoryRoot,
       outputDirectory: path.join(root, name),

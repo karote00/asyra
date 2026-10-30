@@ -19,9 +19,12 @@ function footprintContains(mesh: Mesh, point: readonly number[]) {
     // Vertical/degenerate projected faces cannot cover a plan area.
     const [a, b, c] = vertices
     const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-    if (Math.abs(area) < 1e-10) continue
-    if (sides.every((v) => v >= -1e-10) || sides.every((v) => v <= 1e-10))
+    if (Math.abs(area) < 1e-10) {
+      continue
+    }
+    if (sides.every((v) => v >= -1e-10) || sides.every((v) => v <= 1e-10)) {
       return true
+    }
   }
   return false
 }
@@ -48,17 +51,21 @@ describe('composed rear wall corners', () => {
       }
       for (const suffix of ['', '-cap']) {
         const pair = ids.map((id) => parts.get(id + suffix)?.[0])
-        if (pair.some((part) => !part)) throw new Error('Missing joined wall')
+        if (pair.some((part) => !part)) {
+          throw new Error('Missing joined wall')
+        }
         for (const detail of ['near', 'distant'] as const) {
           const meshes = pair.map((part) => {
             const mesh = detail === 'near' ? part?.mesh : part?.distant?.mesh
-            if (!mesh) throw new Error('Missing wall representation')
+            if (!mesh) {
+              throw new Error('Missing wall representation')
+            }
             return mesh
           })
           // Samples cover all four quadrants, avoiding the diagonal seam itself.
           for (const dx of suffix
             ? [-0.085, -0.02, 0.02, 0.085]
-            : [-0.06, -0.02, 0.02, 0.06])
+            : [-0.06, -0.02, 0.02, 0.06]) {
             for (const dy of suffix
               ? [-0.082, -0.015, 0.015, 0.082]
               : [-0.055, -0.015, 0.015, 0.055]) {
@@ -68,6 +75,7 @@ describe('composed rear wall corners', () => {
                 `${name}${suffix}/${detail} coverage at ${dx},${dy}`
               ).toBe(1)
             }
+          }
         }
       }
     })
@@ -144,28 +152,35 @@ describe('partition wall abutments', () => {
       ['pantry-divider', 1, 'min', p.pantryFront],
       ['lounge-divider', 0, 'max', p.loungeSplit],
       ['lounge-left-return', 1, 'min', p.loungeY - p.returnLength]
-    ] as const)
+    ] as const) {
       for (const suffix of ['', '-cap']) {
         const positions = parts.get(id + suffix)?.[0].mesh.positions
-        if (!positions) throw new Error('Missing wall endpoint')
+        if (!positions) {
+          throw new Error('Missing wall endpoint')
+        }
         const values = positions.filter((_, index) => index % 3 === axis)
         const actual = end === 'max' ? Math.max(...values) : Math.min(...values)
         expect(actual, id + suffix + ' free endpoint').toBeCloseTo(expected, 8)
       }
-    for (const fixture of cases)
+    }
+    for (const fixture of cases) {
       for (const detail of ['near', 'distant'] as const) {
         const meshes = fixture.ids.map((id) => {
           const part = parts.get(id)?.[0]
           const mesh = detail === 'near' ? part?.mesh : part?.distant?.mesh
-          if (!mesh) throw new Error('Missing wall representation: ' + id)
+          if (!mesh) {
+            throw new Error('Missing wall representation: ' + id)
+          }
           return mesh
         })
-        for (const point of fixture.points)
+        for (const point of fixture.points) {
           expect(
             meshes.filter((mesh) => footprintContains(mesh, point)).length,
             `${fixture.name}/${detail} coverage at ${point.join(',')}`
           ).toBe(1)
+        }
       }
+    }
   })
 })
 
@@ -182,12 +197,16 @@ describe('reference rear-wall discontinuity', () => {
     for (const assembly of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + assembly.parts.length)
       offset += assembly.parts.length
-      if (assembly.asset !== 'wall-segment') continue
-      for (const detail of ['near', 'distant'] as const)
+      if (assembly.asset !== 'wall-segment') {
+        continue
+      }
+      for (const detail of ['near', 'distant'] as const) {
         for (const part of parts) {
           const mesh = detail === 'near' ? part.mesh : part.distant?.mesh
-          if (!mesh) throw new Error('Missing wall representation')
-          for (const ratio of [0.2, 0.5, 0.8])
+          if (!mesh) {
+            throw new Error('Missing wall representation')
+          }
+          for (const ratio of [0.2, 0.5, 0.8]) {
             expect(
               footprintContains(mesh, [
                 gapStart + (gapEnd - gapStart) * ratio,
@@ -195,7 +214,9 @@ describe('reference rear-wall discontinuity', () => {
               ]),
               `${assembly.id}/${detail} seals the source-visible rear gap`
             ).toBe(false)
+          }
         }
+      }
     }
   })
 })
@@ -211,14 +232,18 @@ it('joins the lounge rear return at body and cap faces while retaining a rear pa
     )
     offset += assembly.parts.length
   }
-  for (const suffix of ['', '-cap'])
+  for (const suffix of ['', '-cap']) {
     for (const detail of ['near', 'distant'] as const) {
       const member = parts.get('lounge-rear-return' + suffix)?.[0]
       const host = parts.get('lounge-right-wall' + suffix)?.[0]
-      if (!member || !host) throw new Error('Missing actual T-return member')
+      if (!member || !host) {
+        throw new Error('Missing actual T-return member')
+      }
       const a = detail === 'near' ? member.mesh : member.distant?.mesh
       const b = detail === 'near' ? host.mesh : host.distant?.mesh
-      if (!a || !b) throw new Error('Missing wall representation')
+      if (!a || !b) {
+        throw new Error('Missing wall representation')
+      }
       const extent = (mesh: Mesh, axis: number) => {
         const values = mesh.positions.filter((_, i) => i % 3 === axis)
         return [Math.min(...values), Math.max(...values)]
@@ -228,8 +253,8 @@ it('joins the lounge rear return at body and cap faces while retaining a rear pa
         z = extent(a, 2)
       expect(y[0]).toBeCloseTo(extent(b, 1)[1], 8)
       expect(z).toEqual(extent(b, 2).map((v) => expect.closeTo(v, 8)))
-      for (const fraction of [0.2, 0.5, 0.8])
-        for (const dy of [-0.005, 0.005])
+      for (const fraction of [0.2, 0.5, 0.8]) {
+        for (const dy of [-0.005, 0.005]) {
           expect(
             [a, b].filter((mesh) =>
               footprintContains(mesh, [
@@ -238,11 +263,14 @@ it('joins the lounge rear return at body and cap faces while retaining a rear pa
               ])
             )
           ).toHaveLength(1)
+        }
+      }
       const door = (OFFICE_FIT.parameters.doorWidth / 1.66) * 1.52
       expect(
         OFFICE_FIT.parameters.rearY - OFFICE_SHELL.exteriorThickness / 2 - y[1]
       ).toBeGreaterThanOrEqual(door)
     }
+  }
 })
 
 it('keeps the indoor pantry entrance at least as wide as the reference main door leaf', () => {
@@ -260,7 +288,9 @@ it('keeps the indoor pantry entrance at least as wide as the reference main door
     const values = byId
       .get(id)
       ?.flatMap((part) => part.mesh.positions.filter((_, i) => i % 3 === axis))
-    if (!values?.length) throw new Error(`Missing structural member ${id}`)
+    if (!values?.length) {
+      throw new Error(`Missing structural member ${id}`)
+    }
     return [Math.min(...values), Math.max(...values)]
   }
   const pantryBounds = [
@@ -282,10 +312,14 @@ it('keeps the indoor pantry entrance at least as wide as the reference main door
     })
   )
   const frame = byId.get('entrance-door')
-  if (!frame) throw new Error('Missing entrance frame')
+  if (!frame) {
+    throw new Error('Missing entrance frame')
+  }
   const jamb = (id: string, edge: 'min' | 'max') => {
     const member = frame.find((part) => part.id === id)
-    if (!member) throw new Error(`Missing jamb ${id}`)
+    if (!member) {
+      throw new Error(`Missing jamb ${id}`)
+    }
     const values = member.mesh.positions.filter((_, i) => i % 3 === 0)
     return edge === 'min' ? Math.min(...values) : Math.max(...values)
   }
@@ -296,8 +330,9 @@ it('keeps the indoor pantry entrance at least as wide as the reference main door
   if (
     !specification?.mainLeafWidthMetres ||
     !specification.openingClearSizeMetres
-  )
+  ) {
     throw new Error('Missing main door leaf dimensions')
+  }
   // The full frame also contains a fixed side panel; only the leaf supplies passage.
   const leafWidth =
     (aperture * specification.mainLeafWidthMetres) /
@@ -319,7 +354,9 @@ it('meets the rear and lounge bodies with a flush pantry floor band', () => {
   expect(members.has('pantry-east-wall')).toBe(false)
   const bounds = (id: string, axis: number) => {
     const group = members.get(id)
-    if (!group) throw new Error(`Missing structural member ${id}`)
+    if (!group) {
+      throw new Error(`Missing structural member ${id}`)
+    }
     const values = group.flatMap((p) =>
       p.mesh.positions.filter((_, i) => i % 3 === axis)
     )
@@ -354,7 +391,9 @@ it('places the cream and green west-room dividers end-to-end on one partition li
     const bounds = (id: string) => {
       const part = members.get(id)?.[0]
       const mesh = detail === 'near' ? part?.mesh : part?.distant?.mesh
-      if (!mesh) throw new Error(`Missing divider ${id}/${detail}`)
+      if (!mesh) {
+        throw new Error(`Missing divider ${id}/${detail}`)
+      }
       return [0, 1, 2].map((axis) => {
         const values = mesh.positions.filter((_, index) => index % 3 === axis)
         return [Math.min(...values), Math.max(...values)]

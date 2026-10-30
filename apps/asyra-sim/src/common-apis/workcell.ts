@@ -26,8 +26,12 @@ function admitResources(
   workcell: Workcell,
   admit?: WorkcellResourceAdmission
 ): void {
-  if (!workcell.bodies.some((body) => body.visuals?.length)) return
-  if (!admit) throw new Error('Visual resource admission is unavailable')
+  if (!workcell.bodies.some((body) => body.visuals?.length)) {
+    return
+  }
+  if (!admit) {
+    throw new Error('Visual resource admission is unavailable')
+  }
   admit(workcell)
 }
 export function readCandidateParameters(
@@ -36,14 +40,16 @@ export function readCandidateParameters(
 ): CandidateParameters {
   const snapshot = core.getCanonicalOwnerSnapshot(),
     candidate = snapshot.sceneTree.elements[candidateId]
-  if (!candidate || candidate.type !== ComponentTypes.CANDIDATE)
+  if (!candidate || candidate.type !== ComponentTypes.CANDIDATE) {
     throw new Error('Missing candidate')
+  }
   const candidateProperty = snapshot.props[
     candidate.props?.[PropertyNames.CANDIDATE] ?? ''
   ] as Record<string, unknown> | undefined
   const config = candidateProperty?.[PropertyFields.CANDIDATE]
-  if (!validCandidateParameters(config))
+  if (!validCandidateParameters(config)) {
     throw new Error('Invalid canonical candidate parameters')
+  }
   return structuredClone(config)
 }
 
@@ -54,7 +60,9 @@ export function readWorkcell(core: Core, candidateId: string): Workcell {
     const visited = new Set<string>()
     let current: string | undefined = id
     while (current && current !== candidateId) {
-      if (visited.has(current)) throw new Error('Canonical hierarchy cycle')
+      if (visited.has(current)) {
+        throw new Error('Canonical hierarchy cycle')
+      }
       visited.add(current)
       current = snapshot.sceneTree.elements[current]?.parentId
     }
@@ -62,13 +70,16 @@ export function readWorkcell(core: Core, candidateId: string): Workcell {
   }
   const bodies: Body[] = []
   for (const element of Object.values(snapshot.sceneTree.elements)) {
-    if (element.type !== ComponentTypes.BODY || !belongs(element.id)) continue
+    if (element.type !== ComponentTypes.BODY || !belongs(element.id)) {
+      continue
+    }
     const property = snapshot.props[
       element.props?.[PropertyNames.BODY] ?? ''
     ] as Record<string, unknown> | undefined
     const bodyParameters = property?.[PropertyFields.BODY]
-    if (!bodyParameters || typeof bodyParameters !== 'object')
+    if (!bodyParameters || typeof bodyParameters !== 'object') {
       throw new Error('Missing body parameters')
+    }
     bodies.push({
       ...(bodyParameters as BodyParameters),
       id: element.id,
@@ -92,7 +103,9 @@ export function readCandidateLineage(
   candidateId: string
 ): CandidateLineage | undefined {
   const config = readCandidateParameters(core, candidateId)
-  if (!config.lineage) return undefined
+  if (!config.lineage) {
+    return undefined
+  }
   return {
     ...config.lineage,
     bodyOrigins: Object.fromEntries(
@@ -145,9 +158,11 @@ export function replaceWorkcell(
   admitResources(workcell, admit)
   const current = readWorkcell(core, candidateId)
   const owned = new Set(current.bodies.map((body) => body.id))
-  for (const body of workcell.bodies)
-    if (core.getElementData(body.id) && !owned.has(body.id))
+  for (const body of workcell.bodies) {
+    if (core.getElementData(body.id) && !owned.has(body.id)) {
       throw new Error('Body identity belongs to another candidate')
+    }
+  }
   runTransaction(() => {
     const desired = new Map(workcell.bodies.map((body) => [body.id, body]))
     const obsolete = new Set(
@@ -161,32 +176,38 @@ export function replaceWorkcell(
         retained &&
         body.parentId !== null &&
         body.parentId !== retained.parentId
-      )
+      ) {
         core.moveElements({
           elementIds: [body.id],
           targetParentId: candidateId,
           targetIndex: 0
         })
+      }
     }
-    for (const body of current.bodies)
-      if (obsolete.has(body.id) && !obsolete.has(body.parentId ?? ''))
+    for (const body of current.bodies) {
+      if (obsolete.has(body.id) && !obsolete.has(body.parentId ?? '')) {
         core.removeSubtree(body.id)
+      }
+    }
     const pending = [...workcell.bodies],
       inserted = new Set<string>()
     while (pending.length) {
       const index = pending.findIndex(
         (body) => body.parentId === null || inserted.has(body.parentId)
       )
-      if (index < 0) throw new Error('Invalid insertion hierarchy')
+      if (index < 0) {
+        throw new Error('Invalid insertion hierarchy')
+      }
       const [body] = pending.splice(index, 1)
       if (owned.has(body.id)) {
         const target = body.parentId ?? candidateId
-        if (core.getElementData(body.id)?.parentId !== target)
+        if (core.getElementData(body.id)?.parentId !== target) {
           core.moveElements({
             elementIds: [body.id],
             targetParentId: target,
             targetIndex: 0
           })
+        }
         core.updateElementProperties([
           {
             elementId: body.id,
@@ -197,11 +218,14 @@ export function replaceWorkcell(
           name: body.name,
           visible: body.visible
         })
-      } else insertBody(core, candidateId, body)
+      } else {
+        insertBody(core, candidateId, body)
+      }
       inserted.add(body.id)
     }
-    if (current.robotRootId !== workcell.robotRootId)
+    if (current.robotRootId !== workcell.robotRootId) {
       writeRoot(core, candidateId, workcell.robotRootId)
+    }
   })
 }
 export function createCandidate(
@@ -212,8 +236,9 @@ export function createCandidate(
 ): string {
   validateWorkcell(workcell)
   admitResources(workcell, admit)
-  if (!name.trim() || name.length > 200)
+  if (!name.trim() || name.length > 200) {
     throw new Error('Candidate name must contain 1 to 200 characters')
+  }
   return runTransaction(() => {
     const id = core.createElement({
       type: ComponentTypes.CANDIDATE,
@@ -238,12 +263,14 @@ export function upsertBody(
     existing?.visuals?.length &&
     !body.visuals?.length &&
     body.colliders.length
-  )
+  ) {
     throw new Error(
       'Removing the last original part must clear retired geometry; author native replacement parts explicitly afterward'
     )
-  if (!existing && core.getElementData(body.id))
+  }
+  if (!existing && core.getElementData(body.id)) {
     throw new Error('Body identity belongs to another candidate')
+  }
   const next: Workcell = {
     ...current,
     robotRootId: robotRootId === undefined ? current.robotRootId : robotRootId,
@@ -265,15 +292,19 @@ export function upsertBody(
         name: body.name,
         visible: body.visible
       })
-      if (existing.parentId !== body.parentId)
+      if (existing.parentId !== body.parentId) {
         core.moveElements({
           elementIds: [body.id],
           targetParentId: body.parentId ?? candidateId,
           targetIndex: 0
         })
-    } else insertBody(core, candidateId, body)
-    if (current.robotRootId !== next.robotRootId)
+      }
+    } else {
+      insertBody(core, candidateId, body)
+    }
+    if (current.robotRootId !== next.robotRootId) {
       writeRoot(core, candidateId, next.robotRootId)
+    }
   })
 }
 export function removeBody(
@@ -282,14 +313,17 @@ export function removeBody(
   bodyId: string
 ): void {
   const current = readWorkcell(core, candidateId)
-  if (!current.bodies.some((body) => body.id === bodyId))
+  if (!current.bodies.some((body) => body.id === bodyId)) {
     throw new Error('Missing body')
+  }
   const removed = new Set([bodyId])
   const pending = [bodyId]
   while (pending.length) {
     const parent = pending.pop()
     for (const body of current.bodies) {
-      if (body.parentId !== parent) continue
+      if (body.parentId !== parent) {
+        continue
+      }
       removed.add(body.id)
       pending.push(body.id)
     }
@@ -305,7 +339,8 @@ export function removeBody(
   validateWorkcell(next)
   runTransaction(() => {
     core.removeSubtree(bodyId)
-    if (next.robotRootId !== current.robotRootId)
+    if (next.robotRootId !== current.robotRootId) {
       writeRoot(core, candidateId, next.robotRootId)
+    }
   })
 }

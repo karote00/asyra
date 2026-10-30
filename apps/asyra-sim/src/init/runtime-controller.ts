@@ -53,26 +53,33 @@ export class RuntimeController {
     }
   }
   private publish(patch: Partial<RuntimeState>): void {
-    if (this.closed) return
+    if (this.closed) {
+      return
+    }
     this.state = Object.freeze({ ...this.state, ...patch })
     this.listeners.forEach((listener) => listener())
   }
   private assertOpen(): void {
-    if (this.closed) throw new Error('Runtime controller is closed')
+    if (this.closed) {
+      throw new Error('Runtime controller is closed')
+    }
   }
   private requireReady(): SimRuntime {
     this.assertOpen()
-    if (this.state.status !== 'ready' || !this.owned)
+    if (this.state.status !== 'ready' || !this.owned) {
       throw new Error('No editable runtime is ready')
+    }
     return this.owned
   }
   private run<T>(action: () => Promise<T>): Promise<T> {
-    if (this.closed)
+    if (this.closed) {
       return Promise.reject(new Error('Runtime controller is closed'))
-    if (this.operation)
+    }
+    if (this.operation) {
       return Promise.reject(
         new Error('Another runtime operation is still running')
       )
+    }
     const operation = Promise.resolve().then(action)
     this.operation = operation
     return operation.finally(() => {
@@ -83,8 +90,9 @@ export class RuntimeController {
   start(): Promise<void> {
     return this.run(async () => {
       this.assertOpen()
-      if (this.state.status !== 'idle')
+      if (this.state.status !== 'idle') {
         throw new Error('Runtime controller already started')
+      }
       this.publish({ status: 'starting', error: '' })
       try {
         this.owned = await this.create()
@@ -109,14 +117,16 @@ export class RuntimeController {
   }
 
   async capture(onCaptured?: () => void): Promise<ProjectSnapshot> {
-    if (this.operation)
+    if (this.operation) {
       throw new Error('Another runtime operation is still running')
+    }
     const runtime = this.requireReady()
     const resume = runtime.pauseEditing()
     try {
       const captured = await runtime.captureSnapshot()
-      if (this.requireReady() !== runtime)
+      if (this.requireReady() !== runtime) {
         throw new Error('Runtime changed during capture')
+      }
       onCaptured?.()
       return captured
     } finally {
@@ -170,7 +180,9 @@ export class RuntimeController {
       } catch (error) {
         let failure = error
         if (!retired) {
-          if (!this.closed) resume?.()
+          if (!this.closed) {
+            resume?.()
+          }
           this.publish({
             status: 'ready',
             runtime: previous,
@@ -204,7 +216,9 @@ export class RuntimeController {
   }
 
   dispose(): Promise<void> {
-    if (this.closing) return this.closing
+    if (this.closing) {
+      return this.closing
+    }
     this.closed = true
     this.preparation?.abort()
     const pending = this.operation

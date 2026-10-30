@@ -9,7 +9,9 @@ describe('shared invocation dispatch', () => {
     const error = new Error('missing stock')
     const invoker = runtime.createAiInvoker({
       execute: async (call: { name: string }) => {
-        if (call.name === 'missing') throw error
+        if (call.name === 'missing') {
+          throw error
+        }
         return result
       },
       observe: (event: unknown) => {

@@ -8,7 +8,9 @@ export function ExperimentCreation() {
   const view = useExperimentView()
   const saving = useExperimentField('saving')
   const canonical = useExperimentValue((state) => !!state.canonical)
-  if (canonical) return null
+  if (canonical) {
+    return null
+  }
   return (
     <button
       className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"

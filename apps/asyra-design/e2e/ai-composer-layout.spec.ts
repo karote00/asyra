@@ -32,8 +32,9 @@ for (const width of [360, 1280]) {
         add.boundingBox(),
         send.boundingBox()
       ])
-      if (!formBox || !inputBox || !addBox || !sendBox)
+      if (!formBox || !inputBox || !addBox || !sendBox) {
         throw new Error('Composer bounds unavailable')
+      }
       expect(Math.abs(addBox.y - sendBox.y)).toBeLessThanOrEqual(1)
       expect(Math.abs(addBox.height - sendBox.height)).toBeLessThanOrEqual(1)
       expect(sendBox.x + sendBox.width).toBeLessThanOrEqual(

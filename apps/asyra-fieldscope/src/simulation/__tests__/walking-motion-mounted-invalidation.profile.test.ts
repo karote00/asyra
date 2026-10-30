@@ -16,7 +16,9 @@ it('mounted crate consumer retains all original inventory in bounded canonical a
     budget: { ...f.raw.budget, maxExactPredicates: 1000 }
   }
   const result = owner.prepare(raw)
-  if (!('format' in result)) throw new Error('Missing nonlinear admission')
+  if (!('format' in result)) {
+    throw new Error('Missing nonlinear admission')
+  }
   const entries = result.sourceRelations.inventory.filter(
     (e) => e.mountedCrate === f.crate
   )

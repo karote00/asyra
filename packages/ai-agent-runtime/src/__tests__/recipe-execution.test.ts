@@ -581,7 +581,9 @@ it('exports validated stopped child values through every ancestor without runnin
         }
   )
   const base = host.registry.get('set')
-  if (!base) throw new Error('Missing registered fixture operation')
+  if (!base) {
+    throw new Error('Missing registered fixture operation')
+  }
   host.registry.register({
     ...base,
     name: 'repairable',
@@ -627,28 +629,39 @@ describe('bounded repair execution', () => {
         checks++
         const value = Number(call.input)
         let status = value <= 0 ? 'pass' : 'repairable'
-        if (mode === 'decision') status = 'decision-required'
+        if (mode === 'decision') {
+          status = 'decision-required'
+        }
         return success({
           status: mode === 'malformed' ? 'done' : status,
           progress: `remaining:${value}`
         })
       }
       if (call.name === 'repair') {
-        if (mode === 'cancel') controller.abort()
-        if (mode === 'partial' || mode === 'unknown')
+        if (mode === 'cancel') {
+          controller.abort()
+        }
+        if (mode === 'partial' || mode === 'unknown') {
           return {
             ...success(Number(call.input) - 1),
             status: mode,
             settlement: mode
           }
-        if (mode === 'stuck') return success(call.input)
-        if (mode === 'cycle') return success(3 - Number(call.input))
+        }
+        if (mode === 'stuck') {
+          return success(call.input)
+        }
+        if (mode === 'cycle') {
+          return success(3 - Number(call.input))
+        }
         return success(Number(call.input) - 1)
       }
       return success(call.input)
     }, maxSteps)
     const common = host.registry.get('set')
-    if (!common) throw new Error('Missing scalar tool')
+    if (!common) {
+      throw new Error('Missing scalar tool')
+    }
     host.registry.register({ ...common, name: 'repair' })
     host.registry.register({
       ...common,
@@ -768,7 +781,9 @@ describe('bounded repair execution', () => {
   it('pins changed checker dependencies before any mutation', async () => {
     const host = fixture()
     const check = host.registry.get('check')
-    if (!check) throw new Error('Missing checker')
+    if (!check) {
+      throw new Error('Missing checker')
+    }
     host.registry.remove('check', 1)
     host.registry.register({
       ...check,
@@ -830,7 +845,9 @@ it('never exports a malformed own recovery when normalizing a thrown failure', a
     settlement: 'unknown'
   }))
   const primitive = host.registry.get('set')
-  if (!primitive) throw new Error('Missing scalar tool')
+  if (!primitive) {
+    throw new Error('Missing scalar tool')
+  }
   host.registry.register({
     ...primitive,
     name: 'recoverable',
@@ -851,12 +868,16 @@ it('does not advertise stopped resources whose transfer to the caller failed', a
   let count = 0
   const host = setup(async (call) => {
     count++
-    if (count === 2) throw new Error('Leaf unavailable')
+    if (count === 2) {
+      throw new Error('Leaf unavailable')
+    }
     return success(call.input)
   })
   host.register('transfer-failure', ['set', 'set'])
   host.leases.retain.mockImplementation(async ({ toCallId }) => {
-    if (toCallId === undefined) throw new Error('Caller retention failed')
+    if (toCallId === undefined) {
+      throw new Error('Caller retention failed')
+    }
   })
   const result = await host.runner.invoke({
     name: 'transfer-failure',

@@ -21,8 +21,9 @@ async function startFlowServer(
     address.hash ||
     address.username ||
     address.password
-  )
+  ) {
     throw new Error('Expected loopback HTTP origin with explicit port')
+  }
   const service = createFlowService(root, directory, { projectId }),
     capability = randomBytes(32).toString('hex')
   const assets = {
@@ -42,8 +43,9 @@ async function startFlowServer(
       res.end(JSON.stringify(value))
     }
     try {
-      if (req.headers.host !== new URL(origin).host)
+      if (req.headers.host !== new URL(origin).host) {
         return send(403, { error: 'Invalid host' })
+      }
       const route = new URL(req.url, origin)
       if (req.method === 'GET') {
         if (assets[route.pathname]) {
@@ -55,7 +57,9 @@ async function startFlowServer(
           })
           return res.end(fs.readFileSync(path.join(__dirname, file)))
         }
-        if (route.pathname === '/api/session') return send(200, { capability })
+        if (route.pathname === '/api/session') {
+          return send(200, { capability })
+        }
         if (route.pathname === '/api/flows') {
           const current = service.snapshot()
           return send(200, {
@@ -65,7 +69,7 @@ async function startFlowServer(
             )
           })
         }
-        if (route.pathname === '/api/evidence')
+        if (route.pathname === '/api/evidence') {
           return send(
             200,
             service.context(
@@ -73,7 +77,8 @@ async function startFlowServer(
               route.searchParams.get('node')
             )
           )
-        if (route.pathname === '/api/context')
+        }
+        if (route.pathname === '/api/context') {
           return send(
             200,
             compactContext(
@@ -83,35 +88,43 @@ async function startFlowServer(
               )
             )
           )
+        }
         return send(404, { error: 'Unknown route' })
       }
-      if (req.method !== 'POST')
+      if (req.method !== 'POST') {
         return send(405, { error: 'Unsupported method' })
+      }
       if (
         (req.headers.origin && req.headers.origin !== origin) ||
         req.headers['x-flow-capability'] !== capability
-      )
+      ) {
         return send(403, { error: 'Local action authorization required' })
-      if (req.headers['content-type'] !== 'application/json')
+      }
+      if (req.headers['content-type'] !== 'application/json') {
         return send(415, { error: 'Expected JSON' })
+      }
       const chunks = []
       let bytes = 0
       for await (const chunk of req) {
         bytes += chunk.length
-        if (bytes > 1024 * 1024)
+        if (bytes > 1024 * 1024) {
           return send(413, { error: 'Request too large' })
+        }
         chunks.push(chunk)
       }
       const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-      if (route.pathname === '/api/update')
+      if (route.pathname === '/api/update') {
         return send(200, service.update(body.flowId, body.request))
-      if (route.pathname === '/api/preview')
+      }
+      if (route.pathname === '/api/preview') {
         return send(
           200,
           service.preview(body.flowId, body.nodeId, body.actionId)
         )
-      if (route.pathname === '/api/rerun')
+      }
+      if (route.pathname === '/api/rerun') {
         return send(200, await service.rerun(body))
+      }
       if (route.pathname === '/api/cancel') {
         await service.cancel()
         return send(200, { settled: true })

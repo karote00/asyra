@@ -119,7 +119,9 @@ const button = (text: string) => {
     (item) => item.textContent === text
   )
 
-  if (!found) throw new Error(`Missing button: ${text}`)
+  if (!found) {
+    throw new Error(`Missing button: ${text}`)
+  }
 
   return found
 }
@@ -251,12 +253,13 @@ it('identifies selected revisions in selection order and removes a slot without 
       })
     )
   )
-  for (const id of ['c', 'a'])
+  for (const id of ['c', 'a']) {
     await act(() =>
       host
         .querySelector<HTMLInputElement>(`[aria-label="Compare ${id}"]`)
         ?.click()
     )
+  }
   const selection = host.querySelector(
     '[aria-label="Selected comparison runs"]'
   )
@@ -301,20 +304,22 @@ it('retires comparison when a canonical run disappears instead of displaying rem
     isCurrent: () => true
   }
   await act(() => root.render(createElement(RunLibrary, props)))
-  for (const id of ['a', 'b'])
+  for (const id of ['a', 'b']) {
     await act(() =>
       host
         .querySelector<HTMLInputElement>(`[aria-label="Compare ${id}"]`)
         ?.click()
     )
+  }
   await act(() => button('Compare selected runs (2/3)').click())
   await completeComparison()
   expect(host.querySelector('[aria-label="Run comparison"]')).not.toBeNull()
   expect(compare).toHaveBeenCalledTimes(1)
-  for (let index = 0; index < 5; index++)
+  for (let index = 0; index < 5; index++) {
     await act(() =>
       root.render(createElement(RunLibrary, { ...props, runs: [...runs] }))
     )
+  }
   expect(compare).toHaveBeenCalledTimes(1)
   expect(host.querySelector('[aria-label="Run comparison"]')).not.toBeNull()
   await act(() =>
@@ -348,12 +353,13 @@ async function selectPair() {
     isCurrent: () => true
   }
   await act(() => root.render(createElement(RunLibrary, props)))
-  for (const id of ['a', 'b'])
+  for (const id of ['a', 'b']) {
     await act(() =>
       host
         .querySelector<HTMLInputElement>(`[aria-label="Compare ${id}"]`)
         ?.click()
     )
+  }
   return props
 }
 
@@ -389,13 +395,16 @@ it.each(['selection', 'source', 'unmount'])(
     const props = await selectPair()
     const compare = vi.spyOn(comparisonOwner, 'compareRuns')
     await act(() => button('Compare selected runs (2/3)').click())
-    if (change === 'selection') await act(() => button('Remove 1 - a').click())
-    if (change === 'source')
+    if (change === 'selection') {
+      await act(() => button('Remove 1 - a').click())
+    }
+    if (change === 'source') {
       await act(() =>
         root.render(
           createElement(RunLibrary, { ...props, runs: [props.runs[0]] })
         )
       )
+    }
     if (change === 'unmount') {
       await act(() => root.unmount())
       root = createRoot(host)
@@ -435,7 +444,9 @@ it('reveals the explicitly selected run detail without starting a comparison', a
   const entry = host.querySelector<HTMLButtonElement>(
     '.run-history article button'
   )
-  if (!entry) throw new Error('Missing run entry')
+  if (!entry) {
+    throw new Error('Missing run entry')
+  }
   await act(() => entry.click())
   expect(document.activeElement?.getAttribute('aria-label')).toBe(
     'Selected run'

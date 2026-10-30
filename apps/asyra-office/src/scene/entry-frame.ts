@@ -22,8 +22,9 @@ export function createEntryFrame(
   const parts = catalogAsset('entry-door-set').filter((part) =>
     members.includes(part.id)
   )
-  if (parts.length !== members.length)
+  if (parts.length !== members.length) {
     throw new Error('Missing approved structural entry members')
+  }
   const front = Math.min(
     ...parts.flatMap((part) =>
       part.mesh.positions.filter((_, index) => index % 3 === 1)

@@ -27,7 +27,9 @@ export class TransmissionCapture {
   apply(material: THREE.MeshPhysicalMaterial, layer: number | undefined): void {
     const previous = this.bindings.get(material)
     if (layer === undefined) {
-      if (!previous) return
+      if (!previous) {
+        return
+      }
       material.onBeforeCompile = previous.compile
       material.customProgramCacheKey = previous.key
       this.bindings.delete(material)
@@ -93,23 +95,27 @@ export class TransmissionCapture {
       binding: CaptureBinding
     }[] = []
     scene.traverseVisible((object) => {
-      if (!(object instanceof THREE.Mesh) || Array.isArray(object.material))
+      if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) {
         return
+      }
       const binding = this.bindings.get(object.material)
       if (
         binding &&
         (object.material as THREE.MeshPhysicalMaterial).transmission > 0
-      )
+      ) {
         objects.push({
           mesh: object,
           material: object.material as THREE.MeshPhysicalMaterial,
           order: object.renderOrder,
           binding
         })
+      }
     })
     const active = new Set(objects.map(({ material }) => material))
     for (const [source, entry] of this.backFaces) {
-      if (!active.has(source)) entry.release()
+      if (!active.has(source)) {
+        entry.release()
+      }
     }
     const sceneLayers = new Set(objects.map(({ binding }) => binding.layer))
     scene.updateMatrixWorld()
@@ -133,7 +139,9 @@ export class TransmissionCapture {
       )
     ].sort((a, b) => a - b)
     for (const [layer, target] of this.targets) {
-      if (sceneLayers.has(layer)) continue
+      if (sceneLayers.has(layer)) {
+        continue
+      }
       target.dispose()
       this.targets.delete(layer)
     }
@@ -144,10 +152,11 @@ export class TransmissionCapture {
     if (
       typeof renderer.getRenderTarget !== 'function' ||
       typeof renderer.setRenderTarget !== 'function'
-    )
+    ) {
       throw new Error(
         'Ordered spatial transmission requires render-target support'
       )
+    }
     for (const layer of layers) {
       let target = this.targets.get(layer)
       if (!target) {
@@ -161,7 +170,9 @@ export class TransmissionCapture {
       }
       target.setSize(width, height)
       for (const { binding } of objects) {
-        if (binding.layer !== layer) continue
+        if (binding.layer !== layer) {
+          continue
+        }
         binding.texture.value = target.texture
         binding.size.value.set(width, height)
       }
@@ -190,7 +201,9 @@ export class TransmissionCapture {
               binding.layer > layer ? firstOrder - binding.layer : order
           }
           const target = this.targets.get(layer)
-          if (!target) throw new Error('Missing optical capture target')
+          if (!target) {
+            throw new Error('Missing optical capture target')
+          }
           renderer.setRenderTarget(target)
           draw(scene, camera)
         }
@@ -208,7 +221,7 @@ export class TransmissionCapture {
       }
       finish?.()
     }
-    if (layers.length > 1 && finish)
+    if (layers.length > 1 && finish) {
       this.opaqueFrame.render(
         renderer,
         scene,
@@ -218,7 +231,9 @@ export class TransmissionCapture {
         draw,
         consume
       )
-    else consume()
+    } else {
+      consume()
+    }
   }
 
   private backFace(
@@ -251,8 +266,12 @@ export class TransmissionCapture {
 
   dispose(): void {
     this.opaqueFrame.dispose()
-    for (const entry of [...this.backFaces.values()]) entry.release()
-    for (const target of this.targets.values()) target.dispose()
+    for (const entry of [...this.backFaces.values()]) {
+      entry.release()
+    }
+    for (const target of this.targets.values()) {
+      target.dispose()
+    }
     this.targets.clear()
   }
 }

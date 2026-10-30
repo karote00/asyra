@@ -11,6 +11,23 @@ command.
 
 ## PR Checks and App Deployment
 
+### Development checks and generated release artifacts
+
+`yarn validate:local --full --run` and the shared CI checks use
+`yarn test:scripts` for development-tool contracts. Generator behavior is tested
+with isolated fixtures; these checks do not require the checked-in app template
+to be synchronized during development.
+
+`yarn test:release-artifacts` checks the existing Asyra Design template, its
+release configuration, standalone manifest, synchronized source copies and
+package inventory. It neither generates templates nor publishes packages.
+`yarn release:validate --prod=asyra-design` runs this gate after the template
+synchronization check. Framework-only validation does not require app templates.
+Deferred template failures remain failures in this release gate; they are not
+skipped or converted into passing development evidence.
+
+### CI and deployment boundaries
+
 PR validation is independent of hosting. Ready PRs require `validate`,
 `framework-release-readiness`, `e2e-tests`, `collaboration-e2e-tests`, and
 `production-artifact-tests`. `validate` is the total aggregation check;
@@ -136,7 +153,7 @@ yarn test:asyra-design # run its local formal tests
 yarn test:asyra-design:ci # run its CI test task
 yarn lint:asyra-design # lint only its maintained app files
 yarn test:workspaces:ci # run script tests and all workspace CI tests
-yarn lint:workspaces:ci # lint the repository
+yarn lint # lint the repository
 ```
 
 The same `start:<app>`, `test:<app>`, `test:<app>:ci`, `lint:<app>`, and

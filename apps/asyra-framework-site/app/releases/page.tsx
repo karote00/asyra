@@ -25,7 +25,9 @@ export default async function ReleasesPage() {
   const support = content.pages.find(
     ({ id }) => id === 'reference/support-release'
   )
-  if (!support) throw new Error('Missing accepted support and release guide')
+  if (!support) {
+    throw new Error('Missing accepted support and release guide')
+  }
 
   return (
     <SiteFrame>

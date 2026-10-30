@@ -81,12 +81,15 @@ export const createMechanicalChecks = (options: {
   const { store } = options
   const admit = (input: unknown) => {
     const issue = operationInputIssue(input, designCheckInputSchema)
-    if (issue) throw new LocalToolInputError(issue)
+    if (issue) {
+      throw new LocalToolInputError(issue)
+    }
     const value = input as MechanicalCheckInput
-    if (value.requestId !== options.requestId)
+    if (value.requestId !== options.requestId) {
       throw new LocalToolInputError(
         'Mechanical checks belong to another request.'
       )
+    }
     try {
       store.select(value.checks)
     } catch (error) {
@@ -116,7 +119,9 @@ export const createMechanicalChecks = (options: {
           : []
       )
     )
-    if (dependencies.size) await options.refreshPrepared(signal, dependencies)
+    if (dependencies.size) {
+      await options.refreshPrepared(signal, dependencies)
+    }
   }
   const snapshot = (
     input: MechanicalCheckInput,
@@ -134,14 +139,21 @@ export const createMechanicalChecks = (options: {
     const progress: unknown[] = []
     let incomplete = error !== undefined
     for (const item of records) {
-      if (item.retired) continue
+      if (item.retired) {
+        continue
+      }
       const { result, recheck } = item
-      if (result.status === 'unverified' || result.status === 'stale')
+      if (result.status === 'unverified' || result.status === 'stale') {
         incomplete = true
+      }
       const evidenceCurrent =
         recheck?.kind !== 'measurement' || current.has(recheck.elementId)
-      if (!evidenceCurrent) incomplete = true
-      if (recheck && evidenceCurrent && result.status === 'pass') continue
+      if (!evidenceCurrent) {
+        incomplete = true
+      }
+      if (recheck && evidenceCurrent && result.status === 'pass') {
+        continue
+      }
       const findings = recheck?.kind === 'measurement' ? recheck.findings : []
       const repairable =
         evidenceCurrent &&
@@ -150,10 +162,12 @@ export const createMechanicalChecks = (options: {
         findings.every(prescribedPositionFinding)
       let reason =
         'The selected check requires current evidence or a primary-agent decision.'
-      if (!recheck) reason = 'This check has no supported recheck descriptor.'
-      else if (repairable)
+      if (!recheck) {
+        reason = 'This check has no supported recheck descriptor.'
+      } else if (repairable) {
         reason =
           'Apply explicit positions using current parent attachment evidence.'
+      }
       unresolved.push({
         checkId: item.checkId,
         revision: item.revision,
@@ -178,9 +192,12 @@ export const createMechanicalChecks = (options: {
       })
     }
     let status: 'pass' | 'repairable' | 'decision-required' = 'pass'
-    if (unresolved.length) status = 'repairable'
-    if (incomplete || unresolved.some((item) => !item.capability))
+    if (unresolved.length) {
+      status = 'repairable'
+    }
+    if (incomplete || unresolved.some((item) => !item.capability)) {
       status = 'decision-required'
+    }
     return {
       requestId: options.requestId,
       checks: records.map(({ checkId, revision }) => ({ checkId, revision })),
@@ -230,7 +247,9 @@ export const createMechanicalChecks = (options: {
         const ids = targets(input)
         const current = await options.validate(ids, signal)
         const missing = ids.filter((id) => !current.has(id))
-        if (missing.length) await options.measure(missing, signal)
+        if (missing.length) {
+          await options.measure(missing, signal)
+        }
       } catch (error) {
         signal.throwIfAborted()
         failure = error
@@ -252,10 +271,11 @@ export const createMechanicalChecks = (options: {
       const ids = targets(input)
       const current = await options.validate(ids, signal)
       signal.throwIfAborted()
-      if (ids.some((id) => !current.has(id)))
+      if (ids.some((id) => !current.has(id))) {
         throw new LocalToolInputError(
           'Mechanical evidence is unavailable before repair.'
         )
+      }
       // Never silently substitute newer revisions while admitting a write.
       admit(input)
       const records = store.select(input.checks)
@@ -265,10 +285,11 @@ export const createMechanicalChecks = (options: {
       if (
         !pending.length ||
         records.some((item) => !item.retired && !item.recheck)
-      )
+      ) {
         throw new LocalToolInputError(
           'No complete supported pending repair selection.'
         )
+      }
       const findings = pending.flatMap((item) =>
         !item.retired &&
         item.result.status === 'fail' &&
@@ -287,10 +308,11 @@ export const createMechanicalChecks = (options: {
             !item.recheck.findings.length ||
             !item.recheck.findings.every(prescribedPositionFinding)
         )
-      )
+      ) {
         throw new LocalToolInputError(
           'The complete pending set is not supported by this repair.'
         )
+      }
       return { input, findings, targets: targets(input) }
     }
   }

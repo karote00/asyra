@@ -18,11 +18,13 @@ it('constructs a hollow pitcher body with a pouring lip opposite its attached ha
   expect(handle[0][1]).toBeGreaterThan(body[0][1] + 0.045)
   // The rim must leave the centre open, with an inner wall below the top.
   const m = p[0].mesh
-  for (let i = 0; i < m.positions.length; i += 3)
-    if (m.positions[i + 2] > 0.22)
+  for (let i = 0; i < m.positions.length; i += 3) {
+    if (m.positions[i + 2] > 0.22) {
       expect(Math.hypot(m.positions[i], m.positions[i + 1])).toBeGreaterThan(
         0.078
       )
+    }
+  }
   expect(
     pantryPitcher(0xabcdef)
       .filter((p) => ['vessel', 'handle'].includes(p.id))

@@ -75,7 +75,9 @@ export function ExperimentProvider({
 export function useExperimentView(): ExperimentView {
   const view = useContext(ExperimentContext)
 
-  if (!view) throw new Error('Missing experiment projection')
+  if (!view) {
+    throw new Error('Missing experiment projection')
+  }
 
   return view
 }

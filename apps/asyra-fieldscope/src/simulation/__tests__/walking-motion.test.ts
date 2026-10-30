@@ -286,8 +286,9 @@ describe('walking whole-machine motion admission', () => {
         ]
       }
     }
-    for (const assessment of carried.terrain.contactAssessments)
+    for (const assessment of carried.terrain.contactAssessments) {
       assessment.loadCaseId = carried.load.id
+    }
     const admission = owner.prepare(readWalkingMotionRequest(carried, source))
     expect(admission.segments[0].carriedEnvelopes).toHaveLength(1)
     expect(admission.segments[0].carriedEnvelopes[0].attachment).toMatchObject({
@@ -299,14 +300,17 @@ describe('walking whole-machine motion admission', () => {
       ...admission.segments[0].carriedEnvelopes
     ]
     let selfPairs = 0
-    for (let left = 0; left < all.length; left++)
-      for (let right = left + 1; right < all.length; right++)
+    for (let left = 0; left < all.length; left++) {
+      for (let right = left + 1; right < all.length; right++) {
         if (!(
           'part' in all[left] &&
           'part' in all[right] &&
           all[left].body.id === all[right].body.id
-        ))
+        )) {
           selfPairs++
+        }
+      }
+    }
     expect(admission.work.envelopePairs).toBe(selfPairs + all.length)
   })
 
@@ -317,7 +321,9 @@ describe('walking whole-machine motion admission', () => {
       readWalkingMotionRequest(baseline.raw, baseline.source)
     )
     const chassis = next.source.parts.find(({ id }) => id === 'chassis')
-    if (!chassis) throw new Error('Missing test chassis')
+    if (!chassis) {
+      throw new Error('Missing test chassis')
+    }
     next.raw.load.crate = {
       kind: 'attached',
       sourceCoverage: 'complete',
@@ -611,8 +617,9 @@ describe('walking whole-machine motion admission', () => {
     expect(unresolved.work.terrainBoundsPreparations).toBe(1)
     expect(unresolved.work.terrainVertexBounds).toBe(3)
     expect(unresolved.work.envelopePairs).toBeGreaterThan(100)
-    for (let index = 0; index < 100; index++)
+    for (let index = 0; index < 100; index++) {
       expect(rawOnly.owner.read()).toBe(unresolved)
+    }
     unknown.terrain.id = 'changed-debris-survey'
     unknown.terrain.revision++
     const changed = rawOnly.owner.prepare(
@@ -629,8 +636,9 @@ describe('walking whole-machine motion admission', () => {
       fixtureValue.source
     )
     const first = fixtureValue.owner.prepare(request)
-    for (let count = 0; count < 100; count++)
+    for (let count = 0; count < 100; count++) {
       expect(fixtureValue.owner.read()).toBe(first)
+    }
     expect(fixtureValue.owner.prepare(request)).toBe(first)
     expect(fixtureValue.owner.work.preparations).toBe(1)
     const originalBuilds = fixtureValue.sourceOwner.work.builds
@@ -664,7 +672,9 @@ describe('walking whole-machine motion admission', () => {
     raw.gait.id = 'changed-shallow-gait'
     const second = owner.prepare(shallow)
     expect(second).not.toBe(first)
-    if ('format' in second) throw new Error('Legacy request changed authority')
+    if ('format' in second) {
+      throw new Error('Legacy request changed authority')
+    }
     expect(second.path.knots[1].base.position[0]).toBe(0.1)
     expect(owner.work.preparations).toBe(2)
   })
@@ -720,8 +730,9 @@ describe('walking whole-machine motion admission', () => {
       }
       const result = owner.prepare(readWalkingMotionRequest(raw, source))
       expect(result.status).toBe(incompatible ? 'unknown' : 'blocked')
-      if (!incompatible)
+      if (!incompatible) {
         expect(result.reasons).toContain('scene-demand-blocked')
+      }
     }
   })
 
@@ -747,8 +758,9 @@ describe('walking whole-machine motion admission', () => {
       },
       (request) => {
         request.load.id = 'changed-load'
-        for (const assessment of request.terrain.contactAssessments)
+        for (const assessment of request.terrain.contactAssessments) {
           assessment.loadCaseId = request.load.id
+        }
       },
       (request) => {
         request.load.carried = {
@@ -770,8 +782,9 @@ describe('walking whole-machine motion admission', () => {
         request.path.knots[1].time = 0.5
         request.evaluation.until = 0.5
         request.stance.phases[0].until = 0.5
-        for (const assessment of request.terrain.contactAssessments)
+        for (const assessment of request.terrain.contactAssessments) {
           assessment.until = 0.5
+        }
       }
     ]
     for (const [index, change] of changes.entries()) {
@@ -838,7 +851,9 @@ describe('walking whole-machine motion admission', () => {
       const scene = geometry.prepareScene(farm, buildSiteMeshes(farm, geometry))
       const demand = prepareSceneDemand(farm, scene, configuration)
       setDemand(demand)
-      if (previous) expect(owner.isCurrent(previous)).toBe(false)
+      if (previous) {
+        expect(owner.isCurrent(previous)).toBe(false)
+      }
       raw.terrain.sceneRevision = scene.revision
       raw.terrain.route.stripId = 'strip-3'
       raw.terrain.regions[0].binding = {
@@ -852,7 +867,9 @@ describe('walking whole-machine motion admission', () => {
       expect(result.source).toBe(source)
       expect(sourceOwner.work.builds).toBe(1)
       const work = { ...demand.work }
-      for (let read = 0; read < 100; read++) expect(owner.read()).toBe(result)
+      for (let read = 0; read < 100; read++) {
+        expect(owner.read()).toBe(result)
+      }
       expect(demand.work).toEqual(work)
       previous = result
     }

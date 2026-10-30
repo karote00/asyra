@@ -232,7 +232,9 @@ for (const stop of ['cancel', 'timeout'] as const) {
           worker.addEventListener('message', (event) => {
             if (event.data?.fixture === 'uncooperative-method-entered') {
               entered = true
-              if (stop === 'cancel') abort.abort()
+              if (stop === 'cancel') {
+                abort.abort()
+              }
             }
           })
           return worker

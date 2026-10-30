@@ -1357,6 +1357,6 @@
   }
 
   freeze(data)
-  if (typeof globalThis !== 'undefined') globalThis.FLOW_INSPECTOR_DATA = data
-  if (typeof module !== 'undefined' && module.exports) module.exports = data
+  if (typeof globalThis !== 'undefined') {globalThis.FLOW_INSPECTOR_DATA = data}
+  if (typeof module !== 'undefined' && module.exports) {module.exports = data}
 })()

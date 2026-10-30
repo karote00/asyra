@@ -26,7 +26,9 @@ it('admits only explicitly bound version-two source partitions and safe budgets'
     geometry = new SiteGeometry()
   const scene = geometry.prepareScene(farm, buildSiteMeshes(farm, geometry))
   const soil = farm.strips.find((strip) => strip.kind === 'soil')
-  if (!soil) throw new Error('Missing current soil strip')
+  if (!soil) {
+    throw new Error('Missing current soil strip')
+  }
   const demand = prepareSceneDemand(
     farm,
     scene,
@@ -69,8 +71,9 @@ it('admits only explicitly bound version-two source partitions and safe budgets'
   }
   const admitted = readWalkingMotionRequest(next, source, demand)
   expect(admitted.format).toBe('walking-motion-request/2')
-  if (admitted.format !== 'walking-motion-request/2')
+  if (admitted.format !== 'walking-motion-request/2') {
     throw new Error('Missing version two admission')
+  }
   expect(admitted.source).toBe(source)
   expect(admitted.demand).toBe(demand)
   expect(Object.isFrozen(admitted.externalSources[0].regions[0])).toBe(true)
@@ -114,8 +117,9 @@ it('admits only explicitly bound version-two source partitions and safe budgets'
     ...demand.targets.right,
     ...demand.targets.unassigned
   ][0]
-  if (!target || !target.partitions[0])
+  if (!target || !target.partitions[0]) {
     throw new Error('Missing current W1 target partition')
+  }
   const partition = target.partitions[0],
     reference = source.rig.contacts.supportTools[0]
   const contact = {
@@ -143,8 +147,9 @@ it('admits only explicitly bound version-two source partitions and safe budgets'
     source,
     demand
   )
-  if (selected.format !== 'walking-motion-request/2')
+  if (selected.format !== 'walking-motion-request/2') {
     throw new Error('Missing selected source request')
+  }
   expect(selected.targetContacts[0].robot.patch).toBe(reference.patch)
   expect(selected.targetContacts[0].target.partition).toBe(partition)
   expect(() =>

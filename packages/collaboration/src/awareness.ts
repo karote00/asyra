@@ -184,7 +184,9 @@ const cloneAwarenessValue = (
     return value
   }
   if (typeof value === 'number') {
-    if (Number.isFinite(value)) return value
+    if (Number.isFinite(value)) {
+      return value
+    }
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness numbers must be finite'
@@ -235,7 +237,9 @@ const cloneAwarenessValue = (
       )
     }
     const descriptor = Object.getOwnPropertyDescriptor(value, key)
-    if (!descriptor?.enumerable) continue
+    if (!descriptor?.enumerable) {
+      continue
+    }
     if (!('value' in descriptor)) {
       throw new AwarenessValidationError(
         'invalid-state',
@@ -355,8 +359,12 @@ export class Awareness {
       )
     }
     const clock = candidate.clock
-    if (actorId === this.actorId) return false
-    if (clock <= (this.remoteClocks.get(actorId) ?? -1)) return false
+    if (actorId === this.actorId) {
+      return false
+    }
+    if (clock <= (this.remoteClocks.get(actorId) ?? -1)) {
+      return false
+    }
 
     if (candidate.state === null) {
       this.remoteClocks.set(actorId, clock)
@@ -433,7 +441,9 @@ export class Awareness {
   }
 
   dispose(): void {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     this.disposed = true
     this.remote.clear()
     this.remoteClocks.clear()
@@ -445,7 +455,9 @@ export class Awareness {
   }
 
   private remove(actorId: string, reason: AwarenessRemovalReason): boolean {
-    if (!this.remote.delete(actorId)) return false
+    if (!this.remote.delete(actorId)) {
+      return false
+    }
     this.emit({ type: 'removed', actorId, reason })
     return true
   }

@@ -16,7 +16,9 @@ export function useCameraFlight(
 ) {
   useEffect(() => {
     const target = host.current
-    if (!target || !runtime) return
+    if (!target || !runtime) {
+      return
+    }
     const held = new Set<string>()
     let frame: number | undefined
     let previousTime: number | undefined
@@ -29,7 +31,9 @@ export function useCameraFlight(
         })
       )
       const length = Math.hypot(...vector)
-      if (!length) return
+      if (!length) {
+        return
+      }
       const distance = (1.5 * seconds * (accelerated ? 4 : 1)) / length
       runtime.move(
         vector[0] * distance,
@@ -39,7 +43,9 @@ export function useCameraFlight(
     }
     const stop = () => {
       held.clear()
-      if (frame !== undefined) cancelAnimationFrame(frame)
+      if (frame !== undefined) {
+        cancelAnimationFrame(frame)
+      }
       frame = undefined
       previousTime = undefined
       accelerated = false
@@ -49,8 +55,9 @@ export function useCameraFlight(
         stop()
         return
       }
-      if (previousTime !== undefined)
+      if (previousTime !== undefined) {
         move(Math.min((time - previousTime) / 1000, 0.05))
+      }
       previousTime = time
       frame = requestAnimationFrame(tick)
     }
@@ -60,17 +67,25 @@ export function useCameraFlight(
         return
       }
       accelerated = event.shiftKey
-      if (!movementKeys[event.code]) return
+      if (!movementKeys[event.code]) {
+        return
+      }
       event.preventDefault()
-      if (held.has(event.code)) return
+      if (held.has(event.code)) {
+        return
+      }
       held.add(event.code)
       move(1 / 30)
-      if (frame === undefined) frame = requestAnimationFrame(tick)
+      if (frame === undefined) {
+        frame = requestAnimationFrame(tick)
+      }
     }
     const keyup = (event: KeyboardEvent) => {
       accelerated = event.shiftKey
       held.delete(event.code)
-      if (!held.size) stop()
+      if (!held.size) {
+        stop()
+      }
     }
     target.addEventListener('keydown', keydown)
     target.addEventListener('blur', stop)

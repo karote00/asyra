@@ -294,10 +294,11 @@ describe('common tool contracts', () => {
   it('rejects cyclic and executable schema values', () => {
     const cycle: Record<string, unknown> = {}
     cycle.self = cycle
-    for (const outputSchema of [cycle, { parse: () => true }, new Date()])
+    for (const outputSchema of [cycle, { parse: () => true }, new Date()]) {
       expect(() =>
         createAiToolContract({ ...definition(), outputSchema })
       ).toThrow()
+    }
   })
 
   it('validates false as a successful value without interpreting its truthiness', () => {
@@ -469,7 +470,7 @@ it('retains immutable domain verification metadata and rejects non-check owners'
     { statusPath: '', progressPath: '/progress' },
     { statusPath: '/bad~2', progressPath: '/progress' },
     { statusPath: '/same', progressPath: '/same' }
-  ])
+  ]) {
     expect(() =>
       createAiToolContract({
         ...definition(),
@@ -477,6 +478,7 @@ it('retains immutable domain verification metadata and rejects non-check owners'
         verification: value
       })
     ).toThrow()
+  }
   expect(() =>
     createAiToolContract({ ...definition(), verification })
   ).toThrow()

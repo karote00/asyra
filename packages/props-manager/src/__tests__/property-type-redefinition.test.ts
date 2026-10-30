@@ -567,7 +567,9 @@ describe('declarative property type definition owner', () => {
     )
 
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
     const property = new Component({
       id: 'committed-property',
       type: TYPE,
@@ -927,7 +929,9 @@ describe('declarative property type definition owner', () => {
           ? {
               ...field,
               validate: (value: unknown) => {
-                if (value === 13) throw new Error('validator failed')
+                if (value === 13) {
+                  throw new Error('validator failed')
+                }
                 return validatePositive(value)
               }
             }
@@ -936,7 +940,9 @@ describe('declarative property type definition owner', () => {
     }
     commitDeclarativePropertyTypeDefinition(TYPE, throwingDefinition)
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
 
     const loaded = new Component({
       id: 'validator-load',
@@ -952,7 +958,9 @@ describe('declarative property type definition owner', () => {
     registerDeclarativeType()
     commitDeclarativePropertyTypeDefinition(TYPE, nextDefinition())
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
     const property = new Component({
       id: 'object-runtime-kind',
       type: TYPE
@@ -967,7 +975,9 @@ describe('declarative property type definition owner', () => {
     registerDeclarativeType()
     commitDeclarativePropertyTypeDefinition(TYPE, nextDefinition())
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
 
     const loaded = new Component({
       id: 'object-load-kind',
@@ -982,7 +992,9 @@ describe('declarative property type definition owner', () => {
     registerDeclarativeType()
     commitDeclarativePropertyTypeDefinition(TYPE, nextDefinition())
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
 
     const first = new Component({
       id: 'mutable-fallback-first',

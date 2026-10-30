@@ -557,7 +557,9 @@ const advanceWithIdleSamples = (state, targetMs) => {
     const nextNowMs =
       nextState.previousProcessSnapshot.monotonicMs +
       DEFAULT_RESOURCE_GUARD_CONFIG.sampleIntervalMs
-    if (nextNowMs > targetMs) break
+    if (nextNowMs > targetMs) {
+      break
+    }
     const result = evaluateResourceSample(
       nextState,
       trackedCpuSample({

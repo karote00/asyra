@@ -4,7 +4,9 @@ import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
 const gradientSchema = designInlineFillSchema.anyOf.find(
   (schema) => 'properties' in schema
 )
-if (!gradientSchema) throw new Error('Native gradient schema is missing')
+if (!gradientSchema) {
+  throw new Error('Native gradient schema is missing')
+}
 
 const scalar = {
   type: 'number',

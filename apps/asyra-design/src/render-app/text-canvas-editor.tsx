@@ -39,7 +39,9 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
             x,
             y
           })
-          if (!world) return null
+          if (!world) {
+            return null
+          }
           point = world
         }
         return core.workspaceToCanvas(point)
@@ -47,13 +49,17 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
       const origin = project(0, 0)
       const horizontal = project(1, 0)
       const vertical = project(0, 1)
-      if (!origin || !horizontal || !vertical) return
+      if (!origin || !horizontal || !vertical) {
+        return
+      }
       const next = `matrix(${horizontal.x - origin.x},${horizontal.y - origin.y},${vertical.x - origin.x},${vertical.y - origin.y},${origin.x},${origin.y})`
       setTransform((previous) => (previous === next ? previous : next))
     }
     update()
     input.current?.focus()
-    if (session.elementId) input.current?.select()
+    if (session.elementId) {
+      input.current?.select()
+    }
     const frame = core.subscribeToFrameComplete(update)
     const publication = core.subscribeToSharedPublication(() => {
       if (
@@ -91,7 +97,9 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
   }, [session])
 
   const finish = () => {
-    if (composing.current || error) return
+    if (composing.current || error) {
+      return
+    }
     action('finish', draft.current)
   }
   return (
@@ -148,8 +156,9 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
             composing.current ||
             event.nativeEvent.isComposing ||
             event.keyCode === 229
-          )
+          ) {
             return
+          }
           if (event.key === 'Escape') {
             event.preventDefault()
             action('cancel')
@@ -174,6 +183,8 @@ export const TextCanvasEditor = () => {
     textCanvasApis.getSnapshot
   )
   useEffect(() => () => textCanvasApis.cancel(), [])
-  if (!session) return null
+  if (!session) {
+    return null
+  }
   return <ActiveTextEditor session={session} />
 }

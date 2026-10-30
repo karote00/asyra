@@ -30,21 +30,25 @@ if (
     'quality-control',
     'quality-knowledge'
   ].includes(arm)
-)
+) {
   throw new Error(
     'Expected baseline, candidate, transfer or diagnostic and a case ID'
   )
+}
 const cases = JSON.parse(fs.readFileSync(path.join(here, 'cases.json')))
 const quality = arm.startsWith('quality-')
 let selected = cases[arm === 'transfer' ? 'transfer' : 'development'].find(
   (value) => value.id === caseId
 )
-if (quality)
+if (quality) {
   selected = qualityScenario(
     JSON.parse(fs.readFileSync(path.join(here, 'quality-cases.json'))),
     caseId
   )
-if (!selected) throw new Error('Unknown evaluation case')
+}
+if (!selected) {
+  throw new Error('Unknown evaluation case')
+}
 const scenario = {
   ...selected,
   prompt:
@@ -64,8 +68,9 @@ if (
   !execFileSync('lsof', ['-a', '-p', String(vite.pid), '-d', 'cwd', '-Fn'], {
     encoding: 'utf8'
   }).includes('n' + app + '\n')
-)
+) {
   throw new Error('Vite process ownership unavailable')
+}
 const id = `knowledge-${arm}-${caseId}-${Date.now()}`
 const directory = path.join(root, 'tmp/knowledge-evaluation', id)
 fs.mkdirSync(directory, { recursive: true })
@@ -141,8 +146,9 @@ try {
   const page = await context.newPage()
   let unexpectedNavigation
   page.on('framenavigated', (frame) => {
-    if (frame === page.mainFrame() && meta.sentAt)
+    if (frame === page.mainFrame() && meta.sentAt) {
       unexpectedNavigation = frame.url()
+    }
   })
   page.on('pageerror', (error) => {
     meta.errors.push(error.message)
@@ -168,7 +174,7 @@ try {
     null,
     { timeout: 60000 }
   )
-  if (scenario.seed)
+  if (scenario.seed) {
     meta.seed = await page.evaluate(async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
       const { transactionApis } = await import('/src/common-apis')
@@ -186,6 +192,7 @@ try {
         )
       )
     })
+  }
   fs.writeFileSync(
     path.join(directory, 'before.json'),
     JSON.stringify(await snapshot(page))
@@ -209,10 +216,11 @@ try {
   let previous,
     first = false
   while (Date.now() - Date.parse(meta.sentAt) < limitMs) {
-    if (unexpectedNavigation)
+    if (unexpectedNavigation) {
       throw new Error(
         'Unexpected navigation during evaluation: ' + unexpectedNavigation
       )
+    }
     const state = await page.evaluate(async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
       return {
@@ -249,8 +257,9 @@ try {
   }
   const limit = await deadline.finish()
   meta.deadline = limit
-  if (limit.status !== 'finished' || !meta.outcome)
+  if (limit.status !== 'finished' || !meta.outcome) {
     throw new Error('Evaluation deadline exceeded')
+  }
   meta.elapsedMs = Date.now() - Date.parse(meta.sentAt)
   await page.keyboard.press('Meta+1')
   await page.screenshot({ path: path.join(directory, 'final.png') })
@@ -305,7 +314,9 @@ try {
     try {
       process.kill(-vite.pid, 'SIGTERM')
     } catch (stopError) {
-      if (stopError.code !== 'ESRCH') meta.stopFailure = stopError.message
+      if (stopError.code !== 'ESRCH') {
+        meta.stopFailure = stopError.message
+      }
     }
   }
   meta.failure = error.message
@@ -313,7 +324,9 @@ try {
   console.error(JSON.stringify({ directory, failure: error.message }))
   process.exitCode = 1
 } finally {
-  if (deadline) await deadline.finish()
+  if (deadline) {
+    await deadline.finish()
+  }
   await context?.close()
   await ownedBrowser?.close()
   save()

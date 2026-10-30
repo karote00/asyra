@@ -31,7 +31,9 @@ export interface WalkingTerrainContactResult {
 }
 
 const addReason = (reasons: string[], reason: string) => {
-  if (!reasons.includes(reason)) reasons.push(reason)
+  if (!reasons.includes(reason)) {
+    reasons.push(reason)
+  }
 }
 const hasUnknownRelation = (assessment: WalkingContactAssessment) =>
   [
@@ -153,24 +155,31 @@ export function evaluateWalkingTerrainContact(
 ): WalkingTerrainContactResult {
   const reasons: string[] = [],
     contacts: WalkingTerrainContact[] = []
-  if (request.terrain.sceneRevision !== demand.scene.revision)
+  if (request.terrain.sceneRevision !== demand.scene.revision) {
     addReason(reasons, 'terrain-scene-mismatch')
+  }
   if (
     !demand.route ||
     request.terrain.route.bay !== demand.route.bay ||
     request.terrain.route.stripId !== demand.route.stripId
-  )
+  ) {
     addReason(reasons, 'terrain-route-mismatch')
+  }
   for (const [name, observation] of Object.entries(
     request.terrain.observations
-  ))
-    if ('kind' in observation || observation.coverage !== 'complete')
+  )) {
+    if ('kind' in observation || observation.coverage !== 'complete') {
       addReason(reasons, `terrain-${name}-coverage-incomplete`)
+    }
+  }
   for (const phase of request.stance.phases) {
-    if (phase.legs.every(({ state }) => state.kind === 'swing'))
+    if (phase.legs.every(({ state }) => state.kind === 'swing')) {
       addReason(reasons, 'stance-contact-evidence-missing')
+    }
     for (const leg of phase.legs) {
-      if (leg.state.kind !== 'support') continue
+      if (leg.state.kind !== 'support') {
+        continue
+      }
       const contact = supportContact(
         demand,
         source,
@@ -180,7 +189,9 @@ export function evaluateWalkingTerrainContact(
         leg.state.contactAssessmentId,
         reasons
       )
-      if (contact) contacts.push(contact)
+      if (contact) {
+        contacts.push(contact)
+      }
     }
   }
   const incompatible = reasons.some((reason) =>
@@ -195,13 +206,15 @@ export function evaluateWalkingTerrainContact(
     incompatible ||
     reasons.length > 0 ||
     contacts.some(({ status: value }) => value === 'unknown')
-  )
+  ) {
     status = 'unknown'
+  }
   if (
     !incompatible &&
     contacts.some(({ status: value }) => value === 'blocked')
-  )
+  ) {
     status = 'blocked'
+  }
   return Object.freeze({
     status,
     reasons: Object.freeze(reasons),

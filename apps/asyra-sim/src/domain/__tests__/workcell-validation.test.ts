@@ -57,12 +57,14 @@ describe('shared body/load validation', () => {
         ...visual(),
         scale: [value, 1, 1]
       }))
-    ])
+    ]) {
       expect(validBodyParameters({ ...parameters, visuals: [binding] })).toBe(
         false
       )
-    for (const visuals of [null, {}, [visual(), visual()]])
+    }
+    for (const visuals of [null, {}, [visual(), visual()]]) {
       expect(validBodyParameters({ ...parameters, visuals })).toBe(false)
+    }
     expect(
       validBodyParameters({
         ...parameters,
@@ -156,16 +158,19 @@ describe('shared body/load validation', () => {
       0,
       undefined,
       { version: 1, bodies: [null], robotRootId: null }
-    ])
+    ]) {
       expect(() => validateWorkcell(value)).toThrow()
-    for (const id of ['__proto__', 'constructor', 'prototype', '', false])
+    }
+    for (const id of ['__proto__', 'constructor', 'prototype', '', false]) {
       expect(validIdentifier(id)).toBe(false)
+    }
     for (const value of [
       null,
       { ...parameters, colliders: [null] },
       { ...parameters, color: Infinity },
       { ...parameters, pose: { ...IDENTITY_POSE, position: [NaN, 0, 0] } }
-    ])
+    ]) {
       expect(validBodyParameters(value)).toBe(false)
+    }
   })
 })

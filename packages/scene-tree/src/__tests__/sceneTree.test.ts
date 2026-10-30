@@ -859,7 +859,9 @@ describe('SceneTree', () => {
     const propertyAddIndexById = new Map<string, number>()
 
     changes.forEach((change, index) => {
-      if (change.action !== PROPS_ACTIONS.ADD_PROPERTY) return
+      if (change.action !== PROPS_ACTIONS.ADD_PROPERTY) {
+        return
+      }
       ;(change as AddRemovePropertyChange).data.forEach((property) => {
         propertyAddIndexById.set(property.id, index)
       })

@@ -39,13 +39,14 @@ function annulus(outer: number[][], inner: number[][]): Mesh {
     offset = mesh.positions.length / 3
   mesh.positions.push(...inside.positions)
   mesh.uvs.push(...inside.uvs)
-  for (let i = 0; i < inside.indices.length; i += 3)
+  for (let i = 0; i < inside.indices.length; i += 3) {
     mesh.indices.push(
       inside.indices[i] + offset,
       inside.indices[i + 2] + offset,
       inside.indices[i + 1] + offset
     )
-  for (const row of [0, outer.length - 1])
+  }
+  for (const row of [0, outer.length - 1]) {
     for (let i = 0; i < 24; i++) {
       const a = row * 25 + i,
         b = a + 1,
@@ -55,6 +56,7 @@ function annulus(outer: number[][], inner: number[][]): Mesh {
         ...(row === 0 ? [a, b, d, a, d, c] : [a, d, b, a, c, d])
       )
     }
+  }
   return mesh
 }
 interface Shirt {
@@ -100,11 +102,12 @@ export function garmentDetails(
     inner = c.zRange.map((z) => [z, 0, 0, ...c.bandInnerRadii]),
     parts = [part('collar-band', annulus(outer, inner), color, 'fabric')]
   const source = c.frontFlaps[0]
-  if (!('rootPhiDegrees' in source))
+  if (!('rootPhiDegrees' in source)) {
     throw new Error('Missing collar flap source')
+  }
   const flap = emptyMesh(),
     count = 12
-  for (const offset of [-source.wallThickness / 2, source.wallThickness / 2])
+  for (const offset of [-source.wallThickness / 2, source.wallThickness / 2]) {
     for (let i = 0; i <= count; i++) {
       const t = i / count,
         a =
@@ -125,6 +128,7 @@ export function garmentDetails(
         flap.uvs.push(t, p === root ? 0 : 1)
       }
     }
+  }
   const n = (count + 1) * 2
   for (let i = 0; i < count; i++) {
     const a = i * 2,
@@ -149,7 +153,7 @@ export function garmentDetails(
       flap.indices.push(u, u + n, v + n, u, v + n, v)
     }
   }
-  for (const start of [0, count * 2])
+  for (const start of [0, count * 2]) {
     flap.indices.push(
       start,
       start + 1,
@@ -158,18 +162,20 @@ export function garmentDetails(
       start + 1 + n,
       start + n
     )
+  }
   parts.push(part('collar-flap-left', flap, color, 'fabric'))
   const mirrored = {
     positions: flap.positions.map((v, i) => (i % 3 === 0 ? -v : v)),
     uvs: [...flap.uvs],
     indices: [] as number[]
   }
-  for (let i = 0; i < flap.indices.length; i += 3)
+  for (let i = 0; i < flap.indices.length; i += 3) {
     mirrored.indices.push(
       flap.indices[i],
       flap.indices[i + 2],
       flap.indices[i + 1]
     )
+  }
   parts.push(part('collar-flap-right', mirrored, color, 'fabric'))
   for (const s of shirt.sleeves) {
     const rows = Array.from({ length: 5 }, (_, i) =>
@@ -195,12 +201,14 @@ export function garmentDetails(
       )
     )
   }
-  if (shirt.buttons)
+  if (shirt.buttons) {
     for (const [i, z] of shirt.buttons.centresZ.entries()) {
       const b = shirt.buttons,
         row = loftRow(shirt.bodyOuterRings, z),
         q = 1 - ((b.x - row[1]) / row[3]) ** 2
-      if (q < 0) throw new Error('Button outside garment')
+      if (q < 0) {
+        throw new Error('Button outside garment')
+      }
       const y = row[2] - row[4] * Math.sqrt(q),
         mesh = emptyMesh()
       append(
@@ -211,5 +219,6 @@ export function garmentDetails(
       )
       parts.push(part(`shirt-button-${i}`, mesh, materials[b.defaultMaterial]))
     }
+  }
   return parts
 }

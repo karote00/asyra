@@ -24,10 +24,11 @@ it('preserves explicit evaluation policy and rejects unsupported overrides', () 
     20000,
     '2000',
     null
-  ])
+  ]) {
     expect(() =>
       readEvaluationWindow({ ...window, expandedNodeLimit })
     ).toThrow()
+  }
 })
 
 it('keeps the exact test boundary and default production requests independent', async () => {
@@ -72,9 +73,13 @@ it('keeps the exact test boundary and default production requests independent', 
 it('partitions the preserved source under the effective limit without changing source coverage', () => {
   const store = createDesignDraftRepairStore(2000)
   const id = store.retain(source.input.draft)
-  if (!id) throw new Error('Missing source')
+  if (!id) {
+    throw new Error('Missing source')
+  }
   const parts = store.describe(id)?.partitions
-  if (!parts) throw new Error('Missing partitions')
+  if (!parts) {
+    throw new Error('Missing partitions')
+  }
   expect(parts.length).toBeGreaterThan(2)
   let count = 1
   for (let partition = 0; partition < parts.length; partition++) {
@@ -87,7 +92,9 @@ it('partitions the preserved source under the effective limit without changing s
   expect(count).toBe(13095)
   const production = createDesignDraftRepairStore()
   const productionId = production.retain(source.input.draft)
-  if (!productionId) throw new Error('Missing production source')
+  if (!productionId) {
+    throw new Error('Missing production source')
+  }
   expect(production.describe(productionId)?.partitions).toHaveLength(2)
   expect(() => production.repair({ draftId: id, partition: 0 })).toThrow(
     /unavailable/

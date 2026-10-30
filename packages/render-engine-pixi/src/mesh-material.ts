@@ -6,8 +6,9 @@ const finite = (values: readonly number[]) => {
     !values.every(
       (value) => Number.isFinite(value) && Number.isFinite(Math.fround(value))
     )
-  )
+  ) {
     throw new Error('Mesh material requires finite parameters')
+  }
 }
 
 const color = (channels: readonly number[]) => {
@@ -15,8 +16,9 @@ const color = (channels: readonly number[]) => {
   if (
     channels.length !== 4 ||
     channels.some((channel) => channel < 0 || channel > 1)
-  )
+  ) {
     throw new Error('Mesh material color must contain four normalized channels')
+  }
 }
 
 /** Parameter records only: one header, three records per layer, two per stop. */
@@ -29,7 +31,9 @@ export const encodeMeshMaterial = (material: RenderEngineMeshMaterial) => {
       values.push(0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, ...fill.color)
     } else {
       finite([fill.start.x, fill.start.y, fill.end.x, fill.end.y])
-      if (fill.side) finite([fill.side.x, fill.side.y])
+      if (fill.side) {
+        finite([fill.side.x, fill.side.y])
+      }
       const stops = [...fill.stops].sort((a, b) => a.position - b.position)
       values.push(
         gradientModes[fill.type],

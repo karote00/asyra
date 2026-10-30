@@ -72,7 +72,9 @@ export function PortableProjectControls({
 
               event.target.value = ''
 
-              if (file) void read(file)
+              if (file) {
+                void read(file)
+              }
             }}
           />
         </label>

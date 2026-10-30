@@ -25,8 +25,9 @@ export function collectNativeBoundaries({
     !Number.isFinite(startMs) ||
     !Number.isFinite(endMs) ||
     endMs < startMs
-  )
+  ) {
     throw new Error('Invalid native diagnostic identity or window')
+  }
   const base = {
     threadId,
     startMs,
@@ -64,13 +65,16 @@ export function collectNativeBoundaries({
       .map((row) => row.process_uuid)
       .filter(Boolean)
     if (!processId) {
-      if (processes.length !== 1)
+      if (processes.length !== 1) {
         return unavailable(
           processes.length ? 'ambiguous-process' : 'missing-process'
         )
+      }
       processId = processes[0]
     }
-    if (!processes.includes(processId)) return unavailable('missing-process')
+    if (!processes.includes(processId)) {
+      return unavailable('missing-process')
+    }
     const boundaries = []
     const rows =
       database.prepare(`SELECT id, ts, ts_nanos, target, feedback_log_body FROM logs
@@ -83,11 +87,17 @@ export function collectNativeBoundaries({
       Math.floor(endMs / 1000)
     )) {
       const atMs = row.ts * 1000 + row.ts_nanos / 1000000
-      if (!Number.isFinite(atMs) || atMs < startMs || atMs > endMs) continue
+      if (!Number.isFinite(atMs) || atMs < startMs || atMs > endMs) {
+        continue
+      }
       const body = row.feedback_log_body
-      if (typeof body !== 'string') continue
+      if (typeof body !== 'string') {
+        continue
+      }
       const turnId = identity(body, 'turn(?:_id|\\.id)')
-      if (!turnId) continue
+      if (!turnId) {
+        continue
+      }
       let event
       if (row.target === 'codex_core::stream_events_utils') {
         const itemId = body.match(
@@ -97,22 +107,24 @@ export function collectNativeBoundaries({
           itemId &&
           body.includes('try_run_sampling_request') &&
           !body.includes('handle_output_item_done')
-        )
+        ) {
           event = {
             stage: 'native-output-item-started',
             itemId,
             completion: 'unavailable'
           }
-        else if (itemId && body.includes('handle_output_item_done'))
+        } else if (itemId && body.includes('handle_output_item_done')) {
           event = { stage: 'native-output-item-completed', itemId }
-        else {
+        } else {
           const tool = body.match(
             /handle_output_item_done: ToolCall: ([a-zA-Z0-9_.-]{1,160})\b/
           )?.[1]
-          if (tool) event = { stage: 'native-tool-dispatched', tool }
+          if (tool) {
+            event = { stage: 'native-tool-dispatched', tool }
+          }
         }
       }
-      if (event)
+      if (event) {
         boundaries.push({
           ...event,
           source: 'native-diagnostic',
@@ -123,6 +135,7 @@ export function collectNativeBoundaries({
           bodySha256: digest(body),
           elapsedMs: atMs - startMs
         })
+      }
     }
     return {
       ...base,
@@ -171,7 +184,7 @@ export function captureNativeBoundaries(run, directory, options = {}) {
   let changed = true
   while (changed) {
     changed = false
-    for (const { first } of records)
+    for (const { first } of records) {
       if (
         reachable.has(first.sourceRequestId) &&
         !reachable.has(first.requestId)
@@ -179,6 +192,7 @@ export function captureNativeBoundaries(run, directory, options = {}) {
         reachable.add(first.requestId)
         changed = true
       }
+    }
   }
   const streams = records
     .filter(({ first }) => reachable.has(first.sourceRequestId))

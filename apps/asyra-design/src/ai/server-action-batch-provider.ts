@@ -24,7 +24,9 @@ import { describeBatchFailure } from './action-failure'
 
 /** Local manual evaluation only; the evaluator supplies one immutable window before Send. */
 export const browserEvaluationWindow = () => {
-  if (!import.meta.env.DEV || typeof location === 'undefined') return undefined
+  if (!import.meta.env.DEV || typeof location === 'undefined') {
+    return undefined
+  }
   const value = new URL(location.href).searchParams.get('aiEvaluationWindow')
   return value === null ? undefined : readEvaluationWindow(JSON.parse(value))
 }
@@ -32,26 +34,30 @@ export const browserEvaluationWindow = () => {
 export { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
 
 const backendFailure = (code: unknown): AiProviderError => {
-  if (code === 'ACTION_BATCH_MODEL_TIMEOUT')
+  if (code === 'ACTION_BATCH_MODEL_TIMEOUT') {
     return new AiProviderError({
       code: 'AI_PROVIDER_TIMEOUT',
       message: 'The AI request timed out.'
     })
-  if (code === 'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED')
+  }
+  if (code === 'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED') {
     return new AiProviderError({
       code: 'AI_PROVIDER_INVALID_CONFIGURATION',
       message: 'The AI provider is unavailable or not configured.'
     })
-  if (code === 'ACTION_BATCH_MODEL_INVALID_RESPONSE')
+  }
+  if (code === 'ACTION_BATCH_MODEL_INVALID_RESPONSE') {
     return new AiProviderError({
       code: 'AI_PROVIDER_MALFORMED_RESPONSE',
       message: 'The AI returned an invalid drawing response.'
     })
-  if (code === 'ACTION_BATCH_IMAGE_CONVERSION_FAILED')
+  }
+  if (code === 'ACTION_BATCH_IMAGE_CONVERSION_FAILED') {
     return new AiProviderError({
       code: 'AI_PROVIDER_HTTP_STATUS',
       message: 'Image conversion failed. Your drawing is unchanged.'
     })
+  }
   return new AiProviderError({
     code: 'AI_PROVIDER_HTTP_STATUS',
     message: 'The AI request failed.'
@@ -67,16 +73,20 @@ const encodeReceipt = (
 ): string => {
   const body = JSON.stringify(receipt)
   const bytes = new TextEncoder().encode(body).byteLength
-  if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) return body
-  if ('batchFailure' in receipt)
+  if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) {
+    return body
+  }
+  if ('batchFailure' in receipt) {
     throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+  }
   const previous = receipt.failure
   let settlement: NonNullable<AiBatchReceipt['failure']>['settlement'] =
     'completed'
   if (previous) {
     settlement = previous.settlement
-    if (settlement !== 'unknown' && receipt.actionResults.length)
+    if (settlement !== 'unknown' && receipt.actionResults.length) {
       settlement = 'partial'
+    }
   }
   const failure: AiBatchReceipt = {
     actionResults: [],
@@ -119,8 +129,9 @@ const encodeReceipt = (
   if (
     new TextEncoder().encode(encodedFailure).byteLength >
     AI_BATCH_MAXIMUM_REQUEST_BYTES
-  )
+  ) {
     throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+  }
   return encodedFailure
 }
 
@@ -135,7 +146,9 @@ const readActivityStream = async (
   ) => Promise<void>
 ): Promise<AiActionBatch> => {
   const reader = response.body?.getReader()
-  if (!reader) throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+  if (!reader) {
+    throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+  }
   const cancel = () => {
     void reader.cancel().catch(() => undefined)
   }
@@ -153,8 +166,9 @@ const readActivityStream = async (
     } catch {
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
     }
-    if (!event || typeof event !== 'object' || batch)
+    if (!event || typeof event !== 'object' || batch) {
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    }
     if (event.type === 'batch') {
       if (
         !executeBatch ||
@@ -163,8 +177,9 @@ const readActivityStream = async (
         !/^[a-f0-9-]{36}$/.test(event.receiptToken) ||
         !event.batch ||
         typeof event.batch !== 'object'
-      )
+      ) {
         throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+      }
       const started = performance.now()
       let receipt: AiBatchReceipt
       try {
@@ -180,14 +195,19 @@ const readActivityStream = async (
         })
         return
       }
-      if (signal.aborted) throw backendFailure('ACTION_BATCH_ABORTED')
+      if (signal.aborted) {
+        throw backendFailure('ACTION_BATCH_ABORTED')
+      }
       await sendReceipt(event.receiptToken, receipt)
       return
     }
-    if (event.type === 'error') throw backendFailure(event.code)
+    if (event.type === 'error') {
+      throw backendFailure(event.code)
+    }
     if (event.type === 'result') {
-      if (!event.batch || typeof event.batch !== 'object')
+      if (!event.batch || typeof event.batch !== 'object') {
         throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+      }
       batch = event.batch as AiActionBatch
       return
     }
@@ -196,11 +216,13 @@ const readActivityStream = async (
       typeof event.tool !== 'string' ||
       !/^[a-zA-Z0-9_-]{1,64}$/.test(event.tool) ||
       (event.status !== 'running' && event.status !== 'completed')
-    )
+    ) {
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    }
     const activity = event.activity as AiToolProgress['activity']
-    if (activity !== undefined && !isExecutionActivity(activity))
+    if (activity !== undefined && !isExecutionActivity(activity)) {
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    }
     if (!signal.aborted) {
       try {
         onProgress?.({
@@ -219,33 +241,43 @@ const readActivityStream = async (
   try {
     while (!signal.aborted) {
       const { value, done } = await reader.read()
-      if (done) break
+      if (done) {
+        break
+      }
       let offset = 0
       while (offset < value.byteLength) {
         const newline = value.indexOf(10, offset)
         const end = newline < 0 ? value.byteLength : newline
         const segment = value.subarray(offset, end)
         bytes += segment.byteLength
-        if (bytes > 64 * 1024 * 1024)
+        if (bytes > 64 * 1024 * 1024) {
           throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+        }
         buffer += decoder.decode(segment, { stream: true })
         offset = end + 1
         if (newline >= 0) {
           buffer += decoder.decode()
-          if (buffer.trim()) await consume(buffer)
+          if (buffer.trim()) {
+            await consume(buffer)
+          }
           buffer = ''
           bytes = 0
         }
       }
     }
     buffer += decoder.decode()
-    if (buffer.trim()) await consume(buffer)
-    if (signal.aborted)
+    if (buffer.trim()) {
+      await consume(buffer)
+    }
+    if (signal.aborted) {
       throw new AiProviderError({
         code: 'AI_PROVIDER_ABORTED',
         message: 'The request was stopped.'
       })
-    if (!batch) throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    }
+    if (!batch) {
+      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    }
     return batch
   } finally {
     signal.removeEventListener('abort', cancel)
@@ -261,13 +293,14 @@ export const createServerActionBatchProvider = (
   const attempts = new Set<GenericHttpAiProvider>()
   const requestActionBatch: GenericHttpAiProvider['requestActionBatch'] =
     async (input, requestOptions) => {
-      if (disposed)
+      if (disposed) {
         throw new AiProviderError({
           code: 'AI_PROVIDER_DISPOSED',
           message: 'The provider is disposed.'
         })
+      }
       const evaluationWindow = browserEvaluationWindow()
-      if (evaluationWindow)
+      if (evaluationWindow) {
         input = {
           ...input,
           metadata: {
@@ -275,6 +308,7 @@ export const createServerActionBatchProvider = (
             evaluationWindow: { ...evaluationWindow }
           }
         }
+      }
       const provider = createGenericHttpAiProvider({
         endpoint: ACTION_BATCH_ENDPOINT,
         timeoutMs: null,
@@ -286,8 +320,9 @@ export const createServerActionBatchProvider = (
         },
         fetch: async (...args) => {
           const response = await (options.fetch ?? globalThis.fetch)(...args)
-          if (!response.ok && isResponse(response))
+          if (!response.ok && isResponse(response)) {
             throw backendFailure(response.headers.get('x-ai-error-code'))
+          }
           if (
             isResponse(response) &&
             response.headers

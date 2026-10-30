@@ -25,7 +25,9 @@ vi.mock('../spatial/three-engine.js', async () => {
         spatial.options.push(options)
         const initialize = this.initialize.bind(this)
         this.initialize = (input) => {
-          if (spatial.fail) throw new Error('WebGL initialization rejected')
+          if (spatial.fail) {
+            throw new Error('WebGL initialization rejected')
+          }
           return {
             ...initialize(input),
             surface: document.createElement('canvas')
@@ -64,7 +66,9 @@ const start = async (host: HTMLElement) => {
 
 afterEach(async () => {
   vi.restoreAllMocks()
-  if (core.getRuntimeState() === 'active') await core.resetRuntime()
+  if (core.getRuntimeState() === 'active') {
+    await core.resetRuntime()
+  }
 })
 
 describe('Preset complete Core handoff', () => {
@@ -112,7 +116,9 @@ it('starts the official 3D provider once, retires INPUT and surface ownership, a
   expect(spatial.created).toHaveLength(initialCount + 1)
   expect(host.querySelectorAll('canvas')).toHaveLength(1)
   const engine = spatial.created.at(-1)
-  if (!engine) throw new Error('Missing initialized delegate')
+  if (!engine) {
+    throw new Error('Missing initialized delegate')
+  }
   const next = await first.resetRuntime()
   expect(engine.destroy).toHaveBeenCalledOnce()
   expect(host.querySelectorAll('canvas')).toHaveLength(0)
@@ -142,7 +148,9 @@ it('preserves official initialization failure without a fallback canvas and clea
     ).rejects.toThrow('WebGL initialization rejected')
     expect(host.querySelectorAll('canvas')).toHaveLength(0)
     const engine = spatial.created.at(-1)
-    if (!engine) throw new Error('Missing initialized delegate')
+    if (!engine) {
+      throw new Error('Missing initialized delegate')
+    }
     expect(engine.destroy).toHaveBeenCalledOnce()
     const next = await first.resetRuntime()
     expect(engine.destroy).toHaveBeenCalledOnce()
@@ -156,7 +164,7 @@ it('preserves official initialization failure without a fallback canvas and clea
 it('keeps simultaneous official provider lifetimes isolated through Render', async () => {
   const first = new Render(),
     second = new Render()
-  for (const render of [first, second])
+  for (const render of [first, second]) {
     bindPresetProfileProvider(
       {
         setRenderEngineProvider: (provider) =>
@@ -164,12 +172,15 @@ it('keeps simultaneous official provider lifetimes isolated through Render', asy
       },
       PresetProfiles['3D']
     )
+  }
   try {
     await first.init(100, 100, 0)
     const firstEngine = spatial.created.at(-1)
     await second.init(200, 200, 0)
     const secondEngine = spatial.created.at(-1)
-    if (!firstEngine || !secondEngine) throw new Error('Missing delegates')
+    if (!firstEngine || !secondEngine) {
+      throw new Error('Missing delegates')
+    }
     expect(firstEngine).not.toBe(secondEngine)
     first.resetRuntime()
     expect(firstEngine.destroy).toHaveBeenCalledOnce()

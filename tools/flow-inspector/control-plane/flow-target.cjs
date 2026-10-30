@@ -17,7 +17,9 @@ const TARGET_POLICY = freeze({
   maxWorks: 50
 })
 const requireValue = (ok, message) => {
-  if (!ok) throw new Error('Flow target: ' + message)
+  if (!ok) {
+    throw new Error('Flow target: ' + message)
+  }
 }
 const object = (value, keys) =>
   requireValue(
@@ -108,7 +110,7 @@ function validateAllocation(state, binding, previousWorks, contract) {
         new Set(work.allowedFiles).size === work.allowedFiles.length,
       'file scope required'
     )
-    for (const file of work.allowedFiles)
+    for (const file of work.allowedFiles) {
       requireValue(
         canonicalFile(file) &&
           (workspaceScope || file.startsWith(primarySourcePrefix)) &&
@@ -125,6 +127,7 @@ function validateAllocation(state, binding, previousWorks, contract) {
           ),
         'file outside supported runtime scope'
       )
+    }
     requireValue(Array.isArray(work.prerequisites), 'prerequisites required')
     requireValue(
       Array.isArray(work.taskIds) &&
@@ -169,7 +172,9 @@ function validateAllocation(state, binding, previousWorks, contract) {
     visiting = new Set()
   const visit = (id) => {
     requireValue(!visiting.has(id), 'dependency cycle')
-    if (visited.has(id)) return
+    if (visited.has(id)) {
+      return
+    }
     visiting.add(id)
     byId.get(id).prerequisites.forEach((dep) => visit(dep.workId))
     visiting.delete(id)
@@ -313,11 +318,12 @@ function createTargetOwner({
           source.runtimeSourceDigest,
       'assessment source identity is unavailable or conflicting'
     )
-    if (available)
+    if (available) {
       requireValue(
         same(getAssessmentSource(assessmentId), source),
         'assessment source authority is unavailable or conflicting'
       )
+    }
     return source
   }
   const validateAssessmentAdmissionSource = (admission, source) =>
@@ -485,12 +491,14 @@ function createTargetOwner({
             validateAssessmentAdmissionSource(entry.admission, source)
           }
         }
-        for (const older of record.history.slice(0, index))
-          if (older.admission)
+        for (const older of record.history.slice(0, index)) {
+          if (older.admission) {
             requireValue(
               entry.state.works.some((w) => w.id === older.admission.workId),
               'admitted commitment cannot be removed'
             )
+          }
+        }
         validateAllocation(entry.state, record, previousWorks, contract)
         previousWorks = [...previousWorks, ...entry.state.works]
       })
@@ -510,8 +518,8 @@ function createTargetOwner({
     const previous = projections.get(record.id)
     const links = new Map(previous?.links)
     const entries = previous ? [record.history.at(-1)] : record.history
-    for (const entry of entries)
-      for (const work of entry.state.works)
+    for (const entry of entries) {
+      for (const work of entry.state.works) {
         for (const taskId of work.taskIds) {
           links.set(taskId, work.id)
           const old = taskBindings.get(taskId)
@@ -525,7 +533,9 @@ function createTargetOwner({
             workId: work.id
           })
         }
-    for (const entry of entries)
+      }
+    }
+    for (const entry of entries) {
       if (entry.admission) {
         const old = taskBindings.get(entry.admission.taskId)
         requireValue(
@@ -537,6 +547,7 @@ function createTargetOwner({
           admission: entry.admission
         })
       }
+    }
     const works = freeze(
       record.history.at(-1).state.works.map((w) => {
         const assessed = record.history.some(
@@ -592,7 +603,9 @@ function createTargetOwner({
   const owner = {
     checkTask(task, snapshot = null) {
       const binding = taskBindings.get(task.requestId)
-      if (!binding && !task.workBinding) return null
+      if (!binding && !task.workBinding) {
+        return null
+      }
       requireValue(
         binding?.admission,
         'work admission required before execution'
@@ -633,13 +646,14 @@ function createTargetOwner({
         validateAssessmentAdmissionSource(admission, source)
       }
       matchTask(record, work, task)
-      if (snapshot)
+      if (snapshot) {
         requireValue(
           snapshot.digest === admission.source.digest &&
             snapshot.head === admission.source.head &&
             snapshot.contractDigest === task.contractDigest,
           'work admission source mismatch'
         )
+      }
       return admission
     },
     list: () =>
@@ -681,9 +695,12 @@ function createTargetOwner({
                   const task = item.task,
                     attempt = task?.attempts.at(-1)
                   let status = 'pending'
-                  if (attempt) status = task.verificationStatus
-                  if (!['passed', 'failed', 'pending'].includes(status))
+                  if (attempt) {
+                    status = task.verificationStatus
+                  }
+                  if (!['passed', 'failed', 'pending'].includes(status)) {
                     status = 'unknown'
+                  }
                   return {
                     status,
                     taskId: item.taskId,
@@ -695,17 +712,21 @@ function createTargetOwner({
               if (
                 assessments.length &&
                 assessments.every((a) => a.status === 'passed')
-              )
+              ) {
                 status = 'passed'
-              if (assessments.some((a) => a.status === 'unknown'))
+              }
+              if (assessments.some((a) => a.status === 'unknown')) {
                 status = 'unknown'
-              if (assessments.some((a) => a.status === 'failed'))
+              }
+              if (assessments.some((a) => a.status === 'failed')) {
                 status = 'failed'
+              }
               if (
                 status === 'passed' &&
                 !same(record.acceptedBaseline, getBaseline())
-              )
+              ) {
                 status = 'stale'
+              }
               return { ...work, assessment: { status, attempts: assessments } }
             })
           : works,
@@ -738,12 +759,14 @@ function createTargetOwner({
         'request identity and reason required'
       )
       const fingerprint = sha256(JSON.stringify({ request, actor }))
-      for (const r of records)
-        for (const entry of r.history)
+      for (const r of records) {
+        for (const entry of r.history) {
           if (entry.request.requestId === request.requestId) {
             requireValue(entry.fingerprint === fingerprint, 'request conflict')
             return decisionResult(r, entry)
           }
+        }
+      }
       requireValue(
         ['create', 'revise', 'link', 'admit'].includes(request.action),
         'unknown action'
@@ -945,27 +968,34 @@ function createTargetOwner({
           requireValue(task, 'task not found')
           matchTask(record, work, task)
         }
-        for (const other of records)
-          for (const entry of other.history)
-            for (const item of entry.state.works)
-              if (item.taskIds.includes(request.taskId))
+        for (const other of records) {
+          for (const entry of other.history) {
+            for (const item of entry.state.works) {
+              if (item.taskIds.includes(request.taskId)) {
                 requireValue(
                   other.id === record.id && item.id === work.id,
                   'task already belongs to another commitment'
                 )
+              }
+            }
+          }
+        }
         requireValue(
           admission || !work.taskIds.includes(request.taskId),
           'task already linked; replay the original request'
         )
-        if (!work.taskIds.includes(request.taskId))
+        if (!work.taskIds.includes(request.taskId)) {
           work.taskIds.push(request.taskId)
+        }
       }
-      for (const entry of record.history)
-        if (entry.admission)
+      for (const entry of record.history) {
+        if (entry.admission) {
           requireValue(
             state.works.some((w) => w.id === entry.admission.workId),
             'admitted commitment cannot be removed'
           )
+        }
+      }
       validateAllocation(
         state,
         record,
@@ -974,8 +1004,8 @@ function createTargetOwner({
           (contract) => contract.digest === record.targetRevision
         )
       )
-      if (request.action !== 'link')
-        for (const work of state.works)
+      if (request.action !== 'link') {
+        for (const work of state.works) {
           for (const runtimeFile of work.allowedFiles) {
             let exists = false
             try {
@@ -987,6 +1017,8 @@ function createTargetOwner({
             }
             requireValue(exists, 'runtime file missing or unsafe')
           }
+        }
+      }
       const entry = {
         ...(create && Object.hasOwn(record, 'acceptedVersion')
           ? { acceptedVersion: record.acceptedVersion }
@@ -1013,10 +1045,12 @@ function createTargetOwner({
     }
   }
   owner.validateAssessmentAdmissions = () => {
-    for (const record of records)
+    for (const record of records) {
       for (const entry of record.history) {
         const admission = entry.admission
-        if (!admission?.assessmentId) continue
+        if (!admission?.assessmentId) {
+          continue
+        }
         const work = entry.state.works.find(
           (item) => item.id === admission.workId
         )
@@ -1030,6 +1064,7 @@ function createTargetOwner({
         )
         validateAssessmentAdmissionSource(admission, source)
       }
+    }
   }
   return owner
 }

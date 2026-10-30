@@ -7,7 +7,9 @@ it('keeps the complete root import graph portable and free of Design dependencie
   const source = resolve(dirname(fileURLToPath(import.meta.url)), '..')
   const visited = new Set<string>()
   const visit = (file: string) => {
-    if (visited.has(file)) return
+    if (visited.has(file)) {
+      return
+    }
     visited.add(file)
     const contents = readFileSync(file, 'utf8')
     for (const match of contents.matchAll(
@@ -15,8 +17,9 @@ it('keeps the complete root import graph portable and free of Design dependencie
     )) {
       const name = match[1]
       expect(name, file).not.toMatch(/^(?:node:|@asyra\/asyra-design)/)
-      if (name.startsWith('.'))
+      if (name.startsWith('.')) {
         visit(resolve(dirname(file), name.replace(/\.js$/, '.ts')))
+      }
     }
   }
   visit(resolve(source, 'index.ts'))

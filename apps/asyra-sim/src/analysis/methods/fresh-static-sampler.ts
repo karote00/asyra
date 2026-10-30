@@ -133,7 +133,9 @@ export function createFreshStaticSampler(
           )
           tick()
           const upper = ops.norm(ops.sub(wa, wb))[1]
-          if (Number.isFinite(upper)) seed = { a: wa, b: wb, upper }
+          if (Number.isFinite(upper)) {
+            seed = { a: wa, b: wb, upper }
+          }
         }
       }
       evidence = solve(a, b, seed)
@@ -175,7 +177,9 @@ export function createFreshStaticSampler(
       }
       return { evidence }
     } catch (error) {
-      if (!exhausted(error)) throw error
+      if (!exhausted(error)) {
+        throw error
+      }
       return evidence ? { evidence, exhausted: true } : null
     }
   }
@@ -188,8 +192,9 @@ export function createFreshStaticSampler(
         source.origin.originalRoot !== true ||
         source.origin.time !== source.origin.start ||
         source.origin.start >= source.origin.end
-      )
+      ) {
         return undefined
+      }
       return new FreshSource(
         scope,
         source.origin,
@@ -199,7 +204,9 @@ export function createFreshStaticSampler(
         true
       )
     } catch (error) {
-      if (!exhausted(error)) throw error
+      if (!exhausted(error)) {
+        throw error
+      }
       return null
     }
   }

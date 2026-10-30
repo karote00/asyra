@@ -137,14 +137,17 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
     name: 'Show all pairs',
     exact: true
   })
-  if (await allPairs.count()) await allPairs.click()
+  if (await allPairs.count()) {
+    await allPairs.click()
+  }
   for (let pageIndex = 0; pageIndex < 3; pageIndex += 1) {
     summaries.push(
       ...(await result.locator('.evidence-pair > summary').allTextContents())
     )
 
-    if (pageIndex < 2)
+    if (pageIndex < 2) {
       await result.getByRole('button', { name: 'Next pairs' }).click()
+    }
   }
 
   expect(summaries).toHaveLength(46)

@@ -15,7 +15,9 @@ it('keeps the source mug empty with a rounded lip and a separately requested dri
   expect(empty.some((p) => p.id === 'coffee')).toBe(false)
   expect(filled.some((p) => p.id === 'coffee')).toBe(true)
   const cup = empty.find((p) => p.id === 'cup')
-  if (!cup) throw new Error('Missing cup')
+  if (!cup) {
+    throw new Error('Missing cup')
+  }
   const heights = cup.mesh.positions.filter((_, i) => i % 3 === 2)
   expect(
     heights.filter((z) => Math.abs(z - 0.09) < 1e-8).length

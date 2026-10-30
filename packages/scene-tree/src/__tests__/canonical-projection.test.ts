@@ -15,17 +15,25 @@ describe('canonical Scene Tree projection boundary', () => {
     sceneTree.init()
     sceneTree.cleanChanges()
     const workspace = sceneTree.currentWorkspace
-    if (!workspace) throw new Error('Missing workspace')
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
     const id = workspace.get('id')
     const applied: unknown[] = []
     const committed: unknown[] = []
     const immediate = subscribeToAppliedEventBatches((events) => {
-      for (const event of events)
-        if (event.type === EventTypes.SCENE_TREE_CHANGED) applied.push(event)
+      for (const event of events) {
+        if (event.type === EventTypes.SCENE_TREE_CHANGED) {
+          applied.push(event)
+        }
+      }
     })
     const deferred = subscribeToEventBatches((events) => {
-      for (const event of events)
-        if (event.type === EventTypes.SCENE_TREE_CHANGED) committed.push(event)
+      for (const event of events) {
+        if (event.type === EventTypes.SCENE_TREE_CHANGED) {
+          committed.push(event)
+        }
+      }
     })
     const owner = {
       startTransaction: vi.fn(),
@@ -68,7 +76,9 @@ describe('canonical Scene Tree projection boundary', () => {
     sceneTree.init()
     sceneTree.cleanChanges()
     const workspace = sceneTree.currentWorkspace
-    if (!workspace) throw new Error('Missing workspace')
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
     const seen: unknown[] = []
     const subscription = subscribeToEventBatches((events) => {
       seen.push(
@@ -108,12 +118,17 @@ describe('canonical Scene Tree projection boundary', () => {
     sceneTree.init()
     sceneTree.cleanChanges()
     const workspace = sceneTree.currentWorkspace
-    if (!workspace) throw new Error('Missing workspace')
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
     const originalName = workspace.get('name')
     const applied: unknown[] = []
     const subscription = subscribeToAppliedEventBatches((events) => {
-      for (const event of events)
-        if (event.type === EventTypes.SCENE_TREE_CHANGED) applied.push(event)
+      for (const event of events) {
+        if (event.type === EventTypes.SCENE_TREE_CHANGED) {
+          applied.push(event)
+        }
+      }
     })
     const owner = {
       startTransaction: vi.fn(),

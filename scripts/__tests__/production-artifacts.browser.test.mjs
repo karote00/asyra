@@ -36,11 +36,12 @@ const analysisProfile = Object.freeze({
 async function appServer(id, headers = {}) {
   const app = DEPLOYMENT_APPS.find((entry) => entry.id === id)
   assert.ok(app)
-  if (process.env.APP_PUBLIC_TEST === '1')
+  if (process.env.APP_PUBLIC_TEST === '1') {
     return {
       url: `https://${app.project}.pages.dev`,
       close: () => Promise.resolve()
     }
+  }
   const directory = process.env.APP_ARTIFACT_ROOT
     ? path.join(root, process.env.APP_ARTIFACT_ROOT, id)
     : path.join(root, app.output)
@@ -52,13 +53,14 @@ async function browserPage(t, url, closeServer) {
   let page
   t.after(async () => {
     try {
-      if (page && !page.isClosed())
+      if (page && !page.isClosed()) {
         await page.screenshot({
           path: path.join(
             temporary,
             `${t.name.split(' ')[0].toLowerCase()}-cloudflare.png`
           )
         })
+      }
     } finally {
       await browser?.close()
       await closeServer()
@@ -79,8 +81,9 @@ async function browserPage(t, url, closeServer) {
   page.on('websocket', (socket) => sockets.push(socket.url()))
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => {
-    if (/\/(?:@vite|src)\//.test(new URL(request.url()).pathname))
+    if (/\/(?:@vite|src)\//.test(new URL(request.url()).pathname)) {
       sourceRequests.push(request.url())
+    }
   })
   t.after(() => {
     assert.deepEqual(errors, [])
@@ -295,13 +298,16 @@ test(
       }
     )
     let output = ''
-    for (const stream of [child.stdout, child.stderr])
+    for (const stream of [child.stdout, child.stderr]) {
       stream.on('data', (chunk) => {
         output = (output + chunk).slice(-4000)
       })
+    }
     t.diagnostic(`Owned Next production server PID ${child.pid}`)
     const closeServer = async () => {
-      if (child.exitCode !== null) return
+      if (child.exitCode !== null) {
+        return
+      }
       const stopped = new Promise((resolve) => child.once('exit', resolve))
       process.kill(-child.pid, 'SIGTERM')
       const timer = setTimeout(() => {
@@ -316,13 +322,17 @@ test(
     }
     let browserOwnsCleanup = false
     t.after(async () => {
-      if (!browserOwnsCleanup) await closeServer()
+      if (!browserOwnsCleanup) {
+        await closeServer()
+      }
     })
     const url = 'http://127.0.0.1:3038'
     for (let attempt = 0; attempt < 60; attempt++) {
       assert.equal(child.exitCode, null, output)
       try {
-        if (output.includes('Ready in') && (await fetch(url)).ok) break
+        if (output.includes('Ready in') && (await fetch(url)).ok) {
+          break
+        }
       } catch {
         /* wait for owned server */
       }

@@ -10,7 +10,9 @@ const setup = () => {
   let candidates = ['tower', 'tier-3', 'window-3']
   const source = {
     parent: vi.fn((id: string) => {
-      if (!Object.hasOwn(parents, id)) throw new Error('Missing element')
+      if (!Object.hasOwn(parents, id)) {
+        throw new Error('Missing element')
+      }
       return parents[id]
     }),
     region: vi.fn(() => [...candidates])
@@ -49,8 +51,9 @@ describe('inspection dependency currency', () => {
     const reads = source.parent.mock.calls.map(([id]) => id)
     expect(reads).toEqual(['window-3', 'tier-3', 'tower'])
     source.parent.mockClear()
-    for (let repeat = 0; repeat < 100; repeat++)
+    for (let repeat = 0; repeat < 100; repeat++) {
       expect(owner.current(tiers[0])).toBe(true)
+    }
     expect(source.parent).not.toHaveBeenCalled()
     expect(source.region).not.toHaveBeenCalled()
   })

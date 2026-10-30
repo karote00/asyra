@@ -20,7 +20,9 @@ const loadContent = async (): Promise<VerifiedPublicContent> =>
 export default async function AsyraDesignPage() {
   const content = await loadContent()
   const caseStudy = content.pages.find(({ id }) => id === 'cases/asyra-design')
-  if (!caseStudy) throw new Error('Missing accepted Asyra Design case study')
+  if (!caseStudy) {
+    throw new Error('Missing accepted Asyra Design case study')
+  }
 
   return (
     <SiteFrame>

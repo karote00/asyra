@@ -22,13 +22,19 @@ export class SpatialBoundsOwner {
   private disposed = false
 
   measure(values: readonly SpatialMesh[]): SpatialBounds | null {
-    if (this.disposed) throw new Error('Spatial bounds owner is disposed')
+    if (this.disposed) {
+      throw new Error('Spatial bounds owner is disposed')
+    }
     const descriptors = values.map((value) => {
       const admitted = readSpatialDescriptor(value)
-      if (admitted.kind !== 'mesh') throw new Error('Expected a spatial mesh')
+      if (admitted.kind !== 'mesh') {
+        throw new Error('Expected a spatial mesh')
+      }
       return admitted
     })
-    if (!descriptors.length) return null
+    if (!descriptors.length) {
+      return null
+    }
     const min = [Infinity, Infinity, Infinity],
       max = [-Infinity, -Infinity, -Infinity]
     for (const descriptor of descriptors) {
@@ -50,18 +56,19 @@ export class SpatialBoundsOwner {
           z + qw * tz + qx * ty - qy * tx + position[2]
         ]
       }
-      for (const instance of descriptor.instances ?? [null])
-        for (const x of [bounds.min[0], bounds.max[0]])
-          for (const y of [bounds.min[1], bounds.max[1]])
+      for (const instance of descriptor.instances ?? [null]) {
+        for (const x of [bounds.min[0], bounds.max[0]]) {
+          for (const y of [bounds.min[1], bounds.max[1]]) {
             for (const z of [bounds.min[2], bounds.max[2]]) {
               let point: SpatialVector = [x, y, z]
-              if (instance)
+              if (instance) {
                 point = transform(
                   point,
                   instance.position,
                   instance.rotation,
                   instance.scale
                 )
+              }
               point = transform(
                 point,
                 descriptor.position,
@@ -73,9 +80,13 @@ export class SpatialBoundsOwner {
                 max[axis] = Math.max(max[axis], point[axis])
               }
             }
+          }
+        }
+      }
     }
-    if (!min.every(Number.isFinite) || !max.every(Number.isFinite))
+    if (!min.every(Number.isFinite) || !max.every(Number.isFinite)) {
       throw new Error('Nonfinite spatial bounds')
+    }
     return freeze(min, max)
   }
 
@@ -86,7 +97,9 @@ export class SpatialBoundsOwner {
 
   private localBounds(shape: SpatialShape): SpatialBounds {
     const existing = this.local.get(shape)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
     let result: SpatialBounds
     if (shape.kind === 'triangles') {
       const min = [Infinity, Infinity, Infinity],

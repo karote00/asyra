@@ -38,8 +38,9 @@ test('normal CUSTOM workbench renders, edits, undoes, resizes, and picks canonic
   await expect(canvas).toBeVisible()
   const graphics = await canvas.evaluate((canvas) => {
     const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost())
+    if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
+    }
     const info = gl.getExtension('WEBGL_debug_renderer_info')
     return {
       version: gl.getParameter(gl.VERSION),
@@ -92,14 +93,17 @@ test('normal CUSTOM workbench renders, edits, undoes, resizes, and picks canonic
   await expect
     .poll(() =>
       canvas.evaluate((node) => {
-        if (!(node instanceof HTMLCanvasElement))
+        if (!(node instanceof HTMLCanvasElement)) {
           throw new Error('Expected canvas')
+        }
         return [node.width, node.height]
       })
     )
     .toEqual([975, 904])
   const box = await canvas.boundingBox()
-  if (!box) throw new Error('Missing canvas surface')
+  if (!box) {
+    throw new Error('Missing canvas surface')
+  }
   // Independent perspective projection of the fixed fixture center, not renderer picking.
   const eye = [3.2, 2.4, 3.6],
     target = [0, 0.9, 0],

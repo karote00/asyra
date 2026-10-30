@@ -82,7 +82,9 @@ const dataChange = (value: unknown): boolean =>
   )
 
 const isCanonicalChange = (value: unknown): value is CanonicalChange => {
-  if (!isRecord(value)) return false
+  if (!isRecord(value)) {
+    return false
+  }
   switch (value.kind) {
     case 'property-components':
       return (
@@ -186,8 +188,9 @@ const isCanonicalChange = (value: unknown): value is CanonicalChange => {
           'removed',
           'rootParentChildrenAfter'
         ])
-      )
+      ) {
         return false
+      }
       const { action, undoAction, eventName, ...snapshot } = value.change
       return (
         action === 'removeSubtree' &&
@@ -205,13 +208,16 @@ const isCanonicalChange = (value: unknown): value is CanonicalChange => {
 export const readDocumentPublicationSlices = (
   publication: SharedPublication
 ): readonly (readonly CanonicalChange[])[] => {
-  if (!isSharedPublication(publication)) invalid('envelope')
+  if (!isSharedPublication(publication)) {
+    invalid('envelope')
+  }
   return Object.freeze(
     publication.slices.map((slice) =>
       Object.freeze(
         slice.batches.flatMap((batch) => {
-          if (batch.channel !== DocumentPublicationContract.channel)
+          if (batch.channel !== DocumentPublicationContract.channel) {
             invalid(`slice ${slice.sliceId}/channel`)
+          }
           return batch.deliveries.flatMap((delivery) => {
             const payload = delivery.payload
             if (
@@ -226,8 +232,9 @@ export const readDocumentPublicationSlices = (
               return invalid(`delivery ${delivery.deliveryId}`)
             }
             return payload.changes.map((change, position) => {
-              if (!isCanonicalChange(change))
+              if (!isCanonicalChange(change)) {
                 invalid(`delivery ${delivery.deliveryId}/changes/${position}`)
+              }
               return change
             })
           })

@@ -148,7 +148,9 @@ it('consumes real mechanical receipts independently of the attachment owner and 
   })
   try {
     const captured = await reviewer.capture('parent')
-    if (!captured.evidence) throw new Error('Expected mechanical evidence')
+    if (!captured.evidence) {
+      throw new Error('Expected mechanical evidence')
+    }
     const input = {
       evidence: [captured.evidence],
       positions: [f.input.positions[0]]

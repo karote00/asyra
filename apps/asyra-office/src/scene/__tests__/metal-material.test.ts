@@ -58,7 +58,9 @@ it('does not batch an environment-reflective material together with an ordinary 
 
 it('renders the sugar teaspoon as opaque reflective silver metal', () => {
   const spoon = sugarJar().find((part) => part.id === 'teaspoon')
-  if (!spoon) throw new Error('Missing teaspoon')
+  if (!spoon) {
+    throw new Error('Missing teaspoon')
+  }
   const [mesh] = buildSpatialMeshes(
     { parts: [spoon], assemblies: [], labels: [] },
     {}

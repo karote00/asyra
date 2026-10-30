@@ -42,11 +42,15 @@ describe('AI connection status', () => {
       vi.stubGlobal(
         'fetch',
         vi.fn(async () => {
-          if (kind === 'offline') throw new Error('private endpoint')
+          if (kind === 'offline') {
+            throw new Error('private endpoint')
+          }
           return {
             ok: true,
             json: async () => {
-              if (kind === 'html') throw new Error('not JSON')
+              if (kind === 'html') {
+                throw new Error('not JSON')
+              }
               return { state: 'private@example.test' }
             }
           }

@@ -16,7 +16,9 @@ function compareExactSquare(root: number, value: number): number {
     shift = 2 * re - ve
   const left = shift >= 0 ? (r * r) << BigInt(shift) : r * r,
     right = shift >= 0 ? v : v << BigInt(-shift)
-  if (left < right) return -1
+  if (left < right) {
+    return -1
+  }
   return left > right ? 1 : 0
 }
 

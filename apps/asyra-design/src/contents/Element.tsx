@@ -49,7 +49,9 @@ const Element = ({
   onPointerDown
 }: ElementData) => {
   const elementData = useElementData(elementId)
-  if (!elementData) return null
+  if (!elementData) {
+    return null
+  }
 
   const { id, name, type, lock, visible } = elementData as ElementRawData
   const handleElementClick = useCallback(

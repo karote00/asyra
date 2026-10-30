@@ -95,7 +95,7 @@ export const toolSemantics = (
 
 /** Browser owners return declared receipts; this records execution, not visual quality. */
 export const designActionOutcome = (value: unknown): AiToolOutcome => {
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new AiToolContractError(
       'output',
       'The browser action returned no structured receipt',
@@ -107,6 +107,7 @@ export const designActionOutcome = (value: unknown): AiToolOutcome => {
         value
       }
     )
+  }
   const result = value as Record<string, unknown>
   const reportedSettlement = [
     'not-started',
@@ -120,26 +121,30 @@ export const designActionOutcome = (value: unknown): AiToolOutcome => {
     result.delivery &&
     typeof result.delivery === 'object' &&
     (result.delivery as Record<string, unknown>).status === 'unavailable'
-  )
+  ) {
     return {
       status: 'partial',
       settlement: ['complete', 'no-change'].includes(String(result.status))
         ? 'completed'
         : (reportedSettlement ?? 'unknown')
     }
-  if (result.status === 'unknown')
+  }
+  if (result.status === 'unknown') {
     return { status: 'unknown', settlement: reportedSettlement ?? 'unknown' }
-  if (result.status === 'partial' || result.complete === false)
+  }
+  if (result.status === 'partial' || result.complete === false) {
     return { status: 'partial', settlement: reportedSettlement ?? 'partial' }
+  }
   if (
     result.status === 'failed' ||
     result.available === false ||
     result.applicable === false
-  )
+  ) {
     return {
       status: 'failed',
       settlement: reportedSettlement ?? 'unknown'
     }
+  }
   return { status: 'success', settlement: reportedSettlement ?? 'completed' }
 }
 
@@ -243,7 +248,9 @@ const actionEffects: Record<
 }
 export const actionToolSemantics = (name: string, outputSchema: unknown) => {
   const metadata = actionEffects[name]
-  if (!metadata) throw new Error(`No declared action effects: ${name}`)
+  if (!metadata) {
+    throw new Error(`No declared action effects: ${name}`)
+  }
   return toolSemantics(outputSchema, metadata.effect, metadata.resources)
 }
 
@@ -293,7 +300,9 @@ export const hostToolResultSchema = (schema: unknown): unknown => {
     references: readonly string[] = [],
     root = false
   ): unknown => {
-    if (!record(value)) return value
+    if (!record(value)) {
+      return value
+    }
     const result = { ...value }
     let referenced: unknown
     if (
@@ -315,10 +324,13 @@ export const hostToolResultSchema = (schema: unknown): unknown => {
       }
     }
     for (const key of ['allOf', 'anyOf', 'oneOf']) {
-      if (Array.isArray(result[key]))
+      if (Array.isArray(result[key])) {
         result[key] = result[key].map((branch) => visit(branch, references))
+      }
     }
-    if (Object.hasOwn(result, 'not')) result.not = visit(result.not, references)
+    if (Object.hasOwn(result, 'not')) {
+      result.not = visit(result.not, references)
+    }
     const restricted =
       result.additionalProperties !== undefined &&
       result.additionalProperties !== true
@@ -334,10 +346,11 @@ export const hostToolResultSchema = (schema: unknown): unknown => {
             ? { allOf: [result.properties.toolOutcome, outcome] }
             : outcome
       }
-      if (result.propertyNames !== undefined)
+      if (result.propertyNames !== undefined) {
         result.propertyNames = {
           anyOf: [result.propertyNames, { const: 'toolOutcome' }]
         }
+      }
       if (bounded) {
         const without: Record<string, unknown> = {
           not: { required: ['toolOutcome'] }
@@ -359,11 +372,12 @@ export const hostToolResultSchema = (schema: unknown): unknown => {
         ]
       }
     }
-    if (referenced !== undefined)
+    if (referenced !== undefined) {
       result.allOf = [
         referenced,
         ...(Array.isArray(result.allOf) ? result.allOf : [])
       ]
+    }
     return result
   }
   return visit(schema, [], true)
@@ -439,8 +453,12 @@ export const modelToolResultSchemas = (
 
 /** Preserve the owner's schema vocabulary while removing declared internal fields. */
 const modelResultSchema = (schema: unknown): unknown => {
-  if (!schema || typeof schema !== 'object') return schema
-  if (Array.isArray(schema)) return schema.map(modelResultSchema)
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+  if (Array.isArray(schema)) {
+    return schema.map(modelResultSchema)
+  }
   const source = schema as Record<string, unknown>
   const result = { ...source }
   const properties = source.properties as Record<string, unknown> | undefined
@@ -460,8 +478,9 @@ const modelResultSchema = (schema: unknown): unknown => {
         return [[key, modelResultSchema(child)]]
       })
     )
-    if (Array.isArray(source.required))
+    if (Array.isArray(source.required)) {
       result.required = source.required.filter((key) => !omitted.has(key))
+    }
   }
   for (const key of [
     '$defs',
@@ -470,13 +489,14 @@ const modelResultSchema = (schema: unknown): unknown => {
     'dependentSchemas'
   ]) {
     const children = source[key]
-    if (children && typeof children === 'object' && !Array.isArray(children))
+    if (children && typeof children === 'object' && !Array.isArray(children)) {
       result[key] = Object.fromEntries(
         Object.entries(children).map(([name, child]) => [
           name,
           modelResultSchema(child)
         ])
       )
+    }
   }
   for (const key of [
     'anyOf',
@@ -489,8 +509,11 @@ const modelResultSchema = (schema: unknown): unknown => {
     'if',
     'then',
     'else'
-  ])
-    if (source[key] !== undefined) result[key] = modelResultSchema(source[key])
+  ]) {
+    if (source[key] !== undefined) {
+      result[key] = modelResultSchema(source[key])
+    }
+  }
   return result
 }
 
@@ -508,8 +531,9 @@ export const projectToolResultFields = (
     sources: readonly unknown[],
     depth: number
   ): unknown => {
-    if (depth > 64)
+    if (depth > 64) {
       throw new Error('Model result projection exceeds schema depth')
+    }
     const fields = new Map<string, unknown[]>()
     const parts: Record<string, unknown>[] = []
     let opaque = false
@@ -522,7 +546,9 @@ export const projectToolResultFields = (
         opaque = true
         return
       }
-      if (!record(source) || visited.has(source)) return
+      if (!record(source) || visited.has(source)) {
+        return
+      }
       visited.add(source)
       parts.push(source)
       if (typeof source.$ref === 'string' && source.$ref.startsWith('#/')) {
@@ -539,30 +565,48 @@ export const projectToolResultFields = (
       if (record(source.properties)) {
         envelope = true
         for (const [key, child] of Object.entries(source.properties)) {
-          if (record(child) && child['x-model-visibility'] === 'internal')
+          if (record(child) && child['x-model-visibility'] === 'internal') {
             internal.add(key)
-          else fields.set(key, [...(fields.get(key) ?? []), child])
+          } else {
+            fields.set(key, [...(fields.get(key) ?? []), child])
+          }
         }
       }
-      if (record(source.patternProperties))
-        for (const [pattern, child] of Object.entries(source.patternProperties))
+      if (record(source.patternProperties)) {
+        for (const [pattern, child] of Object.entries(
+          source.patternProperties
+        )) {
           patterns.push([new RegExp(pattern), child])
+        }
+      }
       if (source.if !== undefined) {
         const matches = !operationInputIssues(item, source.if, schema, 'output')
         visit(matches ? source.then : source.else)
       }
-      if (record(item) && record(source.dependentSchemas))
-        for (const [key, child] of Object.entries(source.dependentSchemas))
-          if (Object.hasOwn(item, key)) visit(child)
-      if (Array.isArray(source.allOf)) source.allOf.forEach(visit)
-      for (const key of ['anyOf', 'oneOf'])
-        if (Array.isArray(source[key]))
-          for (const branch of source[key])
-            if (!operationInputIssues(item, branch, schema, 'output'))
+      if (record(item) && record(source.dependentSchemas)) {
+        for (const [key, child] of Object.entries(source.dependentSchemas)) {
+          if (Object.hasOwn(item, key)) {
+            visit(child)
+          }
+        }
+      }
+      if (Array.isArray(source.allOf)) {
+        source.allOf.forEach(visit)
+      }
+      for (const key of ['anyOf', 'oneOf']) {
+        if (Array.isArray(source[key])) {
+          for (const branch of source[key]) {
+            if (!operationInputIssues(item, branch, schema, 'output')) {
               visit(branch)
+            }
+          }
+        }
+      }
     }
     sources.forEach(visit)
-    if (opaque) return item
+    if (opaque) {
+      return item
+    }
     if (Array.isArray(item)) {
       return item.map((entry, index) =>
         project(
@@ -571,32 +615,42 @@ export const projectToolResultFields = (
             if (
               Array.isArray(part.prefixItems) &&
               index < part.prefixItems.length
-            )
+            ) {
               return [part.prefixItems[index]]
+            }
             return part.items === undefined ? [] : [part.items]
           }),
           depth + 1
         )
       )
     }
-    if (!record(item)) return item
+    if (!record(item)) {
+      return item
+    }
     const dynamic = parts.flatMap((part) =>
       record(part.additionalProperties) ? [part.additionalProperties] : []
     )
     // An unconstrained value is explicitly opaque. Typed maps still project each
     // value, including maps with no fixed properties and user-authored key names.
-    if (!envelope && !patterns.length && !dynamic.length) return item
+    if (!envelope && !patterns.length && !dynamic.length) {
+      return item
+    }
     const entries: [string, unknown][] = []
     for (const [key, value] of Object.entries(item)) {
-      if (internal.has(key)) continue
+      if (internal.has(key)) {
+        continue
+      }
       const named = fields.get(key) ?? []
       const patterned = patterns
         .filter(([pattern]) => pattern.test(key))
         .map(([, child]) => child)
       const children = [...named, ...patterned]
-      if (!children.length) children.push(...dynamic)
-      if (children.length)
+      if (!children.length) {
+        children.push(...dynamic)
+      }
+      if (children.length) {
         entries.push([key, project(value, children, depth + 1)])
+      }
     }
     return Object.fromEntries(entries)
   }
@@ -660,8 +714,9 @@ export const projectToolDelivery = (
     if (
       recovery.length &&
       !operationContractIssue(value, declared, { stage: 'output' })
-    )
+    ) {
       return projectToolResultFields(value, declared)
+    }
   }
   const issue =
     view === undefined
@@ -671,8 +726,12 @@ export const projectToolDelivery = (
         })
   const original =
     value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
-  if (issue) return toolDeliveryFailure(value, issue, contract)
-  if (!view || typeof view !== 'object' || Array.isArray(view)) return view
+  if (issue) {
+    return toolDeliveryFailure(value, issue, contract)
+  }
+  if (!view || typeof view !== 'object' || Array.isArray(view)) {
+    return view
+  }
   return {
     ...(projectToolResultFields(view, contract.delivery.outputSchema) as Record<
       string,

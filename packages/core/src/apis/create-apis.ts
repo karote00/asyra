@@ -335,11 +335,12 @@ export const createAPIs = (
           const seenPropertyIds = new Set<string>()
           const operations: PropertyMutation[] = []
           const includeIds = (ids: readonly string[]): void => {
-            for (const id of ids)
+            for (const id of ids) {
               if (!seenPropertyIds.has(id)) {
                 seenPropertyIds.add(id)
                 orderedPropertyIds.push(id)
               }
+            }
           }
           if (change.creations !== undefined) {
             includeIds(change.creations.map(({ id }) => id))
@@ -349,10 +350,11 @@ export const createAPIs = (
             })
           }
           for (const { id } of change.removals ?? []) {
-            if (sceneTree.getElementPropertyRelations(id).length > 0)
+            if (sceneTree.getElementPropertyRelations(id).length > 0) {
               throw new Error(
                 `[Core] Cannot retire property record "${id}" retained by an element`
               )
+            }
           }
           change.updates.forEach(({ propertyId, values }) => {
             if (!seenPropertyIds.has(propertyId)) {

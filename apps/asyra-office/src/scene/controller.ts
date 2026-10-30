@@ -87,7 +87,9 @@ export function createSceneController(
     disposed = false
   const listeners = new Set<() => void>()
   const publish = (next: SpatialCamera, view: string) => {
-    if (disposed) throw new Error('Scene disposed')
+    if (disposed) {
+      throw new Error('Scene disposed')
+    }
     camera = next
     layer.submitCamera(camera)
     if (view !== snapshot.view) {
@@ -107,7 +109,9 @@ export function createSceneController(
     overview: () => publish(overviewCamera(aspect), 'Overview'),
     focusPlace: (id: string) => {
       const place = PLACES.find((p) => p.id === id)
-      if (!place) throw new Error('Unknown place')
+      if (!place) {
+        throw new Error('Unknown place')
+      }
       if (id === 'office') {
         publish(overviewCamera(aspect), 'Overview')
         return
@@ -127,7 +131,9 @@ export function createSceneController(
     },
     follow: (id: string) => {
       const agent = ACTORS.find((a) => a.id === id)
-      if (!agent) throw new Error('Agent has no scene representation')
+      if (!agent) {
+        throw new Error('Agent has no scene representation')
+      }
       const p = agent.position,
         angle = (agent.rotation * Math.PI) / 180,
         behind: Vec = [
@@ -157,8 +163,9 @@ export function createSceneController(
         'Free view'
       ),
     move: (right: number, forward: number, fast = false) => {
-      if (!Number.isFinite(right) || !Number.isFinite(forward))
+      if (!Number.isFinite(right) || !Number.isFinite(forward)) {
         throw new Error('Invalid camera movement')
+      }
       const distance = spatialCameraDistance(camera)
       const horizontal = Math.hypot(
         camera.position[0] - camera.target[0],
@@ -189,8 +196,9 @@ export function createSceneController(
       ),
     resize: (nextAspect: number) => {
       aspect = nextAspect
-      if (snapshot.view === 'Overview')
+      if (snapshot.view === 'Overview') {
         publish(overviewCamera(aspect), 'Overview')
+      }
     },
     dispose: () => {
       disposed = true

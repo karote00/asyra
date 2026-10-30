@@ -28,8 +28,9 @@ it('stops consuming a lazy report as soon as the byte allowance is exceeded', ()
 })
 
 it('never permits a caller to raise or disable the hard report limit', () => {
-  for (const limit of [0, -1, 0.5, NaN, Infinity, 64 * 1024 * 1024 + 1])
+  for (const limit of [0, -1, 0.5, NaN, Infinity, 64 * 1024 * 1024 + 1]) {
     expect(() => collectReportText([], limit)).toThrow(
       'Invalid report byte limit'
     )
+  }
 })

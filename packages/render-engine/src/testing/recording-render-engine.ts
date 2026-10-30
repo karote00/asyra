@@ -100,10 +100,11 @@ export class RecordingRenderEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     this.assertReady()
-    if (isSpatialQuery(query))
+    if (isSpatialQuery(query)) {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.SPATIAL_QUERIES
       ])
+    }
 
     switch (query.type) {
       case 'measure-text':

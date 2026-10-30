@@ -40,7 +40,9 @@ export const decodeProfiledWebSocketFrame = ({
       wireByteLength: textEncoder.encode(payloadData).byteLength
     }
   }
-  if (opcode !== 2) return null
+  if (opcode !== 2) {
+    return null
+  }
   const bytes = decodeBase64(payloadData)
   return {
     value: decodeCompactBinary(bytes),

@@ -56,12 +56,13 @@ export function createPlantingNet(
       const z = Math.min(last.z, row.z + i * NET_LAYOUT.mesh)
       add([x, config.netBottom, z], [x, top, z])
     }
-    for (const tube of line)
+    for (const tube of line) {
       ties.push({
         bay: row.bay,
         center: [tube.x, top - NET_LAYOUT.tieWidth / 2, tube.z],
         radius: SUPPORT_LAYOUT.diameter / 2 + NET_LAYOUT.cordDiameter
       })
+    }
   }
   return { strands, ties }
 }

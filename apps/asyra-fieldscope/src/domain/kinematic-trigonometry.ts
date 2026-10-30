@@ -11,9 +11,12 @@ function coefficientsFor(first: number, last: number) {
   let factorial = 1n
   const values: bigint[] = []
   for (let power = 0; power <= last; power++) {
-    if (power > 0) factorial *= BigInt(power)
-    if (power >= first && power % 2 === first)
+    if (power > 0) {
+      factorial *= BigInt(power)
+    }
+    if (power >= first && power % 2 === first) {
       values.push((values.length % 2 ? -1n : 1n) * (factor / factorial))
+    }
   }
   return Object.freeze(values)
 }
@@ -24,7 +27,9 @@ interface Work {
 }
 const newWork = (): Work => ({ evaluations: 0, terms: 0, maxBigIntBits: 0 })
 function observe(work: Work, bits: number) {
-  if (bits > 24000) throw new Error('Polynomial bit budget exceeded')
+  if (bits > 24000) {
+    throw new Error('Polynomial bit budget exceeded')
+  }
   work.maxBigIntBits = Math.max(work.maxBigIntBits, bits)
 }
 function width(value: bigint, work: Work) {
@@ -33,16 +38,18 @@ function width(value: bigint, work: Work) {
   return bits
 }
 function product(a: bigint, b: bigint, work: Work) {
-  if (a !== 0n && b !== 0n && width(a, work) + width(b, work) > 24000)
+  if (a !== 0n && b !== 0n && width(a, work) + width(b, work) > 24000) {
     throw new Error('Polynomial bit budget exceeded')
+  }
   const result = a * b
   width(result, work)
   return result
 }
 function sum(a: bigint, b: bigint, work: Work) {
   const bound = Math.max(width(a, work), width(b, work))
-  if (bound + (a > 0n === b > 0n ? 1 : 0) > 24000)
+  if (bound + (a > 0n === b > 0n ? 1 : 0) > 24000) {
     throw new Error('Polynomial bit budget exceeded')
+  }
   const result = a + b
   width(result, work)
   return result
@@ -53,17 +60,20 @@ function validate(kind: Kind, value: number) {
     typeof value !== 'number' ||
     !Number.isFinite(value) ||
     Math.abs(value) >= 1
-  )
+  ) {
     throw new Error('Invalid polynomial trig input')
+  }
 }
 function polynomial(kind: Kind, value: number, work: Work) {
   work.evaluations++
-  if (value === 0)
+  if (value === 0) {
     return { numerator: kind === 'sin' ? 0n : 1n, denominator: 1n }
+  }
   const { significand, exponent } = dyadic(value)
   // All admitted nonzero inputs have negative binary exponents; |x| < 1.
-  if (exponent >= 0 || -exponent + 1 > 24000)
+  if (exponent >= 0 || -exponent + 1 > 24000) {
     throw new Error('Polynomial exponent budget exceeded')
+  }
   const a = significand,
     b = 1n << BigInt(-exponent)
   width(a, work)
@@ -121,7 +131,9 @@ const newExactWork = (): ExactWork => ({
   rationalComparisons: 0
 })
 function gcdExact(a: bigint, b: bigint, work: ExactWork) {
-  if (a < 0n) a = -a
+  if (a < 0n) {
+    a = -a
+  }
   width(a, work)
   width(b, work)
   while (b !== 0n) {
@@ -135,8 +147,9 @@ function gcdExact(a: bigint, b: bigint, work: ExactWork) {
 }
 function fractionInput(value: unknown, work: ExactWork): PolynomialFraction {
   work.admissionChecks++
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Invalid exact polynomial fraction')
+  }
   const snapshot = { ...value } as Record<string, unknown>
   if (
     Object.keys(snapshot).length !== 2 ||
@@ -144,8 +157,9 @@ function fractionInput(value: unknown, work: ExactWork): PolynomialFraction {
     !Object.hasOwn(snapshot, 'denominator') ||
     typeof snapshot.numerator !== 'bigint' ||
     typeof snapshot.denominator !== 'bigint'
-  )
+  ) {
     throw new Error('Invalid exact polynomial fraction')
+  }
   const { numerator, denominator } = snapshot
   // Bound each input before gcd, products or domain cross multiplication.
   width(numerator, work)
@@ -155,10 +169,12 @@ function fractionInput(value: unknown, work: ExactWork): PolynomialFraction {
     numerator <= -denominator ||
     numerator >= denominator ||
     (numerator === 0n && denominator !== 1n)
-  )
+  ) {
     throw new Error('Invalid exact polynomial domain')
-  if (gcdExact(numerator, denominator, work) !== 1n)
+  }
+  if (gcdExact(numerator, denominator, work) !== 1n) {
     throw new Error('Noncanonical exact polynomial fraction')
+  }
   return Object.freeze({ numerator, denominator })
 }
 function reduced(
@@ -192,16 +208,18 @@ function exactPolynomial(
   work: ExactWork
 ) {
   work.evaluations++
-  if (input.numerator === 0n)
+  if (input.numerator === 0n) {
     return reduced(
       { numerator: kind === 'sin' ? 0n : 1n, denominator: 1n },
       work
     )
+  }
   return reduced(horner(kind, input.numerator, input.denominator, work), work)
 }
 function checkKind(kind: Kind) {
-  if (kind !== 'sin' && kind !== 'cos')
+  if (kind !== 'sin' && kind !== 'cos') {
     throw new Error('Invalid polynomial trig kind')
+  }
 }
 export function evaluateExactPolynomialTrig(kind: Kind, input: unknown) {
   checkKind(kind)
@@ -227,8 +245,9 @@ function createSignCertificate() {
       const constant = values[index],
         linear = values[index + 1],
         lowerAtOne = sum(constant, linear, work)
-      if (constant <= 0n || linear >= 0n || lowerAtOne <= 0n)
+      if (constant <= 0n || linear >= 0n || lowerAtOne <= 0n) {
         throw new Error('Unproved fixed polynomial sign')
+      }
       // z=x*x in [0,1): z^index >= 0, constant+linear*z >= lowerAtOne > 0.
       pairs.push(Object.freeze({ power: index, constant, linear, lowerAtOne }))
     }
@@ -237,8 +256,9 @@ function createSignCertificate() {
       values.length % 2
         ? Object.freeze({ power: last, coefficient: values[last] })
         : null
-    if (tail && tail.coefficient <= 0n)
+    if (tail && tail.coefficient <= 0n) {
       throw new Error('Unproved fixed polynomial tail')
+    }
     return Object.freeze({
       coefficients: values,
       pairs: Object.freeze(pairs),
@@ -255,8 +275,9 @@ function createSignCertificate() {
       .every(
         (v, i) => product(v, BigInt(2 * i + 2), work) === -coefficients.sin[i]
       )
-  )
+  ) {
     throw new Error('Unproved fixed polynomial derivative')
+  }
   const positivePolynomials = Object.freeze({
     sineOverInput: positive(coefficients.sin),
     cosine: positive(coefficients.cos),
@@ -278,20 +299,23 @@ function createSignCertificate() {
 export const POLYNOMIAL_TRIG_SIGN_CERTIFICATE = createSignCertificate()
 export function boundExactPolynomialTrig(kind: Kind, input: unknown) {
   checkKind(kind)
-  if (!input || typeof input !== 'object' || Array.isArray(input))
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error('Invalid exact polynomial interval')
+  }
   const snapshot = { ...input } as Record<string, unknown>
   if (
     Object.keys(snapshot).length !== 2 ||
     !Object.hasOwn(snapshot, 'low') ||
     !Object.hasOwn(snapshot, 'high')
-  )
+  ) {
     throw new Error('Invalid exact polynomial interval')
+  }
   const work = newExactWork(),
     low = fractionInput(snapshot.low, work),
     high = fractionInput(snapshot.high, work)
-  if (rationalCompare(low, high, work) > 0)
+  if (rationalCompare(low, high, work) > 0) {
     throw new Error('Invalid exact polynomial interval')
+  }
   const zero = Object.freeze({ numerator: 0n, denominator: 1n })
   const crossesZero = low.numerator <= 0n && high.numerator >= 0n
   let minimumAt = low,
@@ -304,7 +328,9 @@ export function boundExactPolynomialTrig(kind: Kind, input: unknown) {
     const order = rationalCompare(abs(low), abs(high), work)
     minimumAt = order >= 0 ? low : high
     maximumAt = order <= 0 ? low : high
-    if (crossesZero) maximumAt = zero
+    if (crossesZero) {
+      maximumAt = zero
+    }
   }
   const minimum = exactPolynomial(kind, minimumAt, work)
   const maximum =
@@ -336,12 +362,14 @@ export function evaluatePolynomialTrig(kind: Kind, input: number) {
 }
 export function boundPolynomialTrig(kind: Kind, input: Interval) {
   const admitted = structuredClone(input)
-  if (!admitted || typeof admitted !== 'object')
+  if (!admitted || typeof admitted !== 'object') {
     throw new Error('Invalid polynomial interval')
+  }
   validate(kind, admitted.low)
   validate(kind, admitted.high)
-  if (admitted.low > admitted.high)
+  if (admitted.low > admitted.high) {
     throw new Error('Invalid polynomial interval')
+  }
   const work = newWork()
   let minimum = admitted.low,
     maximum = admitted.high
@@ -350,12 +378,14 @@ export function boundPolynomialTrig(kind: Kind, input: Interval) {
       Math.abs(admitted.low) >= Math.abs(admitted.high)
         ? admitted.low
         : admitted.high
-    if (admitted.low <= 0 && admitted.high >= 0) maximum = 0
-    else
+    if (admitted.low <= 0 && admitted.high >= 0) {
+      maximum = 0
+    } else {
       maximum =
         Math.abs(admitted.low) <= Math.abs(admitted.high)
           ? admitted.low
           : admitted.high
+    }
   }
   const lower = polynomial(kind, minimum, work)
   const upper = Object.is(minimum, maximum)

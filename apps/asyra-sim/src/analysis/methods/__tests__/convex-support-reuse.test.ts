@@ -62,7 +62,9 @@ function digest(value: unknown): string {
   return createHash('sha256')
     .update(
       JSON.stringify(value, (_, item: unknown) => {
-        if (typeof item !== 'number') return item
+        if (typeof item !== 'number') {
+          return item
+        }
         const bytes = Buffer.alloc(8)
         bytes.writeDoubleBE(item)
         return bytes.toString('hex')
@@ -79,7 +81,9 @@ it.runIf(process.env.SIM_SUPPORT_REUSE_POPULATION === '1')(
   'preserves the complete recorded scenario-zero population and charged work',
   async () => {
     const controlFile = process.env.SIM_SUPPORT_REUSE_CONTROL_FILE
-    if (!controlFile) throw new Error('Missing reviewed population control')
+    if (!controlFile) {
+      throw new Error('Missing reviewed population control')
+    }
     const controlText = readFileSync(controlFile, 'utf8')
     const controlSha256 = createHash('sha256').update(controlText).digest('hex')
     expect(controlSha256).toBe(
@@ -100,8 +104,9 @@ it.runIf(process.env.SIM_SUPPORT_REUSE_POPULATION === '1')(
     expect(snapshot.budget.maxDurationMs).toBe(30000)
     const started = performance.now()
     const checkpoint = () => {
-      if (performance.now() - started >= snapshot.budget.maxDurationMs)
+      if (performance.now() - started >= snapshot.budget.maxDurationMs) {
         throw new Error('Analysis exceeded its declared wall-time budget.')
+      }
     }
     const context = new OriginalMeshQuery(checkpoint)
     const pairs: OfficialPairEvidence[] = []
@@ -200,8 +205,9 @@ describe('iteration-local convex support reuse', () => {
     for (let stop = 1; stop <= 8; stop++) {
       let armed = true
       const { counts, query } = await observedQuery((name, current) => {
-        if (armed && name === 'rotate' && current.rotate === stop)
+        if (armed && name === 'rotate' && current.rotate === stop) {
           throw sentinel
+        }
       })
       const input = supportCases()[0]
       expect(() =>
@@ -220,7 +226,9 @@ describe('iteration-local convex support reuse', () => {
     let nestedDigest: string | undefined
     const input = supportCases()[0]
     const observed = await observedQuery((name) => {
-      if (name !== 'rotate' || nested) return
+      if (name !== 'rotate' || nested) {
+        return
+      }
       nested = true
       nestedDigest = digest(
         observed.query(input.a, input.b, input.tolerance, input.iterations)

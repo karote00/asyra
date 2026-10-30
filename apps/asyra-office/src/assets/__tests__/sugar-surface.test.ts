@@ -21,7 +21,9 @@ it('preserves smooth radial normals through cutting without smoothing the slot p
   append(cutter, box([0.8, 0.4, 1]), [1, 0, 1.8])
   const result = subtractSolids(source, [cutter])
   expect(result.normals).toHaveLength(result.positions.length)
-  if (!result.normals) throw new Error('Missing cut normals')
+  if (!result.normals) {
+    throw new Error('Missing cut normals')
+  }
   let sideSamples = 0,
     cutSamples = 0
   for (let t = 0; t < result.triangleRegions.length; t++) {
@@ -58,10 +60,14 @@ it('transforms authored normals with inverse scale and retains them through both
     true
   )
   expect(source.normals).toHaveLength(source.positions.length)
-  if (!source.normals) throw new Error('Missing source normals')
+  if (!source.normals) {
+    throw new Error('Missing source normals')
+  }
   const transformed = emptyMesh()
   append(transformed, source, [3, 4, 5], [30, 20, 10], [2, 3, 4])
-  if (!transformed.normals) throw new Error('Missing transformed normals')
+  if (!transformed.normals) {
+    throw new Error('Missing transformed normals')
+  }
   for (let i = 0; i < source.positions.length; i += 3) {
     const n = source.normals.slice(i, i + 3)
     const basis = emptyMesh()
@@ -72,11 +78,12 @@ it('transforms authored normals with inverse scale and retains them through both
       [30, 20, 10]
     )
     const length = Math.hypot(...basis.positions)
-    for (let k = 0; k < 3; k++)
+    for (let k = 0; k < 3; k++) {
       expect(transformed.normals[i + k]).toBeCloseTo(
         basis.positions[k] / length,
         7
       )
+    }
   }
   const plain = box([1, 1, 1])
   const meshes = buildSpatialMeshes(
@@ -92,19 +99,25 @@ it('transforms authored normals with inverse scale and retains them through both
     {}
   )
   const expected = toSpatial(transformed)
-  if (expected.kind !== 'triangles') throw new Error('Expected triangles')
+  if (expected.kind !== 'triangles') {
+    throw new Error('Expected triangles')
+  }
   expect(meshes).toHaveLength(1)
   const shape = meshes[0].descriptor.shape
-  if (shape.kind !== 'triangles') throw new Error('Expected triangles')
+  if (shape.kind !== 'triangles') {
+    throw new Error('Expected triangles')
+  }
   expect(shape.normals).toHaveLength(shape.positions.length)
-  if (!shape.normals || !expected.normals)
+  if (!shape.normals || !expected.normals) {
     throw new Error('Missing batch normals')
+  }
   const actual = shape.normals.slice(
     plain.positions.length,
     plain.positions.length + transformed.positions.length
   )
-  for (let i = 0; i < actual.length; i++)
+  for (let i = 0; i < actual.length; i++) {
     expect(actual[i]).toBeCloseTo(expected.normals[i], 12)
+  }
 })
 
 it('authors continuous sugar body and lid normals including the leaning transform', () => {
@@ -112,10 +125,12 @@ it('authors continuous sugar body and lid normals including the leaning transfor
   for (const name of ['vessel', 'lid']) {
     const mesh = asset.find((p) => p.id === name)?.mesh
     expect(mesh, name).toBeDefined()
-    if (!mesh || !mesh.normals)
+    if (!mesh || !mesh.normals) {
       throw new Error('Missing sugar normals: ' + name)
+    }
     expect(mesh.normals, name).toHaveLength(mesh.positions.length)
-    for (let i = 0; i < mesh.positions.length; i += 3)
+    for (let i = 0; i < mesh.positions.length; i += 3) {
       expect(Math.hypot(...mesh.normals.slice(i, i + 3))).toBeCloseTo(1, 6)
+    }
   }
 })

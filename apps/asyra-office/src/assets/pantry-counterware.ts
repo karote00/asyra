@@ -198,7 +198,7 @@ export function pantryCounterPlant(kind: 'preparation' | 'sink'): AssetPart[] {
   return parts.map((p) => {
     if (kind === 'preparation' && (p.id === 'pot' || p.id === 'soil')) {
       const pot = COUNTERTOP_REFERENCE.preparationPot
-      if (p.id === 'soil')
+      if (p.id === 'soil') {
         return placeParts(
           [
             part(
@@ -210,6 +210,7 @@ export function pantryCounterPlant(kind: 'preparation' | 'sink'): AssetPart[] {
           ],
           [0, 0, pot.soilHeight - 0.002]
         )[0]
+      }
       const r = pot.radius,
         b = pot.baseRadius,
         h = pot.height,
@@ -234,7 +235,9 @@ export function pantryCounterPlant(kind: 'preparation' | 'sink'): AssetPart[] {
         0.82
       )
     }
-    if (p.id === 'pot' || p.id === 'soil') return p
+    if (p.id === 'pot' || p.id === 'soil') {
+      return p
+    }
     const transform = (mesh: typeof p.mesh) => ({
       ...mesh,
       positions: mesh.positions.map((v, i) =>

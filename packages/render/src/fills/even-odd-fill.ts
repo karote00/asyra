@@ -172,12 +172,13 @@ const createGradientSampler = (
         const radiusY = side
           ? Math.max(Math.hypot(sideX, sideY), EPSILON)
           : radiusX
-        if (radial)
+        if (radial) {
           return (x: number, y: number) => {
             const nx = (x - startX) / radiusX
             const ny = (y - startY) / radiusY
             return Math.sqrt(nx * nx + ny * ny)
           }
+        }
         return (x: number, y: number) => {
           const nx = Math.abs(x - startX) / radiusX
           const ny = Math.abs(y - startY) / radiusY
@@ -194,7 +195,9 @@ const createGradientSampler = (
       case FillGradientTypes.LINEAR:
       default: {
         const denom = dx * dx + dy * dy
-        if (denom <= EPSILON) return () => 0
+        if (denom <= EPSILON) {
+          return () => 0
+        }
         return (x: number, y: number) =>
           ((x - startX) * dx + (y - startY) * dy) / denom
       }

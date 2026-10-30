@@ -83,8 +83,9 @@ test('complete office composition and both navigation panels are the default', a
     .locator('canvas')
     .evaluate((canvas) => {
       const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
-      if (!gl || gl.isContextLost())
+      if (!gl || gl.isContextLost()) {
         throw new Error('Missing live WebGL2 context')
+      }
       return {
         version: gl.getParameter(gl.VERSION),
         width: gl.drawingBufferWidth,

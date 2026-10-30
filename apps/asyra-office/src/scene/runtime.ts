@@ -11,7 +11,9 @@ let ownerCore = core,
   active = false
 const FRAME_REVISION = 'reference-scene.frame-revision'
 export async function startReferenceScene(host: HTMLElement) {
-  if (active) throw new Error('Scene already active')
+  if (active) {
+    throw new Error('Scene already active')
+  }
   active = true
   const owner = ownerCore
   let stopped = false,
@@ -22,7 +24,9 @@ export async function startReferenceScene(host: HTMLElement) {
     controller: ReturnType<typeof createSceneController> | undefined,
     cleanup: Promise<void> | undefined
   const dispose = () => {
-    if (cleanup) return cleanup
+    if (cleanup) {
+      return cleanup
+    }
     stopped = true
     stopKeyboard?.()
     observer?.disconnect()
@@ -66,7 +70,9 @@ export async function startReferenceScene(host: HTMLElement) {
       silent: true
     })
     layer = new SpatialLayer(() => {
-      if (!stopped) owner.setSystemProperty(FRAME_REVISION, ++revision)
+      if (!stopped) {
+        owner.setSystemProperty(FRAME_REVISION, ++revision)
+      }
     })
     owner.registerRenderLayer(layer.registration)
     const size = () => ({
@@ -107,10 +113,14 @@ export async function startReferenceScene(host: HTMLElement) {
     })
     await owner.start(host, { ...size(), backgroundColor: 0xc9c5b5 })
     const browser = host.ownerDocument.defaultView
-    if (!browser) throw new Error('Scene host requires a browser window')
+    if (!browser) {
+      throw new Error('Scene host requires a browser window')
+    }
     stopKeyboard = bindCameraKeyboard(browser, api.move, owner)
     observer = new ResizeObserver(() => {
-      if (stopped) return
+      if (stopped) {
+        return
+      }
       const next = size()
       owner.resizeRenderer(next.width, next.height)
       controller?.resize(next.width / next.height)

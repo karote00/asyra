@@ -124,7 +124,9 @@ test('clean consumer runner owns install, compile, build, test, and cleanup', ()
       allowUnsupportedNode: true,
       runCommand: (command, args, options) => {
         commands.push({ command, args, cwd: options.cwd })
-        if (args[0] !== 'install') return
+        if (args[0] !== 'install') {
+          return
+        }
         const manifest = JSON.parse(
           fs.readFileSync(path.join(options.cwd, 'package.json'), 'utf8')
         )
@@ -191,7 +193,9 @@ test('registry consumer proves npm resolution before running public gates', () =
       allowUnsupportedNode: true,
       runCommand: (command, args, options) => {
         commands.push([command, ...args])
-        if (args[0] !== 'install') return
+        if (args[0] !== 'install') {
+          return
+        }
         const lockfileBlocks = []
         for (const [name, version] of Object.entries(packageVersions)) {
           const packageDirectory = path.join(

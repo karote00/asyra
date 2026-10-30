@@ -64,7 +64,9 @@ it('replays prepared sibling creation, Undo and Redo into the exact durable prop
     expect(publications.length).toBeGreaterThan(0)
     for (const publication of publications.splice(0)) {
       const prepared = prepareCollaborationPublication(publication)
-      if (!prepared) continue
+      if (!prepared) {
+        continue
+      }
       const wire = decodePublicationFramePublication(
         encodePublicationMessageFrames({
           type: CollaborationMessageTypes.PUBLICATION,
@@ -83,7 +85,9 @@ it('replays prepared sibling creation, Undo and Redo into the exact durable prop
     const example = designPreparationExamples.find(
       (entry) => entry.draft.name === 'Repeated visible detail'
     )
-    if (!example) throw new Error('Missing current multi-face example')
+    if (!example) {
+      throw new Error('Missing current multi-face example')
+    }
     const action = createPreparedDesignAction()
     const runner = createAiTransactionRunner()
     const signal = new AbortController().signal

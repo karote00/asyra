@@ -23,7 +23,9 @@ export async function representativeSnapshot(candidate: number) {
     const body = example.workcell.bodies.find(
       (body) => body.id === `example:${source.body}`
     )
-    if (!body) throw new Error('Missing original part target')
+    if (!body) {
+      throw new Error('Missing original part target')
+    }
     body.visuals = [
       {
         version: 1,
@@ -38,7 +40,9 @@ export async function representativeSnapshot(candidate: number) {
   const post = example.workcell.bodies.find(
     (body) => body.name === 'fixture post'
   )
-  if (!post) throw new Error('Missing fixture post')
+  if (!post) {
+    throw new Error('Missing fixture post')
+  }
   // Keep both supplied fixtures and add 28 full original posts around the cell.
   for (let index = 0; index < 28; index++) {
     const fixture = structuredClone(post)

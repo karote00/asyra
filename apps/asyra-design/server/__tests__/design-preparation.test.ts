@@ -211,7 +211,7 @@ describe('semantic design preparation', () => {
       width: 1,
       height: 1
     }
-    for (let depth = 0; depth < 12; depth++)
+    for (let depth = 0; depth < 12; depth++) {
       child = {
         key: `level-${depth}`,
         name: 'Frame',
@@ -220,6 +220,7 @@ describe('semantic design preparation', () => {
         height: 10,
         children: [child]
       }
+    }
     expect(() =>
       prepareDesign({
         type: 'frame',
@@ -449,10 +450,11 @@ describe('editable illustration preparation', () => {
         ]
       ],
       [Array.from({ length: 20001 }, (_, i) => ({ x: i % 100, y: i % 90 }))]
-    ])
+    ]) {
       expect(() =>
         prepareDesign(illustration({ ...vector(), rings }))
       ).toThrow()
+    }
   })
 })
 
@@ -502,8 +504,9 @@ it('keeps the inert semantic typography protocol compatible with canonical field
   for (const field of TEXT_PROPERTY_SCHEMA.fields) {
     const validator =
       DesignTextValidators[field.key as keyof typeof DesignTextValidators]
-    for (const value of values)
+    for (const value of values) {
       expect(validator(value), field.key).toBe(field.validate?.(value))
+    }
   }
 })
 
@@ -623,8 +626,9 @@ describe('structured design construction', () => {
           sourceProperty: 'x'
         }
       ]
-    ])
+    ]) {
       expect(() => prepareDesign({ ...source, relations })).toThrow(/relation/i)
+    }
     expect(() => prepareDesign({ ...source, layout: 'row' })).toThrow(
       /relation/i
     )
@@ -763,8 +767,9 @@ it('validates construction boundaries and isolates brief evidence from caller ch
         checks: [{ key: 'a', property: 'width', expected: 40, tolerance: -1 }]
       }
     }
-  ])
+  ]) {
     expect(() => prepareDesign(invalid)).toThrow()
+  }
   const brief = {
     intent: 'test',
     viewpoint: 'flat',
@@ -1612,14 +1617,20 @@ it('preserves the recorded reflection geometry and independent paints when equal
   const call = saved.calls.find(
     (item: { input: { bytes: number } }) => item.input.bytes === 670447
   )
-  if (!call) throw new Error('Missing recorded reflection input')
+  if (!call) {
+    throw new Error('Missing recorded reflection input')
+  }
   const original = call.inputValue.draft
   const compact = structuredClone(original)
   const keys = new Map<string, string>()
   for (const grid of compact.children) {
-    if (grid.type !== 'surface-grid') continue
+    if (grid.type !== 'surface-grid') {
+      continue
+    }
     for (const motif of grid.motifs) {
-      if (!motif.fills) continue
+      if (!motif.fills) {
+        continue
+      }
       motif.fills = motif.fills.map((fill: unknown) => {
         const serialized = JSON.stringify(fill)
         let key = keys.get(serialized)
@@ -1641,7 +1652,9 @@ it('preserves the recorded reflection geometry and independent paints when equal
   )
   const unknown = structuredClone(compact)
   const first = keys.values().next().value
-  if (!first) throw new Error('Missing material template')
+  if (!first) {
+    throw new Error('Missing material template')
+  }
   Reflect.deleteProperty(unknown.fillTemplates, first)
   expect(() => prepareDesign(unknown, 'invalid-material')).toThrow(
     'unknown Fill template'

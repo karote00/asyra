@@ -36,7 +36,9 @@ const releaseEntries = (entries: PresetCleanupEntry[]): unknown[] => {
   const failures: unknown[] = []
   for (let index = entries.length - 1; index >= 0; index--) {
     const entry = entries[index]
-    if (entry.completed) continue
+    if (entry.completed) {
+      continue
+    }
     try {
       entry.dispose()
       entry.completed = true
@@ -80,7 +82,9 @@ const disposeRuntime = (entries: PresetCleanupEntry[]): void => {
 
 const retryPendingRollback = (core: PresetCoreAPIs): void => {
   const pending = pendingRollbacks.get(core)
-  if (!pending) return
+  if (!pending) {
+    return
+  }
   rollback(pending.entries, pending.applyError)
   pendingRollbacks.delete(core)
 }

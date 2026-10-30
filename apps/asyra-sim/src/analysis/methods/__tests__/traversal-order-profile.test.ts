@@ -28,7 +28,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -51,13 +53,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         let preparation = 0,
           reordering = 0
         const context = new OriginalMeshQuery(() => {
-          if (context.work + reordering >= 500000)
+          if (context.work + reordering >= 500000) {
             throw new MeshWorkLimit('Combined order diagnostic work exhausted')
+          }
         })
         const copy = (node: MeshNode): MeshNode => {
           reordering++
-          if (context.work + reordering > 500000)
+          if (context.work + reordering > 500000) {
             throw new MeshWorkLimit('Order preparation exhausted')
+          }
           return {
             ...node,
             triangles: [...node.triangles].reverse(),

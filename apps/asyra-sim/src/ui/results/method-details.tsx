@@ -9,13 +9,14 @@ export function MethodDetails({
 }) {
   const manifest = descriptor?.manifest
 
-  if (!manifest)
+  if (!manifest) {
     return (
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
         No method declaration was retained. Method identity alone is not
         validation evidence.
       </p>
     )
+  }
 
   return (
     <details className="method-details">

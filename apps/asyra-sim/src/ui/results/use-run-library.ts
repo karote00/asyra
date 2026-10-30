@@ -49,7 +49,9 @@ export function useRunLibrary({
   }
 
   const compareSelected = () => {
-    if (comparisonRequest.current) return
+    if (comparisonRequest.current) {
+      return
+    }
     comparisonRequest.current = comparisonRuns
     setPendingComparison(comparisonRuns)
     setComparisonState(null)
@@ -57,13 +59,17 @@ export function useRunLibrary({
   }
 
   useEffect(() => {
-    if (!pendingComparison) return
+    if (!pendingComparison) {
+      return
+    }
 
     // Give the pending button a paint before the synchronous stored-input comparison.
     // This is one cancellable request, not a recurring rendering loop or a minimum delay.
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => {
-        if (comparisonRequest.current !== pendingComparison) return
+        if (comparisonRequest.current !== pendingComparison) {
+          return
+        }
         try {
           setComparisonState({
             value: compareRuns(pendingComparison),
@@ -112,8 +118,9 @@ export function useRunLibrary({
 
     return () => {
       element?.close()
-      if (returnFocus instanceof HTMLElement && returnFocus.isConnected)
+      if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
         returnFocus.focus()
+      }
     }
   }, [])
 
@@ -124,7 +131,9 @@ export function useRunLibrary({
   const currentPage = Math.min(page, pages - 1)
 
   const exportReport = (format: 'json' | 'csv' | 'html') => {
-    if (!selected) return
+    if (!selected) {
+      return
+    }
 
     try {
       const text = {
@@ -150,7 +159,9 @@ export function useRunLibrary({
   }
 
   const retainSelected = async () => {
-    if (!selected) return
+    if (!selected) {
+      return
+    }
 
     setSaving(true)
 

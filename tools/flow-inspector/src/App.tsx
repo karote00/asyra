@@ -48,7 +48,9 @@ export function WorkspaceApp({
   )
 
   useEffect(() => {
-    if (initialHash !== undefined) return
+    if (initialHash !== undefined) {
+      return
+    }
     const updateLocation = () => setBrowserLocation(readBrowserLocation())
     window.addEventListener('hashchange', updateLocation)
     window.addEventListener('popstate', updateLocation)
@@ -59,7 +61,9 @@ export function WorkspaceApp({
   }, [initialHash])
 
   useEffect(() => {
-    if (routingMode !== 'path' || route.kind === 'error') return
+    if (routingMode !== 'path' || route.kind === 'error') {
+      return
+    }
     const href = route.kind === 'selected' ? `/${route.entry.slug}` : '/'
     if (window.location.pathname + window.location.hash !== href) {
       window.history.replaceState(null, '', href)
@@ -70,37 +74,62 @@ export function WorkspaceApp({
   useEffect(() => {
     const receivePanelVisibility = (event: MessageEvent) => {
       const message = event.data
-      if (event.source !== targetFrameRef.current?.contentWindow) return
-      if (message?.type !== 'flow-inspector:panel-visibility') return
-      if (typeof message.visible !== 'boolean') return
-      if (message.panel === 'catalog') setCatalogVisible(message.visible)
-      if (message.panel === 'header') setHeaderVisible(message.visible)
-      if (message.panel === 'details') setDetailsVisible(message.visible)
+      if (event.source !== targetFrameRef.current?.contentWindow) {
+        return
+      }
+      if (message?.type !== 'flow-inspector:panel-visibility') {
+        return
+      }
+      if (typeof message.visible !== 'boolean') {
+        return
+      }
+      if (message.panel === 'catalog') {
+        setCatalogVisible(message.visible)
+      }
+      if (message.panel === 'header') {
+        setHeaderVisible(message.visible)
+      }
+      if (message.panel === 'details') {
+        setDetailsVisible(message.visible)
+      }
     }
     window.addEventListener('message', receivePanelVisibility)
     return () => window.removeEventListener('message', receivePanelVisibility)
   }, [])
 
   useEffect(() => {
-    if (route.kind !== 'selected' || route.entry.kind !== 'flow-v2') return
+    if (route.kind !== 'selected' || route.entry.kind !== 'flow-v2') {
+      return
+    }
     const forwardZoom = (event: KeyboardEvent) => {
-      if (event.isComposing || event.altKey || event.ctrlKey) return
+      if (event.isComposing || event.altKey || event.ctrlKey) {
+        return
+      }
       const commandKey = event.metaKey && !event.shiftKey
       const alternative = event.shiftKey && !event.metaKey
       let key = ''
-      if (commandKey) key = event.key
-      else if (alternative && event.code === 'Digit1') key = '1'
-      else if (alternative && event.code === 'Digit0') key = '0'
-      if (key !== '1' && key !== '0') return
+      if (commandKey) {
+        key = event.key
+      } else if (alternative && event.code === 'Digit1') {
+        key = '1'
+      } else if (alternative && event.code === 'Digit0') {
+        key = '0'
+      }
+      if (key !== '1' && key !== '0') {
+        return
+      }
       if (
         alternative &&
         (event.target as Element)?.closest?.(
           'input, textarea, select, [contenteditable="true"]'
         )
-      )
+      ) {
         return
+      }
       const frame = targetFrameRef.current?.contentWindow
-      if (!frame) return
+      if (!frame) {
+        return
+      }
       event.preventDefault()
       frame.postMessage(
         {
@@ -115,12 +144,17 @@ export function WorkspaceApp({
   }, [route])
 
   const navigate = (entry: WorkspaceEntry | null) => {
-    if (window.innerWidth <= 900) setCatalogVisible(false)
+    if (window.innerWidth <= 900) {
+      setCatalogVisible(false)
+    }
     if (routingMode === 'path') {
       const href = entry ? `/${entry.slug}` : '/'
-      if (window.location.pathname + window.location.hash !== href)
+      if (window.location.pathname + window.location.hash !== href) {
         window.history.pushState(null, '', href)
-    } else window.location.hash = entry ? workspaceHash(entry.id) : ''
+      }
+    } else {
+      window.location.hash = entry ? workspaceHash(entry.id) : ''
+    }
     setBrowserLocation(readBrowserLocation())
   }
 
@@ -133,8 +167,11 @@ export function WorkspaceApp({
   const toggleGroup = (group: InspectorGroup) => {
     setCollapsedGroups((current) => {
       const next = new Set(current)
-      if (next.has(group)) next.delete(group)
-      else next.add(group)
+      if (next.has(group)) {
+        next.delete(group)
+      } else {
+        next.add(group)
+      }
       return next
     })
   }
@@ -156,7 +193,9 @@ export function WorkspaceApp({
   const syncTargetPanels = () => {
     sendPanelVisibility('catalog', catalogVisible)
     sendPanelVisibility('header', headerVisible)
-    if (detailsVisible !== null) sendPanelVisibility('details', detailsVisible)
+    if (detailsVisible !== null) {
+      sendPanelVisibility('details', detailsVisible)
+    }
   }
 
   useEffect(() => {

@@ -502,9 +502,13 @@ if (isDirectInvocation) {
   let allowUnsupportedNode = false
   let registryOnly = false
   for (const arg of process.argv.slice(2)) {
-    if (arg === '--allow-unsupported-node') allowUnsupportedNode = true
-    else if (arg === '--registry') registryOnly = true
-    else throw new Error(`Unknown argument: ${arg}`)
+    if (arg === '--allow-unsupported-node') {
+      allowUnsupportedNode = true
+    } else if (arg === '--registry') {
+      registryOnly = true
+    } else {
+      throw new Error(`Unknown argument: ${arg}`)
+    }
   }
   const evidence = registryOnly
     ? verifyRegistryConsumer({

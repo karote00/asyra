@@ -95,7 +95,9 @@ function ResultSaving({
   const active = useRef(false)
   const [error, setError] = useState('')
   const retry = async (action: () => unknown) => {
-    if (active.current) return
+    if (active.current) {
+      return
+    }
     active.current = true
     setPending(true)
     setError('')
@@ -111,9 +113,12 @@ function ResultSaving({
   let label = 'Result could not be added to this project.'
   if (retained) {
     label = 'Saving to this project'
-    if (state?.status === 'saved' && !state.dirty)
+    if (state?.status === 'saved' && !state.dirty) {
       label = 'Saved to this project'
-    if (state?.status === 'error') label = `Saving failed: ${state.error}`
+    }
+    if (state?.status === 'error') {
+      label = `Saving failed: ${state.error}`
+    }
   }
   return (
     <div

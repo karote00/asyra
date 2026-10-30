@@ -39,10 +39,14 @@ export const createInspectionDependencies = (source: {
     const result: string[] = []
     const seen = new Set<string>()
     while (id) {
-      if (seen.has(id)) throw new Error('Cyclic inspection dependency')
+      if (seen.has(id)) {
+        throw new Error('Cyclic inspection dependency')
+      }
       seen.add(id)
       result.push(id)
-      if (!reads.has(id)) reads.set(id, source.parent(id))
+      if (!reads.has(id)) {
+        reads.set(id, source.parent(id))
+      }
       id = reads.get(id) ?? ''
     }
     return result
@@ -55,14 +59,22 @@ export const createInspectionDependencies = (source: {
   const unlink = (index: Map<string, Set<string>>, key: string, id: string) => {
     const ids = index.get(key)
     ids?.delete(id)
-    if (!ids?.size) index.delete(key)
+    if (!ids?.size) {
+      index.delete(key)
+    }
   }
   const retire = (id: string) => {
     const receipt = receipts.get(id)
-    if (!receipt) return
+    if (!receipt) {
+      return
+    }
     unlink(roots, receipt.target, id)
-    for (const key of receipt.dependencies) unlink(dependencies, key, id)
-    for (const key of receipt.ancestors) unlink(ancestors, key, id)
+    for (const key of receipt.dependencies) {
+      unlink(dependencies, key, id)
+    }
+    for (const key of receipt.ancestors) {
+      unlink(ancestors, key, id)
+    }
     receipts.delete(id)
   }
   const clear = () => {
@@ -78,9 +90,12 @@ export const createInspectionDependencies = (source: {
       revision: number,
       attachment?: { signature: string; chain: readonly string[] }
     ) {
-      if (disposed) throw new Error('Inspection dependencies are disposed')
-      if (attachment && !source.attachment)
+      if (disposed) {
+        throw new Error('Inspection dependencies are disposed')
+      }
+      if (attachment && !source.attachment) {
         throw new Error('Attachment signature source is unavailable')
+      }
       const start = generation
       const signature = attachment?.signature
       const reads = new Map<string, string | undefined>()
@@ -91,18 +106,22 @@ export const createInspectionDependencies = (source: {
         !targetChain.length ||
         targetChain[0] !== target ||
         new Set(targetChain).size !== targetChain.length
-      )
+      ) {
         throw new Error('Invalid attachment dependency chain')
+      }
       const members = region ? source.region(target, region) : []
       const memberDependencies = new Set<string>([target])
       for (const member of members) {
         const path = chain(member, reads)
         const position = path.indexOf(target)
-        if (position < 0) throw new Error('Foreign inspection region member')
+        if (position < 0) {
+          throw new Error('Foreign inspection region member')
+        }
         path.slice(0, position + 1).forEach((id) => memberDependencies.add(id))
       }
-      if (start !== generation)
+      if (start !== generation) {
         throw new Error('Inspection dependencies changed during capture')
+      }
       const receiptId = crypto.randomUUID()
       const receipt: Receipt = {
         revision,
@@ -116,8 +135,12 @@ export const createInspectionDependencies = (source: {
       }
       receipts.set(receiptId, receipt)
       link(roots, target, receiptId)
-      for (const id of memberDependencies) link(dependencies, id, receiptId)
-      for (const id of receipt.ancestors) link(ancestors, id, receiptId)
+      for (const id of memberDependencies) {
+        link(dependencies, id, receiptId)
+      }
+      for (const id of receipt.ancestors) {
+        link(ancestors, id, receiptId)
+      }
       return { receiptId, revision }
     },
     currentAttachment(
@@ -136,10 +159,16 @@ export const createInspectionDependencies = (source: {
     },
     current(stamp: { receiptId?: string; revision: number }) {
       const receiptId = stamp.receiptId
-      if (!receiptId) return false
+      if (!receiptId) {
+        return false
+      }
       const receipt = receipts.get(receiptId)
-      if (!receipt || receipt.revision !== stamp.revision) return false
-      if (!receipt.pending) return true
+      if (!receipt || receipt.revision !== stamp.revision) {
+        return false
+      }
+      if (!receipt.pending) {
+        return true
+      }
       if (receipt.attachment !== undefined) {
         try {
           const start = generation
@@ -182,7 +211,9 @@ export const createInspectionDependencies = (source: {
       }
     },
     release(stamp: { receiptId?: string }) {
-      if (stamp.receiptId) retire(stamp.receiptId)
+      if (stamp.receiptId) {
+        retire(stamp.receiptId)
+      }
     },
     change(change?: InspectionDependencyChange) {
       generation++
@@ -190,7 +221,9 @@ export const createInspectionDependencies = (source: {
         clear()
         return
       }
-      if (!receipts.size) return
+      if (!receipts.size) {
+        return
+      }
       const affected = new Set<string>()
       const reads = new Map<string, string | undefined>()
       try {
@@ -200,7 +233,9 @@ export const createInspectionDependencies = (source: {
             ...(ancestors.get(id) ?? [])
           ]) {
             const receipt = receipts.get(key)
-            if (receipt?.attachment !== undefined) receipt.pending = true
+            if (receipt?.attachment !== undefined) {
+              receipt.pending = true
+            }
           }
         }
         for (const id of new Set(change.elementIds)) {
@@ -210,28 +245,42 @@ export const createInspectionDependencies = (source: {
             ...(ancestors.get(id) ?? [])
           ]) {
             const retained = receipts.get(receipt)
-            if (retained?.attachment !== undefined) retained.pending = true
-            else retire(receipt)
+            if (retained?.attachment !== undefined) {
+              retained.pending = true
+            } else {
+              retire(receipt)
+            }
           }
           try {
-            for (const parent of chain(id, reads))
-              for (const receipt of roots.get(parent) ?? [])
+            for (const parent of chain(id, reads)) {
+              for (const receipt of roots.get(parent) ?? []) {
                 affected.add(receipt)
+              }
+            }
           } catch {
             // Removal requires an explicit old-parent notification.
-            if (!change.parentIds?.length)
+            if (!change.parentIds?.length) {
               throw new Error('Unknown removed dependency')
+            }
           }
         }
         for (const id of new Set(change.parentIds ?? [])) {
-          for (const parent of chain(id, reads))
-            for (const receipt of roots.get(parent) ?? []) affected.add(receipt)
+          for (const parent of chain(id, reads)) {
+            for (const receipt of roots.get(parent) ?? []) {
+              affected.add(receipt)
+            }
+          }
         }
         for (const id of affected) {
           const receipt = receipts.get(id)
-          if (!receipt) continue
-          if (!receipt.region && receipt.attachment === undefined) retire(id)
-          else receipt.pending = true
+          if (!receipt) {
+            continue
+          }
+          if (!receipt.region && receipt.attachment === undefined) {
+            retire(id)
+          } else {
+            receipt.pending = true
+          }
         }
       } catch {
         clear()

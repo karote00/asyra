@@ -2,7 +2,9 @@ import { expect, it } from 'vitest'
 import { roundFraction } from '../scalar-arithmetic'
 
 function adjacent(value: number, up: boolean) {
-  if (value === 0) return up ? Number.MIN_VALUE : -Number.MIN_VALUE
+  if (value === 0) {
+    return up ? Number.MIN_VALUE : -Number.MIN_VALUE
+  }
   const bits = new DataView(new ArrayBuffer(8))
   bits.setFloat64(0, value)
   const encoded = bits.getBigUint64(0)
@@ -60,8 +62,11 @@ it('encloses original rational values with tight directed binary64 neighbors', (
       high = roundFraction(n, d, 'up')
     expect(compare(low, n, d) <= 0n).toBe(true)
     expect(compare(high, n, d) >= 0n).toBe(true)
-    if (low !== high) expect(adjacent(low, true)).toBe(high)
-    else expect(compare(low, n, d)).toBe(0n)
+    if (low !== high) {
+      expect(adjacent(low, true)).toBe(high)
+    } else {
+      expect(compare(low, n, d)).toBe(0n)
+    }
   }
 })
 

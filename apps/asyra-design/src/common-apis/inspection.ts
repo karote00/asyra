@@ -10,7 +10,7 @@ export const inspectionApis = {
     if (
       !root ||
       (root.type === 'workspace' && elementId !== core.getCurrentWorkspaceId())
-    )
+    ) {
       return {
         available: false,
         elementId,
@@ -19,8 +19,9 @@ export const inspectionApis = {
         message:
           'The inspection target does not exist in the current scene. Use a current element ID or the current workspace ID for overview; do not regroup or redraw.'
       }
+    }
     if (root.type === 'workspace') {
-      if (region || view === 'detail')
+      if (region || view === 'detail') {
         return {
           available: false,
           elementId,
@@ -29,7 +30,8 @@ export const inspectionApis = {
           message:
             'Workspace supports overview only. For native detail, select a concrete child and its local region; do not substitute overview for required detail or regroup the document.'
         }
-      if (root.childCount === 0)
+      }
+      if (root.childCount === 0) {
         return {
           available: false,
           elementId,
@@ -38,6 +40,7 @@ export const inspectionApis = {
           message:
             'The workspace has no drawing to inspect. No image or visual judgment was produced.'
         }
+      }
     }
     try {
       const image = core.captureElementSnapshot(elementId, 1024, {

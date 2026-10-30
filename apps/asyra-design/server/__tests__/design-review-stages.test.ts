@@ -12,8 +12,9 @@ const schemaReviewInput = (input: unknown): unknown => {
     !input ||
     typeof input !== 'object' ||
     !Array.isArray((input as { checks?: unknown }).checks)
-  )
+  ) {
     return input
+  }
   const value = input as Record<string, unknown> & {
     checks: Record<string, unknown>[]
   }
@@ -70,7 +71,7 @@ const plan = {
   detailRequired: true
 }
 const testReferenceImages = createLocalImageTools({ metadata: {} })
-for (const bytes of ['YQ==', 'Yg==', 'Yw=='])
+for (const bytes of ['YQ==', 'Yg==', 'Yw==']) {
   testReferenceImages.addReference({
     dataUrl: `data:image/png;base64,${bytes}`,
     mediaType: 'image/png',
@@ -83,6 +84,7 @@ for (const bytes of ['YQ==', 'Yg==', 'Yw=='])
       suitability: 'requires-visual-assessment'
     }
   })
+}
 const declaredUses = (criteria: string[], limitations: string[] = []) =>
   criteria.flatMap((criterionId) =>
     ['visual', 'fact', 'preparation'].map((purpose) => ({
@@ -282,10 +284,11 @@ describe('construction and comparison review', () => {
     })
   })
   it('rejects unrelated or duplicated structure criteria', () => {
-    for (const structureCriteria of [['Other'], ['Viewpoint', 'Viewpoint']])
+    for (const structureCriteria of [['Other'], ['Viewpoint', 'Viewpoint']]) {
       expect(() =>
         createLocalDesignReview().record({ ...plan, structureCriteria })
       ).toThrow()
+    }
   })
 })
 
@@ -409,8 +412,9 @@ it('rejects unknown, duplicate or empty deferred dispositions and isolates reque
       { id: 'rear', status: 'omit', evidence: 'covered' },
       { id: 'rear', status: 'restored', evidence: 'drawn' }
     ]
-  ])
+  ]) {
     expect(() => r.record({ ...visual, deferredChecks })).toThrow()
+  }
   const other = createLocalDesignReview()
   other.record(plan)
   other.mutate()
@@ -505,8 +509,9 @@ it('retains field validation when native discovery projects a review alternative
   const inspectionSchema = designEvidenceSchema.oneOf.find(
     (schema) => schema.properties.phase.const === 'visual'
   )
-  if (!planSchema || !inspectionSchema)
+  if (!planSchema || !inspectionSchema) {
     throw new Error('Missing review phase schema')
+  }
   expect(
     operationInputIssue(schemaReviewInput(plan), planSchema)
   ).toBeUndefined()
@@ -667,13 +672,14 @@ it('rejects incomplete and conflicting fact changes atomically', () => {
     { scope: '' },
     { dependencies: [] },
     { dependencies: [{ key: 'reference:survey', version: 'other' }] }
-  ])
+  ]) {
     expect(() =>
       review.record({
         phase: 'facts',
         facts: [{ ...sourceFact, id: 'other', ...patch }]
       })
     ).toThrow()
+  }
   expect(() =>
     review.record({
       phase: 'facts',
@@ -1291,7 +1297,9 @@ it('retains source assertions separately while preparation consumes only declare
   })
   const detached = review.record({ phase: 'facts' })
   const retainedFact = detached.facts?.[0]
-  if (!retainedFact) throw new Error('Missing bound source fact')
+  if (!retainedFact) {
+    throw new Error('Missing bound source fact')
+  }
   retainedFact.sources[0] = 'mutated'
   expect(review.record({ phase: 'facts' }).facts).toEqual(
     expect.arrayContaining(
@@ -1734,7 +1742,9 @@ it('rejects a calculation batch atomically when any source is unavailable', () =
 })
 
 const requireTestValue = <T>(value: T | undefined | null): T => {
-  if (value == null) throw new Error('Required test fixture is unavailable')
+  if (value == null) {
+    throw new Error('Required test fixture is unavailable')
+  }
   return value
 }
 
@@ -1820,7 +1830,7 @@ describe('reference identity handoff', () => {
 describe('reference applicability and fact evidence', () => {
   const setup = () => {
     const images = createLocalImageTools({ metadata: {} })
-    for (const bytes of ['YQ==', 'Yg=='])
+    for (const bytes of ['YQ==', 'Yg==']) {
       images.addReference({
         dataUrl: `data:image/png;base64,${bytes}`,
         mediaType: 'image/png',
@@ -1833,6 +1843,7 @@ describe('reference applicability and fact evidence', () => {
           suitability: 'requires-visual-assessment'
         }
       })
+    }
     const review = createLocalDesignReview({
       resolveSources: images.resolveSources,
       validateReferences: images.validateReferences
@@ -2624,7 +2635,9 @@ it('retains eight regional units under one criterion and repairs only the invali
   const current = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.unitId === 'tier-2')
-  if (!current) throw new Error('Expected retained third-tier result')
+  if (!current) {
+    throw new Error('Expected retained third-tier result')
+  }
   const handoff = review.judgmentHandoff([foreign], 'visual')
   expect(handoff.next).toMatchObject({
     requiredInputs: ['bindChecks'],
@@ -2666,7 +2679,9 @@ it('retains eight regional units under one criterion and repairs only the invali
   const updated = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.unitId === 'tier-2')
-  if (!updated) throw new Error('Expected replacement third-tier result')
+  if (!updated) {
+    throw new Error('Expected replacement third-tier result')
+  }
   expect(updated).toMatchObject({
     status: 'unverified',
     revision: current.revision + 1,
@@ -2834,7 +2849,9 @@ describe('declared regional acceptance', () => {
     ).toBeUndefined()
     const { review, capture, submit, overall } = setup()
     const images = units.map((id) => capture(id))
-    for (let i = 0; i < 7; i++) submit(units[i], [images[i]])
+    for (let i = 0; i < 7; i++) {
+      submit(units[i], [images[i]])
+    }
     const incomplete = submit('alignment', [images[2], images[3]], true)
     expect(incomplete).toMatchObject({
       accepted: false,
@@ -2881,10 +2898,11 @@ describe('declared regional acceptance', () => {
     )
     expect(overall(capture('building', 2, true)).accepted).toBe(true)
     const after = review.readChecks({ includePassed: true }).items
-    for (const unitId of units.filter((id) => id !== units[2]))
+    for (const unitId of units.filter((id) => id !== units[2])) {
       expect(after.find((item) => item.unitId === unitId)).toEqual(
         before.find((item) => item.unitId === unitId)
       )
+    }
     expect(review.evidenceEntries().map((entry) => entry.id)).not.toContain(
       whole
     )
@@ -2915,7 +2933,9 @@ describe('declared regional acceptance', () => {
   it('cannot use a regional judgment overview to approve a whole criterion judged only from a crop', () => {
     const { capture, submit, overall } = setup()
     const whole = capture('building', 1, true)
-    for (const unit of [...units, 'alignment']) submit(unit, [whole])
+    for (const unit of [...units, 'alignment']) {
+      submit(unit, [whole])
+    }
     const crop = capture('small-detail')
     const result = overall(crop)
     expect(result.accepted).toBe(false)
@@ -3307,7 +3327,9 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
       capture.view === 'detail',
       image.evidence
     )
-    if (!result) throw new Error('Missing replay image')
+    if (!result) {
+      throw new Error('Missing replay image')
+    }
     ids.set(image.inspectionId, result.inspectionId)
   })
   const input = {
@@ -3667,7 +3689,9 @@ it('replays recorded crown rejection and explicit local redesign from the delive
           receiptId: `${index}:${offset}`
         }
       )
-      if (!image) throw new Error('Expected delivered image')
+      if (!image) {
+        throw new Error('Expected delivered image')
+      }
       ids.set(call.inspectionIds[offset], image.inspectionId)
     })
   }
@@ -4017,7 +4041,9 @@ it('delivers individual correction scopes across sparse reviews without inferrin
   })
   const capture = (elementId: string, overview: boolean, region?: object) => {
     const image = review.inspect(elementId, true, overview, region)
-    if (!image) throw new Error('Missing image')
+    if (!image) {
+      throw new Error('Missing image')
+    }
     return image.inspectionId
   }
   const left = capture('assembly', false, { x: 0, y: 0, width: 20, height: 30 })
@@ -4143,7 +4169,9 @@ it('replays the saved failed material judgment with complete correction evidence
     true,
     true
   )
-  if (!image) throw new Error('Missing current image')
+  if (!image) {
+    throw new Error('Missing current image')
+  }
   const bound = review.bindReview('visual', [
     { criterionId: observed.criterionId, inspectionIds: [image.inspectionId] }
   ])
@@ -4215,7 +4243,9 @@ it('keeps fact targets on the exact correction unit and shares only explicitly c
     ]
   })
   const image = review.inspect('assembly', true, true)
-  if (!image) throw new Error('Missing image')
+  if (!image) {
+    throw new Error('Missing image')
+  }
   const bound = review.bindReview(
     'visual',
     ['a', 'b'].map((unitId) => ({

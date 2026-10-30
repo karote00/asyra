@@ -82,7 +82,9 @@ test('project admission validates existing fixed projects and their identity', a
       token: 'test-token',
       request: async (url, options) => {
         calls.push({ url, options })
-        if (missing && calls.length === 1) return { status: 404 }
+        if (missing && calls.length === 1) {
+          return { status: 404 }
+        }
         return { ok: true, json: async () => ({ success: true, result }) }
       }
     })
@@ -213,13 +215,17 @@ test('public verification uses the native App policy and rejects a missing secur
   let omitPolicy = false
   t.mock.method(globalThis, 'fetch', async (url) => {
     const pathname = new URL(url).pathname
-    if (pathname === '/deployment-version.json')
+    if (pathname === '/deployment-version.json') {
       return Response.json({ app: 'asyra-sim', sourceSha: sha })
-    if (pathname === '/')
+    }
+    if (pathname === '/') {
       return new Response('<script src="/assets/app.js"></script>', {
         headers: omitPolicy ? {} : policy
       })
-    if (pathname === '/assets/app.js') return new Response('console.log(1)')
+    }
+    if (pathname === '/assets/app.js') {
+      return new Response('console.log(1)')
+    }
     return new Response('Not found', { status: 404 })
   })
   await verifyDeployment('asyra-sim', sha)

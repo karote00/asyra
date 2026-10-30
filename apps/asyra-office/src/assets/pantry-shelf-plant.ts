@@ -58,8 +58,9 @@ function roundedPetal(radii: readonly number[]) {
     ]),
     20
   )
-  for (let i = 0; i < mesh.positions.length; i++)
+  for (let i = 0; i < mesh.positions.length; i++) {
     mesh.positions[i] *= radii[i % 3]
+  }
   return mesh
 }
 
@@ -133,7 +134,7 @@ export function pantrySmallShelfPlant() {
   const foliage = planter(1, 0x8d7657, recipe.seed, 'stemmed').filter(
     (p) => p.id !== 'pot' && p.id !== 'soil'
   )
-  for (const p of foliage)
+  for (const p of foliage) {
     for (let i = 0; i < p.mesh.positions.length; i += 3) {
       p.mesh.positions[i] *= recipe.foliageScale[0]
       p.mesh.positions[i + 1] *= recipe.foliageScale[1]
@@ -141,6 +142,7 @@ export function pantrySmallShelfPlant() {
         recipe.foliageBase +
         (p.mesh.positions[i + 2] - recipe.sourceBase) * recipe.foliageScale[2]
     }
+  }
   return [
     ...pantryVessel('shelf-spice-jar'),
     part(

@@ -7,12 +7,18 @@ it('names parts unambiguously and defines shaft spans without treating capsule c
   const { workcell } = createSyntheticExample()
   expect(workcell.bodies.every((body) => !body.name.includes('·'))).toBe(true)
   const shoulder = workcell.bodies.find((body) => body.id.endsWith(':joint-2'))
-  if (!shoulder) throw new Error('Missing shoulder')
+  if (!shoulder) {
+    throw new Error('Missing shoulder')
+  }
   const geometry = shoulder.colliders[0].geometry
-  if (geometry.kind !== 'capsule') throw new Error('Expected a shaft proxy')
+  if (geometry.kind !== 'capsule') {
+    throw new Error('Expected a shaft proxy')
+  }
   expect(geometry.length + geometry.radius * 2).toBeCloseTo(0.65)
   const gripper = workcell.bodies.find((body) => body.role === 'tool')
-  if (!gripper) throw new Error('Missing gripper')
+  if (!gripper) {
+    throw new Error('Missing gripper')
+  }
   expect(gripper.colliders).toHaveLength(3)
   const fingers = gripper.colliders.slice(1)
   expect(fingers[0].pose.position[0]).toBeLessThan(-0.06)

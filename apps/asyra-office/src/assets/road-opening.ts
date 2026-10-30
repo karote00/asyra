@@ -12,12 +12,15 @@ export function roadWithOpening(
     floor = top - depth,
     bottom = -size[2] / 2
   const angles = Array.from({ length: 129 }, (_, i) => (i * Math.PI) / 64)
-  for (const x of [-size[0] / 2, size[0] / 2])
+  for (const x of [-size[0] / 2, size[0] / 2]) {
     for (const y of [-size[1] / 2, size[1] / 2]) {
       let t = Math.atan2(y - cy, x - cx)
-      if (t < 0) t += 2 * Math.PI
+      if (t < 0) {
+        t += 2 * Math.PI
+      }
       angles.push(t)
     }
+  }
   angles.sort((a, b) => a - b)
   for (const angle of angles) {
     const c = Math.cos(angle),
@@ -42,7 +45,7 @@ export function roadWithOpening(
       mesh.uvs.push((x + size[0] / 2) / size[0], (y + size[1] / 2) / size[1])
     }
   }
-  for (let i = 0; i < angles.length - 1; i++)
+  for (let i = 0; i < angles.length - 1; i++) {
     for (let ring = 0; ring < 3; ring++) {
       const a = i * 4 + ring,
         b = a + 1,
@@ -50,6 +53,7 @@ export function roadWithOpening(
         d = c + 1
       mesh.indices.push(a, b, d, a, d, c)
     }
+  }
   for (const [ring, z, flip] of [
     [0, floor, false],
     [3, bottom, true]

@@ -22,7 +22,9 @@ describe('native editable text', () => {
     expect(Object.isFrozen(TEXT_PROPERTY_VALUE_SCHEMAS)).toBe(true)
     for (const schema of Object.values(TEXT_PROPERTY_VALUE_SCHEMAS)) {
       expect(Object.isFrozen(schema)).toBe(true)
-      if ('enum' in schema) expect(Object.isFrozen(schema.enum)).toBe(true)
+      if ('enum' in schema) {
+        expect(Object.isFrozen(schema.enum)).toBe(true)
+      }
     }
     for (const [key, values] of Object.entries({
       fontSize: [Number.MIN_VALUE, 4096],
@@ -38,12 +40,15 @@ describe('native editable text', () => {
       const field = TEXT_PROPERTY_SCHEMA.fields.find(
         (field) => field.key === key
       )
-      if (!field?.validate) throw new Error(`Missing ${key} validator`)
-      for (const value of values)
+      if (!field?.validate) {
+        throw new Error(`Missing ${key} validator`)
+      }
+      for (const value of values) {
         expect(
           field.validate(value),
           `${key}: ${String(value).slice(0, 20)}`
         ).toBe(true)
+      }
     }
   })
 

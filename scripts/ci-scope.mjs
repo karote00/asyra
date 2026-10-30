@@ -23,10 +23,11 @@ function workspaceEntry(group, slug, manifest) {
   if (
     typeof manifest.name !== 'string' ||
     !workspaceNamePattern.test(manifest.name)
-  )
+  ) {
     throw new Error(
       `Workspace manifest has an invalid name: ${group}/${slug}/package.json`
     )
+  }
   const scripts = manifest.scripts ?? {}
   return {
     name: manifest.name,
@@ -58,13 +59,17 @@ function workspaceEntry(group, slug, manifest) {
 }
 
 function vitestRunnerContract(script) {
-  if (typeof script !== 'string') return null
+  if (typeof script !== 'string') {
+    return null
+  }
   const direct = script.match(/^vitest run((?:\s+--[a-z-]+(?:=[a-z0-9-]+)?)*)$/)
   const guarded = script.match(
     /^yarn has:test && vitest run((?:\s+--[a-z-]+(?:=[a-z0-9-]+)?)*)$/
   )
   const match = direct ?? guarded
-  if (!match) return null
+  if (!match) {
+    return null
+  }
   return {
     command: 'vitest',
     args: match[1].trim().split(/\s+/).filter(Boolean),
@@ -113,13 +118,18 @@ function isVitestRelatedInput(changedPath) {
 
 function selectedE2ESuites(changedPaths, options) {
   const suites = relationshipPolicy.e2eSuites
-  if (options.fullValidation || options.selectEveryWorkspace)
+  if (options.fullValidation || options.selectEveryWorkspace) {
     return suites.map((suite) => suite.id).sort()
+  }
   const selected = new Set()
   const design = options.runtimeWorkspaceDirectories.has('apps/asyra-design')
-  if (design)
-    for (const suite of suites)
-      if (suite.id !== 'flow-inspector-board') selected.add(suite.id)
+  if (design) {
+    for (const suite of suites) {
+      if (suite.id !== 'flow-inspector-board') {
+        selected.add(suite.id)
+      }
+    }
+  }
   for (const input of changedPaths.filter((file) => !file.endsWith('.md'))) {
     const exact = suites.filter((suite) =>
       suite.inputs.some(
@@ -127,21 +137,25 @@ function selectedE2ESuites(changedPaths, options) {
       )
     )
     if (exact.length) {
-      for (const suite of exact) selected.add(suite.id)
+      for (const suite of exact) {
+        selected.add(suite.id)
+      }
       continue
     }
     for (const suite of suites) {
       if (
         suite.inputs.some((pattern) => matchesPattern(input, pattern).matched)
-      )
+      ) {
         selected.add(suite.id)
+      }
       if (
         !testFilePattern.test(input) &&
         suite.supportInputs?.some(
           (pattern) => matchesPattern(input, pattern).matched
         )
-      )
+      ) {
         selected.add(suite.id)
+      }
     }
   }
   return [...selected].sort()
@@ -160,12 +174,13 @@ function e2eOwnerSelection(workspace, ownerPaths, sharedOwnerInput) {
             !changedPath.includes('/e2e/') &&
             !changedPath.includes('/__tests__/e2e/'))
       ))
-  )
+  ) {
     return {
       mode: 'not-selected',
       inputs: [],
       reason: workspace.e2eTask ? 'documentation-only' : 'no-e2e-owner'
     }
+  }
   const relatedInputs = ownerPaths.filter(
     (changedPath) =>
       changedPath.startsWith(`${workspace.directory}/e2e/`) &&
@@ -176,13 +191,14 @@ function e2eOwnerSelection(workspace, ownerPaths, sharedOwnerInput) {
     !sharedOwnerInput &&
     relatedInputs.length > 0 &&
     relatedInputs.length === ownerPaths.length
-  )
+  ) {
     return {
       mode: 'related',
       inputs: relatedInputs.sort(),
       reason: 'changed E2E specs owned by workspace',
       runner: { command: 'playwright' }
     }
+  }
   return {
     mode: 'full',
     inputs: [],
@@ -211,11 +227,14 @@ function selectUpstreamBrowserProofs(
         !fs.existsSync(path.join(root, input))
       )
     })
-  )
+  ) {
     return fallback
+  }
   const inventory = contract.inventoryRoots.flatMap((relative) => {
     const base = path.join(root, directory, relative)
-    if (!fs.existsSync(base)) return []
+    if (!fs.existsSync(base)) {
+      return []
+    }
     return fs
       .readdirSync(base, { recursive: true, withFileTypes: true })
       .filter((entry) => entry.isFile())
@@ -241,8 +260,9 @@ function selectUpstreamBrowserProofs(
           !inventory.some((file) => matchesPattern(file, pattern).matched)
       )
     )
-  )
+  ) {
     return fallback
+  }
   const targets = contract.groups.flatMap((group) => {
     const sources = inventory.filter(
       (file) =>
@@ -265,15 +285,18 @@ function selectUpstreamBrowserProofs(
     !targets.length ||
     targets.some(({ inputs }) => !inputs.length) ||
     new Set(targets.map(({ file }) => file)).size !== targets.length
-  )
+  ) {
     return fallback
+  }
   const proofs = targets.map(({ file }) => file)
   const impact = selectTestImpact(root, directory, inputs, false, {
     sourcePaths: new Set(inputs),
     workspaces,
     targets
   })
-  if (impact.reason === 'full-owner-input') return fallback
+  if (impact.reason === 'full-owner-input') {
+    return fallback
+  }
   const selected = new Set([
     ...specs.filter((file) => !proofs.includes(file)),
     ...impact.ordinary
@@ -290,7 +313,9 @@ function readWorkspaceManifests(root) {
   const manifests = new Map()
   for (const group of relationshipPolicy.workspaceRoots) {
     const directory = path.join(root, group)
-    if (!fs.existsSync(directory)) continue
+    if (!fs.existsSync(directory)) {
+      continue
+    }
     const directManifest = path.join(directory, 'package.json')
     if (fs.existsSync(directManifest)) {
       const workspace = workspaceEntry(
@@ -298,19 +323,25 @@ function readWorkspaceManifests(root) {
         '',
         JSON.parse(fs.readFileSync(directManifest, 'utf8'))
       )
-      if (manifests.has(workspace.name))
+      if (manifests.has(workspace.name)) {
         throw new Error(`Duplicate workspace name: ${workspace.name}`)
+      }
       manifests.set(workspace.name, workspace)
       continue
     }
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
       const manifestPath = path.join(directory, entry.name, 'package.json')
-      if (!fs.existsSync(manifestPath)) continue
+      if (!fs.existsSync(manifestPath)) {
+        continue
+      }
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
       const workspace = workspaceEntry(group, entry.name, manifest)
-      if (manifests.has(workspace.name))
+      if (manifests.has(workspace.name)) {
         throw new Error(`Duplicate workspace name: ${workspace.name}`)
+      }
       manifests.set(workspace.name, workspace)
     }
   }
@@ -318,7 +349,9 @@ function readWorkspaceManifests(root) {
 }
 
 function readWorkspaceManifestsAtCommit(commit, repositoryRoot) {
-  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) return new Map()
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) {
+    return new Map()
+  }
   const files = execFileSync(
     'git',
     [
@@ -342,7 +375,9 @@ function readWorkspaceManifestsAtCommit(commit, repositoryRoot) {
   for (const file of files) {
     const [, group, slug] =
       file.match(/^([^/]+)\/(?:(.*?)\/)?package\.json$/) ?? []
-    if (!group || relationshipPolicy.excludedRoots[group]) continue
+    if (!group || relationshipPolicy.excludedRoots[group]) {
+      continue
+    }
     const manifest = JSON.parse(
       execFileSync('git', ['show', `${commit}:${file}`], {
         cwd: repositoryRoot,
@@ -350,8 +385,9 @@ function readWorkspaceManifestsAtCommit(commit, repositoryRoot) {
       })
     )
     const workspace = workspaceEntry(group, slug ?? '', manifest)
-    if (manifests.has(workspace.name))
+    if (manifests.has(workspace.name)) {
       throw new Error(`Duplicate baseline workspace name: ${workspace.name}`)
+    }
     manifests.set(workspace.name, workspace)
   }
   return manifests
@@ -360,24 +396,33 @@ function readWorkspaceManifestsAtCommit(commit, repositoryRoot) {
 function readCreateAppManifests(root) {
   const group = Object.keys(relationshipPolicy.excludedRoots)[0]
   const directory = path.join(root, group)
-  if (!fs.existsSync(directory)) return new Map()
+  if (!fs.existsSync(directory)) {
+    return new Map()
+  }
   const manifests = new Map()
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue
+    if (!entry.isDirectory()) {
+      continue
+    }
     const manifestPath = path.join(directory, entry.name, 'package.json')
-    if (!fs.existsSync(manifestPath)) continue
+    if (!fs.existsSync(manifestPath)) {
+      continue
+    }
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-    if (typeof manifest.name === 'string')
+    if (typeof manifest.name === 'string') {
       manifests.set(manifest.name, {
         name: manifest.name,
         directory: `${group}/${entry.name}`
       })
+    }
   }
   return manifests
 }
 
 function readCreateAppManifestsAtCommit(commit, repositoryRoot) {
-  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) return new Map()
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) {
+    return new Map()
+  }
   const group = Object.keys(relationshipPolicy.excludedRoots)[0]
   const files = execFileSync(
     'git',
@@ -396,18 +441,21 @@ function readCreateAppManifestsAtCommit(commit, repositoryRoot) {
         encoding: 'utf8'
       })
     )
-    if (typeof manifest.name === 'string')
+    if (typeof manifest.name === 'string') {
       manifests.set(manifest.name, {
         name: manifest.name,
         directory: `${group}/${slug}`
       })
+    }
   }
   return manifests
 }
 
 function readDocumentationDirectories(root) {
   const directory = path.join(root, 'docs')
-  if (!fs.existsSync(directory)) return []
+  if (!fs.existsSync(directory)) {
+    return []
+  }
   return fs
     .readdirSync(directory, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -416,7 +464,9 @@ function readDocumentationDirectories(root) {
 }
 
 function readDocumentationDirectoriesAtCommit(commit, repositoryRoot) {
-  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) return []
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) {
+    return []
+  }
   return execFileSync('git', ['ls-tree', '-z', commit, '--', 'docs/'], {
     cwd: repositoryRoot,
     encoding: 'utf8'
@@ -443,9 +493,15 @@ function matchesPattern(changedPath, pattern) {
   const expression = pattern
     .split(/(\*\*|\*|\{slug\})/)
     .map((part) => {
-      if (part === '**') return '.*'
-      if (part === '*') return '[^/]*'
-      if (part === '{slug}') return '([a-z0-9]+(?:-[a-z0-9]+)*)'
+      if (part === '**') {
+        return '.*'
+      }
+      if (part === '*') {
+        return '[^/]*'
+      }
+      if (part === '{slug}') {
+        return '([a-z0-9]+(?:-[a-z0-9]+)*)'
+      }
       return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     })
     .join('')
@@ -460,7 +516,9 @@ function manifestGraph(headManifests, baseManifests) {
     const manifests = source === 'base' ? baseManifests : headManifests
     for (const workspace of manifests.values()) {
       for (const dependency of workspace.dependencies) {
-        if (!allNames.has(dependency)) continue
+        if (!allNames.has(dependency)) {
+          continue
+        }
         const key = `${dependency}\0${workspace.name}`
         const sources = edges.get(key) ?? new Set()
         sources.add(source)
@@ -549,8 +607,9 @@ function classifyChanges(
       ) ||
       relationshipPolicy.contractOnlyInputs.includes(changedPath) ||
       changedPath.startsWith('.yarn/patches/')
-    )
+    ) {
       continue
+    }
     if (relationshipPolicy.sharedInputPaths.includes(changedPath)) {
       selectEveryWorkspace = true
       continue
@@ -566,14 +625,17 @@ function classifyChanges(
         changedPath.startsWith('docs/ai/') ||
         changedPath.startsWith('.changeset/') ||
         relationshipPolicy.rootDocumentationPaths.includes(changedPath))
-    )
+    ) {
       continue
+    }
     const workspace = allManifestViews
       .map((view) => workspaceForPath(changedPath, view))
       .find(Boolean)
     if (workspace) {
       changedWorkspaceNames.add(workspace.name)
-      if (isRuntime(changedPath)) runtimeNames.add(workspace.name)
+      if (isRuntime(changedPath)) {
+        runtimeNames.add(workspace.name)
+      }
       continue
     }
     const createApp = createAppViews
@@ -586,26 +648,32 @@ function classifyChanges(
     const releaseInput = [...releasePaths].some(
       (pattern) => matchesPattern(changedPath, pattern).matched
     )
-    if (releaseInput) frameworkReleaseRequired = true
+    if (releaseInput) {
+      frameworkReleaseRequired = true
+    }
     let matched = false
     for (const rule of relationshipPolicy.workspaceInputRules) {
       const match = matchesPattern(changedPath, rule.pattern)
-      if (!match.matched) continue
+      if (!match.matched) {
+        continue
+      }
       const directory = rule.workspaceDirectory.replace('{slug}', match.slug)
       const owner = [...headManifests.values()].find(
         (entry) => entry.directory === directory
       )
-      if (!owner)
+      if (!owner) {
         unknownPaths.push(
           `Unresolved CI input consumer: ${changedPath} -> ${directory}`
         )
-      else {
+      } else {
         changedWorkspaceNames.add(owner.name)
         runtimeNames.add(owner.name)
       }
       matched = true
     }
-    if (matched) continue
+    if (matched) {
+      continue
+    }
     if (
       releaseInput ||
       Object.values(relationshipPolicy.repositoryScriptGroups).some(
@@ -625,8 +693,9 @@ function classifyChanges(
       /^(?:eslint\.config\.[cm]?js|turbo(?:\.base)?\.json|\.gitignore|\.env\.example)$/.test(
         changedPath
       )
-    )
+    ) {
       continue
+    }
     if (
       changedPath.startsWith('docs/') &&
       (recognizedDocumentationRoots.has(
@@ -634,19 +703,21 @@ function classifyChanges(
       ) ||
         /^docs\/[^/]+$/.test(changedPath)) &&
       changedPath.endsWith('.md')
-    )
+    ) {
       continue
+    }
     unknownPaths.push(changedPath)
   }
 
   const dependencyEdges = manifestGraph(headManifests, baseManifests)
   const propagatedNames = new Set(runtimeNames)
   const affectedNames = new Set(changedWorkspaceNames)
-  if (selectEveryWorkspace)
+  if (selectEveryWorkspace) {
     for (const name of headManifests.keys()) {
       affectedNames.add(name)
       propagatedNames.add(name)
     }
+  }
 
   let changed = true
   while (changed) {
@@ -659,25 +730,30 @@ function classifyChanges(
       }
     }
   }
-  if (unknownPaths.length)
+  if (unknownPaths.length) {
     for (const name of headManifests.keys()) {
       affectedNames.add(name)
       propagatedNames.add(name)
     }
+  }
 
   const affectedWorkspaces = [...headManifests.values()]
     .filter(({ name }) => affectedNames.has(name))
     .sort((left, right) => left.name.localeCompare(right.name))
   for (const workspace of affectedWorkspaces) {
-    if (workspace.contentOnly) continue
-    if (!workspace.buildTask)
+    if (workspace.contentOnly) {
+      continue
+    }
+    if (!workspace.buildTask) {
       unknownPaths.push(
         `Workspace has no canonical build task: ${workspace.name}`
       )
-    if (!workspace.testTask)
+    }
+    if (!workspace.testTask) {
       unknownPaths.push(
         `Workspace has no canonical CI test task: ${workspace.name}`
       )
+    }
   }
 
   const workspaceMatrix = affectedWorkspaces
@@ -696,7 +772,7 @@ function classifyChanges(
         let expanded = true
         while (expanded) {
           expanded = false
-          for (const { dependency, consumer } of dependencyEdges)
+          for (const { dependency, consumer } of dependencyEdges) {
             if (
               dependencyOwners.has(consumer) &&
               !dependencyOwners.has(dependency)
@@ -704,16 +780,18 @@ function classifyChanges(
               dependencyOwners.add(dependency)
               expanded = true
             }
+          }
         }
         const ownerPaths = changedPaths.filter((changedPath) => {
           const pathOwner = allManifestViews
             .map((manifests) => workspaceForPath(changedPath, manifests))
             .find(Boolean)
-          if (pathOwner)
+          if (pathOwner) {
             return (
               pathOwner.name === name ||
               (dependencyOwners.has(pathOwner.name) && isRuntime(changedPath))
             )
+          }
           return relationshipPolicy.workspaceInputRules.some((rule) => {
             const matched = matchesPattern(changedPath, rule.pattern)
             return (
@@ -770,38 +848,39 @@ function classifyChanges(
                   : 'affected-workspace-owner'
               }
         let testSelection
-        if (sharedOwnerInput)
+        if (sharedOwnerInput) {
           testSelection = { mode: 'full', inputs: [], reason: 'shared-input' }
-        else if (e2eOnlyInputs)
+        } else if (e2eOnlyInputs) {
           testSelection = {
             mode: 'not-selected',
             inputs: [],
             reason: 'separate-e2e-owner'
           }
-        else if (onlyDocumentation)
+        } else if (onlyDocumentation) {
           testSelection = {
             mode: 'not-selected',
             inputs: [],
             reason: 'documentation-only'
           }
-        else if (
+        } else if (
           relatedInputs.length > 0 &&
           relatedInputs.length === ownerPaths.length &&
           testRunner &&
           relatedInputsAreConsumerOwned
-        )
+        ) {
           testSelection = {
             mode: 'related',
             inputs: relatedInputs.sort(),
             reason: 'Vitest related-file graph',
             runner: testRunner
           }
-        else
+        } else {
           testSelection = {
             mode: 'full',
             inputs: [],
             reason: 'owner-input-or-runner-unresolved'
           }
+        }
         const supervised = relationshipPolicy.supervisedTestOwners?.[directory]
         let profileSelection
         if (supervised) {
@@ -829,16 +908,17 @@ function classifyChanges(
               workspaces: headManifests
             }
           )
-          if (supervised.profileCommand)
+          if (supervised.profileCommand) {
             profileSelection = {
               files: impact.profiles,
               reason: impact.reason,
               command: supervised.profileCommand
             }
+          }
           const selectedTests = supervised.profileCommand
             ? impact.ordinary
             : [...impact.ordinary, ...impact.profiles].sort()
-          if (impact.reason !== 'full-owner-input')
+          if (impact.reason !== 'full-owner-input') {
             testSelection = {
               mode: selectedTests.length ? 'files' : 'not-selected',
               inputs: selectedTests,
@@ -854,13 +934,14 @@ function classifyChanges(
                   }
                 : {})
             }
+          }
         }
         let e2eSelection = e2eOwnerSelection(
           { directory, e2eTask },
           ownerPaths,
           sharedOwnerInput
         )
-        if (!sharedOwnerInput && e2eSelection.mode === 'full')
+        if (!sharedOwnerInput && e2eSelection.mode === 'full') {
           e2eSelection = selectUpstreamBrowserProofs(
             directory,
             ownerPaths,
@@ -868,6 +949,7 @@ function classifyChanges(
             options.repositoryRoot ?? process.cwd(),
             e2eSelection
           )
+        }
         return {
           name,
           directory,
@@ -935,16 +1017,18 @@ function classifyChanges(
         { cwd: options.repositoryRoot ?? process.cwd(), encoding: 'utf8' }
       )
     )
-    for (const group of Object.keys(fieldscopeProfileGroups))
+    for (const group of Object.keys(fieldscopeProfileGroups)) {
       fieldscopeProfileGroups[group] = inventory[group].filter((file) =>
         fieldscopeProfileFiles.includes(file)
       )
+    }
     const assigned = Object.values(fieldscopeProfileGroups).flat().sort()
     if (
       JSON.stringify(assigned) !==
       JSON.stringify([...fieldscopeProfileFiles].sort())
-    )
+    ) {
       throw new Error('Profile selection is not exactly partitioned')
+    }
   }
   const changedNames = [...changedWorkspaceNames].sort()
   const affectedNamesInHead = affectedWorkspaces.map(({ name }) => name)
@@ -956,8 +1040,9 @@ function classifyChanges(
       (workspace) =>
         workspace.group === 'packages' && propagatedNames.has(workspace.name)
     )
-  )
+  ) {
     frameworkReleaseRequired = true
+  }
 
   const createAppPackages = [...new Set(changedCreateAppDirectories)].sort()
   if (createAppPackages.length === 0) {
@@ -967,10 +1052,16 @@ function classifyChanges(
     const baseCreateAppPaths = [...baseCreateAppManifests.values()].map(
       ({ directory }) => directory
     )
-    for (const changedPath of changedPaths)
-      for (const directory of [...currentCreateAppPaths, ...baseCreateAppPaths])
-        if (changedPath.startsWith(directory + '/'))
+    for (const changedPath of changedPaths) {
+      for (const directory of [
+        ...currentCreateAppPaths,
+        ...baseCreateAppPaths
+      ]) {
+        if (changedPath.startsWith(directory + '/')) {
           changedCreateAppDirectories.add(directory)
+        }
+      }
+    }
   }
   const resolvedCreateAppPackages = [
     ...new Set(changedCreateAppDirectories)
@@ -1013,19 +1104,6 @@ function classifyChanges(
         .map((workspace) => workspace.directory)
     )
   })
-  const lintInputs = [...new Set(changedPaths)]
-    .filter((changedPath) =>
-      fs.existsSync(path.join(process.cwd(), changedPath))
-    )
-    .filter((changedPath) => sourceExtensions.has(path.extname(changedPath)))
-    .sort()
-  const lintFull =
-    options.fullValidation ||
-    changedPaths.some(
-      (changedPath) =>
-        relationshipPolicy.lintFullInputPaths.includes(changedPath) ||
-        /(^|\/)tsconfig(?:\.[^/]+)?\.json$/.test(changedPath)
-    )
   const scriptGroups = relationshipPolicy.repositoryScriptGroups
   const selectedGroups = new Set()
   const directTests = new Set()
@@ -1041,25 +1119,33 @@ function classifyChanges(
     bundleInputPaths(path.join(scriptDirectory, '..'))
   )
   for (const file of changedPaths) {
-    if (skillSources.has(file)) selectedGroups.add('developerAgent')
+    if (skillSources.has(file)) {
+      selectedGroups.add('developerAgent')
+    }
     if (relationshipPolicy.registeredScriptTests.includes(file)) {
       directTests.add(file)
       continue
     }
-    if (publicSources.has(file)) selectedGroups.add('publicSources')
+    if (publicSources.has(file)) {
+      selectedGroups.add('publicSources')
+    }
     for (const [id, group] of Object.entries(scriptGroups)) {
       if (
         !group.patterns.some((pattern) => matchesPattern(file, pattern).matched)
-      )
+      ) {
         continue
-      if (id === 'publicApiInputs' && testFilePattern.test(file)) continue
+      }
+      if (id === 'publicApiInputs' && testFilePattern.test(file)) {
+        continue
+      }
       selectedGroups.add(id)
       if (
         (file.endsWith('.md') &&
           !relationshipPolicy.contractOnlyInputs.includes(file)) ||
         file === 'docs/public/generated/source-map.json'
-      )
+      ) {
         break
+      }
     }
   }
   const repositoryScriptsInputs = [...new Set(changedPaths)].sort()
@@ -1108,15 +1194,6 @@ function classifyChanges(
         )
     )
     .sort()
-  let lintMode = 'not-selected'
-  let lintReason = 'no-applicable-source-files'
-  if (lintFull) {
-    lintMode = 'full'
-    lintReason = 'full-validation-entry-or-shared-lint-configuration'
-  } else if (lintInputs.length) {
-    lintMode = 'files'
-    lintReason = 'changed-files'
-  }
   const manifestInputs = changedPaths.filter((file) =>
     /^(?:apps|packages|tools|create-app)\/[^/]+\/package\.json$/.test(file)
   )
@@ -1140,7 +1217,9 @@ function classifyChanges(
         file.startsWith('.yarn/patches/')
     )
     .concat(dependencyManifestInputs)
-  if (rootImpact.rootDependencies.length) securityInputs.push('package.json')
+  if (rootImpact.rootDependencies.length) {
+    securityInputs.push('package.json')
+  }
   const dependencyInputs = changedPaths.filter(
     (file) =>
       (/^(?:apps|packages|tools|create-app)\//.test(file) &&
@@ -1172,9 +1251,9 @@ function classifyChanges(
       dependencyValidation: guard(dependencyInputs),
       turboValidation: guard(turboInputs),
       lint: {
-        mode: lintMode,
-        inputs: lintFull ? [] : lintInputs,
-        reason: lintReason
+        mode: 'full',
+        inputs: [],
+        reason: 'repository-wide-lint-required'
       },
       repositoryScripts: {
         mode: repositoryScriptsMode,
@@ -1339,9 +1418,15 @@ function classifyChanges(
 }
 
 function loadChangedPaths(base, head) {
-  if (/^0{40}$/.test(base ?? '')) return []
-  if (!/^[a-f0-9]{40}$/.test(base ?? '') || !/^[a-f0-9]{40}$/.test(head ?? ''))
+  if (/^0{40}$/.test(base ?? '')) {
+    return []
+  }
+  if (
+    !/^[a-f0-9]{40}$/.test(base ?? '') ||
+    !/^[a-f0-9]{40}$/.test(head ?? '')
+  ) {
     throw new Error('CI scope requires full base and head commit identities')
+  }
   return execFileSync(
     'git',
     ['diff', '--no-renames', '--name-only', '-z', `${base}...${head}`],
@@ -1455,7 +1540,9 @@ function main() {
     )
   }
   console.log(JSON.stringify(evidence))
-  if (classification.unknownPaths.length) process.exitCode = 1
+  if (classification.unknownPaths.length) {
+    process.exitCode = 1
+  }
 }
 
 export {
@@ -1473,5 +1560,6 @@ export {
 if (
   process.argv[1] &&
   fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
-)
+) {
   main()
+}

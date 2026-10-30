@@ -54,10 +54,12 @@ function enclose(
       contains(row, point.parts[index].affine.matrix[axis])
     )
   })
-  for (const key of ['shoulder', 'elbow', 'wrist'] as const)
+  for (const key of ['shoulder', 'elbow', 'wrist'] as const) {
     contains(result.pose.frames[key], point.pose.frames[key])
-  for (const key of ['position', 'closing', 'approach', 'up'] as const)
+  }
+  for (const key of ['position', 'closing', 'approach', 'up'] as const) {
     contains(result.pose.tool[key], point.pose.tool[key])
+  }
 }
 function widths(result: ReturnType<typeof evaluateRobotIntervalPose>) {
   const width = (values: readonly Interval[]) =>
@@ -177,10 +179,11 @@ it('rejects malformed and accessor snapshots before any scalar or trig work', ()
       { ...singleton(centre), extra: [0, 0] },
       accessor
     ]
-    for (const domains of cases)
+    for (const domains of cases) {
       expect(() =>
         evaluateRobotIntervalPose(rig, domains as JointDomains)
       ).toThrow()
+    }
     expect(reads).toBe(1)
     expect(sum).not.toHaveBeenCalled()
     expect(bound).not.toHaveBeenCalled()

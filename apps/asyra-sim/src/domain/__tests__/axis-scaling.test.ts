@@ -13,8 +13,9 @@ it('normalizes finite direction vectors even when their unscaled norm would over
     Number.MAX_VALUE,
     Number.MAX_VALUE,
     Number.MAX_VALUE
-  ]))
+  ])) {
     expect(value).toBeCloseTo(1 / Math.sqrt(3), 15)
+  }
 })
 
 const fixture = (magnitude: number): Workcell => {
@@ -58,7 +59,9 @@ it.each([1, 1e308, Number.MAX_VALUE])(
     validateWorkcell(model)
     expect(forwardKinematics(model).get('slide')?.position).toEqual([2, 0, 0])
     const pose = evaluateKinematics(model, {}, intervalAlgebra).get('slide')
-    if (!pose) throw new Error('Missing pose')
+    if (!pose) {
+      throw new Error('Missing pose')
+    }
     for (const [index, value] of [2, 0, 0].entries()) {
       expect(pose.position[index][0]).toBeLessThanOrEqual(value)
       expect(pose.position[index][1]).toBeGreaterThanOrEqual(value)

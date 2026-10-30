@@ -5,10 +5,11 @@ const { openProject } = require('./store.cjs')
 const { compactContext } = require('./context.cjs')
 async function main(args) {
   const [command, directory, flowId, nodeId] = args
-  if (!directory)
+  if (!directory) {
     throw new Error(
       'Usage: cli.cjs validate|context|update|serve <flow-directory> [flow-id] [node-id or request-file]'
     )
+  }
   if (command === 'migrate') {
     const request = JSON.parse(fs.readFileSync(flowId, 'utf8'))
     const { loadContract } = require('../control-plane/contracts.cjs')
@@ -39,7 +40,9 @@ async function main(args) {
     console.log(server.origin)
     let closing = false
     const close = async () => {
-      if (closing) return
+      if (closing) {
+        return
+      }
       closing = true
       await server.close()
     }
@@ -68,7 +71,9 @@ async function main(args) {
       nodeId === 'integration'
         ? flow?.integration
         : flow?.nodes.find((n) => n.id === nodeId)
-    if (!selected) throw new Error('Unknown flow or node')
+    if (!selected) {
+      throw new Error('Unknown flow or node')
+    }
     console.log(
       JSON.stringify(
         {
@@ -83,9 +88,10 @@ async function main(args) {
   }
   throw new Error('Unknown flow command')
 }
-if (require.main === module)
+if (require.main === module) {
   main(process.argv.slice(2)).catch((error) => {
     console.error(error.message)
     process.exitCode = 1
   })
+}
 module.exports = { main }

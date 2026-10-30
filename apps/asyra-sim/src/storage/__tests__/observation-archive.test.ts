@@ -67,8 +67,9 @@ it('rejects invalid files, duplicate contents and revoked or forged receipts wit
     ],
     Array.from({ length: 5 }, (_, i) => file(String(i))),
     [file(), file(undefined, 'copy.csv')]
-  ])
+  ]) {
     await expect(archive.prepare(invalid)).rejects.toThrow()
+  }
   const original = await archive.prepare([file()])
   expect(() => archive.accept(structuredClone(original))).toThrow('receipt')
   const current = await archive.prepare([file('a,b', 'new.csv')])
@@ -123,8 +124,9 @@ it('rejects noncanonical Base64, bad digests and malformed collections before hy
       ...source,
       sourceId: `sha256:${String(i).padStart(64, '0')}`
     }))
-  ])
+  ]) {
     expect(() => validateObservationSources(invalid)).toThrow()
+  }
   const corrupt = [{ ...source, base64: 'Yg==' }]
   expect(validateObservationSources(corrupt)).toEqual(corrupt)
   await expect(verifyObservationSources(corrupt)).rejects.toThrow('digest')
@@ -155,11 +157,16 @@ it('rejects overlap and discards late digest output after cancellation or dispos
       const pending = archive.prepare([file()], abort.signal)
       expect(digest).toHaveBeenCalledOnce()
       await expect(archive.prepare([file('overlap')])).rejects.toThrow('active')
-      if (close) archive.dispose()
-      else abort.abort()
+      if (close) {
+        archive.dispose()
+      } else {
+        abort.abort()
+      }
       finish(result)
       await expect(pending).rejects.toThrow(/closed|cancel/i)
-      if (!close) expect(archive.capture([])).toEqual([])
+      if (!close) {
+        expect(archive.capture([])).toEqual([])
+      }
     } finally {
       digest.mockRestore()
       archive.dispose()

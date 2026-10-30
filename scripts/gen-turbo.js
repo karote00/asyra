@@ -12,7 +12,9 @@ const baseConfigPath = path.join(workspaceRoot, 'turbo.base.json')
 const ignorePackages = ['create-app/*']
 
 const getBuildTask = (pkg) => {
-  if (pkg.contentOnly) return null
+  if (pkg.contentOnly) {
+    return null
+  }
   const repoName = pkg.name.split('/').pop()
   const packageBuildTask = `build:${repoName}`
   const task = [packageBuildTask, 'react:build', 'build'].find(
@@ -33,7 +35,9 @@ function getWorkspacePackages() {
   const pkgs = []
 
   for (const pattern of workspaces) {
-    if (ignorePackages.includes(pattern)) continue
+    if (ignorePackages.includes(pattern)) {
+      continue
+    }
 
     const baseDir = pattern.replace('/*', '')
     const dirs = pattern.endsWith('/*')
@@ -43,7 +47,9 @@ function getWorkspacePackages() {
     for (const dir of dirs) {
       const pkgDir = path.join(workspaceRoot, baseDir, dir)
       const pkgJsonPath = path.join(pkgDir, 'package.json')
-      if (!fs.existsSync(pkgJsonPath)) continue
+      if (!fs.existsSync(pkgJsonPath)) {
+        continue
+      }
 
       const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'))
 
@@ -70,10 +76,11 @@ function generateTurboJson(packages) {
   for (const pkg of packages) {
     const buildCmd = getBuildTask(pkg)
     if (buildCmd === null) {
-      if (Object.keys(pkg.scripts).length || pkg.dependencies.length)
+      if (Object.keys(pkg.scripts).length || pkg.dependencies.length) {
         throw new Error(
           `${pkg.name} content-only workspace cannot declare scripts or workspace dependencies`
         )
+      }
       continue
     }
     if (!pkg.scripts[buildCmd]) {

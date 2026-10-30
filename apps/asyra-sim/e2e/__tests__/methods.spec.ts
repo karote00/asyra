@@ -7,9 +7,13 @@ async function download(page: Page, name: string) {
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing download stream')
+  if (!stream) {
+    throw new Error('Missing download stream')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   return Buffer.concat(chunks).toString('utf8')
 }
 
@@ -58,8 +62,9 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
       /^https?:/.test(request.url()) &&
       new URL(request.url()).origin !==
         new URL(info.project.use.baseURL ?? '').origin
-    )
+    ) {
       external.push(request.url())
+    }
   })
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -151,8 +156,12 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   // This portable fixture represents the same evidence from an unavailable private deployment.
   const privatePayload = JSON.stringify(JSON.parse(payload), (key, value) => {
-    if (value === MethodIds.STATIC_SPHERES) return 'private-retired-spheres'
-    if (key === 'origin' && value === 'example') return 'private'
+    if (value === MethodIds.STATIC_SPHERES) {
+      return 'private-retired-spheres'
+    }
+    if (key === 'origin' && value === 'example') {
+      return 'private'
+    }
     return value
   })
   await info.attach('missing-method-project.json', {

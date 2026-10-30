@@ -225,8 +225,9 @@ it('preserves all supported descriptor kinds and shared references without recom
       expect(id).toBe(key)
       expect(delivered[key]).toEqual(retained)
       expect(delivered[key]).not.toHaveProperty('id')
-      for (const name of Object.keys(retained))
+      for (const name of Object.keys(retained)) {
         expect(delivered[key][name]).toBe(retained[name])
+      }
     }
   }
   expect(JSON.stringify(canonical)).toBe(unchanged)
@@ -432,7 +433,9 @@ it('executes resolver delivery through the dispatcher and real Core with full re
   const uiSubscription = core
     .getUIPropertySubject<string[]>('flattenedElementIds')
     ?.subscribe((ids) => {
-      if (ids.length) uiSnapshots.push(ids)
+      if (ids.length) {
+        uiSnapshots.push(ids)
+      }
     })
   const action = createPreparedDesignAction(undefined, async () => undefined)
   const definitions = [createAiToolContract(action)]
@@ -465,7 +468,9 @@ it('executes resolver delivery through the dispatcher and real Core with full re
       intent: 'Apply prepared drawing',
       signal: new AbortController().signal
     })
-    if (!receipt) throw new Error('Missing execution receipt')
+    if (!receipt) {
+      throw new Error('Missing execution receipt')
+    }
     return receipt
   })
   const operations = createLocalOperationTools(definitions, designs, dispatch)
@@ -568,8 +573,9 @@ it('executes resolver delivery through the dispatcher and real Core with full re
         parent
       )
     }
-    for (const [parent, ids] of children)
+    for (const [parent, ids] of children) {
       expect(created.sceneTree.elements[parent].children).toEqual(ids)
+    }
     // Exercise the exact comparison used below on real persisted records.
     const root = created.sceneTree.elements[fixture.prepared.design.rootId]
     const reordered = { ...root, children: [...root.children].reverse() }
@@ -649,13 +655,15 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     expect(repaired.failedStep).toBeUndefined()
     expect(dispatch).toHaveBeenCalledTimes(2)
     const withFin = await core.save()
-    for (const id of expectedIds)
+    for (const id of expectedIds) {
       deepStrictEqual(
         withFin.sceneTree.elements[id],
         reloaded.sceneTree.elements[id]
       )
-    for (const [id, value] of Object.entries(reloaded.props))
+    }
+    for (const [id, value] of Object.entries(reloaded.props)) {
       deepStrictEqual(withFin.props[id], value)
+    }
     factory.undo()
     deepStrictEqual(await core.save(), reloaded)
     factory.redo()
@@ -686,8 +694,10 @@ const vectorDeliveryFixture = JSON.parse(
   }[]
 }
 const canonicalValue = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(canonicalValue)
-  if (value && typeof value === 'object')
+  if (Array.isArray(value)) {
+    return value.map(canonicalValue)
+  }
+  if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
@@ -696,6 +706,7 @@ const canonicalValue = (value: unknown): unknown => {
           canonicalValue((value as Record<string, unknown>)[key])
         ])
     )
+  }
   return value
 }
 
@@ -757,13 +768,14 @@ const measureVectorDelivery = <T>(
     const decoded = performance.now()
     admit(parsed)
     const end = performance.now()
-    if (iteration)
+    if (iteration) {
       rows.push({
         packMs: packed - start,
         encodeMs: serialized - packed,
         parseMs: decoded - serialized,
         restoreAndAdmissionMs: end - decoded
       })
+    }
   }
   return Object.fromEntries(
     Object.keys(rows[0]).map((key) => [
@@ -866,7 +878,9 @@ it.each(['points', 'segments', 'networks'])(
       prepareDesign(mixedDraft, 'conflict')
     )
     const vector = source.entries.find((e) => e.descriptor.type === 'vector')
-    if (!vector) throw new Error('Missing vector fixture')
+    if (!vector) {
+      throw new Error('Missing vector fixture')
+    }
     const records = vector.descriptor[field] as Record<string, { id: string }>
     Object.values(records)[0].id = 'foreign-identity'
     expect(() => deliverPreparedDesign(source)).toThrow(/identity/)
@@ -880,7 +894,9 @@ it('visits each vector identity map once per projection and restoration without 
   const vector = source.entries.find(
     (entry) => entry.descriptor.type === 'vector'
   )
-  if (!vector) throw new Error('Missing vector fixture')
+  if (!vector) {
+    throw new Error('Missing vector fixture')
+  }
   const projectVisits = vi.fn(Reflect.ownKeys)
   for (const field of ['points', 'segments', 'networks']) {
     vector.descriptor[field] = new Proxy(vector.descriptor[field] as object, {
@@ -892,7 +908,9 @@ it('visits each vector identity map once per projection and restoration without 
   const delivered = wire.entries.find(
     (entry) => entry.descriptor.type === 'vector'
   )
-  if (!delivered) throw new Error('Missing vector delivery')
+  if (!delivered) {
+    throw new Error('Missing vector delivery')
+  }
   const restoreVisits = vi.fn(Reflect.ownKeys)
   for (const field of ['points', 'segments', 'networks']) {
     delivered.descriptor[field] = new Proxy(

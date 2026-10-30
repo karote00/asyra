@@ -20,11 +20,13 @@ export async function launchCaptureBrowser({
     try {
       const info = await session.send('SystemInfo.getProcessInfo')
       pid = info.processInfo.find((entry) => entry.type === 'browser')?.id
-      if (!Number.isSafeInteger(pid) || pid < 2)
+      if (!Number.isSafeInteger(pid) || pid < 2) {
         throw new Error('Native browser PID unavailable')
+      }
       identity = processIdentity(pid)
-      if (!identity)
+      if (!identity) {
         throw new Error('Native browser process identity unavailable')
+      }
     } finally {
       await session.detach()
     }
@@ -40,9 +42,12 @@ export async function launchCaptureBrowser({
   )
   const forceStop = async () => {
     const current = processIdentity(pid)
-    if (!current) return
-    if (current !== identity)
+    if (!current) {
+      return
+    }
+    if (current !== identity) {
       throw new Error('Native browser process identity changed')
+    }
     observe('browser-force-stop-requested')
     const deadline = createLiveTestDeadline({
       deadlineAt: Date.now(),
@@ -55,8 +60,9 @@ export async function launchCaptureBrowser({
       10000
     )
     observe('browser-force-stop-completed', { receipt })
-    if (receipt.status !== 'failed' || receipt.errors.length)
+    if (receipt.status !== 'failed' || receipt.errors.length) {
       throw new Error('Native browser force cleanup failed')
+    }
     await boundedCapture(
       'browser process exit',
       async (signal) => {

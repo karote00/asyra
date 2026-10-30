@@ -32,16 +32,18 @@ test('practical resources preserve real evidence and three distinct building ent
     '/docs/start/custom-composition',
     '/docs/start/create-design-app',
     '/atlas'
-  ])
+  ]) {
     assert.ok(content.includes(href))
+  }
   assert.match(content, /asyra-design-7076-product-evidence.webp/)
   assert.match(content, /loading="lazy"/)
   assert.doesNotMatch(content, /<h1|poc-story|action-film|drawTower|drawHouse/)
 })
 test('homepage product evidence covers Design, Asyra FieldScope and Sim with verified scope and limits', async () => {
   const content = await read('components/home-resources.tsx')
-  for (const product of ['Asyra Design', 'Asyra FieldScope', 'Asyra Sim'])
+  for (const product of ['Asyra Design', 'Asyra FieldScope', 'Asyra Sim']) {
     assert.ok(content.includes(product), `Missing ${product} product case`)
+  }
   for (const claim of [
     /cucumber and tomato crops/u,
     /lane and energy assessments/u,
@@ -49,8 +51,9 @@ test('homepage product evidence covers Design, Asyra FieldScope and Sim with ver
     /physical\s+dynamics/u,
     /Development checkpoint - not R0/u,
     /not for\s+production or safety-critical approval/u
-  ])
+  ]) {
     assert.match(content, claim)
+  }
   for (const destination of [
     'https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts',
     'https://asyra-sim.pages.dev',
@@ -152,8 +155,9 @@ test('primary navigation and page semantics survive without JavaScript', async (
     '/asyra-design',
     '/releases',
     '/roadmap'
-  ])
+  ]) {
     assert.ok(story.includes(`href="${href}"`))
+  }
   assert.match(story, /\{children\}/)
   assert.match(story, /\{footer\}/)
 })

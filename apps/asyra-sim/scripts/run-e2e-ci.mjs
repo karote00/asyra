@@ -49,19 +49,21 @@ const assigned = CI_E2E_GROUPS.flatMap(({ files }) => files).toSorted()
 if (
   assigned.length !== new Set(assigned).size ||
   JSON.stringify(assigned) !== JSON.stringify(discovered)
-)
+) {
   throw new Error('Sim CI browser groups must cover every configured spec once')
+}
 
 fs.mkdirSync(temporary, { recursive: true })
 fs.mkdirSync(resultDirectory, { recursive: true })
 
 let activeChild
 let receivedSignal = null
-for (const signal of ['SIGINT', 'SIGTERM'])
+for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     receivedSignal = signal
     activeChild?.kill(signal)
   })
+}
 
 function runPlaywright(command, environment) {
   return new Promise((resolve) => {
@@ -156,8 +158,9 @@ for (const group of selectedGroups) {
         }
       }
     : null
-  if (groupReport)
+  if (groupReport) {
     fs.writeFileSync(reportPath, JSON.stringify(groupReport, null, 2))
+  }
 
   const noTests =
     !report?.stats ||

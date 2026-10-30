@@ -184,9 +184,15 @@ const providerStatusForConnection = (
   connection: CollaborationConnectionState,
   disposed: boolean
 ): ProviderStatus => {
-  if (disposed) return 'disposed'
-  if (connection === 'none') return 'idle'
-  if (connection === 'connected') return 'connected'
+  if (disposed) {
+    return 'disposed'
+  }
+  if (connection === 'none') {
+    return 'idle'
+  }
+  if (connection === 'connected') {
+    return 'connected'
+  }
   return 'disconnected'
 }
 
@@ -367,7 +373,9 @@ class CollaborationSessionController {
     if (this.disposed) {
       throw new Error('[collaboration] collaboration session is disposed')
     }
-    if (this.activated) return this.createHandle()
+    if (this.activated) {
+      return this.createHandle()
+    }
     this.activated = true
 
     const prepared = this.preparedSocket
@@ -384,7 +392,9 @@ class CollaborationSessionController {
         await prepared.composition.collaboration
           .dispose()
           .catch(() => undefined)
-        if (!(error instanceof ProviderFailure)) throw error
+        if (!(error instanceof ProviderFailure)) {
+          throw error
+        }
         console.error(
           '[collaboration] initial document-session activation failed:',
           error
@@ -397,8 +407,12 @@ class CollaborationSessionController {
       this.scheduleReconnect()
     }
 
-    if (this.disposed) throw new Error('Document session is disposed')
-    if (this.recoveryMode) this.applyOutboxState(this.outbox.getState())
+    if (this.disposed) {
+      throw new Error('Document session is disposed')
+    }
+    if (this.recoveryMode) {
+      this.applyOutboxState(this.outbox.getState())
+    }
     const handle = this.createHandle()
     activeHandle = handle
     window.__Collaboration__ = handle
@@ -433,7 +447,9 @@ class CollaborationSessionController {
   }
 
   async disconnect(): Promise<void> {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     this.clearReconnectTimer()
     await this.current?.collaboration.disconnect()
     this.enterDisconnectedEpoch()
@@ -441,7 +457,9 @@ class CollaborationSessionController {
   }
 
   reconnect(): Promise<void> {
-    if (this.disposed) return Promise.resolve()
+    if (this.disposed) {
+      return Promise.resolve()
+    }
     this.clearReconnectTimer()
     return this.attemptReconnect()
   }
@@ -461,13 +479,17 @@ class CollaborationSessionController {
   /** Prepare a durable, validated replay; the caller then reopens the session. */
   prepareRecovery(): Promise<void> {
     return this.schedule(async () => {
-      if (this.disposed) throw new Error('Document session is disposed')
-      if (!core.isTransactionBoundaryIdle())
+      if (this.disposed) {
+        throw new Error('Document session is disposed')
+      }
+      if (!core.isTransactionBoundaryIdle()) {
         throw new Error('Finish the current edit before retrying saving')
+      }
       await this.outbox.retryStorage()
       await this.outbox.retryPreparation(prepareCollaborationPublication)
-      if (!core.isTransactionBoundaryIdle())
+      if (!core.isTransactionBoundaryIdle()) {
         throw new Error('Finish the current edit before retrying saving')
+      }
       // A fresh authoritative bootstrap owns replay. Do not apply the draft to peers.
     })
   }
@@ -502,30 +524,36 @@ class CollaborationSessionController {
         this.recoveryMode ||
         this.state.sync === 'conflicted' ||
         this.state.sync === 'storage-failed'
-      )
+      ) {
         throw new Error(
           'Local publications are pending, conflicted or unavailable'
         )
+      }
       if (
         this.disposed ||
         this.state.connection !== 'connected' ||
         !this.current
-      )
+      ) {
         throw new Error('Document session is not connected')
-      if (this.state.sync !== 'synced')
+      }
+      if (this.state.sync !== 'synced') {
         throw new Error(
           'Local publications are pending, conflicted or unavailable'
         )
+      }
       confirmation = this.current.provider.confirmPersistence(signal)
       // Observe rejection immediately; awaiting the receipt happens outside the publication queue.
       void confirmation.catch(() => undefined)
     })
     const result = boundary.then(() => {
-      if (!confirmation)
+      if (!confirmation) {
         throw new Error('Persistence confirmation was not started')
+      }
       return confirmation
     })
-    if (!signal) return result
+    if (!signal) {
+      return result
+    }
     return new Promise<DocumentPersistenceReceipt>((resolve, reject) => {
       const onAbort = () => reject(signal.reason)
       signal.addEventListener('abort', onAbort, { once: true })
@@ -539,7 +567,9 @@ class CollaborationSessionController {
           reject(error)
         }
       )
-      if (signal.aborted) onAbort()
+      if (signal.aborted) {
+        onAbort()
+      }
     })
   }
 
@@ -560,7 +590,9 @@ class CollaborationSessionController {
   }
 
   async dispose(): Promise<void> {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     this.disposed = true
     this.clearReconnectTimer()
     this.unsubscribePublicationSource?.()
@@ -593,7 +625,9 @@ class CollaborationSessionController {
       composition = temporary.composition
     }
     try {
-      if (temporary) await composition.provider.completeDocumentBootstrap()
+      if (temporary) {
+        await composition.provider.completeDocumentBootstrap()
+      }
       await composition.collaboration.whenIdle()
       await composition.provider.resetDocument()
       await this.dispose()
@@ -628,10 +662,11 @@ class CollaborationSessionController {
     const composition = createSessionComposition(
       this.mode,
       async (publication) => {
-        if (this.recoveryMode)
+        if (this.recoveryMode) {
           throw new Error(
             'Local recovery must complete before receiving peer changes'
           )
+        }
         await this.processRemotePublication(publication)
       }
     )
@@ -647,14 +682,20 @@ class CollaborationSessionController {
   private async activateComposition(
     prepared: PreparedSocketComposition
   ): Promise<boolean> {
-    if (this.disposed || this.recoveryMode) return false
+    if (this.disposed || this.recoveryMode) {
+      return false
+    }
     await applyDocumentSessionBootstrapTail({
       bootstrap: prepared.bootstrap,
       applyPublication: this.processRemotePublication
     })
-    if (this.disposed || this.recoveryMode) return false
+    if (this.disposed || this.recoveryMode) {
+      return false
+    }
     await prepared.composition.collaboration.start()
-    if (this.disposed || this.recoveryMode) return false
+    if (this.disposed || this.recoveryMode) {
+      return false
+    }
     this.bindCurrent(prepared.composition)
     return true
   }
@@ -689,7 +730,9 @@ class CollaborationSessionController {
 
   private async releaseCurrentComposition(): Promise<void> {
     const current = this.current
-    if (!current) return
+    if (!current) {
+      return
+    }
     this.unbindCurrentObservers()
     this.current = undefined
     await current.collaboration.dispose().catch((error) => {
@@ -705,7 +748,9 @@ class CollaborationSessionController {
     preparationError?: Error
   ): void {
     this.pendingRetention += 1
-    if (preparationError) this.recoveryMode = true
+    if (preparationError) {
+      this.recoveryMode = true
+    }
     const recoveryDocument = this.recoveryMode
       ? this.captureRecoveryDocument()
       : undefined
@@ -745,7 +790,9 @@ class CollaborationSessionController {
           error: preparationError
         })
       }
-      if (this.recoveryMode) await this.isolateRecovery()
+      if (this.recoveryMode) {
+        await this.isolateRecovery()
+      }
       if (this.state.connection === 'connected') {
         await this.drainOutbox()
       }
@@ -792,7 +839,9 @@ class CollaborationSessionController {
           await composition.provider.sendPublicationWithAcceptance(
             record.publication,
             async (acceptedPublication) => {
-              if (!needsRecoveryApply) return
+              if (!needsRecoveryApply) {
+                return
+              }
               try {
                 await this.processRemotePublication(acceptedPublication)
                 this.recoveryAppliedPublicationIds.add(record.publicationId)
@@ -826,12 +875,13 @@ class CollaborationSessionController {
           error.code === 'acknowledgement-failed'
         ) {
           try {
-            if (!this.recoveryMode)
+            if (!this.recoveryMode) {
               await this.retainPublicationConflict(
                 record.publicationId,
                 error,
                 needsRecoveryApply
               )
+            }
           } catch (storageError) {
             console.error(
               `[collaboration] publication ${record.publicationId} conflict retention failed:`,
@@ -850,8 +900,9 @@ class CollaborationSessionController {
           })
           return
         }
-        if (this.outbox.getState().status === 'storage-failed')
+        if (this.outbox.getState().status === 'storage-failed') {
           await this.recoverFromStorageFailure(needsRecoveryApply)
+        }
         console.error(
           `[collaboration] publication ${record.publicationId} send failed:`,
           error
@@ -889,8 +940,9 @@ class CollaborationSessionController {
       console.error('[collaboration] recovery retention failed:', error)
     } finally {
       try {
-        if (restoringReplay && document !== undefined)
+        if (restoringReplay && document !== undefined) {
           this.bridge.load(document)
+        }
       } finally {
         await this.isolateRecovery()
       }
@@ -915,8 +967,9 @@ class CollaborationSessionController {
     } finally {
       const recoveryDocument = this.outbox.getRecoveryDocument()
       try {
-        if (restoringReplay && recoveryDocument !== undefined)
+        if (restoringReplay && recoveryDocument !== undefined) {
           this.bridge.load(recoveryDocument)
+        }
       } finally {
         await this.isolateRecovery()
       }
@@ -924,8 +977,12 @@ class CollaborationSessionController {
   }
 
   private attemptReconnect(): Promise<void> {
-    if (this.reconnectPromise) return this.reconnectPromise
-    if (this.disposed || this.recoveryMode) return Promise.resolve()
+    if (this.reconnectPromise) {
+      return this.reconnectPromise
+    }
+    if (this.disposed || this.recoveryMode) {
+      return Promise.resolve()
+    }
     this.reconciling = true
     this.setState({
       sync: 'reconciling'
@@ -934,21 +991,31 @@ class CollaborationSessionController {
       let next: PreparedSocketComposition | undefined
       try {
         await this.operationQueue
-        if (this.disposed || this.recoveryMode) return
+        if (this.disposed || this.recoveryMode) {
+          return
+        }
         await this.releaseCurrentComposition()
-        if (this.disposed || this.recoveryMode) return
+        if (this.disposed || this.recoveryMode) {
+          return
+        }
         next = await this.openSocketComposition()
         await this.operationQueue
-        if (this.disposed || this.recoveryMode) return
+        if (this.disposed || this.recoveryMode) {
+          return
+        }
         await this.outbox.bindDocumentGeneration(
           next.bootstrap.documentGeneration ?? 0
         )
-        if (this.disposed || this.recoveryMode) return
+        if (this.disposed || this.recoveryMode) {
+          return
+        }
         const recoveryCutoff = this.outbox.getLastAppendOrder()
         this.bridge.load(next.bootstrap.checkpoint)
         this.recoveryApplyCutoff = recoveryCutoff
         this.recoveryAppliedPublicationIds.clear()
-        if (!(await this.activateComposition(next))) return
+        if (!(await this.activateComposition(next))) {
+          return
+        }
         next = undefined
         this.reconciling = false
         this.setConnected()
@@ -957,15 +1024,18 @@ class CollaborationSessionController {
         if (
           this.outbox.getState().status === 'storage-failed' &&
           !this.disposed
-        )
+        ) {
           await this.recoverFromStorageFailure()
+        }
         console.error('[collaboration] reconnect attempt failed:', error)
         this.reconciling = false
         this.enterDisconnectedEpoch()
       } finally {
         await next?.composition.collaboration.dispose().catch(() => undefined)
         this.reconciling = false
-        if (this.recoveryMode) this.applyOutboxState(this.outbox.getState())
+        if (this.recoveryMode) {
+          this.applyOutboxState(this.outbox.getState())
+        }
         this.reconnectPromise = undefined
         if (!this.disposed && this.state.connection !== 'connected') {
           this.scheduleReconnect()
@@ -994,7 +1064,9 @@ class CollaborationSessionController {
   }
 
   private clearReconnectTimer(): void {
-    if (!this.reconnectTimer) return
+    if (!this.reconnectTimer) {
+      return
+    }
     clearTimeout(this.reconnectTimer)
     this.reconnectTimer = undefined
   }
@@ -1017,7 +1089,9 @@ class CollaborationSessionController {
       nextConnection
     )
 
-    if (!transition.changed) return false
+    if (!transition.changed) {
+      return false
+    }
     if (nextConnection === 'disconnected') {
       this.disconnectedEpoch += 1
     }
@@ -1046,7 +1120,9 @@ class CollaborationSessionController {
 
   private applyOutboxState(outboxState: PublicationOutboxState): void {
     let sync: CollaborationSyncState = outboxState.status
-    if (this.reconciling) sync = 'reconciling'
+    if (this.reconciling) {
+      sync = 'reconciling'
+    }
     let notification = this.state.notification
     if (
       outboxState.status === 'storage-failed' &&
@@ -1237,27 +1313,35 @@ export const createCollaborationDocumentSession = (
 
   return Object.freeze({
     prepare: async (bridge: CoreCollaborationBridge) => {
-      if (disposed) throw new Error('Document session is disposed')
+      if (disposed) {
+        throw new Error('Document session is disposed')
+      }
       if (preparation) {
         throw new Error('[collaboration] document session is already prepared')
       }
       preparation = prepareCollaborationController(mode, bridge)
       const next = await preparation
-      if (disposed) throw new Error('Document session is disposed')
+      if (disposed) {
+        throw new Error('Document session is disposed')
+      }
       prepared = next
       const checkpoint = prepared.bootstrap.checkpoint
       return {
         loadSource: {
           name: 'SocketDocumentSession',
           load: async () => {
-            if (disposed) throw new Error('Document session is disposed')
+            if (disposed) {
+              throw new Error('Document session is disposed')
+            }
             return checkpoint
           }
         }
       }
     },
     activate: async () => {
-      if (disposed) throw new Error('Document session is disposed')
+      if (disposed) {
+        throw new Error('Document session is disposed')
+      }
       if (!prepared) {
         throw new Error(
           '[collaboration] document session must be prepared before activation'
@@ -1284,7 +1368,9 @@ export const createCollaborationDocumentSession = (
 export const startCollaboration = (
   mode: CollaborationMode
 ): Promise<CollaborationDebugHandle> => {
-  if (startPromise) return startPromise
+  if (startPromise) {
+    return startPromise
+  }
   const pendingStart = prepareCollaborationDocumentSession(mode)
     .then((prepared) => prepared.activate())
     .catch((error) => {

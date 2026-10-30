@@ -115,7 +115,9 @@ describe('M2 experiment preflight and snapshot', () => {
     const emptyBody = example.workcell.bodies.find(
       (body) => body.role === 'fixture'
     )
-    if (!emptyBody) throw new Error('Expected fixture')
+    if (!emptyBody) {
+      throw new Error('Expected fixture')
+    }
     const workcell = {
       ...example.workcell,
       bodies: example.workcell.bodies.map((body) =>
@@ -133,7 +135,9 @@ describe('M2 experiment preflight and snapshot', () => {
     const example = createSyntheticExample()
     const base = definition()
     const excluded = base.scope.influencingBodyIds[0]
-    if (!excluded) throw new Error('Expected influencing fixture')
+    if (!excluded) {
+      throw new Error('Expected influencing fixture')
+    }
     const unacknowledged: ExperimentDefinition = {
       ...base,
       scope: {
@@ -231,7 +235,9 @@ describe('M2 experiment preflight and snapshot', () => {
     const example = createSyntheticExample()
     const base = definition()
     const first = base.scope.excludedPairs[0]
-    if (!first) throw new Error('Expected exclusion')
+    if (!first) {
+      throw new Error('Expected exclusion')
+    }
     for (const excludedPairs of [
       [{ ...first, reason: '' }],
       [first, { ...first }],

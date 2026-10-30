@@ -77,8 +77,9 @@ class Group<T extends GroupAttrs = GroupAttrs>
 
   private canonicalMembership() {
     const membership = memberships.get(this)
-    if (!membership)
+    if (!membership) {
       throw new Error('[Group] Canonical membership is not initialized')
+    }
     return membership
   }
 

@@ -263,7 +263,9 @@ const createGradientResource = (data: unknown): PixiOwnedResource => {
 export const getPixiGradientResourceKey = (
   descriptor: RenderEngineResourceDescriptor
 ): string | undefined => {
-  if (descriptor.kind !== 'gradient') return undefined
+  if (descriptor.kind !== 'gradient') {
+    return undefined
+  }
   const options = parseGradientData(descriptor.data)
   if (
     options.colorStops.some(
@@ -272,24 +274,27 @@ export const getPixiGradientResourceKey = (
         (typeof stop.color === 'number' && !Number.isFinite(stop.color)) ||
         (typeof stop.color !== 'string' && typeof stop.color !== 'number')
     )
-  )
+  ) {
     return undefined
+  }
   const points = [
     options.start,
     options.end,
     options.center,
     options.outerCenter
   ]
-  if (points.some((point) => point !== undefined && !isGradientPoint(point)))
+  if (points.some((point) => point !== undefined && !isGradientPoint(point))) {
     return undefined
+  }
   const scalars = [
     options.innerRadius,
     options.outerRadius,
     options.radiusY,
     options.rotation
   ]
-  if (scalars.some((value) => value !== undefined && !Number.isFinite(value)))
+  if (scalars.some((value) => value !== undefined && !Number.isFinite(value))) {
     return undefined
+  }
   return JSON.stringify([
     options.type,
     options.textureSpace,

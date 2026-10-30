@@ -17,7 +17,9 @@ export const createBoardController = (
   let disposed = false
   let requestedSelection: string | null = null
   const status = (value: AppStatus): void => {
-    if (!disposed) core.setUIProperty(UIProperties.status, { ...value })
+    if (!disposed) {
+      core.setUIProperty(UIProperties.status, { ...value })
+    }
   }
   const reportError = (error: unknown): void =>
     status({
@@ -29,9 +31,12 @@ export const createBoardController = (
       disposed ||
       !core.getUIProperty(UIProperties.ready) ||
       core.getUIProperty(UIProperties.pending)
-    )
+    ) {
       return false
-    if (committingDraft || !draft) return true
+    }
+    if (committingDraft || !draft) {
+      return true
+    }
     committingDraft = true
     try {
       return draft.commit()
@@ -43,7 +48,9 @@ export const createBoardController = (
     }
   }
   const applySelection = (id: string): void => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
     if (!projection.getItem(id)) {
       requestedSelection = id
       return
@@ -52,11 +59,14 @@ export const createBoardController = (
     core.setUIProperty(UIProperties.selectedId, id)
   }
   const unsubscribe = projection.subscribeChanges(() => {
-    if (requestedSelection && projection.getItem(requestedSelection))
+    if (requestedSelection && projection.getItem(requestedSelection)) {
       applySelection(requestedSelection)
+    }
   })
   const edit = (command: () => unknown, message: string): boolean => {
-    if (!prepareAction()) return false
+    if (!prepareAction()) {
+      return false
+    }
     try {
       command()
       status({ tone: 'ok', message })
@@ -67,14 +77,18 @@ export const createBoardController = (
     }
   }
   const run = async (command: () => Promise<void>): Promise<void> => {
-    if (!prepareAction()) return
+    if (!prepareAction()) {
+      return
+    }
     core.setUIProperty(UIProperties.pending, true)
     try {
       await command()
     } catch (error) {
       reportError(error)
     } finally {
-      if (!disposed) core.setUIProperty(UIProperties.pending, false)
+      if (!disposed) {
+        core.setUIProperty(UIProperties.pending, false)
+      }
     }
   }
   return {
@@ -83,13 +97,19 @@ export const createBoardController = (
     prepareAction,
     registerDraft: (commit: () => boolean): (() => void) => {
       const participant = { commit }
-      if (!disposed) draft = participant
+      if (!disposed) {
+        draft = participant
+      }
       return () => {
-        if (draft === participant) draft = null
+        if (draft === participant) {
+          draft = null
+        }
       }
     },
     selectItem: (id: string): void => {
-      if (prepareAction()) applySelection(id)
+      if (prepareAction()) {
+        applySelection(id)
+      }
     },
     addItem: (): void => {
       edit(

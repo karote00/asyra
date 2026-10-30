@@ -14,7 +14,9 @@ import { operationInputIssue } from '../operation-input-schema'
 /** Real App inspection/evidence/review path; only the pixel renderer is substituted. */
 async function verifySelectedReviewFlow() {
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   const { default: core } = await import('../../src/contexts')
   const { applyPreset, PresetProfiles, PresetDefaults } =
     await import('@asyra/preset')
@@ -60,7 +62,9 @@ async function verifySelectedReviewFlow() {
     .spyOn(core, 'captureElementSnapshot')
     .mockImplementation((id) => {
       captures.push(id)
-      if (id === failTarget) throw new Error('Injected pixel capture failure')
+      if (id === failTarget) {
+        throw new Error('Injected pixel capture failure')
+      }
       return {
         type: 'snapshot',
         width: 1,
@@ -103,7 +107,9 @@ async function verifySelectedReviewFlow() {
         batch.actions.map(async (action) => {
           dispatched.push(action.name)
           const owner = actions.find((entry) => entry.name === action.name)
-          if (!owner) throw new Error('Unexpected mutation dispatch')
+          if (!owner) {
+            throw new Error('Unexpected mutation dispatch')
+          }
           return {
             actionId: action.id,
             actionName: action.name,
@@ -136,7 +142,9 @@ async function verifySelectedReviewFlow() {
     signal = signals.signal
   ) => {
     const definition = tools.definitions.find((entry) => entry.name === name)
-    if (!definition) throw new Error('Missing tool ' + name)
+    if (!definition) {
+      throw new Error('Missing tool ' + name)
+    }
     const reply = await invokeLocalTool(tools, definition, input, signal)
     bytes +=
       Buffer.byteLength(JSON.stringify(input)) + Buffer.byteLength(reply.text)
@@ -148,7 +156,9 @@ async function verifySelectedReviewFlow() {
     const value = JSON.parse(reply.text)
     if (name === 'review_drawing' && value.reviewOperation) {
       const contract = resultContracts.get(value.reviewOperation)
-      if (contract) expect(operationInputIssue(value, contract)).toBeUndefined()
+      if (contract) {
+        expect(operationInputIssue(value, contract)).toBeUndefined()
+      }
     }
     return value
   }
@@ -171,14 +181,18 @@ async function verifySelectedReviewFlow() {
     resultContracts.set(operation, selected.usageGuide.results)
     const resultProperties: Record<string, unknown>[] = []
     const inspect = (value: unknown): void => {
-      if (!value || typeof value !== 'object') return
-      if ('properties' in value)
+      if (!value || typeof value !== 'object') {
+        return
+      }
+      if ('properties' in value) {
         resultProperties.push(value.properties as Record<string, unknown>)
+      }
       Object.values(value).forEach(inspect)
     }
     const inspectInput = (value: Record<string, unknown>): void => {
-      if (value.properties)
+      if (value.properties) {
         resultProperties.push(value.properties as Record<string, unknown>)
+      }
       if (typeof value.$ref === 'string') {
         const target = value.$ref
           .slice(2)
@@ -190,12 +204,15 @@ async function verifySelectedReviewFlow() {
           )
         inspectInput(target)
       }
-      for (const mode of ['oneOf', 'anyOf', 'allOf'])
-        if (Array.isArray(value[mode])) value[mode].forEach(inspectInput)
+      for (const mode of ['oneOf', 'anyOf', 'allOf']) {
+        if (Array.isArray(value[mode])) {
+          value[mode].forEach(inspectInput)
+        }
+      }
     }
     inspectInput(selected.usageGuide.parameters)
     if (operation === 'capture') {
-      for (const field of ['checks', 'bindChecks'])
+      for (const field of ['checks', 'bindChecks']) {
         expect(
           resultProperties.some(
             (properties) =>
@@ -203,6 +220,7 @@ async function verifySelectedReviewFlow() {
           ),
           `capture input ${field}`
         ).toBe(false)
+      }
     }
     resultProperties.length = 0
     inspect(selected.usageGuide.results)
@@ -215,9 +233,11 @@ async function verifySelectedReviewFlow() {
         `${operation} result field ${field}`
       ).toBe(operation === 'record')
     }
-    if (operation !== 'record')
+    if (operation !== 'record') {
       expect(selected.invocationExample.invocation).toBeDefined()
-    else expect(selected.usageGuide.instructions).toContain('next.arguments')
+    } else {
+      expect(selected.usageGuide.instructions).toContain('next.arguments')
+    }
     expect(selected.usageGuide.instructions).toContain('accepted')
     expect(selected.usageGuide.recovery).toMatch(/replay/i)
     return selected
@@ -414,7 +434,9 @@ async function verifySelectedReviewFlow() {
     let text = ''
     while (fullValue.contentDelivery) {
       text += fullValue.contentDelivery.text
-      if (!fullValue.contentDelivery.next) break
+      if (!fullValue.contentDelivery.next) {
+        break
+      }
       const next = fullValue.contentDelivery.next
       fullValue = await call(next.tool, next.arguments)
     }
@@ -496,7 +518,9 @@ async function verifySelectedReviewFlow() {
       let serialized = ''
       while (page.contentDelivery) {
         serialized += page.contentDelivery.text
-        if (!page.contentDelivery.next) break
+        if (!page.contentDelivery.next) {
+          break
+        }
         const next = page.contentDelivery.next
         page = await call(next.tool, next.arguments)
       }
@@ -730,8 +754,9 @@ async function verifySelectedReviewFlow() {
     const captureCount = captures.length
     const retry = structuredClone(changed.next.arguments)
     expect(operationInputIssue(retry, canonical)).toBeTruthy()
-    for (const check of retry.bindChecks)
+    for (const check of retry.bindChecks) {
       check.supersedes.reason = 'Inspect the changed local region explicitly'
+    }
     expect(operationInputIssue(retry, canonical)).toBeUndefined()
     const aborted = new AbortController()
     aborted.abort()
@@ -832,7 +857,9 @@ async function verifySelectedReviewFlow() {
   } finally {
     capture.mockRestore()
     evidence.dispose()
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 }
 

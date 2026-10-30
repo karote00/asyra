@@ -138,12 +138,12 @@ test('routes and artifacts resolve to one owner and declared consumers', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from)
-      if (route.to) assert.ok(artifact.consumerStepIds.includes(route.to))
+      if (route.to) {assert.ok(artifact.consumerStepIds.includes(route.to))}
     })
   })
 
@@ -154,7 +154,7 @@ test('routes and artifacts resolve to one owner and declared consumers', () => {
       assert.ok(stepIds.has(consumerId), `${artifact.id} ${consumerId}`)
       assert.ok(step(consumerId).inputs.includes(artifact.id))
     })
-    if (!artifact.terminal) assert.ok(artifact.consumerStepIds.length > 0)
+    if (!artifact.terminal) {assert.ok(artifact.consumerStepIds.length > 0)}
   })
 })
 

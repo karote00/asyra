@@ -12,7 +12,9 @@ export const undoRedoFeature = defineFeature(
     exclusive: true,
     execution: async (snapshot: SystemContextSnapshotWithDetail) => {
       const direction = snapshot.detail?.historyDirection
-      if (direction !== 'undo' && direction !== 'redo') return null
+      if (direction !== 'undo' && direction !== 'redo') {
+        return null
+      }
       if (direction === 'redo') {
         await historyApis.redo()
         return { redid: true }

@@ -28,15 +28,17 @@ function resolveSource(snapshot, admission, contract, executionContext) {
     Object.hasOwn(snapshot, 'executionSource') ||
     Object.hasOwn(admission ?? {}, 'executionSource')
   if (derived && !admission) {
-    if (!contract)
+    if (!contract) {
       throw new Error(
         'Derived execution requires direct trusted source admission'
       )
+    }
     if (
       Object.hasOwn(snapshot, 'sourceRoot') &&
       snapshot.sourceRoot !== executionContext?.sourceRoot
-    )
+    ) {
       throw new Error('Derived source location conflicts with trusted context')
+    }
     const admitted = sourceOwner.validateSourceSnapshot(
       snapshot,
       contract,
@@ -99,15 +101,17 @@ function resolveSource(snapshot, admission, contract, executionContext) {
       execution.verificationSourceDigest !==
         admission.verificationSource.digest ||
       (scoped && execution.runtimeAuthorityDigest !== authority.digest)
-    )
+    ) {
       throw new Error('Derived execution admission does not bind this snapshot')
+    }
   }
   if (!Object.hasOwn(snapshot, 'runtimeSource')) {
-    if (admission)
+    if (admission) {
       throw new Error('Runtime source admission lacks source identity')
+    }
     return { runtime: undefined, authority: undefined, source: null }
   }
-  if (!admission)
+  if (!admission) {
     return {
       runtime: sourceOwner.validateRuntimeSource(
         snapshot,
@@ -117,6 +121,7 @@ function resolveSource(snapshot, admission, contract, executionContext) {
       authority: snapshot.runtimeAuthority,
       source: null
     }
+  }
   const runtime = snapshot.runtimeSource
   const admitted = admission.runtimeSource
   const authorityPresent = Object.hasOwn(snapshot, 'runtimeAuthority')
@@ -157,8 +162,9 @@ function resolveSource(snapshot, admission, contract, executionContext) {
       snapshot.lockfileDigest ||
     (snapshot.sourceRoot &&
       !snapshot.sourceRoot.startsWith(admission.repository + path.sep))
-  )
+  ) {
     throw new Error('Runtime source admission does not bind this snapshot')
+  }
   return { runtime: admitted, authority, source: null }
 }
 function runtimeExecutionMismatch(
@@ -206,10 +212,12 @@ function assessSourceEvidence(
     !expected.length ||
     new Set(flowIds).size !== flowIds.length ||
     flowIds.some((id) => !contract.flows.some((flow) => flow.id === id))
-  )
+  ) {
     issues.push('Invalid or empty selected flow set')
-  if (snapshot.contractDigest !== contract.digest)
+  }
+  if (snapshot.contractDigest !== contract.digest) {
     issues.push('Contract provenance mismatch')
+  }
   const identity = runner.identity
   const hasRuntime =
     Object.hasOwn(snapshot, 'executionSource') ||
@@ -239,8 +247,9 @@ function assessSourceEvidence(
         flowIds,
         scenario
       )
-    )
+    ) {
       issues.push(RUNTIME_EXECUTION_ISSUE)
+    }
   }
   const fingerprint = (value) =>
     typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
@@ -259,8 +268,9 @@ function assessSourceEvidence(
     !contract.scenarios.some((item) => item.id === scenario) ||
     !Array.isArray(identity.flowIds) ||
     JSON.stringify(identity.flowIds) !== JSON.stringify(flowIds)
-  )
+  ) {
     issues.push('Execution provenance mismatch')
+  }
   if (
     !runner.environment ||
     ['node', 'platform', 'architecture', 'vitest'].some(
@@ -268,13 +278,18 @@ function assessSourceEvidence(
         typeof runner.environment[key] !== 'string' || !runner.environment[key]
     ) ||
     runner.environment.vitest !== runner.version
-  )
+  ) {
     issues.push('Missing or inconsistent runner environment')
-  if (!fingerprint(runner.reportDigest))
+  }
+  if (!fingerprint(runner.reportDigest)) {
     issues.push('Missing report fingerprint')
-  if (runner.reason) issues.push('Runner stopped: ' + runner.reason)
-  if (runner.reportError)
+  }
+  if (runner.reason) {
+    issues.push('Runner stopped: ' + runner.reason)
+  }
+  if (runner.reportError) {
     issues.push('Report unavailable: ' + runner.reportError)
+  }
   const allCases = new Map(contract.cases.map((item) => [item.testName, item]))
   let observedCount = 0
   let failedCount = 0
@@ -286,17 +301,20 @@ function assessSourceEvidence(
   ) {
     issues.push('Malformed or missing report')
   } else {
-    if (report.testResults.length !== 1)
+    if (report.testResults.length !== 1) {
       issues.push('Unexpected test suite inventory')
+    }
     for (const suite of report.testResults) {
       if (!object(suite) || !Array.isArray(suite.assertionResults)) {
         issues.push('Malformed suite')
         continue
       }
-      if (suite.name !== path.join(snapshot.sourceRoot, contract.testFile))
+      if (suite.name !== path.join(snapshot.sourceRoot, contract.testFile)) {
         issues.push('Unexpected test source')
-      if (!['passed', 'failed', 'pending'].includes(suite.status))
+      }
+      if (!['passed', 'failed', 'pending'].includes(suite.status)) {
         issues.push('Unknown suite status')
+      }
       let suiteFailures = 0
       for (const assertion of suite.assertionResults) {
         observedCount++
@@ -309,7 +327,9 @@ function assessSourceEvidence(
           issues.push('Malformed assertion')
           continue
         }
-        if (assertion.status === 'passed') passedCount++
+        if (assertion.status === 'passed') {
+          passedCount++
+        }
         if (assertion.status === 'failed') {
           failedCount++
           suiteFailures++
@@ -320,34 +340,42 @@ function assessSourceEvidence(
           continue
         }
         if (!flowIds.includes(item.flowId)) {
-          if (!['pending', 'skipped', 'todo'].includes(assertion.status))
+          if (!['pending', 'skipped', 'todo'].includes(assertion.status)) {
             issues.push('Unrequested test executed: ' + assertion.fullName)
+          }
           continue
         }
         const matches = observations.get(item.id) ?? []
         matches.push(assertion)
         observations.set(item.id, matches)
       }
-      if (suite.status === 'failed' && !suiteFailures)
+      if (suite.status === 'failed' && !suiteFailures) {
         issues.push('Suite failed without a required assertion failure')
-      if (suiteFailures && suite.status !== 'failed')
+      }
+      if (suiteFailures && suite.status !== 'failed') {
         issues.push('Suite status masks failed assertions')
+      }
     }
     if (
       report.numTotalTests !== observedCount ||
       report.numFailedTests !== failedCount ||
       report.numPassedTests !== passedCount
-    )
+    ) {
       issues.push('Runner summary disagrees with observations')
-    if (report.numRuntimeErrorTestSuites > 0)
+    }
+    if (report.numRuntimeErrorTestSuites > 0) {
       issues.push('Runner reported runtime errors')
-    if (!report.success && failedCount === 0)
+    }
+    if (!report.success && failedCount === 0) {
       issues.push('Runner reported unsuccessful execution')
-    if (report.success && failedCount > 0)
+    }
+    if (report.success && failedCount > 0) {
       issues.push('Runner success masks failed assertions')
+    }
   }
-  if (runner.code !== 0 && failedCount === 0)
+  if (runner.code !== 0 && failedCount === 0) {
     issues.push('Unsuccessful runner exit')
+  }
   const cases = expected.map((item) => {
     const matches = observations.get(item.id) ?? []
     if (matches.length !== 1) {
@@ -357,8 +385,9 @@ function assessSourceEvidence(
       return { ...item, status: 'unknown', failures: [] }
     }
     const observed = matches[0]
-    if (!['passed', 'failed'].includes(observed.status))
+    if (!['passed', 'failed'].includes(observed.status)) {
       issues.push('Required case was not executed: ' + item.id)
+    }
     const failures = Array.isArray(observed.failureMessages)
       ? observed.failureMessages
           .filter((value) => typeof value === 'string')
@@ -373,16 +402,20 @@ function assessSourceEvidence(
     }
   })
   // A failing assertion always rejects the gate even if a wrapper returned zero.
-  if (failedCount > 0 && runner.code === 0)
+  if (failedCount > 0 && runner.code === 0) {
     issues.push('Runner exit masked failed assertions')
+  }
   const statusFor = (items) => {
-    if (items.some((item) => item.status === 'failed')) return 'failed'
+    if (items.some((item) => item.status === 'failed')) {
+      return 'failed'
+    }
     if (
       issues.length ||
       !items.length ||
       items.some((item) => item.status !== 'passed')
-    )
+    ) {
       return 'unknown'
+    }
     return 'passed'
   }
   const evidence = {
@@ -415,22 +448,25 @@ function validateStoredEvidence(contract, record, sourceAdmission) {
     record.phase === 'completed' &&
     derived &&
     (!sourceAdmission || record.snapshot?.contractDigest !== contract.digest)
-  )
+  ) {
     throw new Error('Stored derived execution admission is unavailable')
+  }
   if (
     record.phase !== 'completed' ||
     record.snapshot?.contractDigest !== contract.digest
-  )
+  ) {
     return
+  }
   if (
     record.format >= 2 &&
     ['mappingVersion', 'architectureVersion'].some(
       (key) => record.snapshot[key] !== contract[key]
     )
-  )
+  ) {
     throw new Error(
       'Stored evidence provenance disagrees with the current contract'
     )
+  }
   const hasRuntime =
     Object.hasOwn(record.snapshot, 'runtimeSource') ||
     Object.hasOwn(record.runner?.identity ?? {}, 'runtimeSourceDigest') ||
@@ -458,21 +494,25 @@ function validateStoredEvidence(contract, record, sourceAdmission) {
       !Array.isArray(record.evidence?.issues) ||
       record.evidence.issues.includes(RUNTIME_EXECUTION_ISSUE) !== mismatch ||
       (mismatch && record.evidence.status === 'passed')
-    )
+    ) {
       throw new Error('Stored runtime evidence provenance mismatch')
+    }
   }
   const expected = contract.cases.filter((item) =>
     record.flowIds.includes(item.flowId)
   )
   const evidence = record.evidence
   const statusFor = (items) => {
-    if (items.some((item) => item.status === 'failed')) return 'failed'
+    if (items.some((item) => item.status === 'failed')) {
+      return 'failed'
+    }
     if (
       evidence.issues.length ||
       !items.length ||
       items.some((item) => item.status !== 'passed')
-    )
+    ) {
       return 'unknown'
+    }
     return 'passed'
   }
   if (
@@ -505,10 +545,11 @@ function validateStoredEvidence(contract, record, sourceAdmission) {
         ).length !== 1
     ) ||
     evidence.status !== statusFor(evidence.cases)
-  )
+  ) {
     throw new Error(
       'Stored evidence inventory disagrees with the current contract'
     )
+  }
 }
 
 module.exports = {

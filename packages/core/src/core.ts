@@ -383,16 +383,21 @@ class Core implements CoreAPIs {
     this.runtimeCleanups.set(key, cleanup)
     let registered = true
     return () => {
-      if (!registered) return
+      if (!registered) {
+        return
+      }
       registered = false
-      if (this.runtimeCleanups.get(key) === cleanup)
+      if (this.runtimeCleanups.get(key) === cleanup) {
         this.runtimeCleanups.delete(key)
+      }
     }
   }
 
   /** Terminal handoff; the App must stop admission and call outside Feature work. */
   resetRuntime(): Promise<Core> {
-    if (this.runtimeResetPromise) return this.runtimeResetPromise
+    if (this.runtimeResetPromise) {
+      return this.runtimeResetPromise
+    }
     try {
       this.lifetime.assertResetReady()
     } catch (error) {
@@ -430,7 +435,9 @@ class Core implements CoreAPIs {
       ])
       await this.lifetime.drain()
       for (const result of quiescence) {
-        if (result.status === 'rejected') throw result.reason
+        if (result.status === 'rejected') {
+          throw result.reason
+        }
       }
       this.lifetime.state = 'retiring'
       this.renderEngineProviderToken = null
@@ -442,7 +449,9 @@ class Core implements CoreAPIs {
       retire('events', () => this.retireOwnedEvents())
       retire('input', () => this.deps.inputSystem.resetRuntime())
       retire('render', () => {
-        if (this.renderer !== this.defaultRenderer) this.renderer.destroy()
+        if (this.renderer !== this.defaultRenderer) {
+          this.renderer.destroy()
+        }
         this.deps.render.resetRuntime()
         this.attachedCanvas?.remove()
         this.attachedCanvas = null
@@ -471,7 +480,9 @@ class Core implements CoreAPIs {
       } finally {
         this.lifetime.cleanupActive = false
       }
-      if (failures.length > 0) throw failures[0]
+      if (failures.length > 0) {
+        throw failures[0]
+      }
       this.loadSource = null
       this.saveHooks = []
       this.loadHooks = []
@@ -485,7 +496,9 @@ class Core implements CoreAPIs {
       beginFeatureSystemRuntime()
       beginSharedRenderRuntime()
       this.lifetime.state = 'retired'
-      if (core === this.runtimeFacade) core = successor
+      if (core === this.runtimeFacade) {
+        core = successor
+      }
       return successor
     } catch (cause) {
       this.lifetime.state = 'failed'
@@ -514,13 +527,16 @@ class Core implements CoreAPIs {
     }
     for (const [name, registration] of events) {
       try {
-        if (eventRegistry.get(name) === registration)
+        if (eventRegistry.get(name) === registration) {
           eventRegistry.unregister(name)
+        }
       } catch (error) {
         failures.push(error)
       }
     }
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 
   /** Set an advanced full renderer replacement before startup. */
@@ -576,7 +592,9 @@ class Core implements CoreAPIs {
     const eventNames = Object.keys(combinations)
     let disposed = false
     return this.lifetime.cleanup(() => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       disposed = true
       eventNames.forEach((eventName) => {
         this.deps.inputSystem.registry.unregister(eventName)
@@ -591,7 +609,9 @@ class Core implements CoreAPIs {
 
   getElementMetadata(elementId: string) {
     const element = this.deps.sceneTree.getElementById(elementId)
-    if (!element) return undefined
+    if (!element) {
+      return undefined
+    }
     const type = element.get('type')
     const childCount = this.isContainerType(type)
       ? (element as Group).getCanonicalChildCount()
@@ -613,10 +633,11 @@ class Core implements CoreAPIs {
       offset < 0 ||
       !Number.isSafeInteger(limit) ||
       limit < 1
-    )
+    ) {
       throw new Error(
         'Child page requires a nonnegative offset and positive limit'
       )
+    }
     const element = this.deps.sceneTree.getElementById(elementId)
     const children =
       element && this.isContainerType(element.get('type'))
@@ -677,8 +698,9 @@ class Core implements CoreAPIs {
     const activeIds = options?.includeRetired
       ? [...componentIds].filter((id) => this.deps.props.getPropertyById(id))
       : [...componentIds]
-    for (const id of this.deps.props.resolvePropertyAncestorIds(activeIds))
+    for (const id of this.deps.props.resolvePropertyAncestorIds(activeIds)) {
       componentIds.add(id)
+    }
     for (const propertyId of componentIds) {
       for (const relation of this.deps.sceneTree.getElementPropertyRelations(
         propertyId
@@ -760,7 +782,9 @@ class Core implements CoreAPIs {
 
   setCanvasCursor(cursor: string): boolean {
     const canvas = this.getCanvas()
-    if (!canvas) return false
+    if (!canvas) {
+      return false
+    }
     canvas.style.cursor = cursor
     return true
   }
@@ -879,7 +903,9 @@ class Core implements CoreAPIs {
   subscribeToFrameComplete(subscriber: () => void): () => void {
     return this.lifetime.cleanup(
       this.deps.render.subscribeToFrameComplete(() => {
-        if (this.lifetime.isUsable()) subscriber()
+        if (this.lifetime.isUsable()) {
+          subscriber()
+        }
       })
     )
   }
@@ -897,7 +923,9 @@ class Core implements CoreAPIs {
   ): () => void {
     return this.lifetime.cleanup(
       this.deps.factory.subscribeToSharedPublication((publication) => {
-        if (this.lifetime.isUsable()) subscriber(publication)
+        if (this.lifetime.isUsable()) {
+          subscriber(publication)
+        }
       })
     )
   }
@@ -907,7 +935,9 @@ class Core implements CoreAPIs {
   ): () => void {
     return this.lifetime.cleanup(
       this.deps.factory.subscribeToTransactionStatus((status) => {
-        if (this.lifetime.isUsable()) subscriber(status)
+        if (this.lifetime.isUsable()) {
+          subscriber(status)
+        }
       })
     )
   }
@@ -918,7 +948,9 @@ class Core implements CoreAPIs {
   ): () => void {
     return this.lifetime.cleanup(
       this.deps.factory.observeSharedDataChannel(channel, (change) => {
-        if (this.lifetime.isUsable()) subscriber(change)
+        if (this.lifetime.isUsable()) {
+          subscriber(change)
+        }
       })
     )
   }
@@ -939,7 +971,9 @@ class Core implements CoreAPIs {
     origin,
     slices
   }: ApplyRemoteCanonicalChangeSlicesInput): Promise<void> {
-    if (slices.length === 0) return
+    if (slices.length === 0) {
+      return
+    }
     let replayMode: 'redo' | 'rollback' | 'undo' | null = null
     if (origin === 'undo' || origin === 'redo') {
       replayMode = origin
@@ -1218,7 +1252,9 @@ class Core implements CoreAPIs {
     handler: (payload?: TPayload, options?: TOptions) => void
   ): Subscription {
     const subscription = registration.subscribe((payload, options) => {
-      if (this.lifetime.isUsable()) handler(payload, options)
+      if (this.lifetime.isUsable()) {
+        handler(payload, options)
+      }
     })
     this.ownedEventSubscriptions.add(subscription)
     subscription.add(() => this.ownedEventSubscriptions.delete(subscription))
@@ -1847,14 +1883,18 @@ class Core implements CoreAPIs {
       ])
       const aliasIsProjected = (alias: string) => {
         const field = fieldsByKey.get(alias)
-        if (field) return field.project
+        if (field) {
+          return field.project
+        }
         return definition.allowDynamicKeys && !dynamicReservedKeys.has(alias)
       }
 
       this.registrationGraph
         .getIncomingRelations(target)
         .forEach((relation) => {
-          if (relation.source.kind !== 'component') return
+          if (relation.source.kind !== 'component') {
+            return
+          }
           const componentRelation = getComponentPropertyRelationsRuntime(
             relation.source.key
           ).find(
@@ -1872,7 +1912,9 @@ class Core implements CoreAPIs {
           }
 
           componentRelation.property.alias?.forEach((alias) => {
-            if (aliasIsProjected(alias)) return
+            if (aliasIsProjected(alias)) {
+              return
+            }
             this.failStructuralPropertyRelation(
               relation.source,
               relation.name,
@@ -1883,7 +1925,9 @@ class Core implements CoreAPIs {
         })
 
       getPropertyChildRelationsRuntime(type).forEach((relation) => {
-        if (fieldsByKey.get(relation.key)?.project) return
+        if (fieldsByKey.get(relation.key)?.project) {
+          return
+        }
         this.failStructuralPropertyRelation(
           relation.source,
           relation.name,
@@ -2023,7 +2067,9 @@ class Core implements CoreAPIs {
     registration?: RegistrationDefinitionMetadata,
     reservedRelationNames: readonly string[] = []
   ): void {
-    if (!registration?.relations?.length) return
+    if (!registration?.relations?.length) {
+      return
+    }
 
     const relationNames = new Set([
       ...reservedRelationNames,
@@ -2072,7 +2118,9 @@ class Core implements CoreAPIs {
     relationName: string,
     target?: RegistrationRef
   ): void {
-    if (!this.registrationGraph.hasPendingCleanup(ref)) return
+    if (!this.registrationGraph.hasPendingCleanup(ref)) {
+      return
+    }
     throw new RegistrationRelationError({
       ok: false,
       code: 'UNREGISTER_FAILED',
@@ -2226,7 +2274,9 @@ class Core implements CoreAPIs {
 
   private assertPropertyTypeUnused(type: string): void {
     const propertyIds = this.deps.props.getPropertyIdsByType(type)
-    if (propertyIds.length === 0) return
+    if (propertyIds.length === 0) {
+      return
+    }
     throw new RegistrationRelationError({
       ok: false,
       code: 'REGISTRATION_IN_USE',
@@ -2239,9 +2289,13 @@ class Core implements CoreAPIs {
   private assertComponentTypeUnused(type: string): void {
     const activeIds: string[] = []
     this.deps.sceneTree.getAllElements().forEach((element) => {
-      if (element.get('type') === type) activeIds.push(element.get('id'))
+      if (element.get('type') === type) {
+        activeIds.push(element.get('id'))
+      }
     })
-    if (activeIds.length === 0) return
+    if (activeIds.length === 0) {
+      return
+    }
     throw new RegistrationRelationError({
       ok: false,
       code: 'REGISTRATION_IN_USE',
@@ -2261,7 +2315,9 @@ class Core implements CoreAPIs {
 
   /** Validate against the current composition without applying a document. */
   preflightLoad(data: unknown): readonly Readonly<LoadValidationDiagnostic>[] {
-    if (data == null) return Object.freeze([])
+    if (data == null) {
+      return Object.freeze([])
+    }
     const { diagnostics } = this.prepareLoadedData(data)
     return Object.freeze(diagnostics.map((item) => Object.freeze({ ...item })))
   }

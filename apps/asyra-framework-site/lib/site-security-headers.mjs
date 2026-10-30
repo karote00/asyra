@@ -7,7 +7,9 @@ export const siteSecurityHeaders = (environment = process.env) => {
   const scriptSources = ["'self'", "'unsafe-inline'"]
   const connectSources = ["'self'"]
   const imageSources = ["'self'", 'data:']
-  if (isDevelopment) scriptSources.push("'unsafe-eval'")
+  if (isDevelopment) {
+    scriptSources.push("'unsafe-eval'")
+  }
   if (resolveGoogleSiteServices(environment).measurementId) {
     scriptSources.push('https://www.googletagmanager.com')
     connectSources.push(

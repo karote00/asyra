@@ -10,7 +10,9 @@
       const graph = document.getElementById('flow')
       const detail = document.getElementById('detail')
       const target = globalThis.FLOW_INSPECTOR_WORKSPACE_ENTRY
-      if (!graph || !detail || !target) return
+      if (!graph || !detail || !target) {
+        return
+      }
       const lifetime = new AbortController()
       let disposed = false
       let observer
@@ -70,8 +72,12 @@
       const byId = (id) => document.getElementById(id)
       const node = (tag, text, className) => {
         const value = document.createElement(tag)
-        if (text !== undefined) value.textContent = text
-        if (className) value.className = className
+        if (text !== undefined) {
+          value.textContent = text
+        }
+        if (className) {
+          value.className = className
+        }
         return value
       }
       const listen = (element, type, callback) =>
@@ -100,11 +106,15 @@
         }
         const response = await fetch(route, options)
         const value = await response.json()
-        if (!response.ok) throw new Error(value.error ?? 'Request failed')
+        if (!response.ok) {
+          throw new Error(value.error ?? 'Request failed')
+        }
         return value
       }
       function showError(error) {
-        if (disposed) return
+        if (disposed) {
+          return
+        }
         let message = byId('proof-error')
         if (!message) {
           message = node('p', '', 'proof-error')
@@ -150,7 +160,7 @@
         failures.replaceChildren()
         if (item?.status === 'failed') {
           failures.append(node('strong', item.id + ' - failed'))
-          for (const failure of item.failures)
+          for (const failure of item.failures) {
             failures.append(
               node(
                 'pre',
@@ -160,6 +170,7 @@
                 )
               )
             )
+          }
         }
       }
       function projectEvidence() {
@@ -167,7 +178,9 @@
           compatible && record?.matchesCurrentContract ? record.evidence : null
         cases = new Map()
         for (const item of evidence?.cases ?? []) {
-          if (item.flowId !== selectedFlow.id) continue
+          if (item.flowId !== selectedFlow.id) {
+            continue
+          }
           // An invalid report cannot grant successful evidence to a card.
           const status =
             evidence.issues.length && item.status !== 'failed'
@@ -190,7 +203,9 @@
         cards.clear()
         menu.hidden = true
         for (const card of graph.querySelectorAll('.step-card')) {
-          if (!linkedFlows.has(card.dataset.stepId)) continue
+          if (!linkedFlows.has(card.dataset.stepId)) {
+            continue
+          }
           const status = node('span', 'Unknown', 'proof-badge')
           card.querySelector('.badge-row').prepend(status)
           cards.set(card.dataset.stepId, { card, badge: status })
@@ -199,7 +214,9 @@
         renderSelected()
       }
       function setContract(value) {
-        if (contract?.digest === value.digest) return
+        if (contract?.digest === value.digest) {
+          return
+        }
         if (
           value.targetId !== target.id ||
           value.flows.some((flow) =>
@@ -212,9 +229,12 @@
         ) {
           compatible = false
           recordSignature = ''
-          if (selectedFlow) renderRecord(null)
-          for (const button of panel.querySelectorAll('button'))
+          if (selectedFlow) {
+            renderRecord(null)
+          }
+          for (const button of panel.querySelectorAll('button')) {
             button.disabled = true
+          }
           menu.hidden = true
           throw new Error(
             'The canvas step contracts differ from the verification contract. Regenerate the workspace and reload before running work.'
@@ -229,8 +249,9 @@
           option.value = scenario.id
           byId('scenario').append(option)
         }
-        if (contract.scenarios.some((item) => item.id === previousScenario))
+        if (contract.scenarios.some((item) => item.id === previousScenario)) {
           byId('scenario').value = previousScenario
+        }
         linkedFlows.clear()
         const previous = selectedFlow?.id
         const select = byId('proof-flow')
@@ -251,7 +272,9 @@
         select.value = selectedFlow.id
         cases.clear()
         // Invalidation is explicit on contract replacement, separate from polling.
-        for (const { badge: status } of cards.values()) status.remove()
+        for (const { badge: status } of cards.values()) {
+          status.remove()
+        }
         recordSignature = ''
         bindCards()
       }
@@ -262,7 +285,9 @@
             value.snapshot?.digest +
             value.matchesCurrentContract
           : 'empty'
-        if (signature === recordSignature) return
+        if (signature === recordSignature) {
+          return
+        }
         recordSignature = signature
         record = value
         const evidence =
@@ -313,7 +338,7 @@
           (evidence?.expectedCount ?? contract.cases.length)
         let context =
           'No verified snapshot selected. Results cover only declared obligations, not task completion or deployment.'
-        if (record)
+        if (record) {
           context =
             record.scenario !== 'baseline'
               ? 'NEGATIVE DEMONSTRATION - ' +
@@ -321,14 +346,21 @@
                   ?.title ?? record.scenario) +
                 '. Only the captured demonstration is shown.'
               : 'Captured source evidence - limited to the selected flow obligations.'
-        if (record?.snapshot && !record.matchesCurrentContract)
+        }
+        if (record?.snapshot && !record.matchesCurrentContract) {
           context =
             'Historical contract differs. Current cards remain unverified; original evidence stays in its artifacts.'
-        if (record?.mode === 'candidate')
+        }
+        if (record?.mode === 'candidate') {
           context =
             'Candidate proof - acceptance requires an explicit version decision; current cards remain unverified.'
-        if (evidence?.issues.length) context += ' ' + evidence.issues.join(' ')
-        if (record?.error) context += ' ' + record.error
+        }
+        if (evidence?.issues.length) {
+          context += ' ' + evidence.issues.join(' ')
+        }
+        if (record?.error) {
+          context += ' ' + record.error
+        }
         byId('result-context').textContent = context
         byId('ci-result').textContent = record?.ci
           ? 'Verification: ' +
@@ -340,8 +372,9 @@
           : 'No CI aggregate selected'
         const ciLink = byId('ci-envelope-link')
         ciLink.hidden = !record?.ciEnvelopeDigest
-        if (record?.ciEnvelopeDigest)
+        if (record?.ciEnvelopeDigest) {
           ciLink.href = '/api/runs/' + record.id + '/artifacts/ci-envelope'
+        }
         byId('source-digest').textContent =
           record?.snapshot?.digest ?? 'No snapshot yet'
         byId('source-head').textContent = record?.snapshot?.head ?? '-'
@@ -369,9 +402,11 @@
         ]) {
           const link = byId(id)
           link.hidden = !available
-          if (available)
+          if (available) {
             link.href = '/api/runs/' + record.id + '/artifacts/' + name
-          else link.removeAttribute('href')
+          } else {
+            link.removeAttribute('href')
+          }
         }
         projectEvidence()
         if (failures.length) {
@@ -388,7 +423,9 @@
       }
       function renderHistory(state) {
         const signature = JSON.stringify(state.runs) + selectedId
-        if (historySignature === signature) return
+        if (historySignature === signature) {
+          return
+        }
         historySignature = signature
         byId('history').replaceChildren()
         for (const run of state.runs) {
@@ -412,8 +449,9 @@
       }
       function renderMapping(value) {
         mappingState = value
-        if (selectedReviewId === null)
+        if (selectedReviewId === null) {
           selectedReviewId = value.reviews[0]?.id ?? ''
+        }
         const signature =
           value.revision +
           ':' +
@@ -422,7 +460,9 @@
           selectedReviewId +
           ':' +
           mappingNotice
-        if (signature === mappingSignature) return
+        if (signature === mappingSignature) {
+          return
+        }
         mappingSignature = signature
         byId('mapping-baseline').textContent =
           'Accepted mapping revision ' +
@@ -445,8 +485,9 @@
         )
         const diff = byId('mapping-diff')
         diff.replaceChildren()
-        if (!review) diff.append(node('p', mappingNotice))
-        else {
+        if (!review) {
+          diff.append(node('p', mappingNotice))
+        } else {
           diff.append(
             node(
               'p',
@@ -465,16 +506,21 @@
             )
             diff.append(item)
           }
-          if (review.reason)
+          if (review.reason) {
             diff.append(node('p', review.decidedBy + ' - ' + review.reason))
+          }
         }
       }
       async function mappingAction(decision) {
-        if (acting || activeId || !capability || !compatible) return
+        if (acting || activeId || !capability || !compatible) {
+          return
+        }
         acting = true
         controls()
         try {
-          if (byId('proof-error')) byId('proof-error').hidden = true
+          if (byId('proof-error')) {
+            byId('proof-error').hidden = true
+          }
           const body = decision
             ? {
                 id: selectedReviewId,
@@ -491,14 +537,18 @@
             result.status === 'unchanged'
               ? 'No mapping changes. The working mapping matches the accepted baseline.'
               : ''
-          if (decision) byId('mapping-reason').value = ''
+          if (decision) {
+            byId('mapping-reason').value = ''
+          }
           revision++
           await refresh()
         } catch (error) {
           showError(error)
         } finally {
           acting = false
-          if (!disposed) controls()
+          if (!disposed) {
+            controls()
+          }
         }
       }
       function renderOperations(state) {
@@ -507,7 +557,9 @@
           state.shared.fingerprint +
           JSON.stringify(state.evolution.reviews) +
           selectedContractReview
-        if (operationSignature === signature) return
+        if (operationSignature === signature) {
+          return
+        }
         operationSignature = signature
         byId('contract-baseline').textContent =
           'Accepted contract revision ' +
@@ -527,8 +579,9 @@
         }
         if (
           !state.evolution.reviews.some((r) => r.id === selectedContractReview)
-        )
+        ) {
           selectedContractReview = state.evolution.reviews.at(-1)?.id ?? ''
+        }
         select.value = selectedContractReview
         const review = state.evolution.reviews.find(
           (r) => r.id === selectedContractReview
@@ -558,8 +611,9 @@
           option.value = item.stepId
           workSelect.append(option)
         }
-        if (state.work.some((item) => item.stepId === previousStep))
+        if (state.work.some((item) => item.stepId === previousStep)) {
           workSelect.value = previousStep
+        }
         const shared = state.shared
         const manager = byId('manager-view')
         manager.replaceChildren()
@@ -584,11 +638,14 @@
               'None observed'),
           'Potential downstream impact: ' + shared.potentialImpact.join(', '),
           ...shared.blockers.map((b) => 'Blocker: ' + b)
-        ])
+        ]) {
           manager.append(node('p', text))
+        }
       }
       async function contractAction(decision) {
-        if (acting || activeId || !capability) return
+        if (acting || activeId || !capability) {
+          return
+        }
         acting = true
         controls()
         try {
@@ -628,7 +685,9 @@
           showError(error)
         } finally {
           acting = false
-          if (!disposed) controls()
+          if (!disposed) {
+            controls()
+          }
         }
       }
       function controls() {
@@ -643,18 +702,19 @@
           'run-candidate',
           'retry-run',
           'contract-prepare'
-        ])
+        ]) {
           byId(id).disabled =
             !capability ||
             Boolean(activeId) ||
             acting ||
             (id === 'retry-run' && !record)
+        }
         const contractReview = operationState?.evolution.reviews.find(
           (r) => r.id === selectedContractReview
         )
         const targetPinnedReview =
           targetRecord?.targetVerification?.reviewId === selectedContractReview
-        for (const id of ['contract-accept', 'contract-reject'])
+        for (const id of ['contract-accept', 'contract-reject']) {
           byId(id).disabled =
             !capability ||
             Boolean(activeId) ||
@@ -662,6 +722,7 @@
             contractReview?.status !== 'pending' ||
             !byId('contract-reason').value.trim() ||
             (id === 'contract-accept' && targetPinnedReview)
+        }
         byId('work-save').disabled =
           !capability ||
           Boolean(activeId) ||
@@ -674,7 +735,7 @@
         )
         byId('mapping-prepare').disabled =
           !capability || !compatible || Boolean(activeId) || acting
-        for (const id of ['mapping-accept', 'mapping-reject'])
+        for (const id of ['mapping-accept', 'mapping-reject']) {
           byId(id).disabled =
             !capability ||
             !compatible ||
@@ -682,9 +743,11 @@
             acting ||
             review?.status !== 'pending' ||
             !byId('mapping-reason').value.trim()
-        for (const button of menu.querySelectorAll('button'))
+        }
+        for (const button of menu.querySelectorAll('button')) {
           button.disabled =
             !capability || !compatible || Boolean(activeId) || acting
+        }
         renderSelected()
       }
       function renderReview(matching) {
@@ -702,8 +765,9 @@
           !scopedAssessments.some(
             (item) => item.id === selectedScopedAssessmentId
           )
-        )
+        ) {
           selectedScopedAssessmentId = ''
+        }
         retainOptions(byId('pr-assessment'), [
           ['', 'Choose exact bounded work assessment'],
           ...scopedAssessments.map((item) => [
@@ -858,11 +922,15 @@
           ['pr-github', observation?.url]
         ]) {
           byId(name).hidden = !href
-          if (href) byId(name).href = href
+          if (href) {
+            byId(name).href = href
+          }
         }
       }
       async function reviewAction(action) {
-        if (acting || !taskId || !capability) return
+        if (acting || !taskId || !capability) {
+          return
+        }
         const selected = taskId
         const selectedAssessment = selectedScopedAssessmentId
         acting = true
@@ -886,7 +954,9 @@
                     : {})
                 }
           )
-          if (taskId === selected) reviewRecord = value
+          if (taskId === selected) {
+            reviewRecord = value
+          }
           byId('pr-approve').checked = false
         } catch (error) {
           showError(error)
@@ -896,7 +966,9 @@
         }
       }
       function renderTask() {
-        if (!byId('agent-step')) return
+        if (!byId('agent-step')) {
+          return
+        }
         const provider = taskState?.providerAuthorization
         const providerAvailable =
           provider && Date.parse(provider.expiresAt) > Date.now()
@@ -956,9 +1028,10 @@
             'Do not delete records or create a new store to bypass this block. Restarting, waiting, or acknowledging this notice does not reconcile the request.'
           ].join('\n\n')
         }
-        for (const action of ['cancel', 'stop', 'handoff', 'revoke'])
+        for (const action of ['cancel', 'stop', 'handoff', 'revoke']) {
           byId('agent-' + action).disabled =
             !matching || acting || (action === 'cancel' && !busy)
+        }
         byId('agent-resume').disabled =
           !matching ||
           busy ||
@@ -970,11 +1043,13 @@
         if (!matching) {
           let status =
             'No task selected. Demonstration adapter - no language model or paid provider.'
-          if (selectedProvider && providerAvailable)
+          if (selectedProvider && providerAvailable) {
             status =
               'No task selected. Authorized provider selected; no model turn dispatched.'
-          if (!taskState?.available)
+          }
+          if (!taskState?.available) {
             status = 'OS containment unavailable. Delegation is disabled.'
+          }
           byId('agent-result').textContent = status
           byId('agent-artifact').hidden = true
           byId('agent-audit').hidden = true
@@ -1069,13 +1144,20 @@
             ? byId('assessment-task').value
             : ''
         ])
-        for (const key of taskDetails.keys())
-          if (!selected.has(key)) taskDetails.delete(key)
+        for (const key of taskDetails.keys()) {
+          if (!selected.has(key)) {
+            taskDetails.delete(key)
+          }
+        }
         const retained = taskDetails.get(id)
-        if (retained?.signature === signature) return retained.promise
+        if (retained?.signature === signature) {
+          return retained.promise
+        }
         const entry = { signature }
         entry.promise = api('/api/tasks/' + id).catch((error) => {
-          if (taskDetails.get(id) === entry) taskDetails.delete(id)
+          if (taskDetails.get(id) === entry) {
+            taskDetails.delete(id)
+          }
           throw error
         })
         taskDetails.set(id, entry)
@@ -1087,8 +1169,12 @@
           (item) => item.stepId === stepId
         )
         const previousTaskId = taskId
-        if (!options.some((item) => item.id === taskId)) taskId = options[0]?.id
-        if (taskId !== previousTaskId) selectedScopedAssessmentId = ''
+        if (!options.some((item) => item.id === taskId)) {
+          taskId = options[0]?.id
+        }
+        if (taskId !== previousTaskId) {
+          selectedScopedAssessmentId = ''
+        }
         const history = options.map((item) => item.id + item.phase).join(',')
         if (history !== taskHistorySignature) {
           taskHistorySignature = history
@@ -1103,7 +1189,9 @@
             })
           )
         }
-        if (taskId) byId('agent-history').value = taskId
+        if (taskId) {
+          byId('agent-history').value = taskId
+        }
         const selected = options.find((item) => item.id === taskId)
         const signature = selected ? JSON.stringify(selected) : ''
         if (signature !== taskSignature) {
@@ -1119,10 +1207,12 @@
             selectedTask !== taskId ||
             (selectedTask &&
               JSON.stringify(taskSummary(selectedTask)) !== signature)
-          )
+          ) {
             return
-          if (taskSignature === signature && taskRecord?.id === selectedTask)
+          }
+          if (taskSignature === signature && taskRecord?.id === selectedTask) {
             return
+          }
           taskSignature = signature
           taskRecord = nextTask
           reviewRecord = nextReview
@@ -1131,7 +1221,9 @@
         renderTask()
       }
       async function taskAction(action) {
-        if (acting || !capability) return
+        if (acting || !capability) {
+          return
+        }
         acting = true
         renderTask()
         try {
@@ -1206,8 +1298,9 @@
               select.options[index].value === value &&
               select.options[index].textContent === label
           )
-        )
+        ) {
           return
+        }
         const selected = select.value
         select.replaceChildren(
           ...choices.map(([value, label]) => targetOption(value, label))
@@ -1241,11 +1334,12 @@
           : 'Select a reviewed verification source explicitly to enable assessment.'
       }
       function assessmentSelection() {
-        if (byId('assessment-source-kind').value === 'task')
+        if (byId('assessment-source-kind').value === 'task') {
           return {
             sourceTaskId: byId('assessment-task').value,
             sourceAttemptId: byId('assessment-attempt').value
           }
+        }
         return { sourceAttemptId: byId('assessment-source').value }
       }
       function renderAssessmentSource() {
@@ -1321,21 +1415,28 @@
         )
       }
       async function readAssessmentTask() {
-        if (byId('assessment-source-kind').value !== 'task') return
+        if (byId('assessment-source-kind').value !== 'task') {
+          return
+        }
         const id = byId('assessment-task').value
         const summary = taskSummary(id)
         const signature = summary ? JSON.stringify(summary) : ''
         if (!id || !summary) {
           assessmentTask = null
           assessmentTaskSignature = ''
-          if (id)
+          if (id) {
             byId('assessment-notice').textContent =
               'Selected task is unavailable in the current summary window.'
+          }
           renderAssessment()
           return
         }
-        if (assessmentTask?.id === id && assessmentTaskSignature === signature)
+        if (
+          assessmentTask?.id === id &&
+          assessmentTaskSignature === signature
+        ) {
           return
+        }
         try {
           const value = await readTaskDetail(id, signature)
           if (
@@ -1343,13 +1444,15 @@
             byId('assessment-source-kind').value !== 'task' ||
             byId('assessment-task').value !== id ||
             JSON.stringify(taskSummary(id)) !== signature
-          )
+          ) {
             return
+          }
           if (
             assessmentTask?.id === id &&
             assessmentTaskSignature === signature
-          )
+          ) {
             return
+          }
           assessmentTask = value
           assessmentTaskSignature = signature
           retainOptions(byId('assessment-attempt'), [
@@ -1461,8 +1564,9 @@
         if (
           assessmentSignature === signature &&
           byId('assessment-summary').textContent
-        )
+        ) {
           return
+        }
         assessmentSignature = signature
         byId('assessment-summary').textContent = selected
           ? 'Assessment ' +
@@ -1571,18 +1675,26 @@
         const id = byId('assessment-source').value
         assessmentSource = null
         renderAssessment()
-        if (!id) return
+        if (!id) {
+          return
+        }
         try {
           const value = await api('/api/runs/' + id)
-          if (disposed || byId('assessment-source').value !== id) return
+          if (disposed || byId('assessment-source').value !== id) {
+            return
+          }
           assessmentSource = value
           renderAssessment()
         } catch (error) {
-          if (!disposed) byId('assessment-notice').textContent = error.message
+          if (!disposed) {
+            byId('assessment-notice').textContent = error.message
+          }
         }
       }
       async function assessmentAction(cancel = false) {
-        if (assessmentBusy || !capability || !targetRecord) return
+        if (assessmentBusy || !capability || !targetRecord) {
+          return
+        }
         assessmentBusy = true
         byId('assessment-notice').textContent = cancel
           ? 'Cancelling assessment…'
@@ -1601,21 +1713,29 @@
                 ...assessmentSelection()
               })
           selectedAssessmentId = result.id
-          if (disposed) return
+          if (disposed) {
+            return
+          }
           revision++
           byId('assessment-notice').textContent = cancel
             ? 'Cancellation settled; original observations remain in history.'
             : 'Assessment registered. Results are separate from acceptance.'
           await refresh()
         } catch (error) {
-          if (!disposed) byId('assessment-notice').textContent = error.message
+          if (!disposed) {
+            byId('assessment-notice').textContent = error.message
+          }
         } finally {
           assessmentBusy = false
-          if (!disposed) renderAssessment()
+          if (!disposed) {
+            renderAssessment()
+          }
         }
       }
       async function acceptTargetBaseline() {
-        if (assessmentBusy || !capability || !targetRecord) return
+        if (assessmentBusy || !capability || !targetRecord) {
+          return
+        }
         assessmentBusy = true
         byId('assessment-notice').textContent =
           'Committing explicit integrated target baseline acceptance…'
@@ -1631,16 +1751,22 @@
               .map((value) => value.trim())
               .filter(Boolean)
           })
-          if (disposed) return
+          if (disposed) {
+            return
+          }
           revision++
           byId('assessment-notice').textContent =
             'Integrated target baseline accepted. The source assessment remains as historical evidence.'
           await refresh()
         } catch (error) {
-          if (!disposed) byId('assessment-notice').textContent = error.message
+          if (!disposed) {
+            byId('assessment-notice').textContent = error.message
+          }
         } finally {
           assessmentBusy = false
-          if (!disposed) renderAssessment()
+          if (!disposed) {
+            renderAssessment()
+          }
         }
       }
       function targetFlow() {
@@ -1759,7 +1885,7 @@
                 node('p', 'Obligations: ' + work.obligationIds.join(', ')),
                 node('p', 'Runtime files: ' + work.allowedFiles.join(', '))
               )
-              for (const dep of work.prerequisites)
+              for (const dep of work.prerequisites) {
                 item.append(
                   node(
                     'p',
@@ -1771,6 +1897,7 @@
                       dep.handoff
                   )
                 )
+              }
               const prepare = node('button', 'Prepare task from this promise')
               prepare.type = 'button'
               const dependent = work.prerequisites.length > 0
@@ -1782,25 +1909,30 @@
                   record.request.allocationRevision === targetRecord.revision &&
                   record.projection.current
               )
-              if (dependent)
+              if (dependent) {
                 prepare.textContent = 'Prepare task from assessed prerequisites'
+              }
               prepare.disabled =
                 !targetRecord.baselineCurrent ||
                 (dependent
                   ? !selectedAdmissionAssessment
                   : work.status === 'blocked')
               prepare.onclick = async () => {
-                if (acting || !capability) return
+                if (acting || !capability) {
+                  return
+                }
                 acting = true
                 try {
-                  if (!dependent && !selectedId)
+                  if (!dependent && !selectedId) {
                     throw new Error(
                       'Select a completed all-flow baseline proof before preparing work.'
                     )
-                  if (dependent && !selectedAdmissionAssessment)
+                  }
+                  if (dependent && !selectedAdmissionAssessment) {
                     throw new Error(
                       'Select a current retained assessment before preparing dependent work.'
                     )
+                  }
                   const taskId = window.crypto.randomUUID()
                   const admissionId = window.crypto.randomUUID()
                   const targetId = targetRecord.id
@@ -1837,7 +1969,9 @@
                   showError(error)
                 } finally {
                   acting = false
-                  if (!disposed) controls()
+                  if (!disposed) {
+                    controls()
+                  }
                 }
               }
 
@@ -1850,18 +1984,20 @@
           const summary = byId('target-items').querySelector(
             '[data-work-id="' + work.id + '"] .proof-work-assessment'
           )
-          if (summary)
+          if (summary) {
             summary.textContent =
               'Assessment: ' +
               (work.assessment?.status ?? 'pending') +
               ' - bounded work only'
+          }
         }
         const selectedWork = byId('target-link-work').value
         byId('target-link-work').replaceChildren(
           ...(targetRecord?.works ?? []).map((w) => targetOption(w.id, w.title))
         )
-        if (targetRecord?.works.some((w) => w.id === selectedWork))
+        if (targetRecord?.works.some((w) => w.id === selectedWork)) {
           byId('target-link-work').value = selectedWork
+        }
         byId('target-link').disabled = !targetRecord?.works.length
         byId('target-observations').replaceChildren(
           ...(targetRecord?.tasks ?? []).map((entry) => {
@@ -1880,7 +2016,7 @@
                   (task?.verificationStatus ?? 'unknown')
               )
             )
-            for (const attempt of task?.attempts ?? [])
+            for (const attempt of task?.attempts ?? []) {
               item.append(
                 node(
                   'p',
@@ -1890,6 +2026,7 @@
                     (attempt.verdict?.evidence?.status ?? 'unknown')
                 )
               )
+            }
             if (task) {
               const link = node('a', 'Open task and attempt audit')
               link.href = '/api/tasks/' + task.id
@@ -1923,7 +2060,9 @@
               audit.target = '_blank'
               audit.rel = 'noopener noreferrer'
               item.append(audit)
-            } else item.append(node('p', 'PR: no retained review'))
+            } else {
+              item.append(node('p', 'PR: no retained review'))
+            }
             return item
           })
         )
@@ -1931,8 +2070,9 @@
           ? JSON.stringify(targetRecord.history, null, 2)
           : ''
         byId('target-record-link').hidden = !targetRecord
-        if (targetRecord)
+        if (targetRecord) {
           byId('target-record-link').href = '/api/targets/' + targetRecord.id
+        }
       }
       async function loadTarget(id) {
         targetRecord = id ? await api('/api/targets/' + id) : null
@@ -1990,11 +2130,12 @@
         if (
           sourceSelect.value &&
           !sourceOptions.some(([id]) => id === sourceSelect.value)
-        )
+        ) {
           sourceOptions.push([
             sourceSelect.value,
             sourceSelect.selectedOptions[0].textContent
           ])
+        }
         retainOptions(sourceSelect, sourceOptions)
         const taskSelect = byId('assessment-task')
         const taskOptions = [
@@ -2011,11 +2152,12 @@
         if (
           taskSelect.value &&
           !taskOptions.some(([id]) => id === taskSelect.value)
-        )
+        ) {
           taskOptions.push([
             taskSelect.value,
             taskSelect.value.slice(0, 12) + ' - unavailable'
           ])
+        }
         retainOptions(taskSelect, taskOptions)
         readAssessmentTask().catch(() => undefined)
 
@@ -2039,8 +2181,9 @@
             targetOption(t.id, t.objective + ' - ' + t.id)
           )
         )
-        if (state.tasks.records.some((t) => t.id === selectedTask))
+        if (state.tasks.records.some((t) => t.id === selectedTask)) {
           byId('target-link-task').value = selectedTask
+        }
         const signature = JSON.stringify([state.targets, state.tasks.records])
         if (targetRecord && signature !== targetReadSignature) {
           targetRecord = await api('/api/targets/' + targetRecord.id)
@@ -2050,7 +2193,9 @@
         renderAssessment()
       }
       async function targetAction(action) {
-        if (targetBusy || !capability) return
+        if (targetBusy || !capability) {
+          return
+        }
         targetBusy = true
         byId('target-notice').textContent = 'Saving explicit decision…'
         try {
@@ -2060,7 +2205,7 @@
             expectedRevision: targetDraftRevision,
             reason: byId('target-reason').value
           }
-          if (action === 'create')
+          if (action === 'create') {
             Object.assign(request, {
               ...(byId('target-review').value
                 ? { targetReviewId: byId('target-review').value }
@@ -2072,13 +2217,15 @@
                 contractDigest: contract.digest
               }
             })
-          else request.targetId = targetRecord.id
-          if (action === 'link')
+          } else {
+            request.targetId = targetRecord.id
+          }
+          if (action === 'link') {
             Object.assign(request, {
               workId: byId('target-link-work').value,
               taskId: byId('target-link-task').value
             })
-          else {
+          } else {
             const assigned = new Set(
               targetDraft.flatMap((w) => w.obligationIds)
             )
@@ -2150,8 +2297,9 @@
           ['target-create', 'create'],
           ['target-save', 'revise'],
           ['target-link', 'link']
-        ])
+        ]) {
           listen(byId(id), 'click', () => targetAction(action))
+        }
         listen(byId('target-add-work'), 'click', () => {
           const obligationIds = [
             ...byId('target-obligations').querySelectorAll('input:checked')
@@ -2188,7 +2336,9 @@
         })
       }
       async function refresh() {
-        if (refreshing || disposed) return
+        if (refreshing || disposed) {
+          return
+        }
         refreshing = true
         window.clearTimeout(timer)
         const requestRevision = revision
@@ -2202,11 +2352,14 @@
           reviewPolicy = state.reviewPolicy
           await refreshTargets(state)
           refreshTask().catch(showError)
-          if (!selectedId && state.runs.length) selectedId = state.runs[0].id
+          if (!selectedId && state.runs.length) {
+            selectedId = state.runs[0].id
+          }
           const id = selectedId
           const value = id ? await api('/api/runs/' + id) : null
-          if (disposed || requestRevision !== revision || id !== selectedId)
+          if (disposed || requestRevision !== revision || id !== selectedId) {
             return
+          }
           renderRecord(value)
           renderHistory(state)
           controls()
@@ -2220,8 +2373,9 @@
               assessmentRecords.some((item) => item.phase === 'running') ||
               taskState?.activeId ||
               requestRevision !== revision)
-          )
+          ) {
             timer = window.setTimeout(refresh, 500)
+          }
         }
       }
       async function start(flowIds, mode = 'verify', retryScenario) {
@@ -2231,14 +2385,17 @@
           acting ||
           activeId ||
           disposed
-        )
+        ) {
           return
+        }
         acting = true
         controls()
         menu.hidden = true
         panel.open = true
         try {
-          if (byId('proof-error')) byId('proof-error').hidden = true
+          if (byId('proof-error')) {
+            byId('proof-error').hidden = true
+          }
           const request = {
             mode,
             scenario:
@@ -2246,7 +2403,9 @@
                 ? 'baseline'
                 : (retryScenario ?? byId('scenario').value)
           }
-          if (flowIds) request.flowIds = flowIds
+          if (flowIds) {
+            request.flowIds = flowIds
+          }
           const result = await api('/api/runs', request)
           selectedId = result.id
           revision++
@@ -2255,13 +2414,17 @@
           showError(error)
         } finally {
           acting = false
-          if (!disposed) controls()
+          if (!disposed) {
+            controls()
+          }
         }
       }
       function openMenu(event) {
         const card = event.target.closest('.step-card')
         const linked = linkedFlows.get(card?.dataset.stepId)
-        if (!linked || !compatible) return
+        if (!linked || !compatible) {
+          return
+        }
         event.preventDefault()
         menu.replaceChildren(node('strong', 'Verify linked flow'))
         for (const flow of linked) {
@@ -2449,8 +2612,9 @@
           if (
             event.key === 'ContextMenu' ||
             (event.shiftKey && event.key === 'F10')
-          )
+          ) {
             openMenu(event)
+          }
         })
         listen(document, 'keydown', (event) => {
           if (event.key === 'Escape') {
@@ -2459,7 +2623,9 @@
           }
         })
         listen(document, 'click', (event) => {
-          if (!menu.contains(event.target)) menu.hidden = true
+          if (!menu.contains(event.target)) {
+            menu.hidden = true
+          }
         })
         listen(byId('proof-flow'), 'change', (event) => {
           selectedFlow = contract.flows.find(
@@ -2478,7 +2644,9 @@
         })
         listen(byId('work-reason'), 'input', controls)
         listen(byId('work-save'), 'click', async () => {
-          if (acting || activeId || !capability) return
+          if (acting || activeId || !capability) {
+            return
+          }
           acting = true
           controls()
           try {
@@ -2493,7 +2661,9 @@
             showError(error)
           } finally {
             acting = false
-            if (!disposed) controls()
+            if (!disposed) {
+              controls()
+            }
           }
         })
         listen(byId('run-candidate'), 'click', () =>
@@ -2528,15 +2698,17 @@
           'stop',
           'handoff',
           'revoke'
-        ])
+        ]) {
           listen(byId('agent-' + action), 'click', () => taskAction(action))
+        }
         for (const action of [
           'prepare-scoped',
           'prepare',
           'confirm',
           'refresh'
-        ])
+        ]) {
           listen(byId('pr-' + action), 'click', () => reviewAction(action))
+        }
         listen(byId('pr-assessment'), 'change', (event) => {
           selectedScopedAssessmentId = event.target.value
           renderTask()
@@ -2556,7 +2728,9 @@
         listen(byId('run-linked'), 'click', () => start([selectedFlow.id]))
         listen(byId('refresh'), 'click', refresh)
         listen(byId('cancel'), 'click', async () => {
-          if (acting || !activeId) return
+          if (acting || !activeId) {
+            return
+          }
           acting = true
           controls()
           try {
@@ -2566,7 +2740,9 @@
             showError(error)
           } finally {
             acting = false
-            if (!disposed) controls()
+            if (!disposed) {
+              controls()
+            }
           }
         })
         capability = (await api('/api/session')).capability

@@ -78,7 +78,9 @@ const setup = (
       objectType: spatial.kind === 'camera' ? 'container' : 'mesh',
       properties: { [SPATIAL_PROPERTY]: spatial }
     }).object
-    if (!handle) throw new Error('Expected an object handle')
+    if (!handle) {
+      throw new Error('Expected an object handle')
+    }
     engine.execute({ type: 'append-child', parent: root, child: handle })
     return handle
   }
@@ -227,7 +229,9 @@ it('returns full-shape source instance hits despite detail compaction, with stab
     ray: { origin: [0.2, 0, 5], direction: [0, 0, -3] }
   } as const
   const result = f.engine.query(query)
-  if (result.type !== 'spatial-hits') throw new Error('Wrong query result')
+  if (result.type !== 'spatial-hits') {
+    throw new Error('Wrong query result')
+  }
   expect(result.hits.map((h) => h.object)).toEqual([object, second])
   expect(result.hits[0]).toMatchObject({
     instanceIndex: 1,
@@ -241,7 +245,9 @@ it('returns full-shape source instance hits despite detail compaction, with stab
     index: 1
   })
   const reordered = f.engine.query(query)
-  if (reordered.type !== 'spatial-hits') throw new Error('Wrong query result')
+  if (reordered.type !== 'spatial-hits') {
+    throw new Error('Wrong query result')
+  }
   expect(reordered.hits[0].object).toBe(second)
   f.engine.execute({
     type: 'update-object',
@@ -249,7 +255,9 @@ it('returns full-shape source instance hits despite detail compaction, with stab
     properties: { visible: false }
   })
   const hidden = f.engine.query(query)
-  if (hidden.type !== 'spatial-hits') throw new Error('Wrong query result')
+  if (hidden.type !== 'spatial-hits') {
+    throw new Error('Wrong query result')
+  }
   expect(hidden.hits).toHaveLength(1)
   f.engine.execute({
     type: 'update-object',
@@ -273,7 +281,9 @@ it('returns full-shape source instance hits despite detail compaction, with stab
     }
   })
   const replaced = f.engine.query(query)
-  if (replaced.type !== 'spatial-hits') throw new Error('Wrong query result')
+  if (replaced.type !== 'spatial-hits') {
+    throw new Error('Wrong query result')
+  }
   expect(replaced.hits[0]).toMatchObject({
     instanceIndex: 0,
     instanceId: 'selected'
@@ -340,7 +350,9 @@ it('prioritizes eligible screen overlays and reuses full geometry across repeate
     objectType: 'graphics',
     requestId: 'overlay'
   }).object
-  if (!overlay) throw new Error('Missing overlay')
+  if (!overlay) {
+    throw new Error('Missing overlay')
+  }
   f.engine.execute({ type: 'append-child', parent: f.root, child: overlay })
   f.engine.execute({
     type: 'draw',
@@ -360,10 +372,11 @@ it('prioritizes eligible screen overlays and reuses full geometry across repeate
   })
   const cast = vi.spyOn(THREE.Mesh.prototype, 'raycast'),
     dispose = vi.spyOn(THREE.BufferGeometry.prototype, 'dispose')
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     expect(
       f.engine.query({ type: 'spatial-pick', point: { x: 320, y: 240 } })
     ).toMatchObject({ overlay: null, hit: { object } })
+  }
   expect(cast).toHaveBeenCalledTimes(3)
   const meshes = cast.mock.contexts as THREE.Mesh[]
   expect(meshes[1].geometry).toBe(meshes[0].geometry)

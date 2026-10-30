@@ -630,7 +630,9 @@ describe('canonical property inheritance', () => {
     })
     const before = manager.save()
     const b = manager.getPropertyById('b')
-    if (!b) throw new Error('Missing test binding')
+    if (!b) {
+      throw new Error('Missing test binding')
+    }
     const load = b.load.bind(b)
     let fail = true
     b.load = (data) => {
@@ -674,7 +676,9 @@ describe('canonical property inheritance', () => {
     expect(manager.save()).toEqual(before)
     expect(manager.changes).toEqual([])
     const unrelated = manager.getPropertyById('unrelated')
-    if (!unrelated) throw new Error('Missing unrelated test property')
+    if (!unrelated) {
+      throw new Error('Missing unrelated test property')
+    }
     const originalSave = unrelated.save.bind(unrelated)
     unrelated.save = () => {
       throw new Error('unrelated property was inspected')
@@ -726,8 +730,9 @@ describe('canonical property inheritance', () => {
       layer: 'sharedSource'
     })
     propsManager.load({ source: independent })
-    for (const change of result.evidence)
+    for (const change of result.evidence) {
       publishEvent({ type: change.eventName, payload: change } as never)
+    }
     expect(propsManager.save()).toEqual(manager.save())
   })
   it('removes an inherited slot after explicit child detachment without deleting its shared source', () => {
@@ -772,8 +777,9 @@ describe('canonical property inheritance', () => {
       after: { present: false }
     })
     propsManager.load(before)
-    for (const change of result.evidence)
+    for (const change of result.evidence) {
       publishEvent({ type: change.eventName, payload: change } as never)
+    }
     expect(propsManager.save()).toEqual(manager.save())
   })
 })

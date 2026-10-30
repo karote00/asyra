@@ -64,7 +64,9 @@ export class DataChannelObserverRegistry {
   register<TChange = unknown>(
     registration: DataChannelObserverRegistration<TChange>
   ): void {
-    if (this.resetting) throw new Error('[core] Observer runtime is resetting')
+    if (this.resetting) {
+      throw new Error('[core] Observer runtime is resetting')
+    }
     if (this.observerRegistrations.has(registration.name)) {
       throw new Error(
         `[core] Data channel observer "${registration.name}" is already registered`
@@ -92,8 +94,12 @@ export class DataChannelObserverRegistry {
   }
 
   init(): void {
-    if (this.resetting) throw new Error('[core] Observer runtime is resetting')
-    if (this.initialized) return
+    if (this.resetting) {
+      throw new Error('[core] Observer runtime is resetting')
+    }
+    if (this.initialized) {
+      return
+    }
 
     this.observerRegistrations.forEach((registration) => {
       this.activate(registration)
@@ -102,7 +108,9 @@ export class DataChannelObserverRegistry {
   }
 
   dispose(): void {
-    if (!this.initialized) return
+    if (!this.initialized) {
+      return
+    }
     ;[...this.activeObserverCleanups.keys()].forEach((name) => {
       this.deactivate(name)
     })
@@ -128,7 +136,9 @@ export class DataChannelObserverRegistry {
       }
     }
     this.resetting = false
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 
   private activate(
@@ -142,13 +152,17 @@ export class DataChannelObserverRegistry {
         ? this.factory.observeSharedDataChannelBatch(
             registration.channel,
             (changes) => {
-              if (generation === this.runtimeGeneration) onBatch(changes)
+              if (generation === this.runtimeGeneration) {
+                onBatch(changes)
+              }
             }
           )
         : this.factory.observeSharedDataChannel(
             registration.channel,
             (change) => {
-              if (generation === this.runtimeGeneration) onChange?.(change)
+              if (generation === this.runtimeGeneration) {
+                onChange?.(change)
+              }
             }
           )
       this.activeObserverCleanups.set(registration.name, cleanup)

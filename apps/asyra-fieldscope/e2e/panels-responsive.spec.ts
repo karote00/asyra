@@ -12,7 +12,9 @@ test('desktop to mobile transition retains edited dimensions, canvas and keyboar
   test.setTimeout(60_000)
   await openPanelWorkspace(page)
   const canvas = await page.locator('canvas').elementHandle()
-  if (!canvas) throw new Error('Missing workspace canvas')
+  if (!canvas) {
+    throw new Error('Missing workspace canvas')
+  }
   await page.getByLabel('溫室縱向深度', { exact: true }).fill('42')
   await page.getByLabel('溫室縱向深度', { exact: true }).press('Enter')
   await page.setViewportSize({ width: 390, height: 844 })
@@ -39,10 +41,11 @@ test('desktop to mobile transition retains edited dimensions, canvas and keyboar
   await expect(input).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(page.getByLabel('單棟寬度', { exact: true })).toBeFocused()
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('mobile-editor.png'),
       fullPage: true
     })
+  }
   expect(await canvas.evaluate((node) => node.isConnected)).toBe(true)
 })

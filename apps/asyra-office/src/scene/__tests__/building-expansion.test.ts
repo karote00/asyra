@@ -17,7 +17,9 @@ beforeAll(() => {
 })
 const bounds = (id: string) => {
   const value = parts.get(id)
-  if (!value) throw new Error('Missing assembly: ' + id)
+  if (!value) {
+    throw new Error('Missing assembly: ' + id)
+  }
   return meshBounds(value)
 }
 
@@ -47,7 +49,9 @@ it('adds exactly half a metre of clear depth to all four room zones', () => {
 it('retains frontage and stepped heights while extending every connected wall run', () => {
   for (const old of baseline.structure.walls) {
     const current = structure.walls.find((w) => w.id === old.id)
-    if (!current) throw new Error('Missing wall: ' + old.id)
+    if (!current) {
+      throw new Error('Missing wall: ' + old.id)
+    }
     for (const key of [
       'top',
       'endTop',
@@ -55,8 +59,9 @@ it('retains frontage and stepped heights while extending every connected wall ru
       'thickness',
       'alongY',
       'ends'
-    ] as const)
+    ] as const) {
       expect(current[key], old.id + ' ' + key).toEqual(old[key])
+    }
     if (
       [
         'front-thin-wall',
@@ -64,12 +69,15 @@ it('retains frontage and stepped heights while extending every connected wall ru
         'entry-pier',
         'entry-header'
       ].includes(old.id)
-    )
+    ) {
       expect(current).toEqual(old)
+    }
   }
   const wall = (id: string) => {
     const value = structure.walls.find((w) => w.id === id)
-    if (!value) throw new Error('Missing wall: ' + id)
+    if (!value) {
+      throw new Error('Missing wall: ' + id)
+    }
     return value
   }
   expect(wall('left-wall').end).toBe(wall('discussion-left-wall').start)

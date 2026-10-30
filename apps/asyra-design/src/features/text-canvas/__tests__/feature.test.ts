@@ -55,7 +55,9 @@ import '../index'
 beforeEach(() => vi.clearAllMocks())
 it('owns Text gestures only and leaves provisional creation until release', () => {
   const feature = mocks.definitions.get(FeatureNames.CREATE_TEXT)
-  if (!feature) throw new Error('Missing text feature')
+  if (!feature) {
+    throw new Error('Missing text feature')
+  }
   expect(feature.priority).toBeGreaterThan(10)
   expect(feature.exclusive).toBe(true)
   expect(
@@ -65,7 +67,9 @@ it('owns Text gestures only and leaves provisional creation until release', () =
     primaryTool: PrimaryToolType.TEXT,
     mousePosition: { x: 30, y: 40 }
   }
-  if (!feature) throw new Error('Missing text feature')
+  if (!feature) {
+    throw new Error('Missing text feature')
+  }
   const state = feature.session.onStart(snapshot)
   expect(mocks.beginCreate).not.toHaveBeenCalled()
   feature.session.onEnd(snapshot, state)
@@ -81,7 +85,9 @@ it('owns Text gestures only and leaves provisional creation until release', () =
 })
 it('uses drag bounds and does not start an editor when interrupted', () => {
   const feature = mocks.definitions.get(FeatureNames.CREATE_TEXT)
-  if (!feature) throw new Error('Missing text feature')
+  if (!feature) {
+    throw new Error('Missing text feature')
+  }
   const state = feature.session.onStart({
     primaryTool: PrimaryToolType.TEXT,
     mousePosition: { x: 30, y: 40 }
@@ -103,7 +109,9 @@ it('uses drag bounds and does not start an editor when interrupted', () => {
 })
 it('routes double-click only to an ordinary text editing target', () => {
   const feature = mocks.definitions.get(FeatureNames.EDIT_TEXT)
-  if (!feature) throw new Error('Missing text feature')
+  if (!feature) {
+    throw new Error('Missing text feature')
+  }
   feature.execution({
     primaryTool: PrimaryToolType.SELECT,
     mousePosition: { x: 10, y: 20 }
@@ -122,7 +130,9 @@ it('routes double-click only to an ordinary text editing target', () => {
 
 it('preserves the group child-selection step before editing nested text', () => {
   const feature = mocks.definitions.get(FeatureNames.EDIT_TEXT)
-  if (!feature) throw new Error('Missing text feature')
+  if (!feature) {
+    throw new Error('Missing text feature')
+  }
   mocks.getSelectedIds.mockReturnValueOnce(['group'])
   expect(
     feature.execution({

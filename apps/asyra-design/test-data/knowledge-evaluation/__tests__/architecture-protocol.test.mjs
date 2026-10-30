@@ -49,8 +49,9 @@ test('the ablation changes only the two new advisory bodies, never unrelated kno
     'apps/asyra-design/knowledge/design.architectural-illustration.md'
   ])
   assert.equal(spec.attachments.length, 2)
-  for (const attachment of spec.attachments)
+  for (const attachment of spec.attachments) {
     assert.match(attachment.sha256, /^[a-f0-9]{64}$/)
+  }
 })
 
 test('a run-scoped deadline can shorten but never extend the canonical scenario', () => {
@@ -65,8 +66,9 @@ test('a run-scoped deadline can shorten but never extend the canonical scenario'
     ['--deadline-ms=-1'],
     ['--unknown=120000'],
     ['--deadline-ms=120000', '--deadline-ms=60000']
-  ])
+  ]) {
     assert.throws(() => observationDeadline(spec, args))
+  }
 })
 
 test('only an explicit isolated 2000 evaluation budget is admitted', () => {
@@ -84,6 +86,7 @@ test('only an explicit isolated 2000 evaluation budget is admitted', () => {
     ['--expanded-node-limit=2001'],
     ['--expanded-node-limit'],
     ['--expanded-node-limit=2000', '--expanded-node-limit=2000']
-  ])
+  ]) {
     assert.throws(() => evaluationArtifactBudget(args))
+  }
 })

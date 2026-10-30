@@ -43,8 +43,12 @@ let artifactFixture
 let artifactDirectory
 
 const exportedPaths = (exportsValue) => {
-  if (typeof exportsValue === 'string') return [exportsValue]
-  if (!exportsValue || typeof exportsValue !== 'object') return []
+  if (typeof exportsValue === 'string') {
+    return [exportsValue]
+  }
+  if (!exportsValue || typeof exportsValue !== 'object') {
+    return []
+  }
   return Object.values(exportsValue).flatMap(exportedPaths)
 }
 
@@ -88,7 +92,9 @@ const createPackedArtifactFixture = () => {
       'peerDependencies',
       'optionalDependencies'
     ]) {
-      if (!manifest[dependencyField]) continue
+      if (!manifest[dependencyField]) {
+        continue
+      }
       for (const [dependencyName, version] of Object.entries(
         manifest[dependencyField]
       )) {
@@ -146,7 +152,9 @@ before(() => {
 })
 
 after(() => {
-  if (!artifactFixture) return
+  if (!artifactFixture) {
+    return
+  }
   fs.rmSync(artifactFixture.artifactDirectory, { recursive: true, force: true })
   fs.rmSync(artifactFixture.fixtureRoot, { recursive: true, force: true })
 })
@@ -387,7 +395,9 @@ test('generated template runner owns install, compile, build, test, smoke, and c
     allowUnsupportedNode: true,
     runCommand: (command, args, options) => {
       commands.push({ command: [command, ...args], env: options.env })
-      if (args[0] !== 'install') return
+      if (args[0] !== 'install') {
+        return
+      }
       const manifest = JSON.parse(
         fs.readFileSync(path.join(options.cwd, 'package.json'), 'utf8')
       )

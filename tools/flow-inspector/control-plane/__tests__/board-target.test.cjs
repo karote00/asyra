@@ -178,7 +178,9 @@ test(
         LOCAL_ACTOR
       )
       await server.service.waitTask(secondTask)
-      if (process.platform === 'darwin') await prepareReview(secondTask)
+      if (process.platform === 'darwin') {
+        await prepareReview(secondTask)
+      }
       const prepareButton = frame.locator('#target-items button').first()
       await prepareButton.focus()
       await frame.locator('#refresh').evaluate((el) => el.click())
@@ -210,10 +212,11 @@ test(
         ['narrow', 390, 844]
       ]) {
         await page.setViewportSize({ width, height })
-        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+        if (width <= 900 && (await page.locator('.sidebar').isVisible())) {
           await page
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
+        }
         await frame.locator('#target-controls').scrollIntoViewIfNeeded()
         assert.ok(
           await frame
@@ -330,8 +333,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )

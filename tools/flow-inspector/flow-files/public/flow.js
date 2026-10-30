@@ -12,13 +12,17 @@
     stopped = false
   const el = (tag, text) => {
     const node = document.createElement(tag)
-    if (text !== undefined) node.textContent = text
+    if (text !== undefined) {
+      node.textContent = text
+    }
     return node
   }
   const get = async (url) => {
     const response = await fetch(url)
     const value = await response.json()
-    if (!response.ok) throw new Error(value.error)
+    if (!response.ok) {
+      throw new Error(value.error)
+    }
     return value
   }
   const post = async (url, body) => {
@@ -32,34 +36,50 @@
       body: JSON.stringify(body)
     })
     const value = await response.json()
-    if (!response.ok) throw new Error(value.error)
+    if (!response.ok) {
+      throw new Error(value.error)
+    }
     return value
   }
   const currentFlow = () =>
     snapshot?.evaluation.flows.find((f) => f.id === selectedFlow)
   function renderPanel() {
-    if (!loaded || !snapshot) return
+    if (!loaded || !snapshot) {
+      return
+    }
     const flow = currentFlow()
-    if (!flow) return
+    if (!flow) {
+      return
+    }
     const selectedCard = document.querySelector('.step-card.is-selected')
-    if (selection !== 'integration')
+    if (selection !== 'integration') {
       selection = selectedCard?.dataset.stepId ?? flow.nodes[0]?.id
+    }
     const selected =
       selection === 'integration'
         ? flow.integration
         : flow.nodes.find((n) => n.id === selection)
-    if (!selected) return
+    if (!selected) {
+      return
+    }
     const context = selected.context,
       container = document.querySelector('.detail-content')
-    if (!container) return
+    if (!container) {
+      return
+    }
     container.querySelector('.task-summary')?.remove()
     const full = container.querySelector('[data-full-contract]'),
       glance = container.querySelector('.detail-at-a-glance')
-    if (full && glance && !full.contains(glance)) full.append(glance)
-    if (full)
-      for (const item of [...container.children])
-        if (item.matches('.detail-group,.detail-heading,.detail-summary'))
+    if (full && glance && !full.contains(glance)) {
+      full.append(glance)
+    }
+    if (full) {
+      for (const item of [...container.children]) {
+        if (item.matches('.detail-group,.detail-heading,.detail-summary')) {
           full.append(item)
+        }
+      }
+    }
     const panel = el('section')
     panel.className = 'task-summary'
     panel.append(
@@ -83,7 +103,9 @@
       context.blockers[0] ??
       context.warnings[0]?.summary ??
       context.errors[0]?.summary
-    if (blocker) panel.append(el('p', blocker))
+    if (blocker) {
+      panel.append(el('p', blocker))
+    }
     const status = el('p')
     status.setAttribute('role', 'alert')
     const actions = el('div')
@@ -93,7 +115,9 @@
       button.type = 'button'
       button.disabled = busy || document.body.dataset.invalid === 'true'
       button.onclick = async () => {
-        if (busy) return
+        if (busy) {
+          return
+        }
         busy = true
         button.disabled = true
         try {
@@ -155,8 +179,9 @@
         panel.append(box)
       })
     }
-    for (const action of context.actions.filter((a) => a.kind === 'external'))
+    for (const action of context.actions.filter((a) => a.kind === 'external')) {
       panel.append(el('p', action.label + ': ' + action.instructions))
+    }
     const reason = el('textarea')
     reason.setAttribute('aria-label', 'Acceptance reason or note')
     const draftKey = selectedFlow + '/' + selection
@@ -166,8 +191,9 @@
       (c) => c.kind === 'manual'
     )) {
       const decide = async (statusValue) => {
-        if (!reason.value.trim())
+        if (!reason.value.trim()) {
           throw new Error('Explain the decision before submitting')
+        }
         await post('/api/update', {
           flowId: selectedFlow,
           request: {
@@ -199,15 +225,20 @@
     for (const [label, refs] of [
       ['Specification', context.specRefs],
       ['Implementation', context.implementationRefs]
-    ])
-      if (refs.length) panel.append(el('p', label + ': ' + refs.join(', ')))
+    ]) {
+      if (refs.length) {
+        panel.append(el('p', label + ': ' + refs.join(', ')))
+      }
+    }
     panel.append(el('h3', 'Notes and decisions'), reason)
     const noteActions = el('div')
     noteActions.className = 'task-actions'
     const save = el('button', 'Save note')
     save.onclick = async () => {
       try {
-        if (!reason.value.trim()) throw new Error('Enter a note')
+        if (!reason.value.trim()) {
+          throw new Error('Enter a note')
+        }
         await post('/api/update', {
           flowId: selectedFlow,
           request: {
@@ -304,11 +335,14 @@
       const nextSignature = JSON.stringify(next)
       document.body.dataset.invalid = 'false'
       error.textContent = ''
-      if (signature === nextSignature) return
+      if (signature === nextSignature) {
+        return
+      }
       signature = nextSignature
       snapshot = next
-      if (!next.evaluation.flows.some((f) => f.id === selectedFlow))
+      if (!next.evaluation.flows.some((f) => f.id === selectedFlow)) {
         selectedFlow = next.evaluation.flows[0]?.id
+      }
       selector.replaceChildren(
         ...next.evaluation.flows.map((f) => {
           const option = el('option', f.title)
@@ -333,10 +367,11 @@
         })
         loaded = true
         renderPanel()
-      } else
+      } else {
         globalThis.FLOW_INSPECTOR_VIEW.update(
           structuredClone(next.views[selectedFlow])
         )
+      }
     } catch (e) {
       signature = null
       document.body.dataset.invalid = 'true'
@@ -353,7 +388,9 @@
   })
   async function poll() {
     await refresh()
-    if (!stopped) setTimeout(poll, 1000)
+    if (!stopped) {
+      setTimeout(poll, 1000)
+    }
   }
   await poll()
 })()

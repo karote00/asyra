@@ -18,11 +18,17 @@ const fixture = async () => {
   const pixels = Buffer.alloc(12 * 12 * 4)
   const set = (x: number, y: number, color: number[]) =>
     pixels.set(color, (y * 12 + x) * 4)
-  for (let y = 2; y < 10; y++)
-    for (let x = 2; x < 10; x++) set(x, y, [0, 136, 0, 255])
+  for (let y = 2; y < 10; y++) {
+    for (let x = 2; x < 10; x++) {
+      set(x, y, [0, 136, 0, 255])
+    }
+  }
   // White foreground, green interior detail, and same-color exterior mark.
-  for (let y = 4; y < 8; y++)
-    for (let x = 4; x < 8; x++) set(x, y, [255, 255, 255, 255])
+  for (let y = 4; y < 8; y++) {
+    for (let x = 4; x < 8; x++) {
+      set(x, y, [255, 255, 255, 255])
+    }
+  }
   set(5, 5, [0, 136, 0, 255])
   set(0, 0, [0, 136, 0, 255])
   const bytes = await sharp(pixels, {
@@ -305,13 +311,17 @@ it('observes cancellation before and during pixel work without converting or pub
       { metadata: { imageAttachments: [await fixture()] } },
       convert
     )
-    if (cancelBefore) controller.abort()
+    if (cancelBefore) {
+      controller.abort()
+    }
     const pending = tools.call(
       'vectorize_image_layers',
       options,
       controller.signal
     )
-    if (!cancelBefore) controller.abort()
+    if (!cancelBefore) {
+      controller.abort()
+    }
     await expect(pending).rejects.toThrow()
     expect(convert).not.toHaveBeenCalled()
   }
@@ -542,13 +552,19 @@ it('classifies flat-palette coverage without turning transparent matte fringes i
 
 it('real tracing keeps an admitted foreground contact and emits no faint fringe islands', async () => {
   const pixels = Buffer.alloc(12 * 12 * 4)
-  for (let i = 0; i < pixels.length; i += 4) pixels.set([0, 100, 60, 255], i)
-  for (let y = 4; y < 8; y++)
-    for (let x = 0; x < 6; x++)
+  for (let i = 0; i < pixels.length; i += 4) {
+    pixels.set([0, 100, 60, 255], i)
+  }
+  for (let y = 4; y < 8; y++) {
+    for (let x = 0; x < 6; x++) {
       pixels.set([255, 255, 255, x === 0 ? 210 : 255], (y * 12 + x) * 4)
-  for (let y = 0; y < 3; y++)
-    for (let x = 10; x < 12; x++)
+    }
+  }
+  for (let y = 0; y < 3; y++) {
+    for (let x = 10; x < 12; x++) {
       pixels.set([160, 200, 185, 20], (y * 12 + x) * 4)
+    }
+  }
   const bytes = await sharp(pixels, {
     raw: { width: 12, height: 12, channels: 4 }
   })

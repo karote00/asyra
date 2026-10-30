@@ -48,7 +48,9 @@ it(
     vi.spyOn(meshIndex, 'worldBounds').mockImplementation((bounds, pose) => {
       counts.worldBoundsCalls++
       const poses = transformed.get(bounds) ?? new WeakSet<object>()
-      if (poses.has(pose)) counts.repeatedWorldBounds++
+      if (poses.has(pose)) {
+        counts.repeatedWorldBounds++
+      }
       poses.add(pose)
       transformed.set(bounds, poses)
       return worldBounds(bounds, pose)
@@ -124,7 +126,9 @@ it(
         counts.lowerCalls++
         try {
           const result = lower.apply(this, args)
-          if (result > args[2]) counts.clearIntervalCertificates++
+          if (result > args[2]) {
+            counts.clearIntervalCertificates++
+          }
           return result
         } finally {
           counts.lowerWork += this.work - before

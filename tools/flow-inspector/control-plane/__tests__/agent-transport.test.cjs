@@ -85,14 +85,17 @@ test('subscription transport refuses API-key authentication before starting a mo
     events: new EventEmitter(),
     notify: () => undefined,
     async request(method) {
-      if (method === 'account/read') return { account: { type: 'apiKey' } }
-      if (method === 'thread/start')
+      if (method === 'account/read') {
+        return { account: { type: 'apiKey' } }
+      }
+      if (method === 'thread/start') {
         return {
           thread: { id: 'thread' },
           model: 'model',
           instructionSources: [],
           runtimeWorkspaceRoots: []
         }
+      }
       if (method === 'turn/start') {
         turns++
         throw new Error('turn must not start')
@@ -117,17 +120,22 @@ test('turn completion binds final JSON and provider usage, cancellation stays un
       events,
       notify: () => undefined,
       async request(method) {
-        if (method === 'account/read') return { account: { type: 'chatgpt' } }
-        if (method === 'thread/start')
+        if (method === 'account/read') {
+          return { account: { type: 'chatgpt' } }
+        }
+        if (method === 'thread/start') {
           return {
             thread: { id: 'thread' },
             model: 'model',
             instructionSources: [],
             runtimeWorkspaceRoots: []
           }
+        }
         if (method === 'turn/start') {
           setImmediate(() => {
-            if (cancelled) return controller.abort()
+            if (cancelled) {
+              return controller.abort()
+            }
             for (const item of [
               { type: 'userMessage', content: [] },
               {
@@ -198,19 +206,24 @@ test('cancellation waits for the matching interruption receipt without settling 
       events,
       notify: () => undefined,
       async request(method) {
-        if (method === 'account/read') return { account: { type: 'chatgpt' } }
-        if (method === 'thread/start')
+        if (method === 'account/read') {
+          return { account: { type: 'chatgpt' } }
+        }
+        if (method === 'thread/start') {
           return {
             thread: { id: 'thread' },
             model: 'model',
             instructionSources: [],
             runtimeWorkspaceRoots: []
           }
+        }
         if (method === 'turn/start') {
           setImmediate(release)
           return { turn: { id: 'turn' } }
         }
-        if (method === 'turn/interrupt') interrupts++
+        if (method === 'turn/interrupt') {
+          interrupts++
+        }
         return {}
       }
     }
@@ -245,8 +258,9 @@ test('cancellation waits for the matching interruption receipt without settling 
     })
     await new Promise((resolve) => setImmediate(resolve))
     assert.equal(finished, false, 'another turn cannot confirm cancellation')
-    if (receipt === 'closed') events.emit('closed')
-    else if (receipt !== 'missing')
+    if (receipt === 'closed') {
+      events.emit('closed')
+    } else if (receipt !== 'missing') {
       events.emit('notification', {
         method: 'turn/completed',
         params: {
@@ -254,6 +268,7 @@ test('cancellation waits for the matching interruption receipt without settling 
           turn: { id: 'turn', status: receipt }
         }
       })
+    }
     const result = await pending
     assert.equal(result.terminal, false)
     assert.equal(

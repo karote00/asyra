@@ -124,14 +124,18 @@ export function buildCultivationMeshes(
     })
   }
   const assembly = createSupportAssembly(config)
-  for (const member of [...assembly.tubes, ...assembly.rails])
+  for (const member of [...assembly.tubes, ...assembly.rails]) {
     tube(member, 'supports', 0x8a9c9b)
+  }
   const net = createPlantingNet(assembly, config)
-  for (const strand of net.strands) tube(strand, 'net', 0xe5e8ce)
-  for (const tie of net.ties)
+  for (const strand of net.strands) {
+    tube(strand, 'net', 0xe5e8ce)
+  }
+  for (const tie of net.ties) {
     add(`tie:${tie.radius}`, 'ties', 0x26322b, tie.center, () =>
       tieShape(tie.radius)
     )
+  }
   for (const clip of assembly.clips) {
     const key = `clip:${JSON.stringify([clip.firstAxis, clip.secondAxis, clip.normal, clip.firstDiameter, clip.secondDiameter])}`
     add(key, 'clips', 0xb4bfbe, clip.origin, () => {

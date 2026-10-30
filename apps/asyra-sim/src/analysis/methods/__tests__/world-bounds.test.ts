@@ -25,7 +25,9 @@ function compare(
   const bits = view.getBigUint64(0)
   const exponent = Number((bits >> 52n) & 2047n)
   let n = (bits & ((1n << 52n) - 1n)) | (exponent ? 1n << 52n : 0n)
-  if (bits >> 63n) n = -n
+  if (bits >> 63n) {
+    n = -n
+  }
   const shift = (exponent || 1) - 1023 - 52
   return shift >= 0
     ? (n << BigInt(shift)) * denominator - numerator
@@ -79,9 +81,9 @@ it('encloses all box corners across a nontrivial interval rotation', () => {
     rotation: ops.axisAngle([0, 0, 1], interval(-0.5, 0.5))
   })
   // Additional regression samples; conservatism comes from the interval formula.
-  for (const angle of [-0.5, -0.25, 0, 0.25, 0.5])
-    for (const x of bounds[0])
-      for (const y of bounds[1])
+  for (const angle of [-0.5, -0.25, 0, 0.25, 0.5]) {
+    for (const x of bounds[0]) {
+      for (const y of bounds[1]) {
         for (const z of bounds[2]) {
           const point = [
             1 + Math.cos(angle) * x - Math.sin(angle) * y,
@@ -93,4 +95,7 @@ it('encloses all box corners across a nontrivial interval rotation', () => {
             expect(result[axis][1]).toBeGreaterThanOrEqual(point[axis])
           }
         }
+      }
+    }
+  }
 })

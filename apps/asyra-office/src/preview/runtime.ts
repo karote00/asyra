@@ -17,7 +17,9 @@ export async function startAssetPreview(
   host: HTMLElement,
   asset?: ReviewAsset
 ) {
-  if (active) throw new Error('An asset preview is already active')
+  if (active) {
+    throw new Error('An asset preview is already active')
+  }
   active = true
   const owner = runtimeCore
   let stopped = false,
@@ -30,7 +32,9 @@ export async function startAssetPreview(
   let layer: SpatialLayer | undefined
   let cleanup: Promise<void> | undefined
   const dispose = () => {
-    if (cleanup) return cleanup
+    if (cleanup) {
+      return cleanup
+    }
     stopped = true
     observer?.disconnect()
     controller?.dispose()
@@ -70,7 +74,9 @@ export async function startAssetPreview(
       silent: true
     })
     layer = new SpatialLayer(() => {
-      if (!stopped) owner.setSystemProperty(FRAME_REVISION, ++revision)
+      if (!stopped) {
+        owner.setSystemProperty(FRAME_REVISION, ++revision)
+      }
     })
     owner.registerRenderLayer(layer.registration)
     const size = () => ({
@@ -95,16 +101,20 @@ export async function startAssetPreview(
     })
     await owner.start(host, { ...size(), backgroundColor: 0xf4f1e9 })
     observer = new ResizeObserver(() => {
-      if (stopped) return
+      if (stopped) {
+        return
+      }
       const next = size()
       owner.resizeRenderer(next.width, next.height)
-      if (asset && controller)
-        (controller as ReturnType<typeof createAssetReviewController>).resize(
+      if (asset && controller) {
+        ;(controller as ReturnType<typeof createAssetReviewController>).resize(
           next.height,
           Math.min(window.devicePixelRatio, 2),
           next.width
         )
-      else controller?.resize(next.height, Math.min(window.devicePixelRatio, 2))
+      } else {
+        controller?.resize(next.height, Math.min(window.devicePixelRatio, 2))
+      }
     })
     observer.observe(host)
     return {

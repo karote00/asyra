@@ -43,7 +43,9 @@ export const createArrangementAction = (
     }
   },
   execute: async (request, context) => {
-    if (context.signal.aborted) throw new Error('Design arrangement cancelled.')
+    if (context.signal.aborted) {
+      throw new Error('Design arrangement cancelled.')
+    }
     return runAiMutation(context, () => arrange(request))
   }
 })

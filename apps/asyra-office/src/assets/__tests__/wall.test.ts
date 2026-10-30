@@ -3,8 +3,9 @@ import { createWall } from '../wall'
 
 const extents = (part: ReturnType<typeof createWall>[number]) => {
   const mesh = part.descriptor
-  if (mesh.shape.kind !== 'triangles')
+  if (mesh.shape.kind !== 'triangles') {
     throw new Error('Expected triangle output')
+  }
   const shape = mesh.shape
   return [0, 1, 2].map((axis) => {
     const values = shape.positions
@@ -25,7 +26,9 @@ describe('approved wall geometry', () => {
     expect(body[0]).toEqual(cap[0])
     for (const part of parts) {
       const far = part.descriptor.distant
-      if (!far) throw new Error('Missing distant wall geometry')
+      if (!far) {
+        throw new Error('Missing distant wall geometry')
+      }
       const distant = extents({
         ...part,
         descriptor: { ...part.descriptor, shape: far.shape }
@@ -34,10 +37,11 @@ describe('approved wall geometry', () => {
     }
   })
   it('rejects caps that leave no body or cannot contain the authored bevel', () => {
-    for (const capHeight of [0, -0.01, 0.001, 1.8, Infinity, NaN])
+    for (const capHeight of [0, -0.01, 0.001, 1.8, Infinity, NaN]) {
       expect(() =>
         createWall({ size: [1.2, 0.1575, 1.8], capHeight })
       ).toThrow()
+    }
   })
 
   it('keeps both X ends flush and overhangs only thickness by 15 mm per side', () => {
@@ -56,7 +60,9 @@ describe('approved wall geometry', () => {
   it('has closed outward-facing topology and exactly two upper arc segments', () => {
     for (const part of createWall()) {
       const mesh = part.descriptor
-      if (mesh.shape.kind !== 'triangles') throw new Error('Expected triangles')
+      if (mesh.shape.kind !== 'triangles') {
+        throw new Error('Expected triangles')
+      }
       const { positions: p, indices } = mesh.shape
       const edges = new Map<string, number>()
       const key = (i: number) =>
@@ -112,12 +118,18 @@ describe('approved wall geometry', () => {
     for (let i = 0; i < 2; i++) {
       const a = extents(original[i]),
         b = extents(scaled[i])
-      for (let axis = 0; axis < 3; axis++)
-        for (let end = 0; end < 2; end++)
+      for (let axis = 0; axis < 3; axis++) {
+        for (let end = 0; end < 2; end++) {
           expect(b[axis][end]).toBeCloseTo(a[axis][end] * factors[axis], 12)
+        }
+      }
       const shape = scaled[i].descriptor.shape
-      if (shape.kind !== 'triangles') throw new Error('Expected triangles')
-      if (!shape.uvs) throw new Error('Missing UVs')
+      if (shape.kind !== 'triangles') {
+        throw new Error('Expected triangles')
+      }
+      if (!shape.uvs) {
+        throw new Error('Missing UVs')
+      }
       // The first bottom triangle spans local X and thickness Y in metres.
       const first = shape.uvs.slice(0, 6)
       expect(

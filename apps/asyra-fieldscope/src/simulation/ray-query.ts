@@ -96,7 +96,9 @@ const finitePoint = (point: Point3) =>
   Array.isArray(point) && point.length === 3 && point.every(Number.isFinite)
 function unit(direction: Point3): Point3 {
   const scale = Math.max(...direction.map(Math.abs))
-  if (!scale) throw new Error('Zero ray direction')
+  if (!scale) {
+    throw new Error('Zero ray direction')
+  }
   const scaled: Point3 = [
     direction[0] / scale,
     direction[1] / scale,
@@ -127,16 +129,18 @@ function readBatch<B extends WalkingWorldRayBatch>(raw: B): Readonly<B> {
     !['all-attached', 'unknown'].includes(input.fruits) ||
     !Array.isArray(input.rays) ||
     !input.rays.length
-  )
+  ) {
     throw new Error('Invalid ray batch')
+  }
   for (const ray of input.rays) {
     if (
       !finitePoint(ray.origin) ||
       !finitePoint(ray.direction) ||
       !Number.isFinite(ray.maxDistance) ||
       ray.maxDistance <= 0
-    )
+    ) {
       throw new Error('Invalid ray')
+    }
     unit(ray.direction)
   }
   if ('robot' in input && input.robot) {
@@ -148,8 +152,9 @@ function readBatch<B extends WalkingWorldRayBatch>(raw: B): Readonly<B> {
       base.rotation.length !== 4 ||
       !base.rotation.every(Number.isFinite) ||
       Math.abs(Math.hypot(...base.rotation) - 1) > EPS
-    )
+    ) {
       throw new Error('Invalid robot base transform')
+    }
   }
   return freeze(input)
 }
@@ -294,16 +299,18 @@ function exactSourceFrame(
   matrix: FrameMatrix<Dyadic>,
   position: Point3
 ): QueryExactFrame {
-  if (!finitePoint(position))
+  if (!finitePoint(position)) {
     throw new Error('Invalid exact source frame position')
+  }
   const cofactor = frameCross(matrix[1], matrix[2], exactFrameArithmetic)
   const determinant = matrix[0].reduce(
     (sum, value, axis) =>
       exactFrameAdd(sum, exactFrameArithmetic.multiply(value, cofactor[axis])),
     dyadic(0)
   )
-  if (determinant.significand === 0n)
+  if (determinant.significand === 0n) {
     throw new Error('Singular exact source frame')
+  }
   return freeze({
     matrix,
     position: [dyadic(position[0]), dyadic(position[1]), dyadic(position[2])],
@@ -320,8 +327,9 @@ export function prepareQueryExactForwardFrame(
     rotation.length !== 4 ||
     !rotation.every(Number.isFinite) ||
     !rotation.some((value) => value !== 0)
-  )
+  ) {
     throw new Error('Invalid exact source frame rotation')
+  }
   return exactSourceFrame(
     sourceRotationMatrix(rotation, exactFrameArithmetic),
     transform.position
@@ -332,8 +340,9 @@ export function prepareQueryExactInstanceFrame(placement: {
   readonly position: Point3
   readonly yaw: number
 }): QueryExactFrame {
-  if (!Number.isFinite(placement.yaw))
+  if (!Number.isFinite(placement.yaw)) {
     throw new Error('Invalid exact source frame yaw')
+  }
   return exactSourceFrame(
     sourceInstanceMatrix(placement.yaw, dyadic),
     placement.position
@@ -406,7 +415,9 @@ export function transformQueryPoint(
   },
   value: readonly Interval[]
 ): Vector {
-  if (value.length !== 3) throw new Error('Invalid query point')
+  if (value.length !== 3) {
+    throw new Error('Invalid query point')
+  }
   const rotated = apply(frame.matrix, [value[0], value[1], value[2]])
   return [
     add(rotated[0], frame.position[0]),
@@ -458,15 +469,21 @@ function entryDistance(
     const d = direction[axis],
       o = origin[axis]
     if (zero(d)) {
-      if (o.high < box.min[axis] || o.low > box.max[axis]) return null
+      if (o.high < box.min[axis] || o.low > box.max[axis]) {
+        return null
+      }
       continue
     }
-    if (containsZero(d)) continue
+    if (containsZero(d)) {
+      continue
+    }
     const a = divide(subtract(interval(box.min[axis]), o), d)
     const b = divide(subtract(interval(box.max[axis]), o), d)
     near = Math.max(near, Math.min(a.low, b.low))
     far = Math.min(far, Math.max(a.high, b.high))
-    if (near > far) return null
+    if (near > far) {
+      return null
+    }
   }
   return near
 }
@@ -502,8 +519,9 @@ function exactTriangle(
     ![...origin, ...direction].every(
       (value) => finiteInterval(value) && value.low === value.high
     )
-  )
+  ) {
     return undefined
+  }
   work.exactPredicates++
   const values = [
     ...a,
@@ -529,7 +547,9 @@ function exactTriangle(
     e2 = exactSubtract(third, first),
     p = exactCross(d, e2)
   let determinant = exactDot(e1, p)
-  if (determinant === 0n) return undefined
+  if (determinant === 0n) {
+    return undefined
+  }
   const offset = exactSubtract(o, first),
     q = exactCross(offset, e1)
   let u = exactDot(offset, p),
@@ -541,20 +561,27 @@ function exactTriangle(
     v = -v
     t = -t
   }
-  if (u < 0n || v < 0n || u + v > determinant || t < 0n) return null
-  if (t === 0n) return undefined
+  if (u < 0n || v < 0n || u + v > determinant || t < 0n) {
+    return null
+  }
+  if (t === 0n) {
+    return undefined
+  }
   const limit = dyadic(range)
   if (
     limit.exponent >= 0
       ? t > determinant * (limit.significand << BigInt(limit.exponent))
       : t << BigInt(-limit.exponent) > determinant * limit.significand
-  )
+  ) {
     return null
+  }
   const distance = fractionInterval(t, determinant)
   const barycentric = [determinant - u - v, u, v].map((value) =>
     fractionInterval(value, determinant)
   ) as unknown as TriangleHit['barycentric']
-  if (![distance, ...barycentric].every(finiteInterval)) return undefined
+  if (![distance, ...barycentric].every(finiteInterval)) {
+    return undefined
+  }
   return {
     proof: 'exact',
     exactDistance: { numerator: t, denominator: determinant },
@@ -576,7 +603,9 @@ function triangleHit(
   include(box, b)
   include(box, c)
   const entry = entryDistance(box, origin, direction, range)
-  if (entry === null) return null
+  if (entry === null) {
+    return null
+  }
   const unresolved = () => {
     const exact = exactTriangle(a, b, c, origin, direction, range, work)
     return exact === undefined ? { unknownAt: entry } : exact
@@ -586,31 +615,36 @@ function triangleHit(
     e2 = vectorSubtract(numberVector(c), first)
   const p = vectorCross(direction, e2),
     determinant = vectorDot(e1, p)
-  if (!finiteInterval(determinant) || containsZero(determinant))
+  if (!finiteInterval(determinant) || containsZero(determinant)) {
     return unresolved()
+  }
   const offset = vectorSubtract(origin, first),
     q = vectorCross(offset, e1)
   const u = divide(vectorDot(offset, p), determinant),
     v = divide(vectorDot(direction, q), determinant)
   const total = add(u, v),
     distance = divide(vectorDot(e2, q), determinant)
-  if (![u, v, total, distance].every(finiteInterval)) return unresolved()
+  if (![u, v, total, distance].every(finiteInterval)) {
+    return unresolved()
+  }
   if (
     u.high < 0 ||
     v.high < 0 ||
     total.low > 1 ||
     distance.high < 0 ||
     distance.low > range
-  )
+  ) {
     return null
+  }
   if (
     u.low < 0 ||
     v.low < 0 ||
     total.high > 1 ||
     distance.low <= 0 ||
     distance.high > range
-  )
+  ) {
     return unresolved()
+  }
   return {
     proof: 'enclosed',
     distance,
@@ -645,10 +679,13 @@ function closedOrigin(
       Number.MAX_VALUE,
       work
     )
-    if (!hit) continue
+    if (!hit) {
+      continue
+    }
     // A boundary crossing may be a shared edge or tangent, so parity is unresolved.
-    if ('unknownAt' in hit || hit.barycentric.some((value) => value.low <= 0))
+    if ('unknownAt' in hit || hit.barycentric.some((value) => value.low <= 0)) {
       return 'unknown'
+    }
     crossings++
   }
   return crossings % 2 ? 'inside' : 'outside'
@@ -681,7 +718,9 @@ export class RayQueries {
 
   private admitMembership(source: QueryGeometrySource) {
     this.geometry.read(source)
-    if (this.membershipSource === source) return
+    if (this.membershipSource === source) {
+      return
+    }
     const members = new Map<GeometryMesh, Set<SourceRegion>>()
     const origins = new Map<GeometryMesh['origin'], GeometryMesh>()
     const ordinals = new Map<GeometryMesh, number>()
@@ -694,8 +733,9 @@ export class RayQueries {
       }
       members.set(mesh, regions)
       ordinals.set(mesh, ordinals.size)
-      if (origins.has(mesh.origin))
+      if (origins.has(mesh.origin)) {
         throw new Error('Ambiguous canonical source origin')
+      }
       origins.set(mesh.origin, mesh)
     }
     this.geometry.read(source)
@@ -742,11 +782,14 @@ export class RayQueries {
             'rays'
           ].includes(key)
       )
-    )
+    ) {
       throw new Error('Invalid walking world ray request')
-    for (const candidate of candidates)
-      if (candidate.mesh.kind !== 'farm' || candidate.mesh.frame !== 'world')
+    }
+    for (const candidate of candidates) {
+      if (candidate.mesh.kind !== 'farm' || candidate.mesh.frame !== 'world') {
         throw new Error('Walking rays require farm world sources')
+      }
+    }
     return this.scoped(source, raw, candidates)
   }
 
@@ -765,16 +808,18 @@ export class RayQueries {
         !Number.isSafeInteger(instance) ||
         instance < 0 ||
         instance >= (mesh.descriptor?.instances?.length ?? 1)
-      )
+      ) {
         throw new Error('Invalid canonical ray candidate')
+      }
       let instances = scope.get(mesh)
       if (!instances) {
         instances = new Map()
         scope.set(mesh, instances)
       }
       const regions = instances.get(instance) ?? []
-      if (regions.includes(region))
+      if (regions.includes(region)) {
         throw new Error('Duplicate canonical ray candidate')
+      }
       instances.set(
         instance,
         [...regions, region].sort((a, b) => a.indexStart - b.indexStart)
@@ -825,13 +870,14 @@ export class RayQueries {
       ('robot' in source.receipt && !('robot' in input && input.robot)) ||
       input.leaves !== 'source-pose' ||
       input.fruits !== 'all-attached'
-    )
+    ) {
       return publish(
         input.rays.map(() => ({
           status: 'unknown',
           reason: 'missing-or-expired-scene-state'
         }))
       )
+    }
     const transforms = new Map<GeometryMesh['origin'], Inverse>()
     let base: Inverse | undefined
     if ('robot' in source.receipt) {
@@ -839,7 +885,9 @@ export class RayQueries {
         'robot' in input ? input.robot : undefined
       ) as RayBatch['robot']
       const rig = source.receipt.robot.rig
-      if (!rig || !robot) throw new Error('Missing robot rig or pose')
+      if (!rig || !robot) {
+        throw new Error('Missing robot rig or pose')
+      }
       const pose = evaluateRobotAffinePose(rig, robot.joints)
       work.fk += pose.work.fk
       work.bodyMatrices += pose.work.matrices
@@ -859,20 +907,26 @@ export class RayQueries {
       ? [...scope.keys()].sort((a, b) => {
           const first = this.ordinals.get(a),
             second = this.ordinals.get(b)
-          if (first === undefined || second === undefined)
+          if (first === undefined || second === undefined) {
             throw new Error('Missing canonical source ordinal')
+          }
           return first - second
         })
       : source.meshes) {
-      if (mesh.shape.kind !== 'triangles')
+      if (mesh.shape.kind !== 'triangles') {
         throw new Error('Unsupported query source')
+      }
       const parents: Inverse[] = []
       if (mesh.frame === 'robot') {
         const body = transforms.get(mesh.origin)
-        if (!body || !base) throw new Error('Missing body transform')
+        if (!body || !base) {
+          throw new Error('Missing body transform')
+        }
         parents.push(base, body)
       } else {
-        if (!mesh.descriptor) throw new Error('Missing installed transform')
+        if (!mesh.descriptor) {
+          throw new Error('Missing installed transform')
+        }
         parents.push(prepareInverse(mesh.descriptor))
       }
       const instances = mesh.descriptor?.instances
@@ -925,7 +979,9 @@ export class RayQueries {
         work.instances++
         const shape = mesh.shape as TriangleShape,
           product = mesh.prepared
-        if (!product) throw new Error('Missing completed query shape')
+        if (!product) {
+          throw new Error('Missing completed query shape')
+        }
         let origin = numberVector(ray.origin),
           localDirection = direction
         for (const parent of parents) {
@@ -943,21 +999,27 @@ export class RayQueries {
             localDirection,
             ray.maxDistance
           ) === null
-        )
+        ) {
           continue
+        }
         for (const region of product.regions) {
-          if (regions && !regions.includes(region.source)) continue
-          if (!originCandidate(region.bounds, origin)) continue
+          if (regions && !regions.includes(region.source)) {
+            continue
+          }
+          if (!originCandidate(region.bounds, origin)) {
+            continue
+          }
           if (
             region.source.kind === 'open-shell' ||
             closedOrigin(shape, region.source, origin, work) !== 'outside'
-          )
+          ) {
             originUnknown = true
+          }
         }
         const spans = regions ?? [
           { indexStart: 0, indexCount: shape.indices.length }
         ]
-        for (const span of spans)
+        for (const span of spans) {
           for (
             let index = span.indexStart;
             index < span.indexStart + span.indexCount;
@@ -973,7 +1035,9 @@ export class RayQueries {
               ray.maxDistance,
               work
             )
-            if (!candidate) continue
+            if (!candidate) {
+              continue
+            }
             if ('unknownAt' in candidate) {
               ambiguous(candidate.unknownAt, [
                 {
@@ -1008,17 +1072,22 @@ export class RayQueries {
             }
             if (selected) {
               const previous = selected.distance
-              if (distance.low > previous.high) continue
+              if (distance.low > previous.high) {
+                continue
+              }
               if (
                 distance.low === distance.high &&
                 previous.low === previous.high &&
                 distance.low === previous.low
-              )
+              ) {
                 continue
+              }
               if (distance.high >= previous.low) {
                 const first = selected.refine(),
                   second = refine()
-                if (second === null) continue
+                if (second === null) {
+                  continue
+                }
                 if (first === null) {
                   // A contradictory proof cannot preserve an old hit or erase earlier candidates.
                   ambiguous(0, [
@@ -1045,8 +1114,9 @@ export class RayQueries {
                   if (
                     b.numerator * a.denominator >=
                     a.numerator * b.denominator
-                  )
+                  ) {
                     continue
+                  }
                   completed = second
                   distance = second.distance
                 } else {
@@ -1079,15 +1149,18 @@ export class RayQueries {
               }
             }
           }
+        }
       }
-      if (originUnknown)
+      if (originUnknown) {
         return { status: 'unknown', reason: 'unknown-origin-occupancy' }
-      if (unknownAt <= (selected?.distance.high ?? ray.maxDistance))
+      }
+      if (unknownAt <= (selected?.distance.high ?? ray.maxDistance)) {
         return {
           status: 'unknown',
           reason: 'geometric-ambiguity',
           ...(witnesses ? { witnesses } : {})
         }
+      }
       return selected?.result ?? { status: 'miss' }
     })
     return publish(results)

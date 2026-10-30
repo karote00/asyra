@@ -17,12 +17,15 @@ const manifest = JSON.parse(
   }[]
 }
 const selected = manifest.scenarios.find((item) => item.id === scenario)
-if (!selected) throw new Error('Unknown proof scenario')
+if (!selected) {
+  throw new Error('Unknown proof scenario')
+}
 const mutation = selected.mutation
-if (mutation && mutation.file !== 'packages/factory/src/data-transact.ts')
+if (mutation && mutation.file !== 'packages/factory/src/data-transact.ts') {
   throw new Error(
     'Negative proof may transform only its declared runtime owner'
   )
+}
 
 export default defineConfig({
   plugins: [
@@ -32,14 +35,18 @@ export default defineConfig({
       resolveId(id) {
         // Declared aliases run before this hook. Never fall through to a
         // workspace package's mutable dist output for an unknown dependency.
-        if (id.startsWith('@asyra/'))
+        if (id.startsWith('@asyra/')) {
           throw new Error('Uncaptured source dependency: ' + id)
+        }
       },
       transform(code, id) {
-        if (!mutation || id !== resolve(sourceRoot, mutation.file)) return
+        if (!mutation || id !== resolve(sourceRoot, mutation.file)) {
+          return
+        }
         const original = mutation.from
-        if (code.split(original).length !== 2)
+        if (code.split(original).length !== 2) {
           throw new Error('Negative proof mutation site changed')
+        }
         return {
           code: code.replace(original, mutation.to),
           map: null

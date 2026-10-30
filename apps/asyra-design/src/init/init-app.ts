@@ -99,7 +99,9 @@ export const initApp = (): AppInitialization => {
     feature: aiFeature.api,
     onPublished: (turn) => {
       const result = turn.result as { recordingId?: unknown } | null
-      if (typeof result?.recordingId !== 'string') return
+      if (typeof result?.recordingId !== 'string') {
+        return
+      }
       aiStartup.runtime.observe?.({
         sourceRequestId: result.recordingId,
         purpose: 'conversation-publication',

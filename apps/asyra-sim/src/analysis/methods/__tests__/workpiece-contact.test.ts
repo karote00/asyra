@@ -24,7 +24,9 @@ it.each([
     const table = snapshot.workcell.bodies.find(
       (body) => body.id === 'example:fixture-table'
     )
-    if (!movingBody || !table) throw new Error('Missing original sample bodies')
+    if (!movingBody || !table) {
+      throw new Error('Missing original sample bodies')
+    }
 
     const part = movingBody.colliders[0]
     const ops = poseOperations(intervalAlgebra)
@@ -49,7 +51,9 @@ it.each([
       ops.fromPose(table.colliders[0].pose)
     )
 
-    if (part.geometry.kind !== 'mesh') throw new Error('Missing original part')
+    if (part.geometry.kind !== 'mesh') {
+      throw new Error('Missing original part')
+    }
     const geometry = part.geometry
 
     // Independent source-space oracle: this strictly interior prism lies within

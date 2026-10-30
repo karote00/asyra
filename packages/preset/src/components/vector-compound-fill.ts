@@ -63,7 +63,9 @@ export const prepareVectorCompoundFill = (
   fillRule: 'nonzero' | 'evenodd' = 'nonzero'
 ) => {
   const isInside = (winding: number) => {
-    if (fillRule === 'evenodd') return Math.abs(winding) % 2 === 1
+    if (fillRule === 'evenodd') {
+      return Math.abs(winding) % 2 === 1
+    }
     return winding !== 0
   }
   const edges: Edge[] = []
@@ -72,9 +74,12 @@ export const prepareVectorCompoundFill = (
     const contour: Point[] = []
     for (const segment of path.segments) {
       const p = segment.points
-      if (!contour.length) contour.push({ x: p[0], y: p[1] })
-      if (segment.type === 'line') contour.push({ x: p[2], y: p[3] })
-      else
+      if (!contour.length) {
+        contour.push({ x: p[0], y: p[1] })
+      }
+      if (segment.type === 'line') {
+        contour.push({ x: p[2], y: p[3] })
+      } else {
         flattenCurve(
           [
             { x: p[0], y: p[1] },
@@ -84,10 +89,13 @@ export const prepareVectorCompoundFill = (
           ],
           contour
         )
+      }
     }
     contour.forEach((start, index) => {
       const end = contour[(index + 1) % contour.length]
-      if (start.y === end.y) return
+      if (start.y === end.y) {
+        return
+      }
       const minY = Math.min(start.y, end.y)
       const maxY = Math.max(start.y, end.y)
       edges.push({ start, end, minY, maxY, winding: end.y > start.y ? 1 : -1 })
@@ -104,7 +112,9 @@ export const prepareVectorCompoundFill = (
       const b = edges[j]
       const low = Math.max(a.minY, b.minY)
       const high = Math.min(a.maxY, b.maxY)
-      if (low >= high) continue
+      if (low >= high) {
+        continue
+      }
       const lowDifference = edgeX(a, low) - edgeX(b, low)
       const highDifference = edgeX(a, high) - edgeX(b, high)
       if (lowDifference * highDifference < 0) {
@@ -122,10 +132,13 @@ export const prepareVectorCompoundFill = (
   for (let index = 0; index + 1 < sortedLevels.length; index++) {
     const low = sortedLevels[index]
     const high = sortedLevels[index + 1]
-    if (high - low <= EPSILON) continue
+    if (high - low <= EPSILON) {
+      continue
+    }
     const middle = (low + high) / 2
-    while (pending < edges.length && edges[pending].minY <= middle)
+    while (pending < edges.length && edges[pending].minY <= middle) {
       active.push(edges[pending++])
+    }
     active = active.filter((edge) => edge.maxY > middle)
     active.sort((a, b) => edgeX(a, middle) - edgeX(b, middle))
     let winding = 0
@@ -133,8 +146,9 @@ export const prepareVectorCompoundFill = (
     for (const edge of active) {
       const wasInside = isInside(winding)
       winding += edge.winding
-      if (!wasInside && isInside(winding)) left = edge
-      else if (wasInside && !isInside(winding) && left) {
+      if (!wasInside && isInside(winding)) {
+        left = edge
+      } else if (wasInside && !isInside(winding) && left) {
         if (edgeX(edge, middle) - edgeX(left, middle) > EPSILON) {
           const face = [
             { x: edgeX(left, low), y: low },
@@ -148,7 +162,9 @@ export const prepareVectorCompoundFill = (
               Math.hypot(point.x - previous.x, point.y - previous.y) > EPSILON
             )
           })
-          if (face.length >= 3) faces.push(face)
+          if (face.length >= 3) {
+            faces.push(face)
+          }
         }
         left = undefined
       }
@@ -159,8 +175,12 @@ export const prepareVectorCompoundFill = (
     contains: (x: number, y: number) => {
       let winding = 0
       for (const edge of edges) {
-        if (edge.minY > y) break
-        if (y < edge.maxY && edgeX(edge, y) > x) winding += edge.winding
+        if (edge.minY > y) {
+          break
+        }
+        if (y < edge.maxY && edgeX(edge, y) > x) {
+          winding += edge.winding
+        }
       }
       return isInside(winding)
     }

@@ -22,12 +22,16 @@ export class AnalysisWorkerHost {
   ) {}
 
   async handle(input: unknown): Promise<void> {
-    if (this.closed) return
+    if (this.closed) {
+      return
+    }
     if (
       hasExactOwnKeys(input, ['type', 'runId']) &&
       input.type === AnalysisWorkerMessages.CANCEL
     ) {
-      if (input.runId === this.activeRunId) this.abort.abort()
+      if (input.runId === this.activeRunId) {
+        this.abort.abort()
+      }
       return
     }
     if (
@@ -35,13 +39,16 @@ export class AnalysisWorkerHost {
       !hasExactOwnKeys(input, ['type', 'runId', 'snapshot']) ||
       input.type !== AnalysisWorkerMessages.RUN ||
       !validIdentifier(input.runId)
-    )
+    ) {
       return
+    }
     this.activeRunId = input.runId
     const delivery = new WorkerEvidenceDelivery(input.runId, this.post)
     let stage = 'admission'
     const checkpoint = () => {
-      if (this.closed) throw new Error('Method invocation has settled')
+      if (this.closed) {
+        throw new Error('Method invocation has settled')
+      }
       this.abort.signal.throwIfAborted()
       delivery.flush()
     }

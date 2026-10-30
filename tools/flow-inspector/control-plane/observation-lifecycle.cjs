@@ -55,8 +55,9 @@ function executionIdentity(record) {
     !executionKeys.some((key) =>
       Object.hasOwn(environment, 'FLOW_RESULT_' + key)
     )
-  )
+  ) {
     return null
+  }
   const value = Object.fromEntries(
     executionKeys.map((key) => [
       key.toLowerCase(),
@@ -71,15 +72,20 @@ function executionIdentity(record) {
       /^[a-f0-9]{40}$/.test(value[key])
     ) ||
     !['run', 'attempt'].every((key) => /^[1-9][0-9]*$/.test(value[key]))
-  )
+  ) {
     return false
+  }
   return value
 }
 function sameExecution(a, b) {
   const left = executionIdentity(a),
     right = executionIdentity(b)
-  if (left === false || right === false) return false
-  if (left === null || right === null) return left === right
+  if (left === false || right === false) {
+    return false
+  }
+  if (left === null || right === null) {
+    return left === right
+  }
   return (
     ['repository', 'base', 'head', 'integration', 'run'].every(
       (key) => left[key] === right[key]
@@ -88,7 +94,9 @@ function sameExecution(a, b) {
 }
 function matchesExecution(record, expected) {
   const actual = executionIdentity(record)
-  if (!expected) return actual === null
+  if (!expected) {
+    return actual === null
+  }
   return Boolean(
     actual &&
     executionKeys.every(
@@ -125,13 +133,16 @@ function discoveryFailure(record) {
   )
 }
 function mappingScope(record) {
-  if (!Array.isArray(record.contracts) || !record.contracts.length) return null
+  if (!Array.isArray(record.contracts) || !record.contracts.length) {
+    return null
+  }
   if (
     !record.contracts.every(
       (c) => typeof c.manifestPath === 'string' && hash(c.digest)
     )
-  )
+  ) {
     return null
+  }
   return JSON.stringify(
     record.contracts
       .map((c) => [c.manifestPath, c.digest])
@@ -153,8 +164,9 @@ function canSupersede(
     previous.id === next.id ||
     recordDigest(previous) !== correction.predecessorDigest ||
     !discoveryFailure(previous)
-  )
+  ) {
     return false
+  }
   if (
     next.phase !== 'completed' ||
     !(Date.parse(previous.finishedAt) >= Date.parse(previous.startedAt)) ||
@@ -164,8 +176,9 @@ function canSupersede(
     !sameExecution(previous, next) ||
     !mappingScope(previous) ||
     mappingScope(previous) !== mappingScope(next)
-  )
+  ) {
     return false
+  }
   if (
     next.issues.length ||
     next.executionFailureDetails?.length ||
@@ -174,8 +187,9 @@ function canSupersede(
       (c) =>
         c.resolution === 'mapped' && ['passed', 'failed'].includes(c.status)
     )
-  )
+  ) {
     return false
+  }
   const observed = new Set(next.cases.map(identity))
   if (
     observed.size !== next.cases.length ||
@@ -183,16 +197,18 @@ function canSupersede(
     (next.intent &&
       (!validIntent(next.intent) ||
         !next.intent.cases.every((c) => observed.has(identity(c)))))
-  )
+  ) {
     return false
+  }
   if (
     previous.intent &&
     (!validIntent(previous.intent) ||
       !previous.intent.cases.every((c) =>
         intent.cases.some((candidate) => identity(candidate) === identity(c))
       ))
-  )
+  ) {
     return false
+  }
   return true
 }
 function resolveIntent(contracts, request) {
@@ -213,17 +229,22 @@ function resolveIntent(contracts, request) {
     !Array.isArray(request.caseIds) ||
     !request.caseIds.length ||
     new Set(request.caseIds).size !== request.caseIds.length
-  )
+  ) {
     throw new Error('Invalid observation request')
+  }
   const contract = contracts.find(
     (item) => item.manifestPath === request.manifestPath
   )
-  if (!contract) throw new Error('Observation request manifest is not admitted')
+  if (!contract) {
+    throw new Error('Observation request manifest is not admitted')
+  }
   const intent = {
     version: 1,
     cases: request.caseIds.map((id) => {
       const item = contract.cases.find((candidate) => candidate.id === id)
-      if (!item) throw new Error('Observation request case is not admitted')
+      if (!item) {
+        throw new Error('Observation request case is not admitted')
+      }
       return {
         file: item.testFile ?? contract.testFile,
         testName: item.testName,
@@ -231,7 +252,9 @@ function resolveIntent(contracts, request) {
       }
     })
   }
-  if (!validIntent(intent)) throw new Error('Invalid observation intent')
+  if (!validIntent(intent)) {
+    throw new Error('Invalid observation intent')
+  }
   return intent
 }
 function validAssociation(value) {

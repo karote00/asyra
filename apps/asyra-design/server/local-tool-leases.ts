@@ -28,12 +28,16 @@ export const localToolReferences = (
 ): string[] => {
   const result = new Set<string>()
   const visit = (item: unknown, shape: unknown, depth: number) => {
-    if (depth > 48)
+    if (depth > 48) {
       throw new Error('Artifact reference schema exceeds its depth budget')
-    if (!record(shape)) return
+    }
+    if (!record(shape)) {
+      return
+    }
     if (typeof shape.$ref === 'string') {
-      if (!shape.$ref.startsWith('#/'))
+      if (!shape.$ref.startsWith('#/')) {
         throw new Error('Artifact reference schema must be local')
+      }
       let target: unknown = schema
       for (const key of shape.$ref
         .slice(2)
@@ -42,8 +46,9 @@ export const localToolReferences = (
         if (
           (!record(target) && !Array.isArray(target)) ||
           !Object.hasOwn(target, key)
-        )
+        ) {
           throw new Error('Missing artifact reference schema')
+        }
         target = (target as Record<string, unknown>)[key]
       }
       visit(item, target, depth + 1)
@@ -64,21 +69,30 @@ export const localToolReferences = (
     }
     for (const mode of ['allOf', 'anyOf', 'oneOf']) {
       const branches = shape[mode]
-      if (!Array.isArray(branches)) continue
+      if (!Array.isArray(branches)) {
+        continue
+      }
       for (const branch of branches) {
-        if (mode === 'allOf' || !operationInputIssue(item, branch, schema))
+        if (mode === 'allOf' || !operationInputIssue(item, branch, schema)) {
           visit(item, branch, depth + 1)
+        }
       }
     }
     if (record(item) && record(shape.properties)) {
       for (const [key, child] of Object.entries(shape.properties)) {
-        if (Object.hasOwn(item, key)) visit(item[key], child, depth + 1)
+        if (Object.hasOwn(item, key)) {
+          visit(item[key], child, depth + 1)
+        }
       }
     }
     if (record(item) && record(shape.additionalProperties)) {
       for (const [key, child] of Object.entries(item)) {
-        if (!record(shape.properties) || !Object.hasOwn(shape.properties, key))
+        if (
+          !record(shape.properties) ||
+          !Object.hasOwn(shape.properties, key)
+        ) {
           visit(child, shape.additionalProperties, depth + 1)
+        }
       }
     }
     if (Array.isArray(item)) {
@@ -119,10 +133,11 @@ export const createLocalToolLeases = (options: {
     !options.requestId.trim() ||
     !Number.isSafeInteger(options.capacity) ||
     options.capacity < 1
-  )
+  ) {
     throw new TypeError(
       'Artifact ownership requires a request and positive capacity'
     )
+  }
   const requestOwner = Symbol('request')
   const artifacts = new Map<string, LocalArtifact>()
   const calls = new Map<string, LocalArtifactCall>()
@@ -130,29 +145,36 @@ export const createLocalToolLeases = (options: {
   const canonical = (handle: string) => aliases.get(handle) ?? handle
   const forget = (handle: string) => {
     const item = artifacts.get(handle)
-    for (const alias of item?.aliases ?? []) aliases.delete(alias)
+    for (const alias of item?.aliases ?? []) {
+      aliases.delete(alias)
+    }
     artifacts.delete(handle)
   }
   let closing = false
   const releasing = new Map<string, Promise<void>>()
   let disposal: Promise<void> | undefined
   const checkRequest = (requestId: string) => {
-    if (requestId !== options.requestId)
+    if (requestId !== options.requestId) {
       throw new Error('Foreign artifact request')
+    }
   }
   const active = () => {
-    if (closing) throw new Error('Artifact request is closing')
+    if (closing) {
+      throw new Error('Artifact request is closing')
+    }
   }
   const scope = (callId: string) => {
     const call = calls.get(callId)
-    if (!call || call.closing)
+    if (!call || call.closing) {
       throw new Error('Artifact call ownership is unavailable')
+    }
     return call
   }
   const artifact = (handle: string) => {
     const item = artifacts.get(canonical(handle))
-    if (!item || item.state !== 'live')
+    if (!item || item.state !== 'live') {
       throw new Error('Artifact is unavailable for this request')
+    }
     item.validate?.()
     return item
   }
@@ -160,7 +182,9 @@ export const createLocalToolLeases = (options: {
     const errors: unknown[] = []
     for (const handle of handles) {
       const item = artifacts.get(handle)
-      if (!item || item.owners.size || item.state === 'releasing') continue
+      if (!item || item.owners.size || item.state === 'releasing') {
+        continue
+      }
       item.state = 'releasing'
       try {
         await item.release()
@@ -170,7 +194,7 @@ export const createLocalToolLeases = (options: {
         errors.push(error)
       }
     }
-    if (errors.length)
+    if (errors.length) {
       throw new Error(
         errors
           .map((error) =>
@@ -178,13 +202,15 @@ export const createLocalToolLeases = (options: {
           )
           .join('; ')
       )
+    }
   }
   const leases: AiRecipeLeaseAdapter = {
     async open(input) {
       checkRequest(input.requestId)
       active()
-      if (!input.callId.trim() || calls.has(input.callId))
+      if (!input.callId.trim() || calls.has(input.callId)) {
         throw new Error('Artifact call identity is already owned')
+      }
       const ancestors = new Set<string | symbol>([requestOwner])
       let parent = input.parentCallId
       while (parent !== undefined) {
@@ -199,8 +225,9 @@ export const createLocalToolLeases = (options: {
       ]
       const selected = references.map((handle) => {
         const item = artifact(handle)
-        if (![...item.owners].some((owner) => ancestors.has(owner)))
+        if (![...item.owners].some((owner) => ancestors.has(owner))) {
           throw new Error('Artifact is outside caller ownership')
+        }
         return item
       })
       calls.set(input.callId, {
@@ -214,8 +241,9 @@ export const createLocalToolLeases = (options: {
       checkRequest(input.requestId)
       active()
       const source = scope(input.fromCallId)
-      if (source.parentCallId !== input.toCallId)
+      if (source.parentCallId !== input.toCallId) {
         throw new Error('Artifact export requires its actual parent')
+      }
       const target =
         input.toCallId === undefined ? undefined : scope(input.toCallId)
       const references = [
@@ -225,8 +253,9 @@ export const createLocalToolLeases = (options: {
       ]
       const selected = references.map((handle) => {
         const item = artifact(handle)
-        if (!item.owners.has(input.fromCallId))
+        if (!item.owners.has(input.fromCallId)) {
           throw new Error('Cannot export an artifact outside local ownership')
+        }
         return item
       })
       selected.forEach((item, index) => {
@@ -237,19 +266,25 @@ export const createLocalToolLeases = (options: {
     release(input) {
       checkRequest(input.requestId)
       const existing = releasing.get(input.callId)
-      if (existing) return existing
+      if (existing) {
+        return existing
+      }
       const work = Promise.resolve().then(async () => {
         const call = calls.get(input.callId)
-        if (!call) return
+        if (!call) {
+          return
+        }
         if (
           [...calls.values()].some(
             (child) => child.parentCallId === input.callId
           )
-        )
+        ) {
           throw new Error('Artifact call still has an active child')
+        }
         call.closing = true
-        for (const handle of call.references)
+        for (const handle of call.references) {
           artifacts.get(handle)?.owners.delete(input.callId)
+        }
         await cleanup(call.references)
         calls.delete(input.callId)
       })
@@ -262,24 +297,31 @@ export const createLocalToolLeases = (options: {
   }
   const assertRelease = (handle: string, callId?: string) => {
     active()
-    if (callId !== undefined) scope(callId)
+    if (callId !== undefined) {
+      scope(callId)
+    }
     const item = artifacts.get(canonical(handle))
-    if (!item) return
-    if (item.state !== 'live')
+    if (!item) {
+      return
+    }
+    if (item.state !== 'live') {
       throw new Error('Artifact release is already pending')
+    }
     if (
       [...item.owners].some(
         (owner) => owner !== requestOwner && owner !== callId
       )
-    )
+    ) {
       throw new Error('Artifact is still borrowed by another call')
+    }
   }
   const publishAliases = (
     entries: readonly { handle: string; ownerHandle: string }[]
   ) => {
     active()
-    if (artifacts.size + aliases.size + entries.length > options.capacity)
+    if (artifacts.size + aliases.size + entries.length > options.capacity) {
       throw new Error('Artifact ownership capacity reached')
+    }
     const seen = new Set<string>()
     const selected = entries.map((entry) => {
       if (
@@ -287,8 +329,9 @@ export const createLocalToolLeases = (options: {
         seen.has(entry.handle) ||
         artifacts.has(entry.handle) ||
         aliases.has(entry.handle)
-      )
+      ) {
         throw new Error('Artifact identity is already published')
+      }
       seen.add(entry.handle)
       const root = canonical(entry.ownerHandle)
       return { ...entry, root, artifact: artifact(root) }
@@ -311,13 +354,15 @@ export const createLocalToolLeases = (options: {
       if (
         !item.owners.has(callId ?? requestOwner) &&
         !item.owners.has(requestOwner)
-      )
+      ) {
         throw new Error('Artifact is outside caller ownership')
+      }
     },
     borrow(handle: string, callId?: string) {
       active()
-      if (callId === undefined)
+      if (callId === undefined) {
         throw new Error('Artifact borrowing requires a call')
+      }
       const caller = scope(callId)
       const root = canonical(handle)
       const item = artifact(root)
@@ -327,7 +372,9 @@ export const createLocalToolLeases = (options: {
         allowed = item.owners.has(parent)
         parent = scope(parent).parentCallId
       }
-      if (!allowed) throw new Error('Artifact is outside caller ownership')
+      if (!allowed) {
+        throw new Error('Artifact is outside caller ownership')
+      }
       item.owners.add(callId)
       caller.references.add(root)
     },
@@ -348,10 +395,12 @@ export const createLocalToolLeases = (options: {
         !input.handle.trim() ||
         artifacts.has(input.handle) ||
         aliases.has(input.handle)
-      )
+      ) {
         throw new Error('Artifact identity is already published')
-      if (artifacts.size + aliases.size >= options.capacity)
+      }
+      if (artifacts.size + aliases.size >= options.capacity) {
         throw new Error('Artifact ownership capacity reached')
+      }
       artifacts.set(input.handle, {
         owners: new Set([input.callId ?? requestOwner]),
         aliases: new Set(),
@@ -362,14 +411,20 @@ export const createLocalToolLeases = (options: {
       caller?.references.add(input.handle)
     },
     dispose() {
-      if (disposal) return disposal
+      if (disposal) {
+        return disposal
+      }
       disposal = Promise.resolve().then(async () => {
-        if ([...calls.values()].some((call) => !call.closing))
+        if ([...calls.values()].some((call) => !call.closing)) {
           throw new Error('Artifact request still has active calls')
+        }
         closing = true
-        for (const [callId] of calls)
+        for (const [callId] of calls) {
           await leases.release({ requestId: options.requestId, callId })
-        for (const item of artifacts.values()) item.owners.delete(requestOwner)
+        }
+        for (const item of artifacts.values()) {
+          item.owners.delete(requestOwner)
+        }
         await cleanup(artifacts.keys())
       })
       void disposal.catch(() => {

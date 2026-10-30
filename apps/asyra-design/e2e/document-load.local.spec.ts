@@ -25,12 +25,15 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
   const errors: string[] = []
   const navigation: { url: string; at: number }[] = []
   page.on('framenavigated', (frame) => {
-    if (frame === page.mainFrame())
+    if (frame === page.mainFrame()) {
       navigation.push({ url: frame.url(), at: Date.now() })
+    }
   })
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text())
+    if (message.type() === 'error') {
+      errors.push(message.text())
+    }
   })
   await page.addInitScript(() => {
     const observation: LoadObservation = {
@@ -41,11 +44,12 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
     }
     window.documentLoadObservation = observation
     new PerformanceObserver((list) => {
-      for (const entry of list.getEntries())
+      for (const entry of list.getEntries()) {
         observation.longTasks.push({
           start: entry.startTime,
           duration: entry.duration
         })
+      }
     }).observe({ type: 'longtask', buffered: true })
     const original = OffscreenCanvasRenderingContext2D.prototype.createImageData
     OffscreenCanvasRenderingContext2D.prototype.createImageData = function (
@@ -61,19 +65,22 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
         super(url, options)
         this.addEventListener('message', (event) => {
           const data = event.data
-          if (data?.type === 'connected' && data.bootstrap)
+          if (data?.type === 'connected' && data.bootstrap) {
             observation.connectedAtMs = performance.now()
-          if (data?.type === 'timing')
+          }
+          if (data?.type === 'timing') {
             observation.workerTimings.push({
               atMs: performance.now(),
               phase: data.phase,
               durationMs: data.durationMs
             })
-          if (data?.type === 'diagnostic-counter')
+          }
+          if (data?.type === 'diagnostic-counter') {
             observation.workerCounters.push({
               name: data.name,
               value: data.value
             })
+          }
         })
       }
     }
@@ -92,7 +99,9 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
     await expect
       .poll(
         () => {
-          if (errors.length) throw new Error(errors[0])
+          if (errors.length) {
+            throw new Error(errors[0])
+          }
           return page.evaluate(async () => {
             const { core } = await import('../src/testing/runtime-access')
             return {
@@ -146,7 +155,9 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
     const hits = await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
       const bounds = core.getAllElementsBounds()
-      if (!bounds) throw new Error('Document bounds missing')
+      if (!bounds) {
+        throw new Error('Document bounds missing')
+      }
       const samples = []
       for (const y of [0.25, 0.5, 0.75]) {
         for (const x of [0.4, 0.5, 0.6]) {
@@ -169,7 +180,9 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
       'visible tower must expose a selectable target'
     ).toBeDefined()
     const canvas = await page.locator('canvas').first().boundingBox()
-    if (!canvas || !target) throw new Error('Missing selectable canvas target')
+    if (!canvas || !target) {
+      throw new Error('Missing selectable canvas target')
+    }
     await page.mouse.click(canvas.x + target.point.x, canvas.y + target.point.y)
     await expect
       .poll(() =>
@@ -186,7 +199,9 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
         const { core } = await import('../src/testing/runtime-access')
         const { viewportApis } = await import('../src/common-apis/viewport')
         const bounds = core.getAllElementsBounds()
-        if (!bounds) throw new Error('Document bounds missing')
+        if (!bounds) {
+          throw new Error('Document bounds missing')
+        }
         viewportApis.zoomToCenter(1, 800, 500)
         viewportApis.panTo(
           800 - (bounds.minX + bounds.maxX) / 2,

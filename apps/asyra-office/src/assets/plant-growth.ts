@@ -14,8 +14,9 @@ export function createPlantGrowth(
   scaffold: readonly LeafScaffold[],
   config = requiredSpecValue(spec.modules[0].growth, 'plant growth recipe')
 ) {
-  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff)
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) {
     throw new Error('Plant seed must be an unsigned 32-bit integer')
+  }
   let state = seed >>> 0
   const next = () => {
     state = (Math.imul(1664525, state) + 1013904223) >>> 0

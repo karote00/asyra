@@ -40,10 +40,12 @@
       `Flow Inspector target has invalid collections: ${invalidCollections.join(', ')}`
     )
   }
+
   const schemaId = schema?.id
   const recognizedSchemaId =
     schemaId === 'flow-inspector' ||
     (typeof schemaId === 'string' && schemaId.endsWith('.flow-inspector'))
+
   if (!recognizedSchemaId || schema.version !== 2) {
     throw new Error('Flow Inspector requires the flow-inspector/v2 schema.')
   }
@@ -101,10 +103,12 @@
     if (value && typeof value === 'object' && value.href && value.label) {
       return `<a target="_blank" rel="noopener noreferrer" href="${escapeHtml(value.href)}">${escapeHtml(value.label)}</a>`
     }
+
     const text = String(value)
     if (text.startsWith('#') && specLink) {
       return `<a target="_blank" rel="noopener noreferrer" href="${escapeHtml(`${specLink.href}${text}`)}"><code>${escapeHtml(text)}</code></a>`
     }
+
     return escapeHtml(text).replace(/`([^`]+)`/g, '<code>$1</code>')
   }
 
@@ -147,6 +151,7 @@
     if (flow.parentElement?.classList.contains('flow-zoom-surface')) {
       return flow.parentElement.closest('.flow-viewport')
     }
+
     const shell = document.createElement('div')
     shell.className = 'flow-shell'
     const viewport = document.createElement('div')
@@ -157,6 +162,7 @@
     shell.appendChild(viewport)
     viewport.appendChild(surface)
     surface.appendChild(flow)
+
     return viewport
   }
 
@@ -207,7 +213,10 @@
     flow.closest('.flow-shell').appendChild(panelRail)
 
     const notifyParent = (panel, visible) => {
-      if (!isEmbedded) return
+      if (!isEmbedded) {
+        return
+      }
+
       window.parent.postMessage(
         { type: 'flow-inspector:panel-visibility', panel, visible },
         '*'
@@ -217,6 +226,7 @@
     const renderVisibility = () => {
       catalogToggle.disabled = !isEmbedded
       catalogToggle.setAttribute('aria-pressed', String(catalogVisible))
+
       if (!isEmbedded) {
         catalogToggle.title = 'Catalog panel is available in the workspace'
       } else {
@@ -224,7 +234,10 @@
           ? 'Catalog panel is open'
           : 'Open Catalog panel'
       }
-      if (targetMeta) targetMeta.hidden = !headerVisible
+      if (targetMeta) {
+        targetMeta.hidden = !headerVisible
+      }
+
       header.hidden = !headerVisible
       filters.hidden = !headerVisible
       guide.hidden = !headerVisible
@@ -247,7 +260,10 @@
       notifyParent('header', false)
     })
     catalogToggle.addEventListener('click', () => {
-      if (!isEmbedded) return
+      if (!isEmbedded) {
+        return
+      }
+
       catalogVisible = !catalogVisible
       renderVisibility()
       notifyParent('catalog', catalogVisible)
@@ -259,7 +275,10 @@
       flow.querySelector('.is-selected')?.focus({ preventScroll: true })
     })
     flow.addEventListener('click', (event) => {
-      if (!event.target.closest('.step-card')) return
+      if (!event.target.closest('.step-card')) {
+        return
+      }
+
       detailVisible = true
       renderVisibility()
       notifyParent('details', true)
@@ -272,11 +291,16 @@
       'flowfitrequest',
       (event) => {
         const ids = event.detail?.stepIds
-        if (!narrow() || !Array.isArray(ids)) return
+        if (!narrow() || !Array.isArray(ids)) {
+          return
+        }
+
         if (
           ![...flow.children].some((card) => ids.includes(card.dataset.stepId))
-        )
+        ) {
           return
+        }
+
         detailVisible = false
         renderVisibility()
         notifyParent('details', false)
@@ -295,11 +319,19 @@
     })
     window.addEventListener('message', (event) => {
       const message = event.data
-      if (message?.type !== 'flow-inspector:set-panel-visibility') return
-      if (message.panel === 'catalog') catalogVisible = message.visible
-      else if (message.panel === 'header') headerVisible = message.visible
-      else if (message.panel === 'details') detailVisible = message.visible
-      else return
+      if (message?.type !== 'flow-inspector:set-panel-visibility') {
+        return
+      }
+
+      if (message.panel === 'catalog') {
+        catalogVisible = message.visible
+      } else if (message.panel === 'header') {
+        headerVisible = message.visible
+      } else if (message.panel === 'details') {
+        detailVisible = message.visible
+      } else {
+        return
+      }
       renderVisibility()
     })
     renderVisibility()
@@ -352,10 +384,12 @@
           parseFloat(viewportStyle.borderLeftWidth || '0') -
           parseFloat(viewportStyle.borderRightWidth || '0')
       )
-      if (baseWidth > 0)
+      if (baseWidth > 0) {
         surface.style.width = `${baseWidth * scale + originX + gutterWidth}px`
-      if (baseHeight > 0)
+      }
+      if (baseHeight > 0) {
         surface.style.height = `${baseHeight * scale + originY}px`
+      }
     }
 
     const setScale = (nextScale, anchor, fitOrigin) => {
@@ -386,7 +420,10 @@
     viewport.addEventListener(
       'wheel',
       (event) => {
-        if (!event.ctrlKey) return
+        if (!event.ctrlKey) {
+          return
+        }
+
         event.preventDefault()
         viewport.focus({ preventScroll: true })
         const bounds = viewport.getBoundingClientRect()
@@ -400,8 +437,9 @@
       { passive: false }
     )
     const executeZoom = (command) => {
-      if (command === 'reset') resetZoom()
-      else if (command === 'fit-all') {
+      if (command === 'reset') {
+        resetZoom()
+      } else if (command === 'fit-all') {
         if (selectedLaneId !== 'All') {
           selectedLaneId = 'All'
           render()
@@ -422,35 +460,52 @@
         window.parent === window ||
         event.source !== window.parent ||
         event.data?.type !== 'flow-inspector:zoom-command'
-      )
+      ) {
         return
+      }
+
       executeZoom(event.data.command)
     })
     document.addEventListener(
       'keydown',
       (event) => {
-        if (event.isComposing || event.altKey || event.ctrlKey) return
+        if (event.isComposing || event.altKey || event.ctrlKey) {
+          return
+        }
+
         const commandKey = event.metaKey && !event.shiftKey
         const alternative = event.shiftKey && !event.metaKey
         let key = ''
-        if (commandKey) key = event.key
-        else if (alternative && event.code === 'Digit1') key = '1'
-        else if (alternative && event.code === 'Digit0') key = '0'
-        if (key !== '1' && key !== '0') return
+        if (commandKey) {
+          key = event.key
+        } else if (alternative && event.code === 'Digit1') {
+          key = '1'
+        } else if (alternative && event.code === 'Digit0') {
+          key = '0'
+        }
+        if (key !== '1' && key !== '0') {
+          return
+        }
+
         if (
           alternative &&
           event.target.closest?.(
             'input, textarea, select, [contenteditable="true"]'
           )
-        )
+        ) {
           return
+        }
+
         event.preventDefault()
         executeZoom(key === '1' ? 'fit-all' : 'reset')
       },
       true
     )
     const fitCards = (selectedCards, padding, fitAll = false) => {
-      if (!selectedCards.length) return
+      if (!selectedCards.length) {
+        return
+      }
+
       const left = Math.min(...selectedCards.map((card) => card.offsetLeft))
       const top = Math.min(...selectedCards.map((card) => card.offsetTop))
       const right = Math.max(
@@ -462,7 +517,10 @@
       if (fitAll) {
         const width = viewport.offsetWidth
         const height = viewport.offsetHeight
-        if (width <= padding * 2 || height <= padding * 2) return
+        if (width <= padding * 2 || height <= padding * 2) {
+          return
+        }
+
         const fittedScale = Math.min(
           (width - padding * 2) / Math.max(1, right - left),
           (height - padding * 2) / Math.max(1, bottom - top)
@@ -475,6 +533,7 @@
         viewport.scrollLeft = ((left + right) * scale) / 2 + originX - centerX
         viewport.scrollTop = ((top + bottom) * scale) / 2 + originY - centerY
         viewport.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+
         return
       }
       setScale(
@@ -496,8 +555,10 @@
         !Array.isArray(ids) ||
         !viewport.clientWidth ||
         !viewport.clientHeight
-      )
+      ) {
         return
+      }
+
       const requested = new Set(ids)
       const selectedCards = [...flow.children].filter((element) =>
         requested.has(element.dataset.stepId)
@@ -583,21 +644,34 @@
   }
 
   const routeClass = (kind) => {
-    if (kind === 'bypass') return 'route-bypass'
-    if (kind === 'coexecute' || kind === 'fanout') return 'route-parallel'
+    if (kind === 'bypass') {
+      return 'route-bypass'
+    }
+    if (kind === 'coexecute' || kind === 'fanout') {
+      return 'route-parallel'
+    }
+
     return `route-${kind}`
   }
 
   const renderEdges = (svg) => {
     svg.querySelectorAll('.edge-path').forEach((node) => node.remove())
     routes.forEach((route) => {
-      if (!route.to) return
+      if (!route.to) {
+        return
+      }
+
       const from = stepById.get(route.from)
       const to = stepById.get(route.to)
-      if (!from || !to || !isVisible(from) || !isVisible(to)) return
+      if (!from || !to || !isVisible(from) || !isVisible(to)) {
+        return
+      }
+
       const fromCard = flow.querySelector(`[data-step-id="${route.from}"]`)
       const toCard = flow.querySelector(`[data-step-id="${route.to}"]`)
-      if (!fromCard || !toCard) return
+      if (!fromCard || !toCard) {
+        return
+      }
 
       const path = document.createElementNS(
         'http://www.w3.org/2000/svg',
@@ -826,7 +900,9 @@
     const uniqueIds = (label, items) => {
       const seen = new Set()
       items.forEach((item) => {
-        if (seen.has(item.id)) errors.push(`${label}:duplicate:${item.id}`)
+        if (seen.has(item.id)) {
+          errors.push(`${label}:duplicate:${item.id}`)
+        }
         seen.add(item.id)
       })
     }
@@ -861,10 +937,13 @@
     ]
     steps.forEach((step) => {
       requiredStepFields.forEach((field) => {
-        if (step[field] === undefined)
+        if (step[field] === undefined) {
           errors.push(`${step.id}:missing:${field}`)
+        }
       })
-      if (!laneById.has(step.laneId)) errors.push(`${step.id}:lane`)
+      if (!laneById.has(step.laneId)) {
+        errors.push(`${step.id}:lane`)
+      }
       if (!stepById.has(step.failureOwnerStepId)) {
         errors.push(`${step.id}:failureOwnerStepId`)
       }
@@ -883,8 +962,13 @@
     })
 
     routes.forEach((route) => {
-      if (!stepById.has(route.from)) errors.push(`${route.id}:from`)
-      if (route.to && !stepById.has(route.to)) errors.push(`${route.id}:to`)
+      if (!stepById.has(route.from)) {
+        errors.push(`${route.id}:from`)
+      }
+      if (route.to && !stepById.has(route.to)) {
+        errors.push(`${route.id}:to`)
+      }
+
       route.producedArtifacts.forEach((artifactId) => {
         const artifact = artifactById.get(artifactId)
         if (!artifact) {
@@ -1002,7 +1086,10 @@
 
   globalThis.FLOW_INSPECTOR_VIEW = {
     select(id) {
-      if (!stepById.has(id)) return
+      if (!stepById.has(id)) {
+        return
+      }
+
       selectedId = id
       render()
     },
@@ -1028,9 +1115,13 @@
             .sort((a, b) => a.order - b.order)
         )
       )
-      if (!stepById.has(selectedId)) selectedId = steps[0]?.id ?? null
-      if (selectedLaneId !== 'All' && !laneById.has(selectedLaneId))
+      if (!stepById.has(selectedId)) {
+        selectedId = steps[0]?.id ?? null
+      }
+      if (selectedLaneId !== 'All' && !laneById.has(selectedLaneId)) {
         selectedLaneId = 'All'
+      }
+
       runStaticChecks()
       render()
     }
@@ -1042,6 +1133,8 @@
   enablePanelControls()
   window.addEventListener('resize', () => {
     const svg = flow.querySelector('.flow-svg')
-    if (svg) renderEdges(svg)
+    if (svg) {
+      renderEdges(svg)
+    }
   })
 })()

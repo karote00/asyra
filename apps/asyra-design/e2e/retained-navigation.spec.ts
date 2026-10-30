@@ -39,7 +39,9 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
     canvas.addEventListener('wheel', () => nativeWheels++)
     const pointerTargets: unknown[] = []
     const unsubscribe = engine.subscribeToInteraction((event) => {
-      if (event.type === 'pointerdown') pointerTargets.push(event.target)
+      if (event.type === 'pointerdown') {
+        pointerTargets.push(event.target)
+      }
     })
     try {
       const object = engine.execute({
@@ -48,7 +50,9 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
         objectType: 'graphics',
         properties: { eventMode: 'static' }
       }).object
-      if (!object) throw new Error('Missing interactive handle')
+      if (!object) {
+        throw new Error('Missing interactive handle')
+      }
       engine.execute({
         type: 'draw',
         object,
@@ -130,7 +134,9 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
       objectType: 'container',
       properties: { transformGroup: true }
     }).object
-    if (!camera) throw new Error('Missing camera handle')
+    if (!camera) {
+      throw new Error('Missing camera handle')
+    }
     engine.execute({ type: 'append-child', parent: root, child: camera })
     const objects = []
     const operations = [
@@ -149,7 +155,9 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
           y: Math.floor(index / 32) * 6
         }
       }).object
-      if (!object) throw new Error('Missing graphic handle')
+      if (!object) {
+        throw new Error('Missing graphic handle')
+      }
       engine.execute({ type: 'draw', object, operations })
       engine.execute({ type: 'append-child', parent: camera, child: object })
       objects.push(object)
@@ -245,7 +253,9 @@ test('native linear material preserves source-space colors and polygon coverage'
         }
       }
     }).resource
-    if (!object || !resource) throw new Error('Missing native material handles')
+    if (!object || !resource) {
+      throw new Error('Missing native material handles')
+    }
     engine.execute({
       type: 'draw',
       object,
@@ -271,14 +281,17 @@ test('native linear material preserves source-space colors and polygon coverage'
       maxDimension: 400,
       nativeResolution: true
     })
-    if (result.type !== 'snapshot')
+    if (result.type !== 'snapshot') {
       throw new Error('Missing source-space snapshot')
+    }
     const bitmap = await createImageBitmap(
       await (await fetch(result.dataUrl)).blob()
     )
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
     const context = canvas.getContext('2d')
-    if (!context) throw new Error('Missing pixel comparison context')
+    if (!context) {
+      throw new Error('Missing pixel comparison context')
+    }
     context.drawImage(bitmap, 0, 0)
     const points = [
       [40, 20],

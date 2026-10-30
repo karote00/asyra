@@ -20,23 +20,30 @@ import { americanoGlass, sugarJar } from '../../assets/discussion-tableware'
 /** Materialize the same instance basis and placement used by the public renderer. */
 function expanded(source: AssetPart[]): AssetPart[] {
   return source.map((part) => {
-    if (!part.instances) return part
+    if (!part.instances) {
+      return part
+    }
     const mesh = emptyMesh()
     for (const instance of part.instances) {
       const offset = mesh.positions.length / 3
       for (let i = 0; i < part.mesh.positions.length; i += 3) {
         for (let axis = 0; axis < 3; axis++) {
           let value = instance.position[axis]
-          for (let local = 0; local < 3; local++)
+          for (let local = 0; local < 3; local++) {
             value +=
               part.mesh.positions[i + local] *
               instance.basis[local][axis] *
               instance.scale
+          }
           mesh.positions.push(value)
         }
       }
-      for (const index of part.mesh.indices) mesh.indices.push(index + offset)
-      for (const uv of part.mesh.uvs) mesh.uvs.push(uv)
+      for (const index of part.mesh.indices) {
+        mesh.indices.push(index + offset)
+      }
+      for (const uv of part.mesh.uvs) {
+        mesh.uvs.push(uv)
+      }
     }
     const result = { ...part, mesh, instances: undefined, placement: undefined }
     return part.placement
@@ -81,7 +88,9 @@ beforeAll(() => {
 const expandedParts = new Map<string, AssetPart[]>()
 function item(id: string) {
   const value = parts.get(id)
-  if (!value) throw new Error(`Missing discussion furnishing ${id}`)
+  if (!value) {
+    throw new Error(`Missing discussion furnishing ${id}`)
+  }
   let result = expandedParts.get(id)
   if (!result) {
     result = expanded(value)
@@ -150,11 +159,15 @@ it('uses dark-potted pointed tabletop foliage and grounds its tea accessories', 
 it('places a tapered clear Americano before the notebook, with a short white sugar jar and handleless cup', () => {
   const glass = item('discussion-americano')
   const shell = glass.find((p) => p.id === 'glass')
-  if (!shell) throw new Error('Missing clear glass shell')
+  if (!shell) {
+    throw new Error('Missing clear glass shell')
+  }
   expect(shell.opacity).toBe(1)
   expect(shell.optics).toMatchObject({ transmission: 1, captureLayer: 2 })
   const coffee = glass.find((p) => p.id === 'coffee')
-  if (!coffee) throw new Error('Missing Americano contents')
+  if (!coffee) {
+    throw new Error('Missing Americano contents')
+  }
   expect(coffee.color).toBe(0xffffff)
   expect(coffee.optics?.attenuationColor).toBe(0x332218)
   expect(coffee.optics?.transmission).toBe(1)
@@ -233,8 +246,9 @@ it('scatters individual sugar cube orientations without intersections or unstabl
     const a = envelopes[i]
     expect(a[2][0]).toBeGreaterThanOrEqual(0.006 - 1e-9)
     expect(a[2][1]).toBeLessThanOrEqual(0.042 + 1e-9)
-    if (a[2][1] > 0.028)
+    if (a[2][1] > 0.028) {
       expect(a[0][1] < -0.003 || a[1][0] > 0.01 || a[1][1] < -0.01).toBe(true)
+    }
     if (a[2][0] > 0.007) {
       const supported = envelopes.some(
         (b) =>
@@ -283,8 +297,9 @@ it('exposes the glass lip, clear base and empty headspace around translucent cof
   const surface = glass.find((p) => p.id === 'coffee-surface')
   expect(surface?.optics?.transmission).toBe(1)
   expect(surface?.roughness).toBeLessThan(coffee?.roughness ?? 0)
-  if (!rim || !base || !coffee)
+  if (!rim || !base || !coffee) {
     throw new Error('Missing glass construction regions')
+  }
   for (const region of [rim, base, coffee]) {
     expect(region.opacity).toBeGreaterThan(0)
     expect(region.opacity).toBe(1)
@@ -300,7 +315,9 @@ it('matches the selected wide-mouth tapered tumbler with a thick rounded glass b
   const glass = americanoGlass()
   const region = (id: string) => {
     const value = glass.find((part) => part.id === id)
-    if (!value) throw new Error('Missing tumbler region: ' + id)
+    if (!value) {
+      throw new Error('Missing tumbler region: ' + id)
+    }
     return value
   }
   const rim = meshBounds([region('glass-rim')])
@@ -340,7 +357,9 @@ it('uses a low round-bellied sugar jar with a fitted notched lid and an inserted
   const body = sugar.find((p) => p.id === 'vessel')
   const lid = sugar.find((p) => p.id === 'lid')
   const spoon = sugar.find((p) => p.id === 'teaspoon')
-  if (!body || !lid || !spoon) throw new Error('Missing sugar jar or teaspoon')
+  if (!body || !lid || !spoon) {
+    throw new Error('Missing sugar jar or teaspoon')
+  }
   const b = meshBounds([body]),
     l = meshBounds([lid]),
     s = meshBounds([spoon])
@@ -355,7 +374,9 @@ it('leans the removable lid against the jar with its bottom edge supported by th
   const sugar = item('discussion-sugar')
   const lid = sugar.find((p) => p.id === 'lid')
   const body = sugar.find((p) => p.id === 'vessel')
-  if (!lid || !body) throw new Error('Missing sugar jar parts')
+  if (!lid || !body) {
+    throw new Error('Missing sugar jar parts')
+  }
   const l = meshBounds([lid]),
     b = meshBounds([body])
   const top = bounds('meeting-table')[2][1]
@@ -365,7 +386,9 @@ it('leans the removable lid against the jar with its bottom edge supported by th
   let contact = Infinity
   for (let i = 0; i < lid.mesh.positions.length; i += 3) {
     const a = lid.mesh.positions.slice(i, i + 3)
-    if (a[2] > b[2][1]) continue
+    if (a[2] > b[2][1]) {
+      continue
+    }
     for (let j = 0; j < body.mesh.positions.length; j += 3) {
       contact = Math.min(
         contact,
@@ -429,8 +452,9 @@ it('places one rectangular basket under an open side table and an empty vessel o
   const lip = vessel[0].mesh.positions
   const maxZ = meshBounds(vessel)[2][1]
   for (let i = 0; i < lip.length; i += 3) {
-    if (lip[i + 2] > maxZ - 0.01)
+    if (lip[i + 2] > maxZ - 0.01) {
       expect(Math.hypot(lip[i], lip[i + 1] + 0.015)).toBeGreaterThan(0.09)
+    }
   }
 })
 
@@ -443,7 +467,9 @@ it('forms a tapered three-dimensional tree beside a low cabinet under the print'
       const values: number[][] = []
       for (let i = 0; i < p.mesh.positions.length; i += 3) {
         const point = p.mesh.positions.slice(i, i + 3)
-        if (point[2] >= low && point[2] <= high) values.push(point)
+        if (point[2] >= low && point[2] <= high) {
+          values.push(point)
+        }
       }
       return values
     })
@@ -457,13 +483,16 @@ it('forms a tapered three-dimensional tree beside a low cabinet under the print'
   const middle = band(0.95, 1.55),
     apex = band(2.4, 2.68)
   // The enlarged source has a substantial upper crown, not separated beads.
-  for (const span of band(1.65, 1.85)) expect(span).toBeGreaterThan(0.29)
+  for (const span of band(1.65, 1.85)) {
+    expect(span).toBeGreaterThan(0.29)
+  }
   expect(middle[0]).toBeGreaterThan(0.4)
   expect(middle[1]).toBeGreaterThan(0.4)
   expect(middle[0] / middle[1]).toBeGreaterThan(0.65)
   expect(middle[0] / middle[1]).toBeLessThan(1.4)
-  for (const axis of [0, 1])
+  for (const axis of [0, 1]) {
     expect(middle[axis]).toBeGreaterThan(apex[axis] * 1.65)
+  }
   const tree = bounds('discussion-left-climber'),
     cabinet = bounds('discussion-left-storage')
   expect(cabinet[1][0]).toBeGreaterThan(tree[1][1])
@@ -485,7 +514,9 @@ it('aligns the rear note with the console left edge and orders two plants around
     expect(objects[i][2][0], ids[i]).toBeCloseTo(consoleBounds[2][1], 5)
     expect(objects[i][0][0]).toBeGreaterThan(consoleBounds[0][0])
     expect(objects[i][0][1]).toBeLessThan(consoleBounds[0][1])
-    if (i) expect(objects[i][0][0]).toBeGreaterThan(objects[i - 1][0][1])
+    if (i) {
+      expect(objects[i][0][0]).toBeGreaterThan(objects[i - 1][0][1])
+    }
   }
   expect(objects[2][2][1]).toBeGreaterThan(objects[0][2][1])
   const bottle = objects[1]
@@ -511,12 +542,14 @@ it('keeps connected fine foliage throughout the conifer crown', () => {
   ).filter((p) => p.id.startsWith('leaves-'))
   for (let z = 0.36; z <= 1.1; z += 0.04) {
     let radius = 0
-    for (const part of crown)
+    for (const part of crown) {
       for (let i = 0; i < part.mesh.positions.length; i += 3) {
         const [x, y, height] = part.mesh.positions.slice(i, i + 3)
-        if (Math.abs(z - height) < 0.025)
+        if (Math.abs(z - height) < 0.025) {
           radius = Math.max(radius, Math.hypot(x, y))
+        }
       }
+    }
     expect(radius, `foliage at ${z}`).toBeGreaterThan(0.35 * (1.2 - z) * 0.55)
     expect(radius).toBeLessThan(0.46)
   }
@@ -542,7 +575,7 @@ it('constructs the new conifer with fine needles and a charcoal tapered pot', ()
   for (const part of crown) {
     const { positions, indices } = part.mesh
     let longest = 0
-    for (let i = 0; i < indices.length; i += 3)
+    for (let i = 0; i < indices.length; i += 3) {
       for (let side = 0; side < 3; side++) {
         const a = indices[i + side] * 3,
           b = indices[i + ((side + 1) % 3)] * 3
@@ -555,6 +588,7 @@ it('constructs the new conifer with fine needles and a charcoal tapered pot', ()
           )
         )
       }
+    }
     expect(longest).toBeLessThan(0.025)
   }
 })
@@ -578,8 +612,9 @@ it('reuses connected spray geometry without dropping any branches or needles', (
     expect(leaf.mesh).toBe(leaves[0].mesh)
     expect(leaf.mesh.indices.length / 3).toBe(85 * 8)
     for (const instance of leaf.instances ?? []) {
-      for (const axis of instance.basis)
+      for (const axis of instance.basis) {
         expect(Math.hypot(...axis)).toBeCloseTo(1)
+      }
     }
   }
 })
@@ -624,19 +659,21 @@ it.each(Object.entries(DISCUSSION_CONIFER_SIZES))(
           size - 1,
           Math.ceil(Math.max(...points.map((p) => p[1])))
         )
-        for (let y = minY; y <= maxY; y++)
+        for (let y = minY; y <= maxY; y++) {
           for (let x = minX; x <= maxX; x++) {
             const signs = points.map((p, n) =>
               edge(p, points[(n + 1) % 3], x + 0.5, y + 0.5)
             )
-            if (signs.every((n) => n >= 0) || signs.every((n) => n <= 0))
+            if (signs.every((n) => n >= 0) || signs.every((n) => n <= 0)) {
               covered.add(y * size + x)
+            }
           }
+        }
       }
     }
     let total = 0,
       filled = 0
-    for (let y = 0; y < size; y++)
+    for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const height = 0.22 + ((y + 0.5) / size) * 0.94
         const horizontal = ((x + 0.5) / size) * 0.8 - 0.4
@@ -644,11 +681,15 @@ it.each(Object.entries(DISCUSSION_CONIFER_SIZES))(
           height < 0.3 ||
           height > 1.05 ||
           Math.abs(horizontal) > (0.32 * (1.16 - height)) / 0.86
-        )
+        ) {
           continue
+        }
         total++
-        if (covered.has(y * size + x)) filled++
+        if (covered.has(y * size + x)) {
+          filled++
+        }
       }
+    }
     expect(filled / total).toBeGreaterThan(0.85)
   }
 )
@@ -695,7 +736,9 @@ it('fills the clear tumbler near its rim with brown coffee and irregular contain
   const parts = americanoGlass()
   const coffee = parts.find((p) => p.id === 'coffee')
   const surface = parts.find((p) => p.id === 'coffee-surface')
-  if (!coffee || !surface) throw new Error('Missing iced Americano liquid')
+  if (!coffee || !surface) {
+    throw new Error('Missing iced Americano liquid')
+  }
   expect(meshBounds([coffee])[2][1]).toBeCloseTo(0.096, 5)
   expect(meshBounds([surface])[2][0]).toBeCloseTo(0.096, 5)
   const ice = parts.filter((p) => p.id.startsWith('ice-'))
@@ -749,7 +792,9 @@ it('keeps complete glass and liquid paths translucent without repainting ice cav
   const parts = americanoGlass()
   const region = (id: string) => {
     const part = parts.find((p) => p.id === id)
-    if (!part) throw new Error('Missing optical region: ' + id)
+    if (!part) {
+      throw new Error('Missing optical region: ' + id)
+    }
     return part
   }
   // Full-coverage transmission preserves reflections without an alpha veil.
@@ -763,13 +808,16 @@ it('keeps complete glass and liquid paths translucent without repainting ice cav
   expect(region('coffee-ice-interface').mesh.indices.length).toBeGreaterThan(0)
   const body = region('coffee').mesh
   expect(body.positions.length / 3).toBeLessThan(body.indices.length / 2)
-  for (const p of parts.filter((p) => p.id.startsWith('ice-')))
+  for (const p of parts.filter((p) => p.id.startsWith('ice-'))) {
     expect(p.optics).toMatchObject({ transmission: 1, captureLayer: 0 })
+  }
 })
 
 it('keeps the coffee surface upward-facing for optical front-face rendering', () => {
   const surface = americanoGlass().find((p) => p.id === 'coffee-surface')
-  if (!surface) throw new Error('Missing coffee surface')
+  if (!surface) {
+    throw new Error('Missing coffee surface')
+  }
   for (let i = 0; i < surface.mesh.indices.length; i += 3) {
     const [a, b, c] = surface.mesh.indices
       .slice(i, i + 3)
@@ -783,7 +831,9 @@ it('uses dark coffee-brown absorption without tinting the clear glass or ice', (
   const parts = americanoGlass()
   for (const id of ['coffee', 'coffee-surface']) {
     const color = parts.find((p) => p.id === id)?.optics?.attenuationColor
-    if (color === undefined) throw new Error('Missing liquid absorption')
+    if (color === undefined) {
+      throw new Error('Missing liquid absorption')
+    }
     const linear = (channel: number) => {
       const value = channel / 255
       return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
@@ -796,16 +846,18 @@ it('uses dark coffee-brown absorption without tinting the clear glass or ice', (
   }
   for (const p of parts.filter(
     (p) => p.id.startsWith('glass') || p.id.startsWith('ice-')
-  ))
+  )) {
     expect(p.optics?.attenuationColor).toBe(0xffffff)
+  }
 })
 
 it('keeps the floating ice solids separated instead of intersecting each other', () => {
   const cubes = americanoGlass().filter((p) => p.id.startsWith('ice-'))
   const vertices = cubes.map((cube) => {
     const result: number[][] = []
-    for (let i = 0; i < cube.mesh.positions.length; i += 3)
+    for (let i = 0; i < cube.mesh.positions.length; i += 3) {
       result.push(cube.mesh.positions.slice(i, i + 3))
+    }
     return result
   })
   const normals = cubes.map((cube, index) => {
@@ -822,13 +874,15 @@ it('keeps the floating ice solids separated instead of intersecting each other',
         u[0] * v[1] - u[1] * v[0]
       ]
       const length = Math.hypot(...cross)
-      if (length < 1e-12) continue
+      if (length < 1e-12) {
+        continue
+      }
       const normal = cross.map((n) => n / length)
       unique.set(normal.map((n) => n.toFixed(5)).join(','), normal)
     }
     return [...unique.values()]
   })
-  for (let i = 0; i < cubes.length; i++)
+  for (let i = 0; i < cubes.length; i++) {
     for (let j = i + 1; j < cubes.length; j++) {
       // Any separating face plane proves the two convex rounded solids are disjoint.
       const separated = [...normals[i], ...normals[j]].some((normal) => {
@@ -843,4 +897,5 @@ it('keeps the floating ice solids separated instead of intersecting each other',
       })
       expect.soft(separated, cubes[i].id + ' / ' + cubes[j].id).toBe(true)
     }
+  }
 })

@@ -129,11 +129,12 @@ it('preserves world phase across translated templates with independent Fill iden
         10
       )
     })
-    for (let i = 1; i < 3; i++)
+    for (let i = 1; i < 3; i++) {
       expect(phase(gradient(result.entries[i]), 0.5, 0)).toBeCloseTo(
         phase(gradient(result.entries[i + 1]), 0.5, 1),
         10
       )
+    }
     const ids = result.entries
       .slice(1)
       .map((e) => (e.descriptor.fills as { id: string }[])[0].id)
@@ -231,8 +232,9 @@ it('reverses a field without changing geometry or borrowing shared Fill identiti
       1 - phase(gradient(e), 0.3, 0.7),
       10
     )
-    for (const key of ['x', 'y', 'width', 'height', 'points', 'segments'])
+    for (const key of ['x', 'y', 'width', 'height', 'points', 'segments']) {
       expect(reversed.entries[i + 1].descriptor[key]).toEqual(e.descriptor[key])
+    }
   })
 })
 
@@ -316,11 +318,12 @@ it.each([
       })
     )
     const result = prepareDesign(d)
-    for (const e of result.entries.slice(1))
+    for (const e of result.entries.slice(1)) {
       expect(gradient(e).gradientStops).toEqual([
         { position: 0, color, opacity },
         { position: 1, color, opacity }
       ])
+    }
   }
 )
 
@@ -329,16 +332,18 @@ it('keeps field phase invariant under camera translation and uniform scale', () 
     original = prepareDesign(d)
   d.projection = { ...d.projection, scale: 0.04, originX: -300, originY: 700 }
   const changed = prepareDesign(d)
-  for (let i = 1; i < original.entries.length; i++)
+  for (let i = 1; i < original.entries.length; i++) {
     for (const [x, y] of [
       [0, 0],
       [0.2, 0.7],
       [1, 1]
-    ])
+    ]) {
       expect(phase(gradient(changed.entries[i]), x, y)).toBeCloseTo(
         phase(gradient(original.entries[i]), x, y),
         9
       )
+    }
+  }
 })
 
 it('rejects unrepresentable native handles and unsupported nodes without fallback paint', () => {
@@ -553,11 +558,12 @@ it.each([false, true])(
       { position: 0, color: '#808080', opacity: 0.5 },
       { position: 1, color: '#808080', opacity: 0.5 }
     ])
-    if (pattern)
+    if (pattern) {
       expect(gradient(prepared.entries[2]).gradientStops).toEqual([
         { position: 0, color: '#ffffff', opacity: 1 },
         { position: 1, color: '#ffffff', opacity: 1 }
       ])
+    }
     // A real weak slope is not silently snapped to constant paint.
     draft.linearFields.glass.end.z += 1e-10
     expect(() => prepareDesign(draft)).toThrow(/native bounded handles/)
@@ -624,7 +630,9 @@ it('preserves two-axis world phase and source order when recovering sparse insta
   )
   for (const entry of sparse.entries.slice(1)) {
     const original = full.entries.find((e) => e.key === entry.key)
-    if (!original) throw new Error(`Missing original entry ${entry.key}`)
+    if (!original) {
+      throw new Error(`Missing original entry ${entry.key}`)
+    }
     expect(gradient(entry)).toEqual(gradient(original))
     const [, instance, , faceIndex] = entry.key.split('-')
     const i = Number(instance),
@@ -663,7 +671,7 @@ it.each(['facade', 'horizontal'] as const)(
         { position: 1, color: '#ffffff', opacity: 1 }
       ]
     }
-    if (kind === 'horizontal')
+    if (kind === 'horizontal') {
       draft.children.forEach((face, index) => {
         face.vertices = [
           { x: -2000, y: 1000, z: 4000 + index * 8000 },
@@ -672,6 +680,7 @@ it.each(['facade', 'horizontal'] as const)(
           { x: -2000, y: 3000, z: 4000 + index * 8000 }
         ]
       })
+    }
     const before = prepareDesign(draft)
     draft.linearFields.glass.gradientStops = [
       { position: 0, color: '#ff0000', opacity: 0.2 },

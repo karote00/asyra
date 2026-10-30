@@ -56,10 +56,14 @@ it('executes the published identity example through the real Core and uses issue
   reset()
   const contract = basicApiContracts.find((c) => c.method === 'allocateIds')
   expect(contract).toBeDefined()
-  if (!contract) throw new Error('Missing identity allocation contract')
+  if (!contract) {
+    throw new Error('Missing identity allocation contract')
+  }
   const actions = createBasicApiActions()
   const action = actions.find((a) => a.name === contract.name)
-  if (!action) throw new Error('Missing allocated identity executor')
+  if (!action) {
+    throw new Error('Missing allocated identity executor')
+  }
   const dispatch = vi.fn(
     async (batch: import('../action-batch-protocol').AiActionBatch) => ({
       context: null,
@@ -82,7 +86,9 @@ it('executes the published identity example through the real Core and uses issue
   const definition = operations.definitions.find(
     (item) => item.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   const delivery = JSON.parse(
     (
       await invokeLocalTool(
@@ -102,7 +108,9 @@ it('executes the published identity example through the real Core and uses issue
   const batchDefinition = operations.definitions.find(
     (item) => item.name === invocation.tool
   )
-  if (!batchDefinition) throw new Error('Missing advertised batch definition')
+  if (!batchDefinition) {
+    throw new Error('Missing advertised batch definition')
+  }
   expect(
     operationInputIssue(invocation.arguments, batchDefinition.inputSchema)
   ).toBeUndefined()
@@ -319,7 +327,9 @@ it('preserves a real unchanged oval geometry result in the composed action', asy
   const action = createAiActions(undefined, {
     yieldToHost: vi.fn(async () => undefined)
   }).find((a) => a.name === 'update_composition_elements')
-  if (!action) throw new Error('Missing composition updater')
+  if (!action) {
+    throw new Error('Missing composition updater')
+  }
   const before = core.getCanonicalOwnerSnapshot()
   const result = await action.execute(
     { updates: [{ elementId: 'oval', geometry: { scaleX: 1, scaleY: 1 } }] },

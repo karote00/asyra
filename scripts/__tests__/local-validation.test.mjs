@@ -11,6 +11,7 @@ import {
   localCheckCommands
 } from '../local-validation.mjs'
 import { classifyChanges, readWorkspaceManifests } from '../ci-scope.mjs'
+import * as localValidation from '../local-validation.mjs'
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -40,8 +41,9 @@ function fixture(t) {
     'cancelled.txt',
     'removed.txt',
     'old name.txt'
-  ])
+  ]) {
     write(name, 'original')
+  }
   git('add', '.')
   git('commit', '-qm', 'initial')
   const base = git('rev-parse', 'HEAD')
@@ -232,8 +234,147 @@ test('full validation resolves declaration task records to executable task names
   const declarations = commands.find(({ id }) => id === 'declarations')
   assert.ok(declarations)
   assert.ok(declarations.args.every((value) => typeof value === 'string'))
-  for (const { task } of plan.executionPlan.checks.frameworkDeclarations.tasks)
+  for (const { task } of plan.executionPlan.checks.frameworkDeclarations
+    .tasks) {
     assert.ok(declarations.args.includes(task))
+  }
+})
+
+test('local shared checks consume file evidence and reject a mismatched execution identity', (t) => {
+  const { root, base } = workspaceFixture(t)
+  const plan = selectLocalValidation({
+    repositoryRoot: root,
+    inputs: collectLocalInputs({ repositoryRoot: root, base }),
+    full: true
+  })
+  plan.executionPlan.checks.controlPlane.mode = 'not-selected'
+  const outputDirectory = path.join(root, 'tmp/result')
+  const commands = localCheckCommands(plan, outputDirectory, root)
+  const shared = commands.find(({ id }) => id === 'shared')
+
+  assert.equal(typeof shared.env.CI_SCOPE_EVIDENCE_FILE, 'string')
+  assert.equal(fs.existsSync(outputDirectory), false)
+  assert.equal('CI_EXECUTION_PLAN' in shared.env, false)
+  localValidation.writeLocalValidationEvidence(plan, commands, outputDirectory)
+
+  const bin = path.join(root, 'bin')
+  const trace = path.join(root, 'commands.log')
+  fs.mkdirSync(bin)
+  fs.writeFileSync(
+    path.join(bin, 'yarn'),
+    '#!/bin/sh\nprintf "%s\\n" "$*" >> "$CHECK_TRACE"\n',
+    { mode: 0o700 }
+  )
+  const env = {
+    ...process.env,
+    ...shared.env,
+    PATH: bin + path.delimiter + process.env.PATH,
+    CHECK_TRACE: trace
+  }
+  const run = () =>
+    spawnSync(shared.executable, shared.args, {
+      cwd: repositoryRoot,
+      env,
+      encoding: 'utf8',
+      timeout: 10000
+    })
+  const result = run()
+
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(fs.readFileSync(trace, 'utf8').trim().split('\n'), [
+    'lint',
+    'test:scripts',
+    'lint:naming'
+  ])
+  const report = JSON.parse(fs.readFileSync(shared.evidence.path, 'utf8'))
+  assert.equal(report.identity.run, path.basename(outputDirectory))
+  assert.equal(report.relationshipMapDigest, plan.relationshipMapDigest)
+  assert.ok(
+    Object.values(report.checks).every(({ status }) => status === 'passed')
+  )
+
+  const evidence = JSON.parse(
+    fs.readFileSync(env.CI_SCOPE_EVIDENCE_FILE, 'utf8')
+  )
+  evidence.identity.head = '0'.repeat(40)
+  fs.writeFileSync(env.CI_SCOPE_EVIDENCE_FILE, JSON.stringify(evidence))
+  fs.unlinkSync(trace)
+  fs.unlinkSync(shared.evidence.path)
+  const rejected = run()
+
+  assert.equal(rejected.status, 1)
+  assert.match(rejected.stderr, /CI scope evidence does not match/)
+  assert.equal(fs.existsSync(trace), false)
+  assert.equal(fs.existsSync(shared.evidence.path), false)
+})
+
+test('local validation CLI writes evidence only on execution and completes shared checks', (t) => {
+  const { root, git, write } = workspaceFixture(t)
+  write('.gitignore', '.env\ntmp/\n')
+  fs.mkdirSync(path.join(root, 'scripts'))
+  write(
+    'scripts/run-ci-checks.mjs',
+    [
+      "import { execFileSync } from 'node:child_process'",
+      `execFileSync(process.execPath, [${JSON.stringify(path.join(repositoryRoot, 'scripts/run-ci-checks.mjs'))}], { stdio: 'inherit' })`
+    ].join('\n')
+  )
+  git('add', '.')
+  git('commit', '-qm', 'local runner fixture')
+  const base = git('rev-parse', 'HEAD')
+  write('apps/client/README.md', '# Client documentation')
+  const bin = path.join(root, 'tmp/bin')
+  const trace = path.join(root, 'tmp/commands.log')
+  fs.mkdirSync(bin, { recursive: true })
+  fs.writeFileSync(
+    path.join(bin, 'yarn'),
+    '#!/bin/sh\nprintf "%s\\n" "$*" >> "$CHECK_TRACE"\n',
+    { mode: 0o700 }
+  )
+  const run = (args) =>
+    spawnSync(
+      process.execPath,
+      [
+        path.join(repositoryRoot, 'scripts/local-validation.mjs'),
+        '--base',
+        base,
+        ...args
+      ],
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          PATH: bin + path.delimiter + process.env.PATH,
+          CHECK_TRACE: trace
+        },
+        encoding: 'utf8',
+        timeout: 20000
+      }
+    )
+  const preview = run([])
+
+  assert.equal(preview.status, 0, preview.stderr)
+  assert.equal(fs.existsSync(path.join(root, 'tmp/local-validation')), false)
+  assert.equal(fs.existsSync(trace), false)
+  const execution = run(['--run'])
+
+  const [directory] = fs.readdirSync(path.join(root, 'tmp/local-validation'))
+  const log = fs.readFileSync(
+    path.join(root, 'tmp/local-validation', directory, '1.log'),
+    'utf8'
+  )
+  assert.equal(execution.status, 0, execution.stdout + execution.stderr + log)
+  assert.match(execution.stdout, /Local validation passed/)
+  const result = JSON.parse(
+    fs.readFileSync(
+      path.join(root, 'tmp/local-validation', directory, 'result.json'),
+      'utf8'
+    )
+  )
+  assert.equal(result.status, 'passed')
+  assert.equal(result.sourceVerified, true)
+  assert.equal(result.checks.find(({ id }) => id === 'shared').status, 'passed')
+  assert.equal(fs.readFileSync(trace, 'utf8'), 'lint\n')
 })
 
 test('existing separately owned E2E groups declare local argv and result evidence', () => {
@@ -247,8 +388,9 @@ test('existing separately owned E2E groups declare local argv and result evidenc
     assert.ok(['yarn', 'node'].includes(suite.localCommand.executable))
     assert.ok(suite.localCommand.args.length > 0)
     assert.ok(['playwright', 'tap'].includes(suite.localCommand.evidence))
-    if (suite.localCommand.evidence === 'playwright')
+    if (suite.localCommand.evidence === 'playwright') {
       assert.ok(suite.localCommand.args.includes('--max-failures=1'))
+    }
     assert.equal(suite.localCommand.args.includes('scripts/run-e2e.sh'), false)
   }
 })
@@ -304,7 +446,7 @@ for (const paths of [
     'packages/preset/src/components/vector-native-fill.ts',
     'packages/preset/coverage-flow-contracts.json'
   ]
-])
+]) {
   test(`local profile commands consume exactly the same selection as CI for ${paths.join(', ')}`, () => {
     const inputs = {
       changedPaths: paths,
@@ -331,8 +473,10 @@ for (const paths of [
       local.profileFiles.flatMap((file) => ['--file', file])
     )
   })
+}
 
-test('local plan Flow admission uses the same repository test selection as CI', () => {
+test('local plan Flow admission uses the same repository test selection as CI', (t) => {
+  const { root } = fixture(t)
   const paths = ['docs/ai/framework/plans/example/example.flow.json']
   const ci = classifyChanges(paths, readWorkspaceManifests(repositoryRoot))
   const plan = selectLocalValidation({
@@ -348,16 +492,15 @@ test('local plan Flow admission uses the same repository test selection as CI', 
     plan.executionPlan.checks.repositoryScripts,
     ci.executionPlan.checks.repositoryScripts
   )
-  const commands = localCheckCommands(
-    plan,
-    path.join(repositoryRoot, 'tmp/flow-admission')
-  )
+  const outputDirectory = path.join(root, 'tmp/flow-admission')
+  const commands = localCheckCommands(plan, outputDirectory)
+  localValidation.writeLocalValidationEvidence(plan, commands, outputDirectory)
   const shared = commands.find(({ id }) => id === 'shared')
   assert.ok(shared)
   assert.ok(
     JSON.parse(
-      shared.env.CI_EXECUTION_PLAN
-    ).checks.repositoryScripts.tests.includes(
+      fs.readFileSync(shared.env.CI_SCOPE_EVIDENCE_FILE, 'utf8')
+    ).executionPlan.checks.repositoryScripts.tests.includes(
       'scripts/__tests__/plan-flow-documents.test.mjs'
     )
   )

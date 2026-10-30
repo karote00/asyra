@@ -18,6 +18,7 @@ it('keeps scripts, Workers and connections on the deployed origin', () => {
     "base-uri 'none'",
     "frame-ancestors 'none'",
     "form-action 'none'"
-  ])
+  ]) {
     expect(headers).toContain(directive)
+  }
 })

@@ -174,7 +174,9 @@ export const createDocumentPersistenceQueue = ({
     reject(error: unknown): void
   }>()
   const rejectDurabilityWaiters = (error: unknown): void => {
-    for (const waiter of [...durabilityWaiters]) waiter.reject(error)
+    for (const waiter of [...durabilityWaiters]) {
+      waiter.reject(error)
+    }
   }
 
   const unavailableError = (): Error =>
@@ -213,18 +215,24 @@ export const createDocumentPersistenceQueue = ({
   }
 
   const setEditable = (next: boolean): void => {
-    if (editable === next) return
+    if (editable === next) {
+      return
+    }
     editable = next
     onEditabilityChange?.(next)
   }
 
   const clearDirtyTimer = (): void => {
-    if (dirtyTimer !== undefined) clearTimeout(dirtyTimer)
+    if (dirtyTimer !== undefined) {
+      clearTimeout(dirtyTimer)
+    }
     dirtyTimer = undefined
   }
 
   const clearRetryTimer = (): void => {
-    if (retryTimer !== undefined) clearTimeout(retryTimer)
+    if (retryTimer !== undefined) {
+      clearTimeout(retryTimer)
+    }
     retryTimer = undefined
   }
 
@@ -240,7 +248,9 @@ export const createDocumentPersistenceQueue = ({
   }
 
   const scheduleRetry = (): void => {
-    if (retryTimer !== undefined || disposed || stopping) return
+    if (retryTimer !== undefined || disposed || stopping) {
+      return
+    }
     retryTimer = setTimeout(() => {
       retryTimer = undefined
       void attemptInFlight()
@@ -263,8 +273,11 @@ export const createDocumentPersistenceQueue = ({
     backendUnavailable = false
     backendFailure = undefined
     durableSequence = acknowledgement.durableSequence
-    for (const waiter of [...durabilityWaiters])
-      if (waiter.sequence <= durableSequence) waiter.resolve(durableSequence)
+    for (const waiter of [...durabilityWaiters]) {
+      if (waiter.sequence <= durableSequence) {
+        waiter.resolve(durableSequence)
+      }
+    }
     onDurableSequenceChange?.(durableSequence)
     inFlight = undefined
     if (pending.length === 0) {
@@ -289,13 +302,17 @@ export const createDocumentPersistenceQueue = ({
 
   async function attemptInFlight(): Promise<void> {
     const active = inFlight
-    if (!active || disposed) return
+    if (!active || disposed) {
+      return
+    }
     clearRetryTimer()
     try {
       const acknowledgement = await sendBatch(active.batch)
       completeSuccessfulBatch(active, acknowledgement)
     } catch (error) {
-      if (inFlight !== active) return
+      if (inFlight !== active) {
+        return
+      }
       backendUnavailable = true
       backendFailure = error instanceof Error ? error : new Error(String(error))
       setEditable(false)
@@ -366,7 +383,9 @@ export const createDocumentPersistenceQueue = ({
     })
     inFlight = { batch }
     const trackedAttempt = attemptInFlight().finally(() => {
-      if (activeAttempt === trackedAttempt) activeAttempt = undefined
+      if (activeAttempt === trackedAttempt) {
+        activeAttempt = undefined
+      }
     })
     activeAttempt = trackedAttempt
     return trackedAttempt
@@ -380,7 +399,9 @@ export const createDocumentPersistenceQueue = ({
       if (disposed) {
         throw new Error('[document-persistence-queue] queue is disposed')
       }
-      if (backendUnavailable) throw unavailableError()
+      if (backendUnavailable) {
+        throw unavailableError()
+      }
       if (entries.length === 0) {
         throw new Error(
           '[document-persistence-queue] publication batch is empty'
@@ -431,7 +452,9 @@ export const createDocumentPersistenceQueue = ({
         if (disposed) {
           throw new Error('[document-persistence-queue] queue is disposed')
         }
-        if (backendUnavailable) throw unavailableError()
+        if (backendUnavailable) {
+          throw unavailableError()
+        }
         try {
           queue.enqueueBatch(entries)
           return
@@ -447,18 +470,24 @@ export const createDocumentPersistenceQueue = ({
     },
     async whenDurable(sequence, signal) {
       signal?.throwIfAborted()
-      if (disposed)
+      if (disposed) {
         throw new Error('[document-persistence-queue] queue is disposed')
+      }
       if (
         !Number.isSafeInteger(sequence) ||
         sequence < 0 ||
         sequence > headSequence
-      )
+      ) {
         throw new Error(
           '[document-persistence-queue] sequence has not been accepted'
         )
-      if (sequence <= durableSequence) return durableSequence
-      if (backendUnavailable) throw unavailableError()
+      }
+      if (sequence <= durableSequence) {
+        return durableSequence
+      }
+      if (backendUnavailable) {
+        throw unavailableError()
+      }
       return new Promise<number>((resolve, reject) => {
         const clean = () => {
           durabilityWaiters.delete(waiter)
@@ -484,7 +513,9 @@ export const createDocumentPersistenceQueue = ({
       return beginPendingBatch()
     },
     async flushForShutdown() {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       stopping = true
       clearDirtyTimer()
       clearRetryTimer()

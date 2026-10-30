@@ -17,19 +17,22 @@ async function* recordLines(path: string, start = 0) {
       remainder = Buffer.concat([remainder, chunk])
       let end: number
       while ((end = remainder.indexOf(10)) !== -1) {
-        if (end > 256 * 1024)
+        if (end > 256 * 1024) {
           throw new Error('Persisted record capacity exceeded')
+        }
         yield {
           text: remainder.subarray(0, end).toString('utf8'),
           bytes: end + 1
         }
         remainder = remainder.subarray(end + 1)
       }
-      if (remainder.length > 256 * 1024)
+      if (remainder.length > 256 * 1024) {
         throw new Error('Persisted record capacity exceeded')
+      }
     }
-    if (remainder.length)
+    if (remainder.length) {
       throw new Error('Unterminated persisted record stream')
+    }
   } finally {
     input.destroy()
   }
@@ -65,17 +68,24 @@ export const createFileRecordCollector = (options: {
           record.requestId !== requestId ||
           record.sequence !== sequence ||
           record.schemaVersion !== 2
-        )
+        ) {
           throw new Error('Invalid persisted retry sequence')
+        }
         offset += line.bytes
-        if (sequence++ >= from) hashes.push(recordHash(record))
-        if (hashes.length === count) break
+        if (sequence++ >= from) {
+          hashes.push(recordHash(record))
+        }
+        if (hashes.length === count) {
+          break
+        }
       }
       cursors.delete(requestId)
       cursors.set(requestId, { sequence, offset })
       if (cursors.size > (options.maxRequests ?? 32)) {
         const oldest = cursors.keys().next().value
-        if (oldest !== undefined) cursors.delete(oldest)
+        if (oldest !== undefined) {
+          cursors.delete(oldest)
+        }
       }
       return hashes
     },
@@ -86,11 +96,16 @@ export const createFileRecordCollector = (options: {
         file = await open(path, 'r')
         const { size } = await file.stat()
         const lastByte = Buffer.alloc(1)
-        if (size) await file.read(lastByte, 0, 1, size - 1)
-        if (!size || lastByte[0] !== 10)
+        if (size) {
+          await file.read(lastByte, 0, 1, size - 1)
+        }
+        if (!size || lastByte[0] !== 10) {
           throw new Error('Unterminated persisted record stream')
+        }
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          return undefined
+        }
         throw error
       } finally {
         await file?.close()
@@ -102,8 +117,9 @@ export const createFileRecordCollector = (options: {
         if (
           options.maxRecords !== undefined &&
           nextSequence >= options.maxRecords
-        )
+        ) {
           throw new Error('Persisted record capacity exceeded')
+        }
         const record = JSON.parse(line.text)
         if (
           terminal ||
@@ -112,14 +128,19 @@ export const createFileRecordCollector = (options: {
           record.sequence !== nextSequence ||
           typeof record.event !== 'string' ||
           (!nextSequence && record.event !== 'ai_request_started')
-        )
+        ) {
           throw new Error('Invalid persisted record sequence')
+        }
         hashes.push(recordHash(record))
-        if (hashes.length > recordDigestWindowSize) hashes.shift()
+        if (hashes.length > recordDigestWindowSize) {
+          hashes.shift()
+        }
         nextSequence++
         terminal = record.event === 'ai_request_usage'
       }
-      if (!nextSequence) throw new Error('Empty persisted record stream')
+      if (!nextSequence) {
+        throw new Error('Empty persisted record stream')
+      }
       return {
         sink: createExecutionRecordSink(
           options.directory,

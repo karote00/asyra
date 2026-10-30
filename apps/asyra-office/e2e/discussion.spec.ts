@@ -20,8 +20,9 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
     if (
       message.type() === 'error' &&
       !message.location().url.endsWith('/favicon.ico')
-    )
+    ) {
       errors.push(message.text() + ' ' + message.location().url)
+    }
   })
   await page.goto('/')
   await page
@@ -43,9 +44,13 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const graphics = await canvas.evaluate((node) => {
     const gl = (node as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost()) throw new Error('Missing WebGL2 context')
+    if (!gl || gl.isContextLost()) {
+      throw new Error('Missing WebGL2 context')
+    }
     const extension = gl.getExtension('WEBGL_debug_renderer_info')
-    if (!extension) throw new Error('Cannot verify GPU')
+    if (!extension) {
+      throw new Error('Cannot verify GPU')
+    }
     return String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL))
   })
   expect(graphics).not.toMatch(
@@ -63,7 +68,9 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
     path: info.outputPath('discussion-source-angle.png')
   })
   const bounds = await canvas.boundingBox()
-  if (!bounds) throw new Error('Missing canvas bounds')
+  if (!bounds) {
+    throw new Error('Missing canvas bounds')
+  }
   // Native live-browser crop keeps the poster readable without enlarging pixels.
   await page.screenshot({
     path: info.outputPath('discussion-poster-detail.png'),
@@ -112,8 +119,9 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
       exact: true
     })
     .click()
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  }
   await settle()
   await canvas.screenshot({
     path: info.outputPath('discussion-tableware-detail.png')
@@ -128,8 +136,9 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
     }
   })
   expect(errors).toEqual([])
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  }
   await settle()
   await canvas.screenshot({
     path: info.outputPath('discussion-tableware-microscope.png')
@@ -212,8 +221,9 @@ test('iced Americano microscope shows the same production transparent regions', 
     if (
       message.type() === 'error' &&
       !message.location().url.endsWith('/favicon.ico')
-    )
+    ) {
       errors.push(message.text() + ' ' + message.location().url)
+    }
   })
   await installOpticsProbe(page)
   await page.goto('/?review=iced-americano')
@@ -307,9 +317,13 @@ test('sugar ceramic surfaces remain smooth around the spoon notch and leaning li
   await viewport.locator('canvas').waitFor()
   const renderer = await viewport.locator('canvas').evaluate((node) => {
     const gl = (node as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost()) throw new Error('Missing WebGL')
+    if (!gl || gl.isContextLost()) {
+      throw new Error('Missing WebGL')
+    }
     const debug = gl.getExtension('WEBGL_debug_renderer_info')
-    if (!debug) throw new Error('Missing renderer information')
+    if (!debug) {
+      throw new Error('Missing renderer information')
+    }
     return String(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL))
   })
   expect(renderer).not.toMatch(/swiftshader|llvmpipe|softpipe/i)

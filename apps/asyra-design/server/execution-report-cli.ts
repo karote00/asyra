@@ -14,8 +14,9 @@ if (
       policy: designReportPolicy,
       createProvider: ({ directory, signal, environment }) => {
         const model = environment.AI_PROVIDER_MODEL?.trim()
-        if (environment.AI_PROVIDER_BACKEND !== 'local-codex' || !model)
+        if (environment.AI_PROVIDER_BACKEND !== 'local-codex' || !model) {
           return undefined
+        }
         return async (summary) => {
           const { requestLocalAiAssessment } =
             await import('./local-ai-provider')

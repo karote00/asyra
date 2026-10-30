@@ -20,8 +20,9 @@ it('retains the actual asset and bounds through all inspection views and appeara
     'Top',
     'Three-quarter',
     'Cap detail'
-  ] as const)
+  ] as const) {
     control.setView(view)
+  }
   control.resize(600, 2, 800)
   expect(build).toHaveBeenCalledOnce()
   expect(submit).toHaveBeenCalledOnce()
@@ -55,8 +56,9 @@ it('fits depth planes to the asset so submillimetre shells do not z-fight at the
     'Back',
     'Top',
     'Three-quarter'
-  ] as const)
+  ] as const) {
     control.setView(view)
+  }
   for (const [camera] of submitCamera.mock.calls) {
     const distance = Math.hypot(
       ...camera.position.map((n: number, i: number) => n - camera.target[i])
@@ -125,8 +127,9 @@ it('keeps production iced Americano geometry and optical materials across micros
         m.descriptor.optics?.ior === 1.33
     )
   ).toBe(true)
-  for (const view of ['Front', 'Right', 'Top', 'Cap detail'] as const)
+  for (const view of ['Front', 'Right', 'Top', 'Cap detail'] as const) {
     control.setView(view)
+  }
   expect(submit).toHaveBeenCalledOnce()
   expect(submitCamera).toHaveBeenCalledTimes(4)
   control.dispose()

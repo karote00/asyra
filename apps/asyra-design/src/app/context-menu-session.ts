@@ -55,12 +55,16 @@ export const useAppContextMenuSession = (
 
   const dismiss = useCallback((reason: AppContextMenuSessionDismissReason) => {
     const currentSession = sessionRef.current
-    if (!currentSession) return
+    if (!currentSession) {
+      return
+    }
 
     sessionRef.current = null
     setSession(null)
 
-    if (!shouldRestoreInvokerFocus(reason)) return
+    if (!shouldRestoreInvokerFocus(reason)) {
+      return
+    }
 
     queueMicrotask(() => {
       if (currentSession.invoker.isConnected) {

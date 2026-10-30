@@ -133,7 +133,9 @@ const App: React.FC<AppProps> = ({
   )
   useEffect(() => {
     const handleAgentPanelShortcut = (event: KeyboardEvent) => {
-      if (!matchesAiPanelToggleShortcut(event, groupCommandPlatform)) return
+      if (!matchesAiPanelToggleShortcut(event, groupCommandPlatform)) {
+        return
+      }
 
       const root = appRootRef.current
       const eventTarget =

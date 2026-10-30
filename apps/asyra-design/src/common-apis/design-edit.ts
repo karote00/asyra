@@ -67,8 +67,9 @@ export const createDesignElementEditPreparer =
       typeof request.elementId !== 'string' ||
       !request.elementId.length ||
       request.elementId.length > 256
-    )
+    ) {
       throw new Error('Invalid design edit.')
+    }
     const { elementId, name, properties, fillColor, strokeColor } = request
     if (
       (name !== undefined &&
@@ -80,53 +81,70 @@ export const createDesignElementEditPreparer =
           typeof properties !== 'object' ||
           Array.isArray(properties) ||
           !Object.keys(properties).length))
-    )
+    ) {
       throw new Error('Invalid design edit values.')
+    }
     if (
       [name, properties, fillColor, strokeColor].every(
         (value) => value === undefined
       )
-    )
+    ) {
       throw new Error('The design edit has no changes.')
+    }
     const target = apis.getData(elementId)
-    if (!target || target.type === 'workspace')
+    if (!target || target.type === 'workspace') {
       throw new Error('The edit target is unavailable.')
+    }
     const visited = new Set<string>()
     let id: string | undefined = elementId
     let data = target
     while (id) {
-      if (visited.has(id) || visited.size >= 512)
+      if (visited.has(id) || visited.size >= 512) {
         throw new Error('The target hierarchy is invalid.')
+      }
       visited.add(id)
-      if (data.lock) throw new Error('The target or its parent is locked.')
-      if (data.type === 'workspace') break
+      if (data.lock) {
+        throw new Error('The target or its parent is locked.')
+      }
+      if (data.type === 'workspace') {
+        break
+      }
       id = data.parentId
       const parent = id ? apis.getData(id) : undefined
-      if (!parent) throw new Error('The target parent is unavailable.')
+      if (!parent) {
+        throw new Error('The target parent is unavailable.')
+      }
       data = parent
     }
     const computed = apis.getComputed(elementId, observationFields)
-    if (!computed) throw new Error('The target properties are unavailable.')
+    if (!computed) {
+      throw new Error('The target properties are unavailable.')
+    }
     const patch: Record<string, string | number> = {}
     for (const [key, value] of Object.entries(properties ?? {})) {
-      if (!Object.prototype.hasOwnProperty.call(computed, key))
+      if (!Object.prototype.hasOwnProperty.call(computed, key)) {
         throw new Error(`The target does not support ${key}.`)
+      }
       if (geometryFields.includes(key)) {
         if (
           typeof value !== 'number' ||
           !Number.isFinite(value) ||
           Math.abs(value) > 100000 ||
           (['width', 'height'].includes(key) && value <= 0)
-        )
+        ) {
           throw new Error(`Invalid ${key}.`)
+        }
       } else {
         const field = TEXT_PROPERTY_SCHEMA.fields.find(
           (field) => field.key === key
         )
-        if (target.type !== 'text' || !field?.validate?.(value))
+        if (target.type !== 'text' || !field?.validate?.(value)) {
           throw new Error(`Unsupported or invalid ${key}.`)
+        }
       }
-      if (computed[key] !== value) patch[key] = value
+      if (computed[key] !== value) {
+        patch[key] = value
+      }
     }
     for (const [key, color] of [
       ['fills', fillColor],
@@ -135,8 +153,9 @@ export const createDesignElementEditPreparer =
       if (
         color !== undefined &&
         (!Array.isArray(computed[key]) || !computed[key].length)
-      )
+      ) {
         throw new Error(`The target has no primary ${key} to update.`)
+      }
     }
     return () => {
       let changed = false
@@ -148,10 +167,12 @@ export const createDesignElementEditPreparer =
         apis.properties(elementId, patch)
         changed = true
       }
-      if (fillColor !== undefined)
+      if (fillColor !== undefined) {
         changed = apis.fill(elementId, fillColor) || changed
-      if (strokeColor !== undefined)
+      }
+      if (strokeColor !== undefined) {
         changed = apis.stroke(elementId, strokeColor) || changed
+      }
       return {
         status: changed ? 'complete' : 'no-change',
         compositionId: elementId,

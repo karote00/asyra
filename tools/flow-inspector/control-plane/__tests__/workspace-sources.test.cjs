@@ -83,9 +83,11 @@ function fixture(t) {
         : 'apps/studio/server/session.ts'
     ]
   }
-  for (const scenario of manifest.scenarios)
-    if (scenario.mutation)
+  for (const scenario of manifest.scenarios) {
+    if (scenario.mutation) {
       scenario.mutation.file = 'apps/studio/server/session.ts'
+    }
+  }
   write(manifest.specPath, '# Source fixture\n')
   write(manifest.testFile, 'export {}\n')
   write(manifest.configFile, 'export default {}\n')
@@ -113,8 +115,9 @@ test('private App and package integration capture actual workspace identities an
   const reads = new Map()
   const originalRead = fs.readFileSync
   fs.readFileSync = (file, ...args) => {
-    if (typeof file === 'string' && file.startsWith(input.root + path.sep))
+    if (typeof file === 'string' && file.startsWith(input.root + path.sep)) {
       reads.set(file, (reads.get(file) ?? 0) + 1)
+    }
     return originalRead(file, ...args)
   }
   let snapshot
@@ -143,7 +146,9 @@ test('private App and package integration capture actual workspace identities an
       /unrelated|\.env|session\.test|__tests__/.test(file.path)
     )
   )
-  for (const [file, count] of reads) assert.equal(count, 1, file)
+  for (const [file, count] of reads) {
+    assert.equal(count, 1, file)
+  }
   assert.equal(snapshot.readCount, reads.size)
   assert.doesNotThrow(() => validateSourceSnapshot(snapshot, input.contract()))
   assert.doesNotThrow(() =>
@@ -259,13 +264,16 @@ test('a tool workspace can derive execution without writing into its runtime roo
     path.join(input.root, 'tools/flow-inspector/control-plane')
   )
   input.manifest.workspaceSources[0].inputs = ['src/**', 'control-plane/**']
-  for (const step of input.architecture.steps)
+  for (const step of input.architecture.steps) {
     step.implementationBoundary = step.implementationBoundary.map((file) =>
       file.replace('apps/studio/server', 'tools/flow-inspector/control-plane')
     )
-  for (const scenario of input.manifest.scenarios)
-    if (scenario.mutation)
+  }
+  for (const scenario of input.manifest.scenarios) {
+    if (scenario.mutation) {
       scenario.mutation.file = 'tools/flow-inspector/control-plane/session.ts'
+    }
+  }
   const snapshot = input.capture()
   const generated = source.createDerivedExecution({
     sourceRoot: snapshot.sourceRoot,
@@ -321,8 +329,9 @@ for (const method of ['composeSource', 'composeDerivedSource']) {
     const reads = new Map()
     const originalRead = fs.readFileSync
     fs.readFileSync = (file, ...args) => {
-      if (typeof file === 'string' && file.startsWith(input.root + path.sep))
+      if (typeof file === 'string' && file.startsWith(input.root + path.sep)) {
         reads.set(file, (reads.get(file) ?? 0) + 1)
+      }
       return originalRead(file, ...args)
     }
     let composed
@@ -358,7 +367,9 @@ for (const method of ['composeSource', 'composeDerivedSource']) {
       composed.runtimeAuthority.digest,
       current.snapshot.runtimeAuthority.digest
     )
-    for (const [file, count] of reads) assert.equal(count, 1, file)
+    for (const [file, count] of reads) {
+      assert.equal(count, 1, file)
+    }
     assert.equal(composed.readCount, reads.size)
     assert.equal(
       fs.readFileSync(
@@ -404,7 +415,9 @@ test('owner transfer rejects unavailable owners, different runtime inputs and ch
       )
       fs.chmodSync(file, 0o644)
       fs.writeFileSync(file, 'export const value = 999\n')
-    } else delete verifier.admission.runtimeAuthority
+    } else {
+      delete verifier.admission.runtimeAuthority
+    }
     const destination = path.join(input.root, 'tmp', randomUUID())
     assert.throws(() =>
       composeSource(input.root, destination, current, verifier, contract)

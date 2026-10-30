@@ -71,8 +71,9 @@ const withReviewBindingActor = <T extends LocalToolOwner>(owner: T): T => {
       !input ||
       typeof input !== 'object' ||
       Array.isArray(input)
-    )
+    ) {
       return call(name, input, signal)
+    }
     const value = input as Record<string, unknown>
     if (
       value.inspections ||
@@ -81,8 +82,9 @@ const withReviewBindingActor = <T extends LocalToolOwner>(owner: T): T => {
       value.checks.some(
         (check) => !check || typeof check !== 'object' || check.binding
       )
-    )
+    ) {
       return call(name, input, signal)
+    }
     const bindingText = await call(
       name,
       {
@@ -94,7 +96,9 @@ const withReviewBindingActor = <T extends LocalToolOwner>(owner: T): T => {
       signal
     )
     const binding = JSON.parse(bindingText)
-    if (!binding.next?.arguments?.checks) return bindingText
+    if (!binding.next?.arguments?.checks) {
+      return bindingText
+    }
     return call(
       name,
       {
@@ -359,7 +363,9 @@ it('execution proof repairs rejected source through the same request preparation
   const definition = tools.definitions.find(
     (tool) => tool.name === AiDesignToolIds.PREPARE_DESIGN
   )
-  if (!definition) throw new Error('Missing preparation definition')
+  if (!definition) {
+    throw new Error('Missing preparation definition')
+  }
   const missing = JSON.parse(
     (
       await invokeLocalTool(
@@ -564,7 +570,9 @@ it('execution proof preserves partial lookup full recovery and declaration const
   const preparation = designs.definitions.find(
     (tool) => tool.name === AiDesignToolIds.PREPARE_DESIGN
   )
-  if (!preparation) throw new Error('Missing preparation definition')
+  if (!preparation) {
+    throw new Error('Missing preparation definition')
+  }
   const { nativeToolInputSchema, operationInputIssue } =
     await import('../operation-input-schema')
   const nativePreparation = nativeToolInputSchema(preparation.inputSchema) as {
@@ -577,8 +585,9 @@ it('execution proof preserves partial lookup full recovery and declaration const
       (branch) => !Object.hasOwn(branch, 'examples')
     )
   ).toBe(true)
-  for (const example of nativePreparation.examples)
+  for (const example of nativePreparation.examples) {
     expect(operationInputIssue(example, nativePreparation)).toBeUndefined()
+  }
   const highLevel = createLocalOperationTools(
     [
       {
@@ -748,7 +757,9 @@ it('execution proof preserves registered native capability envelopes', async ({
       }
       packets.push(packet)
       queueMicrotask(() => {
-        if (packet.id === undefined) return
+        if (packet.id === undefined) {
+          return
+        }
         const responses: Record<string, unknown> = {
           initialize: {},
           'config/read': { config: {} },
@@ -762,8 +773,9 @@ it('execution proof preserves registered native capability envelopes', async ({
           },
           'turn/start': { turn: { id: 'proof-turn' } }
         }
-        if (packet.method)
+        if (packet.method) {
           send({ id: packet.id, result: responses[packet.method] })
+        }
         if (packet.method === 'turn/start') {
           send({
             id: 100,
@@ -891,16 +903,17 @@ it('execution proof preserves registered native capability envelopes', async ({
       .find((group) => group.name === 'tool_library')
       ?.tools.map((tool) => tool.name)
   ).toEqual(['submit_tool', 'invoke_tool', 'save_tool', 'manage_tool'])
-  for (const group of groups)
+  for (const group of groups) {
     expect(group).toMatchObject({
       type: 'namespace',
       name: expect.any(String),
       description: expect.any(String),
       tools: expect.any(Array)
     })
+  }
   const definitions = groups.flatMap(({ tools }) => tools)
   expect(definitions.length).toBeGreaterThan(0)
-  for (const definition of definitions)
+  for (const definition of definitions) {
     expect(definition).toMatchObject({
       type: 'function',
       deferLoading: true,
@@ -908,6 +921,7 @@ it('execution proof preserves registered native capability envelopes', async ({
       description: expect.any(String),
       inputSchema: expect.any(Object)
     })
+  }
   const names = new Set(definitions.map(({ name }) => name))
   expect(names.has(AiDesignToolIds.DESCRIBE_DESIGN_APIS)).toBe(true)
   expect(
@@ -924,12 +938,17 @@ it('execution proof preserves registered native capability envelopes', async ({
       (packet) => packet.id === id && packet.result
     )?.result
     expect(reply?.success, JSON.stringify(reply)).toBe(true)
-    if (!reply) throw new Error('Missing discovery page')
+    if (!reply) {
+      throw new Error('Missing discovery page')
+    }
     const page = JSON.parse(reply.contentItems[0].text)
     const end = page.offset + page.apis.length + page.tools.length
     expect(page.complete).toBe(end === page.count)
-    if (!page.complete) expect(page.next.arguments.offset).toBe(end)
-    else expect(page.next).toBeUndefined()
+    if (!page.complete) {
+      expect(page.next.arguments.offset).toBe(end)
+    } else {
+      expect(page.next).toBeUndefined()
+    }
   }
   const categoryDiscovery = packets.find(
     (packet) => packet.id === 101 && packet.result
@@ -937,7 +956,9 @@ it('execution proof preserves registered native capability envelopes', async ({
   expect(categoryDiscovery?.success, JSON.stringify(categoryDiscovery)).toBe(
     true
   )
-  if (!categoryDiscovery) throw new Error('Missing category discovery receipt')
+  if (!categoryDiscovery) {
+    throw new Error('Missing category discovery receipt')
+  }
   const categoryApis = JSON.parse(categoryDiscovery.contentItems[0].text).apis
   expect(categoryApis).toEqual(
     basicApiContracts
@@ -950,12 +971,16 @@ it('execution proof preserves registered native capability envelopes', async ({
         })
       )
   )
-  for (const api of categoryApis) expect(api.inputSchema).toBeDefined()
+  for (const api of categoryApis) {
+    expect(api.inputSchema).toBeDefined()
+  }
   const mixed = packets.find(
     (packet) => packet.id === 100 && packet.result
   )?.result
   expect(mixed?.success).toBe(true)
-  if (!mixed) throw new Error('Missing mixed discovery receipt')
+  if (!mixed) {
+    throw new Error('Missing mixed discovery receipt')
+  }
   const nativeMatches = JSON.parse(mixed.contentItems[0].text).tools
   for (const name of [
     AiDesignToolIds.EXECUTE_DESIGN_BATCH,
@@ -980,13 +1005,16 @@ it('execution proof preserves registered native capability envelopes', async ({
     (packet) => packet.id === 100 && packet.result
   )?.result
   expect(discovery?.success).toBe(true)
-  if (!discovery) throw new Error('Missing API discovery receipt')
+  if (!discovery) {
+    throw new Error('Missing API discovery receipt')
+  }
   const apis = JSON.parse(discovery.contentItems[0].text).apis
   expect(apis.map((api: { name: string }) => api.name)).toEqual(
     basicApiContracts.map(({ name }) => name)
   )
-  for (const [index, contract] of basicApiContracts.entries())
+  for (const [index, contract] of basicApiContracts.entries()) {
     expect(apis[index].inputSchema).toEqual(contract.inputSchema)
+  }
   expect(executeBatch).not.toHaveBeenCalled()
   expect(spawn).toHaveBeenCalledTimes(1)
   const records = log.mock.calls.map((call) => JSON.parse(String(call[0])))
@@ -1191,8 +1219,9 @@ it('execution proof exports compound resources before cleanup', async () => {
   } finally {
     await host.dispose()
   }
-  if (typeof artifactId !== 'string')
+  if (typeof artifactId !== 'string') {
     throw new Error('Missing exported artifact')
+  }
   const releasedArtifactId = artifactId
   expect(() => session.resolve(releasedArtifactId)).toThrow()
 })
@@ -1920,7 +1949,9 @@ it('execution proof hands a region identity set into one compact plural removal'
   const removal = basicApiContracts.find(
     (api) => api.owner === 'element' && api.method === 'deleteElements'
   )
-  if (!removal) throw new Error('Missing plural removal contract')
+  if (!removal) {
+    throw new Error('Missing plural removal contract')
+  }
   const read = {
     name: AiActionNames.RESOLVE_DESIGN_TARGETS,
     description: 'Resolve region targets',
@@ -2344,7 +2375,9 @@ it('execution proof preserves concrete work through progress and settlement', as
     })
     const current = () => {
       const active = controller.getSnapshot().activeTurn
-      if (!active) throw new Error('Missing active turn')
+      if (!active) {
+        throw new Error('Missing active turn')
+      }
       return projectAiActivity(active.progress, {
         purpose: active.originalIntent
       }).current
@@ -2410,7 +2443,9 @@ it('execution proof preserves concrete work through progress and settlement', as
       })
     ])
     expect(result).not.toBeNull()
-    if (!result) throw new Error('Missing settled activity')
+    if (!result) {
+      throw new Error('Missing settled activity')
+    }
     expect(controller.getSnapshot().activeTurn).toBeNull()
     expect(
       projectAiActivity(result.progress, { outcome: result.outcome }).current
@@ -2422,7 +2457,9 @@ it('execution proof preserves concrete work through progress and settlement', as
 
 it('execution proof composes capture and assessment without dropping unavailable targets', async () => {
   const hadWindowForInspection = 'window' in globalThis
-  if (!hadWindowForInspection) vi.stubGlobal('window', {})
+  if (!hadWindowForInspection) {
+    vi.stubGlobal('window', {})
+  }
   const { createAiInspectionAction } = await import('../../src/ai/inspection')
   const { inspectionInputSchema } =
     await import('../../src/ai/inspection-schema')
@@ -2452,7 +2489,9 @@ it('execution proof composes capture and assessment without dropping unavailable
   } finally {
     core.getElementData = get
     core.getElementMetadata = getMetadata
-    if (!hadWindowForInspection) Reflect.deleteProperty(globalThis, 'window')
+    if (!hadWindowForInspection) {
+      Reflect.deleteProperty(globalThis, 'window')
+    }
   }
 
   let detailAvailable = false
@@ -2636,7 +2675,7 @@ it('execution proof binds prepared recipe assessment to immutable source before 
       context: {},
       actionResults: batch.actions.map(
         (action): AiBatchReceipt['actionResults'][number] => {
-          if (action.name === AiActionNames.READ_DESIGN_ATTACHMENT)
+          if (action.name === AiActionNames.READ_DESIGN_ATTACHMENT) {
             return {
               actionId: action.id,
               actionName: action.name,
@@ -2652,7 +2691,8 @@ it('execution proof binds prepared recipe assessment to immutable source before 
                 ]
               }
             }
-          if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+          }
+          if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
             return {
               actionId: action.id,
               actionName: action.name,
@@ -2661,6 +2701,7 @@ it('execution proof binds prepared recipe assessment to immutable source before 
                 validatedAt: { sessionId: 'proof-validation', revision: 1 }
               }
             }
+          }
           expect(action.arguments).toMatchObject({
             attachmentEvidence: {
               parentId: 'workspace',
@@ -2828,8 +2869,9 @@ it('execution proof shares immutable tool contracts and preserves rejected outpu
       inputSchema: {}
     }
   ])
-  for (const definition of designs.definitions)
+  for (const definition of designs.definitions) {
     expect(() => createAiToolContract(definition)).not.toThrow()
+  }
 })
 
 it('execution proof retains offline diagnostics until a matching durable terminal acknowledgement', async () => {
@@ -2848,8 +2890,9 @@ it('execution proof retains offline diagnostics until a matching durable termina
     },
     gap: async () => gap,
     append: async (records: readonly ExecutionRecord[]) => {
-      for (const record of records)
+      for (const record of records) {
         stored.set(record.sequence, structuredClone(record))
+      }
     },
     requests: async () => (stored.size || reserved ? ['proof-recording'] : []),
     read: async (_id: string, from: number, count: number) =>
@@ -2875,7 +2918,9 @@ it('execution proof retains offline diagnostics until a matching durable termina
   const host = createRecordDeliveryHost({
     outbox,
     send: (batch) => {
-      if (!online) return Promise.reject(new Error('offline'))
+      if (!online) {
+        return Promise.reject(new Error('offline'))
+      }
       return collector.accept(batch)
     }
   })
@@ -2885,13 +2930,14 @@ it('execution proof retains offline diagnostics until a matching durable termina
       'ai_request_started',
       'ai_request_trace',
       'ai_request_usage'
-    ].entries())
+    ].entries()) {
       sink.write({
         event,
         sequence,
         requestId: 'proof-recording',
         schemaVersion: 2
       })
+    }
     expect((await sink.flush()).status).toBe('failed')
     expect(stored.size).toBe(3)
     online = true
@@ -2941,7 +2987,9 @@ it('execution proof reconciles scoped criterion results after external edits wit
   })
   let copiedIds = 0
   const stop = subscribeToDiagnosticCounters((name, count) => {
-    if (name === 'scene-tree:membership:snapshot-items') copiedIds += count
+    if (name === 'scene-tree:membership:snapshot-items') {
+      copiedIds += count
+    }
   })
   try {
     group.insertChildrenFromCanonicalBatch(0, ['first', 'second'])
@@ -3080,7 +3128,7 @@ const exerciseMultiscaleEvidence = async () => {
             evidence?: { receiptId?: string }
             scope?: unknown
           }
-          if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+          if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
             return {
               actionId: action.id,
               actionName: action.name,
@@ -3090,13 +3138,15 @@ const exerciseMultiscaleEvidence = async () => {
                 coverage: { complete: args.scope !== undefined }
               }
             }
+          }
           expect(action.name).toBe(AiActionNames.INSPECT_DRAWING)
-          if (failCapture)
+          if (failCapture) {
             return {
               actionId: action.id,
               actionName: action.name,
               result: { available: false, error: 'Capture unavailable' }
             }
+          }
           const receiptId = `image-${++sequence}`
           captures.push({ receiptId, elementId: String(args.elementId) })
           return {
@@ -3281,7 +3331,9 @@ const exerciseMultiscaleEvidence = async () => {
   const current = checkResults
     .read({ includePassed: true })
     .items.find((item) => item.unitId === 'combined')
-  if (!current) throw new Error('Expected combined verdict')
+  if (!current) {
+    throw new Error('Expected combined verdict')
+  }
   const captureCount = captures.length
   const replacement = await bind(
     'appearance',
@@ -3302,7 +3354,9 @@ const exerciseMultiscaleEvidence = async () => {
   const replaced = checkResults
     .read({ includePassed: true })
     .items.find((item) => item.unitId === 'combined')
-  if (!replaced) throw new Error('Expected replacement verdict')
+  if (!replaced) {
+    throw new Error('Expected replacement verdict')
+  }
   expect(replaced.revision).toBeGreaterThan(current.revision)
   expect(
     Object.keys(replaced.dependencies).filter((key) =>
@@ -3626,9 +3680,9 @@ it('execution proof checks all acknowledged parts before returning deferred capt
         }
         order.push(action.name)
         let result: AiBatchReceipt['actionResults'][number]['result']
-        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
           result = { status: 'complete', compositionId: 'part-' + ++writes }
-        else if (action.name === AiActionNames.REVIEW_DESIGN) {
+        } else if (action.name === AiActionNames.REVIEW_DESIGN) {
           expect(input.measurementTargets).toBe('descendants')
           result = {
             complete: true,
@@ -3734,12 +3788,12 @@ it('execution proof consumes canonical mutation scope without read pollution or 
             findings: [],
             evidence: { sessionId: 'scope-proof', receiptId: id, revision: 1 }
           }
-        } else if (call.name === 'api_core_getElementData')
+        } else if (call.name === 'api_core_getElementData') {
           result = {
             value: { compositionId: 'read-only-payload' },
             status: 'no-change'
           }
-        else
+        } else {
           result = {
             status: 'complete',
             value: null,
@@ -3752,6 +3806,7 @@ it('execution proof consumes canonical mutation scope without read pollution or 
               removedElementIds: []
             }
           }
+        }
         return {
           actionId: call.id,
           actionName: call.name,
@@ -3832,7 +3887,9 @@ it('execution proof delivers compact structural output without repeating canonic
   const contract = basicApiContracts.find(
     (action) => action.name === 'api_hierarchy_groupElements'
   )
-  if (!contract) throw new Error('Missing structural contract')
+  if (!contract) {
+    throw new Error('Missing structural contract')
+  }
   const full = {
     status: 'complete',
     value: { groupId: 'group', elementIds: ids },
@@ -4156,8 +4213,9 @@ it('execution proof uses only current conversion and primary judgment contracts'
     )
   })
   expect.soft(passed.accepted).toBe(true)
-  if (!Array.isArray(passed.inspectionIds))
+  if (!Array.isArray(passed.inspectionIds)) {
     throw new Error('Missing recorded image IDs')
+  }
   expect.soft(passed).not.toHaveProperty('independentAssessment')
   review.record({
     ...inputReview,
@@ -4429,7 +4487,9 @@ it('execution proof connects tool-first guidance to native selection and Runtime
     const repair = host
       .definitions()
       .find((tool) => tool.name === 'repair_design_checks')
-    if (!verifier || !repair) throw new Error('Missing mechanical contracts')
+    if (!verifier || !repair) {
+      throw new Error('Missing mechanical contracts')
+    }
     const repairSchema = repair.inputSchema as {
       properties: { policy: unknown }
     }
@@ -4580,7 +4640,9 @@ it('execution proof saves nested tool evidence and reopens without product repla
         read: (key) => database.read(key),
         list: (limit) => database.list(limit),
         write: (value) => {
-          if (fail) throw new Error('Store unavailable')
+          if (fail) {
+            throw new Error('Store unavailable')
+          }
           return database.write(value)
         }
       },
@@ -4593,8 +4655,9 @@ it('execution proof saves nested tool evidence and reopens without product repla
         if (
           event.phase === 'started' &&
           event.call.name === 'design_preparation.prepare_design'
-        )
+        ) {
           preparations++
+        }
       },
       createGroups: (ownership) => [
         {
@@ -4778,7 +4841,9 @@ it('execution proof preserves issued history direction across the App feature ha
   const execution = getFeatureRegistry().getDefinition(
     FeatureNames.UNDO_REDO
   )?.execution
-  if (!execution) throw new Error('Missing real history feature')
+  if (!execution) {
+    throw new Error('Missing real history feature')
+  }
   const originalBusy = core.deps.factory.isInUndoRedo
   const originalSet = core.setSystemProperty
   const originalUndo = historyApis.undo
@@ -4797,7 +4862,9 @@ it('execution proof preserves issued history direction across the App feature ha
       const combo = keyCombinations[
         InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
       ].find((entry) => entry.modifiers.includes(modifier))
-      if (!combo) throw new Error('Missing real history shortcut')
+      if (!combo) {
+        throw new Error('Missing real history shortcut')
+      }
       for (const shift of [false, true]) {
         const raw = {
           type: InputType.KEYBOARD,
@@ -4847,7 +4914,9 @@ it('execution proof preserves issued history direction across the App feature ha
     })
     try {
       const dispatch = listeners.get(InputSystemEvents.INPUT_SHORTCUT_UNDOREDO)
-      if (!dispatch) throw new Error('Missing real history dispatch')
+      if (!dispatch) {
+        throw new Error('Missing real history dispatch')
+      }
       const request = dispatch({
         detail: { historyDirection: 'undo' }
       } as unknown as import('@asyra/utils').RawInputEvent)
@@ -4881,7 +4950,9 @@ it('execution proof preserves issued history direction across the App feature ha
       received.push(raw.detail)
     })
     const keydown = callbacks.get('keydown')?.[0]
-    if (!keydown) throw new Error('Missing browser input binding')
+    if (!keydown) {
+      throw new Error('Missing browser input binding')
+    }
     const key = (code: string) =>
       ({
         code,
@@ -4924,8 +4995,9 @@ it('execution proof retires superseded recorded purpose after provider tool sett
   const stages = recordedPurpose.recordedOutput
     .filter((event) => event.evidence.status === 'running')
     .map((event) => {
-      if (typeof event.evidence.purpose !== 'string')
+      if (typeof event.evidence.purpose !== 'string') {
         throw new Error('Recorded purpose is missing')
+      }
       return {
         ...recordedPurpose.item,
         id: event.evidence.activity.callId,
@@ -4948,7 +5020,9 @@ it('execution proof retires superseded recorded purpose after provider tool sett
     write(chunk, _encoding, done) {
       const packet = JSON.parse(String(chunk))
       queueMicrotask(() => {
-        if (packet.id === undefined) return
+        if (packet.id === undefined) {
+          return
+        }
         if (packet.method) {
           const replies: Record<string, unknown> = {
             initialize: {},
@@ -4969,8 +5043,9 @@ it('execution proof retires superseded recorded purpose after provider tool sett
           packet.method === 'turn/start' ||
           (packet.id >= 9001 && packet.result && stageIndex < stages.length)
         ) {
-          if (packet.result && packet.id >= 9001)
+          if (packet.result && packet.id >= 9001) {
             settled.push(projection.result().current)
+          }
           const stage = stages[stageIndex++]
           send({
             method: 'item/completed',
@@ -5293,7 +5368,9 @@ it('execution proof retains many small query handoffs with structural recovery',
       controller.signal
     )
     expect(result.total).toBe(1)
-    if (!result.snapshotId) throw new Error('Expected retained query identity')
+    if (!result.snapshotId) {
+      throw new Error('Expected retained query identity')
+    }
     expect(read).toHaveBeenCalledOnce()
     handles.forEach((handle, index) => {
       expect(
@@ -5328,7 +5405,9 @@ it('execution proof retains many small query handoffs with structural recovery',
     for (let index = 0; index < 32; index++) {
       const subset = refine(index)
       const subsetId = subset.snapshotId
-      if (!subsetId) throw new Error('Expected refined query identity')
+      if (!subsetId) {
+        throw new Error('Expected refined query identity')
+      }
       expect(() =>
         store.read(
           {
@@ -5388,7 +5467,9 @@ it('execution proof preserves completed writes and unresolved coverage after bou
   }))
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch: async (_input, options) => {
-      if (!options.executeBatch) throw new Error('Missing browser dispatch')
+      if (!options.executeBatch) {
+        throw new Error('Missing browser dispatch')
+      }
       const dispatch = options.executeBatch
       const owner = createLocalOperationTools(
         [AiActionNames.ORGANIZE_DESIGN, AiActionNames.INSPECT_DRAWING].map(
@@ -5423,13 +5504,15 @@ it('execution proof preserves completed writes and unresolved coverage after bou
   })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const address = server.address()
-  if (!address || typeof address === 'string')
+  if (!address || typeof address === 'string') {
     throw new Error('Missing loopback address')
+  }
   const origin = `http://127.0.0.1:${address.port}`
   const provider = createServerActionBatchProvider({
     fetch: (async (url: RequestInfo | URL, init: RequestInit = {}) => {
-      if ((init.headers as Record<string, string>)['x-ai-batch-receipt'])
+      if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
         postedBytes = Buffer.byteLength(String(init.body))
+      }
       return fetch(origin + String(url), {
         ...init,
         headers: { ...init.headers, origin }
@@ -5563,8 +5646,9 @@ it('execution proof consumes complete mapping scope before bounded delivery and 
         signal
       )
       expect('receiptPage' in read).toBe(true)
-      if (!('receiptPage' in read) || !read.receiptPage)
+      if (!('receiptPage' in read) || !read.receiptPage) {
         throw new Error('Missing receipt page')
+      }
       expect(Buffer.byteLength(JSON.stringify(read))).toBeLessThan(66000)
       parts.push(read.receiptPage.text)
       offset = read.receiptPage.nextOffset
@@ -5683,7 +5767,9 @@ it('execution proof consumes repeated multi-face examples through exact native t
   const example = designPreparationExamples.find(
     (e) => e.draft.name === 'Repeated visible detail'
   )
-  if (!example) throw new Error('Missing multi-face example')
+  if (!example) {
+    throw new Error('Missing multi-face example')
+  }
   const session = createDesignPreparationSession()
   const result = session.prepare(example.draft)
   const design = session.resolve(result.artifactId)
@@ -5730,7 +5816,9 @@ it('execution proof consumes repeated multi-face examples through exact native t
   const mixedExample = designPreparationExamples.find(
     (entry) => entry.draft.name === 'Translated components'
   )
-  if (!mixedExample) throw new Error('Missing mixed component example')
+  if (!mixedExample) {
+    throw new Error('Missing mixed component example')
+  }
   const mixed = session.prepare(mixedExample.draft)
   const mixedDesign = session.resolve(mixed.artifactId)
   const componentKeys = Array.from({ length: 2 }, (_, index) => [
@@ -5812,7 +5900,9 @@ it('execution proof rejects mismatched query scopes before reads and preserves e
     ).rejects.toThrow(/filter.*region.*snapshot/)
     expect(children).not.toHaveBeenCalled()
     const parent = store.read({ scope: 'children' }, signal)
-    if (!parent.snapshotId) throw new Error('Expected retained parent identity')
+    if (!parent.snapshotId) {
+      throw new Error('Expected retained parent identity')
+    }
     const filtered = (await action.execute(
       {
         scope: 'snapshot',
@@ -5901,7 +5991,9 @@ it('execution proof rejects mismatched query scopes before reads and preserves e
       const actionResults = []
       for (const call of batch.actions) {
         const action = definitions.find((entry) => entry.name === call.name)
-        if (!action) throw new Error('Unexpected dispatch')
+        if (!action) {
+          throw new Error('Unexpected dispatch')
+        }
         dispatched.push(action.name)
         const result = await action.execute(call.arguments as never, {
           signal,
@@ -6014,7 +6106,9 @@ it('execution proof dispatches the published chosen-method route without convert
     const match = method.match(
       new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
     )
-    if (!match) throw new Error(`Missing executable ${label} example`)
+    if (!match) {
+      throw new Error(`Missing executable ${label} example`)
+    }
     return JSON.parse(match[1])
   }
   const declaration = example('representative-review')
@@ -6148,13 +6242,16 @@ it('execution proof admits complete per-target material corrections from the pub
   const match = method.match(
     /```json native-palette-correction\n([\s\S]*?)\n```/
   )
-  if (!match)
+  if (!match) {
     throw new Error('Missing executable native-palette-correction example')
+  }
   const example = JSON.parse(match[1])
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_fill_updateFillsAtIndex'
   )
-  if (!contract) throw new Error('Missing native fill contract')
+  if (!contract) {
+    throw new Error('Missing native fill contract')
+  }
   const operation = example.arguments.operations[0]
   expect(
     operationInputIssue(operation.arguments, contract.inputSchema)
@@ -6312,7 +6409,9 @@ it('execution proof preserves owner result distinctions through native contract 
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_fill_updatePrimaryFillColors'
   )
-  if (!contract) throw new Error('Missing primary color contract')
+  if (!contract) {
+    throw new Error('Missing primary color contract')
+  }
   expect(contract.description).toContain('changed, unchanged or unavailable')
   const definition = {
     ...toolSemantics(basicApiResultSchema(contract), 'mutation', ['document']),
@@ -6370,7 +6469,9 @@ it('execution proof preserves owner result distinctions through native contract 
     ['api_element_createElements', ['created-prefix'], [{}, {}]]
   ] as const) {
     const uncertain = basicApiContracts.find((item) => item.name === name)
-    if (!uncertain) throw new Error('Missing owner contract')
+    if (!uncertain) {
+      throw new Error('Missing owner contract')
+    }
     const result = {
       ...describeBasicApiResult(uncertain, value, inputs),
       settlement: 'completed',
@@ -6554,16 +6655,20 @@ it('execution proof preserves Core mutation and valid no-op receipts through nat
     ).toEqual([])
     for (const [name, input] of cases) {
       reset()
-      if (name === 'resetElementPropertyOverrides')
+      if (name === 'resetElementPropertyOverrides') {
         run(() =>
           api.updateElementPropertyTargets([
             { target, values: { opacity: 0.4 } }
           ])
         )
-      if (name === 'shareElementPropertyTargets')
+      }
+      if (name === 'shareElementPropertyTargets') {
         run(() => api.detachElementPropertyTargets([target]))
+      }
       const contract = writers.find((entry) => entry.method === name)
-      if (!contract) throw new Error('Missing Core mutation contract')
+      if (!contract) {
+        throw new Error('Missing Core mutation contract')
+      }
       const definition = {
         ...toolSemantics(basicApiResultSchema(contract), 'mutation', [
           'document'
@@ -6575,7 +6680,9 @@ it('execution proof preserves Core mutation and valid no-op receipts through nat
       }
       const call = vi.fn(async () => {
         const method = api[name as keyof typeof api]
-        if (typeof method !== 'function') throw new Error('Missing Core owner')
+        if (typeof method !== 'function') {
+          throw new Error('Missing Core owner')
+        }
         const raw = run(() =>
           Reflect.apply(
             method,
@@ -6634,7 +6741,9 @@ it('execution proof preserves Core mutation and valid no-op receipts through nat
       if (replacedBinding) {
         expect(after.props).not.toEqual(before.props)
         expect(after.depth).toBe(before.depth + 1)
-      } else expect(after).toEqual(before)
+      } else {
+        expect(after).toEqual(before)
+      }
       expect(call).toHaveBeenCalledTimes(2)
     }
     reset()
@@ -6646,11 +6755,15 @@ it('execution proof preserves Core mutation and valid no-op receipts through nat
     const contract = writers.find(
       (entry) => entry.method === 'updateElementProperties'
     )
-    if (!contract) throw new Error('Missing mutation contract')
+    if (!contract) {
+      throw new Error('Missing mutation contract')
+    }
     const runtime = createAiAgentRuntime({
       provider: {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch) throw new Error('Missing batch executor')
+          if (!options.executeBatch) {
+            throw new Error('Missing batch executor')
+          }
           const missing = {
             id: 'missing',
             name: contract.name,
@@ -6768,7 +6881,9 @@ it('execution proof preserves non-Core mutation outcomes without opaque applicat
   const contract = writers.find(
     (entry) => entry.operation === 'element.setElementPositions'
   )
-  if (!contract) throw new Error('Missing position contract')
+  if (!contract) {
+    throw new Error('Missing position contract')
+  }
   for (const [receipt, status] of [
     [
       { value: null, acceptedIds: ['a'], unavailableIds: [], changed: true },
@@ -6839,7 +6954,9 @@ it('execution proof keeps material provenance independent of viewport transforms
     await import('@asyra/preset')
   const { RenderContainer } = await import('@asyra/render')
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   const { createPreparedMaterialApplication } =
     await import('../../src/ai/prepared-material-action')
   applyPreset(core, {
@@ -6928,7 +7045,9 @@ it('execution proof keeps material provenance independent of viewport transforms
   } finally {
     owner.dispose()
     core.elementLocalToWorkspace = original
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 })
 
@@ -6955,8 +7074,9 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
     onTestFinished(() => rm(directory, { recursive: true, force: true }))
     const recordDirectory =
       mode === 'storage-failed' ? resolve(directory, 'blocked') : directory
-    if (mode === 'storage-failed')
+    if (mode === 'storage-failed') {
       await writeFile(recordDirectory, 'not a directory')
+    }
     const sink = runtime.createExecutionRecordSink(
       recordDirectory,
       () => undefined
@@ -7030,7 +7150,7 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
     const send = (value: unknown) =>
       child.stdout.write(JSON.stringify(value) + '\n')
     const next = (index: number) => {
-      if (index < requests.length)
+      if (index < requests.length) {
         send({
           id: 100 + index,
           method: 'item/tool/call',
@@ -7042,7 +7162,7 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
             ...requests[index]
           }
         })
-      else {
+      } else {
         send({
           method: 'item/completed',
           params: {
@@ -7085,8 +7205,9 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
           packet.result?.contentItems.some(
             (item: { type: string }) => item.type === 'inputImage'
           )
-        )
+        ) {
           throw new Error('Injected transport failure')
+        }
         queueMicrotask(() => {
           if (packet.method) {
             const responses: Record<string, unknown> = {
@@ -7102,9 +7223,12 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
               },
               'turn/start': { turn: { id: 'images-turn' } }
             }
-            if (packet.id !== undefined)
+            if (packet.id !== undefined) {
               send({ id: packet.id, result: responses[packet.method] })
-            if (packet.method === 'turn/start') next(0)
+            }
+            if (packet.method === 'turn/start') {
+              next(0)
+            }
           } else if (packet.result) {
             replies.push(packet)
             next(packet.id - 99)
@@ -7145,8 +7269,9 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
           if (
             mode === 'cancelled' &&
             request.actions.some((action) => action.name === 'inspect_drawing')
-          )
+          ) {
             controller.abort()
+          }
           return {
             context: {},
             actionResults: request.actions.map(
@@ -7197,7 +7322,9 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
       const file = (await readdir(directory)).find((name) =>
         name.endsWith('.jsonl')
       )
-      if (!file) throw new Error('Missing execution record')
+      if (!file) {
+        throw new Error('Missing execution record')
+      }
       const parsed = runtime.parseExecutionRecord(
         await readFile(resolve(directory, file), 'utf8')
       )
@@ -7225,7 +7352,9 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
     const file = (await readdir(directory)).find((name) =>
       name.endsWith('.jsonl')
     )
-    if (!file) throw new Error('Missing execution record')
+    if (!file) {
+      throw new Error('Missing execution record')
+    }
     const parsed = runtime.parseExecutionRecord(
       await readFile(resolve(directory, file), 'utf8')
     )
@@ -7370,7 +7499,9 @@ it('execution proof delivers bounded information through owner continuations wit
   const definition = owner.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   let args: Record<string, unknown> = { names: ['proof.choose'] }
   const pages: string[] = []
   for (let i = 0; i < 20; i++) {
@@ -7383,7 +7514,9 @@ it('execution proof delivers bounded information through owner continuations wit
     expect(reply.success).toBe(true)
     pages.push(reply.text)
     const page = JSON.parse(reply.text).contentDelivery
-    if (!page || page.lastPage) break
+    if (!page || page.lastPage) {
+      break
+    }
     args = page.next.arguments
   }
   expect(pages.length).toBeGreaterThan(1)
@@ -7496,7 +7629,9 @@ async function readKnowledgeTopic(id: string): Promise<string> {
     const document = result.documents.find(
       (item: { target: string }) => item.target === id
     )
-    if (!document) throw new Error('Missing selected Knowledge topic')
+    if (!document) {
+      throw new Error('Missing selected Knowledge topic')
+    }
     return document.text
   } finally {
     owner.dispose()
@@ -7789,7 +7924,9 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     names[0],
     workflow.definitions[0].inputSchema
   )
-  if (!guidance) throw new Error('Missing main-tool scope guidance')
+  if (!guidance) {
+    throw new Error('Missing main-tool scope guidance')
+  }
   const ownerSchema = workflow.definitions[0].inputSchema as {
     'x-design-input-scope': { selection: string }
   }
@@ -7855,7 +7992,9 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   const definition = operations.definitions.find(
     (item) => item.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   const rejected = await invokeLocalTool(
     operations,
     definition,
@@ -8004,7 +8143,9 @@ it('execution proof distinguishes inspection lookup coverage from completed read
   const definition = owner.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   const read = (schemaPaths: string[]) =>
     invokeLocalTool(
       owner,
@@ -8116,7 +8257,9 @@ const proveDeadlineQueryCleanup = async (
   let blockedQuery: Parameters<typeof queries.read>[0] | undefined
   let pressureLease: { snapshotId: string; leaseId: string } | undefined
   const readFreedCapacity = () => {
-    if (!blockedQuery) throw new Error('Missing capacity rejection')
+    if (!blockedQuery) {
+      throw new Error('Missing capacity rejection')
+    }
     return queries.read(blockedQuery, pressureSignal)
   }
   // Start this deterministic work window when the scripted first turn begins.
@@ -8218,10 +8361,13 @@ const proveDeadlineQueryCleanup = async (
       queueMicrotask(() => {
         if (packet.method && packet.id !== undefined) {
           let result: unknown = {}
-          if (packet.method === 'config/read') result = { config: {} }
-          if (packet.method === 'account/read')
+          if (packet.method === 'config/read') {
+            result = { config: {} }
+          }
+          if (packet.method === 'account/read') {
             result = { account: { type: 'chatgpt' } }
-          if (packet.method === 'thread/start')
+          }
+          if (packet.method === 'thread/start') {
             result = {
               thread: { id: 'cleanup-thread' },
               model: 'gpt-6-astra',
@@ -8229,12 +8375,13 @@ const proveDeadlineQueryCleanup = async (
               instructionSources: [],
               runtimeWorkspaceRoots: []
             }
+          }
           if (packet.method === 'turn/start') {
             startedAt ??= realNow()
             result = { turn: { id: `turn-${++turns}` } }
           }
           send({ id: packet.id, result })
-          if (packet.method === 'turn/start' && turns === 1)
+          if (packet.method === 'turn/start' && turns === 1) {
             call(800, AiActionNames.READ_DESIGN_CONTEXT, {
               arguments: {
                 scope: 'children',
@@ -8243,11 +8390,13 @@ const proveDeadlineQueryCleanup = async (
                 delivery: 'reference'
               }
             })
-          if (packet.method === 'turn/interrupt')
+          }
+          if (packet.method === 'turn/interrupt') {
             notify('turn/completed', {
               turn: { id: 'turn-1', status: 'interrupted' }
             })
-          if (packet.method === 'turn/start' && turns === 2)
+          }
+          if (packet.method === 'turn/start' && turns === 2) {
             // A model cannot smuggle an internal cleanup phase across cutoff.
             call(802, AiDesignToolIds.EXECUTE_DESIGN_BATCH, {
               phase: 'cleanup',
@@ -8259,6 +8408,7 @@ const proveDeadlineQueryCleanup = async (
                 }
               ]
             })
+          }
         } else if (packet.id === 800) {
           const value = JSON.parse(
             packet.result?.contentItems?.[0]?.text ?? '{}'
@@ -8274,16 +8424,25 @@ const proveDeadlineQueryCleanup = async (
                 delivery: 'reference'
               }
             })
-          } else finishReport()
+          } else {
+            finishReport()
+          }
         } else if (packet.id === 801) {
           const value = JSON.parse(
             packet.result?.contentItems?.[0]?.text ?? '{}'
           )
-          if (value.actionResults?.[0]?.result)
+          if (value.actionResults?.[0]?.result) {
             retained.push(value.actionResults[0].result)
-          if (mode === 'cancel') controller.abort()
-          if (mode === 'disconnect') child.emit('close', 1, null)
-        } else if (packet.id === 802) finishReport()
+          }
+          if (mode === 'cancel') {
+            controller.abort()
+          }
+          if (mode === 'disconnect') {
+            child.emit('close', 1, null)
+          }
+        } else if (packet.id === 802) {
+          finishReport()
+        }
       })
       done()
     }
@@ -8298,7 +8457,9 @@ const proveDeadlineQueryCleanup = async (
     provider: {
       requestActionBatch: async (input, options) => {
         const executeBatch = options.executeBatch
-        if (!executeBatch) throw new Error('Missing Runtime dispatcher')
+        if (!executeBatch) {
+          throw new Error('Missing Runtime dispatcher')
+        }
         // A real existing mutation is committed before the query/report lifetime.
         await executeBatch({
           batchId: 'initial-edit',
@@ -8340,13 +8501,15 @@ const proveDeadlineQueryCleanup = async (
                   const id = (action.arguments as { snapshotId: string })
                     .snapshotId
                   releaseAttempts.push(id)
-                  if (mode === 'disconnect')
+                  if (mode === 'disconnect') {
                     throw new Error('Browser transport disconnected')
+                  }
                   if (
                     mode === 'release-failure' &&
                     releaseAttempts.length === 1
-                  )
+                  ) {
                     throw new Error('Injected release transport failure')
+                  }
                 }
                 const receipt = await executeBatch(batch)
                 if (
@@ -8364,8 +8527,9 @@ const proveDeadlineQueryCleanup = async (
                     }
                     try {
                       const retained = queries.read(query, pressureSignal)
-                      if (!retained.snapshotId || !retained.leaseId)
+                      if (!retained.snapshotId || !retained.leaseId) {
                         throw new Error('Missing pressure lease')
+                      }
                       pressureLease ??= {
                         snapshotId: retained.snapshotId,
                         leaseId: retained.leaseId
@@ -8378,8 +8542,9 @@ const proveDeadlineQueryCleanup = async (
                   }
                   expect(blockedQuery).toBeDefined()
                 }
-                if (action.name === AiActionNames.RELEASE_DESIGN_CONTEXT)
+                if (action.name === AiActionNames.RELEASE_DESIGN_CONTEXT) {
                   releaseReceipts.push(receipt)
+                }
                 return receipt
               }
             }
@@ -8391,10 +8556,11 @@ const proveDeadlineQueryCleanup = async (
             expect
               .soft(releaseAttempts)
               .toEqual(retained.map((r) => r.snapshotId))
-            for (const r of retained)
+            for (const r of retained) {
               expect
                 .soft(() => queries.get(r.snapshotId))
                 .toThrow(/missing|evicted/)
+            }
             expect(() => readFreedCapacity()).not.toThrow()
           }
           if (mode === 'release-failure') {
@@ -8436,7 +8602,9 @@ const proveDeadlineQueryCleanup = async (
       intent: 'Adjust one panel and report remaining review',
       signal: controller.signal
     })
-    if (capturedHost) await providerSettled
+    if (capturedHost) {
+      await providerSettled
+    }
     expect(
       retained,
       JSON.stringify({ mode, result, dispatched, packets: packets.slice(-3) })
@@ -8449,12 +8617,15 @@ const proveDeadlineQueryCleanup = async (
       expect(() => queries.get(r.snapshotId)).toThrow(/missing|evicted/)
       expect(() => queries.get(r.snapshotId, r.leaseId)).toThrow(/lease/)
     }
-    if (!sibling.snapshotId || !sibling.leaseId)
+    if (!sibling.snapshotId || !sibling.leaseId) {
       throw new Error('Missing sibling lease')
+    }
     expect(
       queries.get(sibling.snapshotId, sibling.leaseId, siblingSignal).orderedIds
     ).toEqual([ids[1]])
-    if (!pressureLease) throw new Error('Missing pressure lease')
+    if (!pressureLease) {
+      throw new Error('Missing pressure lease')
+    }
     expect(
       queries.get(
         pressureLease.snapshotId,
@@ -8512,10 +8683,11 @@ const proveDeadlineQueryCleanup = async (
     expect(cleanup?.evidence?.status).toBe(
       ['disconnect', 'release-failure'].includes(mode) ? 'failed' : 'completed'
     )
-    if (mode === 'deadline')
+    if (mode === 'deadline') {
       expect(
         events.find((event) => event.stage === 'settlement')?.evidence?.outcome
       ).toBe('completed')
+    }
     if (mode === 'report-failure' || mode === 'disconnect') {
       expect(result.status).toBe('failed')
       expect(
@@ -8546,8 +8718,9 @@ it('execution proof separates bounded work from same-thread self-report without 
 }) => {
   const observations: CleanupProofObservation[] = []
   const log = vi.spyOn(console, 'info').mockImplementation((line) => {
-    if (typeof line === 'string' && line.startsWith('{'))
+    if (typeof line === 'string' && line.startsWith('{')) {
       observations.push(JSON.parse(line))
+    }
   })
   onTestFinished(() => log.mockRestore())
   const parent = resolve('tmp/flow-evaluation-tests')
@@ -8576,12 +8749,17 @@ it('execution proof separates bounded work from same-thread self-report without 
       const packet = JSON.parse(String(chunk)) as (typeof packets)[number]
       packets.push(packet)
       queueMicrotask(() => {
-        if (packet.id === undefined) return
+        if (packet.id === undefined) {
+          return
+        }
         let result: unknown = {}
-        if (packet.method === 'config/read') result = { config: {} }
-        if (packet.method === 'account/read')
+        if (packet.method === 'config/read') {
+          result = { config: {} }
+        }
+        if (packet.method === 'account/read') {
           result = { account: { type: 'chatgpt' } }
-        if (packet.method === 'thread/start')
+        }
+        if (packet.method === 'thread/start') {
           result = {
             thread: { id: 'evaluation-thread' },
             model: 'gpt-6-astra',
@@ -8589,10 +8767,12 @@ it('execution proof separates bounded work from same-thread self-report without 
             instructionSources: [],
             runtimeWorkspaceRoots: []
           }
-        if (packet.method === 'turn/start')
+        }
+        if (packet.method === 'turn/start') {
           result = { turn: { id: `turn-${++turns}` } }
+        }
         send({ id: packet.id, result })
-        if (packet.method === 'turn/interrupt')
+        if (packet.method === 'turn/interrupt') {
           send({
             method: 'turn/completed',
             params: {
@@ -8600,6 +8780,7 @@ it('execution proof separates bounded work from same-thread self-report without 
               turn: { id: 'turn-1', status: 'interrupted' }
             }
           })
+        }
         if (packet.method === 'turn/start' && turns === 2) {
           send({
             method: 'item/completed',
@@ -8688,13 +8869,16 @@ it('execution proof separates bounded work from same-thread self-report without 
     'disconnect',
     'report-failure',
     'release-failure'
-  ] as const)
+  ] as const) {
     await proveDeadlineQueryCleanup(directory, mode, observations)
+  }
 }, 15000)
 
 const proveBudgetRecovery = async (limit: number, withBrief = false) => {
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   try {
     const { createPreparedDesignAction } =
       await import('../../src/ai/design-actions')
@@ -8753,7 +8937,9 @@ const proveBudgetRecovery = async (limit: number, withBrief = false) => {
     const trace = vi.fn()
     const main = createLocalDesignWorkflow(tools, operations, { trace })
     const definition = main.definitions[0]
-    if (!definition) throw new Error('Missing workflow')
+    if (!definition) {
+      throw new Error('Missing workflow')
+    }
     const signal = new AbortController().signal
     const result = JSON.parse(
       (
@@ -8846,7 +9032,9 @@ const proveBudgetRecovery = async (limit: number, withBrief = false) => {
     expect(duplicate.success).toBe(false)
     expect(entries.size).toBe(size)
   } finally {
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 }
 
@@ -8997,7 +9185,9 @@ it('execution proof delivers layered repetition before parameters with canonical
   const definition = main.definitions.find(
     (item) => item.name === invocation.tool
   )
-  if (!definition) throw new Error('Missing published execution route')
+  if (!definition) {
+    throw new Error('Missing published execution route')
+  }
   const reply = await invokeLocalTool(
     main,
     definition,
@@ -9116,11 +9306,13 @@ it('execution proof separates budget snapshot projection and retained lookup wor
     expect(compile).toHaveBeenCalledOnce()
     reads.length = 0
     input.children[0].axes[0].count = 10000
-    if (mode === 'sync') expect(() => session.prepare(input)).toThrow()
-    else
+    if (mode === 'sync') {
+      expect(() => session.prepare(input)).toThrow()
+    } else {
       await expect(
         session.prepareAsync(input, new AbortController().signal)
       ).rejects.toThrow()
+    }
     expect(reads).toEqual(['vertices'])
     expect(compile).toHaveBeenCalledOnce()
     expect(session.resolve(receipt.artifactId)).toBe(artifact)
@@ -9274,7 +9466,9 @@ it('execution proof delivers shared motifs through the main workflow without ext
     )
     contractBytes += Buffer.byteLength(pageText)
     const page = JSON.parse(pageText).contentDelivery
-    if (!page || page.lastPage) break
+    if (!page || page.lastPage) {
+      break
+    }
     budgetQuery = page.next.arguments
   }
   expect(contractBytes).toBeLessThanOrEqual(
@@ -9289,7 +9483,9 @@ it('execution proof delivers shared motifs through the main workflow without ext
   const { invocation } = tool.invocationExample
   expect(invocation.arguments.draft.motifTemplates).toBeDefined()
   const definition = main.definitions.find((d) => d.name === invocation.tool)
-  if (!definition) throw new Error('Missing workflow definition')
+  if (!definition) {
+    throw new Error('Missing workflow definition')
+  }
   const reply = await invokeLocalTool(
     main,
     definition,
@@ -9366,7 +9562,9 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
     )
   const invalid = structuredClone(fixture.compact.draft)
   const invalidGrid = invalid.children.find((c) => c.type === 'surface-grid')
-  if (!invalidGrid) throw new Error('Missing recorded grid')
+  if (!invalidGrid) {
+    throw new Error('Missing recorded grid')
+  }
   invalidGrid.motifs = {
     template: 'missing'
   }
@@ -9453,7 +9651,9 @@ it('execution proof follows union entry navigation and valid recovery without re
     const definition = owner.definitions.find(
       (tool) => tool.name === 'describe_design_apis'
     )
-    if (!definition) throw new Error('Missing discovery definition')
+    if (!definition) {
+      throw new Error('Missing discovery definition')
+    }
     const reply = await invokeLocalTool(
       owner,
       definition,
@@ -9498,7 +9698,9 @@ it('execution proof preserves interrupted owner results without replay', async (
   const { createAiAgentRuntime } = await import('@asyra/ai-agent-runtime')
   const entries = new Map<string, PreparedElementDescriptor>()
   const create = vi.fn((values: readonly PreparedElementDescriptor[]) => {
-    for (const entry of values) entries.set(entry.id, entry)
+    for (const entry of values) {
+      entries.set(entry.id, entry)
+    }
     return values.map((entry) => entry.id)
   })
   const select = vi.fn()
@@ -9777,26 +9979,29 @@ it('execution proof binds an explicitly selected workflow image through the exis
           validatedAt: { sessionId: 'document', revision: 1 },
           coverage: { complete: true }
         }
-        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
           result = {
             status: 'complete',
             compositionId: 'drawing',
             appliedElementIds: ['drawing']
           }
-        if (action.name === AiActionNames.REVIEW_DESIGN)
+        }
+        if (action.name === AiActionNames.REVIEW_DESIGN) {
           result = {
             complete: true,
             findings: [],
             measuredTextIds: [],
             evidence: { sessionId: 'document', revision: 1 }
           }
-        if (action.name === AiActionNames.INSPECT_DRAWING)
+        }
+        if (action.name === AiActionNames.INSPECT_DRAWING) {
           result = {
             available: true,
             imageScope: 'overview',
             image: { dataUrl: 'data:image/png;base64,AA==' },
             evidence: { sessionId: 'document', revision: 1 }
           }
+        }
         return { actionId: action.id, actionName: action.name, result }
       })
     })
@@ -9849,7 +10054,9 @@ it('execution proof binds an explicitly selected workflow image through the exis
   const definition = operations.definitions.find(
     (tool) => tool.name === next.execution.tool
   )
-  if (!definition) throw new Error('Missing delivered review route')
+  if (!definition) {
+    throw new Error('Missing delivered review route')
+  }
   const recorded = await invokeLocalTool(
     operations,
     definition,
@@ -10005,7 +10212,9 @@ it('execution proof preserves retained images during direct response reprojectio
   expect(redisplayed).toEqual(content)
   expect(content).toContainEqual({ type: 'inputImage', imageUrl: uri })
   const text = content.find((item) => item.type === 'inputText')
-  if (!text || text.type !== 'inputText') throw new Error('Missing receipt')
+  if (!text || text.type !== 'inputText') {
+    throw new Error('Missing receipt')
+  }
   expect(JSON.parse(text.text).toolOutcome).toEqual(receipt.toolOutcome)
   expect(localToolResultInstructions).toContain('bindChecks')
 })
@@ -10147,7 +10356,9 @@ it('execution proof delivers projected ovals through projection and canonical di
   const { invocation } = tool.invocationExample
   expect(JSON.stringify(invocation.arguments)).toContain('"ellipse"')
   const definition = main.definitions.find((d) => d.name === invocation.tool)
-  if (!definition) throw new Error('Missing workflow definition')
+  if (!definition) {
+    throw new Error('Missing workflow definition')
+  }
   const reply = await invokeLocalTool(
     main,
     definition,
@@ -10200,7 +10411,9 @@ it('execution proof preserves face-referenced boundaries through retained source
   expect(measureDesignBudget(referenced)).toEqual(measureDesignBudget(inline))
   const partitions = partitionDesignBudget(referenced, 7).partitions
   expect(partitions).toHaveLength(2)
-  if (!partitions) throw new Error('Missing source partitions')
+  if (!partitions) {
+    throw new Error('Missing source partitions')
+  }
   const store = createDesignDraftRepairStore(7)
   const draftId = store.retain(referenced)
   const selected = store.repair({ draftId, partition: 1 })
@@ -10241,8 +10454,10 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
   ).default
   const { createHash } = await import('node:crypto')
   const canonical = (value: unknown): unknown => {
-    if (Array.isArray(value)) return value.map(canonical)
-    if (value && typeof value === 'object')
+    if (Array.isArray(value)) {
+      return value.map(canonical)
+    }
+    if (value && typeof value === 'object') {
       return Object.fromEntries(
         Object.keys(value)
           .sort()
@@ -10251,6 +10466,7 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
             canonical((value as Record<string, unknown>)[key])
           ])
       )
+    }
     return value
   }
   const digest = (value: unknown) =>
@@ -10275,7 +10491,9 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
     const participant = {
       name: 'editor',
       readRuntime: async () => {
-        if (unavailable) throw new Error('Page closed')
+        if (unavailable) {
+          throw new Error('Page closed')
+        }
         return runtime
       },
       read: async () => ({
@@ -10300,14 +10518,18 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
         sourceFingerprint: source
       }),
       readCheckpoint: async () => {
-        if (options.missingCheckpoint) throw new Error('Checkpoint unavailable')
+        if (options.missingCheckpoint) {
+          throw new Error('Checkpoint unavailable')
+        }
         return {
           durableSequence: recorded.durableSequence,
           checkpoint: recorded.afterDocument
         }
       },
       attach: async (value) => {
-        if (options.attachmentFailure) throw new Error('Attachment unavailable')
+        if (options.attachmentFailure) {
+          throw new Error('Attachment unavailable')
+        }
         attachments.push(value)
       }
     })
@@ -10332,7 +10554,9 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
   expect(recorded.reloads.length).toBeGreaterThan(0)
   expect(recorded.historyDepth).toBeNull()
   const recordedError = recorded.expectations[1].error
-  if (!recordedError) throw new Error('Missing recorded Undo failure')
+  if (!recordedError) {
+    throw new Error('Missing recorded Undo failure')
+  }
   const original = new Error(recordedError.message)
   const normal = await make()
   await normal.evidence.phase('persistence', async () => undefined)
@@ -10445,7 +10669,9 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
 it('execution proof delivers selected review usage to real capture binding and recording', async () => {
   vi.resetModules()
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   const { default: core } = await import('../../src/contexts')
   const { applyPreset, PresetProfiles, PresetDefaults } =
     await import('@asyra/preset')
@@ -10517,7 +10743,9 @@ it('execution proof delivers selected review usage to real capture binding and r
         batch.actions.map(async (action) => {
           dispatched.push(action.name)
           const owner = actions.find((entry) => entry.name === action.name)
-          if (!owner) throw new Error('Unexpected mutation dispatch')
+          if (!owner) {
+            throw new Error('Unexpected mutation dispatch')
+          }
           return {
             actionId: action.id,
             actionName: action.name,
@@ -10540,7 +10768,9 @@ it('execution proof delivers selected review usage to real capture binding and r
 
   const call = async (name: string, input: unknown) => {
     const definition = tools.definitions.find((entry) => entry.name === name)
-    if (!definition) throw new Error('Missing native tool')
+    if (!definition) {
+      throw new Error('Missing native tool')
+    }
     return JSON.parse(
       (await invokeLocalTool(tools, definition, input, signals.signal)).text
     )
@@ -10577,9 +10807,11 @@ it('execution proof delivers selected review usage to real capture binding and r
       expect(delivered.usageGuide.recovery).toMatch(/replay/)
       expect(delivered.usageGuide.instructions).toContain('mechanical checks')
       const invocation = delivered.invocationExample.invocation
-      if (operation === 'capture')
+      if (operation === 'capture') {
         invocation.arguments.inspections[0].elementId = ids[0]
-      else invocation.arguments.bindChecks[0].inspectionIds = retained
+      } else {
+        invocation.arguments.bindChecks[0].inspectionIds = retained
+      }
       const result = await call(invocation.tool, invocation.arguments)
       retained = result.inspectionIds
       expect(result.reviewOperation).toBe(operation)
@@ -10599,7 +10831,9 @@ it('execution proof delivers selected review usage to real capture binding and r
   } finally {
     capture.mockRestore()
     evidence.dispose()
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 })
 
@@ -10628,7 +10862,9 @@ it('execution proof resolves compact Knowledge sources through the delivered exa
     const definition = owner.definitions.find(
       (entry) => entry.name === 'read_knowledge'
     )
-    if (!definition) throw new Error('Missing Knowledge read definition')
+    if (!definition) {
+      throw new Error('Missing Knowledge read definition')
+    }
     const input = { ids: ['selected'] }
     const reply = await invokeLocalTool(
       owner,
@@ -10641,7 +10877,9 @@ it('execution proof resolves compact Knowledge sources through the delivered exa
     const expression = definition.description.match(
       /`(const sources = new Map[^`]+)`/
     )?.[1]
-    if (!expression) throw new Error('Missing delivered source example')
+    if (!expression) {
+      throw new Error('Missing delivered source example')
+    }
     const resolve = new Function('result', `${expression} return source;`)(
       result
     )
@@ -10717,7 +10955,9 @@ it('execution proof prepares explicit attachment uses through the existing owner
   const signal = new AbortController().signal
   const invoke = (name: string, input: unknown) => {
     const definition = owner.definitions.find((item) => item.name === name)
-    if (!definition) throw new Error('Missing registered operation')
+    if (!definition) {
+      throw new Error('Missing registered operation')
+    }
     return invokeLocalTool(owner, definition, input, signal)
   }
   const stats = vi.spyOn(sharp.prototype, 'stats')
@@ -10816,7 +11056,9 @@ it('execution proof delivers automatic mechanical scope without accumulating can
     checkedElements: 2
   })
   expect(computed.mock.calls).toHaveLength(1)
-  if (!workspace.evidence) throw new Error('Missing workspace receipt')
+  if (!workspace.evidence) {
+    throw new Error('Missing workspace receipt')
+  }
   expect(
     (await reviewer.coverage(workspace.evidence))?.checks[0].geometry
   ).toBe(false)
@@ -10916,7 +11158,9 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
   const definition = tools.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   const signal = new AbortController().signal
   const query = { names: ['read_design_checks'], view: 'usage' }
   const raw = await readCompleteInformation(
@@ -10928,7 +11172,9 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
   expect(entry.usageGuide?.parameters).toBeDefined()
   expect(entry.definition.nextAction).toBe('execute-with-delivered-contract')
   const target = tools.definitions.find((d) => d.name === entry.execution.tool)
-  if (!target) throw new Error('Missing discovered execution definition')
+  if (!target) {
+    throw new Error('Missing discovered execution definition')
+  }
   const input = {}
   expect(
     operationInputIssue(input, entry.usageGuide.parameters)
@@ -10969,7 +11215,7 @@ it('execution proof selects visual results before cloning mechanical evidence', 
               evidence?: { receiptId?: string }
               scope?: unknown
             }
-            if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+            if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
               return {
                 actionId: action.id,
                 actionName: action.name,
@@ -10982,6 +11228,7 @@ it('execution proof selects visual results before cloning mechanical evidence', 
                   coverage: { complete: args.scope !== undefined }
                 }
               }
+            }
             expect(action.name).toBe(AiActionNames.INSPECT_DRAWING)
             return {
               actionId: action.id,
@@ -11247,10 +11494,13 @@ it('execution proof follows saved material recovery without reinjecting resolved
   for (const { path, value } of saved.replacements) {
     const keys = path.slice(1).split('/')
     let node = corrected as unknown as Record<string, unknown>
-    for (const key of keys.slice(0, -1))
+    for (const key of keys.slice(0, -1)) {
       node = node[key] as Record<string, unknown>
+    }
     const key = keys.at(-1)
-    if (!key) throw new Error('Missing replacement field')
+    if (!key) {
+      throw new Error('Missing replacement field')
+    }
     node[key] = value
   }
   expect(session.recipe(repaired.artifactId).recipe).toEqual({
@@ -11270,7 +11520,9 @@ it('execution proof follows saved material recovery without reinjecting resolved
 
 it('execution proof declares the saved model receipt without internal result fields', async () => {
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   try {
     const saved = (
       await import('../../test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json')
@@ -11290,7 +11542,9 @@ it('execution proof declares the saved model receipt without internal result fie
     const query = owner.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!query) throw new Error('Missing discovery')
+    if (!query) {
+      throw new Error('Missing discovery')
+    }
     const reply = await invokeLocalTool(
       owner,
       query,
@@ -11451,7 +11705,9 @@ it('execution proof declares the saved model receipt without internal result fie
       await host.dispose()
     }
   } finally {
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 })
 

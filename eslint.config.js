@@ -21,6 +21,7 @@ export default tseslint.config(
   },
   {
     ignores: [
+      'create-app/*/template/**',
       '.claude/**/*',
       'docs/**/*',
       'tools/flow-inspector/workspace/generated/**/*',
@@ -36,6 +37,7 @@ export default tseslint.config(
   eslintPluginPrettierRecommended,
   {
     rules: {
+      curly: ['error', 'all'],
       'no-nested-ternary': 'error',
       'no-unassigned-vars': 'off',
       'no-useless-assignment': 'off',

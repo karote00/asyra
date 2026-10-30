@@ -28,17 +28,20 @@ async function produceCandidateProof({
   timeoutMs,
   onSpawn
 }) {
-  if (!containmentAvailable())
+  if (!containmentAvailable()) {
     throw new Error('OS containment unavailable; candidate execution denied')
-  if (!/^[a-zA-Z0-9-]+$/.test(attemptId))
+  }
+  if (!/^[a-zA-Z0-9-]+$/.test(attemptId)) {
     throw new Error('Invalid verification attempt')
+  }
   if (
     snapshot.digest !== sha256(JSON.stringify(snapshot.files)) ||
     snapshot.contractDigest !== contract.digest ||
     snapshot.mappingVersion !== contract.mappingVersion ||
     snapshot.architectureVersion !== contract.architectureVersion
-  )
+  ) {
     throw new Error('Baseline source identity mismatch')
+  }
   const runDirectory = safePath(
     repositoryRoot,
     path.relative(
@@ -57,8 +60,9 @@ async function produceCandidateProof({
     const original = safePath(snapshot.sourceRoot, entry.path)
     const admittedBytes = runtimeAdmission?.bytesByPath.get(entry.path)
     const originalBytes = admittedBytes ?? fs.readFileSync(original)
-    if (!admittedBytes && sha256(originalBytes) !== entry.digest)
+    if (!admittedBytes && sha256(originalBytes) !== entry.digest) {
       throw new Error('Baseline source changed')
+    }
     const candidateOwned = allowedFiles.includes(entry.path)
     const bytes = candidateOwned
       ? fs.readFileSync(safePath(candidateRoot, entry.path))

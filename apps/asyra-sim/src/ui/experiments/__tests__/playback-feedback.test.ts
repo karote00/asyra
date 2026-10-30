@@ -195,7 +195,9 @@ it('keeps the last checked parts highlighted until newer evidence supersedes it 
 
   expect(playbackHighlight({ ...view, time: 3.99 })).toBe(highlight)
 
-  if (!view.feedback) throw new Error('Missing fixture feedback')
+  if (!view.feedback) {
+    throw new Error('Missing fixture feedback')
+  }
   expect(
     playbackHighlight({
       ...view,
@@ -224,6 +226,7 @@ it('keeps the last checked parts highlighted until newer evidence supersedes it 
     historicalHighlight: { colors: new Map([['a', 0x62e6c1]]) }
   }
 
-  for (let frame = 0; frame < 120; frame += 1)
+  for (let frame = 0; frame < 120; frame += 1) {
     expect(playbackHighlight(historical)).toBe(historical.historicalHighlight)
+  }
 })

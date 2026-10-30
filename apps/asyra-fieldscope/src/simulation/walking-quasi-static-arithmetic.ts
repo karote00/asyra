@@ -45,7 +45,7 @@ const cross = (a: MechanicsVector, b: MechanicsVector): MechanicsVector => [
   subtract(multiply(a[0], b[1]), multiply(a[1], b[0]))
 ]
 const square = (v: Interval): Interval => {
-  if (v.low <= 0 && v.high >= 0)
+  if (v.low <= 0 && v.high >= 0) {
     return {
       low: 0,
       high: Math.max(
@@ -53,6 +53,7 @@ const square = (v: Interval): Interval => {
         multiply(interval(v.high), interval(v.high)).high
       )
     }
+  }
   return multiply(v, v)
 }
 export const mechanicsMagnitude = (v: MechanicsVector) =>
@@ -133,7 +134,9 @@ export function mechanicsHull(
     .filter(
       (p, i, all) => i === 0 || p[0] !== all[i - 1][0] || p[1] !== all[i - 1][1]
     )
-  if (sorted.length < 3) return sorted
+  if (sorted.length < 3) {
+    return sorted
+  }
   const half = (values: readonly MechanicsPlanePoint[]) => {
     const result: MechanicsPlanePoint[] = []
     for (const value of values) {
@@ -144,8 +147,9 @@ export function mechanicsHull(
           result[result.length - 1],
           value
         ) <= 0n
-      )
+      ) {
         result.pop()
+      }
       result.push(value)
     }
     result.pop()
@@ -228,12 +232,16 @@ export function mechanicsSupport(
   const supportMarginMetres = minimum(edges.map((e) => e.marginMetres)),
     minimumMomentNm = minimum(edges.map((e) => e.momentNm))
   let status: 'screened' | 'blocked' | 'unknown' = 'unknown'
-  if (hull.length < 3) status = 'blocked'
-  else if (supported) {
-    if (edges.some((e) => e.marginMetres.high <= 0 || e.momentNm.high <= 0))
+  if (hull.length < 3) {
+    status = 'blocked'
+  } else if (supported) {
+    if (edges.some((e) => e.marginMetres.high <= 0 || e.momentNm.high <= 0)) {
       status = 'blocked'
-    else if (edges.every((e) => e.marginMetres.low > 0 && e.momentNm.low > 0))
+    } else if (
+      edges.every((e) => e.marginMetres.low > 0 && e.momentNm.low > 0)
+    ) {
       status = 'screened'
+    }
   }
   return {
     status,

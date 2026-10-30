@@ -12,7 +12,10 @@ const toPosix = (value) => value.split(path.sep).join('/')
 const walk = (root) =>
   fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(root, entry.name)
-    if (entry.isDirectory()) return walk(entryPath)
+    if (entry.isDirectory()) {
+      return walk(entryPath)
+    }
+
     return candidatePattern.test(entry.name) ? [entryPath] : []
   })
 
@@ -36,26 +39,35 @@ const schemaKind = (data) => {
   if (data?.schema?.id === 'flow-inspector' && data.schema.version === 2) {
     return 'flow-v2'
   }
-  if (data?.schema === 'flow-inspector.v1') return 'legacy-v1'
+  if (data?.schema === 'flow-inspector.v1') {
+    return 'legacy-v1'
+  }
+
   return 'plan-contract'
 }
 
 const standalonePathFor = (repoPath) => {
   const direct = repoPath.replace(/\.data\.(?:cjs|js)$/, '.html')
-  if (fs.existsSync(path.join(projectRoot, direct))) return direct
+  if (fs.existsSync(path.join(projectRoot, direct))) {
+    return direct
+  }
   if (repoPath.endsWith('stroke-flow-inspector.data.js')) {
     const strokeEntry = repoPath.replace(
       'stroke-flow-inspector.data.js',
       'stroke-flow-inspector.html'
     )
-    if (fs.existsSync(path.join(projectRoot, strokeEntry))) return strokeEntry
+    if (fs.existsSync(path.join(projectRoot, strokeEntry))) {
+      return strokeEntry
+    }
   }
   return null
 }
 
 const ownerMetadata = (repoPath, id) => {
   const override = catalogPolicy.groupOverrides[id]
-  if (override) return override
+  if (override) {
+    return override
+  }
   if (/(release|website|public-package|public-readme|runtime-atlas)/.test(id)) {
     return { group: 'Release', subgroup: 'Website and Distribution' }
   }
@@ -138,22 +150,29 @@ const ids = new Set()
 const slugs = new Set()
 const reservedSlugs = new Set(['api', 'tools', 'docs', 'apps'])
 for (const entry of entries) {
-  if (ids.has(entry.id))
+  if (ids.has(entry.id)) {
     throw new Error(`Duplicate workspace catalog id: ${entry.id}`)
+  }
+
   ids.add(entry.id)
+
   if (
     typeof entry.slug !== 'string' ||
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.slug) ||
     reservedSlugs.has(entry.slug)
-  )
+  ) {
     throw new Error(`Invalid or reserved workspace slug: ${entry.slug}`)
-  if (slugs.has(entry.slug))
+  }
+  if (slugs.has(entry.slug)) {
     throw new Error(`Duplicate workspace slug: ${entry.slug}`)
+  }
+
   slugs.add(entry.slug)
 }
 for (const id of Object.keys(catalogPolicy.routeSlugs)) {
-  if (!ids.has(id))
+  if (!ids.has(id)) {
     throw new Error(`Workspace slug has no included Inspector: ${id}`)
+  }
 }
 
 const bundle = {

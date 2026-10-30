@@ -108,7 +108,9 @@ it.each(
         intent: 'Create editable objects',
         signal: new AbortController().signal
       })
-      if (!receipt) throw new Error('Missing canonical receipt')
+      if (!receipt) {
+        throw new Error('Missing canonical receipt')
+      }
       return receipt
     })
     const operations = createLocalOperationTools(definitions, tools, dispatch)

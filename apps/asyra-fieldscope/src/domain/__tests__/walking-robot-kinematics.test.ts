@@ -29,7 +29,9 @@ const mutable = <T>(value: T): Mutable<T> =>
   structuredClone(value) as Mutable<T>
 function required<T>(value: T | undefined): T {
   expect(value).toBeDefined()
-  if (value === undefined) throw new Error('Missing test fixture value')
+  if (value === undefined) {
+    throw new Error('Missing test fixture value')
+  }
   return value
 }
 const changedBodyIds = (
@@ -64,9 +66,13 @@ const composeOracle = (
 }
 const axisOracle = (axis: 'x' | 'y' | 'z', angle: number): OracleTransform => {
   let direction: Vector3
-  if (axis === 'x') direction = new Vector3(1, 0, 0)
-  else if (axis === 'y') direction = new Vector3(0, 1, 0)
-  else direction = new Vector3(0, 0, 1)
+  if (axis === 'x') {
+    direction = new Vector3(1, 0, 0)
+  } else if (axis === 'y') {
+    direction = new Vector3(0, 1, 0)
+  } else {
+    direction = new Vector3(0, 0, 1)
+  }
   const rotation = new Quaternion().setFromAxisAngle(direction, angle)
   return {
     position: [0, 0, 0],
@@ -77,8 +83,9 @@ const expectTransformClose = (
   actual: OracleTransform,
   expected: OracleTransform
 ) => {
-  for (let axis = 0; axis < 3; axis++)
+  for (let axis = 0; axis < 3; axis++) {
     expect(actual.position[axis]).toBeCloseTo(expected.position[axis], 12)
+  }
   expect(
     Math.abs(
       new Quaternion(...actual.rotation).dot(
@@ -122,7 +129,9 @@ describe('walking robot pure forward kinematics', () => {
       id: 'tripod-authored-range',
       label: 'Tripod range - synthetic feasibility assumption'
     }
-    for (const leg of raw.legs) leg.jointRanges.knee[0] = -alpha
+    for (const leg of raw.legs) {
+      leg.jointRanges.knee[0] = -alpha
+    }
     const candidate = readWalkingRobotDefinition(raw)
     const defaultSource = new WalkingRobotSourceOwner().prepare(baseline)
     const source = new WalkingRobotSourceOwner().prepare(candidate)
@@ -134,13 +143,14 @@ describe('walking robot pure forward kinematics', () => {
         leg.knee = phase * (groupA ? -alpha : alpha)
         leg.hip = -leg.knee
       }
-      if (phase !== 0)
+      if (phase !== 0) {
         expect(() =>
           evaluateWalkingRobotPose(defaultSource, {
             base: identityBase,
             joints
           })
         ).toThrow()
+      }
       const pose = evaluateWalkingRobotPose(source, {
         base: identityBase,
         joints
@@ -188,12 +198,14 @@ describe('walking robot pure forward kinematics', () => {
         fk: 1,
         bodyTransforms: source.rig.bodies.length
       })
-      for (const body of result.bodyTransforms)
+      for (const body of result.bodyTransforms) {
         expect(body.sourceParts).toBe(
           required(source.rig.bodies.find(({ id }) => id === body.id)).parts
         )
-      for (const field of ['sweep', 'gait', 'contactResult', 'moment'])
+      }
+      for (const field of ['sweep', 'gait', 'contactResult', 'moment']) {
         expect(result).not.toHaveProperty(field)
+      }
     }
     const edge = mutable(source.rig.presets.stowed)
     edge.carriage = definition.carriage.liftRange[1]
@@ -528,7 +540,7 @@ describe('walking robot pure forward kinematics', () => {
       expect(contact.part).toBe(reference.part)
       expect(contact.patch).toBe(reference.patch)
       const coordinates: number[][] = []
-      for (const range of reference.patch.ranges)
+      for (const range of reference.patch.ranges) {
         for (
           let indexOffset = range.indexStart;
           indexOffset < range.indexStart + range.indexCount;
@@ -541,6 +553,7 @@ describe('walking robot pure forward kinematics', () => {
             reference.part.shape.positions[vertex + 2]
           ])
         }
+      }
       const centre = coordinates
         .reduce(
           (sum, coordinate) =>
@@ -555,12 +568,15 @@ describe('walking robot pure forward kinematics', () => {
         composeOracle(body, reference.part.localFrame),
         { position: centre, rotation: [0, 0, 0, 1] }
       )
-      for (let axis = 0; axis < 3; axis++)
+      for (let axis = 0; axis < 3; axis++) {
         expect(contact.position[axis]).toBeCloseTo(expected.position[axis], 12)
+      }
       const tool = result.frames.tools.find(
         ({ chainId }) => chainId === contact.chainId
       )
-      if (tool) expect(contact.position).not.toEqual(tool.position)
+      if (tool) {
+        expect(contact.position).not.toEqual(tool.position)
+      }
     }
     expect(result.frames.inspectionHeads.left.position[0]).toBeLessThan(0)
     expect(result.frames.inspectionHeads.right.position[0]).toBeGreaterThan(0)
@@ -584,16 +600,18 @@ describe('walking robot pure forward kinematics', () => {
     ).rotation
     expect(leftRotation[1]).toBeCloseTo(-rightRotation[1], 12)
     expect(leftRotation[3]).toBeCloseTo(rightRotation[3], 12)
-    for (const segment of result.linkSegments)
+    for (const segment of result.linkSegments) {
       expect(
         new Vector3(...segment.to).distanceTo(new Vector3(...segment.from))
       ).toBeCloseTo(segment.length, 12)
+    }
     for (const chain of source.rig.armChains) {
       const segments = result.linkSegments.filter(({ bodyId }) =>
         chain.bodyIds.includes(bodyId)
       )
-      for (let index = 0; index < segments.length - 1; index++)
+      for (let index = 0; index < segments.length - 1; index++) {
         expect(segments[index].to).toEqual(segments[index + 1].from)
+      }
     }
     expect(result.massProperties.source).toBe(source.massProperties)
     expect(result.massProperties.bodies).toHaveLength(
@@ -611,7 +629,9 @@ describe('walking robot pure forward kinematics', () => {
         (candidate) =>
           candidate.side === arm.side && candidate.role === arm.role
       )
-      if (arm.side === 'right') Object.assign(arm, replacement)
+      if (arm.side === 'right') {
+        Object.assign(arm, replacement)
+      }
     }
     expect(
       evaluateWalkingRobotPose(source, {
@@ -636,7 +656,8 @@ describe('walking robot pure forward kinematics', () => {
       base: { ...identityBase, rotation: [0, 0, 0, 0] },
       joints: bilateral
     })
-    for (const pose of invalid)
+    for (const pose of invalid) {
       expect(() => evaluateWalkingRobotPose(source, pose)).toThrow()
+    }
   })
 })

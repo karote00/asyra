@@ -54,7 +54,9 @@ it('reports escaped missing-field pointers from the selected branch and preserve
     }
   }
   const issues = operationInputIssues({ items: [{ kind: 'first' }] }, schema)
-  if (!issues) throw new Error('Expected required-field issues')
+  if (!issues) {
+    throw new Error('Expected required-field issues')
+  }
   expect(
     issues
       .filter((issue) => issue.keyword === 'required')
@@ -66,7 +68,9 @@ it('reports escaped missing-field pointers from the selected branch and preserve
     schema,
     'output'
   )
-  if (!outputIssues) throw new Error('Expected output issues')
+  if (!outputIssues) {
+    throw new Error('Expected output issues')
+  }
   expect(formatOperationInputIssues(outputIssues)).toContain('output.items[0]')
   expect(
     operationInputIssues({ items: [{ kind: 'first', 'a/b~c': 1 }] }, schema)
@@ -88,7 +92,9 @@ it('retains ambiguous union failures and bounds repeated diagnostics without cla
     Array.from({ length: 50 }, () => ({})),
     { type: 'array', items: { type: 'object', required: ['value'] } }
   )
-  if (!issues) throw new Error('Expected bounded issues')
+  if (!issues) {
+    throw new Error('Expected bounded issues')
+  }
   expect(issues.some((issue) => issue.keyword === 'diagnosticLimit')).toBe(true)
   expect(issues.length).toBeLessThan(50)
   expect(formatOperationInputIssues(issues).length).toBeLessThanOrEqual(3000)

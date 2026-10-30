@@ -36,7 +36,9 @@ export class ExperimentInputReader {
     input: TrajectoryInput,
     workcell: Workcell
   ): TrajectoryImportPreview {
-    if (this.closed) throw new Error('Experiment input reader is closed')
+    if (this.closed) {
+      throw new Error('Experiment input reader is closed')
+    }
     const signature = JSON.stringify([
       input.mapping,
       workcell.bodies
@@ -54,9 +56,11 @@ export class ExperimentInputReader {
         entry.kind === input.kind &&
         entry.signature === signature
     )
-    if (found) return found.result
+    if (found) {
+      return found.result
+    }
     let result: TrajectoryImportPreview
-    if (!validTrajectoryInput(input))
+    if (!validTrajectoryInput(input)) {
       result = {
         value: null,
         conversions: [],
@@ -70,13 +74,15 @@ export class ExperimentInputReader {
           }
         ]
       }
-    else if (input.kind === 'csv')
+    } else if (input.kind === 'csv') {
       result = previewTrajectoryCsv(
         this.readCsv(input.text),
         workcell,
         input.mapping
       )
-    else result = previewTrajectoryJson(input.text, workcell)
+    } else {
+      result = previewTrajectoryJson(input.text, workcell)
+    }
     this.results = [
       { text: input.text, kind: input.kind, signature, result },
       ...this.results
@@ -85,7 +91,9 @@ export class ExperimentInputReader {
   }
 
   readCsv(text: string) {
-    if (this.closed) throw new Error('Experiment input reader is closed')
+    if (this.closed) {
+      throw new Error('Experiment input reader is closed')
+    }
     let source = this.sources.find((entry) => entry.text === text)
     if (!source) {
       source = { text, csv: prepareTrajectoryCsv(text) }
@@ -95,7 +103,9 @@ export class ExperimentInputReader {
   }
 
   readExclusions(text: string) {
-    if (this.closed) throw new Error('Experiment input reader is closed')
+    if (this.closed) {
+      throw new Error('Experiment input reader is closed')
+    }
     if (this.exclusions?.text !== text) {
       try {
         this.exclusions = { text, value: parseExclusions(text) }
@@ -106,8 +116,12 @@ export class ExperimentInputReader {
         }
       }
     }
-    if (this.exclusions.error) throw this.exclusions.error
-    if (!this.exclusions.value) throw new Error('Missing exclusion result')
+    if (this.exclusions.error) {
+      throw this.exclusions.error
+    }
+    if (!this.exclusions.value) {
+      throw new Error('Missing exclusion result')
+    }
     return this.exclusions.value
   }
 
@@ -115,27 +129,33 @@ export class ExperimentInputReader {
     definition: ExperimentDefinition,
     workcell: Workcell
   ): ExperimentDefinition {
-    if (this.closed) throw new Error('Experiment input reader is closed')
+    if (this.closed) {
+      throw new Error('Experiment input reader is closed')
+    }
     const { trajectoryInput, exclusionsInput, ...resolved } = definition
     if (trajectoryInput) {
       const result = this.previewTrajectory(trajectoryInput, workcell)
-      if (!result.value)
+      if (!result.value) {
         throw new Error(
           result.diagnostics.map((item) => item.message).join('\n')
         )
+      }
       resolved.trajectory = result.value.trajectory
       resolved.sourceUnits = result.value.sourceUnits
     }
-    if (exclusionsInput !== undefined)
+    if (exclusionsInput !== undefined) {
       resolved.scope = {
         ...resolved.scope,
         excludedPairs: this.readExclusions(exclusionsInput)
       }
+    }
     const intervalError = trajectoryIntervalError(
       resolved.interval,
       resolved.trajectory
     )
-    if (intervalError) throw new Error(intervalError)
+    if (intervalError) {
+      throw new Error(intervalError)
+    }
     return resolved
   }
 

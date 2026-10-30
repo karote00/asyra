@@ -50,7 +50,9 @@ function fixture() {
   }
   const contacts = cycle.recipe.groups[0].map((chainId) => {
     const anchor = cycle.recipe.anchors.find((a) => a.chainId === chainId)
-    if (!anchor) throw new Error('Missing canonical support')
+    if (!anchor) {
+      throw new Error('Missing canonical support')
+    }
     return {
       part: anchor.part,
       patch: anchor.patch,

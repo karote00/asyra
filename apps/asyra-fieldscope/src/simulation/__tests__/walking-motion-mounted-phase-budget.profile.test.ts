@@ -53,10 +53,11 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
     ![M, W, R, G, ...Object.values(budget)].every(
       (v) => Number.isSafeInteger(v) && v > 0
     )
-  )
+  ) {
     throw new Error(
       'Synthetic passage profile exceeds finite safe integer domain'
     )
+  }
   const owner = new WalkingMotionOwner({
     getCurrentSceneDemand: () => f.demand,
     getCurrentWalkingRobotSource: () => f.source,
@@ -80,8 +81,9 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
     budget,
     load: { ...f.raw.load, crate: { kind: 'mounted', artifact: f.crate } }
   })
-  if (!('format' in result))
+  if (!('format' in result)) {
     throw new Error('Missing nonlinear passage admission')
+  }
   const relations = result.sourceRelations
   const first = new Map<string, unknown>()
   const partIdentity = (index: number) => {
@@ -97,13 +99,19 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
       semantic: entry.semantic?.kind
     }
   }
-  for (const phase of relations.phases)
+  for (const phase of relations.phases) {
     for (const pair of phase.pairs) {
-      if (pair.kind !== 'blocked' && pair.kind !== 'unknown') continue
+      if (pair.kind !== 'blocked' && pair.kind !== 'unknown') {
+        continue
+      }
       for (const proof of pair.proofs) {
-        if (proof.kind !== 'blocked' && proof.kind !== 'unknown') continue
+        if (proof.kind !== 'blocked' && proof.kind !== 'unknown') {
+          continue
+        }
         const reason = proof.reason ?? proof.kind
-        if (first.has(reason) || first.size >= 8) continue
+        if (first.has(reason) || first.size >= 8) {
+          continue
+        }
         first.set(reason, {
           phase: phase.phase,
           kind: pair.kind,
@@ -119,6 +127,7 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
         })
       }
     }
+  }
   const summary = {
     stage: 'synthetic-mounted-result',
     status: result.status,

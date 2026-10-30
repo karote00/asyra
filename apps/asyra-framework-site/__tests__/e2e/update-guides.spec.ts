@@ -21,8 +21,9 @@ test('an agent can follow website discovery to the update index and Text guide',
   const updateLink = markdown.match(
     /\[Update your App with an AI coding agent\]\(([^)]+)\)/
   )
-  if (!updateLink)
+  if (!updateLink) {
     throw new Error('Website discovery is missing the update guide entry')
+  }
   const response = await page.goto(new URL(updateLink[1], discovery.url()).href)
   expect(response?.status()).toBe(200)
   await expect(

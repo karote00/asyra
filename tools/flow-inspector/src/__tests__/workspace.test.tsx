@@ -117,7 +117,10 @@ describe('React workspace', () => {
     fireEvent.click(within(framework).getByText('Framework', { exact: true }))
     expect(within(framework).getByTestId('inspector-entry')).toBeTruthy()
     const toggle = framework.querySelector('.group-toggle')
-    if (!toggle) throw new Error('Missing Framework group toggle')
+    if (!toggle) {
+      throw new Error('Missing Framework group toggle')
+    }
+
     fireEvent.click(toggle)
     expect(within(framework).queryByTestId('inspector-entry')).toBeNull()
     fireEvent.click(toggle)
@@ -132,7 +135,10 @@ describe('React workspace', () => {
       'Selected Flow Inspector'
     ) as HTMLIFrameElement
     const send = vi.fn()
-    if (!frame.contentWindow) throw new Error('Expected mounted viewer frame')
+    if (!frame.contentWindow) {
+      throw new Error('Expected mounted viewer frame')
+    }
+
     frame.contentWindow.postMessage = send
     const key = new KeyboardEvent('keydown', {
       key: '1',

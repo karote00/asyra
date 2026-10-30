@@ -48,12 +48,15 @@ export function usePortableProject({
     setError('')
 
     try {
-      if (file.size > PROJECT_BYTE_LIMIT)
+      if (file.size > PROJECT_BYTE_LIMIT) {
         throw new Error('Project exceeds the 64 MiB limit')
+      }
 
       const text = await file.text()
 
-      if (request.current !== id) return
+      if (request.current !== id) {
+        return
+      }
 
       const snapshot = decodeProject(text)
 
@@ -65,21 +68,28 @@ export function usePortableProject({
         issues: snapshot.loadIssues.length
       })
     } catch (reason) {
-      if (request.current === id) setError(errorMessage(reason))
+      if (request.current === id) {
+        setError(errorMessage(reason))
+      }
     } finally {
-      if (request.current === id) setReading(false)
+      if (request.current === id) {
+        setReading(false)
+      }
     }
   }
 
   const accept = async () => {
-    if (operationPending.current) return
+    if (operationPending.current) {
+      return
+    }
     if (
       !preview ||
       !window.confirm(
         `Import “${preview.name}”? This replaces the current document and starts empty Undo/Redo. ${unsavedRunCount} unretained results will be lost.`
       )
-    )
+    ) {
       return
+    }
 
     operationPending.current = true
     setOperation('import')
@@ -98,7 +108,9 @@ export function usePortableProject({
   }
 
   const exportProject = async () => {
-    if (operationPending.current) return
+    if (operationPending.current) {
+      return
+    }
     operationPending.current = true
     setOperation('export')
     setError('')

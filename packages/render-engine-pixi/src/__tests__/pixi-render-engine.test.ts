@@ -570,7 +570,9 @@ describe('PixiRenderEngine', () => {
         requestId: 'gradient',
         descriptor: value
       }).resource
-      if (!resource) throw new Error('Missing gradient handle')
+      if (!resource) {
+        throw new Error('Missing gradient handle')
+      }
       return resource
     }
     const first = create()
@@ -611,7 +613,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'child',
       objectType: 'container'
     })
-    if (!object || !child) throw new Error('Missing transform handles')
+    if (!object || !child) {
+      throw new Error('Missing transform handles')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({ type: 'append-child', parent: object, child: child })
     const camera = getLastApplication().stage.children[0]
@@ -691,7 +695,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'text-density',
       objectType: 'graphics'
     })
-    if (!root || !object) throw new Error('Missing handles')
+    if (!root || !object) {
+      throw new Error('Missing handles')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',
@@ -789,7 +795,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'child',
       objectType: 'graphics'
     })
-    if (!object || !child) throw new Error('Missing objects')
+    if (!object || !child) {
+      throw new Error('Missing objects')
+    }
     engine.execute({ type: 'append-child', parent: object, child })
     const operation = {
       type: 'text' as const,
@@ -851,7 +859,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'text-paint',
       descriptor: { kind: 'paint', data: paintValue }
     })
-    if (!object || !resource) throw new Error('Missing handles')
+    if (!object || !resource) {
+      throw new Error('Missing handles')
+    }
     engine.execute({
       type: 'draw',
       object,
@@ -903,7 +913,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'aligned-text',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing object')
+    if (!object) {
+      throw new Error('Missing object')
+    }
     for (const align of ['center', 'right'] as const) {
       engine.execute({
         type: 'draw',
@@ -946,11 +958,15 @@ describe('PixiRenderEngine', () => {
         requestId: name,
         objectType: 'graphics'
       })
-      if (!object) throw new Error('Missing object')
+      if (!object) {
+        throw new Error('Missing object')
+      }
       engine.execute({ type: 'append-child', parent, child: object })
       return object
     }
-    if (!root) throw new Error('Missing root')
+    if (!root) {
+      throw new Error('Missing root')
+    }
     const target = create(root, 'capture')
     engine.execute({
       type: 'update-object',
@@ -999,7 +1015,9 @@ describe('PixiRenderEngine', () => {
       outsideWrites = outside.resolutionWrites.length
     const extract = pixiState.applications[0].renderer.extract.canvas
     const original = extract.getMockImplementation()
-    if (!original) throw new Error('Missing extractor')
+    if (!original) {
+      throw new Error('Missing extractor')
+    }
     const inspectCapture = (...args: unknown[]) => {
       expect(text.resolution).toBe(1.28)
       expect(outside.resolutionWrites).toHaveLength(outsideWrites)
@@ -1027,7 +1045,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'content',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing object')
+    if (!object) {
+      throw new Error('Missing object')
+    }
     engine.execute({
       type: 'update-object',
       object,
@@ -1057,7 +1077,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'native-snapshot',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing target')
+    if (!object) {
+      throw new Error('Missing target')
+    }
     engine.execute({
       type: 'update-object',
       object,
@@ -1115,7 +1137,9 @@ describe('PixiRenderEngine', () => {
       objectType: 'graphics'
     })
     const object = created.object
-    if (!object) throw new Error('Missing created object')
+    if (!object) {
+      throw new Error('Missing created object')
+    }
     engine.execute({
       type: 'update-object',
       object,
@@ -1179,7 +1203,9 @@ describe('PixiRenderEngine', () => {
         requestId: 'fractional-snapshot',
         objectType: 'graphics'
       })
-      if (!object) throw new Error('Missing target')
+      if (!object) {
+        throw new Error('Missing target')
+      }
       Object.assign(pixiState.graphics[0], {
         getLocalBounds: () => ({ x: -0.25, y: 1.125, width, height })
       })
@@ -1292,7 +1318,9 @@ describe('PixiRenderEngine', () => {
       requestId: 'hit-target',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing graphics handle')
+    if (!object) {
+      throw new Error('Missing graphics handle')
+    }
     engine.execute({ type: 'append-child', parent: root, child: object })
     const boundary = app.renderer.events.rootBoundary
     boundary.hitTest.mockImplementation(() => {

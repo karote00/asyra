@@ -31,7 +31,9 @@ it('unchanged checkpoints cannot manufacture progress and interruption keeps onl
   let work = 0
   const checkpoint = observer.query('interrupted', () => work)
   const count = records.length
-  for (let index = 0; index < 10000; index++) checkpoint()
+  for (let index = 0; index < 10000; index++) {
+    checkpoint()
+  }
   expect(records).toHaveLength(count)
   work = 11
   observer.endQuery()

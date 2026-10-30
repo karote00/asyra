@@ -200,23 +200,30 @@ it('prepares the saved-input-derived curve design without changing polygon order
   expect(
     design.entries.filter((e) => e.descriptor.type === 'oval')
   ).toHaveLength(192)
-  for (let i = 1; i < design.entries.length; i++)
+  for (let i = 1; i < design.entries.length; i++) {
     if (design.entries[i].descriptor.type !== 'oval') {
       const current = design.entries[i].descriptor,
         prior = original.entries[i].descriptor
-      for (const key of Object.keys(prior))
-        if (!['x', 'y'].includes(key)) expect(current[key]).toEqual(prior[key])
-      for (const key of ['x', 'y'])
+      for (const key of Object.keys(prior)) {
+        if (!['x', 'y'].includes(key)) {
+          expect(current[key]).toEqual(prior[key])
+        }
+      }
+      for (const key of ['x', 'y']) {
         expect(
           Number(current[key]) + Number(design.entries[0].descriptor[key])
         ).toBeCloseTo(
           Number(prior[key]) + Number(original.entries[0].descriptor[key]),
           8
         )
+      }
     }
+  }
   for (let i = 1; i < design.entries.length; i++) {
     const d = design.entries[i].descriptor
-    if (d.type !== 'oval') continue
+    if (d.type !== 'oval') {
+      continue
+    }
     const c = Math.cos(Number(d.rotation)),
       s = Math.sin(Number(d.rotation)),
       w = Number(d.width),

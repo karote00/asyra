@@ -39,27 +39,35 @@ export function createSpatialRenderEngine(
     )
   }
   const ready = (): RenderEngine => {
-    if (state !== 'ready' || !delegate)
+    if (state !== 'ready' || !delegate) {
       throw new Error('Spatial engine is not ready')
+    }
     return delegate
   }
   return {
     name: 'Preset deferred spatial engine',
     capabilities: new Set(SPATIAL_ENGINE_CAPABILITIES),
     async initialize(input) {
-      if (state !== 'new')
+      if (state !== 'new') {
         throw new Error('Spatial engine is not available for initialization')
+      }
       state = 'loading'
       try {
         delegate = await load()
-        if (retired()) throw new Error('Spatial initialization retired')
+        if (retired()) {
+          throw new Error('Spatial initialization retired')
+        }
         assertRenderEngineCapabilities(delegate, SPATIAL_ENGINE_CAPABILITIES)
         const result = await delegate.initialize(input)
-        if (retired()) throw new Error('Spatial initialization retired')
+        if (retired()) {
+          throw new Error('Spatial initialization retired')
+        }
         state = 'ready'
         return result
       } catch (error) {
-        if (!retired()) state = 'failed'
+        if (!retired()) {
+          state = 'failed'
+        }
         release()
         throw error
       }
@@ -70,15 +78,18 @@ export function createSpatialRenderEngine(
       ready().subscribeToInteraction(listener),
     requestFrame: (callback) => ready().requestFrame(callback),
     cancelFrame() {
-      if (state === 'ready') ready().cancelFrame()
+      if (state === 'ready') {
+        ready().cancelFrame()
+      }
     },
     destroy() {
-      if (retired())
+      if (retired()) {
         return {
           destroyedObjects: 0,
           destroyedResources: 0,
           alreadyDestroyed: true
         }
+      }
       const pending = state === 'loading'
       state = 'retired'
       // Initialization settles only after pending work and its cleanup settle.

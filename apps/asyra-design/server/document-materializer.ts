@@ -210,7 +210,9 @@ const assertExistingBatchIdentity = <Document>(
   publicationIds: readonly string[]
 ): boolean => {
   const existing = getOwnValue(current.batches, batch.batchId)
-  if (!existing) return false
+  if (!existing) {
+    return false
+  }
   if (
     existing.firstSequence !== batch.firstSequence ||
     existing.lastSequence !== batch.lastSequence ||
@@ -234,7 +236,9 @@ const isFullyDurablePublicationRetry = <Document>(
       current.publicationSequences,
       item.publicationId
     )
-    if (durableSequence === undefined) continue
+    if (durableSequence === undefined) {
+      continue
+    }
     knownCount += 1
     if (
       durableSequence !== item.sequence ||
@@ -247,7 +251,9 @@ const isFullyDurablePublicationRetry = <Document>(
       )
     }
   }
-  if (knownCount === 0) return false
+  if (knownCount === 0) {
+    return false
+  }
   if (knownCount !== prepared.length) {
     throw new DocumentPersistenceError(
       'durable-conflict',

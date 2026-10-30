@@ -61,11 +61,19 @@ const readProfileCanonicalSummary = (page: Page) =>
     let renderedCount = 0
     let vectorCount = 0
     for (const element of elements) {
-      if (element.type === 'workspace') continue
+      if (element.type === 'workspace') {
+        continue
+      }
       ids.push(element.id)
-      if (element.rendered) renderedCount += 1
-      if (element.type === 'group') groupCount += 1
-      if (element.type !== 'vector') continue
+      if (element.rendered) {
+        renderedCount += 1
+      }
+      if (element.type === 'group') {
+        groupCount += 1
+      }
+      if (element.type !== 'vector') {
+        continue
+      }
       vectorCount += 1
       const computed = element.computed as {
         points?: Readonly<Record<string, unknown>>

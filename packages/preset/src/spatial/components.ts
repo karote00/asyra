@@ -72,8 +72,9 @@ export const SPATIAL_MESH_RENDER_STRATEGY: EngineNeutralRenderStrategy<{
   visible: boolean
 }> = (graphic, data) => {
   const accepted = readSpatialDescriptor(data.descriptor)
-  if (accepted.kind !== 'mesh' || typeof data.visible !== 'boolean')
+  if (accepted.kind !== 'mesh' || typeof data.visible !== 'boolean') {
     throw new Error('Invalid spatial mesh model')
+  }
   let state = meshes.get(graphic)
   if (!state) {
     const mesh = new RenderMesh({ [SPATIAL_PROPERTY]: accepted })

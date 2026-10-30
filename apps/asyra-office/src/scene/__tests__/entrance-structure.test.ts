@@ -20,8 +20,9 @@ function bounds(id: string, region?: string) {
   const selected = parts
     .get(id)
     ?.filter((part) => !region || part.id === region)
-  if (!selected?.length)
+  if (!selected?.length) {
     throw new Error('Missing entrance component: ' + id + '/' + region)
+  }
   return [0, 1, 2].map((axis) => {
     const values = selected.flatMap((part) =>
       part.mesh.positions.filter((_, index) => index % 3 === axis)
@@ -67,16 +68,19 @@ it('supports the entire front wall body and carries flooring to the slab edge', 
 
 it('carries the terminal lounge wall to the rectangular shell outer face', () => {
   const east = bounds('office-slab')[0][1]
-  for (const id of ['lounge-right-wall', 'lounge-right-wall-cap'])
+  for (const id of ['lounge-right-wall', 'lounge-right-wall-cap']) {
     for (const detail of ['near', 'distant'] as const) {
       const item = parts.get(id)?.[0]
       const mesh = detail === 'near' ? item?.mesh : item?.distant?.mesh
-      if (!mesh) throw new Error('Missing terminal wall representation')
+      if (!mesh) {
+        throw new Error('Missing terminal wall representation')
+      }
       const end = Math.max(
         ...mesh.positions.filter((_, index) => index % 3 === 0)
       )
       expect(end, id + '/' + detail).toBeCloseTo(east, 8)
     }
+  }
 })
 
 it('installs the complete approved door and frame with its specified clear aperture and fitting gaps', () => {
@@ -87,8 +91,9 @@ it('installs the complete approved door and frame with its specified clear apert
     !spec?.mounting ||
     !spec.overallBoundsMetres ||
     !spec.openingClearSizeMetres
-  )
+  ) {
     throw new Error('Missing approved entry dimensions')
+  }
   const frame = parts.get('entrance-door')
   expect(
     frame

@@ -42,9 +42,13 @@ const allowedDefinitionFiles = new Set([
 
 const collectSourceFiles = (directory) =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    if (ignoredDirectories.has(entry.name)) return []
+    if (ignoredDirectories.has(entry.name)) {
+      return []
+    }
     const entryPath = path.join(directory, entry.name)
-    if (entry.isDirectory()) return collectSourceFiles(entryPath)
+    if (entry.isDirectory()) {
+      return collectSourceFiles(entryPath)
+    }
     return sourceExtensions.has(path.extname(entry.name)) ? [entryPath] : []
   })
 
@@ -54,7 +58,9 @@ test('debug Window handles are defined for human DevTools but never consumed by 
     .flatMap((filePath) => {
       const relativePath = path.relative(reportRoot, filePath)
       const appRelativePath = path.relative(appRoot, filePath)
-      if (relativePath.endsWith('debug-global-boundary.test.mjs')) return []
+      if (relativePath.endsWith('debug-global-boundary.test.mjs')) {
+        return []
+      }
       const source = fs.readFileSync(filePath, 'utf8')
       const names = source.match(hiddenGlobalPattern) ?? []
       const allowedNames = allowedDefinitionFiles.has(appRelativePath)

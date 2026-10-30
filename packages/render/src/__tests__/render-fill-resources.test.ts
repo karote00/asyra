@@ -87,7 +87,9 @@ describe('render fill resources', () => {
           },
           style
         )
-      } else first.rect(0, 0, 1, 1).fill(style)
+      } else {
+        first.rect(0, 0, 1, 1).fill(style)
+      }
       second.rect(1, 1, 1, 1).fill(style)
       runtime.attachRoot(first)
       runtime.attachRoot(second)

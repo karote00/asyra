@@ -109,7 +109,9 @@ const validateEndpoint = (value: string): string => {
 }
 
 const validateTimeout = (value: number | null | undefined): number | null => {
-  if (value === null) return null
+  if (value === null) {
+    return null
+  }
   const timeoutMs = value ?? DEFAULT_TIMEOUT_MS
   if (
     !Number.isFinite(timeoutMs) ||
@@ -323,7 +325,9 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
       }
 
       cleaned = true
-      if (timeout !== undefined) clearTimeout(timeout)
+      if (timeout !== undefined) {
+        clearTimeout(timeout)
+      }
       options.signal.removeEventListener('abort', abortTransport)
       if (abortWaitListener) {
         attempt.controller.signal.removeEventListener(

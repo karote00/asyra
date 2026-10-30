@@ -910,7 +910,9 @@ describe('Factory action-level shared publication', () => {
       expect(() => {
         handle?.setDeliverySequence({ mode: 'progressive', slices })
         const firstSliceId = slices[0]?.sliceId
-        if (firstSliceId) handle?.deliverSlice(firstSliceId)
+        if (firstSliceId) {
+          handle?.deliverSlice(firstSliceId)
+        }
       }).toThrow(expected)
       factory.endTransaction({ outcome: 'rollback' })
     }
@@ -950,7 +952,9 @@ describe('Factory action-level shared publication', () => {
     })
 
     expect(() => {
-      if (handle) deliver(handle)
+      if (handle) {
+        deliver(handle)
+      }
     }).toThrow(expected)
     factory.endTransaction({ outcome: 'rollback' })
   })
@@ -993,7 +997,9 @@ describe('Factory action-level shared publication', () => {
       if (entry) {
         entry.orderedIds = new Proxy(entry.orderedIds, {
           get(target, property, receiver) {
-            if (property === 'forEach') canonicalOrderScans += 1
+            if (property === 'forEach') {
+              canonicalOrderScans += 1
+            }
             return Reflect.get(target, property, receiver)
           }
         })
@@ -1040,7 +1046,9 @@ describe('Factory action-level shared publication', () => {
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       () => {
-        if (attempted) return
+        if (attempted) {
+          return
+        }
         attempted = true
         attempt(() => {
           factory.updateTransaction(createUpdateEvent('reentrant-single', 2))
@@ -1499,7 +1507,9 @@ describe('Factory action-level shared publication', () => {
     const channel: SharedDataChannel = {
       appendBatch: (changes) => {
         appendCount += 1
-        if (appendCount === 2) throw deliveryFailure
+        if (appendCount === 2) {
+          throw deliveryFailure
+        }
         ;[...sourceHandlers].forEach((handler) => handler(changes))
       },
       observeBatch: (handler) => {
@@ -1702,7 +1712,9 @@ describe('Factory action-level shared publication', () => {
     )
     const deliveredForwardBatches: SharedDeliveryBatch[] = []
     factory.subscribeToSharedDeliveryBatch((batch) => {
-      if (batch.kind === 'forward') deliveredForwardBatches.push(batch)
+      if (batch.kind === 'forward') {
+        deliveredForwardBatches.push(batch)
+      }
     })
     const acknowledgedPublications: SharedPublication[] = []
     const unsubscribeForward = factory.subscribeToSharedPublication(
@@ -1928,7 +1940,9 @@ describe('Factory action-level shared publication', () => {
         () => true
       )
       const group = grouped ? factory.startHistoryGroup() : undefined
-      if (!group) factory.startTransaction()
+      if (!group) {
+        factory.startTransaction()
+      }
       for (let turn = 0; turn < 2; turn++) {
         const write = () => {
           factory.updateTransactionBatch([
@@ -1942,12 +1956,18 @@ describe('Factory action-level shared publication', () => {
           ])
           update(factory, `scene-${turn}`, 2, { sharedDelivery: 'immediate' })
         }
-        if (group) factory.updateHistoryGroup(group, write)
-        else write()
+        if (group) {
+          factory.updateHistoryGroup(group, write)
+        } else {
+          write()
+        }
         await Promise.resolve()
       }
-      if (group) factory.endHistoryGroup(group)
-      else factory.endTransaction()
+      if (group) {
+        factory.endHistoryGroup(group)
+      } else {
+        factory.endTransaction()
+      }
       expect(factory.getUndoHistoryDepth()).toBe(1)
       const assertBoundaries = (direction: 'forward' | 'inverse') => {
         const slices = publications.flatMap(({ slices }) => slices)
@@ -2613,23 +2633,29 @@ describe('Factory action-level shared publication', () => {
         const { id, after } = (
           event as AllEvent & { payload: { id: string; after: number } }
         ).payload
-        if (fail && mode === 'undo' && id === 'first')
+        if (fail && mode === 'undo' && id === 'first') {
           throw new Error('Later owner refused replay')
-        if (local.get(id) === after) return false
+        }
+        if (local.get(id) === after) {
+          return false
+        }
         local.set(id, after)
-        if (mode === 'rollback') restored.push(id)
+        if (mode === 'rollback') {
+          restored.push(id)
+        }
         return true
       }
     )
     factory.startTransaction()
     for (const id of ['first', 'second', 'unchanged']) {
       const handle = update(factory, id, 1, { sharedDelivery: 'immediate' })
-      if (id === 'first')
+      if (id === 'first') {
         handle?.setDeliverySequence({
           mode: 'atomic',
           batchPublications: false,
           slices: []
         })
+      }
       await Promise.resolve()
     }
     factory.endTransaction()
@@ -2790,11 +2816,15 @@ describe('Factory action-level shared publication', () => {
       ReturnType<Factory['updateTransaction']>
     >[] = []
     const completionSubscription = subscribeToUserActionCompleted(() => {
-      if (nested) return
+      if (nested) {
+        return
+      }
       nested = true
       factory.startTransaction()
       const nestedHandle = update(factory, 'element-nested', 2)
-      if (nestedHandle) nestedHandles.push(nestedHandle)
+      if (nestedHandle) {
+        nestedHandles.push(nestedHandle)
+      }
       factory.endTransaction()
     })
 
@@ -2839,7 +2869,9 @@ describe('Factory action-level shared publication', () => {
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       () => {
-        if (nestedAttempted) return
+        if (nestedAttempted) {
+          return
+        }
         nestedAttempted = true
         factory.startTransaction()
         update(factory, 'element-nested', 2)
@@ -2850,7 +2882,9 @@ describe('Factory action-level shared publication', () => {
       publications.push(publication)
     )
     factory.subscribeToTransactionStatus(({ status, transactionId }) => {
-      if (status === 'committed') committedTransactionIds.push(transactionId)
+      if (status === 'committed') {
+        committedTransactionIds.push(transactionId)
+      }
     })
 
     factory.startTransaction()
@@ -2876,12 +2910,16 @@ describe('Factory action-level shared publication', () => {
       order.push(`capture-${transactionId}`)
     })
     factory.subscribeToTransactionStatus(({ status, transactionId }) => {
-      if (status === 'committed') order.push(`status-${transactionId}`)
+      if (status === 'committed') {
+        order.push(`status-${transactionId}`)
+      }
     })
     let nested = false
     const completionSubscription = subscribeToUserActionCompleted(() => {
       order.push('completion')
-      if (nested) return
+      if (nested) {
+        return
+      }
       nested = true
       factory.startTransaction()
       update(factory, 'element-nested', 2)

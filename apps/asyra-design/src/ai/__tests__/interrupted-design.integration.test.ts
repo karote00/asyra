@@ -115,7 +115,9 @@ const projectedSnapshot = () => {
   for (const id of ids) {
     expect(rows?.[id].parentId).toBe(tree.elements[id].parentId)
     const children = (tree.elements[id] as { children?: string[] }).children
-    if (children) expect(rows?.[id].children).toEqual(children)
+    if (children) {
+      expect(rows?.[id].children).toEqual(children)
+    }
   }
   return { version: '1.0.0', props: props.save(), sceneTree: tree }
 }
@@ -194,7 +196,9 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
     const publications: SharedPublication[] = []
     const stop = core.subscribeToSharedPublication((p) => {
       const document = prepareCollaborationPublication(p)
-      if (document) publications.push(document)
+      if (document) {
+        publications.push(document)
+      }
     })
     const action = observeAiAction(
       createPreparedDesignAction(undefined, async () => {
@@ -202,7 +206,9 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
         yields++
         if (yields === 2) {
           clock = 2
-          if (interruption === 'abort') controller.abort()
+          if (interruption === 'abort') {
+            controller.abort()
+          }
         }
       })
     )
@@ -260,11 +266,14 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
             label,
             (mutate) =>
               execute(async (write, settled) => {
-                if (!mutate) throw new Error('Missing grouped executor')
+                if (!mutate) {
+                  throw new Error('Missing grouped executor')
+                }
                 return mutate(() => {
                   const value = write()
-                  if (clock >= 2 && interruption === 'member-rollback')
+                  if (clock >= 2 && interruption === 'member-rollback') {
                     throw new Error('Member failed after writing')
+                  }
                   return value
                 }, settled)
               }),
@@ -357,7 +366,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
       let echoes = 0
       const unlisten = core.subscribeToSharedPublication(() => echoes++)
       try {
-        for (const p of publications)
+        for (const p of publications) {
           await core.applyRemoteCanonicalChangeSlices({
             origin: p.origin,
             // Same validated App-wire to Core boundary as the collaboration adapter.
@@ -365,6 +374,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
               typeof core.applyRemoteCanonicalChangeSlices
             >[0]['slices']
           })
+        }
         await Promise.resolve()
         expect(snapshot()).toEqual(retained)
         expect(factory.getUndoHistoryDepth()).toBe(0)
@@ -454,7 +464,9 @@ it.each(['vertices', 'ellipse'])(
         fill: index % 2 ? '#246080' : '#80a0b0'
       }))
     })
-    if (!draftId) throw new Error('Missing retained source')
+    if (!draftId) {
+      throw new Error('Missing retained source')
+    }
     const freshSignal = () => new AbortController().signal
     const firstRepair = { draftId, partition: 0 }
     const first = await session.prepareAsync(
@@ -472,7 +484,9 @@ it.each(['vertices', 'ellipse'])(
     const publications: SharedPublication[] = []
     const stop = core.subscribeToSharedPublication((p) => {
       const document = prepareCollaborationPublication(p)
-      if (document) publications.push(document)
+      if (document) {
+        publications.push(document)
+      }
     })
     const action = observeAiAction(
       createPreparedDesignAction(undefined, async () => {
@@ -482,8 +496,9 @@ it.each(['vertices', 'ellipse'])(
           firstDesign.entries.every((entry) =>
             core.getElementMetadata(entry.descriptor.id)
           )
-        )
+        ) {
           controller.abort()
+        }
       })
     )
     const execute = async (design: typeof firstDesign, signal: AbortSignal) => {
@@ -598,13 +613,14 @@ it.each(['vertices', 'ellipse'])(
       let echoes = 0
       const unlisten = core.subscribeToSharedPublication(() => echoes++)
       try {
-        for (const publication of publications)
+        for (const publication of publications) {
           await core.applyRemoteCanonicalChangeSlices({
             origin: publication.origin,
             slices: readDocumentPublicationSlices(publication) as Parameters<
               typeof core.applyRemoteCanonicalChangeSlices
             >[0]['slices']
           })
+        }
         await Promise.resolve()
         expect(snapshot()).toEqual(complete)
         expect(factory.getUndoHistoryDepth()).toBe(0)

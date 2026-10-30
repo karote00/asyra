@@ -38,7 +38,9 @@ it('keeps exact paid work beyond 500000 and produces the unchanged complete geom
     fresh = new OriginalMeshQuery(),
     expected = fresh.distance(mesh, sphere, 0.02, 1e-6, 48),
     context = new OriginalMeshQuery()
-  for (let i = 0; i < 500001; i++) context.chargeEvidenceHandoff()
+  for (let i = 0; i < 500001; i++) {
+    context.chargeEvidenceHandoff()
+  }
   expect(context.work).toBe(500001)
   expect(context.distance(mesh, sphere, 0.02, 1e-6, 48)).toEqual(expected)
   expect(context.work).toBe(500001 + fresh.work)
@@ -48,9 +50,13 @@ it('still observes cancellation beyond the old workload threshold and retains ex
   const cancelled = new Error('owned execution cancelled')
   let cancel = false
   const context = new OriginalMeshQuery(() => {
-    if (cancel) throw cancelled
+    if (cancel) {
+      throw cancelled
+    }
   })
-  for (let i = 0; i < 500001; i++) context.chargeEvidenceHandoff()
+  for (let i = 0; i < 500001; i++) {
+    context.chargeEvidenceHandoff()
+  }
   cancel = true
   expect(() => context.chargeEvidenceHandoff()).toThrow(cancelled)
   expect(context.work).toBe(500001)
@@ -70,7 +76,9 @@ it('checks cancellation inside the original median index sort and leaves source 
     this: unknown[],
     compare
   ) {
-    if (!compare) throw new Error('Expected an explicit geometry comparator')
+    if (!compare) {
+      throw new Error('Expected an explicit geometry comparator')
+    }
     sorting = true
     try {
       return sort.call(this, (a, b) => {
@@ -83,7 +91,9 @@ it('checks cancellation inside the original median index sort and leaves source 
   })
   expect(() =>
     buildMeshIndex(mesh, () => {
-      if (sorting && comparisons >= 256) throw cancelled
+      if (sorting && comparisons >= 256) {
+        throw cancelled
+      }
     })
   ).toThrow(cancelled)
   expect(comparisons).toBeLessThanOrEqual(257)

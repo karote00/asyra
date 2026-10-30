@@ -109,16 +109,28 @@ export function validateRobot(
   const fail = () => {
     throw new RobotConfigurationError('Invalid robot design input')
   }
-  if (!input || typeof input !== 'object') return fail()
+  if (!input || typeof input !== 'object') {
+    return fail()
+  }
   for (const key of Object.keys(
     DEFAULT_ROBOT
   ) as (keyof RobotConfiguration)[]) {
-    if (typeof DEFAULT_ROBOT[key] !== 'number') continue
+    if (typeof DEFAULT_ROBOT[key] !== 'number') {
+      continue
+    }
     const value = input[key]
-    if (typeof value !== 'number' || !Number.isFinite(value)) return fail()
-    if (key !== 'dockX' && key !== 'dockZ' && value < 0) return fail()
-    if (positive.includes(key as RobotNumber) && value <= 0) return fail()
-    if (fractions.includes(key as RobotNumber) && value > 1) return fail()
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return fail()
+    }
+    if (key !== 'dockX' && key !== 'dockZ' && value < 0) {
+      return fail()
+    }
+    if (positive.includes(key as RobotNumber) && value <= 0) {
+      return fail()
+    }
+    if (fractions.includes(key as RobotNumber) && value > 1) {
+      return fail()
+    }
   }
   // Admitted design envelope, not a hardware capability claim.
   if (
@@ -129,15 +141,19 @@ export function validateRobot(
     input.height < 0.8 ||
     input.height > 3 ||
     input.start >= input.end
-  )
+  ) {
     return fail()
+  }
   if (
     !['cucumber', 'tomato'].includes(input.tool) ||
     !['left', 'right', 'both'].includes(input.scanSide)
-  )
+  ) {
     return fail()
+  }
   const lane = input.lane
-  if (!lane || !['strip', 'shared'].includes(lane.kind)) return fail()
+  if (!lane || !['strip', 'shared'].includes(lane.kind)) {
+    return fail()
+  }
   if (lane.kind === 'strip') {
     if (
       !Number.isInteger(lane.bay) ||
@@ -145,31 +161,36 @@ export function validateRobot(
       lane.bay > 3 ||
       typeof lane.stripId !== 'string' ||
       !lane.stripId.trim()
-    )
+    ) {
       return fail()
+    }
   } else if (
     !Number.isInteger(lane.boundary) ||
     lane.boundary < 1 ||
     lane.boundary > 3 ||
     !['left', 'right'].includes(lane.side)
-  )
+  ) {
     return fail()
+  }
   const survey = input.survey
-  if (!survey || !['unknown', 'prepared', 'soft'].includes(survey.ground))
+  if (!survey || !['unknown', 'prepared', 'soft'].includes(survey.ground)) {
     return fail()
+  }
   for (const key of [
     'entranceWidth',
     'entranceHeight',
     'frontHeadland',
     'rearHeadland'
-  ] as const)
+  ] as const) {
     if (
       survey[key] !== null &&
       (typeof survey[key] !== 'number' ||
         !Number.isFinite(survey[key]) ||
         survey[key] < 0)
-    )
+    ) {
       return fail()
+    }
+  }
   return Object.freeze({
     ...input,
     lane: Object.freeze({ ...lane }),
@@ -187,7 +208,9 @@ export function assessRobotDesign(
     const strip = farm.strips.findIndex((item) => item.id === stripId)
     resolved =
       strip < 0 ? null : { kind: 'strip', bay: settings.lane.bay, strip }
-  } else resolved = settings.lane
+  } else {
+    resolved = settings.lane
+  }
   const lane =
     settings.end > farm.length || !resolved
       ? null

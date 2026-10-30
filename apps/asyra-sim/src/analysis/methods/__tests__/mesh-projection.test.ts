@@ -49,7 +49,9 @@ it('honors cancellation and exact projected-work exhaustion before producing a c
   let work = 0
   expect(() =>
     projectedBoundsGap(a, left, b, right, 0.02, () => {
-      if (++work > 1) throw new MeshWorkLimit('work')
+      if (++work > 1) {
+        throw new MeshWorkLimit('work')
+      }
     })
   ).toThrow(MeshWorkLimit)
   expect(work).toBe(2)

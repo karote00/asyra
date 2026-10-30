@@ -115,7 +115,9 @@ it('profiles the CI-trace slow original-part pair across live poses', async () =
   const pair = snapshot.pairs.find(
     ({ id }) => id === 'example:joint-1/main-body::example:joint-3/main-body'
   )
-  if (!pair) throw new Error('Missing trace-identified original-part pair')
+  if (!pair) {
+    throw new Error('Missing trace-identified original-part pair')
+  }
   const execute = createOriginalPartExecutor(),
     durations: number[] = []
   const evidence = [3.904, 3.92, 4].map((time) => {

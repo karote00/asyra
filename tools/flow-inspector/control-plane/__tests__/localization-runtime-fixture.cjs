@@ -164,16 +164,18 @@ function localizationFixture() {
   )
   for (const scenario of executionManifest.scenarios) {
     const file = scenario.mutation?.file
-    if (file)
+    if (file) {
       originals.set(file, fs.readFileSync(path.join(repository, file), 'utf8'))
+    }
   }
   const recipeManifest = JSON.parse(
     fs.readFileSync(path.join(root, recipeContract.manifestPath), 'utf8')
   )
   for (const scenario of recipeManifest.scenarios) {
     const file = scenario.mutation?.file
-    if (file)
+    if (file) {
       originals.set(file, fs.readFileSync(path.join(repository, file), 'utf8'))
+    }
   }
   const pixiManifest = JSON.parse(
     fs.readFileSync(path.join(root, pixiContract.manifestPath), 'utf8')
@@ -421,27 +423,36 @@ function localizationFixture() {
         repository,
         'packages/factory/src/__tests__/flow-proof.config.ts'
       )
-      if (kind === 'coverage')
+      if (kind === 'coverage') {
         configFile = path.join(repository, coverageContract.configFile)
-      if (kind === 'vector')
+      }
+      if (kind === 'vector') {
         configFile = path.join(repository, vectorContract.configFile)
-      if (kind === 'pixi')
+      }
+      if (kind === 'pixi') {
         configFile = path.join(repository, pixiContract.configFile)
-      if (kind === 'recipe')
+      }
+      if (kind === 'recipe') {
         configFile = path.join(repository, recipeContract.configFile)
-      if (kind === 'history')
+      }
+      if (kind === 'history') {
         configFile = path.join(
           repository,
           'packages/factory/src/__tests__/history-replay.config.ts'
         )
-      if (kind === 'viewport')
+      }
+      if (kind === 'viewport') {
         configFile = path.join(
           repository,
           'packages/render/src/__tests__/navigation-flow.config.ts'
         )
-      if (kind === 'app') configFile = config
-      if (kind === 'execution')
+      }
+      if (kind === 'app') {
+        configFile = config
+      }
+      if (kind === 'execution') {
         configFile = path.join(repository, executionContract.configFile)
+      }
       const result = await runProcess({
         executable: process.execPath,
         args: [

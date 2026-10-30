@@ -32,7 +32,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -70,7 +72,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               hierarchy,
               checkExecution
             )
-            if (!hierarchy) return index
+            if (!hierarchy) {
+              return index
+            }
             const result = partitionIndex(index, () => {
               addedPreparation++
               checkpoint()
@@ -105,7 +109,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           })
         )
         expect(context.work).toBeLessThanOrEqual(500001)
-        if (candidate.coverage === 'complete')
+        if (candidate.coverage === 'complete') {
           expect(
             candidate.leaves.map((leaf) => [
               leaf.start,
@@ -121,6 +125,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               leaf.penetration
             ])
           )
+        }
       },
       20000
     )

@@ -77,7 +77,9 @@ it('compares v2 results using actual source identity and placement, not retired 
 
   const part = changed.bodies[0].visuals?.[0]
 
-  if (!part) throw new Error('Missing original source binding')
+  if (!part) {
+    throw new Error('Missing original source binding')
+  }
 
   part.scale = [2, 1, 1]
 
@@ -224,7 +226,9 @@ it('tracks geometric input changes while preserving frozen replay and partial lo
       (item) => item.textContent === 'Replay pair'
     )
 
-    if (!button) throw new Error('Missing replay action')
+    if (!button) {
+      throw new Error('Missing replay action')
+    }
 
     await act(() => button.click())
 
@@ -389,7 +393,9 @@ it('distinguishes retained penetration, clearance and unresolved intervals with 
       )
     )
     const pair = host.querySelector<HTMLDetailsElement>('.evidence-pair')
-    if (!pair) throw new Error('Missing pair')
+    if (!pair) {
+      throw new Error('Missing pair')
+    }
     await act(() => {
       pair.open = true
       pair.dispatchEvent(new Event('toggle'))
@@ -496,7 +502,9 @@ it('prioritizes finding and unresolved pairs, discloses all records exactly once
       const next = [...host.querySelectorAll('button')].find(
         (node) => node.textContent === 'Next pairs'
       )
-      if (!next || next.disabled) break
+      if (!next || next.disabled) {
+        break
+      }
       await act(() => next.click())
     }
     expect(new Set(seen).size).toBe(records.length)
@@ -521,7 +529,9 @@ it('prioritizes finding and unresolved pairs, discloses all records exactly once
       node.textContent?.includes('Unresolved pairs without evidence')
     )
     const evidence = host.querySelector('.evidence-list')
-    if (!unresolved || !evidence) throw new Error('Missing pair sections')
+    if (!unresolved || !evidence) {
+      throw new Error('Missing pair sections')
+    }
     expect(
       unresolved.compareDocumentPosition(evidence) &
         Node.DOCUMENT_POSITION_FOLLOWING

@@ -24,8 +24,9 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
       !input ||
       typeof input !== 'object' ||
       Array.isArray(input)
-    )
+    ) {
       return call(name, input, signal)
+    }
     const value = input as Record<string, unknown>
     if (
       value.inspections ||
@@ -34,8 +35,9 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
       value.checks.some(
         (check) => !check || typeof check !== 'object' || check.binding
       )
-    )
+    ) {
       return call(name, input, signal)
+    }
     const bindingText = await call(
       name,
       {
@@ -47,7 +49,9 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
       signal
     )
     const binding = JSON.parse(bindingText)
-    if (!binding.next?.arguments?.checks) return bindingText
+    if (!binding.next?.arguments?.checks) {
+      return bindingText
+    }
     return call(
       name,
       {

@@ -208,7 +208,9 @@ it('retains source-point subtraction enclosure through the shared camera directi
 it('keeps scoped canonical rays local while retaining full-scope equivalence and identity admission', () => {
   const { queries, source } = fixture([triangle('near', 5), triangle('far', 8)])
   const mesh = source.meshes.find((item) => item.origin.id === 'near')
-  if (!mesh) throw new Error('Missing near source')
+  if (!mesh) {
+    throw new Error('Missing near source')
+  }
   const scope = [{ mesh, region: mesh.origin.regions[0], instance: 0 }]
   const local = queries.queryScoped(source, batch(), scope)
   expect(local.scope).toBe('declared-canonical-candidates')
@@ -248,7 +250,9 @@ it('returns nearest original two-sided hidden source triangle with metre distanc
   const result = queries.query(source, request)
   const hit = result.results[0]
   expect(hit.status).toBe('hit')
-  if (hit.status !== 'hit') throw new Error('Missing source hit')
+  if (hit.status !== 'hit') {
+    throw new Error('Missing source hit')
+  }
   expect(hit.mesh.origin.id).toBe('near')
   expect(hit.triangle).toBe(0)
   expect(hit.instance).toBe(0)
@@ -290,7 +294,9 @@ it('includes the exact range endpoint, preserves source-order ties and handles e
     }
     const hit = queries.query(source, input).results[0]
     expect(hit.status).toBe('hit')
-    if (hit.status === 'hit') expect(hit.mesh.origin.id).toBe('first')
+    if (hit.status === 'hit') {
+      expect(hit.mesh.origin.id).toBe('first')
+    }
     input.rays[0].maxDistance = 4.999
     expect(queries.query(source, input).results[0].status).toBe('miss')
   }
@@ -322,8 +328,9 @@ it('rejects invalid numeric requests and keeps missing, future and expired dynam
     { time: NaN },
     { validFrom: 10 },
     { validUntil: Infinity }
-  ])
+  ]) {
     expect(() => queries.query(source, { ...batch(), ...patch })).toThrow()
+  }
 })
 
 it('reports relevant coplanar ambiguity instead of fabricating a miss', () => {
@@ -368,7 +375,9 @@ it('uses descriptor-after-instance placement and reports the nearest instance', 
   const { queries, source } = fixture([mesh])
   const hit = queries.query(source, batch()).results[0]
   expect(hit.status).toBe('hit')
-  if (hit.status !== 'hit') throw new Error('Missing transformed hit')
+  if (hit.status !== 'hit') {
+    throw new Error('Missing transformed hit')
+  }
   expect(hit.instance).toBe(1)
   expect(hit.distance).toBeCloseTo(5, 12)
 })
@@ -410,7 +419,9 @@ it('does not let ambiguity strictly behind a known nearer hit erase its identity
   const { queries, source } = fixture([degenerate, triangle('near', 5)])
   const hit = queries.query(source, batch()).results[0]
   expect(hit.status).toBe('hit')
-  if (hit.status === 'hit') expect(hit.mesh.origin.id).toBe('near')
+  if (hit.status === 'hit') {
+    expect(hit.mesh.origin.id).toBe('near')
+  }
 })
 
 it('profiles actual C hit, miss, net, leaf and both cultivar sources without regenerating their geometry', () => {
@@ -446,8 +457,9 @@ it('profiles actual C hit, miss, net, leaf and both cultivar sources without reg
     const mesh = source.meshes.find((item) =>
       layer === 'foliage' ? foliageShapes.has(item.shape) : item.layer === layer
     )
-    if (!mesh || mesh.shape.kind !== 'triangles')
+    if (!mesh || mesh.shape.kind !== 'triangles') {
       throw new Error('Missing actual source')
+    }
     const shape = mesh.shape
     const points = [0, 1, 2].map((index) => {
       const offset = shape.indices[index] * 3
@@ -468,7 +480,9 @@ it('profiles actual C hit, miss, net, leaf and both cultivar sources without reg
       e[0] * f[1] - e[1] * f[0]
     ]
     const length = Math.hypot(...normal)
-    if (!length) throw new Error('Degenerate sample source')
+    if (!length) {
+      throw new Error('Degenerate sample source')
+    }
     const center = a.map((value, axis) => (value + b[axis] + c[axis]) / 3)
     input.rays.push({
       origin: center.map(
@@ -672,8 +686,9 @@ it('keeps unresolved open-shell origin separate from material and forward hit di
   input.rays[0] = { origin: [0, 0, 1], direction: [0, 0, 1], maxDistance: 0.2 }
   const unresolved = queries.query(source, input).results[0]
   expect(unresolved.status).toBe('unknown')
-  if (unresolved.status === 'unknown')
+  if (unresolved.status === 'unknown') {
     expect(unresolved.reason).toBe('unknown-origin-occupancy')
+  }
   input.rays[0] = { origin: [4, 0, 1], direction: [1, 0, 0], maxDistance: 1 }
   expect(queries.query(source, input).results[0].status).toBe('miss')
 })
@@ -689,10 +704,14 @@ it('bounds immutable representative uncertainty witnesses to the same original s
   const output = queries.query(source, input)
   const result = output.results[0]
   expect(result.status).toBe('unknown')
-  if (result.status !== 'unknown') throw new Error('Missing uncertainty')
+  if (result.status !== 'unknown') {
+    throw new Error('Missing uncertainty')
+  }
   expect(result.witnesses).toHaveLength(2)
   const witnesses = result.witnesses
-  if (!witnesses) throw new Error('Missing representative witnesses')
+  if (!witnesses) {
+    throw new Error('Missing representative witnesses')
+  }
   expect(witnesses.map((witness) => witness.mesh.origin.id)).toEqual([
     'first-overlap',
     'second-overlap'
@@ -703,7 +722,9 @@ it('bounds immutable representative uncertainty witnesses to the same original s
     expect(witness.instance).toBe(0)
     expect(witness.triangle).toBe(0)
     expect(Object.isFrozen(witness)).toBe(true)
-    if (!witness.distance) throw new Error('Missing finite distance bound')
+    if (!witness.distance) {
+      throw new Error('Missing finite distance bound')
+    }
     expect(witness.distance.low).toBeLessThanOrEqual(Math.hypot(0.25, 0.5, 5))
     expect(witness.distance.high).toBeGreaterThanOrEqual(
       Math.hypot(0.25, 0.5, 5)
@@ -720,7 +741,9 @@ it('resolves a supported exact source edge on the real steel assembly without a 
     { ...DEFAULT_CONFIGURATION, length: 2.2 },
     owner
   ).find((mesh) => mesh.layer === 'steel')
-  if (!steel) throw new Error('Missing original steel source')
+  if (!steel) {
+    throw new Error('Missing original steel source')
+  }
   const { queries, source } = fixture([steel])
   const input = batch()
   input.rays[0] = {
@@ -735,7 +758,9 @@ it('resolves a supported exact source edge on the real steel assembly without a 
     // Independent original source-plane oracle; the earlier broadphase lower
     // bound is not an intersection distance and cannot serve as this expected value.
     const shape = steel.descriptor.shape
-    if (shape.kind !== 'triangles') throw new Error('Missing steel triangles')
+    if (shape.kind !== 'triangles') {
+      throw new Error('Missing steel triangles')
+    }
     const [a, b, c] = [0, 1, 2].map((vertex) => {
       const index = shape.indices[1042 * 3 + vertex] * 3
       return shape.positions.slice(index, index + 3)
@@ -828,7 +853,9 @@ it('preserves fresh-preparation results while time, rays and working joints reus
     const input = batch()
     input.time = time
     input.rays[0].direction = [time, 0, 1]
-    if (!input.robot) throw new Error('Missing dynamic robot fixture')
+    if (!input.robot) {
+      throw new Error('Missing dynamic robot fixture')
+    }
     input.robot.joints = { ...input.robot.joints, yaw: time }
     const retained = queries.query(source, input)
     freshOwner.clear()
@@ -847,8 +874,9 @@ it('preserves fresh-preparation results while time, rays and working joints reus
           b.distance,
           ...b.barycentric
         ])
-      } else if (a.status === 'unknown' && b.status === 'unknown')
+      } else if (a.status === 'unknown' && b.status === 'unknown') {
         expect(a.reason).toBe(b.reason)
+      }
     }
     expect(retained.work.vertexVisits + retained.work.regionIndexVisits).toBe(0)
     expect(retained.work.fk).toBe(1)
@@ -939,7 +967,7 @@ it('publishes exact original quaternion coefficients with compatible outward fra
         )
       ]
     ]
-    for (let row = 0; row < 3; row++)
+    for (let row = 0; row < 3; row++) {
       for (let column = 0; column < 3; column++) {
         const value = exact.matrix[row][column],
           enclosure = outward.matrix[row][column]
@@ -952,6 +980,7 @@ it('publishes exact original quaternion coefficients with compatible outward fra
         ).toBe(true)
         expect(Object.isFrozen(value)).toBe(true)
       }
+    }
     transform.position.forEach((value, axis) =>
       expectFrameValue(exact.position[axis], dyadic(value))
     )
@@ -1009,10 +1038,11 @@ it('refuses invalid or singular exact source frames without inventing an inverse
     [0, 0, 0, 0],
     [0.5, 0.5, 0, 0],
     [NaN, 0, 0, 1]
-  ] as const)
+  ] as const) {
     expect(() =>
       prepareQueryExactForwardFrame({ position: [0, 0, 0], rotation })
     ).toThrow()
+  }
   expect(() =>
     prepareQueryExactForwardFrame({
       position: [Infinity, 0, 0],
@@ -1054,7 +1084,9 @@ it('shares original forward quaternion and instance frames with surface queries'
 
 it('consumes actual C body coefficient singletons and encloses installed Three source vertices with a true inverse', () => {
   const source = projection.getSource()
-  if (!source.rig) throw new Error('Missing admitted rig')
+  if (!source.rig) {
+    throw new Error('Missing admitted rig')
+  }
   const pose = kinematics.evaluateRobotAffinePose(source.rig, {
     lift: 0.037,
     yaw: -0.71,
@@ -1150,14 +1182,18 @@ it('hits an actual articulated body source face using the completed Three CPU ma
   const f = fixture([]),
     input = batch(),
     rig = f.source.receipt.robot.rig
-  if (!rig) throw new Error('Missing actual rig')
+  if (!rig) {
+    throw new Error('Missing actual rig')
+  }
   input.robot = {
     base: { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
     joints: { lift: 0.05, yaw: 0.4, shoulder: 0.3, elbow: 0.2, wrist: -0.1 }
   }
   const pose = kinematics.evaluateRobotAffinePose(rig, input.robot.joints)
   const part = pose.parts.find((part) => part.source.id === 'tool-guard')
-  if (!part) throw new Error('Missing original tool guard')
+  if (!part) {
+    throw new Error('Missing original tool guard')
+  }
   const matrix = new Matrix4().compose(
     new Vector3().fromArray(part.transform.position),
     new Quaternion().fromArray(part.transform.rotation),
@@ -1209,7 +1245,9 @@ it('hits an actual articulated body source face using the completed Three CPU ma
         })
       : undefined
   ).toBe('hit')
-  if (hit.status !== 'hit') throw new Error('Missing actual body hit')
+  if (hit.status !== 'hit') {
+    throw new Error('Missing actual body hit')
+  }
   expect(hit.mesh.origin).toBe(part.source)
   expect(hit.triangle).toBe(0)
   expect(hit.distanceBounds.low).toBeLessThanOrEqual(direction.length())

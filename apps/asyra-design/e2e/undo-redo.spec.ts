@@ -197,9 +197,13 @@ test.describe('Undo/Redo Actions', () => {
     const center = await getSelectedElementClientCenter(page)
     expect(before).not.toBeNull()
     expect(center).not.toBeNull()
-    if (!before || !center) throw new Error('Missing real drag target')
+    if (!before || !center) {
+      throw new Error('Missing real drag target')
+    }
     const fileId = new URL(page.url()).searchParams.get('fileId')
-    if (!fileId) throw new Error('Missing document identity')
+    if (!fileId) {
+      throw new Error('Missing document identity')
+    }
     const original = await getCoreDocumentDigest(page)
     const durable = async (expected: typeof original) => {
       await expect
@@ -789,8 +793,9 @@ test.describe('Undo/Redo Actions', () => {
           y: (start.y + end.y) / 2
         }
       )
-      if (!result.changed || result.unavailableIds.length)
+      if (!result.changed || result.unavailableIds.length) {
         throw new Error('Vector split did not settle')
+      }
       return result.value?.point.id
     }, setup.elementId)
     expect(splitPointId).toBeTruthy()

@@ -145,7 +145,9 @@ it('places current local sources without rescanning a growing far mesh inventory
     const localSite = new SiteGeometry()
     const originals = buildSiteMeshes(farm, localSite)
     const template = originals.find((mesh) => mesh.layer === 'base')
-    if (!template) throw new Error('Missing canonical base')
+    if (!template) {
+      throw new Error('Missing canonical base')
+    }
     const far = Array.from({ length: count }, (_, index) => ({
       ...template,
       descriptor: {
@@ -162,18 +164,23 @@ it('places current local sources without rescanning a growing far mesh inventory
     })
     const source = owner.prepare(handle)
     const mesh = source.meshes.find((item) => item.kind === 'dock')
-    if (!mesh) throw new Error('Missing canonical dock')
+    if (!mesh) {
+      throw new Error('Missing canonical dock')
+    }
     expect(source.meshes.indexOf(mesh)).toBeGreaterThanOrEqual(count)
     const includes = Array.prototype.includes
     let scans = 0
     const scan = vi.spyOn(Array.prototype, 'includes')
     scan.mockImplementation(function (this: readonly unknown[], value, from) {
-      if (this === source.meshes) scans++
+      if (this === source.meshes) {
+        scans++
+      }
       return includes.call(this, value, from)
     })
     try {
-      for (let index = 0; index < 8; index++)
+      for (let index = 0; index < 8; index++) {
         owner.placePoint(source, mesh, [0, 0, 0])
+      }
       expect(scans).toBe(0)
       expect(source.work.membershipVisits).toBe(source.meshes.length)
       expect(owner.placementWork).toEqual({
@@ -196,14 +203,16 @@ it('binds original fruit partitions to exact canonical plant instances without d
   const source = owner.prepare(receipt)
   for (const fruit of receipt.scene.fruits) {
     for (const part of fruit.model.parts) {
-      if (!part.partitions.some((span) => span.fruitId === fruit.source.id))
+      if (!part.partitions.some((span) => span.fruitId === fruit.source.id)) {
         continue
+      }
       const mesh = source.meshes.find((item) => item.shape === part.shape)
       expect(mesh?.partitions === part.partitions).toBe(true)
       const instance = mesh?.plants?.findIndex((plant) => plant === fruit.plant)
       expect(instance).toBeGreaterThanOrEqual(0)
-      if (!mesh || instance === undefined)
+      if (!mesh || instance === undefined) {
         throw new Error('Missing exact fruit source')
+      }
       const world = owner.placePoint(
         source,
         mesh,
@@ -226,8 +235,9 @@ it('does no geometry generation or preparation on reads and rejects copied or re
     const owner = new QueryGeometry(owners)
     const source = owner.prepare(receipt)
     const prepare = vi.spyOn(owner, 'prepare')
-    for (let i = 0; i < 10; i++)
+    for (let i = 0; i < 10; i++) {
       expect(owner.read(source) === source).toBe(true)
+    }
     expect(prepare).not.toHaveBeenCalled()
     expect(owner.prepare(receipt) === source).toBe(true)
     expect(() => owner.prepare({ ...receipt })).toThrow()
@@ -328,7 +338,9 @@ it('composes instance placement before descriptor rotation and never substitutes
   const localSite = new SiteGeometry()
   const meshes = buildSiteMeshes(farm, localSite)
   const original = meshes.find((mesh) => mesh.layer === 'base')
-  if (!original) throw new Error('Missing base fixture')
+  if (!original) {
+    throw new Error('Missing base fixture')
+  }
   const installed = {
     ...original,
     descriptor: readSpatialDescriptor({
@@ -351,7 +363,9 @@ it('composes instance placement before descriptor rotation and never substitutes
   const source = owner.prepare(tuple)
   const mesh = source.meshes.find((item) => item.origin.id === installed.id)
   const robotMesh = source.meshes.find((item) => item.kind === 'robot')
-  if (!mesh || !robotMesh) throw new Error('Missing geometry record')
+  if (!mesh || !robotMesh) {
+    throw new Error('Missing geometry record')
+  }
   const point = owner.placePoint(source, mesh, [1, 2, 3])
   point.forEach((value, axis) => expect(value).toBeCloseTo([6, 9, 0][axis], 12))
   expect(() => owner.placePoint(source, mesh, [NaN, 0, 0])).toThrow()
@@ -367,7 +381,9 @@ it('prepares immutable original-source local bounds once and recomputes only for
   const source = owner.prepare(receipt)
   let visits = 0
   for (const shape of source.shapes) {
-    if (shape.kind !== 'triangles') throw new Error('Missing triangle source')
+    if (shape.kind !== 'triangles') {
+      throw new Error('Missing triangle source')
+    }
     visits += shape.positions.length / 3
     const records = source.meshes.filter((mesh) => mesh.shape === shape)
     const box = records[0].prepared.bounds
@@ -428,7 +444,9 @@ it('prepares immutable original-source local bounds once and recomputes only for
 
 it('shares vertex bounds but never borrows another source region mapping on the same shape', () => {
   const base = receipt.scene.meshes.find((mesh) => mesh.layer === 'base')
-  if (!base) throw new Error('Missing actual base source')
+  if (!base) {
+    throw new Error('Missing actual base source')
+  }
   const sheets = Object.freeze(
     base.regions.map((region) =>
       Object.freeze({ ...region, kind: 'sheet' as const })

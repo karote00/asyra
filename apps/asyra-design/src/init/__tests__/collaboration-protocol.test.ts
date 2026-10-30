@@ -241,14 +241,27 @@ describe('collaboration wire protocol', () => {
     }
     const slice = metadata.slices[0]
     const batch = slice.batches[0]
-    if (scenario === 'missing-slices') metadata.slices = []
-    if (scenario === 'duplicate-slice') metadata.slices.push(slice)
-    if (scenario === 'duplicate-batch') slice.batches.push(batch)
-    if (scenario === 'duplicate-order')
+    if (scenario === 'missing-slices') {
+      metadata.slices = []
+    }
+    if (scenario === 'duplicate-slice') {
+      metadata.slices.push(slice)
+    }
+    if (scenario === 'duplicate-batch') {
+      slice.batches.push(batch)
+    }
+    if (scenario === 'duplicate-order') {
       slice.orderedIds.push(slice.orderedIds[0])
-    if (scenario === 'missing-delivery') batch.deliveryCount = 0
-    if (scenario === 'excess-delivery') batch.deliveryCount = 2
-    if (scenario === 'unbounded-count') batch.deliveryCount = 0xffff_ffff
+    }
+    if (scenario === 'missing-delivery') {
+      batch.deliveryCount = 0
+    }
+    if (scenario === 'excess-delivery') {
+      batch.deliveryCount = 2
+    }
+    if (scenario === 'unbounded-count') {
+      batch.deliveryCount = 0xffff_ffff
+    }
     const encoded = new Uint8Array(encodeCompactBinary(metadata))
     const changed = new Uint8Array(
       original.length - metadataLength + encoded.length
@@ -262,8 +275,9 @@ describe('collaboration wire protocol', () => {
     const view = new DataView(changed.buffer)
     view.setUint32(12, changed.length - offset, true)
     view.setUint32(offset + 8, encoded.length, true)
-    if (scenario === 'unbounded-count')
+    if (scenario === 'unbounded-count') {
       view.setUint32(offset + 12, 0xffff_ffff, true)
+    }
     expect(() => decodePublicationMessageFrames([changed])).toThrow(
       /publication wire/
     )
@@ -509,7 +523,9 @@ describe('collaboration wire protocol', () => {
     const sentinel = new Error('stringify sentinel')
     const guardedPublication = new Proxy(publication, {
       get: (target, key, receiver) => {
-        if (key === 'toJSON') throw sentinel
+        if (key === 'toJSON') {
+          throw sentinel
+        }
         return Reflect.get(target, key, receiver)
       }
     })
@@ -758,7 +774,9 @@ describe('collaboration wire protocol', () => {
       fromActorId: 'actor-a',
       sequence: 13
     })[0]
-    if (!frame) throw new Error('Expected one publication frame')
+    if (!frame) {
+      throw new Error('Expected one publication frame')
+    }
 
     const runtime = new PublicationCodecWorkerRuntime()
     const responses: PublicationCodecWorkerResponse[] = []
@@ -834,7 +852,9 @@ describe('collaboration wire protocol', () => {
       sequence: 15
     })[0]
     expect(oversizedFrames).toHaveLength(2)
-    if (!interleavedFrame) throw new Error('Expected an interleaved frame')
+    if (!interleavedFrame) {
+      throw new Error('Expected an interleaved frame')
+    }
     expect(
       oversizedFrames.reduce((total, frame) => total + frame.byteLength, 0)
     ).toBeGreaterThan(PUBLICATION_FRAME_INBOUND_WINDOW_BYTES)
@@ -1029,7 +1049,9 @@ describe('collaboration wire protocol', () => {
       requestId: 'a',
       publication: { ...publication, publicationId: 'b:c' }
     })[0]
-    if (!first || !second) throw new Error('Expected publication frames')
+    if (!first || !second) {
+      throw new Error('Expected publication frames')
+    }
 
     expect(inspectPublicationFrameHeader(first).frameId).not.toBe(
       inspectPublicationFrameHeader(second).frameId
@@ -1250,7 +1272,9 @@ describe('collaboration wire protocol', () => {
       publication
     }
     const frame = encodePublicationMessageFrames(request)[0]
-    if (!frame) throw new Error('Expected one publication frame')
+    if (!frame) {
+      throw new Error('Expected one publication frame')
+    }
     const unsupported = frame.slice(0)
     new Uint8Array(unsupported)[PUBLICATION_FRAME_VERSION_OFFSET] = 0xff
 
@@ -1906,10 +1930,11 @@ it('admits persistence confirmation only with exact nonnegative sequence and gen
     { sequence: 1.5 },
     { documentGeneration: -1 },
     { documentGeneration: undefined }
-  ])
+  ]) {
     expect(
       parseCollaborationClientMessage({ ...message, ...patch })
     ).toBeUndefined()
+  }
 })
 
 it('accepts only the exact checkpoint preparation control milestone', () => {

@@ -39,8 +39,9 @@ export const createNativeProviderConfig = async (options: {
       'slug' in entry &&
       entry.slug === options.model
   )
-  if (matches.length !== 1)
+  if (matches.length !== 1) {
     throw new Error('Selected native model metadata is missing or ambiguous')
+  }
   const selected = {
     ...matches[0],
     tool_mode: 'direct',

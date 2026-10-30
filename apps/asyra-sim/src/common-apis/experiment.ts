@@ -24,15 +24,20 @@ export interface CanonicalExperiment {
 }
 
 function sameValue(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true
-  if (Array.isArray(a) || Array.isArray(b))
+  if (Object.is(a, b)) {
+    return true
+  }
+  if (Array.isArray(a) || Array.isArray(b)) {
     return (
       Array.isArray(a) &&
       Array.isArray(b) &&
       a.length === b.length &&
       a.every((value, index) => sameValue(value, b[index]))
     )
-  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false
+  }
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') {
+    return false
+  }
   const left = Object.keys(a),
     right = Object.keys(b)
   return (
@@ -76,7 +81,9 @@ function validateForCandidate(
   validateExperimentDefinition(definition)
   const workcell = readWorkcell(core, candidateId)
   // Authored text is schema-valid document data; execution resolves it separately.
-  if (definition.trajectoryInput) return
+  if (definition.trajectoryInput) {
+    return
+  }
   validateTrajectory(workcell, definition.trajectory)
   const actuated = workcell.bodies.filter((body) => body.joint.kind !== 'fixed')
   if (
@@ -84,15 +91,17 @@ function validateForCandidate(
       definition.sourceUnits.joints,
       actuated.map((body) => body.id)
     )
-  )
+  ) {
     throw new Error('Experiment source units do not match the candidate joints')
+  }
   for (const body of actuated) {
     const unit = definition.sourceUnits.joints[body.id]
     if (
       (body.joint.kind === 'revolute' && unit !== 'deg' && unit !== 'rad') ||
       (body.joint.kind === 'prismatic' && unit !== 'mm' && unit !== 'm')
-    )
+    ) {
       throw new Error(`Experiment source unit does not match joint ${body.id}`)
+    }
   }
 }
 
@@ -102,14 +111,16 @@ export function readExperiment(
 ): CanonicalExperiment {
   const snapshot = core.getCanonicalOwnerSnapshot(),
     element = snapshot.sceneTree.elements[experimentId]
-  if (!element || element.type !== ComponentTypes.EXPERIMENT)
+  if (!element || element.type !== ComponentTypes.EXPERIMENT) {
     throw new Error('Missing experiment')
+  }
   const candidateId = element.parentId,
     candidate = candidateId
       ? snapshot.sceneTree.elements[candidateId]
       : undefined
-  if (!candidateId || candidate?.type !== ComponentTypes.CANDIDATE)
+  if (!candidateId || candidate?.type !== ComponentTypes.CANDIDATE) {
     throw new Error('Experiment must belong directly to a candidate')
+  }
   const property = snapshot.props[
     element.props?.[PropertyNames.EXPERIMENT] ?? ''
   ] as Record<string, unknown> | undefined
@@ -128,8 +139,9 @@ export function readExperiments(
   candidateId: string
 ): readonly CanonicalExperiment[] {
   const candidate = core.getElementData(candidateId)
-  if (!candidate || candidate.type !== ComponentTypes.CANDIDATE)
+  if (!candidate || candidate.type !== ComponentTypes.CANDIDATE) {
     throw new Error('Missing candidate')
+  }
   return Object.values(core.getCanonicalOwnerSnapshot().sceneTree.elements)
     .filter(
       (element) =>
@@ -145,8 +157,9 @@ export function createExperiment(
   name: string,
   draft: ExperimentDraft
 ): string {
-  if (!name.trim() || name.length > 200)
+  if (!name.trim() || name.length > 200) {
     throw new Error('Experiment name must contain 1 to 200 characters')
+  }
   const definition = definitionFromDraft(draft, 1, 1)
   validateForCandidate(core, candidateId, definition)
   return runTransaction(() =>
@@ -170,10 +183,12 @@ export function updateExperiment(
   draft: ExperimentDraft
 ): ExperimentDefinition {
   const current = readExperiment(core, experimentId)
-  if (current.definition.revision !== expectedRevision)
+  if (current.definition.revision !== expectedRevision) {
     throw new Error('Experiment revision is stale')
-  if (sameValue(draftFromDefinition(current.definition), draft))
+  }
+  if (sameValue(draftFromDefinition(current.definition), draft)) {
     return current.definition
+  }
   const ruleRevision = sameValue(
     draftFromDefinition(current.definition).rule,
     draft.rule

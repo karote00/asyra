@@ -36,10 +36,11 @@ test(
             (item) => item.locations[0].stepId === 'select-history-replay'
           )
         )
-      } else
+      } else {
         assert.ok(
           new Set(failed.map((item) => item.locations[0].stepId)).size >= 2
         )
+      }
       const output = []
       assert.equal(
         await main(['test-results', fault.record.id], {
@@ -597,7 +598,9 @@ test(
       )
     }
     fixture.restore()
-    for (const scenario of scenarios) fixture.mutateRecipe(scenario)
+    for (const scenario of scenarios) {
+      fixture.mutateRecipe(scenario)
+    }
     const combined = await fixture.run('recipe')
     assert.equal(combined.result.code, 1, combined.result.output)
     assert.deepEqual(

@@ -45,7 +45,9 @@ function compare(a: ReturnType<typeof dyadic>, b: ReturnType<typeof dyadic>) {
   const [an, ad] = fraction(a),
     [bn, bd] = fraction(b)
   const d = an * bd - bn * ad
-  if (d < 0n) return -1
+  if (d < 0n) {
+    return -1
+  }
   return d > 0n ? 1 : 0
 }
 describe('canonical mounted crate source', () => {
@@ -61,12 +63,15 @@ describe('canonical mounted crate source', () => {
     expect(product.geometry.parts).toHaveLength(11)
     const cavity = product.geometry.cavity
     expect(cavity.upwardOpen).toBe(true)
-    for (let axis = 0; axis < 3; axis++)
+    for (let axis = 0; axis < 3; axis++) {
       expect(compare(cavity.min[axis], cavity.max[axis])).toBe(-1)
+    }
     const originals = createRobotModel(DEFAULT_ROBOT)
     for (const part of product.geometry.parts) {
       const original = originals.find((p) => p.id === part.id)
-      if (!original) throw new Error('Missing original crate part')
+      if (!original) {
+        throw new Error('Missing original crate part')
+      }
       expect(part.shape).toEqual(original.shape)
       expect(part.regions).toEqual(original.regions)
       const coordinates = [0, 1, 2].map((axis) =>
@@ -148,13 +153,14 @@ describe('canonical mounted crate source', () => {
     ).toBeUndefined()
     expect(() => owner.prepare({ ...source }, request())).toThrow()
     expect(() => owner.prepare(source, first)).toThrow()
-    for (const metres of [0, -0.01, Infinity, NaN])
+    for (const metres of [0, -0.01, Infinity, NaN]) {
       expect(() =>
         owner.prepare(source, {
           ...request(),
           minimumClearance: { metres, evidence: evidence('invalid') }
         })
       ).toThrow()
+    }
     expect(() =>
       owner.prepare(source, { ...request(), sourceParts: [] })
     ).toThrow()

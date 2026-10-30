@@ -118,16 +118,22 @@ function AcceptanceNode({
     (depth < ACCEPTANCE_LIMITS.depth && total + 2 <= ACCEPTANCE_LIMITS.nodes)
 
   const select = (kind: string) => {
-    if (kind === value.kind) return
+    if (kind === value.kind) {
+      return
+    }
 
     if (kind === 'all' || kind === 'any') {
-      if (canGroup)
+      if (canGroup) {
         onChange({
           kind,
           conditions: group ? value.conditions : [value, clearance(baseline)]
         })
-    } else if (kind === 'penetration') onChange({ kind, expected: 'absent' })
-    else if (kind === 'clearance') onChange(clearance(baseline))
+      }
+    } else if (kind === 'penetration') {
+      onChange({ kind, expected: 'absent' })
+    } else if (kind === 'clearance') {
+      onChange(clearance(baseline))
+    }
   }
 
   return (
@@ -173,8 +179,9 @@ function AcceptanceNode({
               onChange={(event) => {
                 const operator = event.target.value
 
-                if (operator === 'above' || operator === 'below')
+                if (operator === 'above' || operator === 'below') {
                   onChange({ ...value, operator })
+                }
               }}
             >
               <option value="above">Strictly above</option>
@@ -213,8 +220,9 @@ function AcceptanceNode({
             onChange={(event) => {
               const expected = event.target.value
 
-              if (expected === 'present' || expected === 'absent')
+              if (expected === 'present' || expected === 'absent') {
                 onChange({ ...value, expected })
+              }
             }}
           >
             <option value="absent">Proven separation</option>

@@ -19,7 +19,9 @@ export function CommittedInput({
     error: string
   } | null>(null)
 
-  if (draft !== null && draft.source !== value) setDraft(null)
+  if (draft !== null && draft.source !== value) {
+    setDraft(null)
+  }
 
   const cancelled = useRef(false)
 
@@ -41,10 +43,11 @@ export function CommittedInput({
           if (
             props.type === 'number' &&
             (field.value.trim() === '' || !Number.isFinite(Number(field.value)))
-          )
+          ) {
             error = 'Enter a finite number.'
-          else if (validateOnCommit && !field.validity.valid)
+          } else if (validateOnCommit && !field.validity.valid) {
             error = field.validationMessage
+          }
           setDraft({ source: value, text: field.value, error })
         }}
         onBlur={(event) => {
@@ -55,14 +58,16 @@ export function CommittedInput({
                 (!event.currentTarget.checkValidity() ||
                   (props.type === 'number' &&
                     event.currentTarget.value.trim() === ''))))
-          )
+          ) {
             return
+          }
           if (
             !cancelled.current &&
             draft?.source === value &&
             draft.text !== String(value)
-          )
+          ) {
             onCommit(draft.text)
+          }
 
           cancelled.current = false
 
@@ -116,8 +121,9 @@ export function NumberField({
         step={step}
         value={value}
         onCommit={(text) => {
-          if (text.trim() !== '' && Number.isFinite(Number(text)))
+          if (text.trim() !== '' && Number.isFinite(Number(text))) {
             onChange(Number(text))
+          }
         }}
       />
     </label>

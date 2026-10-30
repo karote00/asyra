@@ -19,7 +19,9 @@ it('admits only nonnegative hierarchy insertion indices and explains append sema
   const move = basicApiContracts.find(
     (contract) => contract.name === 'api_hierarchy_moveElements'
   )
-  if (!move) throw new Error('Missing hierarchy move contract')
+  if (!move) {
+    throw new Error('Missing hierarchy move contract')
+  }
   const request = { elementIds: ['detail'], targetParentId: 'drawing' }
   expect(
     operationInputIssue(
@@ -107,15 +109,21 @@ it('binds every action to the existing public method signature in argument order
     at: string,
     depth = 0
   ) => {
-    if (depth > 5 || !schema || typeof schema !== 'object') return
+    if (depth > 5 || !schema || typeof schema !== 'object') {
+      return
+    }
     const shape = schema as Record<string, unknown>
-    if (type.isUnion() || shape.anyOf || shape.oneOf || shape.$ref) return
+    if (type.isUnion() || shape.anyOf || shape.oneOf || shape.$ref) {
+      return
+    }
     const item = checker.getIndexTypeOfType(type, ts.IndexKind.Number)
     if (shape.type === 'array' && item) {
       requiredMembers(item, shape.items, at + '[]', depth + 1)
       return
     }
-    if (shape.type !== 'object') return
+    if (shape.type !== 'object') {
+      return
+    }
     const properties = shape.properties as Record<string, unknown> | undefined
     const required = new Set(
       Array.isArray(shape.required) ? shape.required : []
@@ -126,22 +134,25 @@ it('binds every action to the existing public method signature in argument order
         !declaration ||
         ts.isMethodSignature(declaration) ||
         ts.isMethodDeclaration(declaration)
-      )
+      ) {
         continue
+      }
       if (
         !(member.flags & ts.SymbolFlags.Optional) &&
         !required.has(member.name)
-      )
+      ) {
         issues.push(
           `${at}.${member.name}: required by owner but optional in delivery`
         )
-      if (properties?.[member.name])
+      }
+      if (properties?.[member.name]) {
         requiredMembers(
           checker.getTypeOfSymbolAtLocation(member, declaration),
           properties[member.name],
           at + '.' + member.name,
           depth + 1
         )
+      }
     }
   }
 
@@ -151,19 +162,24 @@ it('binds every action to the existing public method signature in argument order
     const [file, variable] = sources[owner]
     const source = program.getSourceFile(path.join(root, file))
     expect(source, file).toBeDefined()
-    if (!source) continue
+    if (!source) {
+      continue
+    }
     let type: ts.Type | undefined
     const visit = (node: ts.Node) => {
       if (
         (ts.isVariableDeclaration(node) || ts.isClassDeclaration(node)) &&
         node.name?.getText(source) === variable
-      )
+      ) {
         type = checker.getTypeAtLocation(node)
+      }
       ts.forEachChild(node, visit)
     }
     visit(source)
     expect(type, variable).toBeDefined()
-    if (!type) continue
+    if (!type) {
+      continue
+    }
     for (const entry of basicApiContracts.filter((c) => c.owner === owner)) {
       const property = type.getProperty(entry.method)
       const declaration = property?.valueDeclaration
@@ -192,8 +208,9 @@ it('binds every action to the existing public method signature in argument order
         continue
       }
       const returnType = checker.typeToString(signature.getReturnType())
-      if (['write', 'delete'].includes(entry.effect) && returnType === 'void')
+      if (['write', 'delete'].includes(entry.effect) && returnType === 'void') {
         issues.push(`${entry.name}: mutation owner returns no result`)
+      }
       for (const parameter of signature
         .getParameters()
         .slice(0, entry.parameters.length)) {
@@ -225,22 +242,25 @@ it('binds every action to the existing public method signature in argument order
       if (
         JSON.stringify(params.slice(0, supplied.length)) !==
         JSON.stringify(supplied)
-      )
+      ) {
         issues.push(
           `${owner}.${entry.method}: expected ${params.join(',')} received ${supplied.join(',')}`
         )
+      }
       for (const p of signature.getParameters().slice(supplied.length)) {
         const d = p.valueDeclaration
-        if (d && ts.isParameter(d) && !d.questionToken && !d.initializer)
+        if (d && ts.isParameter(d) && !d.questionToken && !d.initializer) {
           issues.push(`${owner}.${entry.method}: omitted required ${p.name}`)
+        }
       }
     }
   }
-  if (process.env.API_DELIVERY_AUDIT)
+  if (process.env.API_DELIVERY_AUDIT) {
     writeFileSync(
       path.resolve(root, 'tmp/api-owner-audit.json'),
       JSON.stringify(audited, null, 2)
     )
+  }
   expect(issues).toEqual([])
 })
 
@@ -364,7 +384,9 @@ it('admits Fill updates with target IDs and new values without caller snapshots'
     const contract = basicApiContracts.find(
       (contract) => contract.name === name
     )
-    if (!contract) throw new Error(`Missing ${name}`)
+    if (!contract) {
+      throw new Error(`Missing ${name}`)
+    }
     expect(contract.parameters).toEqual(parameters)
     expect(operationInputIssue(input, contract.inputSchema)).toBeUndefined()
     expect(
@@ -390,7 +412,9 @@ it('rejects flattened gradient fields and admits the canonical nested Fill patch
   }
   for (const name of ['api_fill_updateFillFieldsBatch']) {
     const contract = basicApiContracts.find((c) => c.name === name)
-    if (!contract) throw new Error(name)
+    if (!contract) {
+      throw new Error(name)
+    }
     const input = (patch: unknown) =>
       name.endsWith('Batch')
         ? { updates: [{ elementId: 'a', fillId: 'fa', patch }] }
@@ -433,8 +457,9 @@ it('exposes one mutation route for scalar and plural property edits', () => {
     'api_element_setVectorElementPosition',
     'api_element_createElement',
     'api_element_createVectorElement'
-  ])
+  ]) {
     expect(names).not.toContain(name)
+  }
   for (const name of [
     'api_fill_updateFillFieldsBatch',
     'api_fill_updateFillsAtIndex',
@@ -442,8 +467,9 @@ it('exposes one mutation route for scalar and plural property edits', () => {
     'api_stroke_updateStrokeFieldsBatch',
     'api_element_setVectorElementPositions',
     'api_element_createElements'
-  ])
+  ]) {
     expect(names).toContain(name)
+  }
 })
 
 it('keeps every consolidated public method mapped to an executable replacement', () => {
@@ -471,7 +497,9 @@ it('admits ordinary values through the canonical empty-record patch format', () 
   const api = basicApiContracts.find(
     (api) => api.name === 'api_core_patchElementProperties'
   )
-  if (!api) throw new Error('Missing canonical patch operation')
+  if (!api) {
+    throw new Error('Missing canonical patch operation')
+  }
   expect(
     operationInputIssue(
       { patches: [{ elementId: 'a', values: { width: 12 }, records: [] }] },
@@ -484,7 +512,9 @@ it('rejects malformed Stroke field patches before dispatch without requesting ol
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_stroke_updateStrokeFieldsBatch'
   )
-  if (!contract) throw new Error('Missing Stroke batch contract')
+  if (!contract) {
+    throw new Error('Missing Stroke batch contract')
+  }
   const input = (patch: unknown) => ({
     updates: [{ elementId: 'rect', strokeId: 'stroke', patch }]
   })
@@ -507,7 +537,9 @@ it('exposes the complete structured point selection contract', () => {
   const contract = basicApiContracts.find(
     (c) => c.name === 'api_selection_selectVectorPoint'
   )
-  if (!contract) throw new Error('Missing point selection contract')
+  if (!contract) {
+    throw new Error('Missing point selection contract')
+  }
   for (const target of ['anchor', 'inHandle', 'outHandle']) {
     expect(
       operationInputIssue(
@@ -599,7 +631,9 @@ it('requires fresh document identities in recipes but keeps field names and new 
       (contract) => contract.name === test.name
     )
     expect(source, test.name).toBeDefined()
-    if (!source) throw new Error('Missing contract')
+    if (!source) {
+      throw new Error('Missing contract')
+    }
     const dependency = createAiToolContract({
       name: source.name,
       description: source.description,
@@ -646,10 +680,11 @@ it('requires fresh document identities in recipes but keeps field names and new 
         delete node.path
         node.value = 'previous-document-id'
       }
-      if (node.fields)
+      if (node.fields) {
         Object.values(
           node.fields as Record<string, Record<string, unknown>>
         ).forEach(replace)
+      }
     }
     Object.values(captured as Record<string, Record<string, unknown>>).forEach(
       replace
@@ -671,8 +706,9 @@ it('hands canonical created identities to a later selection without capturing do
   const selection = basicApiContracts.find(
     (item) => item.name === 'api_selection_selectElements'
   )
-  if (!creation || !selection)
+  if (!creation || !selection) {
     throw new Error('Missing public creation or selection')
+  }
   const contracts = [creation, selection].map((source) =>
     createAiToolContract({
       name: source.name,
@@ -755,22 +791,26 @@ it('delivers computed selection owner limits before invocation without restricti
   const contract = basicApiContracts.find(
     (c) => c.name === 'api_core_getElementComputedData'
   )
-  if (!contract) throw new Error('Missing computed read owner')
+  if (!contract) {
+    throw new Error('Missing computed read owner')
+  }
   const schema = contract.inputSchema
   for (const fields of [
     Array.from({ length: 65 }, (_, i) => `field-${i}`),
     ['x'.repeat(129)],
     ['']
-  ])
+  ]) {
     expect(
       operationInputIssue({ elementId: 'drawing', fields }, schema)
     ).toBeTruthy()
+  }
   for (const input of [
     { elementId: 'drawing' },
     { elementId: 'drawing', fields: [] },
     { elementId: 'drawing', fields: ['x', 'fills'] }
-  ])
+  ]) {
     expect(operationInputIssue(input, schema)).toBeUndefined()
+  }
 })
 
 it.each([
@@ -780,7 +820,9 @@ it.each([
   '%s delivers required record patches consistently with the canonical owner',
   (name) => {
     const contract = basicApiContracts.find((c) => c.name === name)
-    if (!contract) throw new Error('Missing patch owner')
+    if (!contract) {
+      throw new Error('Missing patch owner')
+    }
     const schema = contract.inputSchema
     expect(
       operationInputIssue(
@@ -797,7 +839,8 @@ it.each([
           records: [{ key: 'fills', remove: ['fill-id'] }]
         }
       ]
-    ])
+    ]) {
       expect(operationInputIssue({ patches }, schema)).toBeUndefined()
+    }
   }
 )

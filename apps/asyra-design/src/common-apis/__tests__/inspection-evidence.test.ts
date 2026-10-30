@@ -76,8 +76,9 @@ describe('canonical inspection evidence lifetime', () => {
     expect(observe).not.toHaveBeenCalled()
     const first = await evidence.capture(capture)
     expect(first.available).toBe(true)
-    for (let i = 0; i < 100; i++)
+    for (let i = 0; i < 100; i++) {
       expect(evidence.isCurrent(first.evidence)).toBe(true)
+    }
     expect(capture).toHaveBeenCalledTimes(1)
     expect(observe).toHaveBeenCalledTimes(1)
     change()
@@ -335,7 +336,9 @@ it('keeps a target capture current across an unrelated canonical edit', async ()
 it('retains attachment checks by actual parent geometry and reads changed signatures only once', async () => {
   let width = 40
   observed.getElementMetadata.mockImplementation((id: string) => {
-    if (id === 'workspace') return { id, type: 'group' }
+    if (id === 'workspace') {
+      return { id, type: 'group' }
+    }
     return { id, type: 'group', parentId: id === 'child-a' ? 'a' : 'workspace' }
   })
   observed.getElementComputedData.mockImplementation((...args: unknown[]) => ({
@@ -358,7 +361,9 @@ it('retains attachment checks by actual parent geometry and reads changed signat
   expect(evidence.isCurrent(b.evidence)).toBe(true)
   const reads = observed.getElementComputedData.mock.calls.length
   expect(reads).toBe(1)
-  for (let i = 0; i < 10; i++) expect(evidence.isCurrent(a.evidence)).toBe(true)
+  for (let i = 0; i < 10; i++) {
+    expect(evidence.isCurrent(a.evidence)).toBe(true)
+  }
   expect(observed.getElementComputedData).toHaveBeenCalledTimes(reads)
   expect(observed.getElementData).not.toHaveBeenCalled()
   width = 60
@@ -519,29 +524,39 @@ it.each([
         }
         const currentFault = validationFault
         validationFault = undefined
-        if (currentFault === 'duplicate')
+        if (currentFault === 'duplicate') {
           reply.actionResults.push(reply.actionResults[0])
-        if (currentFault === 'missing') reply.actionResults.shift()
-        if (currentFault === 'wrong-name')
+        }
+        if (currentFault === 'missing') {
+          reply.actionResults.shift()
+        }
+        if (currentFault === 'wrong-name') {
           reply.actionResults[0].actionName = 'wrong'
-        if (currentFault === 'invalid-without-version')
-          (reply.actionResults[0].result as Record<string, unknown>).current =
+        }
+        if (currentFault === 'invalid-without-version') {
+          ;(reply.actionResults[0].result as Record<string, unknown>).current =
             false
+        }
         if (
           currentFault === 'missing-version' ||
           currentFault === 'invalid-without-version'
-        )
+        ) {
           delete (reply.actionResults[0].result as Record<string, unknown>)
             .validatedAt
-        if (currentFault === 'extra')
+        }
+        if (currentFault === 'extra') {
           reply.actionResults.push({
             ...reply.actionResults[0],
             actionId: 'unexpected'
           })
-        if (currentFault === 'cancel') controller.abort()
-        if (currentFault === 'throw')
+        }
+        if (currentFault === 'cancel') {
+          controller.abort()
+        }
+        if (currentFault === 'throw') {
           throw new Error('Validation transport unavailable')
-        if (currentFault === 'failure')
+        }
+        if (currentFault === 'failure') {
           return {
             ...reply,
             failure: {
@@ -555,6 +570,7 @@ it.each([
               contextFresh: false
             }
           }
+        }
         return reply
       },
       { reviewTargetId: 'building' }

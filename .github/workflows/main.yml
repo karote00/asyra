@@ -161,7 +161,7 @@ jobs:
           name: ci-scope-evidence
           path: tmp/ci-scope
 
-      - name: Execute selected lint and repository checks
+      - name: Execute full yarn lint and selected repository checks
         id: selected_checks
         env:
           CI_SCOPE_EVIDENCE_FILE: tmp/ci-scope/ci-scope-evidence.json

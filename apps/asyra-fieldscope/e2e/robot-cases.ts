@@ -8,24 +8,27 @@ export async function runRobotWorkspace(
   locale: 'zh-TW' | 'en'
 ) {
   await page.setViewportSize({ width, height: width === 390 ? 844 : 1100 })
-  if (usesCpuSoftwareRenderer)
+  if (usesCpuSoftwareRenderer) {
     await page.emulateMedia({ reducedMotion: 'reduce' })
+  }
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  if (locale === 'en')
+  if (locale === 'en') {
     await page
       .getByRole('combobox', { name: '語言', exact: true })
       .selectOption('en')
+  }
   const en = locale === 'en'
-  if (width < 1100)
+  if (width < 1100) {
     await page
       .getByRole('button', {
         name: en ? 'Open editor panel' : '展開編輯面板',
         exact: true
       })
       .click()
+  }
   await page
     .getByRole('tab', { name: en ? 'Robot' : '機器人', exact: true })
     .click()
@@ -56,11 +59,12 @@ export async function runRobotWorkspace(
   await expect(
     page.getByText(en ? 'Route unverified' : '路線待確認', { exact: true })
   ).toBeVisible()
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('robot-editor.png'),
       fullPage: false
     })
+  }
   const panel = page.locator('#configuration-panel .workspace-panel-content')
   await panel.evaluate((node) => {
     node.scrollTop = node.scrollHeight
@@ -76,36 +80,42 @@ export async function runRobotWorkspace(
     for (const node of document.querySelectorAll<HTMLElement>(
       '#configuration-panel input, #configuration-panel select, #configuration-panel button'
     )) {
-      if (!node.checkVisibility()) continue
+      if (!node.checkVisibility()) {
+        continue
+      }
       const r = node.getBoundingClientRect()
-      if (r.left < 0 || r.right > innerWidth + 1)
+      if (r.left < 0 || r.right > innerWidth + 1) {
         issues.push(
           node.getAttribute('aria-label') || node.textContent || 'control'
         )
-      if (node.clientWidth && node.scrollWidth > node.clientWidth + 2)
+      }
+      if (node.clientWidth && node.scrollWidth > node.clientWidth + 2) {
         issues.push('clipped control')
+      }
     }
     return issues
   })
   expect(overflow).toEqual([])
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('robot-survey.png'),
       fullPage: false
     })
+  }
   await page
     .getByRole('button', {
       name: en ? 'Close editor panel' : '收合編輯面板',
       exact: true
     })
     .click()
-  if (width >= 1100)
+  if (width >= 1100) {
     await page
       .getByRole('button', {
         name: en ? 'Close layers panel' : '收合圖層面板',
         exact: true
       })
       .click()
+  }
   const workspace = page.locator('.scene-workspace')
   await workspace.evaluate(async (node) => {
     await Promise.all(
@@ -117,12 +127,15 @@ export async function runRobotWorkspace(
   await expect(workspace).toHaveAttribute('data-left-open', 'false')
   await expect(workspace).toHaveAttribute('data-right-open', 'false')
   const scene = await page.getByTestId('scene').boundingBox()
-  if (!scene) throw new Error('Missing scene bounds after closing the panels')
+  if (!scene) {
+    throw new Error('Missing scene bounds after closing the panels')
+  }
   expect(scene.width).toBeGreaterThan(width - 80)
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('robot-closeup.png'),
       fullPage: false
     })
+  }
   expect(errors).toEqual([])
 }

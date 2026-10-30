@@ -215,8 +215,9 @@ describe('local semantic design tools', () => {
   it('requires an explicit root choice and exposes both container types without promising unsupported features', () => {
     const definition = createLocalDesignTools(actions).definitions[0]
     const schema = definition.inputSchema
-    if (!('draft' in schema.properties) || !('$defs' in schema))
+    if (!('draft' in schema.properties) || !('$defs' in schema)) {
       throw new Error('Expected preparation schema')
+    }
     expect(schema.properties.draft.required).toContain('type')
     expect(schema.properties.draft.properties.type.enum).toEqual([
       'group',
@@ -286,8 +287,9 @@ describe('local semantic design tools', () => {
         await tools.call('prepare_design', { draft: draft() }, signal())
       )
     ).toMatchObject({ available: true })
-    for (let i = 0; i < 6; i++)
+    for (let i = 0; i < 6; i++) {
       await tools.call('prepare_design', { draft: {} }, signal())
+    }
     expect(
       JSON.parse(
         await tools.call('prepare_design', { draft: draft() }, signal())
@@ -421,8 +423,9 @@ it('advertises structured construction and prevents overflow application', async
     'projection',
     'projected-face',
     'tolerance'
-  ])
+  ]) {
     expect(schema).toContain(field)
+  }
   const receipt = JSON.parse(
     await tools.call(
       'prepare_design',
@@ -477,7 +480,9 @@ it('compiles a ready repeated stage while whole-structure review remains pending
   const stage = designPreparationExamples.find((example) =>
     example.draft.children.some((child) => child.type === 'pattern')
   )
-  if (!stage) throw new Error('Missing pattern example')
+  if (!stage) {
+    throw new Error('Missing pattern example')
+  }
   const result = JSON.parse(await tools.call('prepare_design', stage, signal()))
   expect(result.available).toBe(true)
   expect(result.applicable).toBe(true)
@@ -590,8 +595,9 @@ it('reports all independent input mistakes with paths before compiling geometry'
     'children[0].rings',
     'children[1].height',
     'children[1].width'
-  ])
+  ]) {
     expect(result.message).toContain(path)
+  }
   expect(result.recovery).toBe('correct_input')
   expect(compile).not.toHaveBeenCalled()
 })
@@ -757,7 +763,9 @@ it('keeps representation examples on their actual geometry and layout owners', a
         (type !== 'projected-face' || example.draft.children.length === 1) &&
         example.draft.children.some((child) => child.type === type)
     )
-    if (!example) throw new Error(`Missing example for ${type}`)
+    if (!example) {
+      throw new Error(`Missing example for ${type}`)
+    }
     const receipt = JSON.parse(
       await tools.call('prepare_design', example, signal())
     )
@@ -803,12 +811,18 @@ it('repairs representative live input failures without research, compilation ret
     const invalid = structuredClone(valid)
     const keys = mutation.path.split('.')
     const field = keys.pop()
-    if (!field) throw new Error('Expected test mutation field')
+    if (!field) {
+      throw new Error('Expected test mutation field')
+    }
     let owner: unknown = invalid
-    for (const key of keys) owner = (owner as Record<string, unknown>)[key]
-    if ('value' in mutation)
-      (owner as Record<string, unknown>)[field] = mutation.value
-    else Reflect.deleteProperty(owner as object, field)
+    for (const key of keys) {
+      owner = (owner as Record<string, unknown>)[key]
+    }
+    if ('value' in mutation) {
+      ;(owner as Record<string, unknown>)[field] = mutation.value
+    } else {
+      Reflect.deleteProperty(owner as object, field)
+    }
     const failure = JSON.parse(
       await tools.call('prepare_design', invalid, signal())
     )
@@ -874,7 +888,7 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
     tools,
     execute
   )
-  for (const x of [10, 20])
+  for (const x of [10, 20]) {
     await operations.call(
       'execute_design_batch',
       {
@@ -893,6 +907,7 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
       },
       signal()
     )
+  }
   expect(compile).toHaveBeenCalledTimes(1)
   expect(execute).toHaveBeenCalledTimes(2)
   expect(
@@ -901,8 +916,9 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
     AiActionNames.UPDATE_DESIGN_ELEMENT,
     AiActionNames.UPDATE_DESIGN_ELEMENT
   ])
-  for (const [batch] of execute.mock.calls)
+  for (const [batch] of execute.mock.calls) {
     expect(batch.actions[0].arguments).toMatchObject({ elementId: expected[0] })
+  }
 })
 
 it('defaults application to compact receipts while retaining all prepared identity references', async () => {
@@ -935,8 +951,9 @@ it.each([false, true])(
     const example = designPreparationExamples.find((item) =>
       item.draft.children.some((child) => child.type === 'vector-pattern')
     )
-    if (!example || !('sharedFills' in example.draft))
+    if (!example || !('sharedFills' in example.draft)) {
       throw new Error('Missing shared-fill vector pattern example')
+    }
     const child = example.draft.children[0]
     const input = {
       draft: {
@@ -1157,7 +1174,9 @@ it('uses the same vector discriminator in reusable templates without changing ex
   const definition = tools.definitions.find(
     (item) => item.name === 'prepare_design'
   )
-  if (!definition) throw new Error('Missing preparation definition')
+  if (!definition) {
+    throw new Error('Missing preparation definition')
+  }
   const result = await invokeLocalTool(tools, definition, source, signal())
   const receipt = JSON.parse(result.text)
   expect(receipt).toMatchObject({ available: true, elementCount: 449 })
@@ -1240,7 +1259,9 @@ it('admits a declarative surface grid through native and public schemas without 
   const definition = tools.definitions.find(
     (tool) => tool.name === 'prepare_design'
   )
-  if (!definition) throw new Error('Preparation tool is not registered')
+  if (!definition) {
+    throw new Error('Preparation tool is not registered')
+  }
   const input = {
     draft: {
       type: 'group',
@@ -1318,14 +1339,21 @@ it('admits a declarative surface grid through native and public schemas without 
   for (const issue of ['nonplanar', 'crossed', 'degenerate', 'uv'] as const) {
     const invalid = structuredClone(input)
     const grid = invalid.draft.children[0]
-    if (issue === 'nonplanar') grid.boundary[2].y = 10
-    if (issue === 'crossed')
-      [grid.boundary[1], grid.boundary[2]] = [
+    if (issue === 'nonplanar') {
+      grid.boundary[2].y = 10
+    }
+    if (issue === 'crossed') {
+      ;[grid.boundary[1], grid.boundary[2]] = [
         grid.boundary[2],
         grid.boundary[1]
       ]
-    if (issue === 'degenerate') grid.boundary[1] = { ...grid.boundary[0] }
-    if (issue === 'uv') grid.motifs[0].vertices[0].u = -0.1
+    }
+    if (issue === 'degenerate') {
+      grid.boundary[1] = { ...grid.boundary[0] }
+    }
+    if (issue === 'uv') {
+      grid.motifs[0].vertices[0].u = -0.1
+    }
     const response = await invokeLocalTool(
       tools,
       definition,
@@ -1357,10 +1385,11 @@ it('retains a large exact target subset once and reuses opaque handles in source
     targetSetId: retained.targets[0].targetSetId
   }
   expect(JSON.stringify(reference).length).toBeLessThan(200)
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     expect(tools.resolveTargets(reference)).toEqual(
       keys.map((key) => keyToId[key])
     )
+  }
   tools.resolveTargets(reference).pop()
   expect(tools.resolveTargets(reference)).toHaveLength(17004)
   expect(() =>
@@ -1495,10 +1524,13 @@ it('discovers and invokes world material preparation through current schemas and
     !source ||
     !('linearFields' in source.draft) ||
     !('glass' in source.draft.linearFields)
-  )
+  ) {
     throw new Error('Missing field example')
+  }
   const definition = tools.definitions.find((d) => d.name === 'prepare_design')
-  if (!definition) throw new Error('Missing prepare definition')
+  if (!definition) {
+    throw new Error('Missing prepare definition')
+  }
   expect(operationInputIssue(source, definition.inputSchema)).toBeUndefined()
   expect(
     operationInputIssue(source, nativeToolInputSchema(definition.inputSchema))
@@ -1517,8 +1549,9 @@ it('discovers and invokes world material preparation through current schemas and
     admitPreparedDesignDelivery(JSON.parse(JSON.stringify(design)))
   ).toEqual(JSON.parse(JSON.stringify(canonical)))
   const invalid = { draft: structuredClone(source.draft) }
-  if (!('glass' in invalid.draft.linearFields))
+  if (!('glass' in invalid.draft.linearFields)) {
     throw new Error('Missing cloned field')
+  }
   Object.assign(invalid.draft.linearFields.glass, {
     end: invalid.draft.linearFields.glass.start
   })
@@ -1539,7 +1572,9 @@ it('executes the multi-face representation example with common material, native 
   const example = designPreparationExamples.find(
     (e) => e.draft.name === 'Repeated visible detail'
   )
-  if (!example) throw new Error('Missing multi-face example')
+  if (!example) {
+    throw new Error('Missing multi-face example')
+  }
   const draft = example.draft as unknown as {
     children: { type: string; faces?: unknown[] }[]
   }
@@ -1590,7 +1625,9 @@ it('hands a material revision to its material-only consumer and reuses the same 
   const materialDefinition = owner.definitions.find(
     (tool) => tool.name === 'prepare_material_revision'
   )
-  if (!materialDefinition) throw new Error('Missing material definition')
+  if (!materialDefinition) {
+    throw new Error('Missing material definition')
+  }
   const example = (materialDefinition.inputSchema as { examples: unknown[] })
     .examples[0]
   expect(
@@ -1652,7 +1689,9 @@ it('hands a material revision to its material-only consumer and reuses the same 
     detailRequired: false
   })
   const image = review.inspect('original-surface', true, true)
-  if (!image) throw new Error('Missing image')
+  if (!image) {
+    throw new Error('Missing image')
+  }
   const bound = review.bindReview('visual', [
     { criterionId: 'surface', inspectionIds: [image.inspectionId] }
   ])
@@ -1665,7 +1704,9 @@ it('hands a material revision to its material-only consumer and reuses the same 
     }))
   })
   const guidance = review.correctionContext().discovery
-  if (!guidance) throw new Error('Missing discovery handoff')
+  if (!guidance) {
+    throw new Error('Missing discovery handoff')
+  }
   const query = createLocalOperationTools(
     actions,
     owner,
@@ -1760,7 +1801,9 @@ it.each([10000, 2000])(
     const definition = tools.definitions.find(
       (tool) => tool.name === 'prepare_design'
     )
-    if (!definition) throw new Error('Missing preparation definition')
+    if (!definition) {
+      throw new Error('Missing preparation definition')
+    }
     const reply = await invokeLocalTool(
       {
         ...tools,
@@ -1800,7 +1843,9 @@ it('keeps exhausted source retention a genuine no-write failure', async () => {
   const definition = tools.definitions.find(
     (tool) => tool.name === 'prepare_design'
   )
-  if (!definition) throw new Error('Missing preparation definition')
+  if (!definition) {
+    throw new Error('Missing preparation definition')
+  }
   for (let index = 0; index < 4; index++) {
     const plan = await invokeLocalTool(
       {

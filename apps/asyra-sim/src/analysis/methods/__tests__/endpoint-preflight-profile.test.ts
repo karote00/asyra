@@ -19,7 +19,9 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
     const pair = snapshot.pairs.find(
       (p) => p.a.bodyId === 'example:joint-2' && p.b.bodyId === 'obstacle-11'
     )
-    if (!pair) throw new Error('Missing original ordered pair')
+    if (!pair) {
+      throw new Error('Missing original ordered pair')
+    }
     const settings = {
       ...snapshot.method.settings,
       threshold: snapshot.rule.minimumClearance,
@@ -46,8 +48,9 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const observe: typeof sample = (a, b, origin, previous) => {
           const result = sample(a, b, origin, previous)
           if (origin.segment === 198 && origin.time === origin.start) {
-            if (!result || result.exhausted || source)
+            if (!result || result.exhausted || source) {
               throw new Error('Incomplete or repeated source')
+            }
             expect(origin.originalRoot).toBe(true)
             source = { a, b, evidence: result.evidence, time: origin.time }
           }
@@ -65,7 +68,9 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       expect(result.coverage).toBe('complete')
       expect(result.leaves).toHaveLength(1)
       expect(result.leaves[0].penetration).toBe(false)
-      if (!source) throw new Error('Missing actual first source')
+      if (!source) {
+        throw new Error('Missing actual first source')
+      }
       return { source, result, work: context.work }
     }
     const context = new OriginalMeshQuery()
@@ -166,7 +171,9 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const collider = body?.colliders.find(
           (collider) => collider.id === reference.colliderId
         )
-        if (!collider) throw new Error('Missing canonical collider')
+        if (!collider) {
+          throw new Error('Missing canonical collider')
+        }
         return {
           geometry: collider.geometry,
           pose: ops.compose(poses[side], ops.fromPose(collider.pose))
@@ -183,8 +190,9 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
     for (const [side, shape] of [source.a, source.b].entries()) {
       expect(endpoint[side].geometry).toBe(shape.geometry)
       expect(whole[side].geometry).toBe(shape.geometry)
-      if (shape.geometry.kind !== 'mesh')
+      if (shape.geometry.kind !== 'mesh') {
         throw new Error('Expected immutable source mesh')
+      }
       expect(
         Object.isFrozen(shape.geometry) &&
           Object.isFrozen(shape.geometry.positions) &&
@@ -219,7 +227,9 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         settings.maxIterations
       )
     } catch (error) {
-      if (!(error instanceof MeshWorkLimit)) throw error
+      if (!(error instanceof MeshWorkLimit)) {
+        throw error
+      }
       status = 'exhausted'
       report({ certificateWork: context.work - before })
       return

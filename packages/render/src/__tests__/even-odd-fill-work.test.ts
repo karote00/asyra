@@ -91,7 +91,9 @@ it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
       gradient(type, 0.7)
     ])
     const changed = gradient(type)
-    if (!changed.gradient) throw new Error('Missing gradient')
+    if (!changed.gradient) {
+      throw new Error('Missing gradient')
+    }
     changed.gradient.gradientHandles[1] = { x: 0.7, y: 1 }
     const updated = raster([changed])
     for (const canvas of [first, stacked, updated]) {
@@ -111,7 +113,9 @@ it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
 
 it('prepares invariant gradient inputs once per fill instead of once per pixel', () => {
   const fill = gradient('linear')
-  if (!fill.gradient) throw new Error('Missing gradient')
+  if (!fill.gradient) {
+    throw new Error('Missing gradient')
+  }
   let typeReads = 0
   Object.defineProperty(fill.gradient, 'gradientType', {
     get() {
@@ -146,7 +150,9 @@ it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
   'prepares %s handle coordinates once per raster',
   (type) => {
     const fill = gradient(type)
-    if (!fill.gradient) throw new Error('Missing gradient')
+    if (!fill.gradient) {
+      throw new Error('Missing gradient')
+    }
     let reads = 0
     fill.gradient.gradientHandles = fill.gradient.gradientHandles.map(
       ({ x, y }) => ({

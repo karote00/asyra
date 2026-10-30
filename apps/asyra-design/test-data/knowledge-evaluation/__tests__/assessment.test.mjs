@@ -107,11 +107,12 @@ function fixture() {
     reference,
     output,
     invoke(value = assessment, args) {
-      if (value)
+      if (value) {
         fs.writeFileSync(
           path.join(directory, 'assessment.json'),
           JSON.stringify(value)
         )
+      }
       return spawnSync(
         process.execPath,
         [

@@ -182,7 +182,9 @@ it('coalesces exact crossed deadlines while pause excludes elapsed motion time',
   expect(later.nextDeadline).toBe(180)
   expect(later.run?.activeSeconds).toBe(10)
   expect(later.run?.pose).toBe(paused.run?.pose)
-  if (!later.run) throw new Error('Missing run')
+  if (!later.run) {
+    throw new Error('Missing run')
+  }
   const input = resumeEvidence({
     runId: later.run.id,
     generation,
@@ -233,8 +235,9 @@ it('does no A, geometry or accumulated transition work during reads or clock cha
     lane = vi.spyOn(lanes, 'assessHarvestLane')
   try {
     const initial = session.getSnapshot()
-    for (let i = 0; i < 10; i++)
+    for (let i = 0; i < 10; i++) {
       expect(session.getSnapshot() === initial).toBe(true)
+    }
     session.advance(initial.generation, 60)
     const next = session.getSnapshot()
     expect(next.pendingPatrol).toBe(true)
@@ -261,7 +264,9 @@ it('rejects wrong or expired resume evidence and keeps held decisions paused', a
   const generation = session.getSnapshot().generation
   session.pause(generation)
   const paused = session.getSnapshot()
-  if (!paused.run) throw new Error('Missing run')
+  if (!paused.run) {
+    throw new Error('Missing run')
+  }
   const input = resumeEvidence({ runId: paused.run.id, generation, now: 0 })
   for (const patch of [
     { runId: 'old-run' },
@@ -269,10 +274,11 @@ it('rejects wrong or expired resume evidence and keeps held decisions paused', a
     { validUntil: 0 },
     { source: 'hardware' },
     { sceneRevision: -1 }
-  ])
+  ]) {
     await expect(
       session.resume(generation, { ...input, ...patch } as ResumeEvidence)
     ).rejects.toThrow()
+  }
   expect(resumeProvider).not.toHaveBeenCalled()
   await session.resume(generation, input)
   expect(session.getSnapshot().lifecycle).toBe('paused')
@@ -293,14 +299,21 @@ it('cannot apply a late accepted Resume after cancel or an intervening clock', a
     const generation = session.getSnapshot().generation
     session.pause(generation)
     const paused = session.getSnapshot()
-    if (!paused.run) throw new Error('Missing run')
+    if (!paused.run) {
+      throw new Error('Missing run')
+    }
     const pending = session.resume(
       generation,
       resumeEvidence({ runId: paused.run.id, generation, now: 0 })
     )
-    if (!request || !finish) throw new Error('Missing pending provider')
-    if (change === 'cancel') session.cancel(generation)
-    else session.advance(generation, 1)
+    if (!request || !finish) {
+      throw new Error('Missing pending provider')
+    }
+    if (change === 'cancel') {
+      session.cancel(generation)
+    } else {
+      session.advance(generation, 1)
+    }
     const changed = session.getSnapshot()
     finish(await resumeClear(request))
     await pending
@@ -319,7 +332,9 @@ it('requires fault acknowledgement and a fresh explicit Resume without automatic
   const generation = session.getSnapshot().generation
   session.pause(generation)
   const paused = session.getSnapshot()
-  if (!paused.run) throw new Error('Missing run')
+  if (!paused.run) {
+    throw new Error('Missing run')
+  }
   const input = resumeEvidence({ runId: paused.run.id, generation, now: 0 })
   await session.resume(generation, input)
   expect(session.getSnapshot().lifecycle).toBe('faulted')
@@ -348,13 +363,19 @@ it.each([false, true])(
     const generation = session.getSnapshot().generation
     session.pause(generation)
     const run = session.getSnapshot().run
-    if (!run) throw new Error('Missing run')
+    if (!run) {
+      throw new Error('Missing run')
+    }
     const pending = session.resume(
       generation,
       resumeEvidence({ runId: run.id, generation, now: 0 })
     )
-    if (!request || !finish) throw new Error('Missing pending provider')
-    if (clockChanged) session.advance(generation, 1)
+    if (!request || !finish) {
+      throw new Error('Missing pending provider')
+    }
+    if (clockChanged) {
+      session.advance(generation, 1)
+    }
     retire()
     finish(await resumeClear(request))
     await pending
@@ -392,12 +413,16 @@ it('closes retired sources even when the pending provider rejects', async () => 
   const generation = session.getSnapshot().generation
   session.pause(generation)
   const run = session.getSnapshot().run
-  if (!run) throw new Error('Missing run')
+  if (!run) {
+    throw new Error('Missing run')
+  }
   const pending = session.resume(
     generation,
     resumeEvidence({ runId: run.id, generation, now: 0 })
   )
-  if (!reject) throw new Error('Missing provider')
+  if (!reject) {
+    throw new Error('Missing provider')
+  }
   retire()
   reject(new Error('query failed'))
   await expect(pending).rejects.toThrow('query failed')
@@ -409,17 +434,24 @@ it('rejects copied or expired provider decisions and detaches caller resume inpu
   for (const mode of ['copied', 'expired', 'extended', 'fresh'] as const) {
     const { session } = await setup(async (request) => {
       const result = await resumeClear(request)
-      if (mode === 'copied') return { ...result, request: { ...request } }
-      if (mode === 'expired') return { ...result, validUntil: request.now }
-      if (mode === 'extended')
+      if (mode === 'copied') {
+        return { ...result, request: { ...request } }
+      }
+      if (mode === 'expired') {
+        return { ...result, validUntil: request.now }
+      }
+      if (mode === 'extended') {
         return { ...result, validUntil: request.evidence.validUntil + 1 }
+      }
       return result
     })
     session.start(session.getSnapshot().generation, dispatchEvidence())
     const generation = session.getSnapshot().generation
     session.pause(generation)
     const run = session.getSnapshot().run
-    if (!run) throw new Error('Missing run')
+    if (!run) {
+      throw new Error('Missing run')
+    }
     const input = { ...resumeEvidence({ runId: run.id, generation, now: 0 }) }
     const pending = session.resume(generation, input)
     input.validUntil = 0
@@ -441,10 +473,11 @@ it('produces the same clock and ordered transition evidence from identical inten
     session.advance(generation, 180)
     const snapshot = session.getSnapshot()
     const events: string[] = []
-    for (let node = snapshot.transition; node; node = node.previous)
+    for (let node = snapshot.transition; node; node = node.previous) {
       events.unshift(
         `${node.sequence}:${node.time}:${node.event}:${node.runId}`
       )
+    }
     summaries.push({
       generation,
       now: snapshot.now,

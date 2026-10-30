@@ -20,8 +20,9 @@ describe('four connected greenhouses in source metres', () => {
       ])
       expect(strips[0].x).toBeCloseTo(bay * 7 + 0.35)
       expect(strips[6].x + strips[6].width).toBeCloseTo((bay + 1) * 7 - 0.35)
-      for (let i = 1; i < strips.length; i++)
+      for (let i = 1; i < strips.length; i++) {
         expect(strips[i].x).toBeCloseTo(strips[i - 1].x + strips[i - 1].width)
+      }
     }
     expect(layout.passages).toEqual([
       { x: 6.65, width: 0.7 },

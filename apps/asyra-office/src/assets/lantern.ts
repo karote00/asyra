@@ -11,9 +11,15 @@ function profile(stations: number[][], lastDerivative = 0): number[][] {
   const h = stations.slice(1).map((s, i) => s[0] - stations[i][0])
   const d = h.map((v, i) => (stations[i + 1][1] - stations[i][1]) / v)
   const slopes = stations.map((_, i) => {
-    if (i === 0) return 0
-    if (i === stations.length - 1) return lastDerivative
-    if (d[i - 1] * d[i] <= 0) return 0
+    if (i === 0) {
+      return 0
+    }
+    if (i === stations.length - 1) {
+      return lastDerivative
+    }
+    if (d[i - 1] * d[i] <= 0) {
+      return 0
+    }
     const a = 2 * h[i] + h[i - 1],
       b = h[i] + 2 * h[i - 1]
     return (a + b) / (a / d[i - 1] + b / d[i])
@@ -51,8 +57,9 @@ function prism(bottom: Vec[], top: Vec[]): Mesh {
     const j = (i + 1) % n
     m.indices.push(i, j, j + n, i, j + n, i + n)
   }
-  for (let i = 1; i < n - 1; i++)
+  for (let i = 1; i < n - 1; i++) {
     m.indices.push(0, i + 1, i, n, n + i, n + i + 1)
+  }
   return m
 }
 const square = (half: number, z: number): Vec[] => [
@@ -71,12 +78,13 @@ export function lantern(): AssetPart[] {
     [0, 0],
     ...requiredSpecValue(s.foot, 's.foot').latheZRadiusMetres
   ])
-  for (const c of requiredSpecValue(s.collars, 's.collars'))
+  for (const c of requiredSpecValue(s.collars, 's.collars')) {
     revolve(
       c.partId,
       c.latheZRadiusMetres,
       c.partId === 'foot-collar' ? 0x756344 : metal
     )
+  }
   const shaft = requiredSpecValue(s.shaft, 's.shaft')
   p.push(
     part(

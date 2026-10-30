@@ -22,10 +22,13 @@ test('structural review records the actual hardware renderer and enlarged walls'
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const graphics = await canvas.evaluate((node) => {
     const gl = (node as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost())
+    if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
+    }
     const extension = gl.getExtension('WEBGL_debug_renderer_info')
-    if (!extension) throw new Error('Cannot verify the graphics backend')
+    if (!extension) {
+      throw new Error('Cannot verify the graphics backend')
+    }
     return {
       renderer: String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)),
       vendor: String(gl.getParameter(extension.UNMASKED_VENDOR_WEBGL)),

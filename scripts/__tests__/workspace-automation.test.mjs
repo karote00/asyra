@@ -6,6 +6,7 @@ import path from 'node:path'
 import test from 'node:test'
 import { runInNewContext } from 'node:vm'
 import yaml from 'js-yaml'
+import ts from 'typescript'
 import { fileURLToPath } from 'node:url'
 
 import {
@@ -130,17 +131,23 @@ test('workspace test:ci contracts cannot turn test failures into successful skip
     for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {
       withFileTypes: true
     })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
       const manifestPath = path.join(
         repositoryRoot,
         root,
         entry.name,
         'package.json'
       )
-      if (!fs.existsSync(manifestPath)) continue
+      if (!fs.existsSync(manifestPath)) {
+        continue
+      }
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
       const task = manifest.scripts?.['test:ci']
-      if (!task) continue
+      if (!task) {
+        continue
+      }
       assert.doesNotMatch(
         task,
         /\|\|\s*echo\s+['"]No test files found/u,
@@ -175,12 +182,13 @@ test('root E2E commands name the app and separate local from CI runners', () => 
       `yarn workspace @asyra/${app} test:e2e`,
       `${app} local E2E command`
     )
-    if (manifest.scripts['test:e2e:ci'])
+    if (manifest.scripts['test:e2e:ci']) {
       assert.equal(
         root.scripts[`test:e2e:${app}:ci`],
         `yarn workspace @asyra/${app} test:e2e:ci`,
         `${app} CI E2E command`
       )
+    }
   }
 })
 
@@ -423,10 +431,46 @@ test('standard manifest E2E owners use the runner Chrome in CI and locally', () 
   const workspaceRunner = readText('scripts/run-workspace-checks.mjs')
   assert.match(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath/)
   assert.match(workspaceRunner, /reportReadSuccessfully = false/)
-  assert.match(
+  const source = ts.createSourceFile(
+    'run-workspace-checks.mjs',
     workspaceRunner,
-    /if \(reportReadSuccessfully\) fs\.rmSync\(reportPath, \{ force: true \}\)/
+    ts.ScriptTarget.Latest,
+    true
   )
+  const cleanupBlocks = []
+  const visit = (node) => {
+    if (
+      ts.isTryStatement(node) &&
+      node.finallyBlock?.getText(source).includes('reportReadSuccessfully')
+    ) {
+      cleanupBlocks.push(node.finallyBlock.getText(source))
+    }
+
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  assert.equal(cleanupBlocks.length, 1)
+  for (const reportReadSuccessfully of [true, false]) {
+    const removed = []
+    const diagnostics = []
+    runInNewContext(cleanupBlocks[0], {
+      reportReadSuccessfully,
+      reportPath: 'report.json',
+      fs: { rmSync: (file, options) => removed.push([file, options.force]) },
+      console: { error: (message) => diagnostics.push(message) }
+    })
+
+    assert.deepEqual(
+      removed,
+      reportReadSuccessfully ? [['report.json', true]] : []
+    )
+    assert.deepEqual(
+      diagnostics,
+      reportReadSuccessfully
+        ? []
+        : ['Preserving failed Playwright report: report.json']
+    )
+  }
   assert.match(workspaceRunner, /Preserving failed Playwright report/)
   assert.doesNotMatch(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_NAME/)
   const workspaces = [
@@ -537,7 +581,9 @@ const getWorkspaceManifests = () => {
   const manifests = new Map()
 
   for (const pattern of rootManifest.workspaces) {
-    if (pattern === 'create-app/*') continue
+    if (pattern === 'create-app/*') {
+      continue
+    }
     if (!pattern.endsWith('/*')) {
       const manifest = readJSON(`${pattern}/package.json`)
       manifests.set(manifest.name, manifest)
@@ -547,9 +593,13 @@ const getWorkspaceManifests = () => {
     for (const entry of fs.readdirSync(baseDirectory, {
       withFileTypes: true
     })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
       const manifestPath = path.join(baseDirectory, entry.name, 'package.json')
-      if (!fs.existsSync(manifestPath)) continue
+      if (!fs.existsSync(manifestPath)) {
+        continue
+      }
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
       manifests.set(manifest.name, manifest)
     }
@@ -1194,15 +1244,17 @@ test('root app commands are scoped by app and purpose', () => {
     'test:local',
     'test:ci',
     'test:e2e',
-    'lint',
     'lint:ci',
     'dev:all'
-  ])
+  ]) {
     assert.equal(
       rootScripts[script],
       undefined,
       `ambiguous root script remains: ${script}`
     )
+  }
+  assert.equal(rootScripts.lint, 'eslint .')
+  assert.equal(rootScripts['lint:workspaces:ci'], undefined)
 })
 
 test('workspace version planning materializes release ranges without changing files', () => {
@@ -1369,7 +1421,9 @@ test('a timed-out build command terminates its descendant process', async () => 
     status = spawnSync('ps', ['-o', 'stat=', '-p', String(descendantPid)], {
       encoding: 'utf8'
     }).stdout.trim()
-    if (status === '' || status.startsWith('Z')) break
+    if (status === '' || status.startsWith('Z')) {
+      break
+    }
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
   assert.ok(status === '' || status.startsWith('Z'), status)
@@ -1390,7 +1444,7 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
       (step) =>
         step.name === `Require complete Asyra FieldScope ${group} profiles`
     )
-    for (const files of ['[]', '["src/example.profile.test.ts"]'])
+    for (const files of ['[]', '["src/example.profile.test.ts"]']) {
       for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
         const run = spawnSync('bash', ['-c', gate.run], {
           env: { ...process.env, PROFILE_FILES: files, PROFILE_RESULT: result }
@@ -1400,6 +1454,7 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
           files === '[]' ? result === 'skipped' : result === 'success'
         )
       }
+    }
   }
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')

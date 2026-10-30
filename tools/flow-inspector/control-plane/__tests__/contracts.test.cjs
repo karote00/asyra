@@ -532,8 +532,9 @@ test('Design execution admission locates all existing cases within their seven o
       ts.isIdentifier(node.expression) &&
       node.expression.text === 'it' &&
       ts.isStringLiteral(node.arguments[0])
-    )
+    ) {
       declared.push(node.arguments[0].text)
+    }
     ts.forEachChild(node, visit)
   }
   visit(parsed)
@@ -542,12 +543,14 @@ test('Design execution admission locates all existing cases within their seven o
     contract.cases.map((item) => item.testName).sort(),
     declared.sort()
   )
-  for (const step of contract.runtimeScope.steps)
-    for (const boundary of step.implementationBoundary)
+  for (const step of contract.runtimeScope.steps) {
+    for (const boundary of step.implementationBoundary) {
       assert.ok(
         fs.existsSync(path.join(root, boundary.replace(/\/\*\*$/, ''))),
         boundary
       )
+    }
+  }
   for (const item of contract.cases) {
     assert.ok(source.includes(item.testName))
     assert.ok(item.implementationPaths?.length, item.id)
@@ -579,8 +582,9 @@ test('Render viewport admission retains six exact responsibility locations', () 
   const step = contract.architectureDefinition.steps.find(
     (item) => item.id === 'orchestrate-render-adapter'
   )
-  for (const reference of step.specRefs)
+  for (const reference of step.specRefs) {
     assert.ok(headings.includes(reference), reference)
+  }
   assert.equal(contract.cases.length, 6)
   for (const item of contract.cases) {
     assert.equal(item.stepId, 'orchestrate-render-adapter')
@@ -590,8 +594,9 @@ test('Render viewport admission retains six exact responsibility locations', () 
       ),
       item.id
     )
-    for (const file of item.implementationPaths)
+    for (const file of item.implementationPaths) {
       assert.ok(fs.statSync(path.join(root, file)).isFile())
+    }
   }
 })
 
@@ -647,12 +652,15 @@ test('Reusable composition admission retains four exact owner locations', () => 
   for (const item of contract.cases) {
     assert.ok(source.includes(item.testName.replace('recipe proof ', '')))
     assert.ok(item.implementationPaths?.length, item.id)
-    for (const file of item.implementationPaths)
+    for (const file of item.implementationPaths) {
       assert.ok(fs.statSync(path.join(root, file)).isFile())
+    }
     const step = contract.architectureDefinition.steps.find(
       (step) => step.id === item.stepId
     )
-    for (const ref of step.specRefs) assert.ok(headings.includes(ref), ref)
+    for (const ref of step.specRefs) {
+      assert.ok(headings.includes(ref), ref)
+    }
   }
 })
 test('Reusable composition source config runs all unchanged cases without proof environment', () => {
@@ -702,8 +710,9 @@ test('Pixi engine admission retains 29 exact responsibility locations', () => {
   const step = contract.architectureDefinition.steps.find(
     (item) => item.id === 'execute-render-engine'
   )
-  for (const reference of step.specRefs)
+  for (const reference of step.specRefs) {
     assert.ok(headings.includes(reference), reference)
+  }
   assert.equal(contract.cases.length, 29)
   for (const item of contract.cases) {
     assert.equal(item.stepId, 'execute-render-engine')
@@ -713,8 +722,9 @@ test('Pixi engine admission retains 29 exact responsibility locations', () => {
       ),
       item.id
     )
-    for (const file of item.implementationPaths)
+    for (const file of item.implementationPaths) {
       assert.ok(fs.statSync(path.join(root, file)).isFile())
+    }
   }
 })
 
@@ -765,8 +775,9 @@ test('Preset vector admission retains exact locations and the explicitly referen
       'packages/preset/src/components/fills.ts',
       'packages/preset/src/components/vector-compound-fill.ts'
     ])
-    for (const file of item.implementationPaths)
+    for (const file of item.implementationPaths) {
       assert.ok(fs.statSync(path.join(root, file)).isFile())
+    }
   }
 })
 test('Preset vector source config runs all unchanged cases without proof environment', () => {
@@ -822,8 +833,9 @@ test('Preset compound coverage admission retains exact locations and the explici
             'packages/preset/src/components/vector-compound-fill.ts'
           ]
     )
-    for (const file of item.implementationPaths)
+    for (const file of item.implementationPaths) {
       assert.ok(fs.statSync(path.join(root, file)).isFile())
+    }
   }
 })
 test('Preset compound coverage source config runs all unchanged cases without proof environment', () => {
@@ -910,8 +922,9 @@ test('Design Playwright mapping admits only the six reviewed Chromium deletion c
         "test('" + item.testName.replace('Delete Selected Element ', '') + "'"
       )
     )
-    for (const file of item.implementationPaths)
+    for (const file of item.implementationPaths) {
       assert.ok(fs.statSync(path.join(root, file)).isFile(), file)
+    }
   }
 })
 
@@ -986,8 +999,8 @@ test('the complete functional discovery has one exact responsibility per case, i
     assert.deepEqual(report.errors, [])
     const observed = []
     const walk = (suite, titles = []) => {
-      for (const spec of suite.specs ?? [])
-        for (const project of spec.tests)
+      for (const spec of suite.specs ?? []) {
+        for (const project of spec.tests) {
           observed.push(
             JSON.stringify([
               'apps/asyra-design/e2e/' + spec.file,
@@ -995,15 +1008,21 @@ test('the complete functional discovery has one exact responsibility per case, i
               project.projectName
             ])
           )
-      for (const child of suite.suites ?? [])
+        }
+      }
+      for (const child of suite.suites ?? []) {
         walk(child, [...titles, child.title])
+      }
     }
-    for (const suite of report.suites) walk(suite)
+    for (const suite of report.suites) {
+      walk(suite)
+    }
     const expected = contracts.flatMap((contract) =>
       contract.cases.map((item) => {
         assert.ok(item.implementationPaths.length > 0)
-        for (const file of item.implementationPaths)
+        for (const file of item.implementationPaths) {
           assert.ok(fs.statSync(path.join(root, file)).isFile(), file)
+        }
         return JSON.stringify([
           item.testFile ?? contract.testFile,
           item.testName,
@@ -1098,13 +1117,14 @@ test('toolbar observations retain the actual reset, control and zoom implementat
   const requireEntry = (name, entries) => {
     const item = contract.cases.find((item) => item.testName === name)
     assert.ok(item, name)
-    for (const entry of entries)
+    for (const entry of entries) {
       assert.ok(
         item.implementationPaths.includes(
           'apps/asyra-design/src/toolbar/' + entry
         ),
         name + ': ' + entry
       )
+    }
   }
   requireEntry('Asyra Design Tool should render toolbar with controls', [
     'index.tsx',
@@ -1129,6 +1149,7 @@ test('toolbar observations retain the actual reset, control and zoom implementat
     (item) =>
       item.stepId === 'switch-tool' &&
       item.testName.includes('clicking toolbar button')
-  ))
+  )) {
     requireEntry(item.testName, ['tool-button.tsx'])
+  }
 })

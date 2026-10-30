@@ -94,7 +94,7 @@ it('bounds exact-time observations, rejects retired owners and does not leak ano
 
   records.replace(input, 'current')
 
-  for (let time = 0; time <= LIVE_LIMITS.maxRecordedSamples; time++)
+  for (let time = 0; time <= LIVE_LIMITS.maxRecordedSamples; time++) {
     records.record(input, {
       time,
       pairs: [],
@@ -102,6 +102,7 @@ it('bounds exact-time observations, rejects retired owners and does not leak ano
       complete: false,
       error: 'not checked'
     })
+  }
 
   expect(records.getAll()).toHaveLength(LIVE_LIMITS.maxRecordedSamples)
   expect(records.get(0)).toBeUndefined()

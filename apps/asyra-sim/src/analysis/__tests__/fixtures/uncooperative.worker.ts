@@ -8,7 +8,9 @@ const catalog = createMethodCatalog([
     descriptor: STATIC_SPHERE_METHOD,
     execute: () => {
       self.postMessage({ fixture: 'uncooperative-method-entered' })
-      for (;;) Math.sqrt(Math.random())
+      for (;;) {
+        Math.sqrt(Math.random())
+      }
     }
   }
 ])

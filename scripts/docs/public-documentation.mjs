@@ -56,7 +56,9 @@ const markdownWordCount = (source) => {
 }
 
 const sourcePathForTypesTarget = ({ directory, repositoryRoot, target }) => {
-  if (typeof target !== 'string' || !target.endsWith('.d.ts')) return null
+  if (typeof target !== 'string' || !target.endsWith('.d.ts')) {
+    return null
+  }
   const relativeSource = target
     .replace(/^\.\/dist\//, 'src/')
     .replace(/\.d\.ts$/, '.ts')
@@ -66,9 +68,13 @@ const sourcePathForTypesTarget = ({ directory, repositoryRoot, target }) => {
     directory,
     relativeSource
   )
-  if (fs.existsSync(sourcePath)) return sourcePath
+  if (fs.existsSync(sourcePath)) {
+    return sourcePath
+  }
   const tsxPath = sourcePath.replace(/\.ts$/, '.tsx')
-  if (fs.existsSync(tsxPath)) return tsxPath
+  if (fs.existsSync(tsxPath)) {
+    return tsxPath
+  }
   throw new Error(
     `Cannot resolve public declaration source for packages/${directory}/${target}`
   )
@@ -128,7 +134,9 @@ export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
         ? checker.getAliasedSymbol(exportSymbol)
         : exportSymbol
     const declaration = target.valueDeclaration ?? target.declarations?.[0]
-    if (!declaration) return []
+    if (!declaration) {
+      return []
+    }
     const types = []
     if (
       target.flags &
@@ -210,7 +218,9 @@ const serializeLlms = ({ contentIndex, website = false }) => {
   ]
   for (const page of contentIndex.pages) {
     let href = page.path
-    if (website) href = page.id === 'overview' ? '/docs' : `/docs/${page.id}`
+    if (website) {
+      href = page.id === 'overview' ? '/docs' : `/docs/${page.id}`
+    }
     lines.push(`- [${page.title}](${href}): ${page.description}`)
   }
   lines.push('')

@@ -66,8 +66,8 @@ export function seekFixture() {
     result.time = time
     result.complete = !provisional
 
-    for (const pair of result.pairs)
-      for (const leaf of pair.evidence.leaves)
+    for (const pair of result.pairs) {
+      for (const leaf of pair.evidence.leaves) {
         Object.assign(leaf, {
           start: time,
           end: time,
@@ -75,14 +75,19 @@ export function seekFixture() {
           state: 'clear',
           penetration: false
         })
+      }
+    }
 
-    if (kind !== 'clear')
+    if (kind !== 'clear') {
       Object.assign(result.pairs[0].evidence.leaves[0], {
         state: 'finding',
         penetration: kind === 'collision'
       })
+    }
 
-    if (!provisional) records.set(time, result)
+    if (!provisional) {
+      records.set(time, result)
+    }
 
     state = {
       status: provisional ? 'checking' : 'ready',
@@ -102,7 +107,9 @@ export function seekFixture() {
     latest: () => {
       const view = publish.mock.lastCall?.[0]
 
-      if (!view) throw new Error('Preview has not published a frame')
+      if (!view) {
+        throw new Error('Preview has not published a frame')
+      }
 
       return view
     },

@@ -82,10 +82,11 @@ it('caps actual delayed-harvest cucumber fruits across the entire farm', () => {
       model.fruits.filter((fruit) => fruit.maturity === 'overgrown').length
     ])
   )
-  for (const model of models)
+  for (const model of models) {
     expect(counts.get(model.variant)).toBe(
       CROP_LAYOUT.overgrownVariants.includes(model.variant) ? 1 : 0
     )
+  }
   for (const length of [1, 50, 200]) {
     const config = { ...DEFAULT_CONFIGURATION, length }
     const plants = createCropPositions(config)
@@ -94,7 +95,9 @@ it('caps actual delayed-harvest cucumber fruits across the entire farm', () => {
     )
     const total = cucumbers.reduce((sum, plant) => {
       const count = counts.get(plant.variant)
-      if (count === undefined) throw new Error('Missing planted cucumber model')
+      if (count === undefined) {
+        throw new Error('Missing planted cucumber model')
+      }
       return sum + count
     }, 0)
     expect(total, `Farm length ${length}`).toBeLessThanOrEqual(10)
@@ -104,7 +107,9 @@ it('caps actual delayed-harvest cucumber fruits across the entire farm', () => {
       const stages = new Set(
         cucumbers.flatMap((plant) => {
           const model = models.find((model) => model.variant === plant.variant)
-          if (!model) throw new Error('Missing planted cucumber model')
+          if (!model) {
+            throw new Error('Missing planted cucumber model')
+          }
           return model.fruits
             .filter((fruit) => fruit.maturity === 'overgrown')
             .map((fruit) => fruit.growthStage)

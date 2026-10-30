@@ -65,8 +65,9 @@ type Shape = Extract<SpatialShape, { kind: 'triangles' }>
 const zero = dyadic(0)
 const noFrames: readonly QueryExactFrame[] = Object.freeze([])
 function sourceRelationValue<T>(value: T | undefined | null): T {
-  if (value === undefined || value === null)
+  if (value === undefined || value === null) {
     throw new Error('Missing source relation dependency')
+  }
   return value
 }
 const scalarBudget = Symbol('source relation node arithmetic')
@@ -83,24 +84,31 @@ function boundedScalar(
   value: Dyadic,
   budget: RationalArithmeticBudget | undefined
 ): Dyadic {
-  if (budget) Object.defineProperty(value, scalarBudget, { value: budget })
+  if (budget) {
+    Object.defineProperty(value, scalarBudget, { value: budget })
+  }
   return value
 }
 function scalarAccount(a: Dyadic, b?: Dyadic) {
   const first = (a as BudgetedDyadic)[scalarBudget],
     second = (b as BudgetedDyadic | undefined)?.[scalarBudget]
-  if (first && second && first !== second)
+  if (first && second && first !== second) {
     throw new Error('Different rational source nodes')
+  }
   return first ?? second
 }
 function scalarWork(
   budget: RationalArithmeticBudget | undefined,
   bits: number
 ) {
-  if (!budget) return
+  if (!budget) {
+    return
+  }
   budget.count()
   budget.observeBits(bits)
-  if (bits > budget.maxBits) throw exhausted
+  if (bits > budget.maxBits) {
+    throw exhausted
+  }
 }
 const sum = (a: Dyadic, b: Dyadic): Dyadic => {
   const exponent = Math.min(a.exponent, b.exponent)
@@ -217,8 +225,9 @@ export function prepareWalkingSourceRelations(
     intervals.inputIdentity !== request ||
     intervals.source !== source ||
     intervals.path !== request.path
-  )
+  ) {
     throw new Error('Stale source relation inputs')
+  }
   const evaluator = new WalkingSourceRelationEvaluator(request.budget),
     frameCache = new Map<object, QueryExactFrame>(),
     instanceCache = new Map<object, QueryExactFrame>(),
@@ -286,11 +295,12 @@ export function prepareWalkingSourceRelations(
   ): SceneDemandBounds => {
     const min = [Infinity, Infinity, Infinity],
       max = [-Infinity, -Infinity, -Infinity]
-    for (const p of walkingSourcePointBounds(shape, [input]))
+    for (const p of walkingSourcePointBounds(shape, [input])) {
       for (let axis = 0; axis < 3; axis++) {
         min[axis] = Math.min(min[axis], p.min[axis])
         max[axis] = Math.max(max[axis], p.max[axis])
       }
+    }
     return { min: min as unknown as Point3, max: max as unknown as Point3 }
   }
   const external = new Map(
@@ -307,7 +317,7 @@ export function prepareWalkingSourceRelations(
     ...demand.targets.left,
     ...demand.targets.right,
     ...demand.targets.unassigned
-  ])
+  ]) {
     for (const partition of target.partitions) {
       targetPartitionVisits++
       let instances = targetsByMesh.get(partition.mesh)
@@ -322,31 +332,37 @@ export function prepareWalkingSourceRelations(
       }
       partitions.push(partition)
     }
-  if (request.load.crate.kind === 'unknown')
+  }
+  if (request.load.crate.kind === 'unknown') {
     reasons.add('crate-geometry-unknown')
+  }
   if (
     request.load.crate.kind === 'attached' &&
     request.load.crate.sourceCoverage !== 'complete'
-  )
+  ) {
     reasons.add('crate-source-geometry-incomplete')
+  }
   if (request.load.carried.kind === 'attached') {
     if (
       request.load.carried.items.some((item) => item.shape.kind === 'unknown')
-    )
+    ) {
       reasons.add('carried-source-geometry-unknown')
+    }
     if (
       request.load.carried.items.some(
         (item) => item.sourceCoverage !== 'complete'
       )
-    )
+    ) {
       reasons.add('carried-source-geometry-incomplete')
+    }
   }
   for (const exclusion of demand.freePassage.exclusions) {
     if (
       exclusion.kind !== 'source' ||
       exclusion.mesh.descriptor.shape.kind !== 'triangles'
-    )
+    ) {
       continue
+    }
     sourceExclusionBindings++
     let prepared: readonly QueryExactFrame[] | undefined
     world.push({
@@ -366,7 +382,9 @@ export function prepareWalkingSourceRelations(
   for (const contact of request.targetContacts) {
     const partition = contact.target.partition,
       shape = partition.mesh.descriptor.shape
-    if (shape.kind !== 'triangles') continue
+    if (shape.kind !== 'triangles') {
+      continue
+    }
     for (const region of partition.mesh.regions) {
       if (
         world.some(
@@ -378,8 +396,9 @@ export function prepareWalkingSourceRelations(
                 other.instance === partition.instance
             )
         )
-      )
+      ) {
         continue
+      }
       const descriptorFrame = prepareQueryForwardFrame(
           partition.transform.descriptor
         ),
@@ -421,10 +440,12 @@ export function prepareWalkingSourceRelations(
   }
   for (const terrain of request.terrain.regions) {
     const regions = external.get(terrain.sourceId)
-    if (!regions) throw new Error('Missing admitted terrain regions')
+    if (!regions) {
+      throw new Error('Missing admitted terrain regions')
+    }
     let prepared: readonly QueryExactFrame[] | undefined
     const bounds = bound(terrain.shape, terrain.frame)
-    for (const region of regions)
+    for (const region of regions) {
       world.push({
         owner: terrain,
         shape: terrain.shape,
@@ -432,19 +453,23 @@ export function prepareWalkingSourceRelations(
         bounds,
         frames: () => (prepared ??= chain(terrain.frame))
       })
+    }
   }
   const margin =
     demand.configuration.clearanceMargin.kind === 'bounded'
       ? demand.configuration.clearanceMargin.metres
       : 0
-  if (demand.configuration.clearanceMargin.kind !== 'bounded')
+  if (demand.configuration.clearanceMargin.kind !== 'bounded') {
     reasons.add('clearance-margin-unknown')
+  }
   const strictGap = (
     a: SceneDemandBounds | undefined,
     b: SceneDemandBounds | undefined,
     requiredMargin: number
   ) => {
-    if (!a || !b) return false
+    if (!a || !b) {
+      return false
+    }
     return a.max.some((value, axis) => {
       // Exact comparison of already outward endpoints; no rounded subtraction.
       const forward = difference(dyadic(b.min[axis]), dyadic(value)),
@@ -467,8 +492,9 @@ export function prepareWalkingSourceRelations(
         []
     const issue = (reason: string, a: RelationSource, b: RelationSource) => {
       reasons.add(reason)
-      if (!issues.some((item) => item.reason === reason))
+      if (!issues.some((item) => item.reason === reason)) {
         issues.push({ reason, first: a.region, second: b.region })
+      }
     }
     const knotIndex = request.path.knots.findIndex(
       (knot, index) =>
@@ -477,7 +503,9 @@ export function prepareWalkingSourceRelations(
     )
     const firstKnot = request.path.knots[knotIndex],
       lastKnot = request.path.knots[knotIndex + 1]
-    if (!firstKnot || !lastKnot) throw new Error('Missing motion segment knot')
+    if (!firstKnot || !lastKnot) {
+      throw new Error('Missing motion segment knot')
+    }
     const knots = [firstKnot, lastKnot]
     const constantJoints = knots.every(
       (knot) => JSON.stringify(knot.joints) === JSON.stringify(firstKnot.joints)
@@ -502,7 +530,9 @@ export function prepareWalkingSourceRelations(
         )
       }
       const result = bodyFrames.get(body.id)
-      if (!result) throw new Error('Missing source body frame')
+      if (!result) {
+        throw new Error('Missing source body frame')
+      }
       return result
     }
     const moving: RelationSource[] = []
@@ -518,10 +548,10 @@ export function prepareWalkingSourceRelations(
       }
       entries.set(envelope.region, envelope.bounds)
     }
-    for (const body of source.rig.bodies)
+    for (const body of source.rig.bodies) {
       for (const part of body.parts) {
         let prepared: readonly QueryExactFrame[] | undefined
-        for (const region of part.regions)
+        for (const region of part.regions) {
           moving.push({
             owner: body,
             body,
@@ -531,14 +561,18 @@ export function prepareWalkingSourceRelations(
             bounds: envelopeByPart.get(part)?.get(region),
             frames: () => (prepared ??= chain(part.localFrame, bodyFrame(body)))
           })
+        }
       }
+    }
     // Attachments are separate material owners even when a robot body carries them.
-    if (segment.visited)
+    if (segment.visited) {
       for (const envelope of segment.carriedEnvelopes) {
         const regions = external.get(envelope.attachment.sourceId)
-        if (!regions) throw new Error('Missing admitted carried regions')
+        if (!regions) {
+          throw new Error('Missing admitted carried regions')
+        }
         let prepared: readonly QueryExactFrame[] | undefined
-        for (const region of regions)
+        for (const region of regions) {
           moving.push({
             owner: envelope.assembly,
             shape: envelope.attachment.shape,
@@ -550,11 +584,12 @@ export function prepareWalkingSourceRelations(
                 bodyFrame(envelope.body)
               ))
           })
+        }
       }
-    else {
-      if (request.load.crate.kind === 'attached')
-        for (const part of request.load.crate.sourceParts)
-          for (const region of external.get(part.sourceId) ?? [])
+    } else {
+      if (request.load.crate.kind === 'attached') {
+        for (const part of request.load.crate.sourceParts) {
+          for (const region of external.get(part.sourceId) ?? []) {
             moving.push({
               owner: request.load.crate,
               shape: part.shape,
@@ -563,10 +598,13 @@ export function prepareWalkingSourceRelations(
                 throw new Error('Unvisited source frame')
               }
             })
-      if (request.load.carried.kind === 'attached')
-        for (const item of request.load.carried.items)
-          if (item.shape.kind === 'triangles')
-            for (const region of external.get(item.sourceId) ?? [])
+          }
+        }
+      }
+      if (request.load.carried.kind === 'attached') {
+        for (const item of request.load.carried.items) {
+          if (item.shape.kind === 'triangles') {
+            for (const region of external.get(item.sourceId) ?? []) {
               moving.push({
                 owner: item,
                 shape: item.shape,
@@ -575,6 +613,10 @@ export function prepareWalkingSourceRelations(
                   throw new Error('Unvisited source frame')
                 }
               })
+            }
+          }
+        }
+      }
     }
     const displacement = {
       from: firstKnot.base.position,
@@ -596,8 +638,9 @@ export function prepareWalkingSourceRelations(
           phase.until >= segment.until &&
           phase.legs.some((leg) => leg.state.kind === 'support')
       )
-    )
+    ) {
       reasons.add('support-contact-motion-unproved')
+    }
     const query = (a: RelationSource, b: RelationSource, own: boolean) => {
       const counts = own ? self : environment
       counts.candidate++
@@ -695,7 +738,7 @@ export function prepareWalkingSourceRelations(
             joint &&
             source.rig.jointInterfaces.find((item) => item.jointId === joint.id)
           const patches = (node: RelationSource): readonly SourcePatch[] => {
-            if (declared && joint)
+            if (declared && joint) {
               return (
                 node.body?.id === joint.parentBodyId
                   ? declared.parentPatches
@@ -703,12 +746,14 @@ export function prepareWalkingSourceRelations(
               )
                 .filter((item) => item.part === node.part)
                 .map((item) => item.patch)
-            if (authority === 'authored-fixed-parent-frame')
+            }
+            if (authority === 'authored-fixed-parent-frame') {
               return (
                 node.part?.patches.filter((patch) =>
                   patch.id.endsWith('-interface')
                 ) ?? []
               )
+            }
             return []
           }
           const witness = evaluator.proveBoundary(
@@ -741,8 +786,9 @@ export function prepareWalkingSourceRelations(
               contact.robot.part !== a.part ||
               contact.robot.region !== a.region ||
               !b.targetPartitions?.includes(contact.target.partition)
-            )
+            ) {
               continue
+            }
             const witness = evaluator.proveBoundary(
               first,
               second,
@@ -764,12 +810,19 @@ export function prepareWalkingSourceRelations(
       counts.unknown++
       issue('source-region-relation-unproved', a, b)
     }
-    for (let i = 0; i < moving.length; i++)
-      for (let j = i + 1; j < moving.length; j++)
+    for (let i = 0; i < moving.length; i++) {
+      for (let j = i + 1; j < moving.length; j++) {
         query(moving[i], moving[j], true)
-    for (const a of moving) for (const b of world) query(a, b, false)
-    for (const key of Object.keys(total) as (keyof RelationCoverage)[])
+      }
+    }
+    for (const a of moving) {
+      for (const b of world) {
+        query(a, b, false)
+      }
+    }
+    for (const key of Object.keys(total) as (keyof RelationCoverage)[]) {
       total[key] = self[key] + environment[key]
+    }
     segments.push({
       from: segment.from,
       until: segment.until,
@@ -782,8 +835,9 @@ export function prepareWalkingSourceRelations(
   }
   let status: WalkingSourceRelations['status'] =
     reasons.size > 0 ? 'unknown' : 'clear'
-  if (segments.some((segment) => segment.coverage.blocked > 0))
+  if (segments.some((segment) => segment.coverage.blocked > 0)) {
     status = 'blocked'
+  }
   return freeze({
     format: 'walking-source-relations/1',
     source,
@@ -829,7 +883,9 @@ const product = (a: Dyadic, b: Dyadic): Dyadic => {
 }
 const compare = (a: Dyadic, b: Dyadic) => {
   const value = difference(a, b).significand
-  if (value < 0n) return -1
+  if (value < 0n) {
+    return -1
+  }
   return value > 0n ? 1 : 0
 }
 const point = (p: Point3): ExactPoint => [
@@ -877,7 +933,9 @@ function directionKey(axis: ExactPoint) {
     return a < 0n ? -a : a
   }
   const divisor = integers.reduce((a, b) => gcd(a, b), 0n)
-  if (divisor === 0n) return ''
+  if (divisor === 0n) {
+    return ''
+  }
   const sign = (integers.find((value) => value !== 0n) ?? 1n) < 0n ? -1n : 1n
   return integers
     .map((value) => {
@@ -894,8 +952,11 @@ function* uniqueDirectionIterator(
   for (const value of values) {
     observe?.('candidate')
     const key = directionKey(value)
-    if (!key) observe?.('zero')
-    else if (unique.has(key)) observe?.('duplicate')
+    if (!key) {
+      observe?.('zero')
+    } else if (unique.has(key)) {
+      observe?.('duplicate')
+    }
     if (key && !unique.has(key)) {
       const budget = value.map((v) => scalarAccount(v)).find(Boolean)
       // Positive-divisor reduction keeps the authored orientation, while
@@ -938,16 +999,23 @@ interface TimeRange {
 }
 const fractionCompare = (a: Fraction, b: Fraction) => {
   const value = a.numerator * b.denominator - b.numerator * a.denominator
-  if (value < 0n) return -1
+  if (value < 0n) {
+    return -1
+  }
   return value > 0n ? 1 : 0
 }
 function ratio(a: Dyadic, b: Dyadic): Fraction {
-  if (b.significand === 0n) throw new Error('Zero exact time denominator')
+  if (b.significand === 0n) {
+    throw new Error('Zero exact time denominator')
+  }
   const shift = a.exponent - b.exponent
   let numerator = a.significand,
     denominator = b.significand
-  if (shift >= 0) numerator <<= BigInt(shift)
-  else denominator <<= BigInt(-shift)
+  if (shift >= 0) {
+    numerator <<= BigInt(shift)
+  } else {
+    denominator <<= BigInt(-shift)
+  }
   if (denominator < 0n) {
     numerator = -numerator
     denominator = -denominator
@@ -965,7 +1033,9 @@ function constrain(
   slope: Dyadic,
   strict: boolean
 ) {
-  if (range.empty) return
+  if (range.empty) {
+    return
+  }
   if (slope.significand === 0n) {
     range.empty = strict ? offset.significand <= 0n : offset.significand < 0n
     return
@@ -973,9 +1043,11 @@ function constrain(
   const threshold = ratio(negative(offset), slope),
     key = slope.significand > 0n ? 'low' : 'high'
   const order = fractionCompare(threshold, range[key].value)
-  if ((key === 'low' && order > 0) || (key === 'high' && order < 0))
+  if ((key === 'low' && order > 0) || (key === 'high' && order < 0)) {
     range[key] = { value: threshold, strict }
-  else if (order === 0) range[key].strict ||= strict
+  } else if (order === 0) {
+    range[key].strict ||= strict
+  }
   const crossed = fractionCompare(range.low.value, range.high.value)
   range.empty =
     crossed > 0 || (crossed === 0 && (range.low.strict || range.high.strict))
@@ -1053,8 +1125,9 @@ function sourceIntervalAxisGap(
       const power = v.exponent - shift
       const n = power >= 0 ? v.significand << BigInt(power) : v.significand,
         d = power < 0 ? 1n << BigInt(-power) : 1n
-      if (Math.max(integerBits(n), integerBits(d)) > maxBits)
+      if (Math.max(integerBits(n), integerBits(d)) > maxBits) {
         throw new Error('Nonlinear axis bit budget exhausted')
+      }
       return {
         low: roundFraction(n, d, 'down'),
         high: roundFraction(n, d, 'up')
@@ -1084,7 +1157,9 @@ function sourceIntervalAxisGap(
     }
     const left = projection(a),
       right = projection(b)
-    if (!left || !right) return false
+    if (!left || !right) {
+      return false
+    }
     const norm = direction.reduce(
       (sum, v) =>
         addInterval(
@@ -1207,13 +1282,15 @@ const joinedRegionBounds = (
 ): SceneDemandBounds => {
   const min: [number, number, number] = [Infinity, Infinity, Infinity],
     max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
-  for (const value of values)
+  for (const value of values) {
     for (let k = 0; k < 3; k++) {
       min[k] = Math.min(min[k], value.min[k])
       max[k] = Math.max(max[k], value.max[k])
     }
-  if (![...min, ...max].every(Number.isFinite))
+  }
+  if (![...min, ...max].every(Number.isFinite)) {
     throw new Error('Unbounded region cover source')
+  }
   return Object.freeze({ min: Object.freeze(min), max: Object.freeze(max) })
 }
 const strictRegionBounds = (
@@ -1258,7 +1335,11 @@ function regionCoverCursor(
   const less = (a: RegionCoverTask, b: RegionCoverTask) => {
     const x = key(a),
       y = key(b)
-    for (let k = 0; k < x.length; k++) if (x[k] !== y[k]) return x[k] < y[k]
+    for (let k = 0; k < x.length; k++) {
+      if (x[k] !== y[k]) {
+        return x[k] < y[k]
+      }
+    }
     return false
   }
   const push = (t: RegionCoverTask) => {
@@ -1266,7 +1347,9 @@ function regionCoverCursor(
     heap.push(t)
     while (i) {
       const p = (i - 1) >> 1
-      if (!less(t, heap[p])) break
+      if (!less(t, heap[p])) {
+        break
+      }
       heap[i] = heap[p]
       i = p
     }
@@ -1279,8 +1362,12 @@ function regionCoverCursor(
       let i = 0
       while (2 * i + 1 < heap.length) {
         let c = 2 * i + 1
-        if (c + 1 < heap.length && less(heap[c + 1], heap[c])) c++
-        if (!less(heap[c], last)) break
+        if (c + 1 < heap.length && less(heap[c + 1], heap[c])) {
+          c++
+        }
+        if (!less(heap[c], last)) {
+          break
+        }
         heap[i] = heap[c]
         i = c
       }
@@ -1313,8 +1400,9 @@ function regionCoverCursor(
     const first = roots[i]
     coRigidOwner += (first.count * (first.count - 1)) / 2
     required += first.count * (inventory.length - first.start - first.count)
-    if (!Number.isSafeInteger(required))
+    if (!Number.isSafeInteger(required)) {
       throw new Error('Unsafe region cover cardinality')
+    }
     for (let j = i + 1; j < roots.length; j++) {
       const second = roots[j],
         count = first.count * second.count
@@ -1343,7 +1431,9 @@ function regionCoverCursor(
     finished: readonly WalkingRegionCover[] | undefined
   const next = (): WalkingRegionCover | undefined => {
     check()
-    if (stopped || finished) return
+    if (stopped || finished) {
+      return
+    }
     while (heap.length) {
       const task = heap[0]
       if (task.depth < 2) {
@@ -1380,8 +1470,8 @@ function regionCoverCursor(
             stopped = true
             return
           }
-          for (const a of first)
-            for (const b of second)
+          for (const a of first) {
+            for (const b of second) {
               push({
                 first: a,
                 second: b,
@@ -1389,7 +1479,11 @@ function regionCoverCursor(
                 until: a.count * b.count,
                 depth: 1
               })
-        } else push({ ...task, depth: 2 })
+            }
+          }
+        } else {
+          push({ ...task, depth: 2 })
+        }
         continue
       }
       if (work.leafPairs >= options.maxLeaves) {
@@ -1399,7 +1493,9 @@ function regionCoverCursor(
       pop()
       work.leafPairs++
       const leaf = { ...task, until: task.from + 1 }
-      if (leaf.until < task.until) push({ ...task, from: leaf.until })
+      if (leaf.until < task.until) {
+        push({ ...task, from: leaf.until })
+      }
       return terminal(leaf, 'leaf')
     }
   }
@@ -1407,7 +1503,9 @@ function regionCoverCursor(
     check()
     if (!finished) {
       const remainder = [...initialRemainders]
-      while (heap.length) remainder.push(terminal(pop(), 'unvisited'))
+      while (heap.length) {
+        remainder.push(terminal(pop(), 'unvisited'))
+      }
       finished = Object.freeze(remainder)
       stopped = true
     }
@@ -1576,8 +1674,9 @@ export class WalkingSelectedChainRelationOwner {
     if (
       firstPart.shape !== first.region.shape ||
       secondPart.shape !== second.region.shape
-    )
+    ) {
       return
+    }
     const admittedRanges = (
       part: Pick<WalkingRobotPart, 'shape' | 'patches'>,
       placement: WalkingRegionPlacement,
@@ -1596,7 +1695,9 @@ export class WalkingSelectedChainRelationOwner {
         .flatMap((reference) => reference.patch.ranges)
     const firstRanges = admittedRanges(firstPart, first, firstReferences)
     const secondRanges = admittedRanges(secondPart, second, secondReferences)
-    if (!firstRanges.length || !secondRanges.length) return
+    if (!firstRanges.length || !secondRanges.length) {
+      return
+    }
     return evaluator.proveBoundary(
       first,
       second,
@@ -1667,8 +1768,9 @@ export class WalkingSelectedChainRelationOwner {
     current: SelectedCurrent,
     raw: unknown
   ): WalkingSelectedChainSourceRelations {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
       throw new Error('Invalid selected relation request')
+    }
     const input = raw as Record<string, unknown>
     if (
       Object.keys(input).length !== 3 ||
@@ -1679,11 +1781,14 @@ export class WalkingSelectedChainRelationOwner {
         current.cycle,
         input.motion as WalkingSelectedChainMotion
       ) !== input.motion
-    )
+    ) {
       throw new Error('Stale selected relation motion')
+    }
     const motion = input.motion as WalkingSelectedChainMotion
     const previous = this.read(current, motion)
-    if (previous?.request === raw) return previous
+    if (previous?.request === raw) {
+      return previous
+    }
     const budget = input.budget as WalkingSelectedChainRelationRequest['budget']
     if (
       !budget ||
@@ -1699,8 +1804,9 @@ export class WalkingSelectedChainRelationOwner {
       budget.maxRegionPairs > 2000000 ||
       budget.maxExactPredicates > 5000000 ||
       budget.maxBits > 24000
-    )
+    ) {
       throw new Error('Invalid selected relation finite budget')
+    }
     if (this.source !== motion.source) {
       this.dispose()
       this.source = motion.source
@@ -1732,7 +1838,9 @@ export class WalkingSelectedChainRelationOwner {
       covers: WalkingSelectedChainSourceRelations['covers'][number][] = []
     const localBox = (part: WalkingRobotPart) => {
       let existing = this.sourceBounds.get(part)
-      if (existing) return existing
+      if (existing) {
+        return existing
+      }
       const min = [Infinity, Infinity, Infinity],
         max = [-Infinity, -Infinity, -Infinity]
       for (let i = 0; i < part.shape.positions.length; i += 3) {
@@ -1770,8 +1878,9 @@ export class WalkingSelectedChainRelationOwner {
             region
           )
         : evaluator.prepare(part.shape, region)
-      if (prepared.certified)
+      if (prepared.certified) {
         certificates.set(region, { evaluator, product: prepared })
+      }
       return prepared
     }
     let template: WalkingRationalSourceNode | undefined
@@ -1785,8 +1894,9 @@ export class WalkingSelectedChainRelationOwner {
       for (const entry of motion.fixed.parts) {
         const frame = selectedExactFrame(entry.exact, (bits) => {
           evaluator.accountIntervalPredicate()
-          if (bits > budget.maxBits)
+          if (bits > budget.maxBits) {
             throw new Error('Fixed interval frame bit budget exhausted')
+          }
         })
         fixedFrames.set(entry.part, frame)
         work.fixedBoundsPreparations++
@@ -1825,10 +1935,11 @@ export class WalkingSelectedChainRelationOwner {
               parameter: whole
             })
           } else {
-            if (first.part.bodyId === motion.chain.bodyIds[0])
+            if (first.part.bodyId === motion.chain.bodyIds[0]) {
               work.rootPartOverlaps++
-            for (const firstRegion of first.part.regions)
-              for (const secondRegion of second.part.regions)
+            }
+            for (const firstRegion of first.part.regions) {
+              for (const secondRegion of second.part.regions) {
                 pairs.push({
                   first: first.part,
                   second: second.part,
@@ -1836,6 +1947,8 @@ export class WalkingSelectedChainRelationOwner {
                   secondRegion,
                   proofs: []
                 })
+              }
+            }
           }
         }
       }
@@ -1875,7 +1988,9 @@ export class WalkingSelectedChainRelationOwner {
             vertices.set(part, byRegion)
           }
           let existing = byRegion.get(region)
-          if (existing) return existing
+          if (existing) {
+            return existing
+          }
           let sourcePoints = this.regionPoints.get(part)
           if (!sourcePoints) {
             sourcePoints = new Map()
@@ -1952,8 +2067,9 @@ export class WalkingSelectedChainRelationOwner {
                 p.kind === 'unknown' ||
                 p.kind === 'unvisited'
             )
-          )
+          ) {
             continue
+          }
           if (
             evaluator.exactBudgetExhausted ||
             work.exactLeafPairs >= budget.maxRegionPairs
@@ -2064,11 +2180,12 @@ export class WalkingSelectedChainRelationOwner {
         }
         if (pending.length) {
           if (work.subdivisions >= budget.maxSubdivisions) {
-            for (const index of pending)
+            for (const index of pending) {
               pairs[index].proofs.push({
                 parameter: task.parameter,
                 kind: 'unknown'
               })
+            }
             reasons.push(
               pairs[pending[0]].first.id +
                 ' - ' +
@@ -2101,16 +2218,21 @@ export class WalkingSelectedChainRelationOwner {
     }
     for (const pair of pairs) {
       let kind: SelectedKind = 'exactSeparated'
-      if (pair.proofs.some((p) => p.kind === 'declaredBoundary'))
+      if (pair.proofs.some((p) => p.kind === 'declaredBoundary')) {
         kind = 'declaredBoundary'
+      }
       if (
         !pair.proofs.length ||
         pair.proofs.some((p) => p.kind === 'unvisited')
-      )
+      ) {
         kind = 'unvisited'
-      if (evaluationFailed || pair.proofs.some((p) => p.kind === 'unknown'))
+      }
+      if (evaluationFailed || pair.proofs.some((p) => p.kind === 'unknown')) {
         kind = 'unknown'
-      if (pair.proofs.some((p) => p.kind === 'blocked')) kind = 'blocked'
+      }
+      if (pair.proofs.some((p) => p.kind === 'blocked')) {
+        kind = 'blocked'
+      }
       coverage[kind]++
     }
     const classified =
@@ -2122,8 +2244,12 @@ export class WalkingSelectedChainRelationOwner {
       coverage.unvisited
     coverage.unvisited += coverage.required - classified
     let status: WalkingSelectedChainSourceRelations['status'] = 'clear'
-    if (coverage.unknown || coverage.unvisited) status = 'unknown'
-    if (coverage.blocked) status = 'blocked'
+    if (coverage.unknown || coverage.unvisited) {
+      status = 'unknown'
+    }
+    if (coverage.blocked) {
+      status = 'blocked'
+    }
     const product: WalkingSelectedChainSourceRelations = freeze({
       format: 'walking-selected-chain-source-relations/1',
       source: motion.source,
@@ -2313,18 +2439,22 @@ export class WalkingSourceRelationEvaluator {
           ([, value]) =>
             Number.isSafeInteger(value) && sourceRelationValue(value) > 0
         )
-    )
+    ) {
       throw new Error('Invalid source relation budget')
+    }
     this.limits = { ...limits }
     const prior = limits.priorExactPredicates ?? 0
     if (
       !Number.isSafeInteger(prior) ||
       prior < 0 ||
       prior > limits.maxExactPredicates
-    )
+    ) {
       throw new Error('Invalid prior exact predicate work')
+    }
     this.limits.maxExactPredicates -= prior
-    if (limits.maxBits !== undefined) this.arithmeticBudget(limits.maxBits)
+    if (limits.maxBits !== undefined) {
+      this.arithmeticBudget(limits.maxBits)
+    }
   }
   get work() {
     return Object.freeze({
@@ -2360,8 +2490,9 @@ export class WalkingSourceRelationEvaluator {
     return this.counters.exactPredicates >= this.limits.maxExactPredicates
   }
   private predicate() {
-    if (this.counters.exactPredicates >= this.limits.maxExactPredicates)
+    if (this.counters.exactPredicates >= this.limits.maxExactPredicates) {
       throw exhausted
+    }
     this.counters.exactPredicates++
     this.stages[this.currentStage].predicates++
   }
@@ -2374,9 +2505,10 @@ export class WalkingSourceRelationEvaluator {
       maxBits < 1 ||
       maxBits > 24000 ||
       (this.rationalAccount && this.rationalAccount.maxBits !== maxBits)
-    )
+    ) {
       throw new Error('Invalid rational source bit budget')
-    if (!this.rationalAccount)
+    }
+    if (!this.rationalAccount) {
       this.rationalAccount = Object.freeze({
         maxBits,
         count: () => {
@@ -2390,14 +2522,16 @@ export class WalkingSourceRelationEvaluator {
             firstExcess: null
           })
           observed.maxRequired = Math.max(observed.maxRequired, bits)
-          if (bits > maxBits && observed.firstExcess === null)
+          if (bits > maxBits && observed.firstExcess === null) {
             observed.firstExcess = bits
+          }
           this.counters.maxRationalBitsRequired = Math.max(
             this.counters.maxRationalBitsRequired,
             bits
           )
         }
       })
+    }
     return this.rationalAccount
   }
   prepareRationalFrameTemplate(
@@ -2413,8 +2547,9 @@ export class WalkingSourceRelationEvaluator {
     index: number,
     axis: ExactPoint
   ) {
-    if (!this.frameTemplates.has(template) || !template.frames[index])
+    if (!this.frameTemplates.has(template) || !template.frames[index]) {
       throw new Error('Foreign root template')
+    }
     return this.observeStage('boundaryLocus', () =>
       [0, 1].every(
         (column) =>
@@ -2438,8 +2573,9 @@ export class WalkingSourceRelationEvaluator {
       fixedIndices.some(
         (i) => !Number.isSafeInteger(i) || i < 0 || i >= template.frames.length
       )
-    )
+    ) {
       throw new Error('Foreign rational frame template')
+    }
     const dynamic = this.prepareRationalNode(inputs, template.maxBits)
     return this.observeStage('rationalNodeCompilation', () => {
       const budget = this.arithmeticBudget(template.maxBits)
@@ -2473,7 +2609,9 @@ export class WalkingSourceRelationEvaluator {
           product(v, scale)
         ) as unknown as QueryExactFrame['position']
         const determinant = dot(matrix[0], cross(matrix[1], matrix[2]))
-        if (fixed) this.counters.fixedFrameRescales++
+        if (fixed) {
+          this.counters.fixedFrameRescales++
+        }
         return freeze({ matrix, position, determinant })
       }
       const frames = [
@@ -2503,10 +2641,13 @@ export class WalkingSourceRelationEvaluator {
       !prepared.certified ||
       prepared.shape !== shape ||
       prepared.region !== region
-    )
+    ) {
       throw new Error('Foreign or incomplete source certification')
+    }
     const existing = this.regions.get(shape)?.get(region)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
     const budget = sourceRelationValue(this.rationalAccount)
     return this.observeStage('sourceCertification', () => {
       const points = prepared.points.map(
@@ -2560,8 +2701,9 @@ export class WalkingSourceRelationEvaluator {
         return a < 0n ? -a : a
       }
       try {
-        if (!Array.isArray(inputs) || !inputs.length)
+        if (!Array.isArray(inputs) || !inputs.length) {
           throw new Error('Missing rational source frames')
+        }
         const admittedInputs: readonly ConstrainedFrame<ConstrainedFraction>[] =
           inputs
         let denominator = 1n
@@ -2573,8 +2715,9 @@ export class WalkingSourceRelationEvaluator {
             frame.origin.length !== 3 ||
             frame.matrix.length !== 3 ||
             frame.matrix.some((row) => row.length !== 3)
-          )
+          ) {
             throw new Error('Invalid rational source frame')
+          }
           for (const value of [...frame.origin, ...frame.matrix.flat()]) {
             this.counters.nodeScalarVisits++
             if (
@@ -2582,15 +2725,17 @@ export class WalkingSourceRelationEvaluator {
               typeof value.numerator !== 'bigint' ||
               typeof value.denominator !== 'bigint' ||
               value.denominator <= 0n
-            )
+            ) {
               throw new Error('Invalid rational source scalar')
+            }
             check(value.numerator)
             check(value.denominator)
             scalarWork(budget, 1)
             let numerators = values.get(value.denominator)
             if (!numerators?.has(value.numerator)) {
-              if (gcd(value.numerator, value.denominator) !== 1n)
+              if (gcd(value.numerator, value.denominator) !== 1n) {
                 throw new Error('Noncanonical rational source scalar')
+              }
               if (!numerators) {
                 numerators = new Set()
                 values.set(value.denominator, numerators)
@@ -2598,7 +2743,9 @@ export class WalkingSourceRelationEvaluator {
               numerators.add(value.numerator)
               this.counters.nodeScalarProofs++
             }
-            if (denominators.has(value.denominator)) continue
+            if (denominators.has(value.denominator)) {
+              continue
+            }
             const divisor = gcd(denominator, value.denominator),
               factor = denominator / divisor
             scalarWork(
@@ -2615,7 +2762,9 @@ export class WalkingSourceRelationEvaluator {
           scalarWork(budget, 1)
           let entries = integers.get(value.denominator)
           const previous = entries?.get(value.numerator)
-          if (previous) return previous
+          if (previous) {
+            return previous
+          }
           scalarWork(budget, integerBits(denominator))
           const factor = denominator / value.denominator
           scalarWork(budget, integerBits(value.numerator) + integerBits(factor))
@@ -2639,8 +2788,9 @@ export class WalkingSourceRelationEvaluator {
             integer
           ) as unknown as QueryExactFrame['position']
           const determinant = dot(matrix[0], cross(matrix[1], matrix[2]))
-          if (determinant.significand === 0n)
+          if (determinant.significand === 0n) {
             throw new Error('Singular rational source frame')
+          }
           return freeze({ matrix, position, determinant })
         })
         const node = freeze({
@@ -2656,7 +2806,7 @@ export class WalkingSourceRelationEvaluator {
         this.counters.rationalNodePreparations++
         return node
       } catch (error) {
-        if (error === exhausted)
+        if (error === exhausted) {
           throw new Error(
             'Rational source arithmetic budget exhausted: ' +
               JSON.stringify({
@@ -2665,6 +2815,7 @@ export class WalkingSourceRelationEvaluator {
                 predicates: this.counters.exactPredicates
               })
           )
+        }
         throw error
       }
     })
@@ -2695,10 +2846,12 @@ export class WalkingSourceRelationEvaluator {
               cycleNode.current.cycle.recipe
             ) !== cycleNode.current.cycle ||
             cycleInput.request.cycle !== cycleNode.current.cycle
-          )
+          ) {
             throw new Error('Stale cycle region cover node')
-        } else if (!rationalNode || !this.rationalNodes.has(rationalNode))
+          }
+        } else if (!rationalNode || !this.rationalNodes.has(rationalNode)) {
           throw new Error('Foreign region cover node')
+        }
       }
       ensure()
       if (
@@ -2713,8 +2866,9 @@ export class WalkingSourceRelationEvaluator {
         options.maxLeaves < 1 ||
         !Number.isFinite(options.margin) ||
         options.margin < 0
-      )
+      ) {
         throw new Error('Invalid region cover input')
+      }
       const inventory: Readonly<{
         shape: Shape
         region: SourceRegion
@@ -2745,7 +2899,9 @@ export class WalkingSourceRelationEvaluator {
       const roots: RegionCoverBranch[] = admittedGroups.map((group) => {
         this.predicate()
         this.counters.coverInputs++
-        if (!group.parts.length) throw new Error('Empty region cover owner')
+        if (!group.parts.length) {
+          throw new Error('Empty region cover owner')
+        }
         const start = inventory.length
         const children = group.parts.map((rawPart) => {
           this.predicate()
@@ -2757,8 +2913,9 @@ export class WalkingSourceRelationEvaluator {
             !Object.isFrozen(part.shape.positions) ||
             !Object.isFrozen(part.shape.indices) ||
             !Object.isFrozen(part.regions)
-          )
+          ) {
             throw new Error('Unadmitted region cover shape')
+          }
           const start = inventory.length
           let last = 0
           for (const region of part.regions) {
@@ -2773,10 +2930,12 @@ export class WalkingSourceRelationEvaluator {
               region.indexCount <= 0 ||
               region.indexCount % 3 ||
               region.indexStart + region.indexCount > part.shape.indices.length
-            )
+            ) {
               throw new Error('Invalid region cover partition')
-            if (!cycleNode && region.indexStart !== last)
+            }
+            if (!cycleNode && region.indexStart !== last) {
               throw new Error('Incomplete region cover partition')
+            }
             last = region.indexStart + region.indexCount
             inventory.push(
               Object.freeze({
@@ -2786,8 +2945,9 @@ export class WalkingSourceRelationEvaluator {
               })
             )
           }
-          if (!cycleNode && last !== part.shape.indices.length)
+          if (!cycleNode && last !== part.shape.indices.length) {
             throw new Error('Incomplete region cover partition')
+          }
           if (
             cycleNode &&
             (!part.inputs ||
@@ -2798,12 +2958,15 @@ export class WalkingSourceRelationEvaluator {
                   input.shape !== part.shape ||
                   input.region !== part.regions[k]
               ))
-          )
+          ) {
             throw new Error('Foreign cycle cover inventory')
+          }
           let cached: SceneDemandBounds | undefined
           const bounds = (): SceneDemandBounds =>
             this.observeStage('coverBounds', () => {
-              if (cached) return cached
+              if (cached) {
+                return cached
+              }
               if (cycleNode && 'bounds' in node) {
                 const input = sourceRelationValue(part.inputs)[0]
                 if (
@@ -2815,7 +2978,9 @@ export class WalkingSourceRelationEvaluator {
                   const issued = node.bounds.parts.find(
                     (p) => p.part === input.part
                   )
-                  if (!issued) throw new Error('Missing cycle cover part frame')
+                  if (!issued) {
+                    throw new Error('Missing cycle cover part frame')
+                  }
                   return (cached = {
                     min: [
                       issued.sourceBounds.min[0],
@@ -2854,12 +3019,14 @@ export class WalkingSourceRelationEvaluator {
                       (b) => b.body.id === input.holderBodyId
                     )?.bounds
                   : undefined
-              if (input?.holderBodyId && !boundedFrame)
+              if (input?.holderBodyId && !boundedFrame) {
                 throw new Error('Missing cycle cover holder frame')
+              }
               const frame = rationalNode?.frames[part.frameIndex]
-              if (rationalNode && !frame)
+              if (rationalNode && !frame) {
                 throw new Error('Missing region cover exact frame')
-              for (const region of part.regions)
+              }
+              for (const region of part.regions) {
                 for (
                   let offset = region.indexStart;
                   offset < region.indexStart + region.indexCount;
@@ -2871,16 +3038,20 @@ export class WalkingSourceRelationEvaluator {
                     !Number.isSafeInteger(index) ||
                     index < 0 ||
                     index * 3 + 2 >= part.shape.positions.length
-                  )
+                  ) {
                     throw new Error('Invalid region cover source index')
-                  if (seen.has(index)) continue
+                  }
+                  if (seen.has(index)) {
+                    continue
+                  }
                   seen.add(index)
                   const raw = part.shape.positions.slice(
                     index * 3,
                     index * 3 + 3
                   )
-                  if (!raw.every(Number.isFinite))
+                  if (!raw.every(Number.isFinite)) {
                     throw new Error('Nonfinite region cover source')
+                  }
                   let value: readonly Interval[]
                   if (rationalNode && frame) {
                     const p = raw.map((v) =>
@@ -2894,12 +3065,13 @@ export class WalkingSourceRelationEvaluator {
                     )
                   } else {
                     let p = raw.map(interval) as [Interval, Interval, Interval]
-                    for (const local of input?.localBounds ?? [])
+                    for (const local of input?.localBounds ?? []) {
                       p = transformQueryPoint(local, p) as [
                         Interval,
                         Interval,
                         Interval
                       ]
+                    }
                     value = boundedFrame
                       ? boundedFrame.origin.map((v, k) =>
                           boundedFrame.matrix[k].reduce(
@@ -2916,6 +3088,7 @@ export class WalkingSourceRelationEvaluator {
                   })
                   this.counters.coverVertices++
                 }
+              }
               return (cached = joinedRegionBounds(points))
             })
           return { start, count: inventory.length - start, bounds }
@@ -2931,8 +3104,9 @@ export class WalkingSourceRelationEvaluator {
         }
       })
       if (cycleNode) {
-        if (inventory.length !== cycleNode.inputs.length)
+        if (inventory.length !== cycleNode.inputs.length) {
           throw new Error('Incomplete cycle cover inventory')
+        }
         let offset = 0
         for (const group of admittedGroups) {
           const first = cycleNode.inputs[offset],
@@ -2954,8 +3128,9 @@ export class WalkingSourceRelationEvaluator {
                     (f, k) => f !== previous.localFrames[k]
                   )
               )
-            )
+            ) {
               throw new Error('Mixed cycle cover transform or semantic owner')
+            }
             offset += part.regions.length
           }
         }
@@ -2964,8 +3139,9 @@ export class WalkingSourceRelationEvaluator {
             .clearanceMargin
         if (
           options.margin !== (declared.kind === 'bounded' ? declared.metres : 0)
-        )
+        ) {
           throw new Error('Foreign cycle cover margin')
+        }
       }
       const movingCount = roots
         .slice(0, options.movingGroups)
@@ -2976,8 +3152,9 @@ export class WalkingSourceRelationEvaluator {
           (input, index) =>
             index < movingCount !== !!(input.body || input.holderBodyId)
         )
-      )
+      ) {
         throw new Error('Foreign cycle moving owner boundary')
+      }
       const limits = Object.freeze({ ...options })
       return regionCoverCursor(
         roots,
@@ -3009,8 +3186,9 @@ export class WalkingSourceRelationEvaluator {
         index < -1 ||
         (index !== -1 && !node.chains[index]) ||
         !Object.isFrozen(localFrames)
-      )
+      ) {
         throw new Error('Foreign rational source placement')
+      }
       let byIndex = this.rationalChains.get(node)
       if (!byIndex) {
         byIndex = new Map()
@@ -3028,8 +3206,9 @@ export class WalkingSourceRelationEvaluator {
           if (
             typeof v.significand !== 'bigint' ||
             !Number.isSafeInteger(v.exponent)
-          )
+          ) {
             throw new Error('Invalid exact local source frame')
+          }
           scalarWork(budget, integerBits(v.significand))
           return boundedScalar({ ...v }, budget)
         }
@@ -3075,8 +3254,9 @@ export class WalkingSourceRelationEvaluator {
       !this.rationalNodes.has(node) ||
       this.rationalPlacements.get(first) !== node ||
       this.rationalPlacements.get(second) !== node
-    )
+    ) {
       throw new Error('Foreign rational source relation')
+    }
     return this.relateScaled(first, second, margin, undefined, node.scale)
   }
   relateRationalSheetTriangle(
@@ -3089,16 +3269,18 @@ export class WalkingSourceRelationEvaluator {
       !this.rationalNodes.has(node) ||
       this.rationalPlacements.get(solid) !== node ||
       this.rationalPlacements.get(sheet) !== node
-    )
+    ) {
       throw new Error('Foreign rational sheet relation')
+    }
     const region = sheet.region.region
     if (
       !Number.isSafeInteger(triangleOffset) ||
       triangleOffset % 3 !== 0 ||
       triangleOffset < region.indexStart ||
       triangleOffset + 3 > region.indexStart + region.indexCount
-    )
+    ) {
       throw new Error('Invalid original sheet triangle offset')
+    }
     const unprovedSheet = () => {
       this.counters.sheetTriangleUnknown++
       return freeze({
@@ -3114,24 +3296,31 @@ export class WalkingSourceRelationEvaluator {
         region.kind !== 'sheet' ||
         solid.motion === 'unproved' ||
         sheet.motion === 'unproved'
-      )
+      ) {
         return unprovedSheet()
+      }
       try {
         this.predicate()
         const first = this.place(solid),
           second = this.place(sheet)
         const original =
           sheet.region.triangles[(triangleOffset - region.indexStart) / 3]
-        if (!original || original.length !== 3) return unprovedSheet()
+        if (!original || original.length !== 3) {
+          return unprovedSheet()
+        }
         const points = original.map((index) => second.points[index])
-        if (points.some((p) => !p)) return unprovedSheet()
+        if (points.some((p) => !p)) {
+          return unprovedSheet()
+        }
         const edges = [
           delta(points[1], points[0]),
           delta(points[2], points[1]),
           delta(points[0], points[2])
         ]
         const normal = cross(edges[0], delta(points[2], points[0]))
-        if (isZero(normal)) return unprovedSheet()
+        if (isZero(normal)) {
+          return unprovedSheet()
+        }
         const separated = (axis: ExactPoint) => {
           const left = this.projection(first.points, axis),
             right = this.projection(points, axis)
@@ -3139,7 +3328,7 @@ export class WalkingSourceRelationEvaluator {
             compare(left.max, right.min) < 0 || compare(right.max, left.min) < 0
           )
         }
-        for (const axis of axes)
+        for (const axis of axes) {
           if (separated(axis)) {
             this.counters.sheetTriangleSeparated++
             return freeze({
@@ -3149,6 +3338,7 @@ export class WalkingSourceRelationEvaluator {
               axis
             } as const)
           }
+        }
         const triangleDirections: PlacedDirections = {
           normals: [normal],
           edges
@@ -3183,7 +3373,9 @@ export class WalkingSourceRelationEvaluator {
           triangleOffset
         } as const)
       } catch (error) {
-        if (error !== exhausted) throw error
+        if (error !== exhausted) {
+          throw error
+        }
         return unprovedSheet()
       }
     })
@@ -3198,8 +3390,9 @@ export class WalkingSourceRelationEvaluator {
       this.rationalPlacements.get(sheet.placement) !== node ||
       !Number.isFinite(margin) ||
       margin < 0
-    )
+    ) {
       throw new Error('Invalid sheet interval binding')
+    }
     const work = {
       required: sheet.placement.region.region.indexCount / 3,
       visited: 0,
@@ -3217,8 +3410,9 @@ export class WalkingSourceRelationEvaluator {
           value.denominator <= 0n ||
           value.numerator < 0n ||
           value.numerator > value.denominator
-        )
+        ) {
           throw new Error('Invalid sheet parameter interval')
+        }
       }
       scalarWork(
         account,
@@ -3232,12 +3426,14 @@ export class WalkingSourceRelationEvaluator {
       if (
         parameter.low.numerator * parameter.high.denominator >
         parameter.high.numerator * parameter.low.denominator
-      )
+      ) {
         throw new Error('Unordered sheet parameter interval')
+      }
       const validate = (bound: WalkingSheetRegionIntervalInput['solid']) => {
         const { shape, region } = bound.placement.region
-        if (bound.indices.length !== bound.vertices.length)
+        if (bound.indices.length !== bound.vertices.length) {
           throw new Error('Incomplete original vertex bounds')
+        }
         const slots = new Map<number, number>()
         for (const [slot, index] of bound.indices.entries()) {
           this.predicate()
@@ -3246,8 +3442,9 @@ export class WalkingSourceRelationEvaluator {
             index < 0 ||
             index * 3 + 2 >= shape.positions.length ||
             slots.has(index)
-          )
+          ) {
             throw new Error('Invalid original vertex mapping')
+          }
           const p = bound.vertices[slot]
           if (
             p.length !== 3 ||
@@ -3257,8 +3454,9 @@ export class WalkingSourceRelationEvaluator {
                 !Number.isFinite(v.high) ||
                 v.low > v.high
             )
-          )
+          ) {
             throw new Error('Invalid ordered vertex bound')
+          }
           slots.set(index, slot)
         }
         const required = new Set<number>()
@@ -3269,12 +3467,14 @@ export class WalkingSourceRelationEvaluator {
         ) {
           this.predicate()
           const index = shape.indices[i]
-          if (!slots.has(index))
+          if (!slots.has(index)) {
             throw new Error('Missing original triangle vertex')
+          }
           required.add(index)
         }
-        if (required.size !== slots.size)
+        if (required.size !== slots.size) {
           throw new Error('Foreign original vertex bound')
+        }
         return slots
       }
       validate(solid)
@@ -3316,12 +3516,17 @@ export class WalkingSourceRelationEvaluator {
               this.accountIntervalPredicate()
             }
           )
-        )
+        ) {
           kind = 'pending'
+        }
       }
-      if (kind === 'separated' || kind === 'pending') triangleOffset = undefined
+      if (kind === 'separated' || kind === 'pending') {
+        triangleOffset = undefined
+      }
     } catch (error) {
-      if (error !== exhausted) throw error
+      if (error !== exhausted) {
+        throw error
+      }
       kind = 'unknown'
     } finally {
       work.unvisited = work.required - work.visited
@@ -3342,8 +3547,9 @@ export class WalkingSourceRelationEvaluator {
       if (
         this.rationalPlacements.get(input) !== node ||
         !this.rationalNodes.has(node)
-      )
+      ) {
         throw new Error('Foreign rational semantic witness')
+      }
       const placed = this.place(input)
       for (const [index, p] of placed.points.entries()) {
         this.predicate()
@@ -3357,7 +3563,9 @@ export class WalkingSourceRelationEvaluator {
           const triangle = input.region.triangles.findIndex((t) =>
             t.includes(index)
           )
-          if (triangle < 0) throw new Error('Missing original semantic witness')
+          if (triangle < 0) {
+            throw new Error('Missing original semantic witness')
+          }
           const corner = input.region.triangles[triangle].indexOf(index)
           const triangleOffset = input.region.region.indexStart + triangle * 3
           return freeze({
@@ -3377,8 +3585,9 @@ export class WalkingSourceRelationEvaluator {
       if (
         height.denominator <= 0n ||
         input.region.region.kind === 'closed-solid'
-      )
+      ) {
         return false
+      }
       try {
         const budget = this.rationalAccount
         scalarWork(
@@ -3397,10 +3606,14 @@ export class WalkingSourceRelationEvaluator {
           budget
         )
         const placed = this.place(input)
-        if (!placed.points.length || !input.region.triangles.length)
+        if (!placed.points.length || !input.region.triangles.length) {
           return false
-        for (const p of placed.points)
-          if (compare(product(p[1], denominator), numerator) !== 0) return false
+        }
+        for (const p of placed.points) {
+          if (compare(product(p[1], denominator), numerator) !== 0) {
+            return false
+          }
+        }
         for (const t of input.region.triangles) {
           this.predicate()
           if (
@@ -3408,12 +3621,15 @@ export class WalkingSourceRelationEvaluator {
               delta(placed.points[t[1]], placed.points[t[0]]),
               delta(placed.points[t[2]], placed.points[t[0]])
             )[1].significand === 0n
-          )
+          ) {
             return false
+          }
         }
         return true
       } catch (error) {
-        if (error !== exhausted) throw error
+        if (error !== exhausted) {
+          throw error
+        }
         return false
       }
     })
@@ -3428,10 +3644,13 @@ export class WalkingSourceRelationEvaluator {
         !part.regions.includes(region) ||
         !part.patches.includes(patch) ||
         patch.region !== region
-      )
+      ) {
         return
+      }
       const material = this.prepare(part.shape, region)
-      if (!material.certified) return
+      if (!material.certified) {
+        return
+      }
       try {
         const points: ExactPoint[] = [],
           indices: number[] = [],
@@ -3445,7 +3664,9 @@ export class WalkingSourceRelationEvaluator {
             ) as unknown as Point3,
             key = raw.join(',')
           const old = byCoordinate.get(key)
-          if (old !== undefined) return old
+          if (old !== undefined) {
+            return old
+          }
           const id = points.length
           points.push(
             point(raw).map((v) =>
@@ -3456,7 +3677,7 @@ export class WalkingSourceRelationEvaluator {
           byCoordinate.set(key, id)
           return id
         }
-        for (const range of patch.ranges)
+        for (const range of patch.ranges) {
           for (
             let offset = range.indexStart;
             offset < range.indexStart + range.indexCount;
@@ -3465,8 +3686,9 @@ export class WalkingSourceRelationEvaluator {
             if (
               offset < region.indexStart ||
               offset + 3 > region.indexStart + region.indexCount
-            )
+            ) {
               return
+            }
             offsets.push(offset)
             triangles.push([
               vertex(part.shape.indices[offset]),
@@ -3474,7 +3696,10 @@ export class WalkingSourceRelationEvaluator {
               vertex(part.shape.indices[offset + 2])
             ])
           }
-        if (!triangles.length) return
+        }
+        if (!triangles.length) {
+          return
+        }
         const first = triangles[0],
           normal = cross(
             delta(points[first[1]], points[first[0]]),
@@ -3483,11 +3708,15 @@ export class WalkingSourceRelationEvaluator {
         const nonzero = normal.flatMap((v, k) =>
           v.significand === 0n ? [] : [k]
         )
-        if (nonzero.length !== 1) return
+        if (nonzero.length !== 1) {
+          return
+        }
         const axis = nonzero[0] as 0 | 1 | 2,
           plane = points[first[0]][axis],
           orientation = normal[axis].significand > 0n ? 1 : -1
-        if (points.some((p) => compare(p[axis], plane) !== 0)) return
+        if (points.some((p) => compare(p[axis], plane) !== 0)) {
+          return
+        }
         const edges = new Map<
           string,
           {
@@ -3508,8 +3737,9 @@ export class WalkingSourceRelationEvaluator {
           if (
             n.significand === 0n ||
             (n.significand > 0n ? 1 : -1) !== orientation
-          )
+          ) {
             return
+          }
           area = sum(area, n)
           for (let j = 0; j < 3; j++) {
             const a = t[j],
@@ -3519,7 +3749,7 @@ export class WalkingSourceRelationEvaluator {
             if (old) {
               old.count++
               old.balance += a < b ? 1 : -1
-            } else
+            } else {
               edges.set(key, {
                 a,
                 b,
@@ -3527,6 +3757,7 @@ export class WalkingSourceRelationEvaluator {
                 balance: a < b ? 1 : -1,
                 triangleOffset: offsets[i]
               })
+            }
           }
         }
         const boundary = [...edges.values()].filter((e) => e.count === 1)
@@ -3535,22 +3766,28 @@ export class WalkingSourceRelationEvaluator {
           [...edges.values()].some(
             (e) => e.count > 2 || (e.count === 2 && e.balance !== 0)
           )
-        )
+        ) {
           return
+        }
         const next = new Map(boundary.map((e) => [e.a, e.b]))
         if (
           next.size !== boundary.length ||
           new Set(boundary.map((e) => e.b)).size !== boundary.length
-        )
+        ) {
           return
+        }
         let cursor = boundary[0].a,
           polygonArea = zero
         const visited = new Set<number>()
         do {
-          if (visited.has(cursor)) return
+          if (visited.has(cursor)) {
+            return
+          }
           visited.add(cursor)
           const end = next.get(cursor)
-          if (end === undefined) return
+          if (end === undefined) {
+            return
+          }
           polygonArea = sum(
             polygonArea,
             cross(points[cursor], points[end])[axis]
@@ -3560,8 +3797,9 @@ export class WalkingSourceRelationEvaluator {
         if (
           visited.size !== boundary.length ||
           compare(area, polygonArea) !== 0
-        )
+        ) {
           return
+        }
         const covered = (p: ExactPoint) =>
           boundary.every((edge) => {
             this.predicate()
@@ -3571,9 +3809,11 @@ export class WalkingSourceRelationEvaluator {
             )[axis].significand
             return orientation > 0 ? side >= 0n : side <= 0n
           })
-        if (!points.every(covered)) return
+        if (!points.every(covered)) {
+          return
+        }
         // Pairwise strict interior exclusion makes area/edge coverage a union proof.
-        for (let i = 0; i < triangles.length; i++)
+        for (let i = 0; i < triangles.length; i++) {
           for (let j = i + 1; j < triangles.length; j++) {
             const a = triangles[i].map((k) => points[k]),
               b = triangles[j].map((k) => points[k])
@@ -3588,8 +3828,11 @@ export class WalkingSourceRelationEvaluator {
                 compare(right.max, left.min) <= 0
               )
             })
-            if (!separated) return
+            if (!separated) {
+              return
+            }
           }
+        }
         let extrusionSign: 1 | -1 | undefined
         const sourceOffsets: number[] = []
         let witness: WalkingFootExtrusion['witness'] | undefined
@@ -3609,26 +3852,33 @@ export class WalkingSourceRelationEvaluator {
               height = difference(p[axis], plane)
             if (height.significand !== 0n) {
               const sign = height.significand > 0n ? 1 : -1
-              if (extrusionSign !== undefined && sign !== extrusionSign) return
+              if (extrusionSign !== undefined && sign !== extrusionSign) {
+                return
+              }
               extrusionSign = sign
             }
             const projected = p.map((v, k) =>
               k === axis ? plane : v
             ) as unknown as ExactPoint
-            if (!covered(projected)) return
+            if (!covered(projected)) {
+              return
+            }
             if (!witness && height.significand === 0n) {
               const patchTriangle = triangles.findIndex((t) =>
                 triangleContains(projected, t)
               )
-              if (patchTriangle >= 0)
+              if (patchTriangle >= 0) {
                 witness = {
                   sourceTriangleOffset: offset,
                   patchTriangleOffset: offsets[patchTriangle]
                 }
+              }
             }
           }
         }
-        if (!extrusionSign || !witness) return
+        if (!extrusionSign || !witness) {
+          return
+        }
         return freeze({
           part,
           region,
@@ -3650,7 +3900,9 @@ export class WalkingSourceRelationEvaluator {
           authority: 'convex-source-foot-extrusion/1' as const
         })
       } catch (error) {
-        if (error !== exhausted) throw error
+        if (error !== exhausted) {
+          throw error
+        }
         return
       }
     })
@@ -3662,10 +3914,13 @@ export class WalkingSourceRelationEvaluator {
         !Object.isFrozen(shape.positions) ||
         !Object.isFrozen(shape.indices) ||
         !Object.isFrozen(region)
-      )
+      ) {
         throw new Error('Source relation requires immutable admitted geometry')
+      }
       const prior = this.regions.get(shape)?.get(region)
-      if (prior) return prior
+      if (prior) {
+        return prior
+      }
       if (
         !Number.isSafeInteger(region.indexStart) ||
         !Number.isSafeInteger(region.indexCount) ||
@@ -3674,8 +3929,9 @@ export class WalkingSourceRelationEvaluator {
         region.indexStart % 3 !== 0 ||
         region.indexCount % 3 !== 0 ||
         region.indexStart + region.indexCount > shape.indices.length
-      )
+      ) {
         throw new Error('Invalid source region range')
+      }
       this.counters.regionPreparations++
       const points: ExactPoint[] = [],
         triangles: Triangle[] = [],
@@ -3685,8 +3941,9 @@ export class WalkingSourceRelationEvaluator {
           !Number.isSafeInteger(index) ||
           index < 0 ||
           index * 3 + 2 >= shape.positions.length
-        )
+        ) {
           throw new Error('Invalid source triangle index')
+        }
         const p: Point3 = [
             shape.positions[index * 3],
             shape.positions[index * 3 + 1],
@@ -3694,7 +3951,9 @@ export class WalkingSourceRelationEvaluator {
           ],
           key = p.join(',')
         const existing = ids.get(key)
-        if (existing !== undefined) return existing
+        if (existing !== undefined) {
+          return existing
+        }
         const id = points.length
         points.push(
           point(p).map((v) =>
@@ -3709,12 +3968,13 @@ export class WalkingSourceRelationEvaluator {
         let offset = region.indexStart;
         offset < region.indexStart + region.indexCount;
         offset += 3
-      )
+      ) {
         triangles.push([
           vertex(shape.indices[offset]),
           vertex(shape.indices[offset + 1]),
           vertex(shape.indices[offset + 2])
         ])
+      }
       let certified = region.kind === 'closed-solid'
       let resourceIncomplete = false
       try {
@@ -3763,15 +4023,21 @@ export class WalkingSourceRelationEvaluator {
             )
         }
       } catch (error) {
-        if (error !== exhausted) throw error
+        if (error !== exhausted) {
+          throw error
+        }
         certified = false
         resourceIncomplete = true
       }
-      if (resourceIncomplete) this.certificationOutcomes.resourceIncomplete++
-      else if (region.kind !== 'closed-solid')
+      if (resourceIncomplete) {
+        this.certificationOutcomes.resourceIncomplete++
+      } else if (region.kind !== 'closed-solid') {
         this.certificationOutcomes.notClosedSolid++
-      else if (certified) this.certificationOutcomes.certified++
-      else this.certificationOutcomes.topologyUnproved++
+      } else if (certified) {
+        this.certificationOutcomes.certified++
+      } else {
+        this.certificationOutcomes.topologyUnproved++
+      }
       const result = freeze({ shape, region, points, triangles, certified })
       let products = this.regions.get(shape)
       if (!products) {
@@ -3791,16 +4057,20 @@ export class WalkingSourceRelationEvaluator {
       const previous = reusable
         ? this.placed.get(input.region)?.get(input.frames)
         : undefined
-      if (previous) return previous
-      if (!this.issued.has(input.region))
+      if (previous) {
+        return previous
+      }
+      if (!this.issued.has(input.region)) {
         throw new Error('Unissued prepared source region')
+      }
       for (const frame of input.frames) {
         this.predicate()
         if (
           dot(frame.matrix[0], cross(frame.matrix[1], frame.matrix[2]))
             .significand === 0n
-        )
+        ) {
           throw new Error('Singular source placement')
+        }
       }
       const points = this.observeStage('placementVertices', () =>
         input.region.points.map((p) => {
@@ -3832,7 +4102,9 @@ export class WalkingSourceRelationEvaluator {
         products = new Map()
         this.placed.set(input.region, products)
       }
-      if (reusable) products.set(input.frames, result)
+      if (reusable) {
+        products.set(input.frames, result)
+      }
       this.counters.transformPreparations++
       return result
     })
@@ -3862,8 +4134,12 @@ export class WalkingSourceRelationEvaluator {
     region: WalkingPreparedSourceRegion
   ): PlacedDirections {
     const previous = this.localDirections.get(region)
-    if (previous === exhausted) throw exhausted
-    if (previous) return previous
+    if (previous === exhausted) {
+      throw exhausted
+    }
+    if (previous) {
+      return previous
+    }
     this.counters.localDirectionPreparationAttempts++
     try {
       const value = this.observeStage('localDirectionPreparation', () => {
@@ -3896,14 +4172,20 @@ export class WalkingSourceRelationEvaluator {
       this.counters.localDirectionPreparations++
       return value
     } catch (error) {
-      if (error === exhausted) this.localDirections.set(region, exhausted)
+      if (error === exhausted) {
+        this.localDirections.set(region, exhausted)
+      }
       throw error
     }
   }
   private directionOperator(frame: QueryExactFrame) {
     const previous = this.directionOperators.get(frame)
-    if (previous === exhausted) throw exhausted
-    if (previous) return previous
+    if (previous === exhausted) {
+      throw exhausted
+    }
+    if (previous) {
+      return previous
+    }
     try {
       const linear = this.observeStage('directionMatrixPrimitive', () => {
         // One positive divisor for the WHOLE matrix; never change a row's scale
@@ -3927,7 +4209,9 @@ export class WalkingSourceRelationEvaluator {
           }
           divisor = a
         }
-        if (!divisor) throw new Error('Singular source direction matrix')
+        if (!divisor) {
+          throw new Error('Singular source direction matrix')
+        }
         const reduced = integers.map((value) => {
           scalarWork(budget, integerBits(value))
           return boundedScalar(
@@ -3958,20 +4242,27 @@ export class WalkingSourceRelationEvaluator {
       this.counters.directionOperatorPreparations++
       return result
     } catch (error) {
-      if (error === exhausted) this.directionOperators.set(frame, exhausted)
+      if (error === exhausted) {
+        this.directionOperators.set(frame, exhausted)
+      }
       throw error
     }
   }
   private directions(input: PlacedRegion): PlacedDirections {
     const previous = this.placedDirections.get(input)
-    if (previous === exhausted) throw exhausted
-    if (previous) return previous
+    if (previous === exhausted) {
+      throw exhausted
+    }
+    if (previous) {
+      return previous
+    }
     this.counters.directionPreparationAttempts++
     try {
       const result = this.observeStage('placementDirections', () => {
         // Untagged legacy points retain the exact historical raw axis scale.
-        if (!input.points.some((p) => p.some((v) => !!scalarAccount(v))))
+        if (!input.points.some((p) => p.some((v) => !!scalarAccount(v)))) {
           return this.pointDirections(input)
+        }
         const source = sourceRelationValue(this.placementInputs.get(input))
         const local = this.sourceDirections(source.region)
         const operators = source.frames.map((frame) =>
@@ -3989,8 +4280,9 @@ export class WalkingSourceRelationEvaluator {
                       sourceRelationValue(this.rationalAccount),
                       integerBits(v.significand)
                     )
-                    if (v.exponent !== 0)
+                    if (v.exponent !== 0) {
                       throw new Error('Nonprimitive source direction')
+                    }
                     return v.significand.toString()
                   })
                   .join(',')
@@ -3999,7 +4291,9 @@ export class WalkingSourceRelationEvaluator {
               ? operator.vectors.normal
               : operator.vectors.edge
             const previous = cache.get(key)
-            if (previous === exhausted) throw exhausted
+            if (previous === exhausted) {
+              throw exhausted
+            }
             if (previous) {
               this.counters.directionVectorReuses++
               result = previous
@@ -4023,7 +4317,9 @@ export class WalkingSourceRelationEvaluator {
               cache.set(key, result)
               this.counters.directionVectorPreparations++
             } catch (error) {
-              if (error === exhausted) cache.set(key, exhausted)
+              if (error === exhausted) {
+                cache.set(key, exhausted)
+              }
               throw error
             }
           }
@@ -4070,26 +4366,35 @@ export class WalkingSourceRelationEvaluator {
     function* candidates() {
       yield* a.normals
       yield* b.normals
-      for (const edge of a.edges)
+      for (const edge of a.edges) {
         for (const other of b.edges) {
           counters.edgeCrossProducts++
           yield cross(edge, other)
         }
+      }
     }
     let axisIndex = 0
     const iterator = uniqueDirectionIterator(candidates(), (event) => {
       if (event === 'candidate') {
         counters.axisCandidates++
-        if (axisIndex++ < a.normals.length + b.normals.length)
+        if (axisIndex++ < a.normals.length + b.normals.length) {
           counters.normalAxisCandidates++
-        else counters.crossAxisCandidates++
-      } else if (event === 'unique') counters.uniqueAxes++
-      else if (event === 'duplicate') counters.duplicateAxes++
-      else counters.zeroAxes++
+        } else {
+          counters.crossAxisCandidates++
+        }
+      } else if (event === 'unique') {
+        counters.uniqueAxes++
+      } else if (event === 'duplicate') {
+        counters.duplicateAxes++
+      } else {
+        counters.zeroAxes++
+      }
     })
     while (true) {
       const next = this.observeAxisStage('Preparation', () => iterator.next())
-      if (next.done) return
+      if (next.done) {
+        return
+      }
       yield next.value
     }
   }
@@ -4101,13 +4406,20 @@ export class WalkingSourceRelationEvaluator {
     let min: Dyadic | undefined, max: Dyadic | undefined
     for (const p of points) {
       this.predicate()
-      if (observeAxis) this.counters.axisProjectionVertices++
+      if (observeAxis) {
+        this.counters.axisProjectionVertices++
+      }
       const value = dot(p, axis)
-      if (min === undefined || compare(value, min) < 0) min = value
-      if (max === undefined || compare(value, max) > 0) max = value
+      if (min === undefined || compare(value, min) < 0) {
+        min = value
+      }
+      if (max === undefined || compare(value, max) > 0) {
+        max = value
+      }
     }
-    if (min === undefined || max === undefined)
+    if (min === undefined || max === undefined) {
       throw new Error('Empty source projection')
+    }
     return { min, max }
   }
   /** A sufficient whole-support-feature proof. An unproved subset stays unknown. */
@@ -4133,8 +4445,9 @@ export class WalkingSourceRelationEvaluator {
         !relation.axis ||
         !relation.firstFeature ||
         !relation.secondFeature
-      )
+      ) {
         return undefined
+      }
       const covered = (
         placement: WalkingRegionPlacement,
         feature: readonly number[],
@@ -4151,14 +4464,17 @@ export class WalkingSourceRelationEvaluator {
               range.indexCount % 3 !== 0 ||
               !Number.isSafeInteger(range.indexStart + range.indexCount)
           )
-        )
+        ) {
           return undefined
+        }
         const vertices = new Set(feature),
           coveredVertices = new Set<number>(),
           triangles: number[] = []
         placement.region.triangles.forEach((triangle, index) => {
           this.predicate()
-          if (!triangle.every((vertex) => vertices.has(vertex))) return
+          if (!triangle.every((vertex) => vertices.has(vertex))) {
+            return
+          }
           const original = placement.region.region.indexStart + index * 3
           if (
             !ranges.some(
@@ -4166,8 +4482,9 @@ export class WalkingSourceRelationEvaluator {
                 original >= range.indexStart &&
                 original + 3 <= range.indexStart + range.indexCount
             )
-          )
+          ) {
             return
+          }
           triangles.push(index)
           triangle.forEach((vertex) => coveredVertices.add(vertex))
         })
@@ -4195,11 +4512,13 @@ export class WalkingSourceRelationEvaluator {
             relation.secondFeature,
             secondRanges
           )
-        if (!firstTriangles || !secondTriangles) return undefined
+        if (!firstTriangles || !secondTriangles) {
+          return undefined
+        }
         const a = this.place(first),
           b = this.place(second),
           normal = relation.axis
-        for (const i of firstTriangles)
+        for (const i of firstTriangles) {
           for (const j of secondTriangles) {
             const firstPoints = first.region.triangles[i].map(
                 (index) => a.points[index]
@@ -4227,16 +4546,20 @@ export class WalkingSourceRelationEvaluator {
                   compare(right.max, left.min) >= 0
                 )
               })
-            if (intersects)
+            if (intersects) {
               return freeze({
                 axis: normal,
                 firstTriangle: first.region.region.indexStart + i * 3,
                 secondTriangle: second.region.region.indexStart + j * 3
               })
+            }
           }
+        }
         return undefined
       } catch (error) {
-        if (error !== exhausted) throw error
+        if (error !== exhausted) {
+          throw error
+        }
         return undefined
       }
     })
@@ -4267,8 +4590,9 @@ export class WalkingSourceRelationEvaluator {
     coordinateScale: Dyadic = dyadic(1)
   ): WalkingRegionRelation {
     return this.observeStage('relationSetupAndXYZ', () => {
-      if (!Number.isFinite(margin) || margin < 0)
+      if (!Number.isFinite(margin) || margin < 0) {
         throw new Error('Invalid source clearance margin')
+      }
       if (this.counters.regionPairs >= this.limits.maxRegionPairs) {
         this.counters.unvisitedRegionPairs++
         return unproved
@@ -4279,12 +4603,14 @@ export class WalkingSourceRelationEvaluator {
         !second.region.certified ||
         first.motion === 'unproved' ||
         second.motion === 'unproved'
-      )
+      ) {
         return unproved
+      }
       try {
         const motion = (placement: WalkingRegionPlacement) => {
-          if (placement.translation && placement.displacement)
+          if (placement.translation && placement.displacement) {
             throw new Error('Ambiguous source translation')
+          }
           return placement.displacement
             ? delta(
                 point(placement.displacement.until),
@@ -4327,7 +4653,7 @@ export class WalkingSourceRelationEvaluator {
             )
           )
         }
-        for (const axis of axes)
+        for (const axis of axes) {
           if (
             wholeGap(
               this.projection(a.points, axis),
@@ -4335,8 +4661,10 @@ export class WalkingSourceRelationEvaluator {
               dot(velocity, axis),
               axis
             )
-          )
+          ) {
             return freeze({ kind: 'separated', proof: 'strict-bounds', axis })
+          }
+        }
         const completeAxes = this.completeAxes(
           this.directions(a),
           this.directions(b)
@@ -4352,8 +4680,9 @@ export class WalkingSourceRelationEvaluator {
             time.from < time.pathFrom ||
             time.until > time.pathUntil ||
             time.from > time.until
-          )
+          ) {
             throw new Error('Invalid exact motion interval')
+          }
           const duration = difference(
             dyadic(time.pathUntil),
             dyadic(time.pathFrom)
@@ -4387,7 +4716,9 @@ export class WalkingSourceRelationEvaluator {
             }
           )
           const separated = this.observeAxisStage('Constraint', () => {
-            if (wholeGap(left, right, slope, axis)) return true
+            if (wholeGap(left, right, slope, axis)) {
+              return true
+            }
             const forward = difference(left.max, right.min),
               backward = difference(right.max, left.min)
             constrain(closed, forward, slope, false)
@@ -4414,10 +4745,15 @@ export class WalkingSourceRelationEvaluator {
             return freeze({ kind: 'separated', proof, axis })
           }
         }
-        if (!interior.empty) return freeze({ kind: 'volume-overlap', proof })
-        if (closed.empty)
+        if (!interior.empty) {
+          return freeze({ kind: 'volume-overlap', proof })
+        }
+        if (closed.empty) {
           return margin === 0 ? freeze({ kind: 'separated', proof }) : unproved
-        if (margin !== 0) return unproved
+        }
+        if (margin !== 0) {
+          return unproved
+        }
         if (contactAxis && contactLevel) {
           const axis = contactAxis,
             level = contactLevel
@@ -4437,7 +4773,9 @@ export class WalkingSourceRelationEvaluator {
         }
         return freeze({ kind: 'boundary', proof })
       } catch (error) {
-        if (error !== exhausted) throw error
+        if (error !== exhausted) {
+          throw error
+        }
         return unproved
       }
     })
@@ -4608,8 +4946,9 @@ export function prepareWalkingMountedCrateRelations(
       receipt.recipe !== cycle.recipe ||
       receipt.determinant.numerator <= 0n ||
       mounted.owner.read(cycle.source, crate) !== crate
-    )
+    ) {
       throw new Error('Stale mounted common-base relation')
+    }
   }
   ensure()
   const issued = sourceRelationValue(receipt)
@@ -4624,8 +4963,9 @@ export function prepareWalkingMountedCrateRelations(
     region: SourceRegion,
     base: boolean
   ) => {
-    if (!part.regions.includes(region))
+    if (!part.regions.includes(region)) {
       throw new Error('Foreign mounted region')
+    }
     let regions = placements.get(part)
     if (!regions) {
       regions = new Map()
@@ -4638,7 +4978,9 @@ export function prepareWalkingMountedCrateRelations(
         maxBits
       )
       const index = base ? issued.parts.findIndex((p) => p.part === part) : -1
-      if (base && index < 0) throw new Error('Non-base mounted relation')
+      if (base && index < 0) {
+        throw new Error('Non-base mounted relation')
+      }
       result = evaluator.rationalPlacement(
         evaluator.prepare(part.shape, region),
         node,
@@ -4661,12 +5003,15 @@ export function prepareWalkingMountedCrateRelations(
       margin: number
     ) {
       ensure()
-      if (margin !== 0) return undefined
+      if (margin !== 0) {
+        return undefined
+      }
       if (
         !issued.parts.some((p) => p.part === basePart) ||
         !crate.geometry.parts.includes(cratePart)
-      )
+      ) {
         throw new Error('Foreign mounted part')
+      }
       const a = place(basePart, baseRegion, true),
         b = place(cratePart, crateRegion, false)
       const relation = evaluator.relateRational(
@@ -4675,18 +5020,23 @@ export function prepareWalkingMountedCrateRelations(
         sourceRelationValue(node),
         0
       )
-      if (relation.kind === 'separated')
+      if (relation.kind === 'separated') {
         return { kind: 'exactSeparated' as const }
-      if (relation.kind === 'volume-overlap')
+      }
+      if (relation.kind === 'volume-overlap') {
         return { kind: 'blocked' as const }
-      if (relation.kind !== 'boundary') return undefined
+      }
+      if (relation.kind !== 'boundary') {
+        return undefined
+      }
       if (
         basePart !== crate.tray ||
         baseRegion !== crate.trayPatch.region ||
         cratePart !== crate.geometry.bottomPart ||
         crateRegion !== crate.geometry.bottomPatch.region
-      )
+      ) {
         return { kind: 'blocked' as const }
+      }
       const boundary = evaluator.proveBoundary(
         a,
         b,
@@ -4724,8 +5074,9 @@ export function prepareWalkingConstantRootRelations(
       receipt.recipe !== cycle.recipe ||
       receipt.determinant.numerator <= 0n ||
       (mounted && mounted.owner.read(source, mounted.crate) !== mounted.crate)
-    )
+    ) {
       throw new Error('Stale constant-root relation')
+    }
   }
   ensure()
   const issued = sourceRelationValue(receipt)
@@ -4745,8 +5096,9 @@ export function prepareWalkingConstantRootRelations(
     part: WalkingRobotPart | Readonly<RobotPart>,
     region: SourceRegion
   ) => {
-    if (!member(part) || !part.regions.includes(region))
+    if (!member(part) || !part.regions.includes(region)) {
       throw new Error('Foreign constant-root material')
+    }
     let regions = placements.get(part)
     if (!regions) {
       regions = new Map()
@@ -4779,7 +5131,9 @@ export function prepareWalkingConstantRootRelations(
       margin: number
     ) {
       ensure()
-      if (margin !== 0 || !member(a) || !member(b)) return undefined
+      if (margin !== 0 || !member(a) || !member(b)) {
+        return undefined
+      }
       const ap = place(a, ar),
         bp = place(b, br)
       const result = evaluator.relateRational(
@@ -4788,10 +5142,15 @@ export function prepareWalkingConstantRootRelations(
         sourceRelationValue(node),
         0
       )
-      if (result.kind === 'separated')
+      if (result.kind === 'separated') {
         return { kind: 'exactSeparated' as const }
-      if (result.kind === 'volume-overlap') return { kind: 'blocked' as const }
-      if (result.kind !== 'boundary') return undefined
+      }
+      if (result.kind === 'volume-overlap') {
+        return { kind: 'blocked' as const }
+      }
+      if (result.kind !== 'boundary') {
+        return undefined
+      }
       const crate = mounted?.crate
       let firstRanges: SourcePatch['ranges'] = [],
         secondRanges: SourcePatch['ranges'] = []
@@ -4804,13 +5163,15 @@ export function prepareWalkingConstantRootRelations(
           part: WalkingRobotPart | Readonly<RobotPart>,
           region: SourceRegion
         ): SourcePatch['ranges'] => {
-          if (part === crate.tray && region === crate.trayPatch.region)
+          if (part === crate.tray && region === crate.trayPatch.region) {
             return crate.trayPatch.ranges
+          }
           if (
             part === crate.geometry.bottomPart &&
             region === crate.geometry.bottomPatch.region
-          )
+          ) {
             return crate.geometry.bottomPatch.ranges
+          }
           return []
         }
         firstRanges = ranges(a, ar)
@@ -4842,8 +5203,9 @@ export function prepareWalkingConstantRootRelations(
           }
         }
       }
-      if (!firstRanges.length || !secondRanges.length)
+      if (!firstRanges.length || !secondRanges.length) {
         return { kind: 'blocked' as const }
+      }
       const boundary = evaluator.proveBoundary(
         ap,
         bp,
@@ -4873,8 +5235,9 @@ export function prepareWalkingNonlinearSourceRelations(
     !Number.isSafeInteger(priorCycleOperations) ||
     priorCycleOperations < 0 ||
     priorCycleOperations > request.budget.maxCycleOperations
-  )
+  ) {
     throw new Error('Invalid prior nonlinear cycle work')
+  }
   if (
     readWalkingNonlinearMotionRequest(
       request,
@@ -4883,8 +5246,9 @@ export function prepareWalkingNonlinearSourceRelations(
       current,
       mounted
     ) !== request
-  )
+  ) {
     throw new Error('Unadmitted nonlinear source request')
+  }
   const source = request.source,
     demand = request.demand,
     cycle = current.cycle
@@ -4935,9 +5299,9 @@ export function prepareWalkingNonlinearSourceRelations(
     return { exact, bounds }
   }
   const sources: WalkingNonlinearRelationInput[] = []
-  for (const body of source.rig.bodies)
-    for (const part of body.parts)
-      for (const region of part.regions)
+  for (const body of source.rig.bodies) {
+    for (const part of body.parts) {
+      for (const region of part.regions) {
         sources.push({
           owner: body,
           body,
@@ -4947,6 +5311,9 @@ export function prepareWalkingNonlinearSourceRelations(
           localFrames: noFrames,
           localBounds: []
         })
+      }
+    }
+  }
   const external = new Map(
     request.externalSources.map((p) => [p.sourceId, p.regions])
   )
@@ -4958,7 +5325,7 @@ export function prepareWalkingNonlinearSourceRelations(
     localFrame: WalkingRigidTransform
   ) => {
     const frame = transform(localFrame)
-    for (const region of external.get(sourceId) ?? [])
+    for (const region of external.get(sourceId) ?? []) {
       sources.push({
         owner,
         shape,
@@ -4967,10 +5334,11 @@ export function prepareWalkingNonlinearSourceRelations(
         localFrames: Object.freeze([frame.exact]),
         localBounds: Object.freeze([frame.bounds])
       })
+    }
   }
-  if (request.load.crate.kind === 'unknown')
+  if (request.load.crate.kind === 'unknown') {
     reasons.add('crate-geometry-unknown')
-  else if (request.load.crate.kind === 'mounted') {
+  } else if (request.load.crate.kind === 'mounted') {
     const crate = request.load.crate.artifact
     mountedRelations = prepareWalkingMountedCrateRelations(
       evaluator,
@@ -4980,8 +5348,8 @@ export function prepareWalkingNonlinearSourceRelations(
     )
     const frame = mountedRelations.placement
     work.inputPreparations++
-    for (const part of crate.geometry.parts)
-      for (const region of part.regions)
+    for (const part of crate.geometry.parts) {
+      for (const region of part.regions) {
         sources.push({
           owner: crate,
           mountedCrate: crate,
@@ -4992,21 +5360,25 @@ export function prepareWalkingNonlinearSourceRelations(
           localFrames: frame.exact,
           localBounds: frame.bounds
         })
+      }
+    }
   } else {
-    if (request.load.crate.sourceCoverage !== 'complete')
+    if (request.load.crate.sourceCoverage !== 'complete') {
       reasons.add('crate-source-geometry-incomplete')
+    }
     const crate = request.load.crate
     crate.sourceParts.forEach((p, i) =>
       attachment(crate, p.shape, p.sourceId, 'base', crate.localFrames[i])
     )
   }
-  if (request.load.carried.kind === 'attached')
+  if (request.load.carried.kind === 'attached') {
     for (const item of request.load.carried.items) {
-      if (item.sourceCoverage !== 'complete')
+      if (item.sourceCoverage !== 'complete') {
         reasons.add('carried-source-geometry-incomplete')
-      if (item.shape.kind === 'unknown')
+      }
+      if (item.shape.kind === 'unknown') {
         reasons.add('carried-source-geometry-unknown')
-      else
+      } else {
         attachment(
           item,
           item.shape,
@@ -5014,7 +5386,9 @@ export function prepareWalkingNonlinearSourceRelations(
           item.holderBodyId,
           item.localFrame
         )
+      }
     }
+  }
   const movingCount = sources.length
   const instanceExact = new Map<object, QueryExactFrame>(),
     instanceBounds = new Map<
@@ -5025,8 +5399,9 @@ export function prepareWalkingNonlinearSourceRelations(
     if (
       exclusion.kind !== 'source' ||
       exclusion.mesh.descriptor.shape.kind !== 'triangles'
-    )
+    ) {
       continue
+    }
     const descriptor = transform(exclusion.transform.descriptor)
     const localFrames: QueryExactFrame[] = [],
       localBounds: ReturnType<typeof prepareQueryForwardFrame>[] = []
@@ -5068,7 +5443,7 @@ export function prepareWalkingNonlinearSourceRelations(
   }
   for (const terrain of request.terrain.regions) {
     const frame = transform(terrain.frame)
-    for (const region of external.get(terrain.sourceId) ?? [])
+    for (const region of external.get(terrain.sourceId) ?? []) {
       sources.push({
         owner: terrain,
         terrain,
@@ -5077,6 +5452,7 @@ export function prepareWalkingNonlinearSourceRelations(
         localFrames: Object.freeze([frame.exact]),
         localBounds: Object.freeze([frame.bounds])
       })
+    }
   }
   // These triangles encode an authored exclusion set, never inferred material.
   // Their identity and result reason retain that distinction from source solids.
@@ -5121,19 +5497,23 @@ export function prepareWalkingNonlinearSourceRelations(
       semantic: { kind, bounds }
     })
   }
-  for (const channel of demand.channels)
+  for (const channel of demand.channels) {
     semantic(
       channel,
       'channel',
       channel.bounds,
       'channel-' + channel.bay + '-' + channel.stripId
     )
-  for (const terrain of request.terrain.regions)
-    if (terrain.keepOut.kind === 'bounded')
+  }
+  for (const terrain of request.terrain.regions) {
+    if (terrain.keepOut.kind === 'bounded') {
       semantic(terrain, 'debris', terrain.keepOut, 'debris-' + terrain.id)
+    }
+  }
   const groups = new Map<object, number>()
-  for (const entry of sources.slice(0, movingCount))
+  for (const entry of sources.slice(0, movingCount)) {
     groups.set(entry.owner, (groups.get(entry.owner) ?? 0) + 1)
+  }
   const coRigid = [...groups.values()].reduce(
     (sum, n) => sum + (n * (n - 1)) / 2,
     0
@@ -5142,8 +5522,9 @@ export function prepareWalkingNonlinearSourceRelations(
     (movingCount * (movingCount - 1)) / 2 +
     movingCount * (sources.length - movingCount)
   const required = candidate - coRigid
-  if (!Number.isSafeInteger(candidate))
+  if (!Number.isSafeInteger(candidate)) {
     throw new Error('Nonlinear pair inventory exceeds safe integer domain')
+  }
   const pairs: { first: number; second: number }[] = []
   const coverGroups: {
     owner: object
@@ -5198,7 +5579,9 @@ export function prepareWalkingNonlinearSourceRelations(
     movingGroups = 0
   for (const group of coverGroups) {
     const count = group.parts.reduce((n, p) => n + p.regions.length, 0)
-    if (inventoryOffset < movingCount) movingGroups++
+    if (inventoryOffset < movingCount) {
+      movingGroups++
+    }
     rootSpans.push({ start: inventoryOffset, count })
     inventoryOffset += count
   }
@@ -5229,7 +5612,9 @@ export function prepareWalkingNonlinearSourceRelations(
   })
   const sourceIndices = (entry: WalkingNonlinearRelationInput) => {
     const previous = topology.get(entry)
-    if (previous) return previous
+    if (previous) {
+      return previous
+    }
     const indices = new Set<number>()
     for (
       let offset = entry.region.indexStart;
@@ -5249,26 +5634,31 @@ export function prepareWalkingNonlinearSourceRelations(
     entry: WalkingNonlinearRelationInput,
     frame?: ConstrainedFrame<Interval>
   ): VertexBounds => {
-    if (!frame && worldVertices.has(entry))
+    if (!frame && worldVertices.has(entry)) {
       return sourceRelationValue(worldVertices.get(entry))
+    }
     const result = sourceIndices(entry).map((index) => {
       evaluator.accountIntervalPredicate()
       let p = entry.shape.positions
         .slice(index * 3, index * 3 + 3)
         .map(interval) as [Interval, Interval, Interval]
-      for (const local of entry.localBounds)
+      for (const local of entry.localBounds) {
         p = transformQueryPoint(local, p) as [Interval, Interval, Interval]
-      if (frame)
+      }
+      if (frame) {
         p = frame.origin.map((v, k) =>
           frame.matrix[k].reduce(
             (sum, q, j) => addInterval(sum, multiplyInterval(q, p[j])),
             v
           )
         ) as [Interval, Interval, Interval]
+      }
       work.vertexBounds++
       return Object.freeze(p)
     })
-    if (!frame) worldVertices.set(entry, result)
+    if (!frame) {
+      worldVertices.set(entry, result)
+    }
     return Object.freeze(result)
   }
   const box = (points: VertexBounds): SceneDemandBounds => ({
@@ -5289,16 +5679,18 @@ export function prepareWalkingNonlinearSourceRelations(
       )
     })
   const ensure = () => {
-    if (current.owner.read(source, cycle.recipe) !== cycle)
+    if (current.owner.read(source, cycle.recipe) !== cycle) {
       throw new Error('Stale nonlinear cycle relation')
+    }
   }
   const cycleWork = (operations: number) => {
     work.cycleOperations += operations
     if (
       work.cycleOperations + priorCycleOperations >
       request.budget.maxCycleOperations
-    )
+    ) {
       throw new Error('Nonlinear cycle operation budget exhausted')
+    }
   }
   const reserveCycle = () => {
     if (
@@ -5306,8 +5698,9 @@ export function prepareWalkingNonlinearSourceRelations(
         priorCycleOperations -
         work.cycleOperations <
       cycle.recipe.budget.maxOperations
-    )
+    ) {
       throw new Error('Nonlinear cycle operation reservation unavailable')
+    }
   }
   const phaseCover: WalkingNonlinearSourceRelations['phaseCover'][number][] = []
   const phases: WalkingNonlinearSourceRelations['phases'][number][] = []
@@ -5334,22 +5727,28 @@ export function prepareWalkingNonlinearSourceRelations(
             v.position[1].denominator !== height.denominator
         )
       )
-    )
+    ) {
       return
+    }
     const frame = bound.parts.find((p) => p.part === extrusion.part)?.bounds
-    if (!frame) return
+    if (!frame) {
+      return
+    }
     const coefficient = frame.matrix[1][extrusion.axis]
     if (
       (extrusion.extrusionSign === 1 ? coefficient.low : -coefficient.high) <= 0
-    )
+    ) {
       return
+    }
     const support = bound.supports.find(
       (s) => s.part === extrusion.part && s.patch === extrusion.patch
     )
     const swing = bound.swing.find(
       (s) => s.part === extrusion.part && s.patch === extrusion.patch
     )
-    if (!support && !swing) return
+    if (!support && !swing) {
+      return
+    }
     const original = extrusion.patchVertexIndices
     const included = support
       ? support.fixedVertices.map((v) => v.index)
@@ -5357,15 +5756,17 @@ export function prepareWalkingNonlinearSourceRelations(
     if (
       original.length !== included.length ||
       !original.every((i) => included.includes(i))
-    )
+    ) {
       return
+    }
     if (
       swing &&
       (swing.certificate.authority !== 'exact-polynomial-similarity-lift/1' ||
         !swing.certificate.openPhasePositive ||
         !swing.certificate.endpointZero)
-    )
+    ) {
       return
+    }
     return {
       extrusion,
       height,
@@ -5378,12 +5779,16 @@ export function prepareWalkingNonlinearSourceRelations(
     b: WalkingNonlinearRelationInput,
     bound: NonlinearCycleBound
   ): WalkingNonlinearPairProof['ground'] => {
-    if (b.terrain?.classification !== 'soil' || b.semantic || !a.part) return
+    if (b.terrain?.classification !== 'soil' || b.semantic || !a.part) {
+      return
+    }
     const extrusion = footExtrusions.find(
       (e) => e.part === a.part && e.region === a.region
     )
     const locus = extrusion && footLocus(extrusion, bound)
-    if (!locus) return
+    if (!locus) {
+      return
+    }
     const { height } = locus
     const key = height.numerator + '/' + height.denominator
     let planes = soilPlanes.get(b)
@@ -5399,7 +5804,9 @@ export function prepareWalkingNonlinearSourceRelations(
       )
       planes.set(key, horizontal)
     }
-    if (!horizontal) return
+    if (!horizontal) {
+      return
+    }
     return locus
   }
   const globalParts = new Set(
@@ -5443,8 +5850,11 @@ export function prepareWalkingNonlinearSourceRelations(
       directFixed || (globalMember(a) && globalMember(b)) ? 'constant' : phase
     const key = family + ':' + first + ':' + second
     if (fixedCache.has(key)) {
-      if (family === 'constant') work.globalFixedReuses++
-      else work.phaseFixedReuses++
+      if (family === 'constant') {
+        work.globalFixedReuses++
+      } else {
+        work.phaseFixedReuses++
+      }
       return fixedCache.get(key)
     }
     if (margin === 0 && a.part && a.body?.id === 'base' && b.mountedPart) {
@@ -5461,7 +5871,9 @@ export function prepareWalkingNonlinearSourceRelations(
         b.region,
         margin
       )
-      if (result) fixedCache.set(key, result)
+      if (result) {
+        fixedCache.set(key, result)
+      }
       return result
     }
     if (margin === 0 && a.part && b.mountedPart) {
@@ -5472,10 +5884,14 @@ export function prepareWalkingNonlinearSourceRelations(
         b.region,
         margin
       )
-      if (result) fixedCache.set(key, result)
+      if (result) {
+        fixedCache.set(key, result)
+      }
       return result
     }
-    if (!a.body || !b.body || !a.part || !b.part) return
+    if (!a.body || !b.body || !a.part || !b.part) {
+      return
+    }
     let af: readonly QueryExactFrame[], bf: readonly QueryExactFrame[]
     if (
       b.body.attachment === 'fixed' &&
@@ -5498,7 +5914,9 @@ export function prepareWalkingNonlinearSourceRelations(
       ])
       bf = Object.freeze([transform(b.part.localFrame).exact])
     } else {
-      if (margin !== 0) return
+      if (margin !== 0) {
+        return
+      }
       const result = phaseRelations(family).relate(
         a.part,
         a.region,
@@ -5506,15 +5924,21 @@ export function prepareWalkingNonlinearSourceRelations(
         b.region,
         margin
       )
-      if (result) fixedCache.set(key, result)
+      if (result) {
+        fixedCache.set(key, result)
+      }
       return result
     }
     const ap = { region: evaluator.prepare(a.shape, a.region), frames: af },
       bp = { region: evaluator.prepare(b.shape, b.region), frames: bf }
     const relation = evaluator.relate(ap, bp, 0)
     let result: { kind: NonlinearKind; boundary?: BoundaryWitness } | undefined
-    if (relation.kind === 'separated') result = { kind: 'exactSeparated' }
-    if (relation.kind === 'volume-overlap') result = { kind: 'blocked' }
+    if (relation.kind === 'separated') {
+      result = { kind: 'exactSeparated' }
+    }
+    if (relation.kind === 'volume-overlap') {
+      result = { kind: 'blocked' }
+    }
     if (relation.kind === 'boundary') {
       const ranges = (entry: WalkingNonlinearRelationInput) =>
         sourceRelationValue(entry.part)
@@ -5529,9 +5953,13 @@ export function prepareWalkingNonlinearSourceRelations(
         ranges(a),
         ranges(b)
       )
-      if (boundary) result = { kind: 'declaredBoundary', boundary }
+      if (boundary) {
+        result = { kind: 'declaredBoundary', boundary }
+      }
     }
-    if (result) fixedCache.set(key, result)
+    if (result) {
+      fixedCache.set(key, result)
+    }
     return result
   }
   const axisGap = (
@@ -5555,8 +5983,9 @@ export function prepareWalkingNonlinearSourceRelations(
         integerBits(a.denominator) +
         2 >
       request.budget.maxBits
-    )
+    ) {
       throw new Error('Nonlinear subdivision bit budget exhausted')
+    }
     const n = a.numerator * b.denominator + b.numerator * a.denominator,
       d = 2n * a.denominator * b.denominator
     let x = n < 0n ? -n : n,
@@ -5587,13 +6016,15 @@ export function prepareWalkingNonlinearSourceRelations(
     while (queue.length) {
       const task = sourceRelationValue(queue.shift())
       if (work.phaseNodes >= request.budget.maxPhaseNodes) {
-        for (const index of task.pending)
-          if (records[index].kind !== 'blocked')
+        for (const index of task.pending) {
+          if (records[index].kind !== 'blocked') {
             records[index].proofs.push({
               parameter: task.parameter,
               kind: 'unvisited',
               reason: 'nonlinear-phase-node-budget-exhausted'
             })
+          }
+        }
         continue
       }
       ensure()
@@ -5608,17 +6039,20 @@ export function prepareWalkingNonlinearSourceRelations(
         cycleWork(current.owner.work.operations - priorBoundWork)
       } catch (error) {
         const delta = current.owner.work.operations - priorBoundWork
-        if (delta && !charged) cycleWork(delta)
+        if (delta && !charged) {
+          cycleWork(delta)
+        }
         ensure()
         reasons.add(
           error instanceof Error ? error.message : 'nonlinear-bound-unavailable'
         )
-        for (const index of task.pending)
+        for (const index of task.pending) {
           records[index].proofs.push({
             parameter: task.parameter,
             kind: 'unknown',
             reason: 'nonlinear-bound-unavailable'
           })
+        }
         continue
       }
       const partBounds = new Map(bound.parts.map((p) => [p.part, p.bounds])),
@@ -5638,8 +6072,9 @@ export function prepareWalkingNonlinearSourceRelations(
               }
               return undefined
             })()
-          if (index < movingCount && !frame)
+          if (index < movingCount && !frame) {
             throw new Error('Missing nonlinear source frame')
+          }
           result = vertices(entry, frame)
           nodeVertices.set(index, result)
           nodeBoxes.set(index, box(result))
@@ -5658,8 +6093,9 @@ export function prepareWalkingNonlinearSourceRelations(
                   p.sourceBounds.max[k] > route.max[k]
               ) ||
               p.sourceBounds.max[1] > route.max[1]
-            )
+            ) {
               routeCovered = false
+            }
             if (p.sourceBounds.min[1] < route.min[1]) {
               const lower = p.part.regions.every((region) => {
                 const extrusion = footExtrusions.find(
@@ -5675,10 +6111,12 @@ export function prepareWalkingNonlinearSourceRelations(
                   ) >= route.min[1]
                 )
               })
-              if (!lower) routeCovered = false
+              if (!lower) {
+                routeCovered = false
+              }
             }
           }
-          for (let i = 0; i < movingCount; i++)
+          for (let i = 0; i < movingCount; i++) {
             if (sources[i].holderBodyId) {
               try {
                 vertexProduct(i)
@@ -5686,15 +6124,18 @@ export function prepareWalkingNonlinearSourceRelations(
                 if (
                   bounds.min.some((v, k) => v < route.min[k]) ||
                   bounds.max.some((v, k) => v > route.max[k])
-                )
+                ) {
                   routeCovered = false
+                }
               } catch {
                 routeCovered = false
               }
             }
+          }
         }
-        if (!routeCovered)
+        if (!routeCovered) {
           reasons.add('nonlinear-source-route-coverage-unproved')
+        }
         phaseCover.push({
           phase,
           parameter: task.parameter,
@@ -5730,8 +6171,9 @@ export function prepareWalkingNonlinearSourceRelations(
           if (
             cursor.required !== required ||
             cursor.inventory.length !== sources.length
-          )
+          ) {
             throw new Error('Nonlinear region cover inventory mismatch')
+          }
           covers = []
         } catch (error) {
           reasons.add(
@@ -5748,8 +6190,12 @@ export function prepareWalkingNonlinearSourceRelations(
       const midpoint = half(task.parameter.low, task.parameter.high)
       const placement = (index: number) => {
         let result = placements.get(index)
-        if (result) return result
-        if (nodeFailure) throw nodeFailure
+        if (result) {
+          return result
+        }
+        if (nodeFailure) {
+          throw nodeFailure
+        }
         try {
           if (!point) {
             ensure()
@@ -5792,8 +6238,9 @@ export function prepareWalkingNonlinearSourceRelations(
           }
           return -1
         })()
-        if (entry.holderBodyId && frameIndex < point.parts.length)
+        if (entry.holderBodyId && frameIndex < point.parts.length) {
           throw new Error('Missing nonlinear attachment holder')
+        }
         result = evaluator.rationalPlacement(
           evaluator.prepare(entry.shape, entry.region),
           node,
@@ -5809,13 +6256,17 @@ export function prepareWalkingNonlinearSourceRelations(
           yield* task.pending
           return
         }
-        if (!cursor) return
+        if (!cursor) {
+          return
+        }
         while (
           work.pairIntervals < request.budget.maxRegionPairs &&
           !evaluator.exactBudgetExhausted
         ) {
           const proof = cursor.next()
-          if (!proof) break
+          if (!proof) {
+            break
+          }
           if (proof.kind !== 'leaf') {
             covers.push(proof)
             continue
@@ -5833,7 +6284,9 @@ export function prepareWalkingNonlinearSourceRelations(
       }
       for (const index of pendingIndices()) {
         const record = records[index]
-        if (record.kind === 'blocked') continue
+        if (record.kind === 'blocked') {
+          continue
+        }
         if (
           work.pairIntervals >= request.budget.maxRegionPairs ||
           evaluator.exactBudgetExhausted
@@ -5876,7 +6329,9 @@ export function prepareWalkingNonlinearSourceRelations(
           const fixed = fixedRelation(index, margin, phase)
           if (fixed) {
             record.proofs.push({ parameter: task.parameter, ...fixed })
-            if (fixed.kind === 'blocked') record.kind = 'blocked'
+            if (fixed.kind === 'blocked') {
+              record.kind = 'blocked'
+            }
             continue
           }
           const ground = groundCandidate(a, b, bound)
@@ -5925,14 +6380,17 @@ export function prepareWalkingNonlinearSourceRelations(
             work.sheetTriangleIntervals += surface.work.visited
             work.sheetTriangleUnvisited += surface.work.unvisited
             work.projectionVertices += surface.work.projectionVertices
-            if (surface.kind === 'pending') pending.push(index)
-            else if (surface.kind === 'separated')
+            if (surface.kind === 'pending') {
+              pending.push(index)
+            } else if (surface.kind === 'separated') {
               record.proofs.push({
                 parameter: task.parameter,
                 kind: 'exactSeparated'
               })
-            else {
-              if (surface.kind === 'blocked') record.kind = 'blocked'
+            } else {
+              if (surface.kind === 'blocked') {
+                record.kind = 'blocked'
+              }
               record.proofs.push({
                 parameter: task.parameter,
                 kind: surface.kind,
@@ -5986,13 +6444,15 @@ export function prepareWalkingNonlinearSourceRelations(
             })
             continue
           }
-          if (!ap.region.certified || !bp.region.certified)
+          if (!ap.region.certified || !bp.region.certified) {
             record.proofs.push({
               parameter: task.parameter,
               kind: 'unknown',
               reason: 'nonlinear-open-or-uncertified-source'
             })
-          else pending.push(index)
+          } else {
+            pending.push(index)
+          }
         } catch (error) {
           record.proofs.push({
             parameter: task.parameter,
@@ -6014,12 +6474,13 @@ export function prepareWalkingNonlinearSourceRelations(
           work.subdivisions >= request.budget.maxSubdivisions ||
           work.phaseNodes + queue.length + 2 > request.budget.maxPhaseNodes
         ) {
-          for (const index of pending)
+          for (const index of pending) {
             records[index].proofs.push({
               parameter: task.parameter,
               kind: 'unknown',
               reason: 'nonlinear-source-interval-unproved'
             })
+          }
         } else {
           work.subdivisions++
           queue.push(
@@ -6046,8 +6507,9 @@ export function prepareWalkingNonlinearSourceRelations(
     counts.coRigidOwner = coRigid
     counts.required = required
     for (const cover of covers) {
-      if (cover.kind === 'leaf')
+      if (cover.kind === 'leaf') {
         throw new Error('Leaf duplicated in aggregate cover')
+      }
       counts[cover.kind] += cover.cardinality
     }
     for (const record of records) {
@@ -6075,12 +6537,17 @@ export function prepareWalkingNonlinearSourceRelations(
         record.kind === 'blocked' ||
         record.kind === 'unknown' ||
         record.kind === 'unvisited'
-      )
-        for (const proof of record.proofs)
-          if (proof.reason) reasons.add(proof.reason)
+      ) {
+        for (const proof of record.proofs) {
+          if (proof.reason) {
+            reasons.add(proof.reason)
+          }
+        }
+      }
     }
-    for (const key of Object.keys(overall) as (keyof RelationCoverage)[])
+    for (const key of Object.keys(overall) as (keyof RelationCoverage)[]) {
       overall[key] += counts[key]
+    }
     if (
       counts.required !==
       counts.strictBounds +
@@ -6090,8 +6557,9 @@ export function prepareWalkingNonlinearSourceRelations(
         counts.targetRefinement +
         counts.unknown +
         counts.unvisited
-    )
+    ) {
       throw new Error('Nonlinear region cover partition mismatch')
+    }
     const wholeBound = phaseCover.find((c) => c.phase === phase)?.bounds
     phases.push({
       phase,
@@ -6103,10 +6571,15 @@ export function prepareWalkingNonlinearSourceRelations(
       }))
     })
   }
-  if (phaseCover.length !== 2) reasons.add('nonlinear-phase-cover-incomplete')
-  if (demand.configuration.clearanceMargin.kind !== 'bounded')
+  if (phaseCover.length !== 2) {
+    reasons.add('nonlinear-phase-cover-incomplete')
+  }
+  if (demand.configuration.clearanceMargin.kind !== 'bounded') {
     reasons.add('clearance-margin-unknown')
-  if (demand.status !== 'ready') reasons.add('scene-demand-not-ready')
+  }
+  if (demand.status !== 'ready') {
+    reasons.add('scene-demand-not-ready')
+  }
   return freeze({
     format: 'walking-nonlinear-source-relations/1',
     request,

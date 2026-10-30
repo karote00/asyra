@@ -106,19 +106,24 @@ test('provider green cannot mask real failing or skipped observations', () => {
     f.envelope.runner.reportDigest = hash(f.envelope.report)
     const result = assess(f)
     assert.notEqual(result.verificationStatus, 'passed')
-    if (status === 'failed')
+    if (status === 'failed') {
       assert.equal(result.evidence.cases[0].status, 'failed')
+    }
     assert.equal(result.deliveryStatus, 'blocked')
   }
 })
 test('accepted base rejects silent obligation removal, renamed bindings and policy weakening', () => {
   for (const change of ['removal', 'binding', 'policy']) {
     const f = fixture()
-    if (change === 'policy') f.envelope.policyDigest = 'e'.repeat(64)
-    else {
+    if (change === 'policy') {
+      f.envelope.policyDigest = 'e'.repeat(64)
+    } else {
       f.candidate = structuredClone(f.candidate)
-      if (change === 'removal') f.candidate.cases.pop()
-      else f.candidate.cases[0].testName = 'weakened test'
+      if (change === 'removal') {
+        f.candidate.cases.pop()
+      } else {
+        f.candidate.cases[0].testName = 'weakened test'
+      }
     }
     const result = assess(f)
     assert.equal(result.deliveryStatus, 'blocked')

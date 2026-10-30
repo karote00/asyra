@@ -35,8 +35,13 @@ export function createPlantingRows(config: FarmConfiguration) {
           layout.strips[
             layout.strips.indexOf(drain) + (side === 'left' ? -1 : 1)
           ]
-        if (!adjacent || adjacent.bay !== drain.bay || adjacent.kind !== 'soil')
+        if (
+          !adjacent ||
+          adjacent.bay !== drain.bay ||
+          adjacent.kind !== 'soil'
+        ) {
           return []
+        }
         return [
           {
             bay: drain.bay,
@@ -77,8 +82,9 @@ export function createSupportTubes(
     height <= 0 ||
     !Number.isFinite(embedDepth) ||
     embedDepth <= 0
-  )
+  ) {
     throw new Error('Support height and embed depth must be positive metres')
+  }
   return createSupportPositions(config).map((position) => ({
     ...position,
     diameter: SUPPORT_LAYOUT.diameter,
@@ -132,8 +138,8 @@ export function createSupportAssembly(
     firstDiameter: SUPPORT_LAYOUT.diameter,
     secondDiameter: SUPPORT_LAYOUT.diameter
   }))
-  for (const rail of rails)
-    for (const z of memberStations(site.length, site.postSpacing))
+  for (const rail of rails) {
+    for (const z of memberStations(site.length, site.postSpacing)) {
       clips.push({
         bay: rail.bay,
         origin: [rail.points[0][0], railY, z],
@@ -143,6 +149,8 @@ export function createSupportAssembly(
         firstDiameter: SUPPORT_LAYOUT.diameter,
         secondDiameter: site.tubeDiameter
       })
+    }
+  }
   return { tubes, rails, clips }
 }
 

@@ -219,7 +219,9 @@ it('roundtrips current observations and rejects malformed runtime writes with vi
   ).toThrow()
   const propertyId =
     core.getElementData(elementId)?.props?.[PropertyNames.RUN_REFERENCE]
-  if (!propertyId) throw new Error('Missing reference property')
+  if (!propertyId) {
+    throw new Error('Missing reference property')
+  }
   ;(saved.props[propertyId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] = invalid
@@ -235,14 +237,17 @@ it('enforces per-run and project limits and project-wide observation identity be
   const { candidate } = await retain()
   await features.edit.addObservation('run-a', draft())
   const note = readFieldObservations(core, 'run-a')[0]
-  for (let index = 1; index < 11; index++)
+  for (let index = 1; index < 11; index++) {
     await retain(`run-${index}`, candidate)
+  }
   const saved = await features.edit.captureDocument()
   const references = readCapturedRunReferences(saved)
   for (const [index, reference] of references.entries()) {
     const element = saved.sceneTree.elements[reference.elementId]
     const propertyId = element.props?.[PropertyNames.RUN_REFERENCE]
-    if (!propertyId) throw new Error('Missing reference property')
+    if (!propertyId) {
+      throw new Error('Missing reference property')
+    }
     const property = saved.props[propertyId] as Record<string, unknown>
     const value = property[PropertyFields.RUN_REFERENCE] as Record<
       string,
@@ -263,12 +268,16 @@ it('enforces per-run and project limits and project-wide observation identity be
   )
   expect(core.getUndoHistoryDepth()).toBe(depth)
   const last = references.at(-1)
-  if (!last) throw new Error('Missing reference')
+  if (!last) {
+    throw new Error('Missing reference')
+  }
   const propertyId =
     saved.sceneTree.elements[last.elementId].props?.[
       PropertyNames.RUN_REFERENCE
     ]
-  if (!propertyId) throw new Error('Missing reference property')
+  if (!propertyId) {
+    throw new Error('Missing reference property')
+  }
   const value = (saved.props[propertyId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] as Record<string, unknown>
@@ -281,7 +290,9 @@ it('enforces per-run and project limits and project-wide observation identity be
     saved.sceneTree.elements[references[0].elementId].props?.[
       PropertyNames.RUN_REFERENCE
     ]
-  if (!firstId) throw new Error('Missing reference property')
+  if (!firstId) {
+    throw new Error('Missing reference property')
+  }
   const firstValue = (saved.props[firstId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] as { observations: (typeof note)[] }

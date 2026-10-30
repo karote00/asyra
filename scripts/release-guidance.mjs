@@ -38,11 +38,14 @@ export function artifactIntegrity(file) {
       'Release artifacts cannot contain symlinks'
     )
     if (stat.isDirectory()) {
-      for (const name of fs.readdirSync(entry).sort())
+      for (const name of fs.readdirSync(entry).sort()) {
         visit(path.join(entry, name), `${relative}/${name}`)
+      }
     } else {
       assert.ok(stat.isFile(), 'Expected a regular release artifact')
-      if (relative) hash.update(`${relative}\0${stat.size}\0`)
+      if (relative) {
+        hash.update(`${relative}\0${stat.size}\0`)
+      }
       hash.update(fs.readFileSync(entry))
     }
   }
@@ -108,9 +111,12 @@ export function prepareGuidance({
       const present = new Set(files)
       const contents = new Map()
       const read = (file) => {
-        if (!present.has(file)) return undefined
-        if (!contents.has(file))
+        if (!present.has(file)) {
+          return undefined
+        }
+        if (!contents.has(file)) {
           contents.set(file, git(['show', `${revision}:${file}`]))
+        }
         return contents.get(file)
       }
       const manifests = files
@@ -125,7 +131,9 @@ export function prepareGuidance({
         const included = new Set(roots)
         const visit = (directory) => {
           const entry = manifests.find((item) => item.root === directory)
-          if (!entry) return
+          if (!entry) {
+            return
+          }
           for (const name of Object.keys({
             ...entry.manifest.dependencies,
             ...entry.manifest.devDependencies,
@@ -527,7 +535,8 @@ export function registryCurrent(
   if (
     record.version === artifact.version &&
     record.integrity === artifact.integrity
-  )
+  ) {
     return record
+  }
   return resolveRegistryBaseline(root, record, runCommand)
 }

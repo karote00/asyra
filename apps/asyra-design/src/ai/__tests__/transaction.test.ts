@@ -48,7 +48,9 @@ describe('Design invocation history groups', () => {
     const { runner } = setup()
     await expect(
       runner.run('draw', async (mutate) => {
-        if (!mutate) throw new Error('Expected mutation executor')
+        if (!mutate) {
+          throw new Error('Expected mutation executor')
+        }
         return mutate(() => {
           throw new MutationRecoveryError(new Error('primary'), [
             new Error('cleanup')
@@ -62,7 +64,9 @@ describe('Design invocation history groups', () => {
     const { runner, write, values } = setup()
     await expect(
       runner.run('failed-recovery', async (mutate) => {
-        if (!mutate) throw new Error('Missing mutation executor')
+        if (!mutate) {
+          throw new Error('Missing mutation executor')
+        }
         await expect(
           mutate(() => {
             throw new MutationRecoveryError(new Error('primary'), [
@@ -81,7 +85,9 @@ describe('Design invocation history groups', () => {
     const captures = vi.fn()
     apis.subscribeToCommitCapture(captures)
     await runner.run('draw', async (mutate) => {
-      if (!mutate) throw new Error('Expected grouped mutation executor')
+      if (!mutate) {
+        throw new Error('Expected grouped mutation executor')
+      }
       expect(documentInteractionLock.isActive()).toBe(false)
       await mutate(() => write('ai', 1))
       expect(values.get('ai')).toBe(1)
@@ -107,7 +113,9 @@ describe('Design invocation history groups', () => {
     const { apis, values, write, runner } = setup()
     const failure = new Error('Bad later slice')
     const result = runner.run('draw', async (mutate) => {
-      if (!mutate) throw new Error('Expected grouped mutation executor')
+      if (!mutate) {
+        throw new Error('Expected grouped mutation executor')
+      }
       await mutate(() => write('ai', 1))
       await mutate(() => {
         write('ai', 2)
@@ -129,7 +137,9 @@ describe('Design invocation history groups', () => {
     apis.startTransaction()
     write('user', 10)
     const pending = runner.run('draw', async (mutate) => {
-      if (!mutate) throw new Error('Expected grouped mutation executor')
+      if (!mutate) {
+        throw new Error('Expected grouped mutation executor')
+      }
       return mutate(() => write('ai', 1))
     })
     await Promise.resolve()
@@ -152,7 +162,9 @@ describe('Design invocation history groups', () => {
     const pending = runner.run(
       'draw',
       async (mutate) => {
-        if (!mutate) throw new Error('Expected grouped mutation executor')
+        if (!mutate) {
+          throw new Error('Expected grouped mutation executor')
+        }
         await mutate(() => write('ai', 1))
         apis.startTransaction()
         write('user', 10)
@@ -193,7 +205,9 @@ describe('Design invocation history groups', () => {
     })
     await expect(
       runner.run('draw', async (mutate) => {
-        if (!mutate) throw new Error('Expected grouped mutation executor')
+        if (!mutate) {
+          throw new Error('Expected grouped mutation executor')
+        }
         return mutate(() => write('ai', 1))
       })
     ).rejects.toBeInstanceOf(AiTransactionSettlementError)
@@ -207,7 +221,9 @@ it('observes mutation settlement after canonical publication and before queued u
   const events: string[] = []
   apis.subscribeToCommitCapture(() => events.push('published'))
   await runner.run('settlement', async (mutate) => {
-    if (!mutate) throw new Error('Missing mutation executor')
+    if (!mutate) {
+      throw new Error('Missing mutation executor')
+    }
     await mutate(
       () => {
         write('ai', 1)
@@ -232,7 +248,9 @@ describe('evaluation work deadline', () => {
     try {
       await expect(
         runner.run('bounded work', async (mutate) => {
-          if (!mutate) throw new Error('Missing mutation executor')
+          if (!mutate) {
+            throw new Error('Missing mutation executor')
+          }
           await mutate(() => write('ai', 1))
           now.mockReturnValue(deadline)
           await mutate(() => write('ai', 2))
@@ -260,7 +278,9 @@ describe('evaluation work deadline', () => {
     try {
       apis.startTransaction()
       const pending = runner.run('queued work', async (mutate) => {
-        if (!mutate) throw new Error('Missing mutation executor')
+        if (!mutate) {
+          throw new Error('Missing mutation executor')
+        }
         await mutate(() => write('ai', 1))
       })
       const rejected = expect(pending).rejects.toThrow()

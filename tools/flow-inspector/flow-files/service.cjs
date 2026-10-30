@@ -18,8 +18,9 @@ function createFlowService(
     closed = false
   const snapshot = () => {
     const value = store.snapshot()
-    if (projectId && value.evaluation.projectId !== projectId)
+    if (projectId && value.evaluation.projectId !== projectId) {
       throw new Error('Wrong project identity')
+    }
     return value
   }
   const context = (flowId, nodeId) => {
@@ -28,19 +29,24 @@ function createFlowService(
       nodeId === 'integration'
         ? flow?.integration
         : flow?.nodes.find((n) => n.id === nodeId)
-    if (!node) throw new Error('Unknown flow or node')
+    if (!node) {
+      throw new Error('Unknown flow or node')
+    }
     return node.context
   }
   const preview = (flowId, nodeId, actionId) => {
     const current = context(flowId, nodeId),
       action = current.actions.find((a) => a.id === actionId)
-    if (!action || action.kind !== 'command')
+    if (!action || action.kind !== 'command') {
       throw new Error('No executable action selected')
+    }
     const cwd = path.resolve(projectRoot, action.cwd)
-    if (cwd !== projectRoot && !cwd.startsWith(projectRoot + path.sep))
+    if (cwd !== projectRoot && !cwd.startsWith(projectRoot + path.sep)) {
       throw new Error('Action cwd escapes project')
-    if (fs.realpathSync(cwd) !== cwd || !fs.statSync(cwd).isDirectory())
+    }
+    if (fs.realpathSync(cwd) !== cwd || !fs.statSync(cwd).isDirectory()) {
       throw new Error('Invalid action cwd')
+    }
     const value = {
       flowId,
       nodeId,
@@ -57,10 +63,13 @@ function createFlowService(
     return { ...value, digest: digest(value) }
   }
   async function rerun(request) {
-    if (closed || active) throw new Error('Execution is unavailable or busy')
+    if (closed || active) {
+      throw new Error('Execution is unavailable or busy')
+    }
     const selected = preview(request.flowId, request.nodeId, request.actionId)
-    if (request.confirm !== true || request.digest !== selected.digest)
+    if (request.confirm !== true || request.digest !== selected.digest) {
       throw new Error('Preview is stale or confirmation missing')
+    }
     const controller = new AbortController(),
       executionId = randomUUID()
     const task = { controller, pid: null, promise: null }
@@ -166,7 +175,9 @@ function createFlowService(
     preview,
     rerun,
     update: (flowId, request) => {
-      if (closed) throw new Error('Service is closed')
+      if (closed) {
+        throw new Error('Service is closed')
+      }
       snapshot()
       return store.update(flowId, request)
     },

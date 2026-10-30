@@ -99,7 +99,9 @@ test('does not exempt empty diffs, changeset metadata, executable docs, or mixed
     '.changeset/deleted-record.md'
   ]) {
     for (const status of ['M', 'D']) {
-      if (path === '.changeset/deleted-record.md' && status === 'M') continue
+      if (path === '.changeset/deleted-record.md' && status === 'M') {
+        continue
+      }
       assert.equal(
         evaluateChangesetPrDiff([
           { status: 'M', path: 'docs/README.md' },

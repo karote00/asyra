@@ -53,7 +53,9 @@ it.each(['native', 'registered'])(
           }
         )
         const material = saved.cases[0].input.arguments.materialRevisionId
-        if (!material) throw new Error('Missing saved material identity')
+        if (!material) {
+          throw new Error('Missing saved material identity')
+        }
         ownership.publish(
           material,
           () => undefined,
@@ -68,12 +70,15 @@ it.each(['native', 'registered'])(
               ...operations,
               callInternal: async (name: string) => {
                 const source = saved.cases.find((entry) => entry.tool === name)
-                if (!source) throw new Error('Missing saved tool receipt')
+                if (!source) {
+                  throw new Error('Missing saved tool receipt')
+                }
                 calls.set(name, (calls.get(name) ?? 0) + 1)
                 if (name === 'read_design_context') {
                   const result = source.output.actionResults[0].result
-                  if (!result.snapshotId || !result.leaseId)
+                  if (!result.snapshotId || !result.leaseId) {
                     throw new Error('Missing saved read handles')
+                  }
                   ownership.publish(
                     result.snapshotId,
                     () => undefined,
@@ -99,8 +104,9 @@ it.each(['native', 'registered'])(
         const definition = host
           .definitions()
           .find((entry) => entry.name === source.tool)
-        if (!definition?.registeredName)
+        if (!definition?.registeredName) {
           throw new Error('Missing registered definition')
+        }
         if (route === 'registered' && definition.composition !== 'allowed') {
           const refused = JSON.parse(
             (
@@ -188,8 +194,9 @@ it.each(['native', 'registered'])(
         }) + '\n'
       )
       expect(JSON.stringify(observations)).toContain('computedReadCount')
-      if (route === 'native')
+      if (route === 'native') {
         expect(JSON.stringify(observations)).toContain('visitedResults')
+      }
     } finally {
       await host.dispose()
     }
@@ -251,7 +258,9 @@ it('delivers the operation-owned capture identity through the real host for reus
     const definition = host
       .definitions()
       .find((entry) => entry.name === action.name)
-    if (!definition) throw new Error('Missing actual capture definition')
+    if (!definition) {
+      throw new Error('Missing actual capture definition')
+    }
     const result = await host.invoke({
       name: definition.registeredName,
       input: { arguments: { elementId: 'panel' } }

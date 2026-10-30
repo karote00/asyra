@@ -9,7 +9,9 @@ it('gives cucumber skin longitudinal irregular relief rather than smooth uniform
   const radii: number[] = []
   for (let i = 0; i < mesh.positions.length; i += 3) {
     const [x, y, z] = mesh.positions.slice(i, i + 3)
-    if (x <= 0 || Math.abs(z) > 1e-10 || Math.abs(y) > 0.055) continue
+    if (x <= 0 || Math.abs(z) > 1e-10 || Math.abs(y) > 0.055) {
+      continue
+    }
     const t = 0.5 - y / 0.22
     radii.push(x / Math.sin(Math.PI * t) ** 0.25)
   }

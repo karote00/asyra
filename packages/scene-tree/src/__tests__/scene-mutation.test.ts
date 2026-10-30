@@ -3304,6 +3304,8 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
 })
 
 const requireTestValue = <T>(value: T | undefined | null): T => {
-  if (value == null) throw new Error('Required test fixture is unavailable')
+  if (value == null) {
+    throw new Error('Required test fixture is unavailable')
+  }
   return value
 }

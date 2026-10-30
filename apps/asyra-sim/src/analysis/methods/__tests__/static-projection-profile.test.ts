@@ -32,7 +32,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (p) =>
             p.a.bodyId === 'example:joint-2' && p.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing original ordered pair')
+        if (!pair) {
+          throw new Error('Missing original ordered pair')
+        }
         const context = new OriginalMeshQuery()
         let depth = 0
         const costs = {
@@ -243,10 +245,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           expect(context.work).toBe(197028)
           control = measurement
         } else {
-          if (!control)
+          if (!control) {
             throw new Error(
               'Run both fixed population strategies in declared order'
             )
+          }
           expect(nested.staticAxes).toBe(0)
           expect(calls.omittedStaticProjection).toBeGreaterThan(0)
           expect(result).toEqual(control.result)

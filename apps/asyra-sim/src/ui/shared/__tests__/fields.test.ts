@@ -24,7 +24,9 @@ it('shows numeric validity while typing, keeps invalid text local, and commits a
       )
     )
     const field = host.querySelector('input')
-    if (!field) throw new Error('Missing input')
+    if (!field) {
+      throw new Error('Missing input')
+    }
     const fill = async (text: string) =>
       act(() => {
         Object.getOwnPropertyDescriptor(
@@ -77,7 +79,9 @@ it('shows a cross-field diagnostic immediately without blocking a finite authore
       )
     )
     const field = host.querySelector('input')
-    if (!field) throw new Error('Missing input')
+    if (!field) {
+      throw new Error('Missing input')
+    }
     await act(() => {
       Object.getOwnPropertyDescriptor(
         HTMLInputElement.prototype,

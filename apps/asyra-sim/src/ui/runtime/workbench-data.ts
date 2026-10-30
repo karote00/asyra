@@ -34,7 +34,8 @@ export function useWorkbenchData(
   useLayoutEffect(() => {
     runtime?.views.selectCandidate(candidateId)
   }, [runtime, candidateId])
-  if (snapshot.candidateId !== candidateId)
+  if (snapshot.candidateId !== candidateId) {
     return { ...snapshot, workcell: null, experiments: [] }
+  }
   return snapshot
 }

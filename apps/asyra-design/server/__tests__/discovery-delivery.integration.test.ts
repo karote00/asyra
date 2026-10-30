@@ -149,14 +149,20 @@ const setup = (
     const owner = owners.find((candidate) =>
       candidate.definitions.some((definition) => definition.name === name)
     )
-    if (!owner) throw new Error(`Missing owner: ${name}`)
+    if (!owner) {
+      throw new Error(`Missing owner: ${name}`)
+    }
     const definition = owner.definitions.find((item) => item.name === name)
-    if (!definition) throw new Error(`Missing definition: ${name}`)
+    if (!definition) {
+      throw new Error(`Missing definition: ${name}`)
+    }
     const reply = await invokeLocalTool(owner, definition, args, signal)
     deliveries.push(Buffer.byteLength(reply.text))
     replies.push({ input: args, raw: reply.text })
     const text = await readCompleteInformation(async (input) => {
-      if (input === args) return reply.text
+      if (input === args) {
+        return reply.text
+      }
       const next = await invokeLocalTool(owner, definition, input, signal)
       deliveries.push(Buffer.byteLength(next.text))
       replies.push({ input, raw: next.text })
@@ -187,7 +193,9 @@ it('delivers recorded full contracts and publishes executable high-level usage w
     const definition = owners
       .flatMap((owner) => owner.definitions)
       .find((item) => item.name === name)
-    if (!definition) throw new Error(`Missing definition: ${name}`)
+    if (!definition) {
+      throw new Error(`Missing definition: ${name}`)
+    }
     expect(
       full.tools.find((tool: { name: string }) => tool.name === name)
         .inputSchema
@@ -399,11 +407,15 @@ it('uses direct delivered contracts to invoke the owner and recover information 
   const operations = owners.find((owner) =>
     owner.definitions.some((d) => d.name === 'describe_design_apis')
   )
-  if (!operations) throw new Error('Missing discovery owner')
+  if (!operations) {
+    throw new Error('Missing discovery owner')
+  }
   const definition = operations.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   expect(definition.description).toContain('Each page is delivered directly')
   expect(definition.description).not.toContain('Code Mode')
   const retained = new Map<
@@ -453,7 +465,9 @@ it('uses direct delivered contracts to invoke the owner and recover information 
   )
   const invocation =
     retained.get('usage')?.value?.tools[0].invocationExample.invocation
-  if (!invocation) throw new Error('Missing delivered invocation')
+  if (!invocation) {
+    throw new Error('Missing delivered invocation')
+  }
   const invalid = await call(invocation.tool, {})
   expect(invalid.success).toBe(false)
   expect(execute).not.toHaveBeenCalled()
@@ -505,8 +519,9 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
     'recoveryOutputSchema',
     'lifecycle',
     'execution'
-  ])
+  ]) {
     expect(tool[field]).toEqual(full[field])
+  }
   const example = usage.invocationExample.invocation
   expect(
     operationInputIssue(example.arguments, tool.inputSchema)
@@ -578,11 +593,13 @@ it('preserves canonical restrictions across selected representations and ordered
   for (const input of cases) {
     const nodeTypes = new Set<string>()
     const visit = (value: unknown) => {
-      if (Array.isArray(value)) value.forEach(visit)
-      else if (value && typeof value === 'object') {
+      if (Array.isArray(value)) {
+        value.forEach(visit)
+      } else if (value && typeof value === 'object') {
         const object = value as Record<string, unknown>
-        if (usage.inputScopes.nodeTypes.includes(object.type))
+        if (usage.inputScopes.nodeTypes.includes(object.type)) {
           nodeTypes.add(String(object.type))
+        }
         Object.values(object).forEach(visit)
       }
     }
@@ -623,8 +640,9 @@ it('preserves canonical restrictions across selected representations and ordered
       names: ['prepare_design'],
       inputScope: { operation: 'draft', nodeTypes: ['vector'] }
     }
-  ])
+  ]) {
     expect((await run.call('describe_design_apis', args)).success).toBe(false)
+  }
   expect(run.execute).not.toHaveBeenCalled()
 })
 
@@ -646,7 +664,9 @@ it
     const definition = run.owners
       .flatMap((owner) => owner.definitions)
       .find((tool) => tool.name === 'describe_design_apis')
-    if (!definition) throw new Error('Missing discovery definition')
+    if (!definition) {
+      throw new Error('Missing discovery definition')
+    }
     expect(definition.description).toContain('Each page is delivered directly')
     const namespace = 'design_operations'
     const executions = run.replies.map((page) => ({
@@ -950,16 +970,21 @@ it.each([
     const canonicalDefinitions = full.inputSchema.$defs ?? {}
     const definitions = delivered.$defs ?? {}
     const expand = (value: unknown): unknown => {
-      if (Array.isArray(value)) return value.map(expand)
-      if (!value || typeof value !== 'object') return value
+      if (Array.isArray(value)) {
+        return value.map(expand)
+      }
+      if (!value || typeof value !== 'object') {
+        return value
+      }
       const object = value as Record<string, unknown>
       if (
         typeof object.$ref === 'string' &&
         object.$ref.startsWith('#/$defs/')
       ) {
         const key = object.$ref.slice(8)
-        if (!Object.hasOwn(canonicalDefinitions, key))
+        if (!Object.hasOwn(canonicalDefinitions, key)) {
           return expand(definitions[key])
+        }
       }
       return Object.fromEntries(
         Object.entries(object)
@@ -1030,7 +1055,9 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
   const definition = owners
     .flatMap((owner) => owner.definitions)
     .find((d) => d.name === 'describe_design_apis')
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   const failed = await call('describe_design_apis', inspectionDiscovery.query)
   expect(failed.value.tools).toHaveLength(2)
   expect(
@@ -1084,7 +1111,9 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
     const canonical = owners
       .flatMap((owner) => owner.definitions)
       .find((entry) => entry.name === tool.name)
-    if (!canonical) throw new Error('Missing selected canonical owner')
+    if (!canonical) {
+      throw new Error('Missing selected canonical owner')
+    }
     for (const fragment of corrected.value.tools[0].schemaFragments) {
       const field = fragment.path.split('/').at(-1)
       expect(fragment.schema).toEqual(canonical.inputSchema.properties[field])
@@ -1174,11 +1203,15 @@ it('delivers paged partial discovery directly without promoting coverage or repl
   const owner = owners.find((o) =>
     o.definitions.some((d) => d.name === 'describe_design_apis')
   )
-  if (!owner) throw new Error('Missing discovery owner')
+  if (!owner) {
+    throw new Error('Missing discovery owner')
+  }
   const definition = owner.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   expect(definition.description).toContain('Each page is delivered directly')
   const fragments: string[] = []
   let args: Record<string, unknown> = {
@@ -1200,7 +1233,9 @@ it('delivers paged partial discovery directly without promoting coverage or repl
     })
     expect(Buffer.byteLength(reply.text)).toBeLessThanOrEqual(24000)
     fragments.push(receipt.contentDelivery?.text ?? reply.text)
-    if (!receipt.contentDelivery || receipt.contentDelivery.lastPage) break
+    if (!receipt.contentDelivery || receipt.contentDelivery.lastPage) {
+      break
+    }
     args = receipt.contentDelivery.next.arguments
   }
   expect(pages).toBeGreaterThan(0)
@@ -1359,18 +1394,20 @@ it.each([false, true])(
     ])
     expect(run.created.slice(0, before.length)).toEqual(before)
     expect(run.created.length).toBeGreaterThan(before.length)
-    if (parentId)
+    if (parentId) {
       expect(
         run.created
           .slice(before.length)
           .some((n) => run.parents.get(n.id) === parentId)
       ).toBe(true)
+    }
     const after = structuredClone(run.created)
     for (const input of [
       guide.definition.recover.arguments,
       guide.definition.refresh.arguments
-    ])
+    ]) {
       await run.call('describe_design_apis', input)
+    }
     expect(run.execute).toHaveBeenCalledTimes(count + 1)
     expect(run.created).toEqual(after)
   }
@@ -1400,8 +1437,9 @@ it.each(['group', 'frame'])(
     const invocation = guide.invocationExample.invocation
     const args = structuredClone(invocation.arguments)
     args.draft.type = rootType
-    if (rootType === 'frame')
+    if (rootType === 'frame') {
       Object.assign(args.draft, { width: 100, height: 100 })
+    }
     args.inspection = 'defer'
     expect(args.plan).toBeUndefined()
     const result = await run.call(invocation.tool, args)
@@ -1449,10 +1487,11 @@ it('keeps root and nested frame constraints distinct from optional plan document
   expect(operationInputIssue(sizedGroup, first.inputSchema)).toBeDefined()
   const invalidPlan = { ...args, plan: {} }
   expect(operationInputIssue(invalidPlan, first.inputSchema)).toBeDefined()
-  for (const invalid of [missingHeight, sizedGroup, invalidPlan])
+  for (const invalid of [missingHeight, sizedGroup, invalidPlan]) {
     expect((await run.call('prepare_and_apply_design', invalid)).success).toBe(
       false
     )
+  }
   expect(run.execute).not.toHaveBeenCalled()
   args.draft.children.push({
     key: 'container',
@@ -1571,8 +1610,9 @@ it('preserves exact query representations, full constraints and bounded recovery
     'partialOutputSchema',
     'recoveryOutputSchema',
     'execution'
-  ])
+  ]) {
     expect(full[key]).toEqual(exact[key])
+  }
   const repeated = await run.call('describe_design_apis', {
     query: '  ' + name + '  ',
     view: 'usage'
@@ -1678,8 +1718,9 @@ it('preserves full exact query scope constraints, paging, refresh and invalidati
     expect(pages.length).toBeGreaterThan(1)
     for (const page of pages) {
       const value = JSON.parse(page.raw)
-      if (value.contentDelivery.next)
+      if (value.contentDelivery.next) {
         expect(value.contentDelivery.next.arguments).toMatchObject(input)
+      }
     }
     const refreshed = await run.call('describe_design_apis', {
       ...input,
@@ -1753,7 +1794,9 @@ it('keeps fuzzy query scope rejected and recovers invalid exact scope from owner
   const actionDefinition = actionOwner.definitions.find(
     (item) => item.name === 'describe_design_apis'
   )
-  if (!actionDefinition) throw new Error('Missing discovery definition')
+  if (!actionDefinition) {
+    throw new Error('Missing discovery definition')
+  }
   const actionOnly = await invokeLocalTool(
     actionOwner,
     actionDefinition,
@@ -1774,7 +1817,9 @@ it('preserves scoped exact query ambiguity and qualified recovery without select
   const main = run.owners
     .flatMap((owner) => owner.definitions)
     .find((definition) => definition.name === input.query)
-  if (!main) throw new Error('Missing workflow definition')
+  if (!main) {
+    throw new Error('Missing workflow definition')
+  }
   const owner = createLocalOperationTools(
     [
       {
@@ -1793,7 +1838,9 @@ it('preserves scoped exact query ambiguity and qualified recovery without select
   const definition = owner.definitions.find(
     (item) => item.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
   for (const selector of [{ query: input.query }, { names: [input.query] }]) {
     const reply = await invokeLocalTool(
       owner,
@@ -1891,9 +1938,13 @@ it('keeps first-query scope guidance owner-derived and independent of unrelated 
     const definition = run.owners
       .flatMap((owner) => owner.definitions)
       .find((item) => item.name === 'prepare_and_apply_design')
-    if (!definition) throw new Error('Missing main tool')
+    if (!definition) {
+      throw new Error('Missing main tool')
+    }
     const value = workflowQueryGuidance(definition.name, definition.inputSchema)
-    if (!value) throw new Error('Missing scope guidance')
+    if (!value) {
+      throw new Error('Missing scope guidance')
+    }
     return value
   }
   const original = guidance(small)
@@ -1928,7 +1979,9 @@ it('keeps first-query scope guidance owner-derived and independent of unrelated 
   const definition = small.owners
     .flatMap((owner) => owner.definitions)
     .find((item) => item.name === 'prepare_and_apply_design')
-  if (!definition) throw new Error('Missing main tool')
+  if (!definition) {
+    throw new Error('Missing main tool')
+  }
   const schema = definition.inputSchema as {
     'x-design-input-scope': {
       selection: string
@@ -2026,12 +2079,16 @@ it('delivers expansion accounting and parts selection before the recorded oversi
   const definition = run.owners
     .flatMap((owner) => owner.definitions)
     .find((item) => item.name === 'prepare_and_apply_design')
-  if (!definition) throw new Error('Missing workflow definition')
+  if (!definition) {
+    throw new Error('Missing workflow definition')
+  }
   const guidance = workflowQueryGuidance(
     definition.name,
     definition.inputSchema
   )
-  if (!guidance) throw new Error('Missing workflow guidance')
+  if (!guidance) {
+    throw new Error('Missing workflow guidance')
+  }
   expect(guidance.operationUsage.draft).toContain(
     String(DesignPreparationLimits.expandedNodes)
   )
@@ -2147,7 +2204,9 @@ it('admits exactly the artifact budget and preserves a successful part before a 
   const source = expansionBudget.draft.children.find(
     (node) => node.type === 'surface-grid'
   )
-  if (!source) throw new Error('Missing recorded grid')
+  if (!source) {
+    throw new Error('Missing recorded grid')
+  }
   const draft = {
     type: 'group',
     name: 'Exact capacity',
@@ -2197,9 +2256,13 @@ it('delivers and executes a complete mixed component example and recovers only t
   const definition = run.owners
     .flatMap((owner) => owner.definitions)
     .find((entry) => entry.name === 'prepare_and_apply_design')
-  if (!definition) throw new Error('Missing main tool')
+  if (!definition) {
+    throw new Error('Missing main tool')
+  }
   const initial = workflowQueryGuidance(definition.name, definition.inputSchema)
-  if (!initial) throw new Error('Missing owner query example')
+  if (!initial) {
+    throw new Error('Missing owner query example')
+  }
   const query = initial.example.arguments
   expect(query.inputScope).toEqual({
     operation: 'draft',
@@ -2504,7 +2567,9 @@ it.each(['projected-face', 'surface-grid'])(
     const definition = run.owners
       .flatMap((owner) => owner.definitions)
       .find((owner) => owner.name === 'prepare_and_apply_design')
-    if (!definition) throw new Error('Missing main tool')
+    if (!definition) {
+      throw new Error('Missing main tool')
+    }
     expect(operationInputIssue(args, definition.inputSchema)).toBeUndefined()
     for (const change of [
       { axes: [{ count: 0, step: { x: 0, y: 0, z: 30 } }] },
@@ -2551,7 +2616,9 @@ it('rejects malformed owner repetition declarations without changing canonical c
   const owner = run.owners
     .flatMap((item) => item.definitions)
     .find((item) => item.name === 'prepare_and_apply_design')
-  if (!owner) throw new Error('Missing main tool')
+  if (!owner) {
+    throw new Error('Missing main tool')
+  }
   const input = JSON.parse(JSON.stringify(owner.inputSchema))
   const original = JSON.stringify(input)
   const scope = { operation: 'draft', nodeTypes: ['surface-grid'] }
@@ -2689,7 +2756,9 @@ it('retains acknowledged partition receipts when cancellation arrives between pa
   const invocation = await unstartedCapacityRecovery(run)
   const controller = new AbortController()
   const execute = run.execute.getMockImplementation()
-  if (!execute) throw new Error('Missing execution owner')
+  if (!execute) {
+    throw new Error('Missing execution owner')
+  }
   run.execute.mockImplementationOnce(async (batch) => {
     const result = await execute(batch)
     controller.abort()
@@ -2717,7 +2786,9 @@ it('does not offer automatic replay after a lost application acknowledgement or 
   expect(unavailable.value.recoveryInvocation).toBeUndefined()
   expect(foreign.created).toHaveLength(0)
   const execute = run.execute.getMockImplementation()
-  if (!execute) throw new Error('Missing execution owner')
+  if (!execute) {
+    throw new Error('Missing execution owner')
+  }
   run.execute
     .mockImplementationOnce(execute)
     .mockImplementationOnce(async (batch) => {
@@ -2955,7 +3026,9 @@ it('preserves the saved layered source through compact preparation and canonical
     ]
   })
   const owner = run.owners[0]
-  if (!('resolveTargets' in owner)) throw new Error('Missing design owner')
+  if (!('resolveTargets' in owner)) {
+    throw new Error('Missing design owner')
+  }
   const target = targets.value.targets[0]
   const ids = owner.resolveTargets({
     artifactId: target.artifactId,
@@ -2986,7 +3059,9 @@ it.each([false, true])(
   async (plan) => {
     const run = setup()
     const query = structuredClone(layeredPattern.query)
-    if (!plan) query.inputScope.optionalInputs = []
+    if (!plan) {
+      query.inputScope.optionalInputs = []
+    }
     const response = await run.call('describe_design_apis', query)
     const tool = response.value.tools[0]
     process.stdout.write(
@@ -3074,8 +3149,9 @@ it('detects the semantic loss from combining separate saved painter layers', () 
   const draft = structuredClone(layeredPattern.compact.draft)
   const face = draft.children.find((child) => child.key === 'tier-layer')
   const grid = draft.children.find((child) => child.key === 'window-layer')
-  if (!face || !grid || !('members' in face) || !('members' in grid))
+  if (!face || !grid || !('members' in face) || !('members' in grid)) {
     throw new Error('Missing saved layer patterns')
+  }
   Object.assign(face, { members: [...face.members, ...grid.members] })
   draft.children = draft.children.filter((child) => child !== grid)
   const wrong = prepareDesign(draft, 'layered')
@@ -3102,7 +3178,9 @@ it.each([
     }
     explicit.children = compact.children.flatMap(
       (child: (typeof draft.children)[number]) => {
-        if (child.type !== 'pattern') return [structuredClone(child)]
+        if (child.type !== 'pattern') {
+          return [structuredClone(child)]
+        }
         return Array.from({ length: count }, (_, index) =>
           child.members.map((member: (typeof child.members)[number]) => {
             const node = structuredClone(member)
@@ -3247,7 +3325,9 @@ it('replays saved cross-tool field queries in one bounded reply and executes own
   const declaration = t.owners
     .flatMap((owner) => owner.definitions)
     .find((entry) => entry.name === 'describe_design_apis')
-  if (!declaration) throw new Error('Missing discovery declaration')
+  if (!declaration) {
+    throw new Error('Missing discovery declaration')
+  }
   expect(declaration.description).toContain('fieldQuery example')
   const usage = await t.call('describe_design_apis', fieldRecovery.usage.input)
   expect(usage.success).toBe(true)
@@ -3367,7 +3447,9 @@ it('bounds failed field navigation and traversal independently of unrelated nest
     const definition = owner.definitions.find(
       (entry) => entry.name === 'describe_design_apis'
     )
-    if (!definition) throw new Error('Missing discovery definition')
+    if (!definition) {
+      throw new Error('Missing discovery definition')
+    }
     const entries = vi.spyOn(Object, 'entries')
     try {
       const reply = await invokeLocalTool(
@@ -3513,8 +3595,9 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
   expect(menu.tools.length).toBeGreaterThan(0)
   for (const entry of menu.tools) {
     expect(entry.usageGuide).toBeUndefined()
-    for (const path of entry.outputFields ?? [])
+    for (const path of entry.outputFields ?? []) {
       expect(path.split('/properties/').length, path).toBeLessThanOrEqual(2)
+    }
     expect(['select-exact-tool', 'select-operation-scope']).toContain(
       entry.definition.nextAction
     )
@@ -3583,7 +3666,9 @@ it('assembles selected input once at the final executable usage boundary', async
   const definition = run.owners
     .flatMap((owner) => owner.definitions)
     .find((entry) => entry.name === 'prepare_and_apply_design')
-  if (!definition) throw new Error('Missing main workflow')
+  if (!definition) {
+    throw new Error('Missing main workflow')
+  }
   const scope = { operation: 'draft', nodeTypes: ['rect'] }
   // Guidance owns explanations, not a second parameter preparation that the
   // actual-route assembler would discard or rewrap.
@@ -3601,8 +3686,9 @@ it('assembles selected input once at the final executable usage boundary', async
         schema?.type === 'object' &&
         schema.properties?.draft?.$ref === '#/$defs/readyDraft' &&
         schema.properties?.parts === false
-      )
+      ) {
         preparedRoots++
+      }
       return Reflect.apply(target, receiver, args)
     }
   })

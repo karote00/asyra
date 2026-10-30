@@ -151,10 +151,12 @@ for (const aiPanelOpen of [false, true]) {
         await page.setViewportSize({ width, height: 720 })
         const panelOpen = index === 1 ? !aiPanelOpen : aiPanelOpen
         const panel = page.getByTestId('ai-agent-panel')
-        if (panelOpen && !(await panel.isVisible()))
+        if (panelOpen && !(await panel.isVisible())) {
           await page.getByRole('button', { name: 'Open Agent' }).click()
-        if (!panelOpen && (await panel.isVisible()))
+        }
+        if (!panelOpen && (await panel.isVisible())) {
           await page.getByRole('button', { name: 'Close Agent panel' }).click()
+        }
         // Layout changes only update the available area, never the camera.
         expect(await readCamera()).toEqual(cameraBeforeLayout)
         await clickCanvas(page, 0.1, 0.5)
@@ -164,14 +166,20 @@ for (const aiPanelOpen of [false, true]) {
             const { core } = await import('../src/testing/runtime-access')
             const { viewportApis } = await import('../src/common-apis/viewport')
             const bounds = core.getAllElementsBounds()
-            if (!bounds) throw new Error('Expected drawn content')
+            if (!bounds) {
+              throw new Error('Expected drawn content')
+            }
             const anchor = document.getElementById('viewport-anchor')
-            if (!anchor) throw new Error('Expected viewport anchor')
+            if (!anchor) {
+              throw new Error('Expected viewport anchor')
+            }
             const viewport = anchor.getBoundingClientRect()
             const sidebar =
               document.querySelector('[data-testid="ai-agent-panel"]') ??
               document.querySelector('[data-testid="properties-panel"]')
-            if (!sidebar) throw new Error('Expected visible right sidebar')
+            if (!sidebar) {
+              throw new Error('Expected visible right sidebar')
+            }
             const visibleRight = sidebar.getBoundingClientRect().left
             const scale = viewportApis.getScale()
             const position = viewportApis.getPosition()

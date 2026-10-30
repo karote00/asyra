@@ -44,7 +44,9 @@ it('canonical replay discards superseded input text even when Redo returns to it
       'value'
     )?.set
 
-    if (!input || !setValue) throw new Error('Missing numeric input')
+    if (!input || !setValue) {
+      throw new Error('Missing numeric input')
+    }
 
     await act(() => {
       input.focus()
@@ -94,7 +96,9 @@ it('Escape abandons a numeric draft without emitting a property edit', async () 
     'value'
   )?.set
 
-  if (!input || !setValue) throw new Error('Missing numeric input')
+  if (!input || !setValue) {
+    throw new Error('Missing numeric input')
+  }
 
   await act(() => {
     input.focus()

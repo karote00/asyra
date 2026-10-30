@@ -64,7 +64,9 @@ const evidenceIsCurrent = (page: Page) =>
     const owner = testRuntimeState.get<{
       isCurrent: (value: unknown) => boolean
     }>('inspection-evidence-owner')
-    if (!owner) throw new Error('Inspection evidence owner is unavailable')
+    if (!owner) {
+      throw new Error('Inspection evidence owner is unavailable')
+    }
     return owner.isCurrent(testRuntimeState.get('inspection-evidence-stamp'))
   })
 
@@ -146,7 +148,9 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
       const { core, getActiveCollaborationHandle } =
         await import('../src/testing/runtime-access')
       const handle = getActiveCollaborationHandle()
-      if (!handle) throw new Error('Missing connected document owner')
+      if (!handle) {
+        throw new Error('Missing connected document owner')
+      }
       const persisted = await handle.confirmPersistence(
         new AbortController().signal
       )
@@ -215,15 +219,18 @@ test('recorded action stream preserves drawable targets during incremental const
     !manifestPath,
     'Provide a project-local recorded action replay manifest.'
   )
-  if (!manifestPath) return
+  if (!manifestPath) {
+    return
+  }
   test.setTimeout(300_000)
   const { readFile, appendFile, writeFile } = await import('node:fs/promises')
   const { resolve, relative } = await import('node:path')
   const projectRoot = resolve(process.cwd(), '../..')
   const localPath = (path: string) => {
     const resolved = resolve(path)
-    if (relative(projectRoot, resolved).startsWith('..'))
+    if (relative(projectRoot, resolved).startsWith('..')) {
       throw new Error('Replay inputs must be inside this project')
+    }
     return resolved
   }
   const manifest: {
@@ -249,12 +256,16 @@ test('recorded action stream preserves drawable targets during incremental const
     void appendFile(eventsPath, `${JSON.stringify({ error: error.stack })}\n`)
   })
   page.on('console', async (message) => {
-    if (message.type() !== 'error') return
+    if (message.type() !== 'error') {
+      return
+    }
     const argumentsWithErrors = await Promise.all(
       message.args().map((argument) =>
         argument
           .evaluate((value) => {
-            if (value instanceof Error) return value.stack
+            if (value instanceof Error) {
+              return value.stack
+            }
             if (value && typeof value === 'object' && 'error' in value) {
               const error = value.error
               return {
@@ -288,8 +299,9 @@ test('recorded action stream preserves drawable targets during incremental const
       const pipelineDebugger = traceHierarchy
         ? getActiveCanvasPipelineDebugger()
         : undefined
-      if (traceHierarchy && !pipelineDebugger)
+      if (traceHierarchy && !pipelineDebugger) {
         throw new Error('Requested Canvas Pipeline Debugger is unavailable')
+      }
       const aliases = new Map<string, string>()
       const started = performance.now()
       let currentBatchId = ''
@@ -308,7 +320,9 @@ test('recorded action stream preserves drawable targets during incremental const
           const serializedBytes = new TextEncoder().encode(
             JSON.stringify(publication)
           ).byteLength
-          if (serializedBytes < 1_000_000) return
+          if (serializedBytes < 1_000_000) {
+            return
+          }
           const deliveries = publication.slices.flatMap((slice) =>
             slice.batches.flatMap((batch) => batch.deliveries)
           )
@@ -339,12 +353,17 @@ test('recorded action stream preserves drawable targets during incremental const
         }
       )
       const remap = (value: unknown): unknown => {
-        if (typeof value === 'string') return aliases.get(value) ?? value
-        if (Array.isArray(value)) return value.map(remap)
-        if (value && typeof value === 'object')
+        if (typeof value === 'string') {
+          return aliases.get(value) ?? value
+        }
+        if (Array.isArray(value)) {
+          return value.map(remap)
+        }
+        if (value && typeof value === 'object') {
           return Object.fromEntries(
             Object.entries(value).map(([key, entry]) => [key, remap(entry)])
           )
+        }
         return value
       }
       const captureErrors: {
@@ -386,8 +405,9 @@ test('recorded action stream preserves drawable targets during incremental const
       }
       const provider: AiProvider = {
         requestActionBatch: async (_input, { executeBatch }) => {
-          if (!executeBatch)
+          if (!executeBatch) {
             throw new Error('Runtime batch executor is unavailable')
+          }
           for (const batch of batches) {
             currentBatchId = batch.batchId
             const debuggerHandle =
@@ -412,12 +432,15 @@ test('recorded action stream preserves drawable targets during incremental const
             const receipt = await executeBatch(remap(batch) as AiActionBatch)
             for (const entry of receipt.actionResults) {
               const originalId = groupResults[entry.actionId]
-              if (!originalId) continue
+              if (!originalId) {
+                continue
+              }
               const result = entry.result as { groupId?: string }
-              if (!result.groupId)
+              if (!result.groupId) {
                 throw new Error(
                   `Recorded group result missing: ${entry.actionId}`
                 )
+              }
               aliases.set(originalId, result.groupId)
             }
             viewportApis.zoomFit()
@@ -479,7 +502,9 @@ test('recorded action stream preserves drawable targets during incremental const
       startup.confirmation.beginTurn('recorded-replay')
       const unsubscribeConfirmation = startup.confirmation.subscribe(
         ({ pending }) => {
-          if (pending) startup.confirmation.resolve(true)
+          if (pending) {
+            startup.confirmation.resolve(true)
+          }
         }
       )
       try {
@@ -553,17 +578,20 @@ test('recorded action stream preserves drawable targets during incremental const
   )
   await page.screenshot({ path: testInfo.outputPath('replayed-app.png') })
   for (const [index, capture] of result.captures.entries()) {
-    if (capture.image)
+    if (capture.image) {
       await testInfo.attach(`replayed-root-${index}`, {
         body: Buffer.from(capture.image.dataUrl.split(',')[1], 'base64'),
         contentType: 'image/png'
       })
+    }
   }
   expect(result.status, result.failure ?? 'Recorded batches must execute').toBe(
     'executed'
   )
   const fileId = new URL(page.url()).searchParams.get('fileId')
-  if (!fileId) throw new Error('The test document has no file ID')
+  if (!fileId) {
+    throw new Error('The test document has no file ID')
+  }
   const canonicalDigest = await getCoreDocumentDigest(page)
   await expect
     .poll(() => getPersistedDocumentDigest(fileId), {
@@ -621,9 +649,13 @@ test('canonical coverage follows ungrouped details into their current drawing', 
     const { createInspectionEvidence } =
       await import('../src/common-apis/inspection-evidence')
     const workspace = hierarchyApis.getWorkspaceId()
-    if (!workspace) throw new Error('Missing workspace')
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
     const ids = core.getElementData(workspace)?.children ?? []
-    if (ids.length !== 2) throw new Error('Expected the two test rectangles')
+    if (ids.length !== 2) {
+      throw new Error('Expected the two test rectangles')
+    }
     const tower = hierarchyApis.groupElements([ids[0]])
     const collar = hierarchyApis.groupElements([ids[1]])
     const owner = createInspectionEvidence()
@@ -682,12 +714,18 @@ test('inspection sees hierarchy edits before a long-running AI request settles',
     const runner = createAiTransactionRunner()
     const delivery = { undoable: true, sharedDelivery: 'immediate' } as const
     const workspace = hierarchyApis.getWorkspaceId()
-    if (!workspace) throw new Error('Missing workspace')
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
     const ids = [...(core.getElementData(workspace)?.children ?? [])]
-    if (ids.length !== 2) throw new Error('Expected two rectangles')
+    if (ids.length !== 2) {
+      throw new Error('Expected two rectangles')
+    }
     return runner
       .run('Inspect a running drawing', async (mutate) => {
-        if (!mutate) throw new Error('Expected grouped mutation executor')
+        if (!mutate) {
+          throw new Error('Expected grouped mutation executor')
+        }
         const drawing = await mutate(() => {
           const body = hierarchyApis.groupElements([ids[0]], delivery)
           const detail = hierarchyApis.groupElements([ids[1]], delivery)
@@ -710,7 +748,9 @@ test('inspection sees hierarchy edits before a long-running AI request settles',
       .catch((error: unknown) => {
         // Browser serialization omits custom Error fields; surface the canonical
         // cause so this permanent regression reports the failing owner.
-        if (error instanceof Error && 'cause' in error) throw error.cause
+        if (error instanceof Error && 'cause' in error) {
+          throw error.cause
+        }
         throw error
       })
   })
@@ -735,14 +775,20 @@ test('rendered inspection survives moving a detail group and regrouping the whol
     const runner = createAiTransactionRunner()
     const apply = <T>(operation: () => T) =>
       runner.run('Inspection replay', async (mutate) => {
-        if (!mutate) throw new Error('Expected grouped mutation executor')
+        if (!mutate) {
+          throw new Error('Expected grouped mutation executor')
+        }
         return mutate(operation)
       })
     const delivery = { undoable: true, sharedDelivery: 'immediate' } as const
     const workspace = hierarchyApis.getWorkspaceId()
-    if (!workspace) throw new Error('Missing workspace')
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
     const ids = [...(core.getElementData(workspace)?.children ?? [])]
-    if (ids.length !== 3) throw new Error('Expected three rectangles')
+    if (ids.length !== 3) {
+      throw new Error('Expected three rectangles')
+    }
     const body = await apply(() =>
       hierarchyApis.groupElements([ids[0]], delivery)
     )
@@ -803,13 +849,16 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
     !documentPath,
     'Provide a retained project-local document for deterministic inspection replay.'
   )
-  if (!documentPath) return
+  if (!documentPath) {
+    return
+  }
   const { readFile } = await import('node:fs/promises')
   const { resolve, relative } = await import('node:path')
   const projectRoot = resolve(process.cwd(), '../..')
   const filePath = resolve(documentPath)
-  if (relative(projectRoot, filePath).startsWith('..'))
+  if (relative(projectRoot, filePath).startsWith('..')) {
     throw new Error('Replay document must be inside this project')
+  }
   const document = JSON.parse(await readFile(filePath, 'utf8'))
   const actionPath = process.env.E2E_INSPECTION_ACTIONS
   const fillChanges: {
@@ -820,15 +869,19 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
   }[] = []
   if (actionPath) {
     const resolved = resolve(actionPath)
-    if (relative(projectRoot, resolved).startsWith('..'))
+    if (relative(projectRoot, resolved).startsWith('..')) {
       throw new Error('Replay actions must be inside this project')
+    }
     const frames = (await readFile(resolved, 'utf8')).trim().split('\n')
     for (const frame of frames) {
       const parsed = JSON.parse(frame)
-      if (parsed.type !== 'batch') continue
+      if (parsed.type !== 'batch') {
+        continue
+      }
       for (const action of parsed.batch.actions) {
-        if (action.name === 'api_fill_updateFillFields')
+        if (action.name === 'api_fill_updateFillFields') {
           fillChanges.push(action.arguments)
+        }
       }
     }
     expect(
@@ -855,7 +908,9 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
       const runner = createAiTransactionRunner()
       const apply = <T>(operation: () => T) =>
         runner.run('Inspection replay', async (mutate) => {
-          if (!mutate) throw new Error('Expected grouped mutation executor')
+          if (!mutate) {
+            throw new Error('Expected grouped mutation executor')
+          }
           return mutate(operation)
         })
       const delivery = { undoable: true, sharedDelivery: 'immediate' } as const
@@ -863,10 +918,13 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
       await stage('document loaded')
       viewportApis.zoomFit()
       const workspace = hierarchyApis.getWorkspaceId()
-      if (!workspace) throw new Error('Missing workspace')
+      if (!workspace) {
+        throw new Error('Missing workspace')
+      }
       const roots = core.getElementData(workspace)?.children ?? []
-      if (roots.length !== 1)
+      if (roots.length !== 1) {
         throw new Error('Replay requires one whole-drawing root')
+      }
       const before = core.captureElementSnapshot(roots[0], 1024)
       await stage('baseline captured')
       if (fillChanges.length) {
@@ -918,10 +976,13 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
         ...(await apply(() => hierarchyApis.ungroupElement(roots[0], delivery)))
           .elementIds
       ]
-      if (members.length < 2)
+      if (members.length < 2) {
         throw new Error('Replay requires a drawing and a separate detail group')
+      }
       const detail = members.pop()
-      if (!detail) throw new Error('Replay detail group is missing')
+      if (!detail) {
+        throw new Error('Replay detail group is missing')
+      }
       const drawing = await apply(() =>
         hierarchyApis.groupElements(members, delivery)
       )
@@ -986,13 +1047,16 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
           canvas.width = image.width
           canvas.height = image.height
           const context = canvas.getContext('2d')
-          if (!context) throw new Error('Pixel comparison requires Canvas 2D')
+          if (!context) {
+            throw new Error('Pixel comparison requires Canvas 2D')
+          }
           context.drawImage(image, 0, 0)
           return context.getImageData(0, 0, image.width, image.height).data
         }
         const [left, right] = await Promise.all([decode(before), decode(after)])
-        if (left.length !== right.length)
+        if (left.length !== right.length) {
           throw new Error('Snapshot dimensions changed')
+        }
         let changedPixels = 0
         let maximumChannelDelta = 0
         for (let offset = 0; offset < left.length; offset += 4) {
@@ -1004,7 +1068,9 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
             maximumChannelDelta = Math.max(maximumChannelDelta, delta)
             changed ||= delta > 0
           }
-          if (changed) changedPixels += 1
+          if (changed) {
+            changedPixels += 1
+          }
         }
         return {
           changedFraction: changedPixels / (left.length / 4),
@@ -1066,8 +1132,9 @@ test('scoped inspection preserves other tiers and regions through canonical edit
       const value = (await action.execute({ elementId, region }, {
         signal
       } as never)) as { available: boolean; evidence?: unknown }
-      if (!value.available || !value.evidence)
+      if (!value.available || !value.evidence) {
         throw new Error('Actual rendered capture failed')
+      }
       return value.evidence
     }
     try {
@@ -1232,8 +1299,9 @@ test('public review handoffs retain independent evidence and recover before runt
           read: async (key) => entries.get(key),
           list: async () => [...entries.values()],
           write: async (value) => {
-            if (entries.get(value.key)?.version !== value.expectedVersion)
+            if (entries.get(value.key)?.version !== value.expectedVersion) {
               throw new Error('Conflict')
+            }
             const entry = {
               key: value.key,
               record: value.record,
@@ -1291,7 +1359,9 @@ test('public review handoffs retain independent evidence and recover before runt
                   const execute = testRuntimeState.get<
                     (batch: AiActionBatch) => Promise<Receipt>
                   >('review-handoff-execute')
-                  if (!execute) throw new Error('Missing real runtime executor')
+                  if (!execute) {
+                    throw new Error('Missing real runtime executor')
+                  }
                   return JSON.stringify(
                     await execute(JSON.parse(serialized) as AiActionBatch)
                   )
@@ -1299,9 +1369,11 @@ test('public review handoffs retain independent evidence and recover before runt
                 JSON.stringify(batch)
               )
               const receipt = JSON.parse(serializedReceipt) as Receipt
-              for (const entry of receipt.actionResults)
-                if (entry.actionName === AiActionNames.READ_DESIGN_ATTACHMENT)
+              for (const entry of receipt.actionResults) {
+                if (entry.actionName === AiActionNames.READ_DESIGN_ATTACHMENT) {
                   attachmentReceipts.push(entry.result)
+                }
+              }
               if (
                 cancelAfterValidation &&
                 batch.actions.some(
@@ -1357,7 +1429,9 @@ test('public review handoffs retain independent evidence and recover before runt
           (entry: { result: { inspectionId?: string } }) =>
             entry.result.inspectionId
         )?.result
-        if (!image) throw new Error(JSON.stringify({ elementId, receipt }))
+        if (!image) {
+          throw new Error(JSON.stringify({ elementId, receipt }))
+        }
         expect(image).toMatchObject({
           inspectionId: expect.any(String),
           available: true
@@ -1390,7 +1464,9 @@ test('public review handoffs retain independent evidence and recover before runt
               selection
           )
         })
-        if (!bound.next?.arguments?.checks) return { unavailable: bound }
+        if (!bound.next?.arguments?.checks) {
+          return { unavailable: bound }
+        }
         expect(bound).toMatchObject({
           reviewOperation: 'bind',
           recordedChecks: []
@@ -1837,7 +1913,9 @@ test('public review handoffs retain independent evidence and recover before runt
     const provider: AiProvider = {
       requestActionBatch: async (input, { executeBatch }) => {
         try {
-          if (!executeBatch) throw new Error('Missing runtime executor')
+          if (!executeBatch) {
+            throw new Error('Missing runtime executor')
+          }
           testRuntimeState.set('review-handoff-execute', executeBatch)
           return await (
             window as unknown as {
@@ -1874,7 +1952,9 @@ test('public review handoffs retain independent evidence and recover before runt
       startup.confirmation.dispose()
     }
   })
-  if (bridgeFailure) throw bridgeFailure
+  if (bridgeFailure) {
+    throw bridgeFailure
+  }
   expect(result.providerError).toBeUndefined()
   expect(result).toMatchObject({
     status: 'executed',
@@ -1912,7 +1992,7 @@ for (const mode of [
   'no-progress',
   'cancel-after-write',
   'interrupted-after-write'
-] as const)
+] as const) {
   test(`aggregate mechanical repair preserves independent passes through history and durable reload - ${mode}`, async ({
     page,
     browser
@@ -1961,8 +2041,9 @@ for (const mode of [
           failEligibility &&
           (value.record as { availability?: string }).availability ===
             'eligible'
-        )
+        ) {
           throw new Error('Injected library acknowledgement failure')
+        }
         return database.write(value)
       }
     }
@@ -2068,9 +2149,11 @@ for (const mode of [
                       dispatched.push(
                         ...batch.actions.map((action) => action.name)
                       )
-                      for (const action of batch.actions)
-                        if (action.name === 'review_design')
+                      for (const action of batch.actions) {
+                        if (action.name === 'review_design') {
                           measured.push(String(action.arguments.elementId))
+                        }
+                      }
                       if (
                         mode === 'basis-changed' &&
                         !basisChanged &&
@@ -2101,8 +2184,9 @@ for (const mode of [
                           const execute = testRuntimeState.get<
                             (batch: AiActionBatch) => Promise<Receipt>
                           >('mechanical-integration-execute')
-                          if (!execute)
+                          if (!execute) {
                             throw new Error('Missing actual runtime executor')
+                          }
                           return JSON.parse(
                             JSON.stringify(
                               await execute(JSON.parse(serialized))
@@ -2117,8 +2201,10 @@ for (const mode of [
                             action.name === 'apply_prescribed_positions'
                         )
                       ) {
-                        if (mode === 'cancel-after-write') controller.abort()
-                        if (mode === 'interrupted-after-write')
+                        if (mode === 'cancel-after-write') {
+                          controller.abort()
+                        }
+                        if (mode === 'interrupted-after-write') {
                           throw new BrowserBatchExecutionError(
                             {
                               batchId: batch.batchId,
@@ -2140,6 +2226,7 @@ for (const mode of [
                               }
                             }
                           )
+                        }
                       }
                       return requireBatchSuccess(batch, receipt, 0)
                     },
@@ -2219,7 +2306,9 @@ for (const mode of [
               const result = host
                 .definitions()
                 .find((item) => item.name === name)
-              if (!result) throw new Error(`Missing ${name}`)
+              if (!result) {
+                throw new Error(`Missing ${name}`)
+              }
               return result
             }
             const verifier = definition('verify_design_checks'),
@@ -2307,7 +2396,9 @@ for (const mode of [
             expect(submitted, JSON.stringify(submitted)).toMatchObject({
               ok: true
             })
-            if (mode === 'complete') failEligibility = true
+            if (mode === 'complete') {
+              failEligibility = true
+            }
             if (mode === 'cancel-after-write') {
               await expect(
                 invoke('tool_library.invoke_tool', {
@@ -2409,11 +2500,11 @@ for (const mode of [
                   expect(retry, JSON.stringify(retry)).toMatchObject({
                     execution: { status: 'success', value: 'pass' }
                   })
-                } else if (mode === 'no-progress')
+                } else if (mode === 'no-progress') {
                   expect(result.execution.issues).toContain(
                     'Repeated verification progress'
                   )
-                else {
+                } else {
                   expect(JSON.stringify(result.execution.recovery)).toContain(
                     ids.children[2]
                   )
@@ -2614,7 +2705,9 @@ for (const mode of [
         let providerError: string | undefined
         const provider: AiProvider = {
           requestActionBatch: async (input, { executeBatch }) => {
-            if (!executeBatch) throw new Error('Missing runtime executor')
+            if (!executeBatch) {
+              throw new Error('Missing runtime executor')
+            }
             testRuntimeState.set('mechanical-integration-execute', executeBatch)
             try {
               return await (
@@ -2647,7 +2740,9 @@ for (const mode of [
           startup.confirmation.dispose()
         }
       })
-      if (bridgeFailure) throw bridgeFailure
+      if (bridgeFailure) {
+        throw bridgeFailure
+      }
       expect(result, JSON.stringify(result)).toMatchObject({
         status: 'executed'
       })
@@ -2708,6 +2803,7 @@ for (const mode of [
       await peer.close()
     }
   })
+}
 
 test('mechanical receipts preserve checked inputs across recorded grouping and stacking changes', async ({
   page
@@ -2736,7 +2832,9 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
         const action = input.actionDefinitions?.find(
           (action) => action.name === name
         )
-        if (!action) throw new Error(`Missing action ${name}`)
+        if (!action) {
+          throw new Error(`Missing action ${name}`)
+        }
         return (await action.execute(args, { signal } as never)) as Record<
           string,
           unknown
@@ -2818,7 +2916,9 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
           resized
         }
       } finally {
-        for (const owner of input.ownedResources ?? []) await owner.dispose()
+        for (const owner of input.ownedResources ?? []) {
+          await owner.dispose()
+        }
       }
     },
     recordedMechanics.structuralCalls[1].operations[0].arguments.request
@@ -2884,8 +2984,9 @@ test('server measurement freshness uses the browser mechanical owner through edi
     fixture.actions,
     { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
     async (batch) => {
-      if (disconnected)
+      if (disconnected) {
         throw new Error('Simulated transport loss before browser dispatch')
+      }
       measured.push(
         ...batch.actions
           .filter((action) => action.name === 'review_design')
@@ -2898,14 +2999,20 @@ test('server measurement freshness uses the browser mechanical owner through edi
           typeof import('../src/ai/runtime-input').createAiRuntimeInput
         >
         const input = testRuntimeState.get<RuntimeInput>('mechanical-runtime')
-        if (!input) throw new Error('Missing mechanical runtime')
-        if (!input) throw new Error('Missing runtime')
+        if (!input) {
+          throw new Error('Missing mechanical runtime')
+        }
+        if (!input) {
+          throw new Error('Missing runtime')
+        }
         const actionResults = []
         for (const entry of batch.actions) {
           const action = input.actionDefinitions.find(
             (action) => action.name === entry.name
           )
-          if (!action) throw new Error('Missing requested action')
+          if (!action) {
+            throw new Error('Missing requested action')
+          }
           actionResults.push({
             actionId: entry.id,
             actionName: entry.name,
@@ -2937,7 +3044,9 @@ test('server measurement freshness uses the browser mechanical owner through edi
       const { testRuntimeState } = await import('../src/testing/runtime-access')
       const { transactionApis, fillApis } = await import('../src/common-apis')
       const ids = testRuntimeState.get<string[]>('mechanical-ids')
-      if (!ids) throw new Error('Missing mechanical fixture IDs')
+      if (!ids) {
+        throw new Error('Missing mechanical fixture IDs')
+      }
       transactionApis.runTransaction(() =>
         fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#334455' })
       )
@@ -2949,7 +3058,9 @@ test('server measurement freshness uses the browser mechanical owner through edi
         await import('../src/testing/runtime-access')
       const { transactionApis } = await import('../src/common-apis')
       const ids = testRuntimeState.get<string[]>('mechanical-ids')
-      if (!ids) throw new Error('Missing mechanical fixture IDs')
+      if (!ids) {
+        throw new Error('Missing mechanical fixture IDs')
+      }
       transactionApis.runTransaction(() =>
         core.updateElementProperties([
           {
@@ -2988,8 +3099,12 @@ test('server measurement freshness uses the browser mechanical owner through edi
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<RuntimeInput>('mechanical-runtime')
-      if (!input) throw new Error('Missing mechanical runtime')
-      for (const owner of input.ownedResources ?? []) await owner.dispose()
+      if (!input) {
+        throw new Error('Missing mechanical runtime')
+      }
+      for (const owner of input.ownedResources ?? []) {
+        await owner.dispose()
+      }
     })
   }
 })
@@ -3081,8 +3196,9 @@ for (const rootType of ['frame', 'group'] as const) {
                 a.name === 'validate_inspection_evidence' &&
                 a.arguments.measurementTargets
             )
-          )
+          ) {
             throw new Error('Interrupted coverage delivery')
+          }
           return (await page.evaluate(async (batch) => {
             const { testRuntimeState } =
               await import('../src/testing/runtime-access')
@@ -3090,13 +3206,17 @@ for (const rootType of ['frame', 'group'] as const) {
               typeof import('../src/ai/runtime-input').createAiRuntimeInput
             >
             const input = testRuntimeState.get<Input>('coverage-runtime')
-            if (!input) throw new Error('Missing runtime')
+            if (!input) {
+              throw new Error('Missing runtime')
+            }
             const actionResults = []
             for (const entry of batch.actions) {
               const action = input.actionDefinitions.find(
                 (a) => a.name === entry.name
               )
-              if (!action) throw new Error('Missing action')
+              if (!action) {
+                throw new Error('Missing action')
+              }
               actionResults.push({
                 actionId: entry.id,
                 actionName: entry.name,
@@ -3130,14 +3250,17 @@ for (const rootType of ['frame', 'group'] as const) {
             },
             { id, width }
           )
-        for (const visible of [false, true])
+        for (const visible of [false, true]) {
           await invoke('set_element_visibility', {
             arguments: { elementId: fixture.children[0], visible },
             inspection: 'defer'
           })
+        }
         // Saved calls 60-62: complete root review, exact root verification, retained read.
         expect(recordedMechanics.sourceRun).toContain('1792342207875')
-        for (const id of fixture.children) await review(id)
+        for (const id of fixture.children) {
+          await review(id)
+        }
         await resize(fixture.children[0], 50)
         await resize(fixture.children[1], 60)
         expect((await invoke('read_design_checks')).counts.stale).toBe(2)
@@ -3314,8 +3437,9 @@ for (const rootType of ['frame', 'group'] as const) {
             typeof import('../src/ai/runtime-input').createAiRuntimeInput
           >
           for (const owner of testRuntimeState.get<Input>('coverage-runtime')
-            ?.ownedResources ?? [])
+            ?.ownedResources ?? []) {
             await owner.dispose()
+          }
         })
         await test.step('planned reload - editor', () =>
           evidence.reload('editor', async () => {
@@ -3397,8 +3521,9 @@ for (const rootType of ['frame', 'group'] as const) {
               typeof import('../src/ai/runtime-input').createAiRuntimeInput
             >
             for (const owner of testRuntimeState.get<Input>('coverage-runtime')
-              ?.ownedResources ?? [])
+              ?.ownedResources ?? []) {
               await owner.dispose()
+            }
             testRuntimeState.delete('coverage-runtime')
           })
         } catch (error) {
@@ -3406,7 +3531,9 @@ for (const rootType of ['frame', 'group'] as const) {
         }
         await peer.close()
       }
-      if (failure !== undefined) throw failure
+      if (failure !== undefined) {
+        throw failure
+      }
     }
   )
 }
@@ -3429,7 +3556,9 @@ test('published representative guidance reaches real capture and completion with
     const match = text.match(
       new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
     )
-    if (!match) throw new Error(`Missing published ${label}`)
+    if (!match) {
+      throw new Error(`Missing published ${label}`)
+    }
     return JSON.parse(match[1])
   }
   const declaration = example('representative-review')
@@ -3486,13 +3615,17 @@ test('published representative guidance reaches real capture and completion with
           typeof import('../src/ai/runtime-input').createAiRuntimeInput
         >
         const input = testRuntimeState.get<Input>('guidance-runtime')
-        if (!input) throw new Error('Missing real runtime')
+        if (!input) {
+          throw new Error('Missing real runtime')
+        }
         const actionResults = []
         for (const entry of batch.actions) {
           const action = input.actionDefinitions.find(
             (action) => action.name === entry.name
           )
-          if (!action) throw new Error(`Missing ${entry.name}`)
+          if (!action) {
+            throw new Error(`Missing ${entry.name}`)
+          }
           actionResults.push({
             actionId: entry.id,
             actionName: entry.name,
@@ -3585,8 +3718,9 @@ test('published representative guidance reaches real capture and completion with
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<Input>('guidance-runtime')
-      for (const resource of input?.ownedResources ?? [])
+      for (const resource of input?.ownedResources ?? []) {
         await resource.dispose()
+      }
     })
   }
   await page.reload()
@@ -3745,8 +3879,9 @@ for (const interruption of ['editor', 'peer', 'closed'] as const) {
         },
         edited
       )
-      if (interruption === 'closed') await page.close()
-      else {
+      if (interruption === 'closed') {
+        await page.close()
+      } else {
         const target = interruption === 'editor' ? page : peer
         await target.reload()
         await waitForAppReady(target)

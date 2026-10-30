@@ -167,9 +167,11 @@ const at = (value: unknown, pointer: string): unknown => {
     if (
       (recipeRecord(current) || Array.isArray(current)) &&
       recipeOwn(current, key)
-    )
+    ) {
       current = (current as Record<string, unknown>)[key]
-    else throw new Error('An actual output is missing a validated binding path')
+    } else {
+      throw new Error('An actual output is missing a validated binding path')
+    }
   }
   return current
 }
@@ -185,8 +187,9 @@ const bind = (
     case 'input':
       return at(input, binding.path)
     case 'step':
-      if (!outputs.has(binding.step))
+      if (!outputs.has(binding.step)) {
         throw new Error('A required prior result is unavailable')
+      }
       return at(outputs.get(binding.step), binding.path)
     case 'literal':
       return binding.value
@@ -204,8 +207,9 @@ const bind = (
 
 /** One registry and invoker for both variants; only leaves reach the host scheduler. */
 export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
-  if (!Number.isSafeInteger(options.maxSteps) || options.maxSteps < 1)
+  if (!Number.isSafeInteger(options.maxSteps) || options.maxSteps < 1) {
     throw new TypeError('Execution needs a finite step budget')
+  }
   return {
     async invoke(
       request: AiInvocation & { requestId: string; revision?: number }
@@ -229,30 +233,35 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
           revision,
           requestId: request.requestId
         })
-        if (!entry)
+        if (!entry) {
           throw new AiToolContractError(
             'registration',
             'An exact registered tool is unavailable for this request'
           )
+        }
         const identity = JSON.stringify([name, entry.definition.revision])
-        if (ancestors.has(identity))
+        if (ancestors.has(identity)) {
           throw new Error('Composition dependency cycle')
-        if (entry.kind === 'primitive')
+        }
+        if (entry.kind === 'primitive') {
           return { definition: entry.definition, children: [] }
+        }
         const recipe = options.recipe(name, entry.definition.revision)
         if (
           !recipe ||
           JSON.stringify(createAiToolContract(entry.definition)) !==
             JSON.stringify(recipe.contract)
-        )
+        ) {
           throw new Error(
             'Registered composition contract does not match its admitted recipe'
           )
+        }
         const next = new Set([...ancestors, identity])
         const pinStep = (step: AiRecipeStep, weight: number) => {
           expanded += weight
-          if (!Number.isSafeInteger(expanded) || expanded > options.maxSteps)
+          if (!Number.isSafeInteger(expanded) || expanded > options.maxSteps) {
             throw new Error('Expanded composition exceeds the execution budget')
+          }
           const child = pin(step.tool, step.revision, next, weight)
           const expected = recipe.dependencies.find(
             (item) => item.name === step.tool && item.revision === step.revision
@@ -261,8 +270,9 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
             !expected ||
             JSON.stringify(createAiToolContract(child.definition)) !==
               JSON.stringify(expected)
-          )
+          ) {
             throw new Error('Dependency contract changed since admission')
+          }
           return child
         }
         const children = recipeExecutionSteps(recipe.recipe).map(
@@ -294,12 +304,13 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
           if (
             descendants.some((item) => item.settlement === 'unknown') ||
             settlement === 'unknown'
-          )
+          ) {
             combined = 'unknown'
-          else if (
+          } else if (
             descendants.some((item) => item.settlement !== 'not-started')
-          )
+          ) {
             combined = 'partial'
+          }
           return {
             status: combined === 'unknown' ? 'unknown' : 'failed',
             settlement: combined,
@@ -320,11 +331,12 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
           middleware: [
             async (context, next) => {
               callId = context.callId
-              if (!request.requestId?.trim())
+              if (!request.requestId?.trim()) {
                 throw new AiToolContractError(
                   'registration',
                   'A current request identity is required'
                 )
+              }
               node ??= pin(context.name, request.revision, new Set())
               let value: AiRecipeExecutionResult
               let validatedValue = false
@@ -337,8 +349,12 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                   let settlement =
                     observed?.settlement ??
                     (dispatched ? 'unknown' : 'not-started')
-                  if (error instanceof AiToolContractError && error.inspection)
+                  if (
+                    error instanceof AiToolContractError &&
+                    error.inspection
+                  ) {
                     settlement = error.inspection.settlement
+                  }
                   value = aggregateFailure(settlement)
                 }
                 const outputSchema = validatedValue
@@ -356,10 +372,11 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 }
                 for (const item of value.recovery ?? []) {
                   const schema = recoverySchemas.get(item)
-                  if (schema === undefined)
+                  if (schema === undefined) {
                     throw new Error(
                       'Recovery receipt lacks validated pinned provenance'
                     )
+                  }
                   await options.leases.retain({
                     requestId: request.requestId,
                     fromCallId: context.callId,
@@ -394,7 +411,9 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
             })
           ],
           execute: async (context) => {
-            if (!node) throw new Error('Missing pinned tool')
+            if (!node) {
+              throw new Error('Missing pinned tool')
+            }
             opened = true
             await options.leases.open({
               requestId: request.requestId,
@@ -442,22 +461,26 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                   ...(iteration === undefined ? {} : { iteration })
                 })
               )
-              if (pinned.recipe) children.push(child)
+              if (pinned.recipe) {
+                children.push(child)
+              }
               issues.push(...child.issues)
               recovery.push(...(child.recovery ?? []))
               const schema = exportedSchemas.get(child)
               if (schema !== undefined) {
                 const receipt = child.calls[child.calls.length - 1]
-                if (!receipt)
+                if (!receipt) {
                   throw new Error(
                     'Validated child omitted its invocation receipt'
                   )
+                }
                 const item = Object.freeze({ ...receipt, value: child.value })
                 recoverySchemas.set(item, schema)
                 recovery.push(item)
               }
-              if (completed(child) && !child.issues.length)
+              if (completed(child) && !child.issues.length) {
                 outputs.set(step.id, child.value)
+              }
               return child
             }
             for (let i = 0; i < node.recipe.recipe.steps.length; i++) {
@@ -465,15 +488,17 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 node.recipe.recipe.steps[i],
                 node.children[i]
               )
-              if (!completed(child) || child.issues.length)
+              if (!completed(child) || child.issues.length) {
                 return aggregateFailure(child.settlement)
+              }
             }
             const iteration = node.recipe.recipe.iteration
             if (iteration) {
               const checkNode = node.children[node.recipe.recipe.steps.length]
               const verification = checkNode.definition.verification
-              if (!verification)
+              if (!verification) {
                 throw new Error('Pinned checker lacks verification contract')
+              }
               let state = bind(iteration.state, context.input, outputs)
               const seen = new Set<string>()
               for (let round = 0; ; round++) {
@@ -482,19 +507,23 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                   state,
                   iteration.stateSchema
                 )
-                if (invalidState !== undefined)
+                if (invalidState !== undefined) {
                   throw new Error(`Invalid iteration state: ${invalidState}`)
+                }
                 // Each round has only initial outputs and its own newly acknowledged results.
                 outputs.delete(iteration.check.id)
-                for (const step of iteration.repairs) outputs.delete(step.id)
+                for (const step of iteration.repairs) {
+                  outputs.delete(step.id)
+                }
                 const check = await executeStep(
                   iteration.check,
                   checkNode,
                   state,
                   round
                 )
-                if (!completed(check) || check.issues.length)
+                if (!completed(check) || check.issues.length) {
                   return aggregateFailure(check.settlement)
+                }
                 signal.throwIfAborted()
                 const status = at(check.value, verification.statusPath)
                 const progress = at(check.value, verification.progressPath)
@@ -504,8 +533,9 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                   ) ||
                   typeof progress !== 'string' ||
                   progress.length === 0
-                )
+                ) {
                   throw new Error('Invalid verification outcome')
+                }
                 if (status === 'pass') {
                   outputs.set(iteration.id, {
                     state,
@@ -514,12 +544,15 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                   })
                   break
                 }
-                if (status === 'decision-required')
+                if (status === 'decision-required') {
                   throw new Error('Primary-agent decision required')
-                if (seen.has(progress))
+                }
+                if (seen.has(progress)) {
                   throw new Error('Repeated verification progress')
-                if (round >= iteration.maxIterations)
+                }
+                if (round >= iteration.maxIterations) {
                   throw new Error('Repair iteration budget exhausted')
+                }
                 seen.add(progress)
                 for (let index = 0; index < iteration.repairs.length; index++) {
                   const child = await executeStep(
@@ -528,8 +561,9 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                     state,
                     round + 1
                   )
-                  if (!completed(child) || child.issues.length)
+                  if (!completed(child) || child.issues.length) {
                     return aggregateFailure(child.settlement)
+                  }
                 }
                 state = bind(iteration.next, context.input, outputs, state)
               }
@@ -551,8 +585,9 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
           issues.push(message(error))
           let settlement =
             observed?.settlement ?? (dispatched ? 'unknown' : 'not-started')
-          if (error instanceof AiToolContractError && error.inspection)
+          if (error instanceof AiToolContractError && error.inspection) {
             settlement = error.inspection.settlement
+          }
           result = aggregateFailure(settlement)
         }
         const receipt = Object.freeze({
@@ -577,9 +612,10 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
             : {}),
           issues: Object.freeze([...new Set([...result.issues, ...issues])])
         })
-        if (exportedSchema !== undefined)
+        if (exportedSchema !== undefined) {
           exportedSchemas.set(finalResult, exportedSchema)
-        if (node?.recipe)
+        }
+        if (node?.recipe) {
           executionEvidence.set(
             finalResult,
             Object.freeze({
@@ -589,6 +625,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
               children: Object.freeze(children)
             })
           )
+        }
         return finalResult
       }
       return run(request)

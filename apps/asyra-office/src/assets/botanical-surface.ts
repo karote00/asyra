@@ -6,7 +6,7 @@ export function botanicalSurface(kind: 'veined-leaf' | 'snake-leaf') {
     height = 256
   const albedo: number[] = [],
     normals: number[] = []
-  for (let y = 0; y < height; y++)
+  for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const t = x / (width - 1),
         q = (y / (height - 1) - 0.5) * 2
@@ -33,7 +33,9 @@ export function botanicalSurface(kind: 'veined-leaf' | 'snake-leaf') {
           96 + bands * 25 + mottle * 10,
           49 + bands * 13
         ]
-        if (edge > 0.84 + 0.025 * Math.sin(t * 27)) color = [177, 177, 83]
+        if (edge > 0.84 + 0.025 * Math.sin(t * 27)) {
+          color = [177, 177, 83]
+        }
       }
       albedo.push(
         ...color.map((v) => Math.max(0, Math.min(255, Math.round(v)))),
@@ -41,5 +43,6 @@ export function botanicalSurface(kind: 'veined-leaf' | 'snake-leaf') {
       )
       normals.push(128, 128, 255, 255)
     }
+  }
   return readSpatialSurface({ width, height, albedo, normals })
 }

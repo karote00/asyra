@@ -563,8 +563,11 @@ const renderVectorGraphic = (
     state.projection.attach(graphic)
     vectorFillProjections.set(graphic, state)
   } else {
-    if (geometryChanged) state.projection.update({ model, paint })
-    else if (state.paint !== paint) state.projection.updatePaint(paint)
+    if (geometryChanged) {
+      state.projection.update({ model, paint })
+    } else if (state.paint !== paint) {
+      state.projection.updatePaint(paint)
+    }
     Object.assign(state, {
       points,
       segments,
@@ -600,10 +603,11 @@ const renderVectorGraphic = (
   // Unfilled paths keep their ordinary graphics path. A filled path's stroke
   // is a later child, above its mesh; material changes cannot reverse order.
   const hasFill = hasPaint && coverage.faces.length > 0
-  if (!hasFill)
+  if (!hasFill) {
     applyBaseVectorStroke(graphic, renderData.strokes ?? [], () =>
       drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
     )
+  }
   if (hasFill && renderData.strokes?.length && !state.stroke) {
     state.stroke = new RenderGraphics()
     graphic.addChild(state.stroke)
@@ -613,10 +617,11 @@ const renderVectorGraphic = (
     stroke.clear()
     stroke.visible =
       hasFill && orderedNetworks.length > 0 && !!renderData.strokes?.length
-    if (stroke.visible)
+    if (stroke.visible) {
       applyBaseVectorStroke(stroke, renderData.strokes ?? [], () =>
         drawVectorPath(stroke, orderedNetworks, points, segments, pointOffset)
       )
+    }
   }
 }
 

@@ -78,7 +78,9 @@ nativeIt(
     expect(error?.message).toMatch(/Native turn failed/)
     const directory = error?.message.split('; evidence: ')[1]
     expect(directory).toBeTruthy()
-    if (!directory) throw new Error('Missing native failure evidence')
+    if (!directory) {
+      throw new Error('Missing native failure evidence')
+    }
     const result = JSON.parse(
       await readFile(join(directory, 'result.json'), 'utf8')
     )

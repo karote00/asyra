@@ -39,7 +39,8 @@ test('public source map retains the current source bytes without API type analys
       page.sources,
       page.id
     )
-    for (const source of record.sources)
+    for (const source of record.sources) {
       assert.equal(source.sha256, hashFile(source.path), source.path)
+    }
   }
 })

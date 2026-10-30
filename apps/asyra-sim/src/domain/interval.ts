@@ -3,16 +3,21 @@ export type Interval = readonly [number, number]
 const bits = new DataView(new ArrayBuffer(8))
 
 export function nextUp(value: number): number {
-  if (Number.isNaN(value) || value === Infinity) return value
-  if (value === 0) return Number.MIN_VALUE
+  if (Number.isNaN(value) || value === Infinity) {
+    return value
+  }
+  if (value === 0) {
+    return Number.MIN_VALUE
+  }
   bits.setFloat64(0, value)
   bits.setBigUint64(0, bits.getBigUint64(0) + (value > 0 ? 1n : -1n))
   return bits.getFloat64(0)
 }
 export const nextDown = (value: number): number => -nextUp(-value)
 export function interval(lo: number, hi = lo): Interval {
-  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo > hi)
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo > hi) {
     throw new Error('Invalid numerical interval')
+  }
   return [lo, hi]
 }
 const outward = (lo: number, hi: number): Interval =>
@@ -26,7 +31,9 @@ export function imul(a: Interval, b: Interval): Interval {
   return outward(Math.min(...products), Math.max(...products))
 }
 export function idiv(a: Interval, b: Interval): Interval {
-  if (b[0] <= 0 && b[1] >= 0) throw new Error('Interval division crosses zero')
+  if (b[0] <= 0 && b[1] >= 0) {
+    throw new Error('Interval division crosses zero')
+  }
   return imul(a, outward(1 / b[1], 1 / b[0]))
 }
 export function isquare(a: Interval): Interval {
@@ -35,14 +42,20 @@ export function isquare(a: Interval): Interval {
   return [Math.max(0, nextDown(lo)), nextUp(hi)]
 }
 export function iabs(a: Interval): Interval {
-  if (a[0] >= 0) return a
-  if (a[1] <= 0) return ineg(a)
+  if (a[0] >= 0) {
+    return a
+  }
+  if (a[1] <= 0) {
+    return ineg(a)
+  }
   return [0, Math.max(-a[0], a[1])]
 }
 export const imid = (a: Interval): number => a[0] / 2 + a[1] / 2
 
 function sqrtEndpoint(value: number, upper: boolean): number {
-  if (value === 0) return 0
+  if (value === 0) {
+    return 0
+  }
   if (value < 2 ** -1022) {
     // Scaling is exact for binary64 subnormals; certify in the normal range.
     const scaled = sqrtEndpoint(value * 2 ** 1022, upper) * 2 ** -511
@@ -51,19 +64,24 @@ function sqrtEndpoint(value: number, upper: boolean): number {
   let guess = Math.sqrt(value)
   for (let index = 0; index < 128; index++) {
     const squared = isquare(interval(guess))
-    if (upper ? squared[0] >= value : squared[1] <= value) return guess
+    if (upper ? squared[0] >= value : squared[1] <= value) {
+      return guess
+    }
     guess = upper ? nextUp(guess) : nextDown(guess)
   }
   throw new Error('Runtime square root failed enclosure validation')
 }
 export function isqrt(a: Interval): Interval {
-  if (a[0] < 0) throw new Error('Negative square-root interval')
+  if (a[0] < 0) {
+    throw new Error('Negative square-root interval')
+  }
   return interval(sqrtEndpoint(a[0], false), sqrtEndpoint(a[1], true))
 }
 
 export function isinCos(input: Interval): readonly [Interval, Interval] {
-  if (Math.max(Math.abs(input[0]), Math.abs(input[1])) > 100)
+  if (Math.max(Math.abs(input[0]), Math.abs(input[1])) > 100) {
     throw new Error('Trigonometric envelope exceeded')
+  }
   let x = input,
     halvings = 0
   while (Math.max(Math.abs(x[0]), Math.abs(x[1])) > 0.25) {

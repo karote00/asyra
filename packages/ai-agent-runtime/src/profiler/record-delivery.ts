@@ -38,11 +38,15 @@ export const createRecordDeliverySink = (
     for (;;) {
       const current = storage
       await current
-      if (current === storage) return
+      if (current === storage) {
+        return
+      }
     }
   }
   const retainGap = (record: ExecutionRecord, stage: 'capture' | 'storage') => {
-    if (requestId && record.requestId !== requestId) return
+    if (requestId && record.requestId !== requestId) {
+      return
+    }
     requestId ??= record.requestId
     lost = {
       requestId,
@@ -56,16 +60,22 @@ export const createRecordDeliverySink = (
       ),
       stage: lost && lost.stage !== stage ? 'mixed' : stage
     }
-    if (savingGap) return
+    if (savingGap) {
+      return
+    }
     savingGap = true
     storage = storage.then(async () => {
       try {
         for (;;) {
           const gap = lost
-          if (!gap) return
+          if (!gap) {
+            return
+          }
           await reserve(gap.requestId)
           await options.outbox.recordGap(gap)
-          if (gap === lost) return
+          if (gap === lost) {
+            return
+          }
         }
       } catch (error) {
         reportRecordDeliveryIssue(options, {
@@ -81,12 +91,16 @@ export const createRecordDeliverySink = (
     })
   }
   const schedule = () => {
-    if (scheduled || suspended || complete) return
+    if (scheduled || suspended || complete) {
+      return
+    }
     scheduled = true
     delivery = delivery.then(async () => {
       const version = persistedVersion
       try {
-        if (!requestId || captureFailed) return
+        if (!requestId || captureFailed) {
+          return
+        }
         const receipt = await deliverRecordOutbox(
           options,
           requestId,
@@ -97,7 +111,9 @@ export const createRecordDeliverySink = (
         suspended = receipt.interrupted
       } finally {
         scheduled = false
-        if (version !== persistedVersion && !captureFailed) schedule()
+        if (version !== persistedVersion && !captureFailed) {
+          schedule()
+        }
       }
     })
   }
@@ -140,7 +156,9 @@ export const createRecordDeliverySink = (
       bytes += size
       const snapshot = JSON.parse(serialized) as ExecutionRecord
       pending.push({ record: snapshot, size })
-      if (persisting) return
+      if (persisting) {
+        return
+      }
       persisting = true
       storage = storage.then(async () => {
         try {
@@ -153,8 +171,9 @@ export const createRecordDeliverySink = (
                 next.record.sequence !==
                   pending[count - 1].record.sequence + 1 ||
                 batchBytes + next.size + 1 > recordStorageBatchBytes
-              )
+              ) {
                 break
+              }
               batchBytes += next.size + 1
               count++
             }
@@ -176,7 +195,9 @@ export const createRecordDeliverySink = (
                 throughSequence: batch[batch.length - 1].record.sequence
               })
             } finally {
-              for (const item of batch) bytes -= item.size
+              for (const item of batch) {
+                bytes -= item.size
+              }
             }
           }
         } finally {
@@ -212,7 +233,9 @@ export const recoverRecordDelivery = async (
   }
   let complete = true
   for (const requestId of requests) {
-    if (excludedRequests.has(requestId)) continue
+    if (excludedRequests.has(requestId)) {
+      continue
+    }
     const receipt = await deliverRecordOutbox(options, requestId)
     complete &&= receipt.complete
   }
@@ -229,17 +252,23 @@ export const createRecordDeliveryHost = (
   let recovering = Promise.resolve()
   let disposal: Promise<void> | undefined
   const recover = () => {
-    if (closed) return recovering
+    if (closed) {
+      return recovering
+    }
     recovering = recovering.then(async () => {
       const active = [...sinks]
-      for (const sink of active) await sink.resume()
+      for (const sink of active) {
+        await sink.resume()
+      }
       await recoverRecordDelivery(options, activeRequests)
     })
     return recovering
   }
   return {
     createSink(): ExecutionRecordSink {
-      if (closed) throw new Error('Record delivery host is closed')
+      if (closed) {
+        throw new Error('Record delivery host is closed')
+      }
       const sink = createRecordDeliverySink(options)
       sinks.add(sink)
       return {
@@ -252,7 +281,9 @@ export const createRecordDeliveryHost = (
             return await sink.flush()
           } finally {
             sinks.delete(sink)
-            if (sink.requestId) activeRequests.delete(sink.requestId)
+            if (sink.requestId) {
+              activeRequests.delete(sink.requestId)
+            }
           }
         }
       }

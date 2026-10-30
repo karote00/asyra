@@ -103,13 +103,27 @@ describe('children-map property component', () => {
           handleMode: 'none'
         },
         get: (key: string) => {
-          if (key === 'id') return 'shared-point'
-          if (key === 'type') return PropertyTypes.VECTOR_POINT
-          if (key === 'kind') return 'anchor'
-          if (key === 'x') return value
-          if (key === 'y') return 0
-          if (key === 'anchorType') return 'sharp'
-          if (key === 'handleMode') return 'none'
+          if (key === 'id') {
+            return 'shared-point'
+          }
+          if (key === 'type') {
+            return PropertyTypes.VECTOR_POINT
+          }
+          if (key === 'kind') {
+            return 'anchor'
+          }
+          if (key === 'x') {
+            return value
+          }
+          if (key === 'y') {
+            return 0
+          }
+          if (key === 'anchorType') {
+            return 'sharp'
+          }
+          if (key === 'handleMode') {
+            return 'none'
+          }
         },
         on: () => () => undefined
       }) as never
@@ -152,8 +166,12 @@ describe('children-map property component', () => {
         handleMode: 'none'
       },
       get: (key: string) => {
-        if (key === 'id') return 'active-child'
-        if (key === 'type') return PropertyTypes.VECTOR_POINT
+        if (key === 'id') {
+          return 'active-child'
+        }
+        if (key === 'type') {
+          return PropertyTypes.VECTOR_POINT
+        }
         return undefined
       },
       on: vi.fn(() => () => undefined)
@@ -238,7 +256,9 @@ describe('stroke child relationship projection', () => {
     const projected = strokesPropertyComponentDefinition.children.toValue(
       {
         get: (key: string) => {
-          if (key === 'fill') return fill
+          if (key === 'fill') {
+            return fill
+          }
           return key
         }
       },

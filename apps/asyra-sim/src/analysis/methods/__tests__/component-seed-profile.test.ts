@@ -26,7 +26,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             item.a.bodyId === 'example:joint-2' &&
             item.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing diagnosed source pair')
+        if (!pair) {
+          throw new Error('Missing diagnosed source pair')
+        }
         const time = snapshot.trajectory.keyframes[frame].time
         const prepared = new WeakMap<MeshGeometry, meshIndex.MeshIndex>()
         const build = meshIndex.buildMeshIndex
@@ -41,7 +43,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         let shapes: readonly [ConvexShape, ConvexShape] | undefined
         const distance = context.distance.bind(context)
         context.distance = (a, b, ...args) => {
-          if (shapes) throw new Error('Static probe unexpectedly resampled')
+          if (shapes) {
+            throw new Error('Static probe unexpectedly resampled')
+          }
           shapes = [a, b]
           return distance(a, b, ...args)
         }
@@ -63,7 +67,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         )
         expect(evidence.coverage).toBe('complete')
         expect(evidence.evaluations).toBe(1)
-        if (!shapes) throw new Error('Missing actual static query inputs')
+        if (!shapes) {
+          throw new Error('Missing actual static query inputs')
+        }
         const pairShapes: readonly [ConvexShape, ConvexShape] = shapes
         const charges = { transforms: 0, norms: 0 }
         const tick = (kind: keyof typeof charges) => {
@@ -71,16 +77,20 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           if (
             context.work + charges.transforms + charges.norms >
             diagnosticWorkLimit
-          )
+          ) {
             throw new MeshWorkLimit(
               'Passive point preparation exceeded the unchanged guard'
             )
+          }
         }
         const points = pairShapes.map((shape) => {
-          if (shape.geometry.kind !== 'mesh')
+          if (shape.geometry.kind !== 'mesh') {
             throw new Error('Expected admitted source mesh')
+          }
           const index = prepared.get(shape.geometry)
-          if (!index) throw new Error('Missing exact source preparation')
+          if (!index) {
+            throw new Error('Missing exact source preparation')
+          }
           return index.representatives.map((point) => {
             tick('transforms')
             return meshIndex.worldPoint(shape.pose, point)
@@ -93,7 +103,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           points[1].forEach((b, j) => {
             tick('norms')
             const upper = ops.norm(ops.sub(a, b))[1]
-            if (i === 0 && j === 0) initialUpper = upper
+            if (i === 0 && j === 0) {
+              initialUpper = upper
+            }
             if (upper < minimumUpper) {
               minimumUpper = upper
               witness = [i, j]

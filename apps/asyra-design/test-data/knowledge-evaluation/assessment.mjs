@@ -10,7 +10,9 @@ const repository = fs.realpathSync(
 const inside = (root, file) => file.startsWith(root + path.sep)
 const text = (value) => typeof value === 'string' && value.trim().length > 0
 function requireValue(condition, message) {
-  if (!condition) throw new Error('Invalid assessment: ' + message)
+  if (!condition) {
+    throw new Error('Invalid assessment: ' + message)
+  }
 }
 function object(value, required, optional = []) {
   requireValue(
@@ -98,7 +100,7 @@ function reference(directory, ref) {
 }
 
 export function assessRecordedChanges(directory, filename) {
-  if (!filename)
+  if (!filename) {
     return {
       status: 'not-assessed',
       experience: {
@@ -107,6 +109,7 @@ export function assessRecordedChanges(directory, filename) {
       },
       changes: []
     }
+  }
   requireValue(
     path.resolve(filename) !== path.resolve(directory, 'analysis.json'),
     'assessment cannot be the output file'
@@ -195,10 +198,15 @@ export function assessRecordedChanges(directory, filename) {
     const support = resolve(change.support)
     const counterevidence = resolve(change.counterevidence)
     const reasons = []
-    if (!support.length) reasons.push('No supporting evidence.')
-    if (!change.limitations.length) reasons.push('No stated limits.')
-    if (change.proposedEffect === 'not-exercised')
+    if (!support.length) {
+      reasons.push('No supporting evidence.')
+    }
+    if (!change.limitations.length) {
+      reasons.push('No stated limits.')
+    }
+    if (change.proposedEffect === 'not-exercised') {
       reasons.push('Behavior was not exercised.')
+    }
     if (change.lesson) {
       object(change.lesson, ['cue', 'observation', 'reviewed'])
       requireValue(
@@ -207,8 +215,12 @@ export function assessRecordedChanges(directory, filename) {
           typeof change.lesson.reviewed === 'boolean',
         'invalid lesson'
       )
-      if (!change.lesson.reviewed) reasons.push('Lesson not reviewed.')
-    } else reasons.push('No lesson proposed.')
+      if (!change.lesson.reviewed) {
+        reasons.push('Lesson not reviewed.')
+      }
+    } else {
+      reasons.push('No lesson proposed.')
+    }
     const effect =
       !support.length ||
       !change.limitations.length ||

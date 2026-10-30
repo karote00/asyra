@@ -535,7 +535,9 @@ describe('Core render startup', () => {
       expect(unregistered).toBe(true)
       expect(cleanup).toHaveBeenCalledOnce()
     } finally {
-      if (!unregistered) unregisterDataChannelObserver(observerName)
+      if (!unregistered) {
+        unregisterDataChannelObserver(observerName)
+      }
       factory.observeSharedDataChannel = originalObserve
     }
   })

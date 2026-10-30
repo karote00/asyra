@@ -35,8 +35,9 @@ const specification = (() => {
   const value = architecture.modules.find(
     (item) => item.moduleId === WALL_ASSET_ID
   )
-  if (!value || !value.overallSizeMetres)
+  if (!value || !value.overallSizeMetres) {
     throw new Error('Missing approved wall specification')
+  }
   return { ...value, overallSizeMetres: value.overallSizeMetres }
 })()
 export const WALL_DEFAULT_SIZE: SpatialVector = Object.freeze([
@@ -55,8 +56,9 @@ function readScale(size: SpatialVector): SpatialVector {
     !Array.isArray(size) ||
     size.length !== 3 ||
     !size.every((n) => Number.isFinite(n) && n > 0)
-  )
+  ) {
     throw new Error('Wall extents must be three positive finite metres')
+  }
   return [
     size[0] / WALL_DEFAULT_SIZE[0],
     size[1] / WALL_DEFAULT_SIZE[1],
@@ -143,14 +145,17 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
     (!Number.isFinite(capHeight) ||
       capHeight <= WALL_EDGE_RADIUS * scale[2] ||
       totalHeight - capHeight <= WALL_EDGE_RADIUS * scale[2])
-  )
+  ) {
     throw new Error('Wall cap must leave positive beveled body and cap regions')
+  }
   return Object.freeze(
     WALL_REGION_IDS.map((id) => {
       const component = specification.components.find(
         (part) => part.partId === id
       )
-      if (!component) throw new Error('Missing wall region')
+      if (!component) {
+        throw new Error('Missing wall region')
+      }
       const defaults =
         architecture.materials[component.material as 'plaster' | 'cream-cap']
       const region = options.regions?.[id]
@@ -166,11 +171,12 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
           ? sourceHeight
           : (id === 'top-cap' ? capHeight : totalHeight - capHeight) / scale[2]
       const centre = component.centreMetres.map((n, i) => n * scale[i])
-      if (capHeight !== undefined)
+      if (capHeight !== undefined) {
         centre[2] =
           id === 'top-cap'
             ? totalHeight - capHeight / 2
             : (totalHeight - capHeight) / 2
+      }
       const descriptor = readSpatialDescriptor({
         kind: 'mesh',
         instances: [
@@ -194,7 +200,9 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
         castShadow: true,
         receiveShadow: true
       })
-      if (descriptor.kind !== 'mesh') throw new Error('Expected wall mesh')
+      if (descriptor.kind !== 'mesh') {
+        throw new Error('Expected wall mesh')
+      }
       return Object.freeze({ id, descriptor })
     })
   )
@@ -207,15 +215,17 @@ export function wallAsset(
 ): import('./catalog').AssetPart[] {
   return createWall({ size, capHeight }).map(({ id, descriptor }) => {
     const convert = (shape: typeof descriptor.shape) => {
-      if (shape.kind !== 'triangles')
+      if (shape.kind !== 'triangles') {
         throw new Error('Expected authored wall triangles')
+      }
       const positions: number[] = []
-      for (let i = 0; i < shape.positions.length; i += 3)
+      for (let i = 0; i < shape.positions.length; i += 3) {
         positions.push(
           shape.positions[i] + descriptor.position[0],
           -shape.positions[i + 2] - descriptor.position[2],
           shape.positions[i + 1] + descriptor.position[1]
         )
+      }
       return {
         positions,
         indices: [...shape.indices],

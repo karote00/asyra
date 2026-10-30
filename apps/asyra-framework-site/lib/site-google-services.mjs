@@ -9,12 +9,15 @@ const requireMeasurementId = (value) => {
 }
 
 export const resolveGoogleSiteServices = (environment = process.env) => {
-  if (!isProductionSite(environment)) return {}
+  if (!isProductionSite(environment)) {
+    return {}
+  }
   const settings = {}
   const measurementId = environment.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
   const verification = environment.GOOGLE_SITE_VERIFICATION?.trim()
-  if (measurementId)
+  if (measurementId) {
     settings.measurementId = requireMeasurementId(measurementId)
+  }
   if (verification) {
     if (!/^[A-Za-z0-9_-]+$/.test(verification)) {
       throw new Error(

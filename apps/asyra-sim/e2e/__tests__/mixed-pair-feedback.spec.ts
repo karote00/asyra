@@ -180,7 +180,7 @@ test('200 mm live playback resolves the first table collision with traceable sam
   }[] = []
   for (const time of [3.904, 3.92, 4]) {
     await slider.fill(String(time))
-    if (time === 4)
+    if (time === 4) {
       await expect
         .poll(
           async () => ({
@@ -190,7 +190,7 @@ test('200 mm live playback resolves the first table collision with traceable sam
           { timeout: 15_000 }
         )
         .toEqual({ kind: 'collision', poseMatches: 'true' })
-    else
+    } else {
       await expect
         .poll(
           async () => {
@@ -202,6 +202,7 @@ test('200 mm live playback resolves the first table collision with traceable sam
           { timeout: 15_000 }
         )
         .toBe(true)
+    }
     samples.push({
       time,
       kind: await feedback.getAttribute('data-kind'),
@@ -226,7 +227,9 @@ test('200 mm live playback resolves the first table collision with traceable sam
     const observationsOpen = await observations.evaluate(
       (element) => (element as HTMLDetailsElement).open
     )
-    if (!observationsOpen) await observations.locator('summary').first().click()
+    if (!observationsOpen) {
+      await observations.locator('summary').first().click()
+    }
   }
 
   if (await observations.locator('details').count()) {

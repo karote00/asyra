@@ -157,7 +157,9 @@ it('reads explicit identities without traversing parents or calculating unused p
 it('computes only requested fields and does not split a known identity set into pages', () => {
   const { read, source, records } = fixture()
   const ids = Array.from({ length: 250 }, (_, i) => `known-${i}`)
-  for (const id of ids) records[id] = { name: id }
+  for (const id of ids) {
+    records[id] = { name: id }
+  }
   const result = read({ scope: 'ids', elementIds: ids, fields: ['x'] } as never)
   expect(result.elements).toHaveLength(250)
   expect(result.nextOffset).toBeNull()

@@ -124,19 +124,23 @@ function historyFixture(t, history, version = '0.5.0') {
       path.join(root, relative)
     )
   }
-  for (const name of FRAMEWORK_RELEASE_PACKAGE_NAMES)
+  for (const name of FRAMEWORK_RELEASE_PACKAGE_NAMES) {
     copy(`packages/${name.slice('@asyra/'.length)}/package.json`)
-  for (const prerequisite of FRAMEWORK_RELEASE_PREREQUISITES)
+  }
+  for (const prerequisite of FRAMEWORK_RELEASE_PREREQUISITES) {
     for (const relative of [
       prerequisite.planPath,
       prerequisite.inspectorPath,
       prerequisite.contractTestPath
-    ])
+    ]) {
       copy(relative)
+    }
+  }
   const releases = path.join(root, 'docs/ai/framework/decisions/releases')
   fs.mkdirSync(releases, { recursive: true })
-  for (const [name, content] of Object.entries(history))
+  for (const [name, content] of Object.entries(history)) {
     fs.writeFileSync(path.join(releases, name), content)
+  }
   return root
 }
 

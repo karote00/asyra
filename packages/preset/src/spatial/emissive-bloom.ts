@@ -13,9 +13,11 @@ export function requireBloomRenderer(driver: unknown): THREE.WebGLRenderer {
     'setClearColor',
     'render',
     'clear'
-  ])
-    if (typeof candidate[method] !== 'function')
+  ]) {
+    if (typeof candidate[method] !== 'function') {
       throw new Error(`Spatial bloom requires renderer method ${method}`)
+    }
+  }
   return driver as THREE.WebGLRenderer
 }
 
@@ -124,8 +126,9 @@ void main() {
     }
     const material = entry.material
     const transparent = source.transparent
-    if (material.transparent !== transparent || material.side !== source.side)
+    if (material.transparent !== transparent || material.side !== source.side) {
       material.needsUpdate = true
+    }
     material.transparent = transparent
     material.opacity = source.opacity
     material.side = source.side
@@ -133,16 +136,21 @@ void main() {
     material.depthWrite = source.depthWrite
     material.visible = source.visible
     material.color.setHex(0)
-    if (source instanceof THREE.MeshStandardMaterial)
+    if (source instanceof THREE.MeshStandardMaterial) {
       material.color
         .copy(source.emissive)
         .multiplyScalar(source.emissiveIntensity)
+    }
     return material
   }
 
   render(scene: THREE.Scene, camera: THREE.Camera): void {
-    if (this.disposed) throw new Error('Spatial bloom is disposed')
-    if (this.settings.strength === 0) return
+    if (this.disposed) {
+      throw new Error('Spatial bloom is disposed')
+    }
+    if (this.settings.strength === 0) {
+      return
+    }
     const renderer = this.renderer
     const target = renderer.getRenderTarget()
     const clearColor = renderer.getClearColor(new THREE.Color()).clone()
@@ -153,7 +161,9 @@ void main() {
     const originals: [THREE.Mesh, THREE.Material | THREE.Material[]][] = []
     try {
       scene.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return
+        if (!(object instanceof THREE.Mesh)) {
+          return
+        }
         originals.push([object, object.material])
         object.material = Array.isArray(object.material)
           ? object.material.map((material) => this.mask(material))
@@ -161,7 +171,9 @@ void main() {
       })
       scene.background = null
       renderer.autoClear = false
-      if (renderer.shadowMap) renderer.shadowMap.autoUpdate = false
+      if (renderer.shadowMap) {
+        renderer.shadowMap.autoUpdate = false
+      }
       renderer.setClearColor(0, 0)
       renderer.setRenderTarget(this.maskTarget)
       renderer.clear()
@@ -174,20 +186,27 @@ void main() {
       this.quad.material = this.composite
       this.quad.render(renderer)
     } finally {
-      for (const [object, material] of originals) object.material = material
+      for (const [object, material] of originals) {
+        object.material = material
+      }
       scene.background = background
       renderer.autoClear = autoClear
-      if (renderer.shadowMap && shadowUpdate !== undefined)
+      if (renderer.shadowMap && shadowUpdate !== undefined) {
         renderer.shadowMap.autoUpdate = shadowUpdate
+      }
       renderer.setClearColor(clearColor, clearAlpha)
       renderer.setRenderTarget(target)
     }
   }
 
   dispose(): void {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     this.disposed = true
-    for (const { release } of [...this.masks.values()]) release()
+    for (const { release } of [...this.masks.values()]) {
+      release()
+    }
     this.maskTarget.dispose()
     this.blurTarget.dispose()
     this.horizontal.dispose()

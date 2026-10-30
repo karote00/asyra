@@ -67,7 +67,9 @@ export interface WalkingMotionIntervalResult {
 
 type IntervalVector = readonly [Interval, Interval, Interval]
 function required<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('Incomplete admitted walking source')
+  if (value === undefined) {
+    throw new Error('Incomplete admitted walking source')
+  }
   return value
 }
 interface IntervalTransform {
@@ -110,15 +112,17 @@ function trueTrig(
   work: { trigBounds: number }
 ): Interval {
   work.trigBounds++
-  if (input.low <= -1 || input.high >= 1)
+  if (input.low <= -1 || input.high >= 1) {
     return Object.freeze({ low: -1, high: 1 })
+  }
   const polynomial = boundPolynomialTrig(kind, input).bounds,
     magnitude = Math.max(Math.abs(input.low), Math.abs(input.high)),
     exponent = kind === 'sin' ? 21 : 22,
     factorial = kind === 'sin' ? 51090942171709440000 : 1124000727777607680000
   let remainder = interval(1)
-  for (let power = 0; power < exponent; power++)
+  for (let power = 0; power < exponent; power++) {
     remainder = multiply(remainder, interval(magnitude))
+  }
   remainder = divide(remainder, interval(factorial))
   const enclosed = {
     low: subtract(polynomial, { low: 0, high: remainder.high }).low,
@@ -251,8 +255,9 @@ export function walkingSourcePointBounds(
     position: [0, 0, 0],
     rotation: [0, 0, 0, 1]
   })
-  for (const frame of frames)
+  for (const frame of frames) {
     transform = ops.compose(transform, exactTransform(frame))
+  }
   return Object.freeze(
     [...new Set(shape.indices)].map((index) => {
       const value = ops.transformPoint(
@@ -276,12 +281,14 @@ const interpolate = (from: number, until: number, ratio: Interval): Interval =>
     multiply(subtract(interval(until), interval(from)), ratio)
   )
 function spanAt(path: WalkingMotionPath, time: number) {
-  for (let index = 0; index < path.knots.length - 1; index++)
+  for (let index = 0; index < path.knots.length - 1; index++) {
     if (
       time >= path.knots[index].time &&
       (time < path.knots[index + 1].time || index === path.knots.length - 2)
-    )
+    ) {
       return [path.knots[index], path.knots[index + 1]] as const
+    }
+  }
   throw new Error('Walking interval is outside the path')
 }
 function rangeBetween(
@@ -308,8 +315,9 @@ function jointRanges(
   until: number
 ) {
   const [left, right] = spanAt(path, from)
-  if (until > right.time)
+  if (until > right.time) {
     throw new Error('Walking interval crosses a path knot')
+  }
   const values = new Map<string, Interval>()
   values.set(
     'carriage-lift',
@@ -326,14 +334,16 @@ function jointRanges(
     const rightArm = right.joints.arms.find(
       ({ side, role }) => side === leftArm.side && role === leftArm.role
     )
-    if (!rightArm) throw new Error('Incomplete walking arm path')
+    if (!rightArm) {
+      throw new Error('Incomplete walking arm path')
+    }
     const id = `${leftArm.side}-${leftArm.role}`
     for (const [field, suffix] of [
       ['rootYaw', 'root-yaw'],
       ['shoulderPitch', 'shoulder-pitch'],
       ['elbowPitch', 'elbow-pitch'],
       ['wristPitch', 'wrist-pitch']
-    ] as const)
+    ] as const) {
       values.set(
         `${id}-${suffix}`,
         rangeBetween(
@@ -345,15 +355,18 @@ function jointRanges(
           rightArm[field]
         )
       )
+    }
   }
   for (const leftLeg of left.joints.legs) {
     const rightLeg = right.joints.legs.find(
       ({ side, station }) =>
         side === leftLeg.side && station === leftLeg.station
     )
-    if (!rightLeg) throw new Error('Incomplete walking leg path')
+    if (!rightLeg) {
+      throw new Error('Incomplete walking leg path')
+    }
     const id = `${leftLeg.side}-${leftLeg.station}`
-    for (const field of ['abduction', 'hip', 'knee'] as const)
+    for (const field of ['abduction', 'hip', 'knee'] as const) {
       values.set(
         `${id}-${field}`,
         rangeBetween(
@@ -365,6 +378,7 @@ function jointRanges(
           rightLeg[field]
         )
       )
+    }
   }
   return { left, right, values }
 }
@@ -375,8 +389,12 @@ function numericValue(
   fromValue: number,
   untilValue: number
 ) {
-  if (time === from) return fromValue
-  if (time === until) return untilValue
+  if (time === from) {
+    return fromValue
+  }
+  if (time === until) {
+    return untilValue
+  }
   return fromValue + ((untilValue - fromValue) * (time - from)) / (until - from)
 }
 export function walkingMotionPoseAt(
@@ -507,13 +525,15 @@ function intervalTransforms(
         parent = body.parentBodyId
           ? transforms.get(body.parentBodyId)
           : undefined
-      if (!parent) continue
-      if (body.attachment === 'fixed')
+      if (!parent) {
+        continue
+      }
+      if (body.attachment === 'fixed') {
         transforms.set(
           id,
           ops.compose(parent, exactTransform(required(body.fixedFrame)))
         )
-      else {
+      } else {
         const joint = required(
             source.rig.joints.find(({ childBodyId }) => childBodyId === id)
           ),
@@ -531,7 +551,9 @@ function intervalTransforms(
       pending.delete(id)
       advanced = true
     }
-    if (!advanced) throw new Error('Incomplete walking interval rig')
+    if (!advanced) {
+      throw new Error('Incomplete walking interval rig')
+    }
   }
   return { transforms, ops }
 }
@@ -622,13 +644,13 @@ export function evaluateWalkingMotionInterval(
     mutableWork.intervalFk++
   }
   const envelopes: WalkingPartIntervalEnvelope[] = []
-  for (const body of source.rig.bodies)
+  for (const body of source.rig.bodies) {
     for (const part of body.parts) {
       const transform = ops.compose(
         required(transforms.get(body.id)),
         exactTransform(part.localFrame)
       )
-      for (const region of part.regions)
+      for (const region of part.regions) {
         envelopes.push(
           envelopeFor(
             body,
@@ -639,10 +661,14 @@ export function evaluateWalkingMotionInterval(
             mutableWork
           )
         )
+      }
     }
+  }
   const carriedEnvelopes: WalkingCarriedIntervalEnvelope[] = []
   for (const attachment of input.attachments) {
-    if (attachment.shape.kind === 'unknown') continue
+    if (attachment.shape.kind === 'unknown') {
+      continue
+    }
     const body = required(
         source.rig.bodies.find(({ id }) => id === attachment.holderBodyId)
       ),
@@ -700,7 +726,9 @@ export function prepareWalkingMotionIntervals(
     ...(input.load.crate.kind === 'attached'
       ? input.load.crate.sourceParts.map((part, index) => {
           const crate = input.load.crate
-          if (crate.kind !== 'attached') throw new Error('Invalid crate source')
+          if (crate.kind !== 'attached') {
+            throw new Error('Invalid crate source')
+          }
           const attachment = Object.freeze({
             ...part,
             sourceCoverage: crate.sourceCoverage,
@@ -768,8 +796,9 @@ export function prepareWalkingMotionIntervals(
       attachments,
       assemblies
     })
-    for (const key of Object.keys(work) as (keyof typeof work)[])
+    for (const key of Object.keys(work) as (keyof typeof work)[]) {
       work[key] += result.work[key]
+    }
     segments.push({
       from,
       until,

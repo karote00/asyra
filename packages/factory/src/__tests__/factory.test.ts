@@ -584,7 +584,9 @@ describe('Factory', () => {
       order.push(`capture-later-observer-${transactionId}`)
     })
     factory.subscribeToTransactionStatus(({ status }) => {
-      if (status === 'committed') order.push('public-status')
+      if (status === 'committed') {
+        order.push('public-status')
+      }
     })
 
     factory.startTransaction()

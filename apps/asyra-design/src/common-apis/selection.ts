@@ -93,8 +93,9 @@ export const selectionApis = {
    */
   selectElements: (elementIds: string[], options?: EVENT_OPTIONS) => {
     for (const elementId of elementIds) {
-      if (!core.getElementMetadata(elementId))
+      if (!core.getElementMetadata(elementId)) {
         throw new SelectionTargetUnavailableError(elementId)
+      }
     }
     core.selectElements(elementIds, options)
   },
