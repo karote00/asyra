@@ -1,0 +1,89 @@
+{
+  "sourceRun": "1792418361592",
+  "source": {
+    "status": "queued",
+    "path": "fbb3eb39-8f03-4e61-8de0-02047e51cc28.payloads/202-input.json",
+    "bytes": 11923,
+    "sha256": "f4369539bfa162660d2d80d0438ed900f6b7c599be5a60ec0a59bad20ee79b61",
+    "redactions": [],
+    "resourceIdentities": [],
+    "serializationMs": 0.3922090000123717
+  },
+  "description": "Exact first native correction from C35. It intentionally replaces handles; it is not evidence of a palette-only edit.",
+  "operation": {
+    "name": "api_fill_updateFillsAtIndex",
+    "arguments": {
+      "index": 0,
+      "patch": {
+        "kind": "gradient",
+        "gradient": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#284b50",
+              "opacity": 1
+            },
+            {
+              "position": 0.17,
+              "color": "#406b70",
+              "opacity": 1
+            },
+            {
+              "position": 0.31,
+              "color": "#789b9b",
+              "opacity": 1
+            },
+            {
+              "position": 0.41,
+              "color": "#537e83",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#315c68",
+              "opacity": 1
+            },
+            {
+              "position": 0.69,
+              "color": "#416f78",
+              "opacity": 1
+            },
+            {
+              "position": 0.78,
+              "color": "#6a9297",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#2a4f5e",
+              "opacity": 1
+            }
+          ]
+        }
+      }
+    },
+    "target": {
+      "artifactId": "3af1afd1-f898-4900-a51d-c169b662b8f5",
+      "field": "elementIds",
+      "keys": [
+        "tier0-y"
+      ]
+    }
+  },
+  "outcome": {
+    "status": "success",
+    "settlement": "completed",
+    "issues": []
+  }
+}

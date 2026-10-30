@@ -46,9 +46,12 @@ export type {
   CanonicalPropertyDeliveryOwner,
   CanonicalPropertyDeliveryRecord,
   PropertyValuesMutation,
+  PropertyLayersMutation,
   PropertyRecordsMutation,
   CreateOwnerPropertiesMutation,
   CreateExactPropertyGraphMutation,
+  CreateExactPropertyRecordsMutation,
+  RemoveExactPropertyRecordsMutation,
   RemoveExactOrphanPropertyGraphsMutation,
   PropertyMutation,
   PropertyMutationBatchRequest,
@@ -99,3 +102,14 @@ export type {
   PropertyTypeDefinitionFailure,
   PropertyTypeFieldDefinition
 } from './registries/declarative-property-type.js'
+
+export type {
+  PropertyTarget,
+  PropertyTargetView,
+  SharedPropertySourceUpdate,
+  PropertyIntent,
+  PropertyRootBindingReplacement,
+  PreparedPropertyIntentBatch
+} from './manager/property-intents.js'
+
+export type { OwnerPropertyMutation } from './manager/property-intents.js'

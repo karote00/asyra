@@ -1,0 +1,896 @@
+{
+  "sourceRun": "1792929336384",
+  "providerRecord": "cd751a05-d455-49b8-a2f8-ccba83a97bc0",
+  "calls": [
+    {
+      "input": {
+        "value": {
+          "names": [
+            "validate_reference_images",
+            "select_design_references",
+            "review_drawing"
+          ],
+          "view": "usage"
+        },
+        "bytes": 98,
+        "sha256": "ea49c140d66799ad897060157ea1dd12e971e4bf2d88c8a99e9066bb46cfd227"
+      },
+      "output": {
+        "value": {
+          "apis": [],
+          "tools": [
+            {
+              "name": "validate_reference_images",
+              "namespace": "image_analysis",
+              "registeredName": "image_analysis.validate_reference_images",
+              "revision": 2,
+              "description": "Validate retained reference images in one batch without searching or downloading again. Returns stable content identity, exact dimensions, encoding and byte count. Mechanical validity does not verify the subject, viewpoint, factual accuracy or suitability for fine detail: inspect the image and retain those limitations. Use referenceId in source facts; attachmentIndex remains the image selection handle. Validate retained images without acquisition. Mechanical validity is not subject or fine-detail approval. Reuse referenceId for facts and attachmentIndex for comparison selection.",
+              "effect": "read",
+              "resources": [
+                "references"
+              ],
+              "lifecycle": {
+                "cancellation": "cooperative",
+                "retry": "never",
+                "output": "value"
+              },
+              "composition": "control-plane",
+              "execution": {
+                "kind": "native-tool",
+                "namespace": "image_analysis",
+                "tool": "validate_reference_images"
+              },
+              "inputFields": [
+                "/properties/attachmentIndexes"
+              ],
+              "outputFields": [
+                "/properties/references",
+                "/properties/references/items/properties/referenceId",
+                "/properties/references/items/properties/attachmentIndex",
+                "/properties/references/items/properties/validation",
+                "/properties/references/items/properties/validation/properties/validity"
+              ],
+              "elementBindings": [],
+              "invocationExample": {
+                "available": false,
+                "reason": "no-valid-owner-example"
+              },
+              "definition": {
+                "revision": "f6c15c6743e72610bbe3a9fd95c5a415ecca44523b84000460800c5449bd6d83",
+                "state": "included",
+                "coverage": "usage",
+                "requestedCoverage": "usage",
+                "availableInResponse": true,
+                "deliveryReason": "requested",
+                "nextAction": "use-response-or-recover-requested-scope",
+                "recover": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "image_analysis.validate_reference_images"
+                    ],
+                    "view": "usage",
+                    "refresh": true,
+                    "refreshReason": "delivery-failure"
+                  }
+                },
+                "refresh": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "image_analysis.validate_reference_images"
+                    ],
+                    "refresh": true,
+                    "refreshReason": "context-loss",
+                    "view": "usage"
+                  }
+                }
+              },
+              "schemaSource": "registered-tool-contract"
+            },
+            {
+              "name": "select_design_references",
+              "namespace": "design_operations",
+              "registeredName": "design_operations.select_design_references",
+              "revision": 2,
+              "description": "Select imported reference attachment indexes for primary-agent visual comparison. Identical selection preserves approval; changed uses reopen only their dependent checks. An empty selection clears it. Download success does not establish suitability. Record referenceDecisions with the current requirementRevision in this call; select candidates by index and declare exact uses with id, criterionId/unitId, purpose, original-pixel region (or whole) and limitations. Use returned receipts explicitly in downstream referenceUses; omitted receipts mean reference-free work. Rejected and undecided images are retained but excluded from comparison.",
+              "effect": "prepare",
+              "resources": [
+                "request-artifacts"
+              ],
+              "lifecycle": {
+                "cancellation": "cooperative",
+                "retry": "never",
+                "output": "value"
+              },
+              "composition": "control-plane",
+              "execution": {
+                "kind": "native-tool",
+                "namespace": "design_operations",
+                "tool": "select_design_references"
+              },
+              "inputFields": [
+                "/properties/referenceImageIndexes",
+                "/properties/requirementRevision",
+                "/properties/referenceDecisions"
+              ],
+              "outputFields": [
+                "/properties/referenceImageIndexes",
+                "/properties/referenceDecisions"
+              ],
+              "elementBindings": [],
+              "invocationExample": {
+                "available": false,
+                "reason": "no-valid-owner-example"
+              },
+              "definition": {
+                "revision": "0eb1bc364d3870e5d703a6ee262a11e37534353733dee5dbf185e300ce77f92f",
+                "state": "included",
+                "coverage": "usage",
+                "requestedCoverage": "usage",
+                "availableInResponse": true,
+                "deliveryReason": "requested",
+                "nextAction": "use-response-or-recover-requested-scope",
+                "recover": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "design_operations.select_design_references"
+                    ],
+                    "view": "usage",
+                    "refresh": true,
+                    "refreshReason": "delivery-failure"
+                  }
+                },
+                "refresh": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "design_operations.select_design_references"
+                    ],
+                    "refresh": true,
+                    "refreshReason": "context-loss",
+                    "view": "usage"
+                  }
+                }
+              },
+              "schemaSource": "registered-tool-contract"
+            },
+            {
+              "name": "review_drawing",
+              "namespace": "design_operations",
+              "registeredName": "design_operations.review_drawing",
+              "revision": 15,
+              "description": "Select the next ready part using inputScopes; exact selected usage supplies the complete execution guide.",
+              "effect": "prepare",
+              "resources": [
+                "request-artifacts"
+              ],
+              "lifecycle": {
+                "cancellation": "cooperative",
+                "retry": "never",
+                "output": "value"
+              },
+              "composition": "control-plane",
+              "execution": {
+                "kind": "native-tool",
+                "namespace": "design_operations",
+                "tool": "review_drawing"
+              },
+              "inputScopes": {
+                "operations": [
+                  "record",
+                  "capture",
+                  "bind"
+                ],
+                "nodeTypes": [],
+                "optionalInputs": [],
+                "selection": "inputScope.operation: capture for new current images; bind to reuse retained images for chosen checks; record to submit observed judgments using capture/bind next.arguments. Selecting this contract needs no nodeTypes or planning call. Full and field queries remain available; known current contracts need no lookup."
+              },
+              "inputFields": [
+                "/oneOf/0",
+                "/oneOf/1",
+                "/properties/phase",
+                "/properties/inspectionIds",
+                "/properties/inspections",
+                "/properties/checks",
+                "/properties/bindChecks",
+                "/properties/deferredDetails",
+                "/properties/deferredChecks",
+                "/properties/final"
+              ],
+              "elementBindings": [],
+              "invocationExample": {
+                "illustrative": true,
+                "invocation": {
+                  "namespace": "design_operations",
+                  "tool": "review_drawing",
+                  "arguments": {
+                    "phase": "visual",
+                    "final": false,
+                    "inspections": [
+                      {
+                        "elementId": "current-target-id",
+                        "checks": [
+                          {
+                            "criterionId": "appearance"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              "definition": {
+                "revision": "953f163c04ce6698fb59f74b196924f50d1fb81930a16d3f6bafb6bc8f8ce7db",
+                "state": "included",
+                "coverage": "usage",
+                "requestedCoverage": "usage",
+                "availableInResponse": true,
+                "deliveryReason": "requested",
+                "nextAction": "use-response-or-recover-requested-scope",
+                "recover": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "design_operations.review_drawing"
+                    ],
+                    "view": "usage",
+                    "refresh": true,
+                    "refreshReason": "delivery-failure"
+                  }
+                },
+                "refresh": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "design_operations.review_drawing"
+                    ],
+                    "refresh": true,
+                    "refreshReason": "context-loss",
+                    "view": "usage"
+                  }
+                }
+              },
+              "schemaSource": "registered-tool-contract"
+            }
+          ],
+          "missingNames": [],
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed",
+            "issues": []
+          }
+        },
+        "bytes": 6265,
+        "sha256": "94515d62c5d3944ca865276712d895a2b3e7c9a29053da87cf0f5bb92f81e070"
+      }
+    },
+    {
+      "input": {
+        "value": {
+          "names": [
+            "validate_reference_images",
+            "select_design_references"
+          ]
+        },
+        "bytes": 66,
+        "sha256": "eed0097e78fb97cb6629617045cc9eea90dfe2309c8ae31b0bda1d1b34450f01"
+      },
+      "output": {
+        "value": {
+          "apis": [],
+          "tools": [
+            {
+              "name": "validate_reference_images",
+              "description": "Validate retained reference images in one batch without searching or downloading again. Returns stable content identity, exact dimensions, encoding and byte count. Mechanical validity does not verify the subject, viewpoint, factual accuracy or suitability for fine detail: inspect the image and retain those limitations. Use referenceId in source facts; attachmentIndex remains the image selection handle. Validate retained images without acquisition. Mechanical validity is not subject or fine-detail approval. Reuse referenceId for facts and attachmentIndex for comparison selection.",
+              "revision": 2,
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "attachmentIndexes"
+                ],
+                "properties": {
+                  "attachmentIndexes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 24,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
+              "outputSchema": {
+                "type": "object",
+                "properties": {
+                  "references": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "referenceId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "attachmentIndex": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "validation": {
+                          "type": "object",
+                          "properties": {
+                            "validity": {
+                              "enum": [
+                                "decoded",
+                                "invalid"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "validity"
+                          ],
+                          "additionalProperties": true
+                        }
+                      },
+                      "required": [
+                        "referenceId",
+                        "attachmentIndex",
+                        "validation"
+                      ],
+                      "additionalProperties": true
+                    }
+                  }
+                },
+                "required": [
+                  "references"
+                ],
+                "additionalProperties": true
+              },
+              "partialOutputSchema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "references": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "referenceId": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "attachmentIndex": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "validation": {
+                              "type": "object",
+                              "properties": {
+                                "validity": {
+                                  "enum": [
+                                    "decoded",
+                                    "invalid"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "validity"
+                              ],
+                              "additionalProperties": true
+                            }
+                          },
+                          "required": [
+                            "referenceId",
+                            "attachmentIndex",
+                            "validation"
+                          ],
+                          "additionalProperties": true
+                        }
+                      }
+                    },
+                    "required": [
+                      "references"
+                    ],
+                    "additionalProperties": true
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "available": {
+                        "const": false
+                      },
+                      "recoverable": {
+                        "const": true
+                      },
+                      "code": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "message": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "settlement": {
+                        "enum": [
+                          "not-started",
+                          "completed",
+                          "partial",
+                          "unknown"
+                        ]
+                      },
+                      "executionResult": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "actionResults": {
+                                "type": "array",
+                                "minItems": 1
+                              }
+                            },
+                            "required": [
+                              "actionResults"
+                            ],
+                            "additionalProperties": true
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "batches": {
+                                "type": "array",
+                                "minItems": 1
+                              }
+                            },
+                            "required": [
+                              "batches"
+                            ],
+                            "additionalProperties": true
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "available",
+                      "recoverable",
+                      "code",
+                      "message",
+                      "settlement",
+                      "executionResult"
+                    ],
+                    "additionalProperties": true
+                  }
+                ]
+              },
+              "effect": "read",
+              "resources": [
+                "references"
+              ],
+              "lifecycle": {
+                "cancellation": "cooperative",
+                "retry": "never",
+                "output": "value"
+              },
+              "composition": "control-plane",
+              "kind": "primitive",
+              "availability": "eligible",
+              "registeredName": "image_analysis.validate_reference_images",
+              "namespace": "image_analysis",
+              "execution": {
+                "kind": "native-tool",
+                "namespace": "image_analysis",
+                "tool": "validate_reference_images"
+              },
+              "definition": {
+                "revision": "f6c15c6743e72610bbe3a9fd95c5a415ecca44523b84000460800c5449bd6d83",
+                "state": "included",
+                "coverage": "full",
+                "requestedCoverage": "full",
+                "availableInResponse": true,
+                "deliveryReason": "requested",
+                "nextAction": "use-response-or-recover-requested-scope",
+                "recover": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "image_analysis.validate_reference_images"
+                    ],
+                    "refresh": true,
+                    "refreshReason": "delivery-failure"
+                  }
+                },
+                "refresh": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "image_analysis.validate_reference_images"
+                    ],
+                    "refresh": true,
+                    "refreshReason": "context-loss"
+                  }
+                }
+              },
+              "schemaSource": "registered-tool-contract"
+            },
+            {
+              "name": "select_design_references",
+              "description": "Select imported reference attachment indexes for primary-agent visual comparison. Identical selection preserves approval; changed uses reopen only their dependent checks. An empty selection clears it. Download success does not establish suitability. Record referenceDecisions with the current requirementRevision in this call; select candidates by index and declare exact uses with id, criterionId/unitId, purpose, original-pixel region (or whole) and limitations. Use returned receipts explicitly in downstream referenceUses; omitted receipts mean reference-free work. Rejected and undecided images are retained but excluded from comparison.",
+              "revision": 2,
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "referenceImageIndexes"
+                ],
+                "properties": {
+                  "referenceImageIndexes": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "description": "Attachment indexes of suitable reference images chosen for comparison. Include imported references explicitly; omitted selection uses only original user attachments. Do not select rejected research images."
+                  },
+                  "requirementRevision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Current saved requirementRevision. Required when recording decisions."
+                  },
+                  "referenceDecisions": {
+                    "type": "array",
+                    "maxItems": 24,
+                    "description": "Primary-agent assessments, not tool judgments. Accepted/restricted sources require explicit uses. Each use declares exact criterion/unit, purpose, original-pixel region (or whole) and limitations. Decoding alone is not suitability. Retain returned use receipts for consumers.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "referenceId",
+                        "status",
+                        "reason",
+                        "uses"
+                      ],
+                      "properties": {
+                        "referenceId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1000
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "accepted",
+                            "restricted",
+                            "rejected"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1000
+                        },
+                        "uses": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "criterionId",
+                              "purpose",
+                              "region",
+                              "limitations"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1000
+                              },
+                              "criterionId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1000
+                              },
+                              "unitId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1000
+                              },
+                              "purpose": {
+                                "type": "string",
+                                "enum": [
+                                  "visual",
+                                  "fact",
+                                  "preparation",
+                                  "pixel-comparison"
+                                ]
+                              },
+                              "region": {
+                                "anyOf": [
+                                  {
+                                    "const": "whole"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "description": "Optional native-pixel rectangle in the oriented attachment. Extract only the requested visible detail without resampling. The resulting artifact uses region-local coordinates; sourceRegion maps it back to this attachment.",
+                                    "required": [
+                                      "x",
+                                      "y",
+                                      "width",
+                                      "height"
+                                    ],
+                                    "properties": {
+                                      "x": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      },
+                                      "y": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      },
+                                      "width": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                      },
+                                      "height": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "limitations": {
+                                "type": "array",
+                                "maxItems": 24,
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 1000
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "outputSchema": {
+                "type": "object",
+                "properties": {
+                  "referenceImageIndexes": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "referenceDecisions": {
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "referenceImageIndexes",
+                  "referenceDecisions"
+                ],
+                "additionalProperties": true
+              },
+              "partialOutputSchema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "referenceImageIndexes": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "referenceDecisions": {
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "referenceImageIndexes",
+                      "referenceDecisions"
+                    ],
+                    "additionalProperties": true
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "available": {
+                        "const": false
+                      },
+                      "recoverable": {
+                        "const": true
+                      },
+                      "code": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "message": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "settlement": {
+                        "enum": [
+                          "not-started",
+                          "completed",
+                          "partial",
+                          "unknown"
+                        ]
+                      },
+                      "executionResult": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "actionResults": {
+                                "type": "array",
+                                "minItems": 1
+                              }
+                            },
+                            "required": [
+                              "actionResults"
+                            ],
+                            "additionalProperties": true
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "batches": {
+                                "type": "array",
+                                "minItems": 1
+                              }
+                            },
+                            "required": [
+                              "batches"
+                            ],
+                            "additionalProperties": true
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "available",
+                      "recoverable",
+                      "code",
+                      "message",
+                      "settlement",
+                      "executionResult"
+                    ],
+                    "additionalProperties": true
+                  }
+                ]
+              },
+              "effect": "prepare",
+              "resources": [
+                "request-artifacts"
+              ],
+              "lifecycle": {
+                "cancellation": "cooperative",
+                "retry": "never",
+                "output": "value"
+              },
+              "composition": "control-plane",
+              "kind": "primitive",
+              "availability": "eligible",
+              "registeredName": "design_operations.select_design_references",
+              "namespace": "design_operations",
+              "execution": {
+                "kind": "native-tool",
+                "namespace": "design_operations",
+                "tool": "select_design_references"
+              },
+              "definition": {
+                "revision": "0eb1bc364d3870e5d703a6ee262a11e37534353733dee5dbf185e300ce77f92f",
+                "state": "included",
+                "coverage": "full",
+                "requestedCoverage": "full",
+                "availableInResponse": true,
+                "deliveryReason": "requested",
+                "nextAction": "use-response-or-recover-requested-scope",
+                "recover": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "design_operations.select_design_references"
+                    ],
+                    "refresh": true,
+                    "refreshReason": "delivery-failure"
+                  }
+                },
+                "refresh": {
+                  "tool": "describe_design_apis",
+                  "arguments": {
+                    "names": [
+                      "design_operations.select_design_references"
+                    ],
+                    "refresh": true,
+                    "refreshReason": "context-loss"
+                  }
+                }
+              },
+              "schemaSource": "registered-tool-contract"
+            }
+          ],
+          "missingNames": [],
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed",
+            "issues": []
+          }
+        },
+        "bytes": 8872,
+        "sha256": "6bf80f4abc19782dffd23520adb47c2d1093a8f3c1db26a53129a00087250cd0"
+      }
+    },
+    {
+      "input": {
+        "value": {
+          "attachmentIndexes": [
+            0,
+            1
+          ]
+        },
+        "bytes": 27,
+        "sha256": "525849a925261e9db4212410a0bb8f64ab89dc488cbb3674c42d6477f8a545fb"
+      },
+      "output": {
+        "value": {
+          "references": [
+            {
+              "attachmentIndex": 0,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "sha256": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "bytes": 368902,
+              "reused": false,
+              "validation": {
+                "width": 507,
+                "height": 665,
+                "encoding": "jpeg",
+                "validity": "decoded",
+                "suitability": "requires-visual-assessment"
+              }
+            },
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "sha256": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "bytes": 164669,
+              "reused": false,
+              "validation": {
+                "width": 500,
+                "height": 518,
+                "encoding": "jpeg",
+                "validity": "decoded",
+                "suitability": "requires-visual-assessment"
+              }
+            }
+          ],
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed",
+            "issues": []
+          }
+        },
+        "bytes": 770,
+        "sha256": "863c08d8ca1ab469a494091c612bbdf2f87ab0cbf49d0cd9d753d942255062a5"
+      }
+    }
+  ],
+  "priorGuidance": "Use validate_reference_images to check retained image bytes and dimensions without downloading again. Keep its referenceId for image facts; visual subject/viewpoint suitability remains your responsibility."
+}

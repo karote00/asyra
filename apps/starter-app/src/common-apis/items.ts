@@ -161,13 +161,14 @@ export const createItemApi = (
         return Object.freeze([])
       }
 
-      return runActionTransaction(() =>
-        core.updateElementProperties([
-          {
-            elementId: id,
-            values
-          }
-        ])
+      return runActionTransaction(
+        () =>
+          core.updateElementProperties([
+            {
+              elementId: id,
+              values
+            }
+          ]).acceptedIds
       )
     },
     moveItem(id, offset) {
@@ -177,10 +178,11 @@ export const createItemApi = (
           'Item position must be finite numbers.'
         )
       }
-      return runActionTransaction(() =>
-        core.updateElementProperties([
-          { elementId: id, values: { offsetX: offset.x, offsetY: offset.y } }
-        ])
+      return runActionTransaction(
+        () =>
+          core.updateElementProperties([
+            { elementId: id, values: { offsetX: offset.x, offsetY: offset.y } }
+          ]).acceptedIds
       )
     }
   }

@@ -29,11 +29,7 @@ interface UseGradientInteractionsArgs {
   fillId: string
   ownerElementId: string | null
   gradient: FillGradientData
-  onChangeFill: (
-    patch: FillPatch,
-    options?: EVENT_OPTIONS,
-    sourceFill?: FillAttrs
-  ) => void
+  onChangeFill: (patch: FillPatch, options?: EVENT_OPTIONS) => void
   onStartInteraction: () => void
   onEndInteraction: () => void
 }
@@ -163,11 +159,11 @@ export const useGradientInteractions = ({
     interactionLatestFillRef.current = nextFill
 
     if (isDraggingRef.current) {
-      onChangeFill(patch, options ?? GRADIENT_EDITOR_DRAG_OPTIONS, currentFill)
+      onChangeFill(patch, options ?? GRADIENT_EDITOR_DRAG_OPTIONS)
       return
     }
 
-    onChangeFill(patch, options, currentFill)
+    onChangeFill(patch, options)
   }
 
   const endInteractionSession = () => {

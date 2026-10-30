@@ -1,5 +1,38 @@
 # @asyra/utils
 
+## Pending Atomic registered identity allocation
+
+```update-note
+{
+  "change": "registered-identity-allocation",
+  "owner": "Utils ID counter",
+  "summary": "Reserve immutable ordered IDs atomically from existing counters, rejecting invalid types, ambiguous prefixes and exhaustion before consumption. Keep the allocation regression compatible with the package ES2020 compiler target without changing its assertions.",
+  "sources": [
+    "packages/utils/src/sid/idCounter.ts",
+    "packages/utils/src/sid/__tests__/idCounter.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Callers can reserve registered identities without exposing counter reset or document mutation."
+}
+```
+
+## Pending computed snapshot selection
+
+```update-note
+{
+  "change": "computed-snapshot-selection",
+  "owner": "Shared element observation contract",
+  "summary": "Carry computed field selection to the existing snapshot owner before materialization, avoiding omitted-field copies while retaining detached full reads and mechanical evidence behavior.",
+  "sources": [
+    "packages/utils/src/sceneTree/instanceTypes.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing Core query inputs and outputs, persistence and transaction behavior are unchanged. No new cache, model exchange or migration is required."
+}
+```
+
 ## Pending - Office input and spatial materials
 
 ```update-note

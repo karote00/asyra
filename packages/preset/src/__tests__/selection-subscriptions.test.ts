@@ -433,6 +433,81 @@ describe('Preset Selection Subscriptions', () => {
     }
   })
 
+  it('projects local root binding changes to Render and one UI row without hierarchy work', () => {
+    const core = {
+      getSelection: () => undefined,
+      registerDataChannelObserver: vi.fn(),
+      unregisterDataChannelObserver: vi.fn()
+    } as unknown as PresetCoreAPIs
+    const deps = createDeps()
+    const scan = vi.spyOn(deps.sceneTree, 'getAllElements')
+    const lookup = vi.spyOn(deps.sceneTree, 'getElementById')
+    const binding = vi
+      .spyOn(renderSceneTreeStore, 'updateElementPropertyBindings')
+      .mockReturnValue({ status: 'applied', elementId: 'a' })
+    const reload = vi
+      .spyOn(renderSceneTreeStore, 'reload')
+      .mockImplementation(() => undefined)
+    propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+    propertyRegistry.register('elementDataMap', { defaultValue: {} })
+    uiContext.set('flattenedElementIds', ['a', 'b'])
+    const original = {
+      a: {
+        id: 'a',
+        type: VECTOR_TYPE,
+        props: { fills: 'shared', strokes: 'stroke' }
+      },
+      b: { id: 'b', type: VECTOR_TYPE, props: { fills: 'shared' } }
+    }
+    uiContext.set('elementDataMap', original)
+    const dispose = registerDefaultDataChannelObservers(core, deps, undefined, {
+      renderScene: true,
+      uiContext: true
+    })
+    const set = vi.spyOn(uiContext, 'set')
+    scan.mockClear()
+    lookup.mockClear()
+    try {
+      const changes = [{ key: 'fills', before: 'shared', after: 'local' }]
+      projectSceneChanges([
+        {
+          action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          id: 'a',
+          changes
+        }
+      ])
+      expect(binding).toHaveBeenCalledExactlyOnceWith('a', changes)
+      const current = uiContext.get('elementDataMap') as typeof original
+      expect(current.a.props).toEqual({ fills: 'local', strokes: 'stroke' })
+      expect(current.b).toBe(original.b)
+      expect(original.a.props.fills).toBe('shared')
+      expect(
+        set.mock.calls.some(([key]) => key === 'flattenedElementIds')
+      ).toBe(false)
+      expect(scan).not.toHaveBeenCalled()
+      expect(lookup).not.toHaveBeenCalled()
+      projectSceneChanges([
+        {
+          action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          id: 'a',
+          changes: [{ key: 'fills', before: 'local', after: 'shared' }]
+        }
+      ])
+      expect(uiContext.get('elementDataMap')).toEqual(original)
+    } finally {
+      dispose()
+      set.mockRestore()
+      binding.mockRestore()
+      reload.mockRestore()
+      scan.mockRestore()
+      lookup.mockRestore()
+      propertyRegistry.unregister('flattenedElementIds')
+      propertyRegistry.unregister('elementDataMap')
+    }
+  })
+
   it('registers the applied projection before rebuild and retires it on disposal', () => {
     const core = {
       getSelection: () => undefined,
@@ -1237,6 +1312,294 @@ describe('Preset Selection Subscriptions', () => {
       uiSet.mockRestore()
     }
   })
+
+  it('matches complete derivation for nested tail additions and interior or malformed boundaries', () => {
+    const core = {
+      getSelection: () => undefined,
+      registerDataChannelObserver: vi.fn(),
+      unregisterDataChannelObserver: vi.fn()
+    } as unknown as PresetCoreAPIs
+    propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+    propertyRegistry.register('elementDataMap', { defaultValue: {} })
+    const dispose = registerDefaultDataChannelObservers(
+      core,
+      createDeps(),
+      undefined,
+      { uiContext: true }
+    )
+    const entry = (
+      id: string,
+      parentId: string,
+      index: number,
+      type = 'custom-container'
+    ) => ({ data: { id, parentId, type }, parentId, index })
+    const add = (...entries: ReturnType<typeof entry>[]) => ({
+      action: SCENE_TREE_ACTIONS.ADD_ELEMENTS,
+      entries
+    })
+    const sequence = [
+      add(entry('a', 'workspace', 0), entry('b', 'workspace', 1)),
+      add(
+        entry('c', 'b', 0),
+        entry('d', 'c', 0, 'rect'),
+        entry('e', 'b', 1, 'rect')
+      ),
+      {
+        action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+        data: { id: 'f', parentId: 'b' }
+      },
+      add(entry('g', 'workspace', 2), entry('h', 'g', 0)),
+      [
+        {
+          action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+          ...entry('indexed', 'workspace', 3)
+        },
+        {
+          action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+          data: { id: 'appended', parentId: 'workspace' }
+        }
+      ],
+      add(entry('interior', 'a', 0)),
+      add(entry('before', 'b', 0)),
+      {
+        action: SCENE_TREE_ACTIONS.MOVE_ELEMENTS,
+        moves: [
+          {
+            elementId: 'h',
+            before: { parentId: 'g', index: 0 },
+            after: { parentId: 'a', index: 1 }
+          }
+        ]
+      },
+      {
+        action: SCENE_TREE_ACTIONS.REMOVE_ELEMENT,
+        data: { id: 'before' },
+        parentId: 'b'
+      },
+      // Duplicate and unordered membership cannot use the admitted-tail shortcut.
+      add(entry('g', 'workspace', 2)),
+      add(entry('last', 'g', 1), entry('first', 'g', 0)),
+      add({
+        ...entry('future-parent', 'workspace', 3),
+        data: {
+          id: 'future-parent',
+          parentId: 'workspace',
+          type: 'custom-container',
+          children: ['future-child']
+        }
+      }),
+      add(entry('future-child', 'future-parent', 0))
+    ]
+    const run = (cold: boolean) => {
+      uiContext.set('elementDataMap', {})
+      uiContext.set('flattenedElementIds', [])
+      const snapshots: { ids: unknown; rows: unknown; json: string }[] = []
+      for (const change of sequence) {
+        if (cold) {
+          uiContext.getSubject('elementDataMap')?.next({
+            ...uiContext.get<Record<string, unknown>>('elementDataMap')
+          })
+          uiContext
+            .getSubject('flattenedElementIds')
+            ?.next([...(uiContext.get<string[]>('flattenedElementIds') ?? [])])
+        }
+        projectSceneChanges(Array.isArray(change) ? change : [change])
+        snapshots.forEach(({ ids, rows, json }) =>
+          expect(JSON.stringify({ ids, rows })).toBe(json)
+        )
+        const ids = uiContext.get('flattenedElementIds')
+        const rows = uiContext.get('elementDataMap')
+        snapshots.push({ ids, rows, json: JSON.stringify({ ids, rows }) })
+      }
+      return snapshots
+    }
+    try {
+      const warm = run(false)
+      expect(warm[1].ids).toEqual(['a', 'b', 'c', 'd', 'e'])
+      expect(warm[3].ids).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
+      expect(warm.map(({ json }) => json)).toEqual(
+        run(true).map(({ json }) => json)
+      )
+    } finally {
+      dispose()
+      propertyRegistry.unregister('flattenedElementIds')
+      propertyRegistry.unregister('elementDataMap')
+    }
+  })
+
+  it('invalidates tail preparation after failed input and reentrant publication', () => {
+    const core = {
+      getSelection: () => undefined,
+      registerDataChannelObserver: vi.fn(),
+      unregisterDataChannelObserver: vi.fn()
+    } as unknown as PresetCoreAPIs
+    propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+    propertyRegistry.register('elementDataMap', { defaultValue: {} })
+    uiContext.set('flattenedElementIds', [])
+    uiContext.set('elementDataMap', {})
+    const dispose = registerDefaultDataChannelObservers(
+      core,
+      createDeps(),
+      undefined,
+      { uiContext: true }
+    )
+    const add = (id: string, index: number) =>
+      projectSceneChanges([
+        {
+          action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+          data: { id, parentId: 'workspace' },
+          parentId: 'workspace',
+          index
+        }
+      ])
+    const counters = new Map<string, number>()
+    const stop = subscribeToDiagnosticCounters((name, value) =>
+      counters.set(name, (counters.get(name) ?? 0) + value)
+    )
+    let reseed = false
+    const subject =
+      uiContext.getSubject<Record<string, unknown>>('elementDataMap')
+    const subscription = subject?.subscribe((value) => {
+      if (!reseed) return
+      reseed = false
+      subject.next({ ...value })
+    })
+    try {
+      add('a', 0)
+      reseed = true
+      add('b', 1)
+      counters.clear()
+      add('c', 2)
+      expect(counters.get('ui-context-membership-prepare')).toBe(1)
+      expect(uiContext.get('flattenedElementIds')).toEqual(['a', 'b', 'c'])
+      // A failure before publication must retire the existing preparation too.
+      const readIdentity = vi.fn((): string => {
+        throw new Error('Failed descriptor read')
+      })
+      const beforeFailure = uiContext.get('flattenedElementIds')
+      const broken = {
+        get id(): string {
+          return readIdentity()
+        },
+        parentId: 'workspace'
+      }
+      // Observer failure is isolated by the event bus after canonical apply.
+      projectSceneChanges([
+        {
+          action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+          data: broken,
+          parentId: 'workspace',
+          index: 3
+        }
+      ])
+      expect(readIdentity).toHaveBeenCalledTimes(1)
+      expect(uiContext.get('flattenedElementIds')).toBe(beforeFailure)
+      counters.clear()
+      add('d', 3)
+      expect(counters.get('ui-context-membership-prepare')).toBe(1)
+      expect(uiContext.get('flattenedElementIds')).toEqual(['a', 'b', 'c', 'd'])
+    } finally {
+      subscription?.unsubscribe()
+      stop()
+      dispose()
+      propertyRegistry.unregister('flattenedElementIds')
+      propertyRegistry.unregister('elementDataMap')
+    }
+  })
+
+  it.each([32, 1024])(
+    'does not revisit %i unrelated identities during continuous tail creation',
+    (count) => {
+      const core = {
+        getSelection: () => undefined,
+        registerDataChannelObserver: vi.fn(),
+        unregisterDataChannelObserver: vi.fn()
+      } as unknown as PresetCoreAPIs
+      propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+      propertyRegistry.register('elementDataMap', { defaultValue: {} })
+      uiContext.set('flattenedElementIds', [])
+      uiContext.set('elementDataMap', {})
+      const dispose = registerDefaultDataChannelObservers(
+        core,
+        createDeps(),
+        undefined,
+        {
+          uiContext: true
+        }
+      )
+      const entry = (id: string, parentId: string, index: number) => ({
+        data: { id, parentId },
+        parentId,
+        index
+      })
+      const existing = Array.from(
+        { length: count },
+        (_, index) => `unrelated-${index}`
+      )
+      try {
+        projectSceneChanges([
+          {
+            action: SCENE_TREE_ACTIONS.ADD_ELEMENTS,
+            entries: [
+              entry('background', 'workspace', 0),
+              ...existing.map((id, index) => entry(id, 'background', index)),
+              entry('target', 'workspace', 1)
+            ]
+          }
+        ])
+        const snapshots: { ids: string[]; rows: unknown; json: string }[] = []
+        const originalGet = Map.prototype.get
+        let unrelatedVisits = 0
+        let observing = true
+        const get = vi.spyOn(Map.prototype, 'get').mockImplementation(function (
+          this: Map<unknown, unknown>,
+          key: unknown
+        ) {
+          if (
+            observing &&
+            typeof key === 'string' &&
+            key.startsWith('unrelated-')
+          )
+            unrelatedVisits++
+          return originalGet.call(this, key)
+        })
+        try {
+          for (let batch = 0; batch < 3; batch++) {
+            projectSceneChanges([
+              {
+                action: SCENE_TREE_ACTIONS.ADD_ELEMENTS,
+                entries: [entry(`added-${batch}`, 'target', batch)]
+              }
+            ])
+            // Snapshot assertions run outside the counted owner execution.
+            observing = false
+            const ids = uiContext.get<string[]>('flattenedElementIds') ?? []
+            const rows = uiContext.get('elementDataMap')
+            expect(ids).toEqual([
+              'background',
+              ...existing,
+              'target',
+              ...Array.from({ length: batch + 1 }, (_, i) => `added-${i}`)
+            ])
+            snapshots.forEach((snapshot) =>
+              expect(
+                JSON.stringify({ ids: snapshot.ids, rows: snapshot.rows })
+              ).toBe(snapshot.json)
+            )
+            snapshots.push({ ids, rows, json: JSON.stringify({ ids, rows }) })
+            observing = true
+          }
+        } finally {
+          get.mockRestore()
+        }
+        expect(unrelatedVisits).toBe(0)
+      } finally {
+        dispose()
+        propertyRegistry.unregister('flattenedElementIds')
+        propertyRegistry.unregister('elementDataMap')
+      }
+    }
+  )
 
   it.each([32, 1024])(
     'does not reread %i unchanged rows across structural publications',

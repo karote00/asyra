@@ -84,11 +84,10 @@ Completed plan:
 - `AiActionBatch` contains one `batchId`, optional explanation, and ordered
   actions. Each action contains one id, registered name, server-prepared
   arguments, and bounded redaction-ready summary
-- Runtime validates only the small control envelope: non-empty `batchId`,
-  optional explanation type, non-empty actions, action id/name presence,
-  duplicate action ids, and registered action names. It does not traverse or
-  reinterpret item, path, point, style, bounds, coordinate, or geometry
-  arguments
+- Runtime resolution validates the control envelope and registered action names.
+  At invocation, `observeAiAction` uses the shared Runtime middleware to validate
+  arguments and outcomes against the exact registered input/output contracts.
+  This admission validates data; it does not reinterpret geometry or run a model.
 - resolution returns one `ResolvedAiActionBatch`; permission receives one
   `PermissionReadyAiActionBatch`; confirmation and terminal presentation
   receive one `AiActionBatchPreview`. Every stage preserves `batchId`
@@ -96,18 +95,15 @@ Completed plan:
   Permission and execution receive the exact same arguments identity.
   `AiActionBatchPreview` retains and redacts only bounded summaries, never the
   complete arguments or composition geometry
-- the reference action catalog contains only:
-  - `request_drawing_detail_choice`
-  - `insert_vector_composition`
-  - `update_composition_elements`
-  - `remove_ai_composition`
-  - `set_element_visibility`
-  - `select_elements`
-- every registered action definition exposes exactly one backend-facing
-  `inputSchema` plus one `execute(args, context)` function. `inputSchema`
-  describes what the server must prepare; the frontend does not run it against
-  returned action arguments and exposes no client model-prepare or
-  model-validation path
+- `createAiRuntimeInput` composes the current browser action definitions from
+  their owners, including the canonical basic API catalog. Native tools and
+  composed tools use those same scoped/versioned contracts; discovery exposure
+  and batch-only restrictions belong to the existing server tool owners.
+- Each definition declares its name, revision, description, input/output and
+  partial-output schemas, effects, resources, lifecycle and execution function.
+  The browser performs deterministic input and result admission before delivering
+  the receipt; preparation remains with its existing owner. The catalog is not a
+  separate manually maintained list of names.
 - the production provider owns preparation of accepted/skipped roles, bounds,
   styles, paths, points, and one `PreparedDrawingArtifact` before returning the
   `AiActionBatch`. The 7,076 sample stores that already-prepared result in its
@@ -135,17 +131,26 @@ Completed plan:
 - follow-up updates consume only canonical ids projected from the preceding
   action result; each target is revalidated immediately before its common-API
   mutation
-- recoverable per-object failures are returned as `partial` or `no-change`
-  evidence; canonical mutation or grouping consistency failures reject the
-  executor so the outer runtime transaction rolls back
+- Receipts distinguish successful changes, successful no-change, failure,
+  partial completion and unknown settlement according to the exact owner contract.
+  `set_element_visibility` consumes the canonical plural flag receipt and reports
+  unavailable targets as failed with
+  not-started settlement. Operation success never implies visual acceptance or
+  durable persistence.
+- Design uses the Runtime `preserve-progress` failure policy. Each admitted
+  synchronous mutation is a member of one Factory history group. Failure or
+  cancellation stops future work and closes that group while preserving
+  acknowledged completed members for Undo. Failed member compensation remains
+  Factory-owned; unknown settlement is reported explicitly and never replayed.
 - permission rules are explicit and default-deny; confirmation defaults to
   cancellation
-- action executors call `src/common-apis/*` with `undoable: true`. Atomic
-  mutations and composition Group/children use
-  `sharedDelivery: 'transaction-end'`; progressive composition batches and
-  non-composition progressive mutations use ordinary immediate delivery inside
-  the same outer transaction. Factory, canonical owners, Render, and optional
-  Collaboration retain their ordinary ownership
+- Action executors call `src/common-apis/*` through the existing mutation
+  executor with undoable writes. Finite synchronous members publish through
+  ordinary Factory/shared-delivery ownership; no transaction stays open while
+  awaiting the model or a child tool. Runtime checks cancellation before
+  delegation and at actual writer entry. Cancellation after a completed write
+  preserves its receipt and settlement. Canonical owners, Render and Collaboration
+  retain their ordinary ownership.
 - after the provider returns server-prepared loading bounds, the App sets one
   runtime-only `aiDrawingProgress` System Context value and
   commits an exact-bounds DOM compositor overlay, then crosses a browser paint
@@ -431,7 +436,25 @@ Import boundary:
 - `getVectorAnchorPoints(elementId: string): VectorAnchorPoint[]`
 - `getVectorAnchorSubpaths(elementId: string): VectorAnchorPoint[][]`
 - `getVectorTopology(elementId: string): { points: Record<string, VectorPointNode>; segments: Record<string, VectorSegment>; networks: Record<string, VectorNetwork> }`
-- `scaleVectorElementAroundCenter(elementId: string, scale: { scaleX: number; scaleY: number }, mutationOptions?: EVENT_OPTIONS): boolean`
+
+App document writers with mutation receipts return
+`{ value, acceptedIds, unavailableIds, changed }`. The original domain result is
+in `value`; callers must not use receipt-object truthiness as a success test.
+Accepted identities include valid unchanged targets. Unavailable identities identify
+rejected requests; mixed results remain partial. `changed` comes from the original
+canonical application, not visual scope. Empty patches validate their targets.
+Transport/settlement failures retain their existing recovery owner; never replay
+acknowledged writes to reconstruct output. Reads, transient selection/viewport,
+structural receipts and existing ordered-status batches keep their own contracts.
+
+The same contract applies to `setElementLock`, `toggleElementLock`,
+`toggleElementVisible`, `resetElementSize`, `changeElementGeometry` and
+`setElementPositions`. Geometry-only void results now retain `value: null`.
+Position batches retain unavailable targets separately from valid unchanged ones.
+Unregistered scalar conveniences such as `setElementVisible`, `addFill`,
+`removeFill` and `setVectorElementPosition` keep their independent public contracts.
+
+- `scaleVectorElementAroundCenter(elementId: string, scale: { scaleX: number; scaleY: number }, mutationOptions?: EVENT_OPTIONS): MutationReceipt<boolean>`
   - applies the existing scale-around-center behavior through the ordinary
     canonical vector route
 - `getVectorAnchorPointAtWorkspacePos(elementId: string, workspacePos: PositionData, hitRadius?: number): { point: VectorAnchorPoint; index: number } | null`
@@ -451,25 +474,28 @@ Import boundary:
     affected canonical Props into local computed data
   - this is forced-rollback cleanup, not a canonical mutation: it creates no
     Undo, shared publication, CRDT, or persistence evidence
-- `appendVectorAnchorPoint(elementId: string, point: VectorAnchorPoint, options?: AppendVectorAnchorPointOptions): { point: VectorAnchorPoint; index: number } | null`
+- `appendVectorAnchorPoint(elementId: string, point: VectorAnchorPoint, options?: AppendVectorAnchorPointOptions): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null>`
   - `AppendVectorAnchorPointOptions` combines subpath/continuation/structural
     intent inputs with ordinary `EVENT_OPTIONS`
   - structural intent validation owns the final `undoable` value while preserving
     caller-selected `sharedDelivery`, `shared`, and `rollbackable` mutation
     options
 - `getVectorAnchorContinuation(elementId: string, pointId: string): { networkId: string; pointId: string; side: VectorEndpointSide } | null`
-- `connectVectorAnchorEndpoints(elementId: string, sourcePointId: string, targetPointId: string): { closed: boolean } | null`
-- `connectVectorAnchorPoints(elementId: string, sourcePointId: string, targetPointId: string): { closed: boolean } | null`
-- `removeLastSinglePointSubpath(elementId: string): boolean`
-- `removeVectorAnchorPoint(elementId: string, pointId: string): boolean`
-- `splitVectorSegmentAtWorkspacePos(elementId: string, segmentId: string, workspacePos: PositionData): { point: VectorAnchorPoint; index: number } | null`
-- `setVectorClosed(elementId: string, closed: boolean): void`
-- `updateVectorAnchorPointPosition(elementId: string, pointId: string, position: PositionData, options?: VectorPointMutationOptions): { point: VectorAnchorPoint; index: number } | true | null`
-- `updateVectorAnchorPointType(elementId: string, pointId: string, type: 'smooth' | 'sharp'): { point: VectorAnchorPoint; index: number } | null`
+- `connectVectorAnchorEndpoints(elementId: string, sourcePointId: string, targetPointId: string): MutationReceipt<{ closed: boolean } | null>`
+- `connectVectorAnchorPoints(elementId: string, sourcePointId: string, targetPointId: string): MutationReceipt<{ closed: boolean } | null>`
+- `removeLastSinglePointSubpath(elementId: string): MutationReceipt<boolean>`
+- `removeVectorAnchorPoint(elementId: string, pointId: string): MutationReceipt<boolean>`
+- `splitVectorSegmentAtWorkspacePos(elementId: string, segmentId: string, workspacePos: PositionData): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null>`
+- `setVectorClosed(elementId: string, closed: boolean): MutationReceipt<null>`
+- `setVectorElementPositions(updates: readonly { elementId: string; position: PositionData }[], options?: EVENT_OPTIONS): MutationReceipt<readonly string[]>`
+  - retains the original processed-update IDs in `value`; accepted IDs also include
+    valid unchanged targets, while unavailable targets remain explicit
+- `updateVectorAnchorPointPosition(elementId: string, pointId: string, position: PositionData, options?: VectorPointMutationOptions): MutationReceipt<{ point: VectorAnchorPoint; index: number } | true | null>`
+- `updateVectorAnchorPointType(elementId: string, pointId: string, type: 'smooth' | 'sharp'): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null>`
 - `getVectorAnchorPointHandleMode(elementId: string, pointId: string): VectorHandleMode`
-- `setVectorAnchorPointHandleMode(elementId: string, pointId: string, mode: VectorHandleMode): { point: VectorAnchorPoint; index: number } | null`
-- `updateVectorAnchorPointHandlePosition(elementId: string, pointId: string, target: 'inHandle' | 'outHandle', position: PositionData, options?: VectorPointMutationOptions): { point: VectorAnchorPoint; index: number } | true | null`
-- `updateVectorAnchorPointHandles(elementId: string, updates: { pointId: string; target: 'inHandle' | 'outHandle'; position: PositionData | null; forceSmooth?: boolean }[], options?: VectorPointMutationOptions): void`
+- `setVectorAnchorPointHandleMode(elementId: string, pointId: string, mode: VectorHandleMode): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null>`
+- `updateVectorAnchorPointHandlePosition(elementId: string, pointId: string, target: 'inHandle' | 'outHandle', position: PositionData, options?: VectorPointMutationOptions): MutationReceipt<{ point: VectorAnchorPoint; index: number } | true | null>`
+- `updateVectorAnchorPointHandles(elementId: string, updates: { pointId: string; target: 'inHandle' | 'outHandle'; position: PositionData | null; forceSmooth?: boolean }[], options?: VectorPointMutationOptions): MutationReceipt<null>`
   - `VectorPointMutationOptions` preserves ordinary `EVENT_OPTIONS` and accepts
     `skipResult`; active App drag callers use immediate shared delivery plus
     gesture-keyed local `replace-latest` History metadata
@@ -493,19 +519,23 @@ Import boundary:
   - each applied create geometry update uses `sharedDelivery: 'immediate'`;
     pointer-up writes only a 100×100 click reset or a newer final pointer
     geometry, and the outer create session remains one undo commit
-- `createVectorElementFromSinglePoint(pointId: string, position: PositionData, mutationOptions?: EVENT_OPTIONS): string | null`
+- `createVectorElementFromSinglePoint(pointId: string, position: PositionData, mutationOptions?: EVENT_OPTIONS): MutationReceipt<string | null>`
 - `deleteElement(elementId: string, options?: { undoable: boolean }): boolean`
   - delegates every existing non-workspace identity to the public canonical
     `removeSubtree` boundary; deleting a Group removes its complete subtree
     rather than leaving descendants attached to a missing parent
-- `resetElementSize(elementId: string, options?: EVENT_OPTIONS): void`
-- `setElementPositions(positionsById: Record<string, PositionData>, options?: EVENT_OPTIONS): void`
+- `changeElementGeometry(elementId: string, geometry: Partial<ElementBounds>, options?: EVENT_OPTIONS): MutationReceipt<null>`
+- `resetElementSize(elementId: string, options?: EVENT_OPTIONS): MutationReceipt<null>`
+- `setElementPositions(positionsById: Record<string, PositionData>, options?: EVENT_OPTIONS): MutationReceipt<null>`
   - writes one continuous-gesture `x/y` sample for ordinary and Vector elements
     without inspecting or patching Vector topology
   - child-only moves do not normalize ancestor Groups or rebase siblings at
     any pointer sample or gesture finalization
 - `hasMovedBeyondThreshold(clientDragStart: PositionData, clientCurrentPos: PositionData, threshold?: number): boolean`
-- `updateElementProperties(elementIds: readonly string[], values: Readonly<Record<string, DataTypes>>, options?: EVENT_OPTIONS): void`
+- `updateElementProperties(elementIds: readonly string[], values: Readonly<Record<string, DataTypes>>, options?: EVENT_OPTIONS): PropertyMutationReceipt`
+  - returns accepted original caller IDs and the canonical changed flag, including
+    Group normalization; empty values still validate targets and valid no-ops
+    return changed=false. The patch wrapper preserves the same Core receipt.
   - submits one plural canonical Core property replacement for the explicit
     targets inside one transaction
   - child-only geometry values do not project ancestor Group or sibling
@@ -627,26 +657,28 @@ Import boundary:
 - `getGradientHandleGeometry(elementId: string, fillId: string): { elementId: string; fillId: string; fill: FillAttrs; width: number; height: number; canvasHandles: [PositionData, PositionData] } | null`
 - `getGradientHandleHitAtClientPos(elementId: string, fillId: string, clientPos: PositionData, hitRadius?: number): { handleIndex: 0 | 1 } | null`
 - `getNextGradientForHandleAtClientPosition(elementId: string, fillId: string, handleIndex: 0 | 1, clientPos: PositionData): FillGradientData | null`
-- `updateGradientHandleAtClientPosition(elementId: string, fillId: string, handleIndex: 0 | 1, clientPos: PositionData, options?: EVENT_OPTIONS): FillGradientData | null`
+- `updateGradientHandleAtClientPosition(elementId: string, fillId: string, handleIndex: 0 | 1, clientPos: PositionData, options?: EVENT_OPTIONS): MutationReceipt<FillGradientData | null>`
 - `getFillTargetsAtIndex(elementIds, index): FillTarget[]`
   - resolves each current row to its real element/Fill IDs; missing rows reject
-- `addFills(elementIds, options?): string[]`
-- `removeFills(targets: FillTarget[], options?): void`
-- `updateFillsAtIndex(elementIds, index, patch: FillPatch | readonly FillPatch[], options?): void`
+- `addFills(elementIds, options?): MutationReceipt<string[]>`
+- `removeFills(targets: FillTarget[], options?): MutationReceipt<null>`
+- `updateFillsAtIndex(elementIds, index, patch: FillPatch | readonly FillPatch[], options?): MutationReceipt<null>`
   - resolves each unique element's current row once, then dispatches one canonical
     new-value batch; callers do not fetch or echo Fill IDs/current values
   - an array must align exactly with unique input element IDs; repeated mutation targets and invalid length/rows reject before writes
   - identical input patches do not create persistent shared properties
-- `shareFillAtIndex(sourceElementId, elementIds, index, options?): void`
+- `shareFillAtIndex(sourceElementId, elementIds, index, options?): MutationReceipt<null>`
   - explicitly links the selected row to the source's canonical Fill property;
-    subsequent property edits propagate to every reference
-  - preserves other rows and skips already shared targets; one Undo restores
-    the previous independent relationships
-- `detachFillsAtIndex(elementIds, index, options?): void`
+    subsequent selected-owner edits remain local overrides; explicit shared-source
+    edits propagate to unmasked consumers
+  - preserves other rows; repeated sharing follows canonical binding evidence and
+    may replace a binding, so it must not be guessed to be a no-op. One Undo
+    restores the previous relationships
+- `detachFillsAtIndex(elementIds, index, options?): MutationReceipt<null>`
   - creates independent canonical Fill children from the selected row's writable
     fields and changes only those references in one transaction
   - Undo/Redo restores/replays the relationship, not an App-owned shadow map
-- `updateFillFieldsBatch(updates: FillFieldsUpdate[], options?): void`
+- `updateFillFieldsBatch(updates: FillFieldsUpdate[], options?): MutationReceipt<null>`
   - one canonical batch for multiple Fill records; each update contains
     `elementId`, `fillId` and only the requested `patch`
   - unknown patch fields reject before dispatch; gradient fields belong inside
@@ -655,8 +687,8 @@ Import boundary:
   - Property Panel matching Fill rows support multi-selection edits, add/remove
     and gradient controls with one Undo per action; mixed-row presentation and
     single-owner canvas gradient handles are unchanged
-- `updateFillFields(elementId, fillId, patch: FillPatch, options?: EVENT_OPTIONS)`
-- `updateFillField(elementId, fillId, key, value, options?: EVENT_OPTIONS)`
+- `updateFillFields(elementId, fillId, patch: FillPatch, options?: EVENT_OPTIONS): MutationReceipt<null>`
+- `updateFillField(elementId, fillId, key, value, options?: EVENT_OPTIONS): MutationReceipt<null>`
   - consume requested new fields only; callers do not provide current Fill data
   - existing canonical Fill records preserve all omitted fields; undefined fields
     are omitted, while explicit `gradient: null` clears the gradient
@@ -670,6 +702,13 @@ Import boundary:
     `false` when the target has no fill or already has the requested color
 
 `strokeApis` (`src/common-apis/strokes.ts`)
+
+- `addStroke(elementId, options?): MutationReceipt<string | null>`
+- `removeStroke(elementId, strokeId, options?): MutationReceipt<boolean>`
+- `updateStrokeFieldsBatch(updates, options?): MutationReceipt<null>`
+  - unavailable removal is distinct from validated unchanged updates
+  - empty patches still validate the requested Stroke; canonical batch rejection
+    retains the original transaction and recovery guarantees
 
 - `getPrimaryStrokeColor(elementId: string): string | null`
 - `updatePrimaryStrokeColor(elementId: string, color: string, options?: EVENT_OPTIONS): boolean`
@@ -853,6 +892,11 @@ available, returning an opaque request-local artifact ID. Backend layout uses
 absolute, row, column or grid constraints and native frame/rect/oval/text/vector
 nodes; it does not invent content. Prepared data is admitted in full before writes.
 See `specs/design-preparation.md` and `specs/editable-text.md`.
+An explicit draft `linearFields` map supplies common world-space linear paint
+for projected or translated pattern faces selected with `materialField`. The
+preparation owner emits independent native gradients; no renderer, live material
+constraint or persistent document format is added. Ordinary native fills remain
+available. Scope, conflicts and unsupported inputs follow the preparation spec.
 
 - `read_design_context`: selection or paginated current hierarchy, bounded summaries
   and explicit truncation; no canonical mutation or geometry-payload copy.
@@ -971,15 +1015,19 @@ the declared return contract. Reads report `execution: complete` and
 with `application: transient`, preserving its non-document meaning. Ordered creation results retain
 IDs/nulls and item indices; mixed success is `partial`, all failed is `failed`,
 and empty input is `no-change`. Structural movement/removal uses the owner's
-changed-item list. Boolean application arrays retain each boolean; false can mean
-unchanged or unavailable and is explicitly unresolved, not proof of a valid target.
-Void return is `application: not-reported`, not a measured change; false/null
-owner receipts are `not-confirmed`. Thrown errors remain failures.
+changed-item list. Primary-color batches return ordered changed/unchanged/unavailable
+statuses; unchanged valid targets are fulfilled, unavailable targets make the
+result partial or failed. Scalar color helpers retain their changed boolean.
+Void return is `application: not-reported`; false/null and empty untyped arrays
+are `not-confirmed`. These ambiguous results have `status: unknown`, not success
+or a valid no-op. Thrown errors remain failures.
 
-Compact batch acknowledgements combine only successful valueless returns and
-retain `application: not-reported`. Identity-bearing, read, failed, partial and
-uncertain receipts remain available in order. Conversation settlement preserves
-failed receipts; confirmed writes alongside failure produce a partial outcome.
+Compact delivery retains unconfirmed receipts and their mutation evidence rather
+than combining them into successful valueless acknowledgements. Identity-bearing,
+read, failed and partial receipts remain available in order. Conversation settlement
+preserves failed receipts; confirmed writes alongside failure produce a partial
+outcome. Failed required measurement/capture delivery is partial independently of
+completed mutation settlement and recovers through inspection without write replay.
 Execution completion is never a visual-quality verdict.
 
 ### Stroke new-value batches
@@ -1018,7 +1066,12 @@ pagination metadata (`elements` stays empty); it accepts no computed fields.
 Default `result: "elements"` preserves metadata and explicitly requested fields.
 Use bounds to locate local corrections even when their parent spans a much larger
 area, then pass the returned IDs to ordinary batch actions. Children queries are
-for hierarchy questions. Every reply states `limit` and `nextOffset` (explicit limits are at most 200;
+for hierarchy questions and accept `parentId`, not `bounds` or `filter`.
+For hierarchy filtering, retain the children result then explicitly use
+`scope: "snapshot"`, its `snapshotId` and `filter`. Selection accepts neither
+hierarchy nor region selectors; IDs requires `elementIds`. Invalid combinations
+reject before source reads or lease allocation and preserve existing references.
+Inline fill queries use the same ID/region contracts. Every reply states `limit` and `nextOffset` (explicit limits are at most 200;
 known IDs without a limit remain together);
 continue with the same bounds/filter, not an invented larger limit. Region
 results cover visible projected bounding boxes, not exact contours or occlusion.

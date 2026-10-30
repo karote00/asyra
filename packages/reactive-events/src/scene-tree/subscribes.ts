@@ -3,6 +3,7 @@ import {
   type RemoveElementEvent,
   type AddElementsEvent,
   type RemoveElementsEvent,
+  type UpdateElementPropertyBindingsEvent,
   type UpdateElementDataEvent,
   type UpdateComputedDataEvent,
   type UpdateComputedDataPatchEvent,
@@ -46,6 +47,11 @@ export const subscribeToMoveElements = createSubscribeEvent<MoveElementsEvent>(
 
 export const subscribeToChangeSubtree =
   createSubscribeEvent<ChangeSubtreeEvent>(EventTypes.CHANGE_SUBTREE)
+
+export const subscribeToUpdateElementPropertyBindings =
+  createSubscribeEvent<UpdateElementPropertyBindingsEvent>(
+    EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS
+  )
 
 export const subscribeToUpdateElementData =
   createSubscribeEvent<UpdateElementDataEvent>(EventTypes.UPDATE_ELEMENT_DATA)

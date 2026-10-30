@@ -1,6 +1,13 @@
 import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
-import { createTestDocumentURL, waitForAppReady } from './test-utils'
+import {
+  createTestDocumentURL,
+  createTestDocumentIdentity,
+  getCoreDocumentDigest,
+  getPersistedDocumentDigest,
+  waitForAppReady
+} from './test-utils'
+import recordedQuery from '../server/__tests__/fixtures/recorded-101/context-query-20261019.json' with { type: 'json' }
 import { prepareLargeNavigationDocument } from './large-navigation-document'
 
 test('queries current regions and composes relative edits with Undo', async ({
@@ -397,19 +404,18 @@ test('retained region fills use current positions, keep Undo, and reject stale s
       )
       input.mappings[0].snapshotId = shared.snapshotId
       input.mappings[0].leaseId = shared.leaseId
-      let conflict = ''
-      try {
-        await runner.run(
-          'Conflicting shared mapping',
-          (runMutation) => action.execute(input, { signal, runMutation }),
-          { signal }
-        )
-      } catch (error) {
-        conflict = String(
-          error instanceof Error && error.cause ? error.cause : error
-        )
-      }
-      const afterConflict = readColors()
+      // A local Fill edit masks the shared source per target; it does not
+      // reject distinct local colors or mutate the common source.
+      await runner.run(
+        'Map local overrides of shared fills',
+        (runMutation) => action.execute(input, { signal, runMutation }),
+        { signal }
+      )
+      const localMapped = readColors()
+      await historyApis.undo()
+      const localUndone = readColors()
+      await historyApis.redo()
+      const localRedone = readColors()
       const refreshed = store.read(
         {
           scope: 'ids',
@@ -434,8 +440,9 @@ test('retained region fills use current positions, keep Undo, and reject stale s
       await historyApis.undo()
       const sharedUndone = readColors()
       return {
-        conflict,
-        afterConflict,
+        localMapped,
+        localUndone,
+        localRedone,
         sharedMapped,
         sharedUndone,
         mapped,
@@ -455,10 +462,11 @@ test('retained region fills use current positions, keep Undo, and reject stale s
   expect(result.afterRejected).toEqual(result.mapped)
   expect(result.stale).toContain('stale')
   expect(result.transferredRows).toBe(0)
-  expect(result.conflict).toMatch(/conflict/i)
-  expect(result.afterConflict).toEqual(['#000000', '#000000', '#000000'])
+  expect(result.localMapped).toEqual(result.mapped)
+  expect(result.localUndone).toEqual(['#000000', '#000000', '#000000'])
+  expect(result.localRedone).toEqual(result.localMapped)
   expect(result.sharedMapped).toEqual(['#abcdef', '#abcdef', '#abcdef'])
-  expect(result.sharedUndone).toEqual(result.afterConflict)
+  expect(result.sharedUndone).toEqual(result.localMapped)
 })
 
 test('retained regions invalidate on ancestor moves, new matches and Undo', async ({
@@ -523,4 +531,158 @@ test('retained regions invalidate on ancestor moves, new matches and Undo', asyn
     }
   })
   expect(evidence).toEqual({ ancestor: true, created: true, undone: true })
+})
+
+test('recovers a rejected recorded query through explicit refinement, local edit, history and durable reload', async ({
+  page
+}) => {
+  const document = createTestDocumentIdentity()
+  await page.goto(document.url)
+  await waitForAppReady(page)
+  await expect
+    .poll(() =>
+      page.evaluate(async () =>
+        (await import('../src/testing/runtime-access'))
+          .getActiveCollaborationHandle()
+          ?.getStatus()
+      )
+    )
+    .toBe('connected')
+  const result = await page.evaluate(async (recorded) => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis, fillApis, historyApis } =
+      await import('../src/common-apis')
+    const { observeDesignChanges } =
+      await import('../src/common-apis/design-review')
+    const { createRetainedDesignContext } =
+      await import('../src/common-apis/retained-design-context')
+    const { createDocumentContextAction } =
+      await import('../src/ai/context-action')
+    const workspace = core.getCurrentWorkspaceId()
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [
+          {
+            type: 'rect',
+            name: 'Query target',
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 20
+          },
+          {
+            type: 'rect',
+            name: 'Untouched sibling',
+            x: 50,
+            y: 0,
+            width: 20,
+            height: 20
+          }
+        ],
+        workspace
+      )
+    )
+    if (!ids[0] || !ids[1]) throw new Error('Missing query fixture')
+    const targets = ids as string[]
+    transactionApis.runTransaction(() =>
+      fillApis.updateFillsAtIndex(targets, 0, { color: '#123456' })
+    )
+    let childReads = 0
+    const source = {
+      getCurrentWorkspaceId: () => core.getCurrentWorkspaceId(),
+      getSelectedElementIds: () => core.getSelectedElementIds(),
+      getElementChildren: (id: string, offset: number, limit: number) => {
+        childReads++
+        return core.getElementChildren(id, offset, limit)
+      },
+      getElementIdsInBounds: core.getElementIdsInBounds.bind(core),
+      getElementMetadata: core.getElementMetadata.bind(core),
+      getElementComputedData: core.getElementComputedData.bind(core)
+    }
+    const store = createRetainedDesignContext(source, observeDesignChanges)
+    const action = createDocumentContextAction(store.read)
+    const signal = new AbortController().signal
+    const colors = () =>
+      targets.map(
+        (id) =>
+          (
+            core.getElementComputedData(id, ['fills'])?.fills as {
+              color: string
+            }[]
+          )[0].color
+      )
+    try {
+      let failure = ''
+      try {
+        await action.execute(recorded as never, { signal })
+      } catch (error) {
+        failure = String(error)
+      }
+      const rejectedReads = childReads
+      const parent = store.read(
+        { scope: 'children', parentId: workspace, delivery: 'reference' },
+        signal
+      )
+      if (!parent.snapshotId) throw new Error('Missing parent reference')
+      const filtered = store.read(
+        {
+          scope: 'snapshot',
+          snapshotId: parent.snapshotId,
+          filter: { name: { equals: 'Query target' } },
+          delivery: 'page'
+        },
+        signal
+      )
+      const selected = filtered.elements.map((row) => row.id)
+      const readsAfterRefinement = childReads
+      transactionApis.runTransaction(() =>
+        fillApis.updateFillsAtIndex(selected, 0, { color: '#abcdef' })
+      )
+      const edited = colors()
+      let stale = ''
+      try {
+        store.read({ scope: 'snapshot', snapshotId: parent.snapshotId }, signal)
+      } catch (error) {
+        stale = String(error)
+      }
+      await historyApis.undo()
+      const undone = colors()
+      await historyApis.redo()
+      const redone = colors()
+      const refreshed = store.read(
+        { scope: 'ids', elementIds: selected, delivery: 'reference' },
+        signal
+      )
+      return {
+        failure,
+        rejectedReads,
+        readsAfterRefinement,
+        selected,
+        targets,
+        edited,
+        undone,
+        redone,
+        stale,
+        refreshed: refreshed.total
+      }
+    } finally {
+      store.dispose()
+    }
+  }, recordedQuery)
+  expect(result.failure).toMatch(/filter.*region.*snapshot/)
+  expect(result.rejectedReads).toBe(0)
+  expect(result.readsAfterRefinement).toBe(1)
+  expect(result.selected).toEqual([result.targets[0]])
+  expect(result.edited).toEqual(['#abcdef', '#123456'])
+  expect(result.undone).toEqual(['#123456', '#123456'])
+  expect(result.redone).toEqual(result.edited)
+  expect(result.stale).toContain('stale')
+  expect(result.refreshed).toBe(1)
+  const digest = await getCoreDocumentDigest(page)
+  await expect
+    .poll(() => getPersistedDocumentDigest(document.fileId))
+    .toEqual(digest)
+  await page.reload()
+  await waitForAppReady(page)
+  await expect.poll(() => getCoreDocumentDigest(page)).toEqual(digest)
 })

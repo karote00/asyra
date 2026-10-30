@@ -47,7 +47,7 @@ const defaultApis: DesignEditApis = {
 const colorValid = (value: unknown) =>
   typeof value === 'string' && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value)
 
-export const createDesignElementEditor =
+export const createDesignElementEditPreparer =
   (apis: DesignEditApis = defaultApis) =>
   (request: DesignElementEdit) => {
     if (
@@ -138,23 +138,32 @@ export const createDesignElementEditor =
       )
         throw new Error(`The target has no primary ${key} to update.`)
     }
-    let changed = false
-    if (name !== undefined && name !== target.name) {
-      apis.rename(elementId, name)
-      changed = true
-    }
-    if (Object.keys(patch).length) {
-      apis.properties(elementId, patch)
-      changed = true
-    }
-    if (fillColor !== undefined)
-      changed = apis.fill(elementId, fillColor) || changed
-    if (strokeColor !== undefined)
-      changed = apis.stroke(elementId, strokeColor) || changed
-    return {
-      status: changed ? 'complete' : 'no-change',
-      compositionId: elementId,
-      appliedElementIds: changed ? [elementId] : []
+    return () => {
+      let changed = false
+      if (name !== undefined && name !== target.name) {
+        apis.rename(elementId, name)
+        changed = true
+      }
+      if (Object.keys(patch).length) {
+        apis.properties(elementId, patch)
+        changed = true
+      }
+      if (fillColor !== undefined)
+        changed = apis.fill(elementId, fillColor) || changed
+      if (strokeColor !== undefined)
+        changed = apis.stroke(elementId, strokeColor) || changed
+      return {
+        status: changed ? 'complete' : 'no-change',
+        compositionId: elementId,
+        appliedElementIds: changed ? [elementId] : []
+      }
     }
   }
+export const createDesignElementEditor = (
+  apis: DesignEditApis = defaultApis
+) => {
+  const prepare = createDesignElementEditPreparer(apis)
+  return (request: DesignElementEdit) => prepare(request)()
+}
+export const prepareDesignElementEdit = createDesignElementEditPreparer()
 export const editDesignElement = createDesignElementEditor()

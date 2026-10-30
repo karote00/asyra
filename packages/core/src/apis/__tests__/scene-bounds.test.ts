@@ -11,6 +11,7 @@ interface TestElement {
     y: number
     width: number
     height: number
+    rotation?: number
   }
 }
 
@@ -41,7 +42,8 @@ const createCoreWithElements = (elements: TestElement[]): Core => {
       {
         get: (key: keyof TestElement) => data[key],
         computed: {
-          get: (key: 'x' | 'y' | 'width' | 'height') => data.bounds?.[key]
+          get: (key: 'x' | 'y' | 'width' | 'height' | 'rotation') =>
+            data.bounds?.[key]
         },
         getAllComputedData: () => data.bounds ?? {}
       }
@@ -326,4 +328,37 @@ describe('Core Scene Tree world-space bounds', () => {
   it('returns no bounds for an empty workspace', () => {
     expect(getBounds([workspace()])).toBeNull()
   })
+})
+
+it('uses analytic rotated oval extents through canonical nested Group world positions', () => {
+  const oval = { x: 10, y: 20, width: 20, height: 10, rotation: Math.PI / 4 }
+  const direct = getBounds([
+    workspace(),
+    element('oval', WORKSPACE_ID, oval, 'oval')
+  ])
+  const nested = getBounds([
+    workspace(),
+    element(
+      'group',
+      WORKSPACE_ID,
+      { x: 100, y: 200, width: 999, height: 999 },
+      EntityTypes.GROUP
+    ),
+    element('oval', 'group', { ...oval, x: -90, y: -180 }, 'oval')
+  ])
+  const cx = 10 + 5 / Math.sqrt(2),
+    cy = 20 + 15 / Math.sqrt(2),
+    r = Math.sqrt(62.5)
+  expect(direct?.minX).toBeCloseTo(cx - r, 10)
+  expect(direct?.maxX).toBeCloseTo(cx + r, 10)
+  expect(direct?.minY).toBeCloseTo(cy - r, 10)
+  expect(direct?.maxY).toBeCloseTo(cy + r, 10)
+  for (const key of ['minX', 'maxX', 'minY', 'maxY'] as const)
+    expect(nested?.[key]).toBeCloseTo(Number(direct?.[key]), 10)
+  expect(
+    getBounds([
+      workspace(),
+      element('oval', WORKSPACE_ID, { ...oval, rotation: NaN }, 'oval')
+    ])
+  ).toBeNull()
 })

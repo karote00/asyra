@@ -1,20 +1,29 @@
+import { isDeepStrictEqual } from 'node:util'
+import { isRecord, isNonBlankString } from '../src/collaboration/wire-values'
+import { DocumentPersistenceError } from './document-persistence-error'
+import {
+  persistenceSpan,
+  type DocumentPersistenceObservation
+} from './document-persistence-observation'
 import type {
   CanonicalChange,
   AppDocumentData,
   ElementRawData,
-  GroupRawData,
-  PropertyComponentRawData
+  GroupRawData
 } from '../src/collaboration/app-protocol-types'
 
 const fail = (message: string): never => {
-  throw new Error(`[document-canonical-reducer] ${message}`)
+  throw new DocumentPersistenceError(
+    'invalid-operation',
+    `[document-canonical-reducer] ${message}`
+  )
 }
 
 const cloneJson = <Value>(value: Value): Value =>
   JSON.parse(JSON.stringify(value)) as Value
 
 const sameJson = (left: unknown, right: unknown): boolean =>
-  JSON.stringify(left) === JSON.stringify(right)
+  isDeepStrictEqual(left, right)
 
 const createWorkingDocument = (document: AppDocumentData): AppDocumentData => ({
   ...document,
@@ -61,143 +70,203 @@ const setContainerChildren = (
   }
 }
 
-const collectPropertyReferences = (
-  value: unknown,
-  knownPropertyIds: ReadonlySet<string>,
-  references: Set<string>
-): void => {
-  if (typeof value === 'string') {
-    if (knownPropertyIds.has(value)) references.add(value)
-    return
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item) =>
-      collectPropertyReferences(item, knownPropertyIds, references)
-    )
-    return
-  }
-  if (typeof value !== 'object' || value === null) return
-  Object.entries(value).forEach(([key, item]) => {
-    if (key === 'id' || key === 'type') return
-    collectPropertyReferences(item, knownPropertyIds, references)
-  })
-}
-
-const removeOwnedProperties = (
-  document: AppDocumentData,
-  elements: readonly (ElementRawData | GroupRawData)[]
-): void => {
-  const knownPropertyIds = new Set(Object.keys(document.props))
-  const pending = elements.flatMap((element) =>
-    Object.values(element.props ?? {})
-  )
-  const removed = new Set<string>()
-  let pendingIndex = 0
-  while (pendingIndex < pending.length) {
-    const propertyId = pending[pendingIndex]
-    pendingIndex += 1
-    if (!propertyId || removed.has(propertyId)) continue
-    const component = document.props[propertyId]
-    if (!component) continue
-    removed.add(propertyId)
-    const references = new Set<string>()
-    collectPropertyReferences(component, knownPropertyIds, references)
-    pending.push(...references)
-  }
-  removed.forEach((propertyId) => {
-    Reflect.deleteProperty(document.props, propertyId)
-  })
-}
-
 const applyPropertyComponents = (
   document: AppDocumentData,
   change: Extract<CanonicalChange, { kind: 'property-components' }>
 ): void => {
-  for (const record of change.records ?? []) {
-    const component = document.props[record.propertyId]
-    if (!component) fail(`property "${record.propertyId}" is missing`)
-    const currentChildIds = (
-      component as unknown as Readonly<Record<string, unknown>>
-    )[record.key]
-    if (
-      !Array.isArray(currentChildIds) ||
-      currentChildIds.some(
-        (childId) => typeof childId !== 'string' || childId.length === 0
-      ) ||
-      new Set(currentChildIds).size !== currentChildIds.length
-    ) {
-      fail(`property "${record.propertyId}" record "${record.key}" is invalid`)
-    }
-    const existingChildIds = currentChildIds as string[]
-    const setEntries = Object.entries(record.set ?? {})
-    const removeIds = [...(record.remove ?? [])]
-    const removeIdSet = new Set(removeIds)
-    if (
-      removeIds.some(
-        (childId) => typeof childId !== 'string' || childId.length === 0
-      ) ||
-      removeIdSet.size !== removeIds.length ||
-      removeIds.some((childId) => !existingChildIds.includes(childId)) ||
-      setEntries.some(
-        ([childId, values]) =>
-          childId.length === 0 ||
-          typeof values !== 'object' ||
-          values === null ||
-          Array.isArray(values) ||
-          removeIdSet.has(childId)
-      )
-    ) {
-      fail(
-        `property "${record.propertyId}" record "${record.key}" has invalid operations`
-      )
-    }
-    const nextChildIds = existingChildIds.filter(
-      (childId) => !removeIdSet.has(childId)
-    )
-    const nextChildIdSet = new Set(nextChildIds)
-    for (const [childId, values] of setEntries) {
-      const detachedValues = cloneJson(values)
-      if (detachedValues.id !== undefined && detachedValues.id !== childId) {
-        fail(`property record "${childId}" has a mismatched id`)
-      }
-      const existingChild = document.props[childId]
-      const nextType = detachedValues.type ?? existingChild?.type
-      if (typeof nextType !== 'string' || nextType.length === 0) {
-        fail(`property record "${childId}" has an invalid type`)
-      }
-      if (
-        existingChild &&
-        detachedValues.type !== undefined &&
-        detachedValues.type !== existingChild.type
-      ) {
-        fail(`property record "${childId}" changes its type`)
-      }
-      document.props[childId] = {
-        ...(existingChild ?? {}),
-        ...detachedValues,
-        id: childId,
-        type: nextType
-      } as PropertyComponentRawData
-      if (!nextChildIdSet.has(childId)) {
-        nextChildIds.push(childId)
-        nextChildIdSet.add(childId)
-      }
-    }
-    removeIds.forEach((childId) => {
-      Reflect.deleteProperty(document.props, childId)
-    })
-    document.props[record.propertyId] = {
-      ...component,
-      [record.key]: nextChildIds
-    } as PropertyComponentRawData
+  for (const component of change.creations ?? []) {
+    if (document.props[component.id])
+      fail(`duplicate property "${component.id}"`)
+    document.props[component.id] = cloneJson(component)
   }
   for (const update of change.updates) {
     const component = document.props[update.propertyId]
     if (!component) fail(`property "${update.propertyId}" is missing`)
+    if (
+      component.inheritance ||
+      ['id', 'type', 'inheritance', 'sharedSource'].some((key) =>
+        Object.hasOwn(update.values, key)
+      )
+    )
+      fail(
+        `property "${update.propertyId}" requires a canonical layer operation`
+      )
     document.props[update.propertyId] = {
       ...component,
       ...cloneJson(update.values)
-    } as PropertyComponentRawData
+    }
+  }
+  for (const item of change.layers ?? []) {
+    const component = document.props[item.propertyId]
+    if (!component) fail(`property "${item.propertyId}" is missing`)
+    let next = cloneJson(component)
+    for (const edit of item.changes) {
+      if (edit.layer === 'sharedSource') {
+        if (
+          edit.key !== 'sharedSource' ||
+          next.inheritance ||
+          (edit.state.present && edit.state.value !== true)
+        )
+          fail(`invalid shared source layer "${item.propertyId}"`)
+        if (edit.state.present) next.sharedSource = true
+        else Reflect.deleteProperty(next, 'sharedSource')
+      } else {
+        if (
+          !isRecord(next.inheritance) ||
+          !isRecord(next.inheritance[edit.layer])
+        )
+          fail(`property "${item.propertyId}" has no ${edit.layer} layer`)
+        const inheritance = next.inheritance as Record<string, unknown>
+        const layer = {
+          ...(inheritance[edit.layer] as Record<string, unknown>)
+        }
+        if (edit.state.present)
+          Object.defineProperty(layer, edit.key, {
+            value: cloneJson(edit.state.value),
+            enumerable: true,
+            writable: true,
+            configurable: true
+          })
+        else Reflect.deleteProperty(layer, edit.key)
+        next = { ...next, inheritance: { ...inheritance, [edit.layer]: layer } }
+      }
+    }
+    document.props[item.propertyId] = next
+  }
+  const removed = new Set<string>()
+  for (const component of change.removals ?? []) {
+    if (
+      removed.has(component.id) ||
+      !sameJson(document.props[component.id], component)
+    )
+      fail(`stale or duplicate property retirement "${component.id}"`)
+    removed.add(component.id)
+  }
+  for (const id of removed) Reflect.deleteProperty(document.props, id)
+}
+
+const validatePropertyLinks = (
+  document: AppDocumentData,
+  changes: readonly CanonicalChange[]
+): void => {
+  const propertyIds = new Set<string>()
+  const elementIds = new Set<string>()
+  const invalidatedIds = new Set<string>()
+  for (const change of changes) {
+    if (change.kind === 'element-property-bindings')
+      change.changes.forEach(({ id }) => elementIds.add(id))
+    if (change.kind !== 'property-components') continue
+    change.creations?.forEach(({ id }) => propertyIds.add(id))
+    change.removals?.forEach(({ id }) => invalidatedIds.add(id))
+    change.layers?.forEach(({ propertyId, changes: edits }) => {
+      propertyIds.add(propertyId)
+      if (
+        edits.some(
+          (edit) => edit.layer === 'sharedSource' && !edit.state.present
+        )
+      )
+        invalidatedIds.add(propertyId)
+    })
+  }
+  if (invalidatedIds.size > 0) {
+    for (const element of Object.values(document.sceneTree.elements))
+      if (
+        Object.values(element.props ?? {}).some((id) => invalidatedIds.has(id))
+      )
+        elementIds.add(element.id)
+    for (const component of Object.values(document.props)) {
+      const inheritance = component.inheritance
+      if (
+        isRecord(inheritance) &&
+        (invalidatedIds.has(inheritance.sourceId as string) ||
+          (isRecord(inheritance.childBindings) &&
+            Object.entries(inheritance.childBindings).some(
+              ([slot, id]) =>
+                invalidatedIds.has(slot) || invalidatedIds.has(id as string)
+            )))
+      )
+        propertyIds.add(component.id)
+    }
+  }
+  for (const elementId of elementIds) {
+    // Ordered binding/removal application already checks existence. Only live
+    // owners have outgoing links at the end of a persistence window.
+    const element = document.sceneTree.elements[elementId]
+    if (!element) continue
+    for (const id of Object.values(element.props ?? {}))
+      if (!document.props[id])
+        fail(`element "${element.id}" references missing property "${id}"`)
+  }
+  for (const propertyId of propertyIds) {
+    const component = document.props[propertyId]
+    if (!component) continue
+    if (component.sharedSource !== undefined && component.sharedSource !== true)
+      fail(`invalid shared source marker "${component.id}"`)
+    if (component.inheritance === undefined) continue
+    const inheritance = component.inheritance
+    if (
+      !isRecord(inheritance) ||
+      !isNonBlankString(inheritance.sourceId) ||
+      !isRecord(inheritance.overrides) ||
+      !isRecord(inheritance.childBindings) ||
+      Object.keys(inheritance).some(
+        (key) => !['sourceId', 'overrides', 'childBindings'].includes(key)
+      ) ||
+      Object.keys(component).some(
+        (key) => !['id', 'type', 'inheritance'].includes(key)
+      )
+    )
+      fail(`invalid property inheritance "${component.id}"`)
+    const { sourceId, childBindings } = inheritance as {
+      sourceId: string
+      childBindings: Record<string, unknown>
+    }
+    const source = document.props[sourceId]
+    if (
+      !source ||
+      source.id === component.id ||
+      source.type !== component.type ||
+      source.inheritance !== undefined ||
+      source.sharedSource !== true
+    )
+      fail(`invalid property source "${component.id}"`)
+    const localIds = new Set<string>()
+    for (const [slot, id] of Object.entries(childBindings)) {
+      if (
+        !isNonBlankString(id) ||
+        !document.props[id] ||
+        !document.props[slot] ||
+        document.props[slot].type !== document.props[id].type ||
+        localIds.has(id)
+      )
+        fail(`invalid property binding "${component.id}:${slot}"`)
+      localIds.add(id as string)
+    }
+  }
+}
+
+const applyElementPropertyBindings = (
+  document: AppDocumentData,
+  change: Extract<CanonicalChange, { kind: 'element-property-bindings' }>
+): void => {
+  for (const entry of change.changes) {
+    const element = getElement(document, entry.id)
+    const properties = { ...element.props }
+    for (const binding of entry.changes) {
+      if (properties[binding.key] !== binding.before)
+        fail(`stale element property binding "${entry.id}:${binding.key}"`)
+      const before = document.props[binding.before],
+        after = document.props[binding.after]
+      if (!before || !after || before.type !== after.type)
+        fail(`invalid element property binding "${entry.id}:${binding.key}"`)
+      Object.defineProperty(properties, binding.key, {
+        value: binding.after,
+        enumerable: true,
+        writable: true,
+        configurable: true
+      })
+    }
+    document.sceneTree.elements[entry.id] = { ...element, props: properties }
   }
 }
 
@@ -297,10 +366,7 @@ const applySubtreeRemoval = (
   if (!sameJson(expectedRootParentChildren, rootParentChildrenAfter)) {
     fail(`subtree root parent evidence for "${elementId}" is stale`)
   }
-  removeOwnedProperties(
-    document,
-    removed.map(({ data }) => data)
-  )
+
   removed.forEach(({ elementId: removedId }) => {
     Reflect.deleteProperty(document.sceneTree.elements, removedId)
   })
@@ -336,16 +402,17 @@ const applyElementCreation = (
   document: AppDocumentData,
   change: Extract<CanonicalChange, { kind: 'element-creation' }>
 ): void => {
-  const parentChildren = [...getContainerChildren(document, change.parentId)]
-  if (change.index < 0 || change.index > parentChildren.length) {
-    fail('element creation index is invalid')
-  }
   const elementIds = new Set<string>()
-  for (const element of change.elements) {
+  const entriesByParent = new Map<string, (typeof change.entries)[number][]>()
+  for (const entry of change.entries) {
+    const { data: element, parentId } = entry
     if (elementIds.has(element.id) || document.sceneTree.elements[element.id]) {
       fail(`created element "${element.id}" already exists`)
     }
     elementIds.add(element.id)
+    const entries = entriesByParent.get(parentId) ?? []
+    entries.push(entry)
+    entriesByParent.set(parentId, entries)
   }
   for (const component of change.properties) {
     if (document.props[component.id]) {
@@ -353,11 +420,28 @@ const applyElementCreation = (
     }
     document.props[component.id] = cloneJson(component)
   }
-  for (const element of change.elements) {
-    document.sceneTree.elements[element.id] = cloneJson(element)
+  for (const { data } of change.entries) {
+    document.sceneTree.elements[data.id] = cloneJson(data)
   }
-  parentChildren.splice(change.index, 0, ...elementIds)
-  setContainerChildren(document, change.parentId, parentChildren)
+  for (const [parentId, entries] of entriesByParent) {
+    const children = [...getContainerChildren(document, parentId)]
+    const usedIndexes = new Set<number>()
+    for (const { data, index } of entries.sort(
+      (left, right) => left.index - right.index
+    )) {
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index > children.length ||
+        usedIndexes.has(index)
+      ) {
+        fail('element creation index is invalid')
+      }
+      usedIndexes.add(index)
+      children.splice(index, 0, data.id)
+    }
+    setContainerChildren(document, parentId, children)
+  }
 }
 
 const applyElementRemoval = (
@@ -384,10 +468,6 @@ const applyElementRemoval = (
       fail(`element removal location for "${elementId}" is stale`)
     }
   }
-  removeOwnedProperties(
-    document,
-    change.removals.map(({ data }) => data)
-  )
   change.removals.forEach(({ data }) => {
     Reflect.deleteProperty(document.sceneTree.elements, data.id)
   })
@@ -402,13 +482,23 @@ const applyElementRemoval = (
 
 export const applyCanonicalChangesToDocument = (
   document: AppDocumentData,
-  changes: readonly CanonicalChange[]
+  changes: readonly CanonicalChange[],
+  observation?: DocumentPersistenceObservation
 ): AppDocumentData => {
-  const working = createWorkingDocument(document)
+  const endPreparation = persistenceSpan(observation, 'working-map-preparation')
+  let working: AppDocumentData
+  try {
+    working = createWorkingDocument(document)
+  } finally {
+    endPreparation()
+  }
   for (const change of changes) {
     switch (change.kind) {
       case 'property-components':
         applyPropertyComponents(working, change)
+        break
+      case 'element-property-bindings':
+        applyElementPropertyBindings(working, change)
         break
       case 'element-data':
         applyElementData(working, change)
@@ -430,5 +520,16 @@ export const applyCanonicalChangesToDocument = (
         break
     }
   }
+  if (
+    changes.some(
+      (change) =>
+        change.kind === 'element-property-bindings' ||
+        (change.kind === 'property-components' &&
+          (change.creations !== undefined ||
+            change.removals !== undefined ||
+            change.layers !== undefined))
+    )
+  )
+    validatePropertyLinks(working, changes)
   return working
 }

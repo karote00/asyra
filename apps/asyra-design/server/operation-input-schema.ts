@@ -7,9 +7,15 @@ const { isEqual } = lodash
 // again here: this consumes the advertised model-facing operation schema.
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
-export { operationInputIssue } from '../src/ai/tool-schema'
+export {
+  operationInputIssue,
+  operationInputIssues,
+  formatOperationInputIssues,
+  type OperationInputIssue,
+  operationContractIssue
+} from '../src/ai/tool-schema'
 
-// Native Code Mode renders union branches without their sibling constraints.
+// Native schema rendering projects union branches without their sibling constraints.
 // Distribute object constraints into each alternative before registration; local
 // admission still uses the original schema. Never alter the caller's registry.
 const intersectSchemas = (left: unknown, right: unknown): unknown => {
@@ -93,10 +99,17 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
     const branches = result[mode]
     if (!Array.isArray(branches)) continue
     if (mode !== 'allOf' && record(result.properties)) {
-      const { [mode]: _branches, $defs, definitions, ...common } = result
+      const {
+        [mode]: _branches,
+        $defs,
+        definitions,
+        examples,
+        ...common
+      } = result
       return {
         ...($defs ? { $defs } : {}),
         ...(definitions ? { definitions } : {}),
+        ...(examples !== undefined ? { examples } : {}),
         [mode]: compactNativeAlternatives(
           mode,
           branches.map((branch) =>

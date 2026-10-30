@@ -93,6 +93,15 @@ describe('children-map property component', () => {
       .constructor as new () => typeof core.deps.props
     const createChild = (value: number) =>
       ({
+        data: {
+          id: 'shared-point',
+          type: PropertyTypes.VECTOR_POINT,
+          kind: 'anchor',
+          x: value,
+          y: 0,
+          anchorType: 'sharp',
+          handleMode: 'none'
+        },
         get: (key: string) => {
           if (key === 'id') return 'shared-point'
           if (key === 'type') return PropertyTypes.VECTOR_POINT
@@ -133,6 +142,15 @@ describe('children-map property component', () => {
       .constructor as new () => typeof core.deps.props
     const manager = new PropsManager()
     const child = {
+      data: {
+        id: 'active-child',
+        type: PropertyTypes.VECTOR_POINT,
+        kind: 'anchor',
+        x: 0,
+        y: 0,
+        anchorType: 'sharp',
+        handleMode: 'none'
+      },
       get: (key: string) => {
         if (key === 'id') return 'active-child'
         if (key === 'type') return PropertyTypes.VECTOR_POINT

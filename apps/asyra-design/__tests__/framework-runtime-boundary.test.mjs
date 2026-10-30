@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import path from 'node:path'
@@ -211,7 +212,7 @@ for (const specifier of [
   })
 }
 
-test('the public Group bounds entrypoint has no runtime dependencies', async () => {
+test('the public Group bounds entrypoint loads only its canonical pure geometry dependency', async () => {
   const entry = fileURLToPath(import.meta.resolve('@asyra/preset/group-bounds'))
   const result = await build({
     configFile: false,
@@ -227,14 +228,62 @@ test('the public Group bounds entrypoint has no runtime dependencies', async () 
   const chunks = results
     .flatMap((item) => item.output)
     .filter((item) => item.type === 'chunk')
+  const utilsDirectory = path.dirname(
+    fileURLToPath(import.meta.resolve('@asyra/utils'))
+  )
+  const geometryEntry = path.join(utilsDirectory, 'render/geometry-bounds.js')
+  // Exact owner closure: a new dependency must be reviewed, not silently allowed
+  // merely because it lives somewhere in Utils. The unused point transform
+  // is tree-shaken from this consumer; the ellipse calculation remains shared.
   assert.deepEqual(
-    chunks.flatMap((chunk) => Object.keys(chunk.modules)),
-    [entry]
+    chunks.flatMap((chunk) => Object.keys(chunk.modules)).sort(),
+    [entry, geometryEntry].sort()
+  )
+  assert.equal(
+    fileURLToPath(import.meta.resolve('@asyra/utils/geometry-bounds')),
+    geometryEntry
+  )
+  const rootGeometry = await import('@asyra/utils')
+  const narrowGeometry = await import('@asyra/utils/geometry-bounds')
+  assert.equal(
+    narrowGeometry.calculateEllipseBounds,
+    rootGeometry.calculateEllipseBounds,
+    'Public entries must share one calculation owner'
   )
   assert.deepEqual(
     chunks.flatMap((chunk) => [...chunk.imports, ...chunk.dynamicImports]),
     []
   )
+  assert.equal(chunks.length, 1)
+  const { deriveGroupBounds } = await import(
+    `data:text/javascript;base64,${Buffer.from(chunks[0].code).toString('base64')}`
+  )
+  assert.deepEqual(deriveGroupBounds([]), { x: 0, y: 0, width: 0, height: 0 })
+  assert.deepEqual(
+    deriveGroupBounds([{ x: 10, y: 20, width: -15, height: 10 }]),
+    { x: -5, y: 20, width: 15, height: 10 }
+  )
+  assert.throws(
+    () => deriveGroupBounds([{ x: 0, y: NaN, width: 5, height: 5 }]),
+    /finite/
+  )
+  const oval = Object.freeze({
+    type: 'oval',
+    x: 10,
+    y: 20,
+    width: 20,
+    height: 10,
+    rotation: Math.PI / 4
+  })
+  const bounds = deriveGroupBounds([oval])
+  const radius = Math.sqrt(62.5)
+  for (const [key, expected] of Object.entries({
+    x: 10 + 5 / Math.sqrt(2) - radius,
+    y: 20 + 15 / Math.sqrt(2) - radius,
+    width: 2 * radius,
+    height: 2 * radius
+  }))
+    assert.ok(Math.abs(bounds[key] - expected) < 1e-10, key)
 })
 
 for (const configFileName of [

@@ -390,6 +390,14 @@ App-protocol module with no framework dependency. Decode reconstructs the
 in-memory App publication and enforces codec integrity; it does not authorize
 a second recursive product-schema validation pass.
 
+Exact-record retirement compares the durable JSON value, including every field,
+reference and array position. Binary transport can preserve signed zero while
+JSON checkpoints represent both `-0` and `0` as `0`; those two numeric values
+must compare equally without numeric tolerance, dropped fields or inferred
+retirement. Nonzero changes, type differences, missing fields, reordered arrays
+and duplicate retirement remain conflicts. A failed retirement leaves the
+previous durable document unchanged.
+
 If one batch cannot be applied, the backend does not acknowledge a sequence
 past the failure. The socket server retains the exact unacknowledged batch and
 retries it with the same identities. Later batches cannot overtake it.

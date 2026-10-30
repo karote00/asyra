@@ -1,0 +1,71 @@
+{
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1793010611909",
+  "provider": "21554202-aaef-4283-b430-d00e8244748c.jsonl",
+  "calls": [
+    {
+      "index": 29,
+      "tool": "describe_design_apis",
+      "input": {
+        "names": [
+          "execute_design_batch"
+        ],
+        "view": "usage"
+      },
+      "inputSha256": "278a0259d25ba79aab38683f170cc3035a7ee40a1b2f429199df08d3fb9bcdc4",
+      "outputSha256": "bd22d9ca49827814a733291d8568eaf786a744061cae653079e221e7f2fd57eb",
+      "replyBytes": 8082
+    },
+    {
+      "index": 30,
+      "tool": "describe_design_apis",
+      "input": {
+        "names": [
+          "execute_design_batch"
+        ],
+        "schemaPaths": [
+          "/properties/operations",
+          "/properties/response"
+        ]
+      },
+      "inputSha256": "d28e8619337d0fc0c86595a2ad4de265278ba0f2f46c6722f82ff9e7c44ac2f9",
+      "outputSha256": "84c1c2f20e7a514efbed88540ae8608ea1d14efed6773cf0b10cca6123fcd759",
+      "replyBytes": 12706
+    },
+    {
+      "index": 31,
+      "tool": "describe_design_apis",
+      "input": {
+        "operations": [
+          "element.deleteElements"
+        ],
+        "view": "full"
+      },
+      "inputSha256": "abd4a79cf999db2e51806b461d96e7123e7cdb7564391c43887ad5cd2d731146",
+      "outputSha256": "5441d7a018f109f7bbbd1757674cd62bcc02f4c82d373eef5fcf1fa42da3dc57",
+      "replyBytes": 8476
+    },
+    {
+      "index": 32,
+      "tool": "execute_design_batch",
+      "input": {
+        "operations": [
+          {
+            "name": "api_element_deleteElements",
+            "arguments": {},
+            "target": {
+              "field": "elementIds",
+              "artifactId": "83608e53-565b-4c66-9e7b-f243af2702c3",
+              "keyPrefix": "roofFin0"
+            }
+          }
+        ],
+        "inspection": "defer",
+        "message": "移除被遮蔽卻誤顯的後方塔冠構件"
+      },
+      "inputSha256": "3c30d8f056fa1efc1856e506ee46e7d12fa43e59121d4b1ab435abfd4460d465",
+      "outputSha256": "ea268b619d416d700d5f501135a490e285682aba1c12bf3d9321df2bc1eedf40",
+      "replyBytes": 717
+    }
+  ],
+  "baselineReplyBytes": 29264
+}

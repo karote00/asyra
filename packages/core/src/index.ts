@@ -516,3 +516,13 @@ export type {
   HistoryGroupStatus
 } from '@asyra/factory'
 export type { HistoryGroupAPIs } from './types/history.js'
+
+export type {
+  ElementPropertyIntentAPIs,
+  ElementPropertyTarget,
+  ElementPropertyOverride,
+  ElementPropertyOverrideReset,
+  ElementPropertySharing
+} from './types/property-intents.js'
+
+export type { PropertyMutationReceipt } from './types/property-mutation-receipt.js'

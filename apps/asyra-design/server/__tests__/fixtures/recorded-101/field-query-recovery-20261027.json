@@ -1,0 +1,37 @@
+{
+  "source": {
+    "run": "1793098230821",
+    "provider": "20b546fa-9e48-4f29-a607-0d1b424a50e8"
+  },
+  "baseline": {
+    "handoffBytes": 30676,
+    "mixedContentBytes": 36623,
+    "firstEnvelopeBytes": 23257
+  },
+  "usage": {
+    "payload": "63-input.json",
+    "sha256": "fc9265aee38b4178781cb12d6623b52c2a3f124a1dd82661b925d881307af91d",
+    "bytes": 99,
+    "input": {
+      "names": [
+        "discover_knowledge",
+        "select_design_references",
+        "define_design_criteria"
+      ],
+      "view": "usage"
+    }
+  },
+  "query": {
+    "payload": "74-input.json",
+    "sha256": "9f28e844a76234ff33ff137d4fc525cd007e67d855393dc1f4f7180b9605cb08",
+    "bytes": 184,
+    "input": {
+      "names": ["select_design_references", "prepare_and_apply_design"],
+      "schemaPaths": [
+        "/properties/referenceImageIndexes",
+        "/properties/requirementRevision",
+        "/properties/referenceDecisions"
+      ]
+    }
+  }
+}

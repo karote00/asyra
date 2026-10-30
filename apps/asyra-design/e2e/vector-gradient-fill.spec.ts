@@ -145,6 +145,8 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
     page.evaluate(async (ids) => {
       const { core } = await import('../src/testing/runtime-access')
       return {
+        hoveredElementId: core.getSystemProperty('hoveredElementId'),
+        selectedIds: core.getSelectedElementIds(),
         zoom: core.getSystemProperty('zoom'),
         viewport: core.getSystemProperty('viewportPosition'),
         elements: ids.map((id) => {
@@ -239,11 +241,22 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
       (await snapshot()).elements.map((element) => element.fills?.[0]?.opacity)
     )
     .toEqual([1, 1, 1, 1])
-  await expect
-    .poll(async () =>
-      (await page.locator('canvas').first().screenshot()).equals(before)
+  try {
+    await expect
+      .poll(async () =>
+        (await page.locator('canvas').first().screenshot()).equals(before)
+      )
+      .toBe(true)
+  } finally {
+    await page
+      .locator('canvas')
+      .first()
+      .screenshot({ path: testInfo.outputPath('after-undo.png') })
+    await writeFile(
+      testInfo.outputPath('after-undo.json'),
+      JSON.stringify(await snapshot(), null, 2)
     )
-    .toBe(true)
+  }
   await page.keyboard.press('Meta+Shift+z')
   await expect
     .poll(async () =>

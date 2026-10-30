@@ -1,0 +1,130 @@
+{
+  "requestId": "f3691d71-6405-4dfc-928f-51b3dccf0858",
+  "providerUsage": {
+    "event": "ai_request_usage",
+    "schemaVersion": 2,
+    "requestId": "f3691d71-6405-4dfc-928f-51b3dccf0858",
+    "sequence": 3701,
+    "provider": "local-codex",
+    "model": "gpt-6-astra",
+    "conversationId": "conversation-d632ecfd-7b80-4491-a189-4d551e88daf7",
+    "turnId": "conversation-d632ecfd-7b80-4491-a189-4d551e88daf7:turn:1",
+    "attempt": 1,
+    "finishedAt": "2026-10-18T11:51:33.869Z",
+    "durationMs": 495478.644,
+    "timing": {
+      "observedToolAndResearchMs": 26933.24133300048,
+      "outsideToolAndResearchMs": 468545.4026669995
+    },
+    "transport": {
+      "sentBytes": 4437031,
+      "receivedBytes": 8115500
+    },
+    "recordingFailures": 0,
+    "outcome": "completed",
+    "usageStatus": "reported",
+    "tokens": {
+      "inputTokens": 1292213,
+      "cachedInputTokens": 1200000,
+      "outputTokens": 17316,
+      "reasoningOutputTokens": 5240,
+      "totalTokens": 1309529
+    }
+  },
+  "phases": [
+    {
+      "name": "Reference, knowledge and construction planning",
+      "fromSeconds": 0.0,
+      "toSeconds": 96.01854004200001,
+      "wallSeconds": 96.01854004200001,
+      "toolSeconds": 0.09015933500000392,
+      "researchSeconds": 2.4544089170000225,
+      "outsideObservedSeconds": 93.47397178999998,
+      "toolInvocations": 12
+    },
+    {
+      "name": "Base, tiers and crown construction",
+      "fromSeconds": 96.01854004200001,
+      "toSeconds": 193.434122625,
+      "wallSeconds": 97.41558258299997,
+      "toolSeconds": 15.417372499999997,
+      "researchSeconds": 0.0,
+      "outsideObservedSeconds": 81.99821008299999,
+      "toolInvocations": 4
+    },
+    {
+      "name": "First visual review and edit discovery",
+      "fromSeconds": 193.434122625,
+      "toSeconds": 219.70380962500002,
+      "wallSeconds": 26.269687000000033,
+      "toolSeconds": 0.022787040000024718,
+      "researchSeconds": 0.0,
+      "outsideObservedSeconds": 26.24689996000001,
+      "toolInvocations": 6
+    },
+    {
+      "name": "Material repair, ornaments and base completion",
+      "fromSeconds": 219.70380962500002,
+      "toSeconds": 325.28029791700004,
+      "wallSeconds": 105.576488292,
+      "toolSeconds": 3.2269038750000765,
+      "researchSeconds": 0.0,
+      "outsideObservedSeconds": 102.34958441699992,
+      "toolInvocations": 4
+    },
+    {
+      "name": "Mechanical and second visual review",
+      "fromSeconds": 325.28029791700004,
+      "toSeconds": 383.900411584,
+      "wallSeconds": 58.62011366699997,
+      "toolSeconds": 0.136122376000043,
+      "researchSeconds": 0.0,
+      "outsideObservedSeconds": 58.483991290999924,
+      "toolInvocations": 7
+    },
+    {
+      "name": "Continuous reflections and ordering",
+      "fromSeconds": 383.900411584,
+      "toSeconds": 430.51139029199993,
+      "wallSeconds": 46.61097870799992,
+      "toolSeconds": 5.330714415999944,
+      "researchSeconds": 0.0,
+      "outsideObservedSeconds": 41.28026429199998,
+      "toolInvocations": 3
+    },
+    {
+      "name": "Final scoped evidence and acceptance",
+      "fromSeconds": 430.51139029199993,
+      "toSeconds": 495.478644,
+      "wallSeconds": 64.96725370800006,
+      "toolSeconds": 0.25470237199985424,
+      "researchSeconds": 0.0,
+      "outsideObservedSeconds": 64.7125513360002,
+      "toolInvocations": 10
+    }
+  ],
+  "toolCounts": {
+    "discover_knowledge": 1,
+    "read_knowledge": 1,
+    "describe_design_apis": 13,
+    "validate_reference_images": 1,
+    "define_design_criteria": 1,
+    "select_design_references": 2,
+    "record_design_facts": 2,
+    "prepare_and_apply_design": 6,
+    "review_drawing": 10,
+    "execute_design_batch": 2,
+    "read_design_checks": 2,
+    "read_design_context": 2,
+    "review_design": 3
+  },
+  "toolUnionMs": 24478.761913999944,
+  "inputBytes": 1038747,
+  "outputBytes": 509059,
+  "definitionOutputBytes": 376451,
+  "constructionInputBytes": 1013123,
+  "unusableCalls": [],
+  "visualCaptureCalls": 4,
+  "visualJudgmentCalls": 5,
+  "visualRebindCalls": 1
+}

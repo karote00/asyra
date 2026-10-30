@@ -1,5 +1,8 @@
 import { expect, it, vi } from 'vitest'
-import { createAiActionRegistry } from '@asyra/ai-agent-runtime'
+import {
+  createAiActionRegistry,
+  AiTransactionSettlementError
+} from '@asyra/ai-agent-runtime'
 import { createLocalOperationTools } from '../../../server/local-operation-tools'
 import { prepareOperationBatch } from '../../../server/local-operation-batch'
 vi.mock('../../contexts', () => ({ default: {} }))
@@ -7,12 +10,14 @@ vi.mock('../../common-apis/fills', () => ({ fillApis: {} }))
 import { createRetainedDesignContext } from '../../common-apis/retained-design-context'
 import { createRetainedFillAction as createAction } from '../retained-fill-action'
 
-const createRetainedFillAction = (
-  queries: Parameters<typeof createAction>[0],
-  apis: Omit<NonNullable<Parameters<typeof createAction>[1]>, 'owners'> & {
-    owners?: (ids: string[]) => string[]
-  }
-) => createAction(queries, { owners: () => ['a', 'b', 'c'], ...apis })
+const changedReceipt = (updates: readonly { elementId: string }[]) => ({
+  value: null,
+  acceptedIds: updates.map((item) => item.elementId),
+  unavailableIds: [],
+  changed: updates.length > 0
+})
+
+const createRetainedFillAction = createAction
 const targets = (ids: readonly string[]) =>
   ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` }))
 const input = {
@@ -49,7 +54,7 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     expect(admitted).toBe(true)
     return snapshot
   })
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction({ get } as never, {
     targets,
     metadata: () => ({ lock: false }),
@@ -67,12 +72,12 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     { elementId: 'b', fillId: 'fill-b', patch: { color: '#808080' } },
     { elementId: 'c', fillId: 'fill-c', patch: { color: '#ffffff' } }
   ])
-  expect(action.revision).toBe(4)
+  expect(action.revision).toBe(7)
   expect(result).toMatchObject({ appliedCount: 3 })
 })
 it('rejects a reference invalidated while queued and performs no write', async () => {
   let stale = false
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction(
     {
       get: () => {
@@ -96,7 +101,7 @@ it('rejects a reference invalidated while queued and performs no write', async (
 it.each(['lock', 'missing', 'domain', 'nonfinite'])(
   'rejects %s before any write',
   async (reason) => {
-    const update = vi.fn()
+    const update = vi.fn(changedReceipt)
     const data = structuredClone(snapshot)
     if (reason === 'nonfinite') data.result.elements[2].properties.x = NaN
     const action = createRetainedFillAction({ get: () => data } as never, {
@@ -117,7 +122,7 @@ it.each(['lock', 'missing', 'domain', 'nonfinite'])(
 )
 
 it('rejects a locked ancestor before writing descendants', async () => {
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction({ get: () => snapshot } as never, {
     targets,
     metadata: (id) =>
@@ -135,7 +140,7 @@ it('discovers the mapping by operation and admits the advertised input through t
   const action = createRetainedFillAction({ get: () => snapshot } as never, {
     targets,
     metadata: () => ({}),
-    update: vi.fn()
+    update: vi.fn(changedReceipt)
   })
   registry.register(action)
   const tools = createLocalOperationTools(
@@ -200,8 +205,9 @@ it.each([false, true])(
       },
       () => () => undefined
     )
-    const update = vi.fn(() => {
+    const update = vi.fn((updates: readonly { elementId: string }[]) => {
       expect(reads).toBe(10)
+      return changedReceipt(updates)
     })
     const action = createRetainedFillAction(queries, {
       targets,
@@ -259,7 +265,7 @@ it('rejects foreign retained inputs before writing and preserves the owning requ
     { scope: 'ids', elementIds: ['a'], fields: ['x'], delivery: 'reference' },
     owner
   )
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction(queries, {
     targets,
     metadata: () => ({ lock: false }),
@@ -294,7 +300,7 @@ it.each([false, true])(
     const action = createRetainedFillAction({ get, releaseLease } as never, {
       targets,
       metadata: () => ({ lock: locked }),
-      update: vi.fn()
+      update: vi.fn(changedReceipt)
     })
     const pending = action.execute(
       { mappings: [{ ...input.mappings[0], leaseId: 'caller-lease' }] },
@@ -365,7 +371,7 @@ it('refines retained candidates into one canonical plural edit', async () => {
       observation: { selectionExecutions: 0, refinementExecutions: 1 }
     })
     const released = vi.spyOn(queries, 'releaseLease')
-    const update = vi.fn()
+    const update = vi.fn(changedReceipt)
     const edit = createRetainedFillAction(queries, {
       targets: (selectedIds) =>
         selectedIds.map((elementId) => ({
@@ -418,14 +424,13 @@ it('refines retained candidates into one canonical plural edit', async () => {
   }
 })
 
-it('exports the canonical shared-property owners for post-write mechanical checks', async () => {
-  const owners = vi.fn(() => ['a', 'b', 'c', 'shared-outside-query'])
-  const update = vi.fn()
+it('maps distinct local colors on one shared source and reports only selected owners', async () => {
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction({ get: () => snapshot } as never, {
-    targets,
+    targets: (ids) =>
+      ids.map((elementId) => ({ elementId, fillId: 'shared-fill' })),
     metadata: () => ({ lock: false }),
-    update,
-    owners
+    update
   })
   const result = await action.execute(input, {
     signal: new AbortController().signal,
@@ -434,12 +439,15 @@ it('exports the canonical shared-property owners for post-write mechanical check
   expect(result).toMatchObject({
     mutationScope: {
       complete: true,
-      elementIds: ['a', 'b', 'c', 'shared-outside-query'],
+      elementIds: ['a', 'b', 'c'],
       removedElementIds: []
     }
   })
-  expect(owners).toHaveBeenCalledExactlyOnceWith(['fill-a', 'fill-b', 'fill-c'])
-  expect(update).toHaveBeenCalledTimes(1)
+  expect(update).toHaveBeenCalledExactlyOnceWith([
+    { elementId: 'a', fillId: 'shared-fill', patch: { color: '#000000' } },
+    { elementId: 'b', fillId: 'shared-fill', patch: { color: '#808080' } },
+    { elementId: 'c', fillId: 'shared-fill', patch: { color: '#ffffff' } }
+  ])
 })
 
 // Recorded mapping receipts contained 3,584 and 1,600 affected identities.
@@ -464,12 +472,11 @@ it.each([3584, 1600])(
       () => () => undefined
     )
     const signal = new AbortController().signal
-    const update = vi.fn()
+    const update = vi.fn(changedReceipt)
     const action = createAction(queries, {
       metadata: () => ({ lock: false }),
       targets,
-      update,
-      owners: () => ids
+      update
     })
     try {
       const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
@@ -585,8 +592,9 @@ it.each(['capacity', 'cancel'] as const)(
       throw new Error('Retained query capacity reserved by pending consumers')
     })
     const get = vi.fn(() => snapshot)
-    const update = vi.fn(() => {
+    const update = vi.fn((updates: readonly { elementId: string }[]) => {
       if (failure === 'cancel') controller.abort()
+      return changedReceipt(updates)
     })
     const action = createRetainedFillAction({ get, retainReceipt } as never, {
       targets,
@@ -623,3 +631,325 @@ it.each(['capacity', 'cancel'] as const)(
     expect(retainReceipt).toHaveBeenCalledOnce()
   }
 )
+
+it.each(['complete', 'locked', 'write-failure'])(
+  'preserves another consumer of an equivalent query after %s',
+  async (outcome) => {
+    const computed = vi.fn(() => ({ x: 10 }))
+    const queries = createRetainedDesignContext(
+      {
+        getCurrentWorkspaceId: () => 'workspace',
+        getSelectedElementIds: () => [],
+        getElementChildren: () => {
+          throw new Error('Explicit targets must not traverse children')
+        },
+        getElementIdsInBounds: () => {
+          throw new Error('Explicit targets must not perform spatial search')
+        },
+        getElementMetadata: (id) => ({ name: id, type: 'rectangle' }),
+        getElementComputedData: computed
+      },
+      () => () => undefined
+    )
+    const controller = new AbortController()
+    const query = { scope: 'ids' as const, elementIds: ['a'] }
+    const held = queries.read(
+      { ...query, fields: ['x'], delivery: 'reference' },
+      controller.signal
+    )
+    const released = vi.spyOn(queries, 'releaseLease')
+    const update = vi.fn((updates: readonly { elementId: string }[]) => {
+      if (outcome === 'write-failure') throw new Error('Canonical write failed')
+      return changedReceipt(updates)
+    })
+    const action = createRetainedFillAction(queries, {
+      targets,
+      metadata: () => ({ lock: outcome === 'locked' }),
+      update
+    })
+    const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
+    try {
+      const pending = action.execute(
+        { mappings: [{ ...mapping, query }] },
+        { signal: controller.signal, runMutation: async (write) => write() }
+      )
+      if (outcome === 'complete')
+        await expect(pending).resolves.toMatchObject({ appliedCount: 1 })
+      else
+        await expect(pending).rejects.toThrow(
+          outcome === 'locked' ? /locked/ : /Canonical write failed/
+        )
+      expect(update).toHaveBeenCalledTimes(outcome === 'locked' ? 0 : 1)
+      expect(computed).toHaveBeenCalledTimes(1)
+      expect(
+        queries.get(held.snapshotId, held.leaseId, controller.signal).orderedIds
+      ).toEqual(['a'])
+      expect(released).toHaveBeenCalledTimes(1)
+      const consumed = released.mock.calls[0][0]
+      expect(consumed).not.toBe(held.leaseId)
+      expect(() =>
+        queries.get(held.snapshotId, consumed, controller.signal)
+      ).toThrow(/lease/)
+      const reused = queries.read(
+        { ...query, fields: ['x'], delivery: 'reference' },
+        controller.signal
+      )
+      expect(reused.snapshotId).toBe(held.snapshotId)
+      expect(reused.leaseId).toBe(held.leaseId)
+      expect(reused.observation).toMatchObject({
+        reused: true,
+        selectionExecutions: 0,
+        computedReadCount: 0
+      })
+      controller.abort()
+      expect(() => queries.get(held.snapshotId, held.leaseId)).toThrow(/lease/)
+    } finally {
+      queries.dispose()
+    }
+  }
+)
+
+it('reuses a rejected mapping query through another local-edit consumer, then refreshes after mutation', async () => {
+  const { createBasicApiActions } = await import('../basic-api-actions')
+  const colors = new Map([
+    ['a', '#112233'],
+    ['unrelated', '#778899']
+  ])
+  const computed = vi.fn(() => ({ x: 10 }))
+  let changed = () => {
+    throw new Error('Missing observer')
+  }
+  const queries = createRetainedDesignContext(
+    {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => [],
+      getElementChildren: () => {
+        throw new Error('Unexpected traversal')
+      },
+      getElementIdsInBounds: () => {
+        throw new Error('Unexpected spatial search')
+      },
+      getElementMetadata: (id) => ({ name: id, type: 'rectangle' }),
+      getElementComputedData: computed
+    },
+    (listener) => {
+      changed = listener
+      return () => undefined
+    }
+  )
+  const signal = new AbortController().signal
+  const context = { signal, runMutation: async <T>(write: () => T) => write() }
+  const query = { scope: 'ids' as const, elementIds: ['a'] }
+  const held = queries.read(
+    { ...query, fields: ['x'], delivery: 'reference' },
+    signal
+  )
+  const mapWrite = vi.fn()
+  const mapper = createRetainedFillAction(queries, {
+    targets,
+    metadata: () => ({ lock: true }),
+    update: mapWrite
+  })
+  const edit = vi.fn(
+    (ids: string[], _index: number, patch: { color: string }) => {
+      ids.forEach((id) => colors.set(id, patch.color))
+      changed()
+    }
+  )
+  const action = createBasicApiActions(
+    () => ({
+      core: {},
+      element: {},
+      selection: {},
+      hierarchy: {},
+      viewport: {},
+      stroke: {},
+      fill: { updateFillsAtIndex: edit }
+    }),
+    { observe: () => () => undefined, resolve: () => 'live' },
+    queries
+  ).find((candidate) => candidate.name === 'api_fill_updateFillsAtIndex')
+  if (!action) throw new Error('Missing canonical fill action')
+  const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
+  const reference = {
+    snapshotId: held.snapshotId,
+    leaseId: held.leaseId,
+    total: held.total
+  }
+  try {
+    await expect(
+      mapper.execute({ mappings: [{ ...mapping, query }] }, context)
+    ).rejects.toThrow(/locked/)
+    expect(mapWrite).not.toHaveBeenCalled()
+    const args = {
+      elementIds: reference,
+      index: 0,
+      patch: { color: '#abcdef' }
+    }
+    expect(
+      prepareOperationBatch(
+        [{ name: action.name, arguments: args }],
+        [action]
+      )[0].arguments
+    ).toEqual(args)
+    await action.execute(args, context)
+    expect(edit).toHaveBeenCalledExactlyOnceWith(['a'], 0, { color: '#abcdef' })
+    expect(colors.get('a')).toBe('#abcdef')
+    expect(colors.get('unrelated')).toBe('#778899')
+    expect(computed).toHaveBeenCalledTimes(1)
+    await expect(action.execute(args, context)).rejects.toThrow(/stale/)
+    expect(edit).toHaveBeenCalledTimes(1)
+    const fresh = queries.read(
+      { ...query, fields: ['x'], delivery: 'reference' },
+      signal
+    )
+    expect(fresh.snapshotId).not.toBe(held.snapshotId)
+    await action.execute(
+      {
+        ...args,
+        elementIds: {
+          snapshotId: fresh.snapshotId,
+          leaseId: fresh.leaseId,
+          total: fresh.total
+        }
+      },
+      context
+    )
+    expect(edit).toHaveBeenCalledTimes(2)
+    expect(computed).toHaveBeenCalledTimes(2)
+    queries.releaseFor(signal)
+    await expect(
+      action.execute(
+        {
+          ...args,
+          elementIds: {
+            snapshotId: fresh.snapshotId,
+            leaseId: fresh.leaseId,
+            total: fresh.total
+          }
+        },
+        context
+      )
+    ).rejects.toThrow(/lease|missing/)
+    expect(edit).toHaveBeenCalledTimes(2)
+  } finally {
+    queries.dispose()
+  }
+})
+
+it('advertises only executable inline query scopes for retained fill consumers', async () => {
+  const { operationInputIssue, nativeToolInputSchema } =
+    await import('../../../server/operation-input-schema')
+  const action = createRetainedFillAction({} as never, {
+    targets,
+    metadata: () => ({ lock: false }),
+    update: vi.fn(changedReceipt)
+  })
+  const { snapshotId: _snapshot, ...mapping } = input.mappings[0]
+  for (const schema of [
+    action.inputSchema,
+    nativeToolInputSchema(action.inputSchema)
+  ]) {
+    for (const query of [
+      { scope: 'ids', elementIds: ['a'] },
+      {
+        scope: 'region',
+        bounds: { x: 0, y: 0, width: 10, height: 10 },
+        filter: { type: 'rect' }
+      }
+    ])
+      expect(
+        operationInputIssue({ mappings: [{ ...mapping, query }] }, schema)
+      ).toBeUndefined()
+    for (const query of [
+      { scope: 'ids' },
+      { scope: 'region' },
+      { scope: 'ids', elementIds: ['a'], filter: { type: 'rect' } },
+      {
+        scope: 'region',
+        elementIds: ['a'],
+        bounds: { x: 0, y: 0, width: 10, height: 10 }
+      }
+    ])
+      expect(
+        operationInputIssue({ mappings: [{ ...mapping, query }] }, schema)
+      ).toBeDefined()
+  }
+})
+
+it('preserves unavailable targets in the model receipt without replaying accepted mapping work', async () => {
+  const update = vi.fn(() => ({
+    value: null,
+    changed: true,
+    acceptedIds: ['a', 'b'],
+    unavailableIds: ['c']
+  }))
+  const action = createRetainedFillAction(
+    {
+      get: () => snapshot,
+      retainReceipt: () => {
+        throw new Error('Retention unavailable')
+      }
+    } as never,
+    { targets, metadata: () => ({}), update }
+  )
+  const result = await action.execute(input, {
+    signal: new AbortController().signal
+  })
+  expect(result).toMatchObject({
+    status: 'partial',
+    acceptedIds: ['a', 'b'],
+    unavailableIds: ['c'],
+    modelResult: {
+      status: 'partial',
+      unavailableIds: ['c'],
+      acceptedIds: ['a', 'b'],
+      delivery: { status: 'unavailable' }
+    }
+  })
+  expect(update).toHaveBeenCalledTimes(1)
+})
+
+it('preserves an output contract failure after a malformed owner receipt', async () => {
+  const update = vi.fn(() => ({
+    value: null,
+    changed: true,
+    acceptedIds: ['wrong'],
+    unavailableIds: []
+  }))
+  const action = createRetainedFillAction({ get: () => snapshot } as never, {
+    targets,
+    metadata: () => ({}),
+    update
+  })
+  await expect(
+    action.execute(input, { signal: new AbortController().signal })
+  ).rejects.toMatchObject({
+    stage: 'output',
+    inspection: { settlement: 'completed' }
+  })
+  expect(update).toHaveBeenCalledTimes(1)
+})
+
+it('preserves transaction settlement and the original rejection without replay', async () => {
+  const update = vi.fn(changedReceipt)
+  const action = createRetainedFillAction({ get: () => snapshot } as never, {
+    targets,
+    metadata: () => ({}),
+    update
+  })
+  for (const status of ['rolled-back', 'committed', 'unknown'] as const) {
+    const cause = new Error('Retained query stale')
+    const settlement = new AiTransactionSettlementError(cause, status)
+    await expect(
+      action.execute(input, {
+        signal: new AbortController().signal,
+        runMutation: async () => {
+          throw settlement
+        }
+      })
+    ).rejects.toBe(settlement)
+    expect(settlement.cause).toBe(cause)
+  }
+  expect(update).not.toHaveBeenCalled()
+})

@@ -28,7 +28,6 @@ function threadRequest(cwd, model) {
       'features.shell_tool': false,
       'features.unified_exec': false,
       'features.apply_patch_freeform': false,
-      'features.code_mode': false,
       'features.multi_agent': false,
       'features.plugins': false,
       'features.apps': false,

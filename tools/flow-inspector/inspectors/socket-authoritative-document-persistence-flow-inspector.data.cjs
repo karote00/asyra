@@ -651,6 +651,7 @@
         'Batch and publication retry are idempotent.',
         'The shared App wire decoder reconstructs each trusted publication exactly once and the App organizer converts it to ordered canonical changes without a second recursive product-schema validation or independent route/payload interpretation.',
         'Each publication boundary applies atomically and no acknowledgement advances past a failed publication.',
+        'Exact-record retirement preserves every JSON field, reference and array position. Binary signed zero and checkpoint zero compare equally without tolerance or field omission; genuine changes and duplicate retirement remain conflicts.',
         'A successful request stores the updated checkpoint and returns the highest contiguous durable sequence.'
       ],
       bypasses: [

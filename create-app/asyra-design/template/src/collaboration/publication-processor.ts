@@ -2,12 +2,7 @@ import type {
   ApplyRemoteCanonicalChangeSlicesInput,
   SharedPublication
 } from './app-protocol-types'
-import {
-  canonicalChangesFromOrganizedPublication,
-  classifyRemoteRestore,
-  organizeRemotePublication,
-  organizeSourceSlice
-} from './operations'
+import { readDocumentPublicationSlices } from './document-publication'
 import { emitDiagnosticCounter, measureBrowserDragPhase } from '@asyra/utils'
 
 export type DecideRemotePublication = (
@@ -36,32 +31,9 @@ export const createPublicationProcessor =
     if (acceptedPublication === false) {
       return false
     }
-    const acceptedOrganization = measureBrowserDragPhase(
-      'collaboration:remote-input-organize',
-      () => organizeRemotePublication(acceptedPublication)
-    )
-    const acceptedRestore = measureBrowserDragPhase(
-      'collaboration:remote-restore-classify',
-      () => classifyRemoteRestore(acceptedOrganization)
-    )
     const canonicalSlices = measureBrowserDragPhase(
-      'collaboration:remote-canonical-batch-derive',
-      () => {
-        if (acceptedRestore) {
-          return [
-            canonicalChangesFromOrganizedPublication(
-              acceptedOrganization,
-              acceptedRestore
-            )
-          ]
-        }
-        return acceptedOrganization.sourceSlices.map((slice) =>
-          canonicalChangesFromOrganizedPublication(
-            organizeSourceSlice(slice, acceptedOrganization),
-            undefined
-          )
-        )
-      }
+      'collaboration:remote-canonical-validate',
+      () => readDocumentPublicationSlices(acceptedPublication)
     )
     canonicalSlices.forEach((canonicalChanges) => {
       canonicalChanges.forEach((change) => {
@@ -69,7 +41,7 @@ export const createPublicationProcessor =
         emitDiagnosticCounter('collaboration:remote-add-element-batch-count')
         emitDiagnosticCounter(
           'collaboration:remote-add-element-batch-size',
-          change.elements.length
+          change.entries.length
         )
       })
     })

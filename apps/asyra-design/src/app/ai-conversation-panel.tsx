@@ -1,4 +1,5 @@
 import { AiToolLibraryPanel } from './ai-tool-library-panel'
+import { projectEvaluationReport } from '../ai/evaluation-window'
 import { AiConversationNavigation } from './ai-conversation-navigation'
 import { AiConnectionStatus } from './ai-connection-status'
 import {
@@ -607,6 +608,9 @@ const AiConversationFeed = ({
         {timeline.map((turn) => {
           const settled = 'outcome' in turn ? turn : null
           const summary = settled ? summarizeAiTurn(settled) : null
+          const evaluationReport = settled
+            ? projectEvaluationReport(settled)
+            : undefined
           const question = settled ? projectAiQuestion(settled) : null
           const answer = timeline.find(
             (entry) => entry.replyToTurnId === turn.turnId
@@ -634,6 +638,9 @@ const AiConversationFeed = ({
               data-testid="ai-agent-message"
               data-outcome={settled?.outcome ?? 'active'}
               data-turn-id={turn.turnId}
+              data-evaluation-report={
+                evaluationReport ? JSON.stringify(evaluationReport) : undefined
+              }
               key={turn.turnId}
             >
               <div
@@ -728,7 +735,9 @@ const AiConversationFeed = ({
                     ) : null}
                     {activity.current.label ? (
                       <span>
-                        {activity.mode === 'context' && activity.current.message
+                        {activity.mode === 'context' &&
+                        activity.current.label === 'Current task' &&
+                        activity.current.message
                           ? 'Task context - no App operation executing'
                           : activity.current.label}
                       </span>
@@ -781,7 +790,10 @@ const AiConversationFeed = ({
                   </section>
                 ) : null}
                 {settled && !question ? (
-                  <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
+                  <p
+                    data-testid="ai-agent-result"
+                    className="mb-0 mt-2 whitespace-pre-wrap break-words"
+                  >
                     {summary?.message}
                   </p>
                 ) : null}

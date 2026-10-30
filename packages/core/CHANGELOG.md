@@ -1,5 +1,109 @@
 # @asyra/core
 
+## Pending Identity allocation facade
+
+```update-note
+{
+  "change": "identity-allocation-facade",
+  "owner": "Core identity allocation",
+  "summary": "Delegate batch identity reservation to the existing namespace-aware ID counter without document writes or history.",
+  "sources": [
+    "packages/core/src/core.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "New allocateIds facade is documented with ordering, failure and persistence boundaries."
+}
+```
+
+## Pending computed field selection contract
+
+```update-note
+{
+  "change": "computed-field-selection-contract",
+  "owner": "Core computed reads",
+  "summary": "Expose unchanged computed field selection limits through the pure contracts entry for schema consumers.",
+  "sources": [
+    "packages/core/src/types/scene-tree.ts",
+    "packages/core/src/apis/scene-tree.ts",
+    "packages/core/src/contracts/index.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "The existing 64-field and 128-character limits, snapshot isolation and validation remain unchanged. No persisted format or migration changes."
+}
+```
+
+## Pending ordinary creation input normalization
+
+```update-note
+{
+  "change": "ordinary-creation-input-normalization",
+  "owner": "Core creation input normalization",
+  "summary": "Remove unused creation input envelopes and the second projection while retaining the existing Core normalization owner, defaults, supplied/generated IDs, input isolation and complete owner results.",
+  "sources": [
+    "packages/core/src/apis/scene-tree.ts",
+    "packages/core/src/__tests__/scene-tree-api.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Public creation inputs and output, validation, geometry, history and retained-source recovery remain unchanged. No migration, new cache or additional model exchange is required."
+}
+```
+
+## Pending ordinary creation result handoff
+
+```update-note
+{
+  "change": "ordinary-creation-result-handoff",
+  "owner": "Core creation results",
+  "summary": "Forward the existing Scene Tree frozen ordered creation result through Core and App without redundant ID array copies; verify actual saved-input flows and immutable receipts.",
+  "sources": [
+    "packages/core/src/apis/create-apis.ts",
+    "packages/core/src/apis/scene-tree.ts",
+    "packages/core/src/__tests__/scene-tree-api.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Creation inputs, ordered IDs, frozen isolation, history and retained-source recovery are unchanged. No migration or new model exchange is required."
+}
+```
+
+## Pending computed snapshot selection
+
+```update-note
+{
+  "change": "computed-snapshot-selection",
+  "owner": "Core computed reads",
+  "summary": "Carry computed field selection to the existing snapshot owner before materialization, avoiding omitted-field copies while retaining detached full reads and mechanical evidence behavior.",
+  "sources": [
+    "packages/core/src/apis/scene-tree.ts",
+    "packages/core/src/apis/create-apis.ts",
+    "packages/core/src/__tests__/scene-tree-api.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing Core query inputs and outputs, persistence and transaction behavior are unchanged. No new cache, model exchange or migration is required."
+}
+```
+
+## Pending metadata child counts
+
+```update-note
+{
+  "change": "metadata-child-count",
+  "owner": "Core metadata facade",
+  "summary": "Read child counts from the canonical Group membership owner without materializing full child snapshots during scalar metadata reads.",
+  "sources": [
+    "packages/core/src/core.ts",
+    "packages/core/src/__tests__/app-runtime-facade.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing public metadata values and membership ownership remain unchanged. No persisted format or consumer migration is required."
+}
+```
+
 ## 0.5.7
 
 ### Patch Changes

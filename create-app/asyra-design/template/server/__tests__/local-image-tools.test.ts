@@ -1,5 +1,9 @@
+import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'
-import { createLocalImageTools } from '../local-image-tools'
+import { createLocalImageTools as createOwner } from '../local-image-tools'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalImageTools = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import { AiImageToolIds } from '../ai-domain-prompt'
 import * as analysis from '../local-vector-component-analysis'
 
@@ -18,7 +22,7 @@ describe('local provider image tools', () => {
       { metadata: { imageAttachments: [attachment] } },
       convert
     )
-    expect(tools.definitions).toHaveLength(5)
+    expect(tools.definitions).toHaveLength(6)
     const signal = new AbortController().signal
     expect(
       await tools.call(
@@ -89,7 +93,7 @@ describe('local provider image tools', () => {
           imageAttachments: [{ ...attachment, mediaType: 'image/gif' }]
         }
       }).definitions
-    ).toHaveLength(5)
+    ).toHaveLength(6)
   })
 
   it('requires same-request analysis for mappings and reuses evidence during preparation', async () => {
@@ -261,6 +265,19 @@ describe('local provider image tools', () => {
         { id: 'draw', name: 'insert_vector_composition', arguments: args }
       ]
     })
+    const currentReference = {
+      ...reference,
+      imageArtifactId: source.imageArtifactId
+    }
+    expect(
+      tools.resolveBatch(batch(currentReference)).actions[0].arguments
+    ).toHaveProperty('slices')
+    expect(() =>
+      tools.resolveBatch(batch({ ...currentReference, ovalPathIds: [] }))
+    ).toThrow()
+    expect(
+      tools.resolveBatch(batch(currentReference)).actions[0].arguments
+    ).toHaveProperty('slices')
     expect(() => tools.resolveBatch(batch(reference))).toThrow(/analysis/i)
     expect(() =>
       tools.resolveBatch(
@@ -727,4 +744,560 @@ describe('contour review tool integration', () => {
       )
     ).rejects.toThrow()
   })
+})
+
+it('reports an oversized conversion as a bounded result instead of an unavailable tool', async () => {
+  const svg = 'x'.repeat(8 * 1024 * 1024 + 1)
+  const convert = vi.fn(async () => svg)
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: 'data:image/png;base64,YQ==',
+            mediaType: 'image/png',
+            size: 1
+          }
+        ]
+      }
+    },
+    convert
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'vtracer',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Preserve the selected detail'
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result).toMatchObject({
+    available: false,
+    code: 'VECTOR_ARTIFACT_BYTE_LIMIT',
+    observedBytes: svg.length,
+    limitBytes: 8 * 1024 * 1024
+  })
+  expect(result.message).toContain('region')
+  expect(result).not.toHaveProperty('imageArtifactId')
+})
+
+it('preserves native region pixels and isolates reuse by selected source region', async () => {
+  const sharp = (await import('sharp')).default
+  const pixels = Buffer.from([
+    255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255, 20, 30, 40, 50, 60, 70
+  ])
+  const bytes = await sharp(pixels, {
+    raw: { width: 3, height: 2, channels: 3 }
+  })
+    .png()
+    .toBuffer()
+  const convert = vi.fn(async ({ bytes: selected }) => {
+    const metadata = await sharp(selected).metadata()
+    return `<svg width="${metadata.width}" height="${metadata.height}"><path d="M0,0L1,0L1,1Z" fill="#000000"/></svg>`
+  })
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+            mediaType: 'image/png',
+            size: bytes.length
+          }
+        ]
+      }
+    },
+    convert
+  )
+  const call = (region: unknown) =>
+    tools
+      .call(
+        'vtracer',
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Only this visible region is needed',
+            region
+          }
+        },
+        new AbortController().signal
+      )
+      .then(JSON.parse)
+  const region = { x: 1, y: 0, width: 1, height: 2 }
+  const first = await call(region)
+  const repeated = await call({ height: 2, width: 1, y: 0, x: 1 })
+  expect(repeated.imageArtifactId).toBe(first.imageArtifactId)
+  expect(convert).toHaveBeenCalledOnce()
+  expect(first).toMatchObject({ width: 1, height: 2, sourceRegion: region })
+  const cropped = await sharp(convert.mock.calls[0][0].bytes)
+    .removeAlpha()
+    .raw()
+    .toBuffer()
+  expect(cropped).toEqual(Buffer.from([0, 255, 0, 20, 30, 40]))
+  await call({ x: 0, y: 0, width: 1, height: 2 })
+  expect(convert).toHaveBeenCalledTimes(2)
+  for (const bad of [
+    { ...region, x: -1 },
+    { ...region, x: 0.5 },
+    { ...region, width: 0 },
+    { ...region, width: 3 }
+  ])
+    await expect(call(bad)).rejects.toThrow(/region/i)
+  expect(convert).toHaveBeenCalledTimes(2)
+})
+
+it('selects regions in display orientation and rejects cancelled conversion before publishing reuse', async () => {
+  const sharp = (await import('sharp')).default
+  const bytes = await sharp(
+    Buffer.from([
+      255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255, 20, 30, 40, 50, 60, 70
+    ]),
+    { raw: { width: 3, height: 2, channels: 3 } }
+  )
+    .withMetadata({ orientation: 6 })
+    .png()
+    .toBuffer()
+  const controller = new AbortController()
+  let cancel = true
+  const convert = vi.fn(async (_input: { bytes: Uint8Array }) => {
+    if (cancel) controller.abort()
+    return '<svg width="1" height="3"><path d="M0,0L1,0L1,3Z" fill="#000000"/></svg>'
+  })
+  const input = {
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+          mediaType: 'image/png',
+          size: bytes.length
+        }
+      ]
+    }
+  }
+  const tools = createLocalImageTools(input, convert)
+  const args = {
+    attachmentIndex: 0,
+    plan: {
+      strategy: 'preserve-vectors',
+      reason: 'Use the displayed column',
+      region: { x: 1, y: 0, width: 1, height: 3 }
+    }
+  }
+  await expect(tools.call('vtracer', args, controller.signal)).rejects.toThrow(
+    /abort/i
+  )
+  cancel = false
+  const result = JSON.parse(
+    await tools.call('vtracer', args, new AbortController().signal)
+  )
+  expect(result).toMatchObject({ width: 1, height: 3 })
+  expect(convert).toHaveBeenCalledTimes(2)
+  expect(
+    await sharp(convert.mock.calls[1][0].bytes).removeAlpha().raw().toBuffer()
+  ).toEqual(Buffer.from([255, 0, 0, 0, 255, 0, 0, 0, 255]))
+  expect(input.metadata.imageAttachments[0].dataUrl).toBe(
+    `data:image/png;base64,${bytes.toString('base64')}`
+  )
+})
+
+it('converts a native region through the real worker and artifact parser', async () => {
+  const sharp = (await import('sharp')).default
+  const bytes = await sharp({
+    create: { width: 32, height: 24, channels: 4, background: '#168ca0' }
+  })
+    .png()
+    .toBuffer()
+  const tools = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+          mediaType: 'image/png',
+          size: bytes.length
+        }
+      ]
+    }
+  })
+  const result = JSON.parse(
+    await tools.call(
+      'vtracer',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Trace this exact visible region',
+          region: { x: 7, y: 3, width: 16, height: 12 }
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result).toMatchObject({
+    width: 16,
+    height: 12,
+    sourceRegion: { x: 7, y: 3, width: 16, height: 12 }
+  })
+  expect(result.imageArtifactId).toEqual(expect.any(String))
+})
+
+it('extracts original pixels from a reference above four megapixels', async () => {
+  const sharp = (await import('sharp')).default
+  const bytes = await sharp({
+    create: { width: 2001, height: 2000, channels: 3, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const convert = vi.fn(async ({ bytes: selected }) => {
+    expect(await sharp(selected).metadata()).toMatchObject({
+      width: 2,
+      height: 3
+    })
+    expect([...(await sharp(selected).raw().toBuffer())]).toEqual(
+      Array(6).fill([18, 52, 86]).flat()
+    )
+    return '<svg width="2" height="3"><path d="M0,0L2,0L2,3Z" fill="#123456"/></svg>'
+  })
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+            mediaType: 'image/png',
+            size: bytes.length
+          }
+        ]
+      }
+    },
+    convert
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'vtracer',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Inspect the selected native pixels',
+          region: { x: 1999, y: 1997, width: 2, height: 3 }
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result).toMatchObject({ width: 2, height: 3 })
+  expect(convert).toHaveBeenCalledOnce()
+})
+
+it('validates retained bytes with stable identity and reuses admission evidence', async () => {
+  const bytes = await sharp({
+    create: { width: 8, height: 5, channels: 3, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const tools = createLocalImageTools({ metadata: {} })
+  const index = tools.addReference({
+    dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+    mediaType: 'image/png',
+    size: bytes.length
+  })
+  const signal = new AbortController().signal
+  const first = JSON.parse(
+    await tools.call(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: [index] },
+      signal
+    )
+  )
+  const second = JSON.parse(
+    await tools.call(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: [index] },
+      signal
+    )
+  )
+  expect(first.references[0]).toMatchObject({
+    attachmentIndex: index,
+    bytes: bytes.length,
+    reused: false,
+    validation: {
+      width: 8,
+      height: 5,
+      encoding: 'png',
+      validity: 'decoded',
+      suitability: 'requires-visual-assessment'
+    }
+  })
+  expect(second.references[0]).toMatchObject({
+    referenceId: first.references[0].referenceId,
+    reused: true
+  })
+  expect(tools.resolveSources([`attachment:${index}`])).toEqual([
+    first.references[0].referenceId
+  ])
+  await expect(
+    tools.call(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: [index + 1] },
+      signal
+    )
+  ).rejects.toThrow(/reference/i)
+})
+
+it('recovers an invalid layer source and hands real separated contours to drawing preparation', async () => {
+  const pixels = Buffer.alloc(12 * 12 * 4)
+  for (let y = 0; y < 12; y++)
+    for (let x = 0; x < 12; x++)
+      pixels.set(
+        x >= 4 && x < 8 && y >= 4 && y < 8
+          ? [255, 255, 255, 255]
+          : [0, 136, 0, 255],
+        (y * 12 + x) * 4
+      )
+  const bytes = await sharp(pixels, {
+    raw: { width: 12, height: 12, channels: 4 }
+  })
+    .png()
+    .toBuffer()
+  const tools = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+          mediaType: 'image/png',
+          size: bytes.length
+        }
+      ]
+    }
+  })
+  const input = {
+    attachmentIndex: 0,
+    background: {
+      componentType: 'rect',
+      bounds: { x: 0, y: 0, width: 12, height: 12 },
+      fill: '#008800'
+    },
+    colorTolerance: 0,
+    clipToBackground: true
+  }
+  const signal = new AbortController().signal
+  await expect(
+    tools.call(
+      'vectorize_image_layers',
+      { ...input, attachmentIndex: 9 },
+      signal
+    )
+  ).rejects.toThrow()
+  const result = JSON.parse(
+    await tools.call('vectorize_image_layers', input, signal)
+  )
+  const drawing = tools.resolveBatch({
+    actions: [
+      {
+        name: 'insert_vector_composition',
+        arguments: {
+          imageArtifactId: result.imageArtifactId,
+          compositionRole: 'Layered drawing',
+          bounds: { x: 20, y: 20, width: 120, height: 120 },
+          excludePathIds: []
+        }
+      }
+    ]
+  }).actions[0].arguments
+  const descriptors = (
+    drawing as {
+      slices: {
+        descriptors: { type: string; width: number; height: number }[]
+      }[]
+    }
+  ).slices.flatMap((slice) => slice.descriptors)
+  expect(descriptors[0]).toMatchObject({
+    type: 'rect',
+    width: 120,
+    height: 120
+  })
+  expect(descriptors.length).toBeGreaterThan(1)
+  expect(
+    descriptors
+      .slice(1)
+      .every((item: { type: string }) => item.type === 'vector')
+  ).toBe(true)
+})
+
+it('preserves selected original reference bytes and excludes unselected research images', () => {
+  const user = {
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png',
+    size: 1
+  }
+  const research = { ...user, dataUrl: 'data:image/png;base64,Yg==' }
+  const tools = createLocalImageTools({
+    metadata: { imageAttachments: [user] }
+  })
+  const index = tools.addReference(research)
+  expect(tools.referenceImages()).toEqual([
+    { role: 'reference', dataUrl: user.dataUrl }
+  ])
+  expect(tools.referenceImages([index])).toEqual([
+    { role: 'reference', dataUrl: research.dataUrl }
+  ])
+  expect(tools.referenceImages([])).toEqual([])
+  expect(() => tools.referenceImages([2])).toThrow(/existing/)
+})
+
+it('prepares reference uses lazily through the same retained validation as standalone calls', async () => {
+  const bytes = await sharp({
+    create: { width: 8, height: 5, channels: 3, background: 'red' }
+  })
+    .png()
+    .toBuffer()
+  const image = {
+    dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+    mediaType: 'image/png',
+    size: bytes.length
+  }
+  const tools = createLocalImageTools({
+    metadata: { imageAttachments: [image] }
+  })
+  const stats = vi.spyOn(sharp.prototype, 'stats')
+  try {
+    const identity = tools.validateReferences([0])[0]
+    expect(identity).not.toHaveProperty('validation')
+    expect(stats).not.toHaveBeenCalled()
+    const signal = new AbortController().signal
+    await tools.prepareReferences([0], signal)
+    expect(
+      tools.validateReferences([], [identity.referenceId])[0].validation
+    ).toMatchObject({ width: 8, height: 5 })
+    await tools.prepareReferences([0], signal)
+    const explicit = JSON.parse(
+      await tools.call(
+        'validate_reference_images',
+        { attachmentIndexes: [0] },
+        signal
+      )
+    )
+    expect(explicit.references[0]).toMatchObject({
+      referenceId: identity.referenceId,
+      reused: true,
+      validation: {
+        validity: 'decoded',
+        suitability: 'requires-visual-assessment'
+      }
+    })
+    expect(stats).toHaveBeenCalledOnce()
+  } finally {
+    stats.mockRestore()
+  }
+})
+
+it('shares reference decoding across concurrent callers without allowing cancellation to discard a peer result', async () => {
+  const bytes = await sharp({
+    create: { width: 3, height: 7, channels: 3, background: 'blue' }
+  })
+    .jpeg()
+    .toBuffer()
+  const tools = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        { dataUrl: `data:image/jpeg;base64,${bytes.toString('base64')}` }
+      ]
+    }
+  })
+  const original = sharp.prototype.stats
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const stats = vi
+    .spyOn(sharp.prototype, 'stats')
+    .mockImplementationOnce(async function (this: ReturnType<typeof sharp>) {
+      const value = await original.call(this)
+      await gate
+      return value
+    })
+  const cancelled = new AbortController()
+  try {
+    const first = tools.prepareReferences([0], cancelled.signal)
+    const checked = expect(first).rejects.toThrow()
+    const second = tools.prepareReferences([0], new AbortController().signal)
+    await vi.waitFor(() => expect(stats).toHaveBeenCalledOnce())
+    cancelled.abort()
+    release()
+    await checked
+    const result = JSON.parse(await second)
+    expect(result.references[0]).toMatchObject({
+      reused: true,
+      validation: { width: 3, height: 7, validity: 'decoded' }
+    })
+    await tools.prepareReferences([0], new AbortController().signal)
+    expect(stats).toHaveBeenCalledOnce()
+  } finally {
+    release()
+    stats.mockRestore()
+  }
+})
+
+it('reuses imported admission and rejects foreign identities before decoding any selected source', async () => {
+  const bytes = await sharp({
+    create: { width: 2, height: 5, channels: 3, background: 'green' }
+  })
+    .png()
+    .toBuffer()
+  const image = {
+    dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+    mediaType: 'image/png',
+    size: bytes.length
+  }
+  const tools = createLocalImageTools({ metadata: {} })
+  tools.addReference({
+    ...image,
+    validation: {
+      width: 2,
+      height: 5,
+      encoding: 'png',
+      validity: 'decoded',
+      suitability: 'requires-visual-assessment'
+    }
+  })
+  const stats = vi.spyOn(sharp.prototype, 'stats')
+  try {
+    const result = JSON.parse(
+      await tools.prepareReferences([0], new AbortController().signal)
+    )
+    expect(result.references[0]).toMatchObject({
+      reused: true,
+      validation: { validity: 'decoded' }
+    })
+    expect(stats).not.toHaveBeenCalled()
+    const fresh = createLocalImageTools({ metadata: {} })
+    expect(() =>
+      fresh.validateReferences([], [result.references[0].referenceId])
+    ).toThrow(/Unknown retained reference/)
+    await expect(
+      tools.prepareReferences([0, 99], new AbortController().signal)
+    ).rejects.toThrow(/existing reference/)
+    expect(stats).not.toHaveBeenCalled()
+    const broken = createLocalImageTools({
+      metadata: {
+        imageAttachments: [{ dataUrl: 'data:image/png;base64,YQ==' }]
+      }
+    })
+    const invalid = JSON.parse(
+      await broken.prepareReferences([0], new AbortController().signal)
+    )
+    expect(invalid.references[0].validation).toMatchObject({
+      validity: 'invalid',
+      reason: expect.any(String)
+    })
+    expect(broken.validateReferences([0])[0]).not.toHaveProperty('validation')
+  } finally {
+    stats.mockRestore()
+  }
 })

@@ -1,0 +1,43 @@
+{
+  "source": {
+    "run": "knowledge-quality-knowledge-taipei-101-1792595690638",
+    "provider": "0e2a2799-acc4-41ca-838d-b278014706e2",
+    "scope": "Selected read inputs and original delivery measurements; no model efficacy claim."
+  },
+  "cases": [
+    {
+      "topic": "method",
+      "input": {
+        "contexts": [
+          "architectural-illustration"
+        ],
+        "ids": [
+          "design.architectural-illustration.materials.method"
+        ]
+      },
+      "observed": {
+        "bytes": 40186,
+        "pages": 2,
+        "firstOutputSha256": "b418969cfa6dd3ad37d0429cd317c149846454f44593505b84d7b19647c59139",
+        "sequence": 274
+      }
+    },
+    {
+      "topic": "review",
+      "input": {
+        "contexts": [
+          "architectural-illustration"
+        ],
+        "ids": [
+          "design.architectural-illustration.materials.review"
+        ]
+      },
+      "observed": {
+        "bytes": 27324,
+        "pages": 2,
+        "firstOutputSha256": "316cc5aabf9abd72b0236bcfe849a9a0f211b937fad932ad5d90d7bf0383270a",
+        "sequence": 411
+      }
+    }
+  ]
+}

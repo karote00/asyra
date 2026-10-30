@@ -4,6 +4,7 @@ import { RenderGraphics } from '@asyra/render'
 import { describe, expect, it } from 'vitest'
 import {
   TEXT_PROPERTY_SCHEMA,
+  TEXT_PROPERTY_VALUE_SCHEMAS,
   TEXT_PROPERTY_DEFINITION,
   TEXT_PROPERTY_TYPE,
   DEFAULT_TEXT_DATA
@@ -14,6 +15,38 @@ import {
 } from '../components/text.js'
 
 describe('native editable text', () => {
+  it('publishes immutable value contracts for every native property without changing valid bounds', () => {
+    expect(Object.keys(TEXT_PROPERTY_VALUE_SCHEMAS).sort()).toEqual(
+      TEXT_PROPERTY_SCHEMA.fields.map((field) => field.key).sort()
+    )
+    expect(Object.isFrozen(TEXT_PROPERTY_VALUE_SCHEMAS)).toBe(true)
+    for (const schema of Object.values(TEXT_PROPERTY_VALUE_SCHEMAS)) {
+      expect(Object.isFrozen(schema)).toBe(true)
+      if ('enum' in schema) expect(Object.isFrozen(schema.enum)).toBe(true)
+    }
+    for (const [key, values] of Object.entries({
+      fontSize: [Number.MIN_VALUE, 4096],
+      lineHeight: [Number.MIN_VALUE, 8192],
+      letterSpacing: [-100, 100],
+      text: ['', 'x'.repeat(100000)],
+      fontFamily: ['  Family  ', 'x'.repeat(128)],
+      textSizing: ['auto-width', 'auto-height', 'fixed'],
+      fontWeight: ['normal', 'bold'],
+      fontStyle: ['normal', 'italic'],
+      textAlign: ['left', 'center', 'right']
+    })) {
+      const field = TEXT_PROPERTY_SCHEMA.fields.find(
+        (field) => field.key === key
+      )
+      if (!field?.validate) throw new Error(`Missing ${key} validator`)
+      for (const value of values)
+        expect(
+          field.validate(value),
+          `${key}: ${String(value).slice(0, 20)}`
+        ).toBe(true)
+    }
+  })
+
   it('preserves text, rejects invalid writes and defaults invalid loaded typography', () => {
     core.registerPropertySchema(TEXT_PROPERTY_SCHEMA)
     const TextProperty = core.definePropertyComponent(TEXT_PROPERTY_DEFINITION)

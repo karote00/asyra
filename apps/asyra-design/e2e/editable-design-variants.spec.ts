@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import sharp from 'sharp'
 import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import {
   createTestDocumentIdentity,
   getUndoHistoryDepth,
@@ -435,7 +436,7 @@ for (const [name, draft] of Object.entries({
               id: 'create',
               name: 'apply_prepared_design',
               arguments: {
-                design,
+                design: deliverPreparedDesign(design),
                 ...(name === 'vectorGradients' ? { response: 'compact' } : {})
               },
               summary: `Create ${name} design`

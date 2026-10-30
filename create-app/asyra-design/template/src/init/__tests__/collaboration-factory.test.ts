@@ -1,3 +1,7 @@
+import {
+  prepareDocumentPublication,
+  readDocumentPublicationSlices
+} from '../../collaboration/document-publication'
 import type { SharedPublication } from '@asyra/factory'
 import { describe, expect, it, vi } from 'vitest'
 import { EventTypes } from '@asyra/reactive-events'
@@ -22,15 +26,44 @@ const createDelivery = (
   deliveryId: string,
   eventName: string,
   orderedIds: readonly string[]
-) => ({
-  deliveryId,
-  eventName,
-  orderedIds,
-  payload: { id: orderedIds[0] }
-})
+) => {
+  let payload: unknown = { id: orderedIds[0] }
+  if (eventName === EventTypes.UPDATE_ELEMENT_DATA) {
+    payload = {
+      id: orderedIds[0],
+      action: 'updateElementData',
+      eventName,
+      changes: [{ key: 'name', before: 'Before', after: 'After' }]
+    }
+  } else if (eventName === EventTypes.UPDATE_PROPERTY) {
+    payload = {
+      id: 'property-a',
+      action: 'updateProperty',
+      eventName,
+      key: 'x',
+      before: 0,
+      after: 1
+    }
+  } else if (eventName === EventTypes.REMOVE_PROPERTY) {
+    payload = {
+      data: orderedIds.map((id) => ({ id, type: 'position', x: 0, y: 0 }))
+    }
+  } else if (eventName === EventTypes.CHANGE_SUBTREE) {
+    payload = {
+      elementId: 'element-a',
+      action: 'removeSubtree',
+      undoAction: 'restoreSubtree',
+      eventName,
+      removed: [],
+      rootParentChildrenAfter: [],
+      options: { undoable: true }
+    }
+  }
+  return { deliveryId, eventName, orderedIds, payload }
+}
 
 describe('Asyra Design collaboration composition', () => {
-  it('forwards an already document-only minimal publication by identity', () => {
+  it('publishes explicit operations while preserving source publication identity', () => {
     let publicationSubscriber: ((publication: unknown) => void) | undefined
     const owner = {
       subscribeToSharedPublication: vi.fn((subscriber) => {
@@ -39,7 +72,8 @@ describe('Asyra Design collaboration composition', () => {
       })
     }
     const filtered = createDocumentCollaborationPublicationSource(
-      owner as never
+      owner as never,
+      vi.fn()
     )
     const received = vi.fn()
     const documentPublication = Object.freeze({
@@ -61,7 +95,12 @@ describe('Asyra Design collaboration composition', () => {
                   deliveryId: 'delivery-document-only',
                   eventName: EventTypes.UPDATE_ELEMENT_DATA,
                   orderedIds: Object.freeze(['element-a']),
-                  payload: Object.freeze({ id: 'element-a' })
+                  payload: Object.freeze({
+                    id: 'element-a',
+                    action: 'updateElementData',
+                    eventName: EventTypes.UPDATE_ELEMENT_DATA,
+                    changes: [{ key: 'name', before: 'Before', after: 'After' }]
+                  })
                 })
               ])
             })
@@ -74,7 +113,9 @@ describe('Asyra Design collaboration composition', () => {
     publicationSubscriber?.(documentPublication)
 
     expect(received).toHaveBeenCalledOnce()
-    expect(received).toHaveBeenCalledWith(documentPublication)
+    expect(received).toHaveBeenCalledWith(
+      prepareDocumentPublication(documentPublication)
+    )
   })
 
   it('forwards only app-owned document channels', () => {
@@ -87,7 +128,8 @@ describe('Asyra Design collaboration composition', () => {
       })
     }
     const filtered = createDocumentCollaborationPublicationSource(
-      owner as never
+      owner as never,
+      vi.fn()
     )
     const received = vi.fn()
     const selectionDelivery = createDelivery(
@@ -156,24 +198,26 @@ describe('Asyra Design collaboration composition', () => {
 
     expect(received).toHaveBeenCalledTimes(1)
     expect(received).toHaveBeenCalledWith(
-      createPublication('mixed-action', [
-        {
-          sliceId: 'document-slice',
-          orderedIds: ['scene-delivery', 'props-delivery'],
-          batches: [
-            {
-              batchId: 'scene-batch',
-              channel: SharedDataChannelNames.SCENE_TREE,
-              deliveries: [sceneDelivery]
-            },
-            {
-              batchId: 'props-batch',
-              channel: SharedDataChannelNames.PROPS,
-              deliveries: [propsDelivery]
-            }
-          ]
-        }
-      ])
+      prepareDocumentPublication(
+        createPublication('mixed-action', [
+          {
+            sliceId: 'document-slice',
+            orderedIds: ['scene-delivery', 'props-delivery'],
+            batches: [
+              {
+                batchId: 'scene-batch',
+                channel: SharedDataChannelNames.SCENE_TREE,
+                deliveries: [sceneDelivery]
+              },
+              {
+                batchId: 'props-batch',
+                channel: SharedDataChannelNames.PROPS,
+                deliveries: [propsDelivery]
+              }
+            ]
+          }
+        ])
+      )
     )
     expect('runRemoteTransaction' in filtered).toBe(false)
     expect('isRemoteAsyncHandlerError' in filtered).toBe(false)
@@ -189,7 +233,8 @@ describe('Asyra Design collaboration composition', () => {
       })
     }
     const filtered = createDocumentCollaborationPublicationSource(
-      owner as never
+      owner as never,
+      vi.fn()
     )
     const received = vi.fn()
     const selectionDelivery = createDelivery(
@@ -249,26 +294,29 @@ describe('Asyra Design collaboration composition', () => {
 
     expect(received).toHaveBeenCalledOnce()
     const publication = received.mock.calls[0]?.[0]
+    expect(readDocumentPublicationSlices(publication)).toHaveLength(1)
     expect(isSharedPublication(publication)).toBe(true)
     expect(publication).toEqual(
-      createPublication('atomic-delete', [
-        {
-          sliceId: 'scene-slice',
-          orderedIds: ['scene-delivery', 'props-delivery'],
-          batches: [
-            {
-              batchId: 'scene-batch',
-              channel: SharedDataChannelNames.SCENE_TREE,
-              deliveries: [sceneDelivery]
-            },
-            {
-              batchId: 'props-batch',
-              channel: SharedDataChannelNames.PROPS,
-              deliveries: [propsDelivery]
-            }
-          ]
-        }
-      ])
+      prepareDocumentPublication(
+        createPublication('atomic-delete', [
+          {
+            sliceId: 'scene-slice',
+            orderedIds: ['scene-delivery', 'props-delivery'],
+            batches: [
+              {
+                batchId: 'scene-batch',
+                channel: SharedDataChannelNames.SCENE_TREE,
+                deliveries: [sceneDelivery]
+              },
+              {
+                batchId: 'props-batch',
+                channel: SharedDataChannelNames.PROPS,
+                deliveries: [propsDelivery]
+              }
+            ]
+          }
+        ])
+      )
     )
   })
 
@@ -292,7 +340,8 @@ describe('Asyra Design collaboration composition', () => {
         throw new Error('diagnostic failure')
       })
     const filtered = createDocumentCollaborationPublicationSource(
-      owner as never
+      owner as never,
+      vi.fn()
     )
     const received = vi.fn()
     const selectionDelivery = createDelivery(
@@ -368,7 +417,9 @@ describe('Asyra Design collaboration composition', () => {
     if (!propsSlice) throw new Error('Expected retained Props slice')
     expect(received).toHaveBeenCalledOnce()
     expect(received).toHaveBeenCalledWith(
-      createPublication('document-action', [propsSlice])
+      prepareDocumentPublication(
+        createPublication('document-action', [propsSlice])
+      )
     )
   })
 
@@ -381,8 +432,10 @@ describe('Asyra Design collaboration composition', () => {
         return () => undefined
       })
     }
+    const failed = vi.fn()
     const filtered = createDocumentCollaborationPublicationSource(
-      owner as never
+      owner as never,
+      failed
     )
     const received = vi.fn()
 
@@ -413,9 +466,99 @@ describe('Asyra Design collaboration composition', () => {
             }
           ])
         )
-      ).toThrow(/local-only computed projection/i)
+      ).not.toThrow()
+      expect(failed).toHaveBeenLastCalledWith(
+        expect.objectContaining({ publicationId: `computed-${eventName}` }),
+        expect.objectContaining({
+          message: expect.stringMatching(/local-only computed projection/i)
+        })
+      )
     }
 
     expect(received).not.toHaveBeenCalled()
   })
+})
+
+it('does not misclassify a document consumer exception as preparation failure', () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  const failed = vi.fn()
+  const source = createDocumentCollaborationPublicationSource(
+    {
+      subscribeToSharedPublication: (subscriber) => {
+        publish = subscriber
+        return () => {
+          publish = undefined
+        }
+      }
+    },
+    failed
+  )
+  const consumerError = new Error('consumer rejected the handoff')
+  source.subscribe(() => {
+    throw consumerError
+  })
+  const delivery = createDelivery('update-p', EventTypes.UPDATE_PROPERTY, [
+    'property-a'
+  ])
+  const publication = createPublication('consumer-failure', [
+    {
+      sliceId: 'slice',
+      orderedIds: ['update-p'],
+      batches: [
+        {
+          batchId: 'batch',
+          channel: SharedDataChannelNames.PROPS,
+          deliveries: [delivery]
+        }
+      ]
+    }
+  ])
+  expect(() => publish?.(publication)).toThrow(consumerError)
+  expect(failed).not.toHaveBeenCalled()
+})
+
+it('keeps the source identity and actual preparation error in browser diagnostic capture', async () => {
+  const runtime = await import('../../testing/runtime-access')
+  let publish: ((publication: SharedPublication) => void) | undefined
+  const subscribe = vi
+    .spyOn(runtime.core, 'subscribeToSharedPublication')
+    .mockImplementation((subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    })
+  const key = 'preparation-failure-diagnostic'
+  try {
+    runtime.startDocumentPublicationCapture(key)
+    publish?.(
+      createPublication('diagnostic-source', [
+        {
+          sliceId: 'slice',
+          orderedIds: ['computed'],
+          batches: [
+            {
+              batchId: 'batch',
+              channel: SharedDataChannelNames.SCENE_TREE,
+              deliveries: [
+                createDelivery('computed', EventTypes.UPDATE_COMPUTED_DATA, [
+                  'element-a'
+                ])
+              ]
+            }
+          ]
+        }
+      ])
+    )
+    expect(runtime.readDocumentPublicationDecodeFailures(key)).toEqual([
+      {
+        publicationId: 'diagnostic-source',
+        message:
+          '[collaboration] local-only computed projection cannot enter a shared publication'
+      }
+    ])
+  } finally {
+    runtime.stopTestCapture(key)
+    subscribe.mockRestore()
+  }
 })

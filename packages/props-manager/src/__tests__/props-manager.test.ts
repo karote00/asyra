@@ -6177,11 +6177,13 @@ describe('PropsManager', () => {
       JSON.stringify([
         ReactiveEventsModule.EventTypes.UPDATE_PROPERTY,
         'staged-history-position',
+        null,
         'x'
       ]),
       JSON.stringify([
         ReactiveEventsModule.EventTypes.UPDATE_PROPERTY,
         'staged-history-position',
+        null,
         'y'
       ])
     ])
@@ -6255,6 +6257,7 @@ describe('PropsManager', () => {
         JSON.stringify([
           ReactiveEventsModule.EventTypes.UPDATE_PROPERTY,
           child.get('id'),
+          null,
           'value'
         ])
       ],

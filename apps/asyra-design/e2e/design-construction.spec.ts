@@ -1,15 +1,118 @@
+import { createServer } from 'node:http'
+import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
+import { createBatchExchange } from '../server/batch-exchange'
+import { createLocalOperationTools } from '../server/local-operation-tools'
+import { createLocalDesignWorkflow } from '../server/local-design-workflow'
+import { invokeLocalTool } from '../server/local-tool-invocation'
+import { readFileSync, writeFileSync } from 'node:fs'
+const recoveryFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/pattern-budget-recovery-20261023.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
+const faceBoundaryFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/face-boundary-20261025.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
+const referencedFaceInput = structuredClone(faceBoundaryFixture.inputs[0])
+for (const [path, face] of faceBoundaryFixture.pairs[0]) {
+  let owner = referencedFaceInput.draft
+  for (const key of path.slice(0, -1)) owner = owner[key]
+  owner[path[path.length - 1]] = { face }
+}
+referencedFaceInput.inspection = 'defer'
+const sharedMotifsFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
+const layeredFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/layered-pattern-20261023.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
+import {
+  captureBrowserErrors,
+  getCapturedBrowserErrors,
+  getPersistedDocumentCheckpoint,
+  getPersistedDocumentDigest
+} from './test-utils'
 import { expect, test } from '@playwright/test'
+import {
+  createDesignPreparationSession,
+  prepareDesignAsync
+} from '../server/design-preparation'
 import { createLocalDesignTools } from '../server/local-design-tools'
 import { AiActionNames } from '../src/constants/ai-actions'
 import type { PreparedDesign } from '../src/ai/prepared-design'
 import {
   createTestDocumentIdentity,
-  waitForAppReady,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
   undo,
   redo
 } from './test-utils'
+
+const attachConstructionEvidence = async (name: string, value: unknown) => {
+  const info = test.info()
+  const path = info.outputPath(name + '.json')
+  writeFileSync(path, JSON.stringify(value))
+  await info.attach(name, { contentType: 'application/json', path })
+}
+// Keep complete diagnostics outside the bounded machine-readable report.
+test.afterEach(() => {
+  const testInfo = test.info()
+  for (const attachment of testInfo.attachments) {
+    if (!attachment.name.startsWith('construction-')) continue
+    expect(attachment.contentType).toBe('application/json')
+    expect(Boolean(attachment.body), attachment.name).toBe(false)
+    const file = attachment.path
+    if (!file) throw new Error('Missing evidence file: ' + attachment.name)
+    expect(() => JSON.parse(readFileSync(file, 'utf8'))).not.toThrow()
+  }
+})
+
+const captureConstructionCollaboration = (
+  page: import('@playwright/test').Page,
+  reset = false
+) =>
+  page.evaluate(async (resetOutcomes) => {
+    const { RuntimeDiagnosticEvents } =
+      await import('../src/constants/runtime-diagnostics')
+    const operations = resetOutcomes
+      ? ['collaboration:reset-outcomes']
+      : ['collaboration:get-status', 'collaboration:read-outcomes']
+    return operations.map((operation) => {
+      const detail: { operation: string; response?: unknown; error?: string } =
+        {
+          operation
+        }
+      document.dispatchEvent(
+        new CustomEvent(RuntimeDiagnosticEvents.REQUEST, { detail })
+      )
+      if (detail.error) throw new Error(detail.error)
+      if (!Object.hasOwn(detail, 'response'))
+        throw new Error(`Missing diagnostic response: ${operation}`)
+      return { operation, at: Date.now(), response: detail.response }
+    })
+  }, reset)
 
 const editorial = {
   type: 'frame',
@@ -261,10 +364,66 @@ const patterned = {
     }
   ]
 }
+const ovals = {
+  type: 'group',
+  name: 'Projected medallions',
+  projection: {
+    azimuth: 30,
+    elevation: 35,
+    scale: 2,
+    originX: 120,
+    originY: 200
+  },
+  linearFields: {
+    light: {
+      frame: 'world',
+      start: { x: 0, y: 0, z: 0 },
+      end: { x: 0, y: 0, z: 90 },
+      gradientStops: [
+        { position: 0, color: '#075985', opacity: 1 },
+        { position: 1, color: '#7DD3FC', opacity: 1 }
+      ]
+    }
+  },
+  children: [
+    {
+      type: 'pattern',
+      key: 'medallions',
+      name: 'Medallions',
+      origin: { x: 0, y: 0, z: 0 },
+      axes: [{ count: 3, step: { x: 105, y: 0, z: 0 } }],
+      members: [
+        {
+          type: 'projected-face',
+          key: 'rim',
+          name: 'Gold rim',
+          fill: '#F59E0B',
+          ellipse: {
+            center: { x: 35, y: 0, z: 45 },
+            u: { x: 35, y: 0, z: 0 },
+            v: { x: 8, y: 0, z: 42 }
+          }
+        },
+        {
+          type: 'projected-face',
+          key: 'inset',
+          name: 'Blue inset',
+          materialField: 'light',
+          ellipse: {
+            center: { x: 35, y: 0, z: 45 },
+            u: { x: 27, y: 0, z: 0 },
+            v: { x: 6, y: 0, z: 34 }
+          }
+        }
+      ]
+    }
+  ]
+}
 for (const [name, draft] of Object.entries({
   editorial,
   pavilion,
-  patterned
+  patterned,
+  ovals
 })) {
   test(`structured ${name} preparation renders editable geometry with one Undo`, async ({
     page
@@ -304,7 +463,8 @@ for (const [name, draft] of Object.entries({
     await page.route('**/api/ai/action-batch', (route) =>
       route.fulfill({ json: batch })
     )
-    await page.goto(createTestDocumentIdentity().url)
+    const identity = createTestDocumentIdentity()
+    await page.goto(identity.url)
     await waitForAppReady(page)
     const before = await getCoreDocumentDigest(page),
       depth = await getUndoHistoryDepth(page)
@@ -324,14 +484,18 @@ for (const [name, draft] of Object.entries({
         return {
           nodes: ids.map((id) => ({
             type: core.getElementData(id)?.type,
+            renderedRotation: core.deps.render.getElementById(id)?.rotation,
             values: core.getElementComputedData(id, [
               'x',
               'y',
               'width',
               'height',
+              'rotation',
+              'fills',
               'text'
             ])
           })),
+          sceneBounds: core.getAllElementsBounds(),
           review: await reviewDesign(ids[0])
         }
       },
@@ -339,11 +503,31 @@ for (const [name, draft] of Object.entries({
     )
     for (const [i, entry] of design.entries.entries()) {
       expect(actual.nodes[i].type).toBe(entry.descriptor.type)
+      if (entry.descriptor.type === 'oval') {
+        expect(actual.nodes[i].values?.rotation).toBe(entry.descriptor.rotation)
+        expect(actual.nodes[i].renderedRotation).toBeCloseTo(
+          Number(entry.descriptor.rotation),
+          10
+        )
+      }
       for (const property of ['width', 'height'] as const)
         expect(Number(actual.nodes[i].values?.[property])).toBeCloseTo(
           Number(entry.descriptor[property]),
           5
         )
+    }
+    if (name === 'ovals') {
+      const root = design.entries[0].descriptor
+      expect(actual.sceneBounds?.minX).toBeCloseTo(Number(root.x), 8)
+      expect(actual.sceneBounds?.minY).toBeCloseTo(Number(root.y), 8)
+      expect(actual.sceneBounds?.maxX).toBeCloseTo(
+        Number(root.x) + Number(root.width),
+        8
+      )
+      expect(actual.sceneBounds?.maxY).toBeCloseTo(
+        Number(root.y) + Number(root.height),
+        8
+      )
     }
     expect(actual.review.complete).toBe(true)
     expect(actual.review.findings).toEqual([])
@@ -359,16 +543,48 @@ for (const [name, draft] of Object.entries({
       ).selectionApis.clearSelection()
       ;(await import('../src/common-apis/viewport')).viewportApis.zoomFit()
     })
+    if (name === 'ovals') {
+      const insetIds = design.entries
+        .filter((e) => e.key.endsWith('-inset'))
+        .map((e) => e.descriptor.id)
+      await expect
+        .poll(() =>
+          page.evaluate(async (ids) => {
+            const { elementApis } =
+              await import('../src/testing/runtime-access')
+            return ids.map((id) => {
+              const bounds = elementApis.getElementClientBounds(id)
+              if (!bounds) throw new Error('Missing oval client bounds')
+              return elementApis.getRenderElementIdAtClientPos({
+                x: bounds.x + bounds.width / 2,
+                y: bounds.y + bounds.height / 2
+              })
+            })
+          }, insetIds)
+        )
+        .toEqual(insetIds)
+    }
     await page.screenshot({ path: testInfo.outputPath(`${name}.png`) })
-    await testInfo.attach('construction-evidence', {
-      body: JSON.stringify({
-        receipt,
-        actual,
-        viewport: { width: 1440, height: 1000 },
-        appURL: process.env.APP_URL,
-        selected: false
-      }),
-      contentType: 'application/json'
+    if (name === 'ovals') {
+      await expect
+        .poll(() => getPersistedDocumentDigest(identity.fileId), {
+          timeout: 30000
+        })
+        .toEqual(after)
+      await page.reload()
+      await waitForAppReady(page)
+      expect(await getCoreDocumentDigest(page)).toEqual(after)
+      await page.evaluate(async () => {
+        ;(await import('../src/common-apis/viewport')).viewportApis.zoomFit()
+      })
+      await page.screenshot({ path: testInfo.outputPath('ovals-reloaded.png') })
+    }
+    await attachConstructionEvidence('construction-evidence', {
+      receipt,
+      actual,
+      viewport: { width: 1440, height: 1000 },
+      appURL: process.env.APP_URL,
+      selected: false
     })
   })
 }
@@ -522,3 +738,432 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
     path: testInfo.outputPath('artifact-targeted-batch.png')
   })
 })
+
+for (const scenario of [
+  {
+    title:
+      'face boundaries preserve partition recovery, collaboration, Undo and durable reload',
+    input: referencedFaceInput,
+    artifacts: 2,
+    members: 2310,
+    boundaryReferences: true
+  },
+  {
+    title:
+      'shared motifs preserve independent surfaces through application, Undo and durable reload',
+    input: { draft: sharedMotifsFixture.compact.draft, inspection: 'defer' },
+    artifacts: 1,
+    members: 2668
+  },
+  {
+    title:
+      'budget partitions preserve one root through canonical normalization, Undo and durable reload',
+    input: recoveryFixture.input,
+    artifacts: 2,
+    members: 13094
+  },
+  {
+    title:
+      'layered patterns preserve references through application, Undo and durable reload',
+    input: { draft: layeredFixture.compact.draft, inspection: 'defer' },
+    artifacts: 1,
+    members: 1442
+  }
+])
+  test(scenario.title, async ({ page, browser }) => {
+    test.setTimeout(180000)
+    const designs: PreparedDesign[] = []
+    const exchange = createBatchExchange()
+    const controller = new AbortController()
+    let workflowResult: ReturnType<typeof JSON.parse>
+    let serverError: unknown
+    const referenced = 'boundaryReferences' in scenario
+    let attempts = 0
+    let peerContext: Awaited<ReturnType<typeof browser.newContext>> | undefined
+    let peer: import('@playwright/test').Page | undefined
+    const server = createServer(async (request, response) => {
+      response.setHeader(
+        'Access-Control-Allow-Origin',
+        request.headers.origin ?? '*'
+      )
+      response.setHeader(
+        'Access-Control-Allow-Headers',
+        'content-type,x-ai-batch-receipt'
+      )
+      if (request.method === 'OPTIONS') {
+        response.end()
+        return
+      }
+      try {
+        const chunks: Buffer[] = []
+        for await (const chunk of request) chunks.push(Buffer.from(chunk))
+        const input = JSON.parse(Buffer.concat(chunks).toString())
+        const token = request.headers['x-ai-batch-receipt']
+        if (typeof token === 'string') {
+          const accepted = exchange.accept(token, input)
+          response.setHeader('Content-Type', 'application/json')
+          response.end(JSON.stringify({ accepted }))
+          return
+        }
+        response.setHeader('Content-Type', 'application/x-ndjson')
+        const tools = createLocalDesignTools(
+          input.actions,
+          referenced
+            ? createDesignPreparationSession(
+                undefined,
+                async (...args) => {
+                  if (++attempts === 2)
+                    throw new Error('Injected preparation interruption')
+                  return prepareDesignAsync(...args)
+                },
+                undefined,
+                2000
+              )
+            : undefined
+        )
+        const operations = createLocalOperationTools(
+          input.actions,
+          tools,
+          async (batch) => {
+            for (const action of batch.actions)
+              if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+                designs.push(
+                  (action.arguments as { design: PreparedDesign }).design
+                )
+            return exchange.execute(batch, controller.signal, (frame) =>
+              response.write(JSON.stringify(frame) + '\n')
+            )
+          }
+        )
+        const main = createLocalDesignWorkflow(tools, operations)
+        const result = await invokeLocalTool(
+          main,
+          main.definitions[0],
+          scenario.input,
+          controller.signal
+        )
+        workflowResult = JSON.parse(result.text)
+        if (referenced) {
+          expect(workflowResult.toolOutcome.status).toBe('partial')
+          const recovery = workflowResult.recoveryInvocation
+          expect(recovery.arguments.parts).toHaveLength(1)
+          expect(JSON.stringify(recovery.arguments)).not.toContain('vertices')
+          workflowResult = JSON.parse(
+            (
+              await invokeLocalTool(
+                main,
+                main.definitions[0],
+                recovery.arguments,
+                controller.signal
+              )
+            ).text
+          )
+          expect(attempts).toBe(3)
+        }
+        response.end(
+          JSON.stringify({
+            type: 'result',
+            batch: {
+              batchId: 'construction-complete',
+              actions: [
+                {
+                  id: 'report',
+                  name: 'report_outcome',
+                  arguments: {
+                    outcome: 'completed',
+                    message: 'Construction applied.'
+                  },
+                  summary: 'Report completion'
+                }
+              ]
+            }
+          }) + '\n'
+        )
+      } catch (error) {
+        serverError = error
+        response.destroy(error instanceof Error ? error : undefined)
+      }
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address()
+    if (!address || typeof address === 'string')
+      throw new Error('Missing test endpoint')
+    try {
+      await page.route('**/api/ai/status', (route) =>
+        route.fulfill({ json: { state: 'ready' } })
+      )
+      await page.route('**/api/ai/action-batch', (route) =>
+        route.continue({ url: `http://127.0.0.1:${address.port}/action-batch` })
+      )
+      const document = createTestDocumentIdentity(
+        referenced ? 'aiPerformance=profile' : ''
+      )
+      await page.goto(document.url)
+      await waitForAppReady(page)
+      const fileId = new URL(page.url()).searchParams.get('fileId')
+      if (!fileId) throw new Error('Missing document identity')
+      if (referenced) {
+        peerContext = await browser.newContext()
+        peer = await peerContext.newPage()
+        await peer.goto(page.url())
+        await waitForAppReady(peer)
+        for (const actor of [page, peer])
+          await expect
+            .poll(() =>
+              actor.evaluate(async () =>
+                (await import('../src/testing/runtime-access'))
+                  .getActiveCollaborationHandle()
+                  ?.getStatus()
+              )
+            )
+            .toBe('connected')
+        for (const actor of [page, peer]) {
+          captureBrowserErrors(actor)
+          await captureConstructionCollaboration(actor, true)
+        }
+      }
+      const before = await getCoreDocumentDigest(page)
+      const beforeCount = await page.evaluate(async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getCanonicalElementCount()
+      )
+      const depth = await getUndoHistoryDepth(page)
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      await page
+        .getByLabel('Message Agent')
+        .fill('Apply the construction fixture')
+      await page.getByRole('button', { name: 'Send', exact: true }).click()
+      await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+        'data-outcome',
+        'success',
+        { timeout: 90000 }
+      )
+      expect(serverError).toBeUndefined()
+      expect(workflowResult.toolOutcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
+      })
+      if (scenario.artifacts > 1)
+        expect(workflowResult.parts).toHaveLength(
+          referenced ? 1 : scenario.artifacts
+        )
+      else expect(workflowResult.parts).toBeUndefined()
+      expect(designs).toHaveLength(scenario.artifacts)
+      expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+      const root = designs[0].entries[0].descriptor
+      const members = designs.flatMap((design) => design.entries.slice(1))
+      const actual = await page.evaluate(
+        async (ids) => {
+          const { core } = await import('../src/testing/runtime-access')
+          return ids.map((id) => ({
+            parentId: core.getElementMetadata(id)?.parentId,
+            world: core.elementLocalToWorkspace(id, { x: 0, y: 0 }),
+            values: core.getElementComputedData(id, ['width', 'height'])
+          }))
+        },
+        members.map((entry) => entry.descriptor.id)
+      )
+      expect(actual).toHaveLength(scenario.members)
+      // One assertion retains the complete oracle without recording 65,000 test steps.
+      const differences: string[] = []
+      for (const [i, entry] of members.entries()) {
+        if (actual[i].parentId !== root.id) differences.push(`parent:${i}`)
+        for (const [field, observed, expected] of [
+          ['x', actual[i].world.x, Number(root.x) + Number(entry.descriptor.x)],
+          ['y', actual[i].world.y, Number(root.y) + Number(entry.descriptor.y)],
+          ['width', actual[i].values?.width, entry.descriptor.width],
+          ['height', actual[i].values?.height, entry.descriptor.height]
+        ]) {
+          const delta = Math.abs(Number(observed) - Number(expected))
+          if (!Number.isFinite(delta) || delta >= 0.000005)
+            differences.push(`${i}:${field}:${delta}`)
+        }
+      }
+      expect(differences).toEqual([])
+      const order = await page.evaluate(async (id) => {
+        const { core } = await import('../src/testing/runtime-access')
+        return core.getElementData(id)?.children
+      }, root.id)
+      expect(order).toEqual(members.map((entry) => entry.descriptor.id))
+      let digestTransport: unknown
+      const digestPage = new Proxy(page, {
+        get(target, property, receiver) {
+          if (property !== 'evaluate')
+            return Reflect.get(target, property, receiver)
+          return async (...args: Parameters<typeof page.evaluate>) => {
+            const result = await page.evaluate(...args)
+            digestTransport = result
+            return result
+          }
+        }
+      })
+      const after = await getCoreDocumentDigest(digestPage)
+      expect(Object.keys(digestTransport as object)).toEqual(Object.keys(after))
+      expect(digestTransport).toEqual(after)
+      await page.evaluate(async () => {
+        const { core, testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        let saveCount = 0
+        testRuntimeState.set('construction-digest-save-count', saveCount)
+        core.registerSaveHook((data) => {
+          testRuntimeState.set('construction-digest-save-count', ++saveCount)
+          return data
+        })
+      })
+      expect(await getCoreDocumentDigest(page, beforeCount)).toBeNull()
+      expect(
+        await page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).testRuntimeState.get(
+            'construction-digest-save-count'
+          )
+        )
+      ).toBe(0)
+      const afterCount = await page.evaluate(async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getCanonicalElementCount()
+      )
+      expect(await getCoreDocumentDigest(page, afterCount)).toEqual(after)
+      expect(
+        await page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).testRuntimeState.get(
+            'construction-digest-save-count'
+          )
+        )
+      ).toBe(1)
+      if (peer)
+        await expect
+          .poll(() =>
+            getCoreDocumentDigest(
+              peer as import('@playwright/test').Page,
+              afterCount
+            )
+          )
+          .toEqual(after)
+      await page.getByRole('button', { name: 'Close Agent panel' }).click()
+      if (peer)
+        await peer.evaluate(async () => {
+          const { getActiveAiDrawingPerformanceProfile } =
+            await import('../src/testing/runtime-access')
+          getActiveAiDrawingPerformanceProfile()?.reset()
+        })
+      await page.evaluate(async () => {
+        const { historyApis } = await import('../src/common-apis/history')
+        await historyApis.undo()
+      })
+      expect(await getCoreDocumentDigest(page)).toEqual(before)
+      if (peer) {
+        try {
+          await expect
+            .poll(() =>
+              getCoreDocumentDigest(
+                peer as import('@playwright/test').Page,
+                beforeCount
+              )
+            )
+            .toEqual(before)
+          expect(
+            (await captureConstructionCollaboration(peer))[1].response
+          ).toMatchObject({ failed: 0 })
+        } catch (error) {
+          try {
+            const diagnostics = await Promise.allSettled([
+              captureConstructionCollaboration(page),
+              captureConstructionCollaboration(peer),
+              getPersistedDocumentCheckpoint(fileId)
+            ])
+            await attachConstructionEvidence(
+              'construction-peer-undo-diagnostics',
+              {
+                expected: before,
+                actorErrors: getCapturedBrowserErrors(page),
+                peerErrors: getCapturedBrowserErrors(peer),
+                diagnostics: diagnostics.map((result) =>
+                  result.status === 'fulfilled'
+                    ? result
+                    : { status: result.status, reason: String(result.reason) }
+                )
+              }
+            )
+          } catch (diagnosticError) {
+            test.info().annotations.push({
+              type: 'diagnostic-capture-failed',
+              description: String(diagnosticError)
+            })
+          }
+          throw error
+        } finally {
+          try {
+            const evidence = await peer.evaluate(async () => {
+              const { getActiveAiDrawingPerformanceProfile } =
+                await import('../src/testing/runtime-access')
+              const profile = getActiveAiDrawingPerformanceProfile()
+              if (!profile) throw new Error('Missing peer Undo profile')
+              return {
+                visibility: document.visibilityState,
+                sample: profile.snapshot(),
+                runtime: profile.getRuntimeEvidence()
+              }
+            })
+            await attachConstructionEvidence(
+              'construction-peer-undo-profile',
+              evidence
+            )
+          } catch (diagnosticError) {
+            test.info().annotations.push({
+              type: 'diagnostic-capture-failed',
+              description: String(diagnosticError)
+            })
+          }
+        }
+      }
+      await page.evaluate(async () => {
+        const { historyApis } = await import('../src/common-apis/history')
+        await historyApis.redo()
+      })
+      expect(await getCoreDocumentDigest(page)).toEqual(after)
+      if (peer)
+        await expect
+          .poll(() =>
+            getCoreDocumentDigest(
+              peer as import('@playwright/test').Page,
+              afterCount
+            )
+          )
+          .toEqual(after)
+      await expect
+        .poll(() => getPersistedDocumentDigest(fileId), { timeout: 30000 })
+        .toEqual(after)
+      await page.reload()
+      await waitForAppReady(page)
+      try {
+        expect(await getCoreDocumentDigest(page)).toEqual(after)
+      } catch (error) {
+        try {
+          const checkpoint = await getPersistedDocumentCheckpoint(fileId)
+          const reloaded = await page.evaluate(async () =>
+            (await import('../src/testing/runtime-access')).core.save()
+          )
+          await attachConstructionEvidence('construction-reload-documents', {
+            expected: after,
+            checkpoint,
+            reloaded
+          })
+        } catch (diagnosticError) {
+          test.info().annotations.push({
+            type: 'diagnostic-capture-failed',
+            description: String(diagnosticError)
+          })
+        }
+        throw error
+      }
+    } finally {
+      await peerContext?.close()
+      controller.abort()
+      server.closeAllConnections()
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve()))
+      )
+    }
+  })

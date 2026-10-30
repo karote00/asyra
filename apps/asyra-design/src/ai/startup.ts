@@ -19,7 +19,10 @@ import {
   createAiConfirmationBroker,
   type AiConfirmationBroker
 } from './confirmation'
-import { createServerActionBatchProvider } from './server-action-batch-provider'
+import {
+  createServerActionBatchProvider,
+  browserEvaluationWindow
+} from './server-action-batch-provider'
 import { createAiTransactionRunner } from './transaction'
 
 export interface AiStartup {
@@ -99,6 +102,7 @@ export const createAiStartup = (
           [AiActionNames.RELEASE_DOCUMENT_EXPORT]: 'allow',
           ...basicApiPermissionRules,
           [AiActionNames.APPLY_PREPARED_DESIGN]: 'allow',
+          [AiActionNames.APPLY_PREPARED_MATERIAL]: 'allow',
           [AiActionNames.APPLY_PRESCRIBED_POSITIONS]: 'allow',
           [AiActionNames.ORGANIZE_DESIGN]: 'allow',
           [AiActionNames.ARRANGE_DESIGN]: 'allow',
@@ -135,7 +139,10 @@ export const createAiStartup = (
           }
         ],
         requestConfirmation: confirmation.requestConfirmation,
-        transactionRunner: createAiTransactionRunner({ history })
+        transactionRunner: createAiTransactionRunner({
+          history,
+          getMutationDeadline: () => browserEvaluationWindow()?.workDeadlineAt
+        })
       })
     )
 

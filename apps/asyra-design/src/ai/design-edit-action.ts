@@ -6,7 +6,7 @@ import {
   actionToolSemantics
 } from './tool-contract'
 import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
-import { DEFAULT_TEXT_DATA } from '@asyra/preset'
+import { TEXT_PROPERTY_VALUE_SCHEMAS } from '@asyra/preset'
 import {
   editDesignElement,
   type DesignElementEdit
@@ -32,8 +32,13 @@ export const createDesignEditAction = (
     additionalProperties: false,
     required: ['elementId'],
     properties: {
-      elementId: { type: 'string', minLength: 1, maxLength: 256 },
-      name: { type: 'string', minLength: 1, maxLength: 160 },
+      elementId: {
+        'x-design-element-binding': 'each',
+        type: 'string',
+        minLength: 1,
+        maxLength: 256
+      },
+      name: { type: 'string', minLength: 1, maxLength: 160, pattern: '\\S' },
       properties: {
         type: 'object',
         additionalProperties: false,
@@ -51,12 +56,7 @@ export const createDesignEditAction = (
               { type: 'number', exclusiveMinimum: 0, maximum: 100000 }
             ])
           ),
-          ...Object.fromEntries(
-            Object.entries(DEFAULT_TEXT_DATA).map(([key, value]) => [
-              key,
-              { type: typeof value }
-            ])
-          )
+          ...TEXT_PROPERTY_VALUE_SCHEMAS
         }
       },
       fillColor: {

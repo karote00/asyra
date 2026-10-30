@@ -13,8 +13,8 @@ import {
   type RemoveElementEvent,
   type RemoveElementsEvent,
   type MoveElementsEvent,
-  type UpdateElementDataEvent,
-  type UpdateTransactionEvent
+  type UpdateElementPropertyBindingsEvent,
+  type UpdateElementDataEvent
 } from '@asyra/reactive-events'
 import {
   PROPS_ACTIONS,
@@ -234,6 +234,23 @@ export const initSceneTreeSubscribes = () => {
     ({ payload, options }) => sceneTree.applySubtreeChange(payload, options)
   )
 
+  subscribeToSynchronousEvent<UpdateElementPropertyBindingsEvent>(
+    EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+    ({ payload }) => {
+      const prepared = sceneTree.prepareCanonicalElementPropertyBindingMutation(
+        [
+          {
+            ...payload,
+            action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+            eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS
+          }
+        ]
+      )
+      sceneTree.applyPreparedElementMutation(prepared)
+      return true
+    }
+  )
+
   subscribeToSynchronousEvent<UpdateElementDataEvent>(
     EventTypes.UPDATE_ELEMENT_DATA,
     ({ payload }) => {
@@ -307,11 +324,9 @@ export const initSceneTreeSubscribes = () => {
         event.eventName === EventTypes.UPDATE_PROPERTY &&
         isUpdatePropertyChange(event.payload)
       ) {
-        const propertyPayload = event.payload
-        const transactionEvent = event as UpdateTransactionEvent
-        const orderedPropertyIds = transactionEvent.canonicalEvidence
-          ?.orderedIds ?? [propertyPayload.id]
-        orderedPropertyIds.forEach(appendPropertyId)
+        // Ordering metadata may contain element IDs; dependency resolution
+        // consumes the actual property owner identity from the canonical payload.
+        appendPropertyId(event.payload.id)
         return
       }
       if (

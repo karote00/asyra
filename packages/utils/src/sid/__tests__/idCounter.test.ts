@@ -10,6 +10,76 @@ describe('idCounter', () => {
     idCounter.clear()
   })
 
+  it('allocates registered types atomically in caller order without exposing counter control', () => {
+    idCounter.setNamespace('document-client')
+    const first = idCounter.allocate([
+      IDTypes.ELEMENT,
+      IDTypes.GROUP,
+      IDTypes.ELEMENT
+    ])
+    expect(first).toEqual([
+      'el-document-client-1',
+      'gp-document-client-1',
+      'el-document-client-2'
+    ])
+    expect(Object.isFrozen(first)).toBe(true)
+    const before = { ...idCounter.counter }
+    expect(() =>
+      idCounter.allocate([IDTypes.ELEMENT, 'not-registered'])
+    ).toThrow()
+    expect(idCounter.counter).toEqual(before)
+    expect(idCounter.allocate([])).toEqual([])
+    idCounter.load('el-document-client-40', IDTypes.ELEMENT)
+    expect(idCounter.allocate([IDTypes.ELEMENT])).toEqual([
+      'el-document-client-41'
+    ])
+    idCounter.setNamespace('other-client')
+    expect(idCounter.allocate([IDTypes.ELEMENT])).toEqual([
+      'el-other-client-42'
+    ])
+  })
+
+  it('rejects exhausted and ambiguous allocations without consuming any prefix', () => {
+    idCounter.update(IDTypes.ELEMENT, `el-${Number.MAX_SAFE_INTEGER - 1}`)
+    const before = { ...idCounter.counter }
+    expect(() =>
+      idCounter.allocate([IDTypes.GROUP, IDTypes.ELEMENT, IDTypes.ELEMENT])
+    ).toThrow('exhausted')
+    expect(idCounter.counter).toEqual(before)
+    idCounter.registerType('alias-a', 'same')
+    idCounter.registerType('alias-b', 'same')
+    const aliases = { ...idCounter.counter }
+    expect(() => idCounter.allocate(['alias-a', 'alias-b'])).toThrow(
+      'ambiguous'
+    )
+    expect(() => idCounter.allocate(['alias-a'])).toThrow('ambiguous')
+    expect(idCounter.counter).toEqual(aliases)
+    idCounter.unregisterType('alias-a')
+    idCounter.unregisterType('alias-b')
+  })
+
+  it('allocates independent concurrent requests and custom registered types without reusing issued IDs', async () => {
+    idCounter.registerType('custom-shape', 'shape')
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 12 }, () =>
+          Promise.resolve().then(() =>
+            idCounter.allocate(['custom-shape', IDTypes.ELEMENT])
+          )
+        )
+      )
+      expect(new Set(results.flat()).size).toBe(24)
+      expect(results[0]).toEqual(['shape-1', 'el-1'])
+      expect(results[results.length - 1]).toEqual(['shape-12', 'el-12'])
+      const before = { ...idCounter.counter }
+      expect(() => idCounter.allocate(null as never)).toThrow()
+      expect(() => idCounter.allocate([IDTypes.ELEMENT, 1] as never)).toThrow()
+      expect(idCounter.counter).toEqual(before)
+    } finally {
+      idCounter.unregisterType('custom-shape')
+    }
+  })
+
   describe('check current max number of id', () => {
     it('should return the current default id if type is not provided', () => {
       const currentId = idCounter.current()

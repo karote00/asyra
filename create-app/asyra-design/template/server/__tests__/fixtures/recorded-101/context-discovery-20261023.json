@@ -1,0 +1,43 @@
+{
+  "provenance": {
+    "run": "1792759840879",
+    "provider": "6b02a8f4-aaae-4070-936d-fda4163552b5",
+    "sha256": {
+      "38-input.json": "1f0ce9936c0a389482a5a43e63742a9305d253f412487d73ec837f19ce71d032",
+      "39-output.json": "8b7def9bc8cb4abdc05576111045c7bda3898f202137664a1e6ef39737a9b3c3",
+      "41-input.json": "3c9f4f06f9e5fa69d4f80382cafeb79b193398c6a1591915d57db931f18cfac2",
+      "42-output.json": "8a2295ee4542f170aa76593e30b4795523082a99f44bd8fb1cb904b0c6a93115",
+      "44-input.json": "03bfb0561ef8f75ecae65d0f0925b4074178af00054e1e8d22c63f263bb64766"
+    }
+  },
+  "usageQuery": {
+    "names": ["read_design_context"],
+    "view": "usage"
+  },
+  "fragmentQuery": {
+    "names": ["read_design_context"],
+    "schemaPaths": ["/oneOf/0"]
+  },
+  "invocation": {
+    "arguments": {
+      "scope": "ids",
+      "elementIds": ["design-dd0a06b9-1510-457a-983d-f814aa079df8-0"],
+      "fields": ["x", "y"],
+      "delivery": "page"
+    }
+  },
+  "rejectedRecovery": {
+    "tool": "describe_design_apis",
+    "arguments": {
+      "names": ["design_operations.read_design_context"],
+      "refresh": true,
+      "refreshReason": "delivery-failure",
+      "schemaPaths": ["/oneOf/0"]
+    }
+  },
+  "baseline": {
+    "lookupCalls": 2,
+    "inputBytes": 108,
+    "outputBytes": 27654
+  }
+}

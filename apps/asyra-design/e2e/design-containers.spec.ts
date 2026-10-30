@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import {
   createTestDocumentIdentity,
   waitForAppReady,
@@ -78,7 +79,7 @@ for (const rootType of ['group', 'frame'] as const) {
             {
               id: 'apply',
               name: 'apply_prepared_design',
-              arguments: { design },
+              arguments: { design: deliverPreparedDesign(design) },
               summary: 'Create the design'
             }
           ]

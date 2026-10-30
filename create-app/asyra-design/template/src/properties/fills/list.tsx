@@ -1,10 +1,11 @@
 import type { FillRowAttrs } from '@asyra/utils'
 import FillItem from './fill'
+import AppearanceSection from '../appearance-section'
 import { PlusIcon } from '../icons'
 
 interface FillListProps {
   fills: FillRowAttrs[]
-  ownerElementId: string | null
+  elementIds: string[]
   mixed: boolean
   onAdd: () => void
   onRemoveFill: (index: number) => void
@@ -12,20 +13,16 @@ interface FillListProps {
 
 const FillList = ({
   fills,
-  ownerElementId,
+  elementIds,
   mixed,
   onAdd,
   onRemoveFill
 }: FillListProps) => {
   return (
-    <div
-      className="grid grid-cols-1 w-full pb-2"
-      data-testid="prop-fills-section"
-    >
-      <div className="group flex items-center justify-between h-10 pl-4 pr-2 text-white">
-        <span className="text-[11px] font-medium opacity-60 tracking-wider">
-          Fill
-        </span>
+    <AppearanceSection
+      label="Fill"
+      testId="prop-fills-section"
+      actions={
         <button
           type="button"
           onClick={onAdd}
@@ -35,8 +32,8 @@ const FillList = ({
         >
           <PlusIcon />
         </button>
-      </div>
-
+      }
+    >
       {mixed && (
         <div
           className="pl-4 pr-2 py-2 text-[11px] text-white/50"
@@ -66,12 +63,12 @@ const FillList = ({
             key={primaryFillId}
             index={index}
             fillId={primaryFillId}
-            ownerElementId={ownerElementId}
+            elementIds={elementIds}
             onRemove={() => onRemoveFill(index)}
           />
         )
       })}
-    </div>
+    </AppearanceSection>
   )
 }
 

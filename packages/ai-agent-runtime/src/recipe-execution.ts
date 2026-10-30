@@ -12,7 +12,8 @@ import {
   embedAiToolSchema,
   selectAiToolResultSchema,
   type AiToolContract,
-  type AiToolOutcome
+  type AiToolOutcome,
+  type AiToolValidator
 } from './tool-contract.js'
 import type {
   AiJsonValue,
@@ -128,7 +129,7 @@ export interface AiRecipeInvokerOptions {
     name: string,
     revision: number
   ) => AdmittedAiRecipe | undefined
-  readonly validate: (value: unknown, schema: AiJsonValue) => string | undefined
+  readonly validate: AiToolValidator
   /** This is the host's existing permission, freshness and scheduler boundary. */
   readonly execute: (
     call: AiInvocationContext,

@@ -7,14 +7,12 @@ import FillList from './list'
 const Fills = () => {
   const fillsValue = useFills()
   const selection = useProperty<Set<string>>('elementSelection')
-  const ownerElementId = selection.size === 1 ? Array.from(selection)[0] : null
+  const elementIds = Array.from(selection)
   const mixed = fillsValue === MIXED_STRING
   const fills = mixed ? [] : fillsValue
 
   const handleAddFill = () => {
-    if (ownerElementId) {
-      fillApis.addFill(ownerElementId)
-    }
+    fillApis.addFills(elementIds)
   }
 
   const handleRemoveFill = (index: number) => {
@@ -22,16 +20,13 @@ const Fills = () => {
       return
     }
 
-    const fillId = fills[index]?.ids[0]
-    if (ownerElementId && fillId) {
-      fillApis.removeFill(ownerElementId, fillId)
-    }
+    fillApis.removeFills(fillApis.getFillTargetsAtIndex(elementIds, index))
   }
 
   return (
     <FillList
       fills={fills}
-      ownerElementId={ownerElementId}
+      elementIds={elementIds}
       mixed={mixed}
       onAdd={handleAddFill}
       onRemoveFill={handleRemoveFill}

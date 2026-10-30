@@ -2,6 +2,20 @@
   "schemaVersion": 1,
   "pages": [
     {
+      "id": "updates/retained-information-r1",
+      "path": "updates/retained-information-r1.md",
+      "section": "Extend",
+      "title": "Adopt selected retained information",
+      "description": "Pending exact Knowledge and tool-result selection with preserved scope, validity and read-only recovery.",
+      "sources": [
+        "packages/ai-agent-runtime/src/knowledge-types.ts",
+        "packages/ai-agent-runtime/src/knowledge.ts",
+        "apps/asyra-design/server/local-knowledge.ts",
+        "apps/asyra-design/server/local-operation-tools.ts"
+      ],
+      "packages": ["@asyra/ai-agent-runtime"]
+    },
+    {
       "id": "overview",
       "path": "index.md",
       "section": "Overview",
@@ -686,6 +700,41 @@
         "@asyra/ai-agent-runtime",
         "@asyra/collaboration",
         "@asyra/persistence"
+      ]
+    },
+    {
+      "id": "updates/design-owner-handoffs-r1",
+      "path": "updates/design-owner-handoffs-r1.md",
+      "section": "Extend",
+      "title": "Adopt canonical property and AI handoffs",
+      "description": "Pending source-bound integration guidance for property receipts, retained Knowledge, interruption and shared geometry consumers.",
+      "sources": [
+        "packages/core/src/types/property-intents.ts",
+        "packages/ai-agent-runtime/src/knowledge-types.ts",
+        "packages/ai-agent-runtime/src/provider.ts",
+        "packages/utils/src/render/geometry-bounds.ts"
+      ],
+      "packages": ["@asyra/core", "@asyra/ai-agent-runtime", "@asyra/utils"]
+    },
+    {
+      "id": "updates/unified-tool-contracts-r1",
+      "path": "updates/unified-tool-contracts-r1.md",
+      "section": "Extend",
+      "title": "Adopt unified direct tool contracts",
+      "description": "Pending direct-tool integration, canonical constraints and retained recovery without replay.",
+      "sources": [
+        "apps/asyra-design/server/local-operation-tools.ts",
+        "apps/asyra-design/server/local-design-workflow.ts",
+        "packages/ai-agent-runtime/src/recipe-schema.ts",
+        "packages/preset/src/props/components/text-component.ts",
+        "packages/core/src/core.ts",
+        "packages/utils/src/sid/idCounter.ts"
+      ],
+      "packages": [
+        "@asyra/ai-agent-runtime",
+        "@asyra/core",
+        "@asyra/preset",
+        "@asyra/utils"
       ]
     }
   ]

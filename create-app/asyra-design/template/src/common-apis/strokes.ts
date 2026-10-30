@@ -18,10 +18,16 @@ import type {
 import { STROKE_PATCH_KEYS, type StrokeWritableKey } from '../constants'
 import core from '../contexts'
 import { calculateVectorBounds } from './element/vector-geometry'
-import { getChangedDefinedPatchEntries } from './property-patch'
 import { transactionApis } from './transaction'
+import { mutationReceipt, type MutationReceipt } from './mutation-receipt'
 
 export type StrokePatch = Partial<Pick<StrokeAttrs, StrokeWritableKey>>
+
+export interface StrokeFieldsUpdate {
+  readonly elementId: string
+  readonly strokeId: string
+  readonly patch: StrokePatch
+}
 
 export interface PrimaryStrokeColorUpdate {
   readonly color: string
@@ -37,9 +43,6 @@ const createStrokeRecordPatch = (
   fields: Readonly<Record<string, unknown>>,
   values?: Readonly<Record<string, unknown>>
 ): ElementPropertyPatchUpdate => {
-  if (fields.id !== strokeId) {
-    throw new Error(`Stroke record key "${strokeId}" does not match its id`)
-  }
   const recordFields: Record<string, unknown> = {}
   for (const key of STROKE_PATCH_KEYS) {
     const value = fields[key]
@@ -130,25 +133,30 @@ const getPrimaryStroke = (elementId: string): StrokeAttrs | null => {
 }
 
 export const strokeApis = {
-  addStroke: (elementId: string, options?: EVENT_OPTIONS): string | null => {
+  addStroke: (
+    elementId: string,
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<string | null> => {
     if (!core.getElementData(elementId)) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
     const stroke = createDefaultStroke({ id: id('stroke') })
-    transactionApis.runTransaction(() => {
-      core.patchElementProperties(
+    const evidence = transactionApis.runTransaction(() => {
+      return core.patchElementProperties(
         [createStrokeRecordPatch(elementId, stroke.id, { ...stroke })],
         options
       )
     })
-    return stroke.id
+    return mutationReceipt(stroke.id, evidence)
   },
 
   removeStroke: (
     elementId: string,
     strokeId: string,
     options?: EVENT_OPTIONS
-  ): boolean => {
+  ): MutationReceipt<boolean> => {
     const computed = core.getElementComputedData(elementId) as
       { strokes?: unknown } | undefined
     const strokes = computed?.strokes
@@ -162,11 +170,13 @@ export const strokeApis = {
           (candidate as { id?: unknown }).id === strokeId
       )
     ) {
-      return false
+      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    transactionApis.runTransaction(() => {
-      core.patchElementProperties(
+    const evidence = transactionApis.runTransaction(() => {
+      return core.patchElementProperties(
         [
           {
             elementId,
@@ -181,7 +191,7 @@ export const strokeApis = {
         options
       )
     })
-    return true
+    return mutationReceipt(true, evidence)
   },
 
   getPrimaryStrokeColor: (elementId: string): string | null => {
@@ -192,17 +202,19 @@ export const strokeApis = {
   updatePrimaryStrokeColors: (
     updates: readonly PrimaryStrokeColorUpdate[],
     options?: EVENT_OPTIONS
-  ): readonly boolean[] => {
+  ): readonly ('changed' | 'unchanged' | 'unavailable')[] => {
+    const results: ('changed' | 'unchanged' | 'unavailable')[] = []
     const prepared = updates.map(({ color, elementId }) => {
       const stroke = getPrimaryStroke(elementId)
-      if (
-        !stroke ||
-        typeof color !== 'string' ||
-        color.length === 0 ||
-        stroke.fill.color === color
-      ) {
+      if (!stroke || typeof color !== 'string' || color.length === 0) {
+        results.push('unavailable')
         return null
       }
+      if (stroke.fill.color === color) {
+        results.push('unchanged')
+        return null
+      }
+      results.push('changed')
       return {
         elementId,
         nextStroke: {
@@ -216,7 +228,7 @@ export const strokeApis = {
       }
     })
     if (!prepared.some((update) => update !== null)) {
-      return Object.freeze(prepared.map(() => false))
+      return Object.freeze(results)
     }
 
     transactionApis.runTransaction(() => {
@@ -233,7 +245,7 @@ export const strokeApis = {
         options
       )
     })
-    return Object.freeze(prepared.map((update) => update !== null))
+    return Object.freeze(results)
   },
 
   updatePrimaryStrokeColor: (
@@ -249,62 +261,81 @@ export const strokeApis = {
         }
       ],
       options
-    )[0] ?? false,
+    )[0] === 'changed',
+
+  updateStrokeFieldsBatch: (
+    updates: readonly StrokeFieldsUpdate[],
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<null> => {
+    const targets = new Map<string, Set<string>>()
+    const bounds = new Map<string, Record<string, DataTypes> | null>()
+    const patches: ElementPropertyPatchUpdate[] = []
+    for (const { elementId, strokeId, patch } of updates) {
+      if (
+        !isRecord(patch) ||
+        Object.keys(patch).some(
+          (key) => !(STROKE_PATCH_KEYS as readonly string[]).includes(key)
+        )
+      )
+        throw new Error('Invalid Stroke patch field')
+      if (!targets.has(elementId)) {
+        const strokes = core.getElementComputedData(elementId, [
+          'strokes'
+        ])?.strokes
+        targets.set(
+          elementId,
+          new Set(
+            Array.isArray(strokes) ? strokes.map((stroke) => stroke.id) : []
+          )
+        )
+      }
+      if (!strokeId || !targets.get(elementId)?.has(strokeId))
+        throw new Error(`Missing Stroke ${strokeId} on ${elementId}`)
+      if (!Object.values(patch).some((value) => value !== undefined)) continue
+      let values: Record<string, DataTypes> | undefined
+      if (hasGeometryAffectingStrokePatch(patch) && !bounds.has(elementId)) {
+        const repair = getVectorBoundsRepairPatch(elementId)
+        bounds.set(elementId, repair)
+        values = repair ?? undefined
+      }
+      patches.push(createStrokeRecordPatch(elementId, strokeId, patch, values))
+    }
+    if (!patches.length)
+      return mutationReceipt(null, {
+        acceptedIds: [...new Set(updates.map(({ elementId }) => elementId))],
+        changed: false
+      })
+    const evidence = transactionApis.runTransaction(() =>
+      core.patchElementProperties(patches, options)
+    )
+    return mutationReceipt(null, {
+      acceptedIds: [...new Set(updates.map(({ elementId }) => elementId))],
+      changed: evidence.changed
+    })
+  },
 
   updateStrokeFields: (
     elementId: string,
     strokeId: string,
-    currentStroke: StrokeAttrs,
     patch: StrokePatch,
     options?: EVENT_OPTIONS
-  ) => {
-    const changedEntries = getChangedDefinedPatchEntries(
-      STROKE_PATCH_KEYS,
-      currentStroke,
-      patch
-    )
-    if (changedEntries.length === 0) {
-      return
-    }
-
-    transactionApis.runTransaction(() => {
-      const vectorBoundsRepairPatch = hasGeometryAffectingStrokePatch(patch)
-        ? getVectorBoundsRepairPatch(elementId)
-        : null
-      const nextStroke = {
-        ...currentStroke,
-        ...Object.fromEntries(changedEntries)
-      } as Readonly<Record<string, unknown>>
-      core.patchElementProperties(
-        [
-          createStrokeRecordPatch(
-            elementId,
-            strokeId,
-            nextStroke,
-            vectorBoundsRepairPatch ?? undefined
-          )
-        ],
-        options
-      )
-    })
-  },
+  ) =>
+    strokeApis.updateStrokeFieldsBatch(
+      [{ elementId, strokeId, patch }],
+      options
+    ),
 
   updateStrokeField: <K extends StrokeWritableKey>(
     elementId: string,
     strokeId: string,
-    currentStroke: StrokeAttrs,
     key: K,
     value: StrokeAttrs[K],
     options?: EVENT_OPTIONS
-  ) => {
+  ) =>
     strokeApis.updateStrokeFields(
       elementId,
       strokeId,
-      currentStroke,
-      {
-        [key]: value
-      } as StrokePatch,
+      { [key]: value } as StrokePatch,
       options
     )
-  }
 }

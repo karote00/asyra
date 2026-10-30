@@ -30,6 +30,7 @@ import type {
 import { vectorApis } from './vector-apis'
 import { updateElementProperties as applyElementPropertyUpdate } from './update-element-properties'
 import { viewportApis } from '../viewport'
+import { mutationReceipt, type MutationReceipt } from '../mutation-receipt'
 
 export type { VectorPointTarget } from './types'
 export {
@@ -46,28 +47,61 @@ const resolveEventOptions = (options?: EVENT_OPTIONS): EVENT_OPTIONS => {
   return { undoable: true }
 }
 
+export type ElementFlagResult = 'changed' | 'unchanged' | 'unavailable'
+
+const setElementFlags = (
+  elementIds: readonly string[],
+  key: 'lock' | 'visible',
+  value: boolean,
+  options?: EVENT_OPTIONS
+): ElementFlagResult[] => {
+  const changes = new Set<string>()
+  const targets = new Map<string, ElementFlagResult>()
+  const result = elementIds.map((elementId): ElementFlagResult => {
+    if (changes.has(elementId)) return 'unchanged'
+    const previous = targets.get(elementId)
+    if (previous) return previous
+    const element = core.getElementData(elementId)
+    let status: ElementFlagResult = 'changed'
+    if (!element || element.type === EntityTypes.WORKSPACE)
+      status = 'unavailable'
+    else if (element[key] === value) status = 'unchanged'
+    targets.set(elementId, status)
+    if (status === 'changed') changes.add(elementId)
+    return status
+  })
+  if (changes.size) {
+    const resolvedOptions = resolveEventOptions(options)
+    runTransaction(() => {
+      for (const elementId of changes)
+        core.updateElementData(elementId, { [key]: value }, resolvedOptions)
+    })
+  }
+  return result
+}
+
 const setElementFlag = (
   elementId: string,
   key: 'lock' | 'visible',
   value: boolean,
   options?: EVENT_OPTIONS
-): boolean => {
-  const element = core.getElementData(elementId)
-  if (!element || element.type === EntityTypes.WORKSPACE) {
-    return false
-  }
+): boolean => setElementFlags([elementId], key, value, options)[0] === 'changed'
 
-  if (element[key] === value) {
-    return false
-  }
-
-  const resolvedOptions = resolveEventOptions(options)
-
-  runTransaction(() => {
-    core.updateElementData(elementId, { [key]: value }, resolvedOptions)
-  })
-
-  return true
+const setElementFlagReceipt = (
+  elementId: string,
+  key: 'lock' | 'visible',
+  value: boolean,
+  options?: EVENT_OPTIONS
+): MutationReceipt<boolean> => {
+  const status = setElementFlags([elementId], key, value, options)[0]
+  return mutationReceipt(
+    status === 'changed',
+    {
+      acceptedIds: status === 'unavailable' ? [] : [elementId],
+      changed: status === 'changed'
+    },
+    status === 'unavailable' ? [elementId] : []
+  )
 }
 
 const getDefaultFillsForType = (type: EntityType) => {
@@ -145,15 +179,6 @@ const getWorkspaceOrderedElementIds = (): string[] => {
   }
 
   return orderedIds
-}
-
-const boundsIntersect = (a: ElementBounds, b: ElementBounds): boolean => {
-  const aMaxX = a.x + a.width
-  const aMaxY = a.y + a.height
-  const bMaxX = b.x + b.width
-  const bMaxY = b.y + b.height
-
-  return a.x <= bMaxX && aMaxX >= b.x && a.y <= bMaxY && aMaxY >= b.y
 }
 
 const createElementAtWorkspacePos = (
@@ -248,30 +273,8 @@ export const elementApis = {
     return null
   },
 
-  getElementIdsInBounds: (bounds: ElementBounds): string[] => {
-    if (!bounds) {
-      return []
-    }
-
-    const orderedIds = getWorkspaceOrderedElementIds()
-    return orderedIds.filter((elementId) => {
-      const element = core.getElementData(elementId)
-      if (!element) {
-        return false
-      }
-
-      if (element.type === EntityTypes.WORKSPACE) {
-        return false
-      }
-
-      const elementBounds = elementApis.getElementBounds(elementId)
-      if (!elementBounds) {
-        return false
-      }
-
-      return boundsIntersect(elementBounds, bounds)
-    })
-  },
+  getElementIdsInBounds: (bounds: ElementBounds): string[] =>
+    core.getElementIdsInBounds(bounds),
 
   getElementIdAtClientPos: (clientPos: PositionData): string | null => {
     const renderHit = core.getElementIdAtClientPos(clientPos)
@@ -307,8 +310,8 @@ export const elementApis = {
     elementId: string,
     lock: boolean,
     options?: EVENT_OPTIONS
-  ): boolean => {
-    return setElementFlag(elementId, 'lock', lock, options)
+  ): MutationReceipt<boolean> => {
+    return setElementFlagReceipt(elementId, 'lock', lock, options)
   },
 
   setElementVisible: (
@@ -319,25 +322,44 @@ export const elementApis = {
     return setElementFlag(elementId, 'visible', visible, options)
   },
 
-  toggleElementLock: (elementId: string, options?: EVENT_OPTIONS): boolean => {
+  setElementsVisible: (
+    elementIds: readonly string[],
+    visible: boolean,
+    options?: EVENT_OPTIONS
+  ): ElementFlagResult[] =>
+    setElementFlags(elementIds, 'visible', visible, options),
+
+  toggleElementLock: (
+    elementId: string,
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<boolean> => {
     const element = core.getElementData(elementId)
     if (!element || element.type === EntityTypes.WORKSPACE) {
-      return false
+      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    return setElementFlag(elementId, 'lock', !element.lock, options)
+    return setElementFlagReceipt(elementId, 'lock', !element.lock, options)
   },
 
   toggleElementVisible: (
     elementId: string,
     options?: EVENT_OPTIONS
-  ): boolean => {
+  ): MutationReceipt<boolean> => {
     const element = core.getElementData(elementId)
     if (!element || element.type === EntityTypes.WORKSPACE) {
-      return false
+      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    return setElementFlag(elementId, 'visible', !element.visible, options)
+    return setElementFlagReceipt(
+      elementId,
+      'visible',
+      !element.visible,
+      options
+    )
   },
 
   getElementBounds: (elementId: string): ElementBounds | null => {
@@ -467,13 +489,14 @@ export const elementApis = {
       return false
     }
 
-    const minX = bounds.x - padding
-    const minY = bounds.y - padding
-    const maxX = bounds.x + bounds.width + padding
-    const maxY = bounds.y + bounds.height + padding
+    const localPoint = core.workspaceToElementLocal(elementId, point)
+    if (!localPoint) return false
 
     return (
-      point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+      localPoint.x >= -padding &&
+      localPoint.x <= bounds.width + padding &&
+      localPoint.y >= -padding &&
+      localPoint.y <= bounds.height + padding
     )
   },
 
@@ -496,13 +519,12 @@ export const elementApis = {
       return null
     }
 
-    const orderedElementIds = core.createElementsInParent(
+    return core.createElementsInParent(
       descriptors,
       parentId,
       undefined,
       options
     )
-    return Object.freeze([...orderedElementIds])
   },
 
   createElements: (
@@ -512,29 +534,36 @@ export const elementApis = {
     if (createOptions.length === 0) {
       return []
     }
-    if (createOptions.every(({ type }) => type === 'vector')) {
-      const parentId = createOptions[0].parentId ?? core.getCurrentWorkspaceId()
-      if (
-        !parentId ||
-        createOptions.some(
-          (elementOptions) =>
-            (elementOptions.parentId ?? core.getCurrentWorkspaceId()) !==
+    return runTransaction(() => {
+      const result: (string | null)[] = []
+      let offset = 0
+      while (offset < createOptions.length) {
+        const current = createOptions[offset]
+        if (current.type !== 'vector') {
+          result.push(elementApis.createElement(current, options))
+          offset++
+          continue
+        }
+        const parentId = current.parentId ?? core.getCurrentWorkspaceId()
+        const first = offset++
+        while (
+          offset < createOptions.length &&
+          createOptions[offset].type === 'vector' &&
+          (createOptions[offset].parentId ?? core.getCurrentWorkspaceId()) ===
             parentId
         )
-      ) {
-        return createOptions.map(() => null)
+          offset++
+        const group = createOptions.slice(first, offset)
+        result.push(
+          ...(vectorApis.createVectorElementsInParent(
+            group,
+            parentId,
+            options
+          ) ?? group.map(() => null))
+        )
       }
-      return (
-        vectorApis.createVectorElementsInParent(
-          createOptions,
-          parentId,
-          options
-        ) ?? createOptions.map(() => null)
-      )
-    }
-    return createOptions.map((elementOptions) =>
-      elementApis.createElement(elementOptions, options)
-    )
+      return Object.freeze(result)
+    })
   },
 
   createElement: (
@@ -587,6 +616,13 @@ export const elementApis = {
     )
   },
 
+  deleteElements: (elementIds: readonly string[], options?: EVENT_OPTIONS) =>
+    runTransaction(() => ({
+      removed: core
+        .removeSubtrees(elementIds, options)
+        .map((elementId) => ({ elementId }))
+    })),
+
   deleteElement: (elementId: string, options?: EVENT_OPTIONS): boolean => {
     const element = core.getElementData(elementId)
     if (!element || element.type === EntityTypes.WORKSPACE) {
@@ -599,7 +635,7 @@ export const elementApis = {
   },
 
   resetElementSize: (elementId: string, options?: EVENT_OPTIONS) => {
-    elementApis.changeElementGeometry(
+    return elementApis.changeElementGeometry(
       elementId,
       {
         width: DEFAULT_ELEMENT_SIZE,
@@ -614,7 +650,10 @@ export const elementApis = {
     geometry: Partial<ElementBounds>,
     options?: EVENT_OPTIONS
   ) => {
-    applyElementPropertyUpdate([elementId], geometry, options)
+    return mutationReceipt(
+      null,
+      applyElementPropertyUpdate([elementId], geometry, options)
+    )
   },
 
   normalizeGroupGeometryForElements: (
@@ -635,28 +674,30 @@ export const elementApis = {
   ) => {
     const entries = Object.entries(positionsById ?? {})
     if (entries.length === 0) {
-      return
+      return mutationReceipt(null, { acceptedIds: [], changed: false })
     }
 
-    runTransaction(() => {
+    return runTransaction(() => {
+      const acceptedIds: string[] = []
+      const unavailableIds: string[] = []
       const propertyUpdates: {
         elementId: string
         values: Readonly<Record<string, unknown>>
       }[] = []
 
       entries.forEach(([elementId, position]) => {
-        if (
-          typeof position?.x !== 'number' ||
-          typeof position?.y !== 'number'
-        ) {
+        if (!Number.isFinite(position?.x) || !Number.isFinite(position?.y)) {
+          unavailableIds.push(elementId)
           return
         }
 
         const currentPosition = elementApis.getElementPosition(elementId)
         if (!currentPosition) {
+          unavailableIds.push(elementId)
           return
         }
 
+        acceptedIds.push(elementId)
         if (
           currentPosition.x === position.x &&
           currentPosition.y === position.y
@@ -673,9 +714,11 @@ export const elementApis = {
         })
       })
 
-      if (propertyUpdates.length > 0) {
-        core.updateElementProperties(propertyUpdates, options)
-      }
+      const changed =
+        propertyUpdates.length > 0
+          ? core.updateElementProperties(propertyUpdates, options).changed
+          : false
+      return mutationReceipt(null, { acceptedIds, changed }, unavailableIds)
     })
   },
 

@@ -32,6 +32,7 @@ import {
   type UpdateElementBatchChange,
   type UpdateElementChange,
   type UpdateElementDataChange,
+  type UpdateElementPropertyBindingsChange,
   type UpdateElementPatchChange,
   type WorkspaceRawData
 } from '@asyra/utils'
@@ -218,6 +219,12 @@ const updateRenderSceneTree = (change: SceneTreeChange) => {
       return recordRenderProjectionOutcome(
         renderSceneTreeStore.applySubtreeChange(change as SubtreeChange)
       )
+    case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS: {
+      const { id, changes } = change as UpdateElementPropertyBindingsChange
+      return recordRenderProjectionOutcome(
+        renderSceneTreeStore.updateElementPropertyBindings(id, changes)
+      )
+    }
     case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA: {
       const { id, changes, options } = change as UpdateElementDataChange
       return recordRenderProjectionOutcome(
@@ -926,6 +933,85 @@ interface ProjectedHierarchyPreparation {
   children: Map<string, string[]>
 }
 
+// A terminal ancestry proof is local to this publication, never a second tree.
+const planProjectedTailAdditions = (
+  changes: readonly SceneTreeChange[],
+  prepared: ProjectedHierarchyPreparation | undefined
+): string[] | undefined => {
+  if (
+    !prepared ||
+    prepared.flattenedIds.length === 0 ||
+    changes.some(
+      (change) =>
+        change.action !== SCENE_TREE_ACTIONS.ADD_ELEMENT &&
+        change.action !== SCENE_TREE_ACTIONS.ADD_ELEMENTS
+    )
+  )
+    return
+  const tail: string[] = []
+  const terminalIds = new Set<string>()
+  let current: string | undefined =
+    prepared.flattenedIds[prepared.flattenedIds.length - 1]
+  while (current) {
+    if (terminalIds.has(current)) return
+    emitDiagnosticCounter('ui-context-hierarchy-tail-visit')
+    terminalIds.add(current)
+    tail.push(current)
+    current = prepared.parents.get(current)
+  }
+  tail.reverse()
+  const appended: string[] = []
+  const addedIds = new Set<string>()
+  const childCounts = new Map<string, number>()
+  for (const change of changes) {
+    let entries: readonly {
+      data: AddRemoveElementEntry['data'] & { children?: unknown }
+      parentId?: string
+      index?: number
+    }[]
+    if (change.action === SCENE_TREE_ACTIONS.ADD_ELEMENTS) {
+      entries = (change as AddRemoveElementsChange).entries
+    } else if (change.action === SCENE_TREE_ACTIONS.ADD_ELEMENT) {
+      entries = [change as AddRemoveElementChange]
+    } else return
+    for (const { data, parentId, index } of entries) {
+      const id = data.id
+      const parent = typeof parentId === 'string' ? parentId : data.parentId
+      if (
+        !id ||
+        !parent ||
+        prepared.parents.has(id) ||
+        prepared.children.has(id) ||
+        addedIds.has(id) ||
+        !terminalIds.has(parent) ||
+        (data.children !== undefined &&
+          (!Array.isArray(data.children) || data.children.length !== 0))
+      )
+        return
+      const childCount =
+        childCounts.get(parent) ?? prepared.children.get(parent)?.length ?? 0
+      if (index !== undefined && index !== childCount) return
+      if (
+        change.action === SCENE_TREE_ACTIONS.ADD_ELEMENTS &&
+        index === undefined
+      )
+        return
+      while (tail[tail.length - 1] !== parent) {
+        const previous = tail.pop()
+        if (previous === undefined) return
+        terminalIds.delete(previous)
+      }
+      tail.push(id)
+      terminalIds.add(id)
+      addedIds.add(id)
+      appended.push(id)
+      childCounts.set(parent, childCount + 1)
+      emitDiagnosticCounter('ui-context-hierarchy-append-entry')
+    }
+  }
+  return appended.length ? appended : undefined
+}
+
 const projectUIContextSceneTreeBatch = (
   changes: readonly SceneTreeChange[],
   lifetime: UIContextSyncLifetime
@@ -949,6 +1035,7 @@ const projectUIContextSceneTreeBatch = (
         : undefined
     // Re-entrant publication or failure must never consume an in-progress index.
     lifetime.hierarchy = undefined
+    const tailAdditions = planProjectedTailAdditions(changes, reusable)
     const mutation = createProjectedElementDataMapMutation(
       current,
       currentFlattenedIds
@@ -1007,6 +1094,12 @@ const projectUIContextSceneTreeBatch = (
       if (!parentId) return
       emitDiagnosticCounter('ui-context-membership-add-scalar')
       const children = childrenByParent.get(parentId) ?? []
+      if (tailAdditions) {
+        children.push(elementId)
+        childrenByParent.set(parentId, children)
+        dirtyParentIds.add(parentId)
+        return
+      }
       const existingIndex = children.indexOf(elementId)
       if (existingIndex >= 0) {
         children.splice(existingIndex, 1)
@@ -1049,6 +1142,13 @@ const projectUIContextSceneTreeBatch = (
       })
 
       entriesByParent.forEach((parentEntries, parentId) => {
+        if (tailAdditions) {
+          const children = childrenByParent.get(parentId) ?? []
+          parentEntries.forEach(({ elementId }) => children.push(elementId))
+          childrenByParent.set(parentId, children)
+          dirtyParentIds.add(parentId)
+          return
+        }
         const insertedIds = new Set(
           parentEntries.map(({ elementId }) => elementId)
         )
@@ -1195,6 +1295,7 @@ const projectUIContextSceneTreeBatch = (
               index: index as number
             })
           } else {
+            if (tailAdditions) flushScalarAdditionMemberships()
             insertMembership(projectedParentId, elementId, index)
           }
           break
@@ -1344,6 +1445,19 @@ const projectUIContextSceneTreeBatch = (
           })
           break
         }
+        case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS: {
+          const { id, changes: bindings } =
+            change as UpdateElementPropertyBindingsChange
+          const current = next[id]
+          if (!current) break
+          const props: Record<string, unknown> = { ...(current.props ?? {}) }
+          bindings.forEach(({ key, after }) => {
+            props[key] = after
+          })
+          ensureMutableMap()[id] = { ...current, props }
+          changedElementIds.add(id)
+          break
+        }
         case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA: {
           const { id, changes: updates } = change as UpdateElementDataChange
           updates.forEach(({ key, after }) => {
@@ -1410,57 +1524,67 @@ const projectUIContextSceneTreeBatch = (
         parentIds.set(elementId, getProjectedParentId(row))
         return true
       }
-      const currentFlattenedIdSet = new Set(currentFlattenedIds)
-      const orderedCandidates = [
-        ...currentFlattenedIds,
-        ...[...changedElementIds].filter(
-          (elementId) => !currentFlattenedIdSet.has(elementId)
+      if (tailAdditions) {
+        emitDiagnosticCounter(
+          'ui-context-flattened-identity-copy',
+          currentFlattenedIds.length
         )
-      ]
-      const rootParentIds: string[] = []
-      const rootParentIdSet = new Set<string>()
-      orderedCandidates.forEach((elementId) => {
-        if (!hasProjectedRow(elementId)) return
-        const parentId = parentIds.get(elementId)
-        if (
-          parentId &&
-          !rootParentIdSet.has(parentId) &&
-          !hasProjectedRow(parentId)
-        ) {
-          rootParentIdSet.add(parentId)
-          rootParentIds.push(parentId)
+        nextFlattenedIds = currentFlattenedIds.concat(tailAdditions)
+      } else {
+        const currentFlattenedIdSet = new Set(currentFlattenedIds)
+        const orderedCandidates = [
+          ...currentFlattenedIds,
+          ...[...changedElementIds].filter(
+            (elementId) => !currentFlattenedIdSet.has(elementId)
+          )
+        ]
+        const rootParentIds: string[] = []
+        const rootParentIdSet = new Set<string>()
+        orderedCandidates.forEach((elementId) => {
+          emitDiagnosticCounter('ui-context-hierarchy-root-candidate')
+          if (!hasProjectedRow(elementId)) return
+          const parentId = parentIds.get(elementId)
+          if (
+            parentId &&
+            !rootParentIdSet.has(parentId) &&
+            !hasProjectedRow(parentId)
+          ) {
+            rootParentIdSet.add(parentId)
+            rootParentIds.push(parentId)
+          }
+        })
+        const flattenedElementIds: string[] = []
+        const visited = new Set<string>()
+        const collectProjectedChildren = (
+          elementId: string,
+          parentId: string
+        ): void => {
+          emitDiagnosticCounter('ui-context-hierarchy-node-visit')
+          if (visited.has(elementId) || !hasProjectedRow(elementId)) {
+            completeHierarchy = false
+            return
+          }
+          if (parentIds.get(elementId) !== parentId) completeHierarchy = false
+          visited.add(elementId)
+          flattenedElementIds.push(elementId)
+          ;(childrenByParent.get(elementId) ?? []).forEach((childId) =>
+            collectProjectedChildren(childId, elementId)
+          )
         }
-      })
-      const flattenedElementIds: string[] = []
-      const visited = new Set<string>()
-      const collectProjectedChildren = (
-        elementId: string,
-        parentId: string
-      ): void => {
-        if (visited.has(elementId) || !hasProjectedRow(elementId)) {
-          completeHierarchy = false
-          return
-        }
-        if (parentIds.get(elementId) !== parentId) completeHierarchy = false
-        visited.add(elementId)
-        flattenedElementIds.push(elementId)
-        ;(childrenByParent.get(elementId) ?? []).forEach((childId) =>
-          collectProjectedChildren(childId, elementId)
-        )
+        rootParentIds.forEach((parentId) => {
+          ;(childrenByParent.get(parentId) ?? []).forEach((childId) =>
+            collectProjectedChildren(childId, parentId)
+          )
+        })
+        if (visited.size !== parentIds.size) completeHierarchy = false
+        nextFlattenedIds = flattenedElementIds
       }
-      rootParentIds.forEach((parentId) => {
-        ;(childrenByParent.get(parentId) ?? []).forEach((childId) =>
-          collectProjectedChildren(childId, parentId)
-        )
-      })
-      if (visited.size !== parentIds.size) completeHierarchy = false
 
       emitDiagnosticCounter('ui-context-sync-flattened-ids')
       emitDiagnosticCounter(
         'ui-context-flattened-identity-output',
-        flattenedElementIds.length
+        nextFlattenedIds.length
       )
-      nextFlattenedIds = flattenedElementIds
     }
 
     emitDiagnosticCounter('ui-context-membership-row-read', membershipRowReads)

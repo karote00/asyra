@@ -753,10 +753,14 @@ test.describe('Vector app-flow invariants', () => {
           y: (start.y + end.y) / 2
         }
       )
-      if (!result?.point?.id) {
+      if (
+        !result.changed ||
+        result.unavailableIds.length ||
+        !result.value?.point.id
+      ) {
         throw new Error('Failed to split vector segment')
       }
-      return result.point.id
+      return result.value.point.id
     })
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:split')
@@ -777,7 +781,7 @@ test.describe('Vector app-flow invariants', () => {
       if (!elementId) {
         throw new Error('Missing selected vector for remove')
       }
-      if (!elementApis.removeVectorAnchorPoint(elementId, pointId)) {
+      if (!elementApis.removeVectorAnchorPoint(elementId, pointId).changed) {
         throw new Error('Failed to remove split vector point')
       }
     }, splitPointId)
@@ -864,7 +868,11 @@ test.describe('Vector app-flow invariants', () => {
         'B',
         'smooth'
       )
-      if (!updated?.point?.id) {
+      if (
+        !updated.changed ||
+        updated.unavailableIds.length ||
+        !updated.value?.point?.id
+      ) {
         throw new Error('Failed to set vector anchor type')
       }
     })
@@ -945,7 +953,11 @@ test.describe('Vector app-flow invariants', () => {
         'B',
         'mirror-angle-length'
       )
-      if (!updated?.point?.id) {
+      if (
+        !updated.changed ||
+        updated.unavailableIds.length ||
+        !updated.value?.point?.id
+      ) {
         throw new Error('Failed to set vector handle mode')
       }
     })

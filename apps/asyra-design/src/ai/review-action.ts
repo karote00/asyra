@@ -6,20 +6,32 @@ import {
   toolResultObject,
   actionToolSemantics
 } from './tool-contract'
-import type { createInspectionEvidence } from '../common-apis/inspection-evidence'
+import type { InspectionEvidenceStamp } from './inspection-evidence'
 import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
-import { reviewDesign } from '../common-apis/design-review'
+import {
+  reviewDesign,
+  type MechanicalCoverageSelection
+} from '../common-apis/design-review'
 import { AiActionNames } from '../constants'
 type ReviewResult = Awaited<ReturnType<typeof reviewDesign>>
 type ReviewHandler = (
-  ...args: Parameters<typeof reviewDesign>
+  elementId: string,
+  signal?: AbortSignal,
+  measurementTargets?: MechanicalCoverageSelection
 ) => Promise<
-  Omit<ReviewResult, 'observation'> & Partial<Pick<ReviewResult, 'observation'>>
+  Omit<ReviewResult, 'observation'> &
+    Partial<Pick<ReviewResult, 'observation'>> & {
+      evidence?: InspectionEvidenceStamp
+      coveredMeasurementTargets?: string[]
+    }
 >
 export const createDesignReviewAction = (
   review: ReviewHandler = reviewDesign,
-  evidence?: ReturnType<typeof createInspectionEvidence>
-): AiActionDefinition<{ elementId: string }> => ({
+  isCurrent?: (stamp: InspectionEvidenceStamp) => boolean
+): AiActionDefinition<{
+  elementId: string
+  measurementTargets?: MechanicalCoverageSelection
+}> => ({
   ...actionToolSemantics(
     AiActionNames.REVIEW_DESIGN,
     toolResultObject(
@@ -36,6 +48,7 @@ export const createDesignReviewAction = (
         checkedElements: toolResultCount,
         measuredTextCount: toolResultCount,
         measuredTextIds: toolResultIds,
+        coveredMeasurementTargets: toolResultIds,
         findings: { type: 'array', items: { type: 'object' } },
         observation: toolResultObject(
           Object.fromEntries(
@@ -61,7 +74,7 @@ export const createDesignReviewAction = (
       ]
     )
   ),
-  revision: 4,
+  revision: 8,
   composition: 'allowed',
   verification: {
     statusPath: '/verification/status',
@@ -69,17 +82,37 @@ export const createDesignReviewAction = (
   },
   name: AiActionNames.REVIEW_DESIGN,
   description:
-    'Read-only deterministic review of the complete target subtree in cooperative chunks: measure real text content against its layout box and check unrotated child bounds. No screenshot. Fix concrete findings using current IDs, then explicitly review the corrected target. Capturing an image is independent. Complete means supported checks ran. The verification verdict covers only mechanical findings and supports explicit bounded repair recipes; it never certifies appearance or brief compliance. Truncation and unavailable checks must not be reported as full verification.',
+    'Read-only deterministic review of the complete target subtree in cooperative chunks: measure real text content against its layout box and check unrotated child bounds. Workspace has no own geometry; review its visible descendants without imposing root containment. No screenshot. Fix concrete findings using current IDs, then explicitly review the corrected target. Capturing an image is independent. Complete means supported checks ran. The verification verdict covers only mechanical findings and supports explicit bounded repair recipes; it never certifies appearance or brief compliance. Truncation and unavailable checks must not be reported as full verification.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
     required: ['elementId'],
-    properties: { elementId: { ...toolDocumentReference, maxLength: 256 } }
+    properties: {
+      elementId: {
+        ...toolDocumentReference,
+        'x-design-element-binding': 'each',
+        maxLength: 256
+      },
+      measurementTargets: {
+        anyOf: [
+          {
+            type: 'array',
+            uniqueItems: true,
+            items: { type: 'string', minLength: 1, maxLength: 256 }
+          },
+          { type: 'string', const: 'descendants' }
+        ],
+        description:
+          'Select explicit target IDs (empty means none), or descendants for actual captured descendants excluding the root. Returned coveredMeasurementTargets identifies scope only; validate the receipt to reconcile compatible current obligations. Uncovered targets remain unchanged. No caller candidate list is needed for automatic checking.'
+      }
+    }
   },
-  execute: async ({ elementId }, { signal }) => {
+  execute: async ({ elementId, measurementTargets }, { signal }) => {
     if (signal.aborted) throw new Error('Design review cancelled.')
     const measure = async () => {
-      const measurement = await review(elementId, signal)
+      const measurement = await (measurementTargets
+        ? review(elementId, signal, measurementTargets)
+        : review(elementId, signal))
       let status: 'pass' | 'repairable' | 'decision-required' =
         'decision-required'
       if (measurement.complete && !measurement.truncated) {
@@ -111,6 +144,20 @@ export const createDesignReviewAction = (
         )
       )
       signal.throwIfAborted()
+      if (measurement.evidence && !isCurrent?.(measurement.evidence))
+        return {
+          ...measurement,
+          available: false,
+          complete: false,
+          evidence: undefined,
+          coveredMeasurementTargets: [],
+          verification: {
+            status: 'decision-required',
+            progress: Array.from(new Uint8Array(digest), (byte) =>
+              byte.toString(16).padStart(2, '0')
+            ).join('')
+          }
+        }
       return {
         ...measurement,
         verification: {
@@ -121,15 +168,6 @@ export const createDesignReviewAction = (
         }
       }
     }
-    if (!evidence) return measure()
-    const result = await evidence.capture(
-      async () => {
-        const measurement = await measure()
-        return { ...measurement, available: measurement.complete }
-      },
-      { elementId }
-    )
-    signal.throwIfAborted()
-    return result
+    return measure()
   }
 })

@@ -1385,3 +1385,65 @@ it('retains owner phase correlation, source work and definition delivery scope w
     log.mockRestore()
   }
 })
+
+it.each(
+  (['saved', 'failed', 'throws'] as const).flatMap((mode) =>
+    (['provider_item_completed', 'provider_notification'] as const).map(
+      (stage) => ({ mode, stage })
+    )
+  )
+)(
+  'preserves native/public provenance and isolated sink $mode for $stage',
+  async ({ mode, stage }) => {
+    const records: Record<string, unknown>[] = []
+    const payloads: ReturnType<typeof serializeToolPayload>[] = []
+    const usage = createProfiler(
+      { intent: 'private', context: {}, actions: [], attempt: 1 },
+      'model',
+      {
+        sink: {
+          write: (record) => records.push(record),
+          writePayload: (_requestId, _callId, _phase, value) => {
+            if (mode === 'throws') throw new Error('storage unavailable')
+            payloads.push(serializeToolPayload(value))
+            return {
+              status: mode === 'failed' ? 'failed' : 'queued',
+              path: mode === 'failed' ? null : 'native.json'
+            }
+          },
+          flush: async () => ({ status: 'saved', path: null })
+        }
+      }
+    )
+    usage.trace(stage, {
+      callId: 'item:one',
+      nativeOutput: {
+        stage: 'native-completed-result',
+        modelVisibility: 'unavailable',
+        content: [
+          {
+            value: {
+              title: '材質',
+              schema: { required: ['color'], additionalProperties: false },
+              apiKey: 'private-key'
+            }
+          }
+        ]
+      }
+    })
+    expect(records[records.length - 1]).toMatchObject({
+      stage,
+      diagnostic: {
+        output: { payload: { status: mode === 'saved' ? 'queued' : 'failed' } }
+      }
+    })
+    expect(JSON.stringify(records)).not.toContain('private-key')
+    expect(JSON.stringify(records)).not.toContain('additionalProperties')
+    if (mode !== 'throws') {
+      expect(payloads[0].serialized).toContain('additionalProperties')
+      expect(payloads[0].serialized).not.toContain('private-key')
+    }
+    usage.finish('cancelled')
+    expect(records[records.length - 1]?.event).toBe('ai_request_usage')
+  }
+)

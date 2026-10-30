@@ -25,6 +25,17 @@ Core API tier types (explicit ownership contract):
 - `CorePresetInstallAPIs`: strict subset required by `applyPreset(...)` (no optional `core?.api` checks)
 - `CorePresetDependencies`: concrete dependency object returned by `core.getPresetDependencies()`
 
+Identity reservation:
+
+- `core.allocateIds(types: readonly string[]): readonly string[]` delegates to
+  the existing `idCounter` owner. Registered types receive one frozen ordered ID
+  each; use `el` for general element identities. Empty input is valid. Unknown
+  types, ambiguous prefixes and exhausted counters reject the entire allocation
+  without advancing any counter. Namespace and loaded counter positions remain
+  authoritative. This reserves identities, not document objects: no document
+  publication, Undo entry or geometry is created. Keep issued IDs; retries reserve
+  new values. Never infer persistent IDs from draft keys or reset a live counter.
+
 Lifecycle and integration:
 
 - `suspendElementPresentation(elementId)`: temporary render-only suppression,
@@ -236,6 +247,12 @@ Scene/model bridge:
   - Core obtains the complete prepared Props property-graph batch and prepared
     Scene insertion before it asks either owner to apply, then returns only an
     isolated frozen ordered-ID result; an empty input is inert
+  - Core normalizes ordinary inputs directly to ordered descriptors without an
+    unused envelope or second projection; preserve default/override ordering,
+    supplied/generated IDs and caller-input isolation before Scene Tree admission
+  - Scene Tree owns that result; ordinary Core request/facade and App adapters
+    forward it without copying. The result remains separate from mutable input
+    and membership, and later batches/history/reload cannot modify old lists
 - `createElementsInParentFromCanonicalData(elements: readonly ElementRawData[], properties: readonly PropertyComponentRawData[], parentId: string, index?: number, options?: EVENT_OPTIONS): readonly string[]`
   - Scene validates the detached canonical elements and issues the exact
     element-slot-to-property relations; Core passes those relations unchanged
@@ -262,7 +279,13 @@ Scene/model bridge:
     observer evidence is released before Factory owner commit
 - `getElementComputedData(elementId: string, fields?: readonly string[]): Record<string, unknown> | undefined`
   - omitted `fields` preserves the detached whole projection; explicit fields
-    clone only requested own values, avoiding omitted geometry payloads
+    clone only requested own enumerable values, avoiding omitted geometry payloads
+  - forward explicit selection to the existing computed snapshot owner before
+    materialization; selected reads neither enumerate all projection keys nor
+    create a complete shallow projection before filtering. Core validates first
+    and detaches the owner result; no additional cache or query is introduced
+  - `ComputedFieldSelectionLimits` from `@asyra/core/contracts` exposes these
+    unchanged limits for input-schema consumers; the Core owner still validates them
   - accepts at most 64 nonempty flat names of at most 128 characters; duplicate
     names are read once and invalid selections fail before reading the owner
   - missing elements return `undefined`; empty selection for an existing element
@@ -353,13 +376,18 @@ Managed property bridges:
 - `setUIProperty<T>(key: string, value: T): void`
 - `getUIPropertySubject<T>(key: string): BehaviorSubject<T> | undefined`
 - `onUIPropertyChange<T>(key: string, callback: (value: T) => void): () => void`
-- `updateElementProperties(updates: readonly ElementPropertyValuesUpdate[], options?: EVENT_OPTIONS): readonly string[]`
+- `updateElementProperties(updates: readonly ElementPropertyValuesUpdate[], options?: EVENT_OPTIONS): PropertyMutationReceipt`
   - replaces complete canonical property field values for one or many elements
     after one resolved Scene target set and one prepared Props mutation batch
-- `patchElementProperties(patches: readonly ElementPropertyPatchUpdate[], options?: EVENT_OPTIONS): readonly string[]`
+- `patchElementProperties(patches: readonly ElementPropertyPatchUpdate[], options?: EVENT_OPTIONS): PropertyMutationReceipt`
   - applies typed ordered record set/remove deltas through the same prepared
-    owner boundary; both plural APIs return only isolated frozen ordered
-    element IDs
+    owner boundary; both plural APIs return immutable `{ acceptedIds, changed }`.
+    IDs are accepted targets, not necessarily modified targets; changed is derived
+    from canonical apply evidence, including bindings and retired property graphs.
+    The same receipt applies to updatePropertyComponents, owner property intents
+    (update/reset/detach/share) and updateSharedPropertySources, with property/source
+    IDs for source operations and element IDs for owner operations. Empty input and
+    accepted operations with no canonical evidence return changed=false.
 - `defineSystemProperty<T>(key: string, defaultValue: T): BehaviorSubject<T>` (primary declaration API)
 - `defineSystemProperty<T>(key: string, defaultValue: T, options?: { runtime?: boolean; silent?: boolean; validate?: (value: unknown) => value is T }): BehaviorSubject<T>`
 - `registerSystemProperty<T>(key: string, defaultValue: T): BehaviorSubject<T>` (compatibility alias of `defineSystemProperty`)

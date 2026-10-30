@@ -11,7 +11,11 @@ All shared knowledge files occupy one directory level. The filename without
 `.md` is the knowledge ID. Dots are part of the ID, not a directory hierarchy.
 Markdown plus YAML frontmatter carries advisory What, Why, How, provenance and
 Evaluation Guidance. References, extensions and explicitly targeted overrides
-compose content without changing the shared sources.
+compose required content without changing the shared sources. Optional `children`
+metadata provides nested navigation without including child bodies. A directory
+module is thin advice, not a reference to all descendants. Leaf modules declare
+only necessary dependencies; direct reads preserve necessary constraints without
+requiring parent-first reading. Shared files remain portable and advisory.
 
 ## Responsibility boundaries
 
@@ -43,6 +47,11 @@ vector database, embedding engine or separate knowledge service is required.
 
 ## Active behavior contract
 
-The [V1 plan](plans/composable-domain-knowledge-v1-plan.md) owns the current scoped
-implementation, conflict policy, isolation, resource limits and acceptance cases.
-Do not treat a plan's pending behavior as implemented functionality.
+The [active plan](plans/composable-domain-knowledge-v1-plan.md) owns task scope,
+sequence, prerequisites and acceptance. Current Runtime conflict, isolation,
+revision and resource behavior belongs to
+[optional Knowledge access](../framework/packages/ai-agent-runtime.md#optional-knowledge-access).
+App execution belongs to the
+[Design specification](../apps/asyra-design/specs/ai-execution-flow.md#knowledge-to-capability-adoption)
+and its existing Inspector. A plan coordinates these owners; it neither replaces
+their contracts nor turns pending behavior into implemented functionality.

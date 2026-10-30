@@ -15,7 +15,195 @@ const coreHistoryGroupDisposition = {
   ]
 } as const
 
+const coreRenderLifecycleDisposition = {
+  owner: 'core',
+  methods: ['renderIsReady'],
+  reason:
+    'Host-owned notification after renderer initialization, not a readiness query. Model operations must not emit lifecycle events.'
+} as const
+
 export const basicApiDispositions = [
+  coreRenderLifecycleDisposition,
+  {
+    owner: 'core',
+    methods: ['suspendElementPresentation'],
+    reason:
+      'The Canvas editor owns the temporary presentation lease and its synchronous release callback. Model actions must not hide canonical glyphs or acquire host editing lifecycle handles.'
+  },
+  {
+    owner: 'core',
+    methods: ['measureText'],
+    reason:
+      'The Canvas editor and typography mutation owner measure provisional text with the installed renderer before committing layout. Model inspection uses measureElementContentBounds for canonical document elements.'
+  },
+  {
+    owner: 'core',
+    methods: ['save', 'propsSaveData', 'sceneTreeSaveData'],
+    reason:
+      'Framework serialization remains available to the document export owner. Model requests use explicit export artifacts and download delivery; completion confirms the existing document session durability without returning serialized document bodies.'
+  },
+  {
+    owner: 'core',
+    methods: ['isInUndoRedo'],
+    reason:
+      'App input admission synchronously observes the existing Factory replay flags before dispatch. Model calls use the public history actions; an asynchronous status query cannot reserve or control history execution.'
+  },
+  {
+    owner: 'core',
+    methods: ['getPropertyOwnerElementIds'],
+    reason:
+      'Host inspection observes canonical property publications and resolves affected live or retired owners. This inverse ownership index supports mutation evidence, not an independent model operation.'
+  },
+  {
+    owner: 'element',
+    methods: ['deleteElement'],
+    replacement: 'api_element_deleteElements',
+    reason:
+      'Pass one or more target IDs to the shared canonical deletion batch.'
+  },
+  {
+    owner: 'hierarchy',
+    methods: ['removeSubtree'],
+    replacement: 'api_element_deleteElements',
+    reason:
+      'Plural deletion preserves descendants and returns removed identities without canonical snapshots.'
+  },
+  {
+    owner: 'core',
+    methods: ['removeSubtree', 'removeSubtrees'],
+    replacement: 'api_element_deleteElements',
+    reason:
+      'The common API forwards all targets through the canonical Core subtree batch.'
+  },
+  {
+    owner: 'core',
+    methods: ['getElementIdsInBounds'],
+    replacement: 'api_element_getElementIdsInBounds',
+    reason:
+      'The common element query forwards to this renderer-backed Core facade; one AI entry point preserves the same workspace bounds contract.'
+  },
+  {
+    owner: 'element',
+    methods: ['setElementVisible'],
+    replacement: 'api_element_setElementsVisible',
+    reason:
+      'Pass elementIds for one or more targets; one ordered canonical batch and receipt.'
+  },
+  {
+    owner: 'fill',
+    methods: ['addFill'],
+    replacement: 'api_fill_addFills',
+    reason: 'Pass elementIds with one or more targets.'
+  },
+  {
+    owner: 'fill',
+    methods: ['removeFill'],
+    replacement: 'api_fill_removeFills',
+    reason: 'Pass targets with elementId and fillId.'
+  },
+  {
+    owner: 'fill',
+    methods: ['updatePrimaryFillColor'],
+    replacement: 'api_fill_updatePrimaryFillColors',
+    reason: 'Pass updates with target IDs and new colors.'
+  },
+  {
+    owner: 'fill',
+    methods: ['updateFillField'],
+    replacement: 'api_fill_updateFillFieldsBatch',
+    reason: 'Pass updates with new patch fields; one field is a one-key patch.'
+  },
+  {
+    owner: 'fill',
+    methods: ['updateFillFields'],
+    replacement: 'api_fill_updateFillFieldsBatch',
+    reason: 'Pass one or more target-specific new patches.'
+  },
+  {
+    owner: 'stroke',
+    methods: ['updatePrimaryStrokeColor'],
+    replacement: 'api_stroke_updatePrimaryStrokeColors',
+    reason: 'Pass updates with target IDs and new colors.'
+  },
+  {
+    owner: 'stroke',
+    methods: ['updateStrokeField'],
+    replacement: 'api_stroke_updateStrokeFieldsBatch',
+    reason: 'Pass updates with new patch fields; one field is a one-key patch.'
+  },
+  {
+    owner: 'stroke',
+    methods: ['updateStrokeFields'],
+    replacement: 'api_stroke_updateStrokeFieldsBatch',
+    reason: 'Pass one or more target-specific new patches.'
+  },
+  {
+    owner: 'element',
+    methods: ['setVectorElementPosition'],
+    replacement: 'api_element_setVectorElementPositions',
+    reason: 'Pass one or more position updates.'
+  },
+  {
+    owner: 'element',
+    methods: ['createElement'],
+    replacement: 'api_element_createElements',
+    reason: 'Pass createOptions as an ordered array, including a single item.'
+  },
+  {
+    owner: 'element',
+    methods: ['createVectorElement'],
+    replacement: 'api_element_createElements',
+    reason: 'Pass ordered createOptions with type vector.'
+  },
+  {
+    owner: 'core',
+    methods: ['createElementInParent'],
+    replacement: 'api_core_createElementsInParent',
+    reason:
+      'Pass data as an ordered array and preserve parent and insertion index.'
+  },
+  {
+    owner: 'core',
+    methods: ['selectElements'],
+    replacement: 'api_selection_selectElements',
+    reason: 'Replace the element selection with the supplied IDs.'
+  },
+  {
+    owner: 'core',
+    methods: ['selectVectorPoints'],
+    replacement: 'api_selection_selectVectorPoints',
+    reason: 'Replace encoded vector point selection IDs.'
+  },
+  {
+    owner: 'core',
+    methods: ['selectVectorSegments'],
+    replacement: 'api_selection_selectVectorSegments',
+    reason: 'Replace encoded vector segment selection IDs.'
+  },
+  {
+    owner: 'selection',
+    methods: ['clearSelection'],
+    replacement: 'api_selection_selectElements',
+    reason: 'Supply an empty elementIds array.'
+  },
+  {
+    owner: 'selection',
+    methods: ['clearVectorPointSelection'],
+    replacement: 'api_selection_selectVectorPoints',
+    reason: 'Supply an empty pointIds array.'
+  },
+  {
+    owner: 'selection',
+    methods: ['clearVectorSegmentSelection'],
+    replacement: 'api_selection_selectVectorSegments',
+    reason: 'Supply an empty segmentIds array.'
+  },
+  {
+    owner: 'element',
+    methods: ['isContainerType'],
+    replacement: 'api_core_isContainerType',
+    reason: 'Query registered container capability at its canonical owner.'
+  },
   coreHistoryGroupDisposition,
   {
     owner: 'core',

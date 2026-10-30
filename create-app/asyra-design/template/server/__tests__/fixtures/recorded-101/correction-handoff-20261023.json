@@ -1,0 +1,224 @@
+{
+  "source": {
+    "run": "knowledge-quality-knowledge-taipei-101-1792770001609",
+    "revision": "74e44c1f3bac2ac6cbe18901260be191c3fba6ad",
+    "provider": "bae35b5a-a1a6-4a5b-a2d5-23a9e2df6334",
+    "payloads": [
+      "19-input.json",
+      "40-input.json",
+      "43-output.json"
+    ]
+  },
+  "plan": {
+    "phase": "plan",
+    "method": "世界公分座標，固定正投影；先檢查相鄰玻璃立面，再擴展八節竹節。未知尺寸為估計，不宣稱精確測繪。",
+    "references": [
+      "使用者提供之空拍與如意裝飾"
+    ],
+    "criteria": {
+      "overall": {
+        "requirement": "完整台北101，固定俯視三分之四視角",
+        "description": "基座至尖頂輪廓、八節外擴竹節、可見頂面一致",
+        "verification": "visual",
+        "requiredUnits": []
+      },
+      "material": {
+        "requirement": "寫實材質光影與詳細窗框",
+        "description": "玻璃反射與金屬窗框、陰影連續可信",
+        "verification": "visual",
+        "requiredUnits": []
+      },
+      "ornament": {
+        "requirement": "保留可見裝飾與基座結構",
+        "description": "如意與錢幣裝飾及基座細節",
+        "verification": "visual",
+        "requiredUnits": []
+      }
+    },
+    "detailRequired": true
+  },
+  "judgment": {
+    "phase": "visual",
+    "final": false,
+    "inspectionIds": [
+      "7defa29a-7f6d-4746-8321-a37d452c18f5"
+    ],
+    "checks": [
+      {
+        "criterionId": "material",
+        "inspectionIds": [
+          "7defa29a-7f6d-4746-8321-a37d452c18f5"
+        ],
+        "binding": {
+          "requestId": "69f59a11-d854-467a-9c1b-cad4364ba5ca",
+          "requirementRevision": 1,
+          "checkRevision": 1,
+          "dependencies": [
+            {
+              "inspectionId": "7defa29a-7f6d-4746-8321-a37d452c18f5",
+              "elementId": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+              "scope": "overview:whole",
+              "source": {
+                "sessionId": "2dbab1e2-a592-4d4d-ad80-9e16580ac553",
+                "revision": 0,
+                "receiptId": "bb584436-6f09-4091-859b-fe0b892bef38"
+              }
+            }
+          ],
+          "signature": "3b681a1b1fced7f41fbd85799478bcf301f3e006e44dcadebc98eb166b08106b"
+        },
+        "status": "fail",
+        "evidence": "窗框與兩側明暗可辨、接縫連續，但玻璃偏平坦，缺少可信反射，基座仍無細節；不構成寫實材質完成。"
+      }
+    ]
+  },
+  "receipt": {
+    "phase": "visual",
+    "reviewOperation": "record",
+    "recordedChecks": [
+      {
+        "id": "visual:material",
+        "criterionId": "material",
+        "origin": "main-agent",
+        "status": "fail",
+        "revision": 2
+      }
+    ],
+    "results": {
+      "countsScope": "request-checks",
+      "counts": {
+        "pass": 1,
+        "fail": 1,
+        "unverified": 0,
+        "stale": 2
+      },
+      "visitedResults": 0,
+      "revision": 8,
+      "firstPendingId": "visual:overall"
+    },
+    "coverage": {
+      "required": 3,
+      "passed": 0,
+      "pending": [
+        {
+          "id": "visual:overall",
+          "criterionId": "overall",
+          "status": "stale"
+        },
+        {
+          "id": "visual:material",
+          "criterionId": "material",
+          "status": "fail"
+        },
+        {
+          "id": "visual:ornament",
+          "criterionId": "ornament",
+          "status": "stale"
+        }
+      ]
+    },
+    "final": false,
+    "facts": [],
+    "deferredDetails": [],
+    "deferredChecks": [],
+    "pendingDetails": [],
+    "regressions": [],
+    "revision": 1,
+    "accepted": false,
+    "checks": [
+      {
+        "criterionId": "material",
+        "inspectionIds": [
+          "7defa29a-7f6d-4746-8321-a37d452c18f5"
+        ],
+        "binding": {
+          "requestId": "69f59a11-d854-467a-9c1b-cad4364ba5ca",
+          "requirementRevision": 1,
+          "checkRevision": 1,
+          "dependencies": [
+            {
+              "inspectionId": "7defa29a-7f6d-4746-8321-a37d452c18f5",
+              "elementId": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+              "scope": "overview:whole",
+              "source": {
+                "sessionId": "2dbab1e2-a592-4d4d-ad80-9e16580ac553",
+                "revision": 0,
+                "receiptId": "bb584436-6f09-4091-859b-fe0b892bef38"
+              }
+            }
+          ],
+          "signature": "3b681a1b1fced7f41fbd85799478bcf301f3e006e44dcadebc98eb166b08106b"
+        },
+        "status": "fail",
+        "evidence": "窗框與兩側明暗可辨、接縫連續，但玻璃偏平坦，缺少可信反射，基座仍無細節；不構成寫實材質完成。",
+        "factIds": []
+      }
+    ],
+    "inspectionIds": [
+      "7defa29a-7f6d-4746-8321-a37d452c18f5"
+    ],
+    "correction": {
+      "diagnosticOnly": true,
+      "coverage": {
+        "required": 3,
+        "passed": 0,
+        "pending": [
+          {
+            "id": "visual:overall",
+            "criterionId": "overall",
+            "status": "stale"
+          },
+          {
+            "id": "visual:material",
+            "criterionId": "material",
+            "status": "fail"
+          },
+          {
+            "id": "visual:ornament",
+            "criterionId": "ornament",
+            "status": "stale"
+          }
+        ]
+      },
+      "referenceDecisions": [],
+      "requiresFreshReview": true,
+      "revision": 1,
+      "criteria": [
+        {
+          "criterionId": "overall",
+          "evidence": [
+            "Await primary-agent review of actual rendered evidence."
+          ],
+          "elementIds": []
+        },
+        {
+          "criterionId": "material",
+          "evidence": [
+            "窗框與兩側明暗可辨、接縫連續，但玻璃偏平坦，缺少可信反射，基座仍無細節；不構成寫實材質完成。"
+          ],
+          "elementIds": []
+        },
+        {
+          "criterionId": "ornament",
+          "evidence": [
+            "Await primary-agent review of actual rendered evidence."
+          ],
+          "elementIds": []
+        }
+      ],
+      "inspections": [
+        {
+          "inspectionId": "7defa29a-7f6d-4746-8321-a37d452c18f5",
+          "elementId": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+          "overview": true,
+          "detail": false
+        }
+      ]
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  }
+}

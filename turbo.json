@@ -56,9 +56,11 @@
         "@asyra/factory#build:factory",
         "@asyra/feature-system#build:feature-system",
         "@asyra/input-system#build:input-system",
+        "@asyra/props-manager#build:props-manager",
         "@asyra/reactive-events#build:reactive-events",
         "@asyra/render#build:render",
-        "@asyra/render-engine-pixi#build:render-engine-pixi"
+        "@asyra/render-engine-pixi#build:render-engine-pixi",
+        "@asyra/scene-tree#build:scene-tree"
       ]
     },
     "@asyra/asyra-fieldscope#react:build": {

@@ -31,6 +31,15 @@ const updateKeyState = (raw: RawInputEvent) => {
   core.setSystemProperty(PresetSystemPropertyKeys.KEY_META, nextKeyState.meta)
 }
 
+const updateHistoryShortcutState = (raw: RawInputEvent) => {
+  updateKeyState(raw)
+  if (core.isInUndoRedo()) return false
+  raw.detail = {
+    ...raw.detail,
+    historyDirection: raw.modifiers.shift ? 'redo' : 'undo'
+  }
+}
+
 export const isEditableShortcutTarget = (target: Element | null): boolean => {
   if (!(target instanceof HTMLElement)) {
     return false
@@ -43,6 +52,11 @@ export const isEditableShortcutTarget = (target: Element | null): boolean => {
     target.isContentEditable ||
     target.contentEditable === 'true'
   )
+}
+
+const updateToolShortcutState = (raw: RawInputEvent) => {
+  if (isEditableShortcutTarget(document.activeElement)) return false
+  updateKeyState(raw)
 }
 
 const updateGroupShortcutState = (raw: RawInputEvent) => {
@@ -233,27 +247,33 @@ export const keyCombinations = {
   [InputSystemEvents.INPUT_SHORTCUT_SWITCH_PRIMARY_TOOL]: [
     {
       type: InputType.KEYBOARD,
+      keys: [keyMap.keys.KeyT],
+      detail: { primaryTool: PrimaryToolType.TEXT },
+      callback: updateToolShortcutState
+    },
+    {
+      type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyR],
       detail: { primaryTool: PrimaryToolType.RECTANGLE },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyV],
       detail: { primaryTool: PrimaryToolType.SELECT },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyO],
       detail: { primaryTool: PrimaryToolType.OVAL },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyP],
       detail: { primaryTool: PrimaryToolType.PEN },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     }
   ],
   [InputSystemEvents.INPUT_SHORTCUT_CANCEL]: [
@@ -309,13 +329,13 @@ export const keyCombinations = {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyZ],
       modifiers: [ModifierKey.META],
-      callback: updateKeyState
+      callback: updateHistoryShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyZ],
       modifiers: [ModifierKey.CTRL],
-      callback: updateKeyState
+      callback: updateHistoryShortcutState
     }
   ],
   [InputSystemEvents.INPUT_SHORTCUT_GROUP]: groupShortcutInputRegistrations.map(

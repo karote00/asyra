@@ -1,7 +1,9 @@
+import { ComputedFieldSelectionLimits } from '@asyra/core/contracts'
 import {
   defineBasicApi,
   apiString,
   apiId,
+  apiElementId,
   apiNumber,
   apiPosition,
   apiObject,
@@ -12,7 +14,7 @@ import {
 } from './basic-api-contracts'
 
 const elementPropertyUpdatesSchema = apiArray(
-  apiObject({ elementId: apiId, values: apiRecord })
+  apiObject({ elementId: apiElementId, values: apiRecord })
 )
 
 const elementCreationDataSchema = {
@@ -149,7 +151,7 @@ const getElementMetadataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementMetadata',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiId }],
+  parameters: [{ name: 'elementId', schema: apiElementId }],
   description:
     'Read canonical identity, name, type, parent, visibility, lock and childCount without copying property data or children. Prefer read_design_context for multiple IDs.'
 })
@@ -159,7 +161,7 @@ const getElementChildrenApi = defineBasicApi({
   method: 'getElementChildren',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'offset', schema: { type: 'integer', minimum: 0 }, optional: true },
     { name: 'limit', schema: { type: 'integer', minimum: 1 }, optional: true }
   ],
@@ -171,7 +173,7 @@ const getElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementData',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiId }],
+  parameters: [{ name: 'elementId', schema: apiElementId }],
   description:
     'Returns detached canonical element data; property references are not resolved geometry.'
 })
@@ -181,8 +183,18 @@ const getElementComputedDataApi = defineBasicApi({
   method: 'getElementComputedData',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
-    { name: 'fields', schema: apiArray(apiString), optional: true }
+    { name: 'elementId', schema: apiElementId },
+    {
+      name: 'fields',
+      schema: {
+        ...apiArray({
+          ...apiString,
+          maxLength: ComputedFieldSelectionLimits.fieldName
+        }),
+        maxItems: ComputedFieldSelectionLimits.fields
+      },
+      optional: true
+    }
   ],
   description:
     'Read only requested fields when possible. This is a computed projection, not a canonical write payload: linked records such as fills/strokes are expanded objects. Keep their IDs and use patchElementProperties records to edit them; do not write expanded records back through updateElementProperties.'
@@ -229,7 +241,7 @@ const hasProjectedElementApi = defineBasicApi({
   owner: 'core',
   method: 'hasProjectedElement',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiId }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const getElementIdAtClientPosApi = defineBasicApi({
@@ -271,7 +283,7 @@ const workspaceToElementLocalApi = defineBasicApi({
   method: 'workspaceToElementLocal',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -283,7 +295,7 @@ const elementLocalToWorkspaceApi = defineBasicApi({
   method: 'elementLocalToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'localPosition', schema: apiPosition }
   ]
 })
@@ -295,7 +307,7 @@ const elementSourceToWorkspaceApi = defineBasicApi({
   method: 'elementSourceToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'sourcePosition', schema: apiPosition }
   ]
 })
@@ -307,7 +319,7 @@ const workspaceToElementSourceApi = defineBasicApi({
   method: 'workspaceToElementSource',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -372,6 +384,8 @@ const createElementsInParentApi = defineBasicApi({
 const updateElementPropertiesApi = defineBasicApi({
   owner: 'core',
   method: 'updateElementProperties',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
@@ -381,6 +395,8 @@ const updateElementPropertiesApi = defineBasicApi({
 const patchElementPropertiesApi = defineBasicApi({
   owner: 'core',
   method: 'patchElementProperties',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   effect: 'write',
   parameters: [
     {
@@ -388,7 +404,7 @@ const patchElementPropertiesApi = defineBasicApi({
       schema: apiArray(
         apiObject(
           {
-            elementId: apiId,
+            elementId: apiElementId,
             values: apiRecord,
             records: apiArray(
               apiObject(
@@ -397,18 +413,20 @@ const patchElementPropertiesApi = defineBasicApi({
               )
             )
           },
-          ['elementId']
+          ['elementId', 'records']
         )
       )
     }
   ],
   description:
-    'Plural patches of canonical property records without replacing unrelated records or relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; Reuse known fillId; if unknown, obtain it from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
+    'Plural patches require records (use [] with ordinary values); updateElementProperties also supports ordinary values. Preserve unrelated records and relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; Reuse known fillId; if unknown, obtain it from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
 })
 
 const updatePropertyComponentsApi = defineBasicApi({
   owner: 'core',
   method: 'updatePropertyComponents',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['propertyId'],
   effect: 'write',
   parameters: [
     {
@@ -423,9 +441,10 @@ const updatePropertyComponentsApi = defineBasicApi({
 const updateElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'updateElementData',
+  resultKind: 'change-flag',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     {
       name: 'values',
       schema: apiObject(
@@ -511,7 +530,120 @@ const moveElementsApi = defineBasicApi({
     'Prefer hierarchy.moveElements in this app to maintain automatic group bounds.'
 })
 
+const propertyTargetSchema = apiObject(
+  {
+    elementId: apiElementId,
+    propertyName: apiString,
+    path: apiArray(apiObject({ key: apiString, childId: apiId })),
+    expectedRootId: apiId,
+    expectedPropertyId: apiId,
+    expectedSourceId: apiId
+  },
+  ['elementId', 'propertyName', 'path']
+)
+
+const readElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'readElementPropertyTargets',
+  effect: 'read',
+  parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
+  description:
+    'Read property mode, effective values, sparse overrides and independent sourceId. Use an empty path to read the root and its children; children expose logical childId and effective propertyId. Build subsequent paths from those logical slots, not row indices or guessed IDs. Optional expected identities reject stale targets.'
+})
+const updateElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'updateElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, values: apiRecord })
+      )
+    }
+  ],
+  description:
+    'Edit only the selected owner targets; source-backed targets receive sparse local overrides, including equal-valued masks. Shared sources and unrelated owners remain unchanged. The whole batch preflights before writing. Returns locally accepted element IDs, not save confirmation.'
+})
+const updateSharedPropertySourcesApi = defineBasicApi({
+  owner: 'core',
+  method: 'updateSharedPropertySources',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['propertyId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(apiObject({ propertyId: apiId, values: apiRecord }))
+    }
+  ],
+  description:
+    'Explicitly edit independent shared property sources by source ID. Changes propagate to unmasked consumers; local overrides remain. Use only when intending to modify the shared style, not one selected object. Returns locally accepted source IDs, not element IDs or save confirmation.'
+})
+const resetElementPropertyOverridesApi = defineBasicApi({
+  owner: 'core',
+  method: 'resetElementPropertyOverrides',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, keys: apiArray(apiString) })
+      )
+    }
+  ],
+  description:
+    'Remove the named local field masks so values follow the current shared source again. Does not write a captured source value as an override. Returns locally accepted element IDs; no durability claim.'
+})
+const detachElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'detachElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
+  effect: 'write',
+  parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
+  description:
+    'Materialize current effective values into independent owner components and release their source links atomically. Other owners and sources remain unchanged. Undo restores the links. Returns locally accepted element IDs; read targets again for new bindings, save separately for durability.'
+})
+const shareElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'shareElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, sourceId: apiId })
+      )
+    }
+  ],
+  description:
+    'Rebind selected owner targets to an independent same-type source. Reset or detach existing local overrides first; sharing rejects remaining masks or child bindings. Logical child slots remain stable. A source-backed source is rejected; no source chains. Later owner edits remain local overrides. Returns locally accepted element IDs; read targets again for new bindings, save separately for durability.'
+})
+
 export const basicCoreApiContracts = [
+  defineBasicApi({
+    owner: 'core',
+    method: 'allocateIds',
+    effect: 'prepare',
+    resultKind: 'allocated-ids',
+    parameters: [{ name: 'types', schema: apiArray(apiString) }],
+    examples: [{ types: ['el', 'el'] }],
+    description:
+      'Allocate IDs atomically from the existing registered counters in input order; el is the general element counter. No objects or Undo entries are created. Use separate returned IDs as source keys for distinct nodes, and reuse the face key in boundary.face. Keep returned IDs for later references; prepared keyToId is authoritative for actual document IDs. Empty input is valid; invalid/unregistered types, ambiguous prefixes or exhaustion consume nothing. Counter state and reset are not exposed. Caller-authored unique keys remain valid.'
+  }),
+  readElementPropertyTargetsApi,
+  updateElementPropertyTargetsApi,
+  updateSharedPropertySourcesApi,
+  resetElementPropertyOverridesApi,
+  detachElementPropertyTargetsApi,
+  shareElementPropertyTargetsApi,
   getCurrentWorkspaceIdApi,
   getCanonicalElementCountApi,
   getAllElementsBoundsApi,

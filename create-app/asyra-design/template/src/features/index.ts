@@ -14,3 +14,5 @@ import './group-elements'
 import './layer-hierarchy-move'
 import './pen-tool'
 import './gradient-fill-handles'
+
+import './text-canvas'

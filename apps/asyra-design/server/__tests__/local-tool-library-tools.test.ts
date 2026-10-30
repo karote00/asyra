@@ -11,6 +11,7 @@ const createLocalToolLibraryTools = (...args: Parameters<typeof createOwner>) =>
 import { invokeLocalTool } from '../local-tool-invocation'
 import {
   nativeToolInputSchema,
+  operationContractIssue,
   operationInputIssue
 } from '../operation-input-schema'
 import { createLocalToolScheduler } from '../local-tool-scheduler'
@@ -45,7 +46,7 @@ const fixture = () => {
       bindingDepth: 12,
       issues: 8
     },
-    validate: operationInputIssue,
+    validate: operationContractIssue,
     store: {
       read: async (key) => entries.get(key),
       list: async () => [...entries.values()],

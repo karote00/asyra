@@ -1,0 +1,4343 @@
+{
+  "provenance": {
+    "runId": "knowledge-quality-knowledge-taipei-101-1792742530370",
+    "payload": "151121ee-201e-4563-9ae6-ec677678d331.payloads/19-input.json",
+    "sha256": "46b8973c678c8f0b49a3fc22e679060acebe9bbd167b9c40af7a0048f92a596f",
+    "derivation": "Original invocation preserved. Compact counterpart replaces only two contiguous translation-equivalent source runs; source key/name differences are explicit test observations."
+  },
+  "query": {
+    "names": [
+      "prepare_and_apply_design"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "draft",
+      "nodeTypes": [
+        "projected-face",
+        "surface-grid",
+        "pattern"
+      ],
+      "optionalInputs": [
+        "plan"
+      ]
+    }
+  },
+  "baseline": {
+    "inputBytes": 24502,
+    "guideBodyBytes": 25604,
+    "guideWireBytes": 27702,
+    "guideReplies": 2
+  },
+  "input": {
+    "draft": {
+      "type": "group",
+      "name": "台北101｜公分世界座標建築插畫",
+      "projection": {
+        "azimuth": 38,
+        "elevation": 25,
+        "scale": 1,
+        "originX": 11000,
+        "originY": 47000
+      },
+      "fillTemplates": {
+        "metal": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#556a6b",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#b3c9c7",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#718c8c",
+              "opacity": 1
+            }
+          ]
+        },
+        "dark": "#173d48",
+        "roof": "#819896",
+        "stone": "#859491",
+        "glassL": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#173e4a",
+              "opacity": 1
+            },
+            {
+              "position": 0.3333333333333333,
+              "color": "#366775",
+              "opacity": 1
+            },
+            {
+              "position": 0.6666666666666666,
+              "color": "#719caa",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#335d70",
+              "opacity": 1
+            }
+          ]
+        },
+        "glassR": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#153840",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#285b62",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#4c848b",
+              "opacity": 1
+            }
+          ]
+        },
+        "edge": "#adc5c4"
+      },
+      "children": [
+        {
+          "type": "projected-face",
+          "key": "podiumx",
+          "name": "podiumx",
+          "vertices": [
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2800
+            },
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 2800
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podiumy",
+          "name": "podiumy",
+          "vertices": [
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2800
+            },
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 2800
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podiumtop",
+          "name": "podiumtop",
+          "vertices": [
+            {
+              "x": -7200,
+              "y": -7200,
+              "z": 2800
+            },
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 2800
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2800
+            },
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 2800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "basex",
+          "name": "basex",
+          "vertices": [
+            {
+              "x": 3500,
+              "y": -3500,
+              "z": 2800
+            },
+            {
+              "x": 3500,
+              "y": 3500,
+              "z": 2800
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": -2500,
+              "z": 8000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "basey",
+          "name": "basey",
+          "vertices": [
+            {
+              "x": -3500,
+              "y": 3500,
+              "z": 2800
+            },
+            {
+              "x": 3500,
+              "y": 3500,
+              "z": 2800
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": -2500,
+              "y": 2500,
+              "z": 8000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "basetop",
+          "name": "basetop",
+          "vertices": [
+            {
+              "x": -2500,
+              "y": -2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": -2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": -2500,
+              "y": 2500,
+              "z": 8000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerx",
+          "name": "lowerx",
+          "vertices": [
+            {
+              "x": 2500,
+              "y": -2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 15000
+            },
+            {
+              "x": 2900,
+              "y": -2900,
+              "z": 15000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowery",
+          "name": "lowery",
+          "vertices": [
+            {
+              "x": -2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 15000
+            },
+            {
+              "x": -2900,
+              "y": 2900,
+              "z": 15000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowertop",
+          "name": "lowertop",
+          "vertices": [
+            {
+              "x": -2900,
+              "y": -2900,
+              "z": 15000
+            },
+            {
+              "x": 2900,
+              "y": -2900,
+              "z": 15000
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 15000
+            },
+            {
+              "x": -2900,
+              "y": 2900,
+              "z": 15000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0x",
+          "name": "tier0x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 15000
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 15000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18000
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 18000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0y",
+          "name": "tier0y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 15000
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 15000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18000
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 18000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0top",
+          "name": "tier0top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 18000
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 18000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18000
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 18000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip0x",
+          "name": "lip0x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 18000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18140
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 18140
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip0y",
+          "name": "lip0y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 18000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18140
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 18140
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip0top",
+          "name": "lip0top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 18140
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 18140
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 18140
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 18140
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1x",
+          "name": "tier1x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 18250
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 18250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21250
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 21250
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1y",
+          "name": "tier1y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 18250
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 18250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21250
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 21250
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1top",
+          "name": "tier1top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 21250
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 21250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21250
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 21250
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip1x",
+          "name": "lip1x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 21250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21390
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 21390
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip1y",
+          "name": "lip1y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 21250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21390
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 21390
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip1top",
+          "name": "lip1top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 21390
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 21390
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 21390
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 21390
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2x",
+          "name": "tier2x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 21500
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 21500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24500
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 24500
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2y",
+          "name": "tier2y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 21500
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 21500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24500
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 24500
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2top",
+          "name": "tier2top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 24500
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 24500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24500
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 24500
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip2x",
+          "name": "lip2x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 24500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24640
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 24640
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip2y",
+          "name": "lip2y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 24500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24640
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 24640
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip2top",
+          "name": "lip2top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 24640
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 24640
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 24640
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 24640
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier3x",
+          "name": "tier3x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 24750
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 24750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27750
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 27750
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier3y",
+          "name": "tier3y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 24750
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 24750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27750
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 27750
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier3top",
+          "name": "tier3top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 27750
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 27750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27750
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 27750
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip3x",
+          "name": "lip3x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 27750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27890
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 27890
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip3y",
+          "name": "lip3y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 27750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27890
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 27890
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip3top",
+          "name": "lip3top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 27890
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 27890
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 27890
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 27890
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier4x",
+          "name": "tier4x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 28000
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 28000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31000
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 31000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier4y",
+          "name": "tier4y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 28000
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 28000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31000
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 31000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier4top",
+          "name": "tier4top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 31000
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 31000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31000
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 31000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip4x",
+          "name": "lip4x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 31000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31140
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 31140
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip4y",
+          "name": "lip4y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 31000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31140
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 31140
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip4top",
+          "name": "lip4top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 31140
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 31140
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 31140
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 31140
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier5x",
+          "name": "tier5x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 31250
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 31250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34250
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 34250
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier5y",
+          "name": "tier5y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 31250
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 31250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34250
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 34250
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier5top",
+          "name": "tier5top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 34250
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 34250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34250
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 34250
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip5x",
+          "name": "lip5x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 34250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34390
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 34390
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip5y",
+          "name": "lip5y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 34250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34250
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34390
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 34390
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip5top",
+          "name": "lip5top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 34390
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 34390
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 34390
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 34390
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier6x",
+          "name": "tier6x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 34500
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 34500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37500
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 37500
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier6y",
+          "name": "tier6y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 34500
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 34500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37500
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 37500
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier6top",
+          "name": "tier6top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 37500
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 37500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37500
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 37500
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip6x",
+          "name": "lip6x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 37500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37640
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 37640
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip6y",
+          "name": "lip6y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 37500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37500
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37640
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 37640
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip6top",
+          "name": "lip6top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 37640
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 37640
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 37640
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 37640
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier7x",
+          "name": "tier7x",
+          "vertices": [
+            {
+              "x": 2400,
+              "y": -2400,
+              "z": 37750
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 37750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40750
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 40750
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier7y",
+          "name": "tier7y",
+          "vertices": [
+            {
+              "x": -2400,
+              "y": 2400,
+              "z": 37750
+            },
+            {
+              "x": 2400,
+              "y": 2400,
+              "z": 37750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40750
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 40750
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier7top",
+          "name": "tier7top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 40750
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 40750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40750
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 40750
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip7x",
+          "name": "lip7x",
+          "vertices": [
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 40750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40890
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 40890
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip7y",
+          "name": "lip7y",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 40750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40750
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40890
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 40890
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lip7top",
+          "name": "lip7top",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 40890
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 40890
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 40890
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 40890
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crownx",
+          "name": "crownx",
+          "vertices": [
+            {
+              "x": 1700,
+              "y": -1700,
+              "z": 41000
+            },
+            {
+              "x": 1700,
+              "y": 1700,
+              "z": 41000
+            },
+            {
+              "x": 1400,
+              "y": 1400,
+              "z": 44800
+            },
+            {
+              "x": 1400,
+              "y": -1400,
+              "z": 44800
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crowny",
+          "name": "crowny",
+          "vertices": [
+            {
+              "x": -1700,
+              "y": 1700,
+              "z": 41000
+            },
+            {
+              "x": 1700,
+              "y": 1700,
+              "z": 41000
+            },
+            {
+              "x": 1400,
+              "y": 1400,
+              "z": 44800
+            },
+            {
+              "x": -1400,
+              "y": 1400,
+              "z": 44800
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crowntop",
+          "name": "crowntop",
+          "vertices": [
+            {
+              "x": -1400,
+              "y": -1400,
+              "z": 44800
+            },
+            {
+              "x": 1400,
+              "y": -1400,
+              "z": 44800
+            },
+            {
+              "x": 1400,
+              "y": 1400,
+              "z": 44800
+            },
+            {
+              "x": -1400,
+              "y": 1400,
+              "z": 44800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternx",
+          "name": "lanternx",
+          "vertices": [
+            {
+              "x": 900,
+              "y": -900,
+              "z": 44800
+            },
+            {
+              "x": 900,
+              "y": 900,
+              "z": 44800
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 47000
+            },
+            {
+              "x": 700,
+              "y": -700,
+              "z": 47000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanterny",
+          "name": "lanterny",
+          "vertices": [
+            {
+              "x": -900,
+              "y": 900,
+              "z": 44800
+            },
+            {
+              "x": 900,
+              "y": 900,
+              "z": 44800
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 47000
+            },
+            {
+              "x": -700,
+              "y": 700,
+              "z": 47000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanterntop",
+          "name": "lanterntop",
+          "vertices": [
+            {
+              "x": -700,
+              "y": -700,
+              "z": 47000
+            },
+            {
+              "x": 700,
+              "y": -700,
+              "z": 47000
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 47000
+            },
+            {
+              "x": -700,
+              "y": 700,
+              "z": 47000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "mastx",
+          "name": "mastx",
+          "vertices": [
+            {
+              "x": 230,
+              "y": -230,
+              "z": 47000
+            },
+            {
+              "x": 230,
+              "y": 230,
+              "z": 47000
+            },
+            {
+              "x": 60,
+              "y": 60,
+              "z": 50800
+            },
+            {
+              "x": 60,
+              "y": -60,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "masty",
+          "name": "masty",
+          "vertices": [
+            {
+              "x": -230,
+              "y": 230,
+              "z": 47000
+            },
+            {
+              "x": 230,
+              "y": 230,
+              "z": 47000
+            },
+            {
+              "x": 60,
+              "y": 60,
+              "z": 50800
+            },
+            {
+              "x": -60,
+              "y": 60,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "masttop",
+          "name": "masttop",
+          "vertices": [
+            {
+              "x": -60,
+              "y": -60,
+              "z": 50800
+            },
+            {
+              "x": 60,
+              "y": -60,
+              "z": 50800
+            },
+            {
+              "x": 60,
+              "y": 60,
+              "z": 50800
+            },
+            {
+              "x": -60,
+              "y": 60,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX0",
+          "name": "windowsX0",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 15000
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 15000
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 18000
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 18000
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY0",
+          "name": "windowsY0",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 15000
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 15000
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 18000
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 18000
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX1",
+          "name": "windowsX1",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 18250
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 18250
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 21250
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 21250
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY1",
+          "name": "windowsY1",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 18250
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 18250
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 21250
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 21250
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX2",
+          "name": "windowsX2",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 21500
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 21500
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 24500
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 24500
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY2",
+          "name": "windowsY2",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 21500
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 21500
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 24500
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 24500
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX3",
+          "name": "windowsX3",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 24750
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 24750
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 27750
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 27750
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY3",
+          "name": "windowsY3",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 24750
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 24750
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 27750
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 27750
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX4",
+          "name": "windowsX4",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 28000
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 28000
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 31000
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 31000
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY4",
+          "name": "windowsY4",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 28000
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 28000
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 31000
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 31000
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX5",
+          "name": "windowsX5",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 31250
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 31250
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 34250
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 34250
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY5",
+          "name": "windowsY5",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 31250
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 31250
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 34250
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 34250
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX6",
+          "name": "windowsX6",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 34500
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 34500
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 37500
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 37500
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY6",
+          "name": "windowsY6",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 34500
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 34500
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 37500
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 37500
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsX7",
+          "name": "windowsX7",
+          "boundary": [
+            {
+              "x": 2401,
+              "y": -2400,
+              "z": 37750
+            },
+            {
+              "x": 2401,
+              "y": 2400,
+              "z": 37750
+            },
+            {
+              "x": 2851,
+              "y": 2850,
+              "z": 40750
+            },
+            {
+              "x": 2851,
+              "y": -2850,
+              "z": 40750
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassR"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "windowsY7",
+          "name": "windowsY7",
+          "boundary": [
+            {
+              "x": -2400,
+              "y": 2401,
+              "z": 37750
+            },
+            {
+              "x": 2400,
+              "y": 2401,
+              "z": 37750
+            },
+            {
+              "x": 2850,
+              "y": 2851,
+              "z": 40750
+            },
+            {
+              "x": -2850,
+              "y": 2851,
+              "z": 40750
+            }
+          ],
+          "rows": 8,
+          "columns": 10,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "glassL"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "podiumWindowsx",
+          "name": "podiumWindowsx",
+          "boundary": [
+            {
+              "x": 7201,
+              "y": -7000,
+              "z": 100
+            },
+            {
+              "x": 7201,
+              "y": 7000,
+              "z": 100
+            },
+            {
+              "x": 7201,
+              "y": 7000,
+              "z": 2600
+            },
+            {
+              "x": 7201,
+              "y": -7000,
+              "z": 2600
+            }
+          ],
+          "rows": 3,
+          "columns": 16,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "dark"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "podiumWindowsy",
+          "name": "podiumWindowsy",
+          "boundary": [
+            {
+              "x": -7000,
+              "y": 7201,
+              "z": 100
+            },
+            {
+              "x": 7000,
+              "y": 7201,
+              "z": 100
+            },
+            {
+              "x": 7000,
+              "y": 7201,
+              "z": 2600
+            },
+            {
+              "x": -7000,
+              "y": 7201,
+              "z": 2600
+            }
+          ],
+          "rows": 3,
+          "columns": 16,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "dark"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "brief": {
+        "intent": "完整台北101，可編輯2D建築插畫；不加入施工設備與背景",
+        "viewpoint": "固定 elevated three-quarter 正投影，方位38度、俯角25度",
+        "sources": [
+          "僅使用使用者兩張附件：航拍限量體與基座關係；特寫限裝飾形狀材質"
+        ],
+        "assumptions": [
+          "世界單位公分、投影比例1px/cm；50800cm總高，其他寬高分配為估計而非附件精密測量",
+          "玻璃使用方向性藍綠反射，金屬窗框獨立；光源左上。正投影保持各面一致。"
+        ],
+        "checks": []
+      }
+    },
+    "inspection": "immediate",
+    "message": "建立完整塔身、八層竹節、基座與尖塔",
+    "plan": {
+      "phase": "plan",
+      "method": "公分世界座標與統一正投影；原生向量與表面網格。僅附件支持量體與裝飾，未見尺寸估計。",
+      "references": [
+        "使用者航拍附件",
+        "使用者裝飾特寫"
+      ],
+      "referenceImageIndexes": [
+        0,
+        1
+      ],
+      "detailRequired": true,
+      "criteria": {
+        "overall": {
+          "requirement": "完整台北101俯視三分之四建築插畫",
+          "description": "基座至尖塔完整、八節外挑塔身、無額外背景及施工設備",
+          "verification": "visual",
+          "requiredUnits": []
+        },
+        "detail": {
+          "requirement": "高細節窗框與裝飾及寫實材質",
+          "description": "可見面有窗格、框材、反射、陰影及如意裝飾",
+          "verification": "visual",
+          "requiredUnits": []
+        }
+      }
+    }
+  },
+  "compact": {
+    "draft": {
+      "type": "group",
+      "name": "台北101｜公分世界座標建築插畫",
+      "projection": {
+        "azimuth": 38,
+        "elevation": 25,
+        "scale": 1,
+        "originX": 11000,
+        "originY": 47000
+      },
+      "fillTemplates": {
+        "metal": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#556a6b",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#b3c9c7",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#718c8c",
+              "opacity": 1
+            }
+          ]
+        },
+        "dark": "#173d48",
+        "roof": "#819896",
+        "stone": "#859491",
+        "glassL": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#173e4a",
+              "opacity": 1
+            },
+            {
+              "position": 0.3333333333333333,
+              "color": "#366775",
+              "opacity": 1
+            },
+            {
+              "position": 0.6666666666666666,
+              "color": "#719caa",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#335d70",
+              "opacity": 1
+            }
+          ]
+        },
+        "glassR": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#153840",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#285b62",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#4c848b",
+              "opacity": 1
+            }
+          ]
+        },
+        "edge": "#adc5c4"
+      },
+      "children": [
+        {
+          "type": "projected-face",
+          "key": "podiumx",
+          "name": "podiumx",
+          "vertices": [
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2800
+            },
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 2800
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podiumy",
+          "name": "podiumy",
+          "vertices": [
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2800
+            },
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 2800
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podiumtop",
+          "name": "podiumtop",
+          "vertices": [
+            {
+              "x": -7200,
+              "y": -7200,
+              "z": 2800
+            },
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 2800
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2800
+            },
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 2800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "basex",
+          "name": "basex",
+          "vertices": [
+            {
+              "x": 3500,
+              "y": -3500,
+              "z": 2800
+            },
+            {
+              "x": 3500,
+              "y": 3500,
+              "z": 2800
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": -2500,
+              "z": 8000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "basey",
+          "name": "basey",
+          "vertices": [
+            {
+              "x": -3500,
+              "y": 3500,
+              "z": 2800
+            },
+            {
+              "x": 3500,
+              "y": 3500,
+              "z": 2800
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": -2500,
+              "y": 2500,
+              "z": 8000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "basetop",
+          "name": "basetop",
+          "vertices": [
+            {
+              "x": -2500,
+              "y": -2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": -2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": -2500,
+              "y": 2500,
+              "z": 8000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerx",
+          "name": "lowerx",
+          "vertices": [
+            {
+              "x": 2500,
+              "y": -2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 15000
+            },
+            {
+              "x": 2900,
+              "y": -2900,
+              "z": 15000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowery",
+          "name": "lowery",
+          "vertices": [
+            {
+              "x": -2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 8000
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 15000
+            },
+            {
+              "x": -2900,
+              "y": 2900,
+              "z": 15000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowertop",
+          "name": "lowertop",
+          "vertices": [
+            {
+              "x": -2900,
+              "y": -2900,
+              "z": 15000
+            },
+            {
+              "x": 2900,
+              "y": -2900,
+              "z": 15000
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 15000
+            },
+            {
+              "x": -2900,
+              "y": 2900,
+              "z": 15000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "pattern",
+          "key": "tier-layer",
+          "name": "tier-layer",
+          "origin": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "axes": [
+            {
+              "count": 8,
+              "step": {
+                "x": 0,
+                "y": 0,
+                "z": 3250
+              }
+            }
+          ],
+          "members": [
+            {
+              "type": "projected-face",
+              "key": "tier0x",
+              "name": "tier0x",
+              "vertices": [
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 15000
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 15000
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2850,
+                  "y": -2850,
+                  "z": 18000
+                }
+              ],
+              "fill": {
+                "template": "glassR"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "tier0y",
+              "name": "tier0y",
+              "vertices": [
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 15000
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 15000
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18000
+                },
+                {
+                  "x": -2850,
+                  "y": 2850,
+                  "z": 18000
+                }
+              ],
+              "fill": {
+                "template": "glassL"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "tier0top",
+              "name": "tier0top",
+              "vertices": [
+                {
+                  "x": -2850,
+                  "y": -2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2850,
+                  "y": -2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18000
+                },
+                {
+                  "x": -2850,
+                  "y": 2850,
+                  "z": 18000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lip0x",
+              "name": "lip0x",
+              "vertices": [
+                {
+                  "x": 2850,
+                  "y": -2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18140
+                },
+                {
+                  "x": 2850,
+                  "y": -2850,
+                  "z": 18140
+                }
+              ],
+              "fill": {
+                "template": "glassR"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lip0y",
+              "name": "lip0y",
+              "vertices": [
+                {
+                  "x": -2850,
+                  "y": 2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18140
+                },
+                {
+                  "x": -2850,
+                  "y": 2850,
+                  "z": 18140
+                }
+              ],
+              "fill": {
+                "template": "glassL"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lip0top",
+              "name": "lip0top",
+              "vertices": [
+                {
+                  "x": -2850,
+                  "y": -2850,
+                  "z": 18140
+                },
+                {
+                  "x": 2850,
+                  "y": -2850,
+                  "z": 18140
+                },
+                {
+                  "x": 2850,
+                  "y": 2850,
+                  "z": 18140
+                },
+                {
+                  "x": -2850,
+                  "y": 2850,
+                  "z": 18140
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "crownx",
+          "name": "crownx",
+          "vertices": [
+            {
+              "x": 1700,
+              "y": -1700,
+              "z": 41000
+            },
+            {
+              "x": 1700,
+              "y": 1700,
+              "z": 41000
+            },
+            {
+              "x": 1400,
+              "y": 1400,
+              "z": 44800
+            },
+            {
+              "x": 1400,
+              "y": -1400,
+              "z": 44800
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crowny",
+          "name": "crowny",
+          "vertices": [
+            {
+              "x": -1700,
+              "y": 1700,
+              "z": 41000
+            },
+            {
+              "x": 1700,
+              "y": 1700,
+              "z": 41000
+            },
+            {
+              "x": 1400,
+              "y": 1400,
+              "z": 44800
+            },
+            {
+              "x": -1400,
+              "y": 1400,
+              "z": 44800
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crowntop",
+          "name": "crowntop",
+          "vertices": [
+            {
+              "x": -1400,
+              "y": -1400,
+              "z": 44800
+            },
+            {
+              "x": 1400,
+              "y": -1400,
+              "z": 44800
+            },
+            {
+              "x": 1400,
+              "y": 1400,
+              "z": 44800
+            },
+            {
+              "x": -1400,
+              "y": 1400,
+              "z": 44800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternx",
+          "name": "lanternx",
+          "vertices": [
+            {
+              "x": 900,
+              "y": -900,
+              "z": 44800
+            },
+            {
+              "x": 900,
+              "y": 900,
+              "z": 44800
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 47000
+            },
+            {
+              "x": 700,
+              "y": -700,
+              "z": 47000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanterny",
+          "name": "lanterny",
+          "vertices": [
+            {
+              "x": -900,
+              "y": 900,
+              "z": 44800
+            },
+            {
+              "x": 900,
+              "y": 900,
+              "z": 44800
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 47000
+            },
+            {
+              "x": -700,
+              "y": 700,
+              "z": 47000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanterntop",
+          "name": "lanterntop",
+          "vertices": [
+            {
+              "x": -700,
+              "y": -700,
+              "z": 47000
+            },
+            {
+              "x": 700,
+              "y": -700,
+              "z": 47000
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 47000
+            },
+            {
+              "x": -700,
+              "y": 700,
+              "z": 47000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "mastx",
+          "name": "mastx",
+          "vertices": [
+            {
+              "x": 230,
+              "y": -230,
+              "z": 47000
+            },
+            {
+              "x": 230,
+              "y": 230,
+              "z": 47000
+            },
+            {
+              "x": 60,
+              "y": 60,
+              "z": 50800
+            },
+            {
+              "x": 60,
+              "y": -60,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "masty",
+          "name": "masty",
+          "vertices": [
+            {
+              "x": -230,
+              "y": 230,
+              "z": 47000
+            },
+            {
+              "x": 230,
+              "y": 230,
+              "z": 47000
+            },
+            {
+              "x": 60,
+              "y": 60,
+              "z": 50800
+            },
+            {
+              "x": -60,
+              "y": 60,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "masttop",
+          "name": "masttop",
+          "vertices": [
+            {
+              "x": -60,
+              "y": -60,
+              "z": 50800
+            },
+            {
+              "x": 60,
+              "y": -60,
+              "z": 50800
+            },
+            {
+              "x": 60,
+              "y": 60,
+              "z": 50800
+            },
+            {
+              "x": -60,
+              "y": 60,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "pattern",
+          "key": "window-layer",
+          "name": "window-layer",
+          "origin": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "axes": [
+            {
+              "count": 8,
+              "step": {
+                "x": 0,
+                "y": 0,
+                "z": 3250
+              }
+            }
+          ],
+          "members": [
+            {
+              "type": "surface-grid",
+              "key": "windowsX0",
+              "name": "windowsX0",
+              "boundary": [
+                {
+                  "x": 2401,
+                  "y": -2400,
+                  "z": 15000
+                },
+                {
+                  "x": 2401,
+                  "y": 2400,
+                  "z": 15000
+                },
+                {
+                  "x": 2851,
+                  "y": 2850,
+                  "z": 18000
+                },
+                {
+                  "x": 2851,
+                  "y": -2850,
+                  "z": 18000
+                }
+              ],
+              "rows": 8,
+              "columns": 10,
+              "order": "cell-major",
+              "motifs": [
+                {
+                  "key": "pane",
+                  "name": "玻璃窗與獨立窗框",
+                  "fill": {
+                    "template": "glassR"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.055,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.84
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.84
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "windowsY0",
+              "name": "windowsY0",
+              "boundary": [
+                {
+                  "x": -2400,
+                  "y": 2401,
+                  "z": 15000
+                },
+                {
+                  "x": 2400,
+                  "y": 2401,
+                  "z": 15000
+                },
+                {
+                  "x": 2850,
+                  "y": 2851,
+                  "z": 18000
+                },
+                {
+                  "x": -2850,
+                  "y": 2851,
+                  "z": 18000
+                }
+              ],
+              "rows": 8,
+              "columns": 10,
+              "order": "cell-major",
+              "motifs": [
+                {
+                  "key": "pane",
+                  "name": "玻璃窗與獨立窗框",
+                  "fill": {
+                    "template": "glassL"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.055,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.84
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.84
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "podiumWindowsx",
+          "name": "podiumWindowsx",
+          "boundary": [
+            {
+              "x": 7201,
+              "y": -7000,
+              "z": 100
+            },
+            {
+              "x": 7201,
+              "y": 7000,
+              "z": 100
+            },
+            {
+              "x": 7201,
+              "y": 7000,
+              "z": 2600
+            },
+            {
+              "x": 7201,
+              "y": -7000,
+              "z": 2600
+            }
+          ],
+          "rows": 3,
+          "columns": 16,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "dark"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "podiumWindowsy",
+          "name": "podiumWindowsy",
+          "boundary": [
+            {
+              "x": -7000,
+              "y": 7201,
+              "z": 100
+            },
+            {
+              "x": 7000,
+              "y": 7201,
+              "z": 100
+            },
+            {
+              "x": 7000,
+              "y": 7201,
+              "z": 2600
+            },
+            {
+              "x": -7000,
+              "y": 7201,
+              "z": 2600
+            }
+          ],
+          "rows": 3,
+          "columns": 16,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "pane",
+              "name": "玻璃窗與獨立窗框",
+              "fill": {
+                "template": "dark"
+              },
+              "vertices": [
+                {
+                  "u": 0.055,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.1
+                },
+                {
+                  "u": 0.945,
+                  "v": 0.84
+                },
+                {
+                  "u": 0.055,
+                  "v": 0.84
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "brief": {
+        "intent": "完整台北101，可編輯2D建築插畫；不加入施工設備與背景",
+        "viewpoint": "固定 elevated three-quarter 正投影，方位38度、俯角25度",
+        "sources": [
+          "僅使用使用者兩張附件：航拍限量體與基座關係；特寫限裝飾形狀材質"
+        ],
+        "assumptions": [
+          "世界單位公分、投影比例1px/cm；50800cm總高，其他寬高分配為估計而非附件精密測量",
+          "玻璃使用方向性藍綠反射，金屬窗框獨立；光源左上。正投影保持各面一致。"
+        ],
+        "checks": []
+      }
+    },
+    "inspection": "immediate",
+    "message": "建立完整塔身、八層竹節、基座與尖塔",
+    "plan": {
+      "phase": "plan",
+      "method": "公分世界座標與統一正投影；原生向量與表面網格。僅附件支持量體與裝飾，未見尺寸估計。",
+      "references": [
+        "使用者航拍附件",
+        "使用者裝飾特寫"
+      ],
+      "referenceImageIndexes": [
+        0,
+        1
+      ],
+      "detailRequired": true,
+      "criteria": {
+        "overall": {
+          "requirement": "完整台北101俯視三分之四建築插畫",
+          "description": "基座至尖塔完整、八節外挑塔身、無額外背景及施工設備",
+          "verification": "visual",
+          "requiredUnits": []
+        },
+        "detail": {
+          "requirement": "高細節窗框與裝飾及寫實材質",
+          "description": "可見面有窗格、框材、反射、陰影及如意裝飾",
+          "verification": "visual",
+          "requiredUnits": []
+        }
+      }
+    }
+  }
+}

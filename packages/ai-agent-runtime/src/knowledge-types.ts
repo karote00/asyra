@@ -5,6 +5,8 @@ export interface AiKnowledgeMetadata {
   readonly description: string
   readonly provenance: readonly string[]
   readonly contexts?: readonly string[]
+  /** Optional navigation only; never an automatic content dependency. */
+  readonly children?: readonly string[]
   readonly references?: readonly string[]
   readonly extends?: readonly string[]
   readonly overrides?: readonly {
@@ -33,8 +35,12 @@ export interface AiKnowledgeContent {
 }
 
 export interface AiKnowledgeQuery {
+  /** Redisplay selected full documents from a live result in this session. */
+  readonly fromResult?: string
   /** Re-read advice after earlier results are absent from effective context. */
   readonly rehydrate?: boolean
+  /** Complete earlier results explicitly still held by this caller. */
+  readonly reuseFrom?: readonly string[]
   readonly ids: readonly string[]
   readonly contexts?: readonly string[]
 }
@@ -50,19 +56,25 @@ export interface AiKnowledgeResult {
   readonly generation: number
   readonly contextKey: string
   readonly alreadyDelivered: boolean
-  readonly documents: readonly {
+  readonly documents: readonly ({
     readonly target: string
     readonly source: AiKnowledgeSource
     readonly replacedSource?: AiKnowledgeSource
-    readonly text: string
-  }[]
+  } & (
+    | { readonly text: string; readonly retainedFrom?: never }
+    | { readonly text?: never; readonly retainedFrom: string }
+  ))[]
   readonly sources: readonly AiKnowledgeSource[]
 }
 
 export interface AiKnowledgeSession {
   /** Host notification that retained tool results were dropped or reconstructed. */
   invalidateContext(): void
-  discover(contexts?: readonly string[]): readonly AiKnowledgeMetadata[]
+  /** Optional roots select registered visible children, never content dependencies. */
+  discover(
+    contexts?: readonly string[],
+    ids?: readonly string[]
+  ): readonly AiKnowledgeMetadata[]
   retrieve(
     query: AiKnowledgeQuery,
     signal: AbortSignal

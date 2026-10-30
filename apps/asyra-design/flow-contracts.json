@@ -6,9 +6,7 @@
   "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
   "testFile": "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
   "configFile": "apps/asyra-design/server/__tests__/execution-flow.config.ts",
-  "negativeCaseIds": [
-    "compose.registered-tools"
-  ],
+  "negativeCaseIds": ["compose.registered-tools"],
   "externalInputs": [
     "artifact:request-context",
     "artifact:tool-program",
@@ -24,15 +22,19 @@
         "components.button.md",
         "design.landing-page.md",
         "icons.md",
-        "typography.md"
+        "typography.md",
+        "illustration.architecture.md",
+        "illustration.architecture.spatial.md",
+        "illustration.architecture.projection.md",
+        "illustration.architecture.repetition.md",
+        "illustration.architecture.materials.md",
+        "illustration.architecture.materials.method.md"
       ],
       "entry": null
     },
     {
       "name": "@asyra/core",
-      "inputs": [
-        "src/**"
-      ],
+      "inputs": ["src/**"],
       "entry": "src/index.ts"
     },
     {
@@ -42,15 +44,25 @@
         "server/**",
         "knowledge/**",
         "vtracer-tool-server.mjs",
-        "collaboration-server.ts"
+        "collaboration-server.ts",
+        "e2e/execution-evidence.ts",
+        "e2e/test-utils.ts",
+        "e2e/fixtures/execution-continuity.json",
+        "test-data/knowledge-evaluation/architecture-101.json",
+        "test-data/knowledge-evaluation/quality-cases.json",
+        "test-data/knowledge-evaluation/visual-result-selection-20261028.json",
+        "test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json",
+        "test-data/knowledge-evaluation/quality.mjs",
+        "test-data/knowledge-evaluation/architecture-protocol.mjs",
+        "test-data/knowledge-evaluation/native-boundaries.mjs",
+        "test-data/knowledge-evaluation/public-activity.mjs",
+        "test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json"
       ],
       "entry": null
     },
     {
       "name": "@asyra/design-system",
-      "inputs": [
-        "src/**"
-      ],
+      "inputs": ["src/**"],
       "entry": "src/index.tsx"
     }
   ],
@@ -69,6 +81,55 @@
         "observe"
       ],
       "cases": [
+        {
+          "id": "compose.model-delivery",
+          "stepId": "compose",
+          "testName": "execution proof declares the saved model receipt without internal result fields",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-library-tools.ts",
+            "apps/asyra-design/src/ai/tool-contract.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json"
+          ]
+        },
+        {
+          "id": "compose.material-repair",
+          "stepId": "compose",
+          "testName": "execution proof follows saved material recovery without reinjecting resolved fields",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json"
+          ]
+        },
+        {
+          "id": "compose.unified-usage",
+          "stepId": "compose",
+          "testName": "execution proof delivers complete non-scoped usage without mutation or a full lookup",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/ai-domain-prompt.ts"
+          ]
+        },
+        {
+          "id": "compose.attachment-reference",
+          "stepId": "compose",
+          "testName": "execution proof prepares explicit attachment uses through the existing owner without prerequisite validation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-image-tools.ts",
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/ai-domain-prompt.ts"
+          ]
+        },
+        {
+          "id": "compose.knowledge-source-delivery",
+          "stepId": "compose",
+          "testName": "execution proof resolves compact Knowledge sources through the delivered example without another read",
+          "implementationPaths": ["apps/asyra-design/server/local-knowledge.ts"]
+        },
         {
           "id": "compose.ordered-parts",
           "stepId": "compose",
@@ -93,7 +154,10 @@
           "testName": "execution proof repairs rejected source through the same request preparation owner",
           "implementationPaths": [
             "apps/asyra-design/server/design-draft-repair.ts",
-            "apps/asyra-design/server/design-preparation.ts"
+            "apps/asyra-design/server/design-preparation.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/design-construction-schema.ts"
           ]
         },
         {
@@ -101,7 +165,10 @@
           "stepId": "compose",
           "testName": "execution proof preserves partial lookup full recovery and declaration constraints",
           "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts"
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/operation-input-schema.ts"
           ]
         },
         {
@@ -116,9 +183,7 @@
           "id": "request.continuity",
           "stepId": "request",
           "testName": "execution proof validates continuity references before a successor request",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/conversation.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
         },
         {
           "id": "prepare.lifetime",
@@ -143,7 +208,11 @@
           "testName": "execution proof composes preparation and canonical dispatch without repeated work",
           "implementationPaths": [
             "apps/asyra-design/server/local-design-workflow.ts",
-            "apps/asyra-design/server/local-tool-scheduler.ts"
+            "apps/asyra-design/server/local-tool-scheduler.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts"
           ]
         },
         {
@@ -162,7 +231,9 @@
           "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers",
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-design-review.ts"
+            "apps/asyra-design/server/local-design-review.ts",
+            "packages/core/src/core.ts",
+            "packages/scene-tree/src/components/group.ts"
           ]
         },
         {
@@ -186,9 +257,7 @@
           "id": "settle.partial",
           "stepId": "settle",
           "testName": "execution proof retains partial progress when a successor makes no change",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/conversation.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
         },
         {
           "id": "observe.accounting",
@@ -196,7 +265,11 @@
           "testName": "execution proof accounts observed spans without private payloads or invented model timing",
           "implementationPaths": [
             "packages/ai-agent-runtime/src/profiler/recorder.ts",
-            "packages/ai-agent-runtime/src/profiler/evaluation.ts"
+            "packages/ai-agent-runtime/src/profiler/evaluation.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/architecture-101.json",
+            "apps/asyra-design/test-data/knowledge-evaluation/quality-cases.json",
+            "apps/asyra-design/test-data/knowledge-evaluation/quality.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/architecture-protocol.mjs"
           ]
         },
         {
@@ -204,16 +277,15 @@
           "stepId": "observe",
           "testName": "execution proof records timestamped transport without storing transport content",
           "implementationPaths": [
-            "packages/ai-agent-runtime/src/profiler/recorder.ts"
+            "packages/ai-agent-runtime/src/profiler/recorder.ts",
+            "apps/asyra-design/server/local-ai-provider.ts"
           ]
         },
         {
           "id": "observe.shared-invocation",
           "stepId": "observe",
           "testName": "execution proof composes a non-drawing host through shared invocation and local projection",
-          "implementationPaths": [
-            "packages/ai-agent-runtime/src/invocation.ts"
-          ]
+          "implementationPaths": ["packages/ai-agent-runtime/src/invocation.ts"]
         },
         {
           "id": "apply.region-removal",
@@ -261,7 +333,14 @@
           "stepId": "inspect",
           "testName": "execution proof composes capture and assessment without dropping unavailable targets",
           "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts"
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/common-apis/inspection.ts",
+            "apps/asyra-design/src/ai/inspection.ts",
+            "apps/asyra-design/src/ai/inspection-schema.ts",
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/server/local-design-review.ts",
+            "packages/render/src/render.ts",
+            "packages/render/src/layers/viewport/viewport-layer.ts"
           ]
         },
         {
@@ -330,7 +409,8 @@
           "stepId": "inspect",
           "testName": "execution proof uses only current conversion and primary judgment contracts",
           "implementationPaths": [
-            "apps/asyra-design/server/local-design-review.ts"
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
         {
@@ -400,10 +480,12 @@
         {
           "id": "settle.recorded-purpose",
           "stepId": "settle",
-          "testName": "execution proof retains recorded authored purpose after provider tool settlement",
+          "testName": "execution proof retires superseded recorded purpose after provider tool settlement",
           "implementationPaths": [
             "apps/asyra-design/server/local-ai-provider.ts",
-            "apps/asyra-design/src/ai/activity-state.ts"
+            "apps/asyra-design/src/ai/activity-state.ts",
+            "packages/ai-agent-runtime/src/provider.ts",
+            "apps/asyra-design/server/ai-domain-prompt.ts"
           ]
         },
         {
@@ -433,36 +515,443 @@
             "apps/asyra-design/src/common-apis/retained-design-context.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
+        },
+        {
+          "id": "prepare.world-material",
+          "stepId": "prepare",
+          "testName": "execution proof preserves world material phase through preparation and current artifact consumption",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-linear-field.ts",
+            "apps/asyra-design/server/design-construction.ts"
+          ]
+        },
+        {
+          "id": "prepare.repeated-representation",
+          "stepId": "prepare",
+          "testName": "execution proof consumes repeated multi-face examples through exact native targets and artifact lifetime",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-target-index.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/server/design-budget.ts"
+          ]
+        },
+        {
+          "id": "apply.query-admission",
+          "stepId": "apply",
+          "testName": "execution proof rejects mismatched query scopes before reads and preserves explicit refinement",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-context.ts",
+            "apps/asyra-design/src/common-apis/retained-design-context.ts",
+            "apps/asyra-design/src/ai/context-action.ts"
+          ]
+        },
+        {
+          "id": "compose.chosen-method-handoff",
+          "stepId": "compose",
+          "testName": "execution proof dispatches the published chosen-method route without converting record success into acceptance",
+          "implementationPaths": [
+            "apps/asyra-design/server/ai-domain-prompt.ts",
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.review.md",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "compose.material-correction",
+          "stepId": "compose",
+          "testName": "execution proof admits complete per-target material corrections from the published route",
+          "implementationPaths": [
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.correction.md",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "settle.property-relationships",
+          "stepId": "settle",
+          "testName": "execution proof preserves exact shared property relationships in publication",
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/document-publication.ts"
+          ]
+        },
+        {
+          "id": "compose.owner-result-handoff",
+          "stepId": "compose",
+          "testName": "execution proof preserves owner result distinctions through native contract admission",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/server/local-tool-invocation.ts"
+          ]
+        },
+        {
+          "id": "apply.core-owner-results",
+          "stepId": "apply",
+          "testName": "execution proof preserves Core mutation and valid no-op receipts through native invocation",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "packages/core/src/apis/element-properties.ts",
+            "packages/core/src/apis/property-intents.ts",
+            "packages/core/src/apis/props.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "packages/ai-agent-runtime/src/runtime.ts"
+          ]
+        },
+        {
+          "id": "apply.non-core-owner-results",
+          "stepId": "apply",
+          "testName": "execution proof preserves non-Core mutation outcomes without opaque application",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/mutation-receipt.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/element/vector-apis.ts",
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/common-apis/strokes.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts"
+          ]
+        },
+        {
+          "id": "apply.material-provenance",
+          "stepId": "apply",
+          "testName": "execution proof keeps material provenance independent of viewport transforms",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-material-action.ts"
+          ]
+        },
+        {
+          "id": "observe.tool-images",
+          "stepId": "observe",
+          "testName": "execution proof preserves exact submitted inspection pixels and delivery identity",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "packages/ai-agent-runtime/src/profiler/recorder.ts",
+            "packages/ai-agent-runtime/src/node/record-sink.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/analyze.mjs"
+          ]
+        },
+        {
+          "id": "compose.information-forwarding",
+          "stepId": "compose",
+          "testName": "execution proof delivers bounded information through owner continuations without replaying operations",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-information-delivery.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "compose.knowledge-selection",
+          "stepId": "compose",
+          "testName": "execution proof selects nested Knowledge without reading sibling bodies",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-knowledge.ts",
+            "packages/ai-agent-runtime/src/knowledge.ts",
+            "packages/ai-agent-runtime/src/knowledge-types.ts"
+          ]
+        },
+        {
+          "id": "observe.native-output",
+          "stepId": "observe",
+          "testName": "execution proof distinguishes native output observation from tool execution and unavailable argument progress",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/local-provider-activity.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/public-activity.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/analyze.mjs",
+            "packages/ai-agent-runtime/src/profiler/recorder.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/native-boundaries.mjs"
+          ]
+        },
+        {
+          "id": "compose.knowledge-complete-topic",
+          "stepId": "compose",
+          "testName": "execution proof delivers selected Knowledge decisions completely without optional bodies",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-knowledge.ts",
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.method.md",
+            "apps/asyra-design/knowledge/design.architectural-illustration.contracts.md",
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.review.md"
+          ]
+        },
+        {
+          "id": "compose.selected-operation-contract",
+          "stepId": "compose",
+          "testName": "execution proof delivers selected operation contracts without exhaustive discovery",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-workflow-discovery.ts",
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/ai-domain-prompt.ts",
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/src/ai/tool-schema.ts"
+          ]
+        },
+        {
+          "id": "compose.inspection-discovery-receipts",
+          "stepId": "compose",
+          "testName": "execution proof distinguishes inspection lookup coverage from completed reads",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-information-delivery.ts"
+          ]
+        },
+        {
+          "id": "compose.evaluation-report",
+          "stepId": "settle",
+          "testName": "execution proof separates bounded work from same-thread self-report without replay",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/src/ai/evaluation-window.ts",
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-query-artifacts.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-leases.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/common-apis/retained-design-context.ts"
+          ]
+        },
+        {
+          "id": "compose.budget-recovery",
+          "stepId": "compose",
+          "testName": "execution proof continues safe capacity through retained partitions in one invocation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/design-budget.ts"
+          ]
+        },
+        {
+          "id": "compose.brief-capacity",
+          "stepId": "compose",
+          "testName": "execution proof preserves descriptive brief through safe capacity and one root",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/design-budget.ts"
+          ]
+        },
+        {
+          "id": "observe.settled-report",
+          "stepId": "observe",
+          "testName": "execution proof captures only the admitted settled report without rereading transport",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/evaluation-window.ts",
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx"
+          ]
+        },
+        {
+          "id": "prepare.evaluation-budget",
+          "stepId": "prepare",
+          "testName": "execution proof isolates the evaluation budget through delivery and retained recovery",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-preparation.ts",
+            "apps/asyra-design/server/design-draft-repair.ts"
+          ]
+        },
+        {
+          "id": "compose.layered-repetition",
+          "stepId": "compose",
+          "testName": "execution proof delivers layered repetition before parameters with canonical references",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-workflow.ts"
+          ]
+        },
+        {
+          "id": "prepare.source-read-ownership",
+          "stepId": "prepare",
+          "testName": "execution proof separates budget snapshot projection and retained lookup work",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "compose.shared-motifs",
+          "stepId": "compose",
+          "testName": "execution proof delivers shared motifs through the main workflow without extra reading",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/design-workflow-discovery.ts"
+          ]
+        },
+        {
+          "id": "prepare.shared-motifs",
+          "stepId": "prepare",
+          "testName": "execution proof preserves shared motifs geometry budget lifetime and recovery",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "compose.context-discovery",
+          "stepId": "compose",
+          "testName": "execution proof follows union entry navigation and valid recovery without replay",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "apply.interrupted-results",
+          "stepId": "apply",
+          "testName": "execution proof preserves interrupted owner results without replay",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "packages/ai-agent-runtime/src/runtime.ts"
+          ]
+        },
+        {
+          "id": "compose.interrupted-results",
+          "stepId": "compose",
+          "testName": "execution proof preserves cancellation evidence through native invocation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-invocation.ts",
+            "apps/asyra-design/server/local-ai-provider.ts"
+          ]
+        },
+        {
+          "id": "compose.compact-diagnostics",
+          "stepId": "compose",
+          "testName": "execution proof projects compact diagnostics after owner evidence without replay",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "compose.visual-judgment-handoff",
+          "stepId": "compose",
+          "testName": "execution proof binds an explicitly selected workflow image through the existing review owner",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
+        },
+        {
+          "id": "apply.ui-projection",
+          "stepId": "apply",
+          "testName": "execution proof preserves incremental UI publications without unrelated hierarchy work",
+          "implementationPaths": [
+            "packages/preset/src/subscriptions/data-channel.ts"
+          ]
+        },
+        {
+          "id": "compose.image-display-recovery",
+          "stepId": "compose",
+          "testName": "execution proof preserves retained images during direct response reprojection",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "prepare.sampled-ellipse",
+          "stepId": "prepare",
+          "testName": "execution proof delivers projected ovals through projection and canonical dispatch",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-face.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/server/design-preparation-examples.ts"
+          ]
+        },
+        {
+          "id": "prepare.face-boundary",
+          "stepId": "prepare",
+          "testName": "execution proof preserves face-referenced boundaries through retained source selection",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-face.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-construction-schema.ts"
+          ]
+        },
+        {
+          "id": "observe.e2e-continuity",
+          "stepId": "observe",
+          "testName": "execution proof preserves E2E runtime continuity and original failure attribution",
+          "implementationPaths": [
+            "apps/asyra-design/e2e/execution-evidence.ts",
+            "apps/asyra-design/e2e/test-utils.ts",
+            "apps/asyra-design/e2e/fixtures/execution-continuity.json"
+          ]
+        },
+        {
+          "id": "compose.selected-review-usage",
+          "stepId": "compose",
+          "testName": "execution proof delivers selected review usage to real capture binding and recording",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-workflow-discovery.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
+        },
+        {
+          "id": "inspect.automatic-coverage-delivery",
+          "stepId": "inspect",
+          "testName": "execution proof delivers automatic mechanical scope without accumulating candidates",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/ai/review-action.ts",
+            "apps/asyra-design/src/common-apis/design-review.ts"
+          ]
+        },
+        {
+          "id": "inspect.visual-result-selection",
+          "stepId": "inspect",
+          "testName": "execution proof selects visual results before cloning mechanical evidence",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-check-results.ts",
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/visual-result-selection-20261028.json"
+          ]
         }
       ],
       "handoffs": [
         {
+          "routeId": "capacity-plan-to-compose",
+          "decision": "required",
+          "caseIds": ["compose.budget-recovery", "prepare.evaluation-budget"]
+        },
+        {
           "routeId": "request-to-compose",
           "decision": "required",
-          "caseIds": [
-            "compose.registered-tools"
-          ]
+          "caseIds": ["compose.registered-tools"]
         },
         {
           "routeId": "compose-to-prepare",
           "decision": "required",
           "caseIds": [
             "prepare.lifetime",
-            "compose.resource-export"
+            "compose.resource-export",
+            "prepare.repeated-representation",
+            "compose.layered-repetition"
           ]
         },
         {
           "routeId": "compose-to-apply",
           "decision": "required",
-          "caseIds": [
-            "apply.composition"
-          ]
+          "caseIds": ["apply.composition"]
         },
         {
           "routeId": "prepare-to-apply",
           "decision": "required",
           "caseIds": [
-            "apply.composition"
+            "apply.composition",
+            "prepare.repeated-representation",
+            "apply.material-provenance"
           ]
         },
         {
@@ -472,7 +961,11 @@
             "request.continuity",
             "apply.region-removal",
             "apply.bounded-receipt-delivery",
-            "apply.registered-model-delivery"
+            "apply.registered-model-delivery",
+            "compose.owner-result-handoff",
+            "apply.core-owner-results",
+            "apply.non-core-owner-results",
+            "apply.material-provenance"
           ]
         },
         {
@@ -487,17 +980,15 @@
         {
           "routeId": "apply-to-settle",
           "decision": "required",
-          "caseIds": [
-            "settle.partial",
-            "apply.history-intent"
-          ]
+          "caseIds": ["settle.partial", "apply.history-intent"]
         },
         {
           "routeId": "inspect-to-compose",
           "decision": "required",
           "caseIds": [
             "inspect.current-evidence",
-            "inspect.current-contract"
+            "inspect.current-contract",
+            "inspect.visual-result-selection"
           ]
         },
         {
@@ -505,29 +996,24 @@
           "decision": "required",
           "caseIds": [
             "inspect.current-evidence",
-            "inspect.current-contract"
+            "inspect.current-contract",
+            "inspect.visual-result-selection"
           ]
         },
         {
           "routeId": "prepare-to-inspect",
           "decision": "required",
-          "caseIds": [
-            "inspect.prepared-recipe"
-          ]
+          "caseIds": ["inspect.prepared-recipe"]
         },
         {
           "routeId": "prepared-review-to-apply",
           "decision": "required",
-          "caseIds": [
-            "inspect.prepared-recipe"
-          ]
+          "caseIds": ["inspect.prepared-recipe"]
         },
         {
           "routeId": "prepared-review-to-compose",
           "decision": "required",
-          "caseIds": [
-            "inspect.prepared-recipe"
-          ]
+          "caseIds": ["inspect.prepared-recipe"]
         }
       ]
     }
@@ -542,9 +1028,7 @@
     {
       "id": "omit-registered-tools",
       "title": "Omit registered tools",
-      "expectedFailedCaseIds": [
-        "compose.registered-tools"
-      ],
+      "expectedFailedCaseIds": ["compose.registered-tools"],
       "mutation": {
         "file": "apps/asyra-design/server/local-ai-provider.ts",
         "from": "dynamicTools: nativeDefinitions,",
@@ -554,9 +1038,7 @@
     {
       "id": "misclassify-combined-tool",
       "title": "Run a canvas workflow as independent preparation",
-      "expectedFailedCaseIds": [
-        "apply.composition"
-      ],
+      "expectedFailedCaseIds": ["apply.composition"],
       "mutation": {
         "file": "apps/asyra-design/server/local-design-workflow.ts",
         "from": "executionAccess: LocalToolAccess.EXCLUSIVE,",
@@ -570,7 +1052,8 @@
         "inspect.current-evidence",
         "inspect.scoped-dependencies",
         "inspect.regional-units",
-        "inspect.regional-pixels"
+        "inspect.regional-pixels",
+        "inspect.visual-result-selection"
       ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
@@ -595,9 +1078,7 @@
     {
       "id": "read-late-history-modifier",
       "title": "Read live modifier instead of issued history intent",
-      "expectedFailedCaseIds": [
-        "apply.history-intent"
-      ],
+      "expectedFailedCaseIds": ["apply.history-intent"],
       "mutation": {
         "file": "apps/asyra-design/src/features/undo-redo/index.ts",
         "from": "const direction = snapshot.detail?.historyDirection",
@@ -607,9 +1088,7 @@
     {
       "id": "accept-history-during-replay",
       "title": "Accept history input while Factory is replaying",
-      "expectedFailedCaseIds": [
-        "apply.history-intent"
-      ],
+      "expectedFailedCaseIds": ["apply.history-intent"],
       "mutation": {
         "file": "apps/asyra-design/src/config/key-combinations.ts",
         "from": "if (core.isInUndoRedo()) return false",
@@ -619,9 +1098,7 @@
     {
       "id": "dispatch-rejected-history",
       "title": "Dispatch rejected input into downstream consumers",
-      "expectedFailedCaseIds": [
-        "apply.history-intent"
-      ],
+      "expectedFailedCaseIds": ["apply.history-intent"],
       "mutation": {
         "file": "packages/input-system/src/input-system.ts",
         "from": "if (combo.callback?.(raw) === false) continue",
@@ -631,9 +1108,7 @@
     {
       "id": "queue-immediate-history",
       "title": "Queue an accepted history command",
-      "expectedFailedCaseIds": [
-        "apply.history-intent"
-      ],
+      "expectedFailedCaseIds": ["apply.history-intent"],
       "mutation": {
         "file": "apps/asyra-design/src/features/undo-redo/index.ts",
         "from": "executionMode: 'immediate'",
@@ -643,13 +1118,81 @@
     {
       "id": "unbounded-receipt-delivery",
       "title": "Bypass bounded receipt delivery",
-      "expectedFailedCaseIds": [
-        "apply.bounded-receipt-delivery"
-      ],
+      "expectedFailedCaseIds": ["apply.bounded-receipt-delivery"],
       "mutation": {
         "file": "apps/asyra-design/src/ai/server-action-batch-provider.ts",
         "from": "if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) return body",
         "to": "if (bytes >= 0) return body"
+      }
+    },
+    {
+      "id": "drop-final-property-relationships",
+      "title": "Drop final relationship arrays from property publication",
+      "expectedFailedCaseIds": ["settle.property-relationships"],
+      "mutation": {
+        "file": "apps/asyra-design/src/collaboration/operations.ts",
+        "from": "values[payload.key] = payload.after",
+        "to": "if (!Array.isArray(payload.after)) values[payload.key] = payload.after"
+      }
+    },
+    {
+      "id": "retire-property-before-update",
+      "title": "Retire property components before their preceding value updates",
+      "expectedFailedCaseIds": ["settle.property-relationships"],
+      "mutation": {
+        "file": "apps/asyra-design/src/collaboration/operations.ts",
+        "from": "if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {\n      flush()",
+        "to": "if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {\n      if (addition) flush()"
+      }
+    },
+    {
+      "id": "ignore-owner-unavailability",
+      "title": "Promote unavailable owner results to success",
+      "expectedFailedCaseIds": ["compose.owner-result-handoff"],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/basic-api-results.ts",
+        "from": "if (unavailable)\n      status =",
+        "to": "if (false)\n      status ="
+      }
+    },
+    {
+      "id": "lose-core-no-op",
+      "title": "Treat every Core property receipt as changed",
+      "expectedFailedCaseIds": ["apply.core-owner-results"],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/basic-api-results.ts",
+        "from": "status: result.changed ? 'complete' : 'no-change'",
+        "to": "status: 'complete'"
+      }
+    },
+    {
+      "id": "lose-core-failure-settlement",
+      "title": "Discard known Core failed-member settlement",
+      "expectedFailedCaseIds": ["apply.core-owner-results"],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/runtime.ts",
+        "from": "if (error.status === 'rolled-back')\n                              settlement = 'not-started'",
+        "to": "if (error.status === 'rolled-back')\n                              settlement = 'unknown'"
+      }
+    },
+    {
+      "id": "lose-non-core-no-op",
+      "title": "Promote unchanged App owner receipts to completed changes",
+      "expectedFailedCaseIds": ["apply.non-core-owner-results"],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/basic-api-results.ts",
+        "from": "const { acceptedIds, unavailableIds, changed } = receipt\n    let status = changed ? 'complete' : 'no-change'",
+        "to": "const { acceptedIds, unavailableIds, changed } = receipt\n    let status = 'complete'"
+      }
+    },
+    {
+      "id": "viewport-material-invalidation",
+      "title": "Include viewport-derived coordinates in material provenance",
+      "expectedFailedCaseIds": ["apply.material-provenance"],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/prepared-material-action.ts",
+        "from": "      placements\n",
+        "to": "      placements,\n      viewportBasis: core.elementLocalToWorkspace(elementId, { x: 0, y: 0 })\n"
       }
     }
   ]

@@ -1,9 +1,5 @@
-import { AiDesignToolIds } from '../constants/ai-design'
-import {
-  AiReferenceToolIds,
-  AiResearchActivityIds
-} from '../constants/ai-research'
-import type { AiRuntimeProgressUpdate } from '@asyra/ai-agent-runtime'
+import { activityToolLabels } from './activity-state'
+export { createAiActivityProjection, projectAiActivity } from './activity-state'
 import type { AiConversationOutcome, AiSettledTurn } from './conversation'
 import { AiActionNames, AiDrawingDetailOptionIds } from '../constants'
 
@@ -253,6 +249,22 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     typeof reported.result.message === 'string' &&
     reported.result.message.length <= 1000
   ) {
+    if (
+      reported.result.outcome === 'completed' &&
+      isPlainObject(reported.result.persistence)
+    ) {
+      const status = reported.result.persistence.status
+      if (status === 'unavailable' || status === 'local-only') {
+        return Object.freeze({
+          durationLabel: formatElapsedTime(turn.durationMs),
+          message:
+            status === 'unavailable'
+              ? 'Drawing work is complete, but saving could not be confirmed. Changes have been kept. Resolve document storage before closing; do not repeat the drawing.'
+              : 'Drawing work is complete locally. Durable document storage is not connected.',
+          outcome: turn.outcome
+        })
+      }
+    }
     let disposition = ''
     if (reported.result.outcome === 'unsupported') {
       disposition =
@@ -312,151 +324,6 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
     'permission',
     'confirmation'
   ].includes(String(turn.result.stage))
-}
-
-const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
-  vtracer: 'Converting artwork to vectors',
-  [AiDesignToolIds.PREPARE_DESIGN]: 'Preparing the design',
-  [AiDesignToolIds.RECORD_DESIGN_REVIEW]: 'Checking the requested details',
-  [AiActionNames.APPLY_PREPARED_DESIGN]: 'Adding the design',
-  [AiResearchActivityIds.RESEARCH_DESIGN_CONTEXT]: 'Researching design context',
-  [AiReferenceToolIds.SEARCH_REFERENCE_IMAGES]: 'Finding a reference',
-  [AiReferenceToolIds.IMPORT_REFERENCE_IMAGE]: 'Preparing the reference',
-  [AiActionNames.ORGANIZE_DESIGN]: 'Organizing layers',
-  [AiActionNames.ARRANGE_DESIGN]: 'Arranging the design',
-  [AiActionNames.REVIEW_DESIGN]: 'Checking the layout',
-  [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'Refining the design',
-  [AiActionNames.READ_DESIGN_CONTEXT]: 'Reading the design',
-  [AiActionNames.INSPECT_DRAWING]: 'Reviewing the drawing',
-  [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Adding the drawing',
-  [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'Replacing the drawing',
-  [AiActionNames.REMOVE_AI_COMPOSITION]: 'Removing the drawing',
-  [AiActionNames.SET_ELEMENT_VISIBILITY]: 'Adjusting element visibility',
-  [AiActionNames.SELECT_ELEMENTS]: 'Selecting elements',
-  [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'Refining the drawing'
-})
-
-const activityLabel = (update: AiRuntimeProgressUpdate): string => {
-  if (update.tool && update.toolStatus) {
-    const tool = Object.hasOwn(activityToolLabels, update.tool)
-      ? activityToolLabels[update.tool]
-      : 'Planning the drawing'
-    return update.toolStatus === 'running' ? tool : 'Reviewing the results'
-  }
-  switch (update.phase) {
-    case 'context':
-      return 'Reviewing the drawing'
-    case 'provider':
-      return 'Planning the drawing'
-    case 'resolution':
-      return 'Reviewing the planned changes'
-    case 'permission':
-      return 'Checking whether changes can be applied'
-    case 'confirmation':
-      return 'Awaiting approval'
-    case 'execution': {
-      const summary = update.summary.trim()
-      if (
-        summary.length <= 100 &&
-        /^[\x20-\x7e]+$/.test(summary) &&
-        ![
-          'Applying changes',
-          'Updating the drawing',
-          'Preparing the drawing'
-        ].includes(summary)
-      )
-        return summary
-      return update.tool && Object.hasOwn(activityToolLabels, update.tool)
-        ? activityToolLabels[update.tool]
-        : 'Preparing the drawing'
-    }
-    case 'settled':
-      if (update.outcome === 'failed') return 'Failed'
-      if (update.outcome === 'cancelled') return 'Stopped'
-      return 'Finished'
-  }
-}
-
-const activityLoopLabel = (tool: string | undefined): string | undefined => {
-  if (
-    [
-      AiResearchActivityIds.RESEARCH_DESIGN_CONTEXT,
-      AiReferenceToolIds.SEARCH_REFERENCE_IMAGES,
-      AiReferenceToolIds.IMPORT_REFERENCE_IMAGE
-    ].includes(tool as never)
-  )
-    return 'Researching design context'
-  if (
-    [
-      AiDesignToolIds.PREPARE_DESIGN,
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
-      AiActionNames.APPLY_PREPARED_DESIGN,
-      AiActionNames.INSPECT_DRAWING,
-      AiActionNames.REVIEW_DESIGN,
-      AiActionNames.UPDATE_DESIGN_ELEMENT,
-      AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
-      AiActionNames.INSERT_VECTOR_COMPOSITION,
-      AiActionNames.REPLACE_VECTOR_COMPOSITION
-    ].includes(tool as never)
-  )
-    return 'Drawing and refining'
-}
-
-/** One projection per turn render; the current entry is shared with the history. */
-export const projectAiActivity = (
-  updates: readonly AiRuntimeProgressUpdate[],
-  state: {
-    readonly stopping?: boolean
-    readonly awaitingAnswer?: boolean
-    readonly awaitingApproval?: boolean
-    readonly outcome?: AiConversationOutcome
-  } = {}
-) => {
-  const entries: { label: string; message?: string }[] = []
-  let loop: string | undefined
-  for (const update of updates) {
-    if (state.awaitingAnswer && update.phase === 'settled') continue
-    // Preserve model-authored language while keeping status descriptions bounded.
-    const message = update.message?.trim()
-    const activityMessage =
-      message && message.length <= 100 ? message : undefined
-    // Completion is an acknowledgement, not a new user-facing work phase.
-    if (update.toolStatus === 'completed' && !activityMessage) continue
-    if (
-      loop &&
-      ['resolution', 'permission', 'execution'].includes(update.phase)
-    )
-      continue
-    loop =
-      update.phase === 'provider' ? activityLoopLabel(update.tool) : undefined
-    const entry = {
-      label: loop ?? activityLabel(update),
-      ...(!loop && activityMessage ? { message: activityMessage } : {})
-    }
-    const previous = entries.at(-1)
-    if (previous?.label !== entry.label || previous.message !== entry.message) {
-      entries.push(entry)
-    }
-  }
-  let terminalLabel: string | undefined
-  if (state.awaitingAnswer) {
-    terminalLabel = undefined
-  } else if (state.outcome) {
-    terminalLabel = 'Finished'
-    if (state.outcome === 'partial')
-      terminalLabel =
-        entries.at(-1)?.label === 'Failed' ? 'Failed' : 'Partially completed'
-    if (state.outcome === 'failed') terminalLabel = 'Failed'
-    if (state.outcome === 'cancelled') terminalLabel = 'Stopped'
-  } else if (state.stopping) {
-    terminalLabel = 'Stopping…'
-  } else if (state.awaitingApproval) {
-    terminalLabel = 'Awaiting approval'
-  }
-  if (terminalLabel && entries.at(-1)?.label !== terminalLabel)
-    entries.push({ label: terminalLabel })
-  if (!entries.length) entries.push({ label: 'Starting request' })
-  return { entries, current: entries[entries.length - 1] }
 }
 
 export const projectAiQuestion = (

@@ -1,4 +1,5 @@
-import { beforeAll, vi } from 'vitest'
+import { afterEach, beforeAll, vi } from 'vitest'
+import { setImmediate } from 'node:timers/promises'
 import * as tableware from '../../../assets/discussion-tableware'
 import type { AssetPart } from '../../../assets/catalog'
 import { createReferenceScene } from '../../reference-scene'
@@ -9,6 +10,9 @@ import { createReferenceScene } from '../../reference-scene'
  * Placement creates new meshes, so the prepared local solids remain unchanged.
  */
 export function useReferenceSceneFixture() {
+  // CPU-heavy synchronous cases must leave a host turn for worker RPC replies.
+  // Microtask-only hook completion can otherwise starve the runner transport.
+  afterEach(() => setImmediate())
   let coffee: AssetPart[]
   let sugar: AssetPart[]
   let scene: ReturnType<typeof createReferenceScene> | undefined

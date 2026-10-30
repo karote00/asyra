@@ -5,6 +5,13 @@
 Own the canonical document entity graph, raw entity state,
 element-slot-to-property relations, and local computed projection.
 
+Computed snapshots use the existing Element/Computed owner. The optional field
+selection on `getAllComputedData(fields?)` and `Computed.save(fields?)` selects
+own enumerable values before materialization, without enumerating omitted keys.
+The default remains a full shallow snapshot. Core validates selections and owns
+the detached deep copy for App consumers; these observations remain local
+projections, not canonical persistence or collaboration records.
+
 ## Owns
 
 - entity create/remove/update operations
@@ -305,3 +312,20 @@ materialized once per membership revision; later insertion cannot mutate an
 already returned snapshot. Existing string-array persistence remains unchanged.
 A failed pre-handoff creation removes only its attempted memberships and attempts
 independent cleanup. After accepted handoff, Factory remains the recovery owner.
+
+## Owner-local Property Binding - Admitted Contract
+
+The active shared-property task extends the existing element-to-property relation
+owner. Scene resolves `{ elementId, propertyName, path }`, where each path entry
+is `{ key, childId }` for one registered child relationship. Retained targets may
+also require exact expected source/binding identity. Row indexes are not retained
+mutation authority. First local override allocation must preserve the logical
+child selected by a gesture; later frames cannot fall back to editing its source.
+
+Props prepares source/override/child records; Scene prepares root binding changes;
+Core coordinates their atomic application. Different owners may override one
+source field differently. Raw source writes remain explicit source operations.
+Local computed projection reads resolved effective values and creates no history,
+publication or persisted mirror. One existing Factory/Session boundary owns the
+user action. Implementation and complete peer/history/reload evidence remain
+required by the active plan; these declarations do not assert completion.

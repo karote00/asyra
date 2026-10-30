@@ -37,6 +37,7 @@ import {
   restorePropertySchemaAfterFailedDeclarativeCommit
 } from './property-schema.js'
 import { matchesPropertyValueKind } from './property-value-kind.js'
+import { readPropertyInheritance } from './property-inheritance.js'
 
 export interface PropertyTypeFieldDefinition<T = unknown> {
   readonly key: string
@@ -514,6 +515,8 @@ export const createPropertyComponentFromConfig = (
     uniqueKeys([
       'id',
       'type',
+      'inheritance',
+      'sharedSource',
       ...fixedKeys,
       ...(config.dynamicReservedKeys ?? [])
     ])
@@ -610,7 +613,8 @@ export const createPropertyComponentFromConfig = (
   }
 
   class ConfiguredPropertyComponent extends BasePropertyComponent<PropertyComponentInstanceDataTypes> {
-    data!: PropertyComponentInstanceDataTypes
+    data!: PropertyComponentInstanceDataTypes &
+      Pick<PropertyComponentRawData, 'sharedSource' | 'inheritance'>
 
     constructor(data: Partial<PropertyComponentRawData>) {
       super()
@@ -623,6 +627,26 @@ export const createPropertyComponentFromConfig = (
     }
 
     load(data: PropertyComponentRawData): void {
+      const inheritance = readPropertyInheritance(
+        data as unknown as Record<string, unknown>
+      )
+      if (inheritance) {
+        this.data = {
+          id: data.id,
+          type: config.type,
+          inheritance: clonePropertyDefinitionValue(inheritance)
+        } as PropertyComponentInstanceDataTypes
+        return
+      }
+      if (this.data.inheritance) {
+        this.data = {
+          id: data.id,
+          type: config.type,
+          ...clonePropertyDefinitionRecord(defaults)
+        } as PropertyComponentInstanceDataTypes
+      }
+      if (data.sharedSource === true) this.data.sharedSource = true
+      else delete this.data.sharedSource
       this.data.id = typeof data.id === 'string' ? data.id : this.data.id
       const rawData: Record<string, unknown> = isRecord(data) ? data : {}
       persistKeys.forEach((key) => {
@@ -652,8 +676,56 @@ export const createPropertyComponentFromConfig = (
       })
     }
 
+    get<K extends keyof PropertyComponentInstanceDataTypes>(
+      key: K
+    ): PropertyComponentInstanceDataTypes[K] {
+      const inheritance = this.data.inheritance
+      if (
+        !inheritance ||
+        key === 'id' ||
+        key === 'type' ||
+        String(key) === 'inheritance' ||
+        String(key) === 'sharedSource'
+      )
+        return super.get(key)
+      const field = String(key)
+      if (!persistKeys.includes(field))
+        throw new Error(
+          `Property inheritance cannot read unknown field "${field}"`
+        )
+      const source = this.propertyComponentAccessor.getPropertyById(
+        inheritance.sourceId
+      )
+      if (
+        !source ||
+        source.get('type') !== config.type ||
+        'inheritance' in
+          (source as unknown as { data: Record<string, unknown> }).data
+      )
+        throw new Error('Property inheritance source is unavailable or invalid')
+      const current = Object.prototype.hasOwnProperty.call(
+        inheritance.overrides,
+        field
+      )
+        ? inheritance.overrides[field]
+        : source.get(key)
+      if (children && field === children.key && Array.isArray(current)) {
+        return current.map(
+          (childId) => inheritance.childBindings[childId] ?? childId
+        ) as unknown as PropertyComponentInstanceDataTypes[K]
+      }
+      return current as PropertyComponentInstanceDataTypes[K]
+    }
+
     save(): PropertyComponentRawData {
+      if (this.data.inheritance)
+        return {
+          id: this.data.id,
+          type: this.data.type,
+          inheritance: clonePropertyDefinitionValue(this.data.inheritance)
+        } as PropertyComponentRawData
       const saved = super.save() as Record<string, unknown>
+      if (this.data.sharedSource) saved.sharedSource = true
       const data = this.data as unknown as Record<string, unknown>
       const dynamicPersistKeys = allowDynamicKeys
         ? Object.keys(data).filter(isAllowedDynamicKey)
@@ -701,6 +773,21 @@ export const createPropertyComponentFromConfig = (
       value: PropertyComponentInstanceDataTypes[K],
       options?: EvnetOptions
     ): void {
+      if (
+        String(key) === 'inheritance' ||
+        String(key) === 'sharedSource' ||
+        this.data.inheritance
+      ) {
+        throw new Error(
+          'Canonical property layers require an explicit prepared layer mutation'
+        )
+      }
+      if (this.data.sharedSource)
+        this.propertyComponentAccessor.validateSharedWrite(
+          this.data.id,
+          String(key),
+          value
+        )
       if (children && key === (children.key as K)) {
         const normalized = normalizeChildrenValue(
           value,

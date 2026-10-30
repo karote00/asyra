@@ -159,15 +159,19 @@ export async function dragOnCanvas(
 }
 
 /**
- * Wait for the app to be fully initialized
+ * Wait for the editable shell and a browser paint opportunity.
+ * Persistence and collaboration convergence require their separate owner checks.
  */
 export async function waitForAppReady(page: Page) {
-  await page.waitForLoadState('networkidle')
   await page.waitForSelector('#viewport-anchor')
   await page.waitForSelector('[data-testid="toolbar"]')
-  // Extra wait for canvas to be ready
   await page.waitForSelector('canvas')
-  await page.waitForTimeout(500) // Allow rendering to complete
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
 }
 
 /**
@@ -252,20 +256,57 @@ const createDocumentDigest = (documentState: unknown): DocumentDigest => {
   }
 }
 
+export function getCoreDocumentDigest(page: Page): Promise<DocumentDigest>
+export function getCoreDocumentDigest(
+  page: Page,
+  expectedElementCount: number
+): Promise<DocumentDigest | null>
 export async function getCoreDocumentDigest(
-  page: Page
-): Promise<DocumentDigest> {
-  const documentState = await page.evaluate(async () => {
-    const data = await (
-      await import('../src/testing/runtime-access')
-    ).core.save()
-    return {
-      version: data.version,
-      sceneTree: data.sceneTree,
-      props: data.props
+  page: Page,
+  expectedElementCount?: number
+): Promise<DocumentDigest | null> {
+  return page.evaluate(async (expectedElementCount) => {
+    const { core } = await import('../src/testing/runtime-access')
+    // A different count cannot match the full document. Avoid blocking remote
+    // replay with save/clone/hash work while that cheap precondition is false.
+    if (
+      expectedElementCount !== undefined &&
+      core.getCanonicalElementCount() !== expectedElementCount
+    )
+      return null
+    const data = await core.save()
+    // Keep the browser oracle independent of the Node persistence digest.
+    // Only the digest crosses the automation bridge, never the full document.
+    const sortValue = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(sortValue)
+      if (typeof value !== 'object' || value === null) return value
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>)
+          .sort(([left], [right]) => {
+            if (left < right) return -1
+            if (left > right) return 1
+            return 0
+          })
+          .map(([key, item]) => [key, sortValue(item)])
+      )
     }
-  })
-  return createDocumentDigest(documentState)
+    const bytes = new TextEncoder().encode(
+      JSON.stringify(
+        sortValue({
+          version: data.version,
+          sceneTree: data.sceneTree,
+          props: data.props
+        })
+      )
+    )
+    const hash = await crypto.subtle.digest('SHA-256', bytes)
+    return {
+      byteLength: bytes.byteLength,
+      sha256: Array.from(new Uint8Array(hash), (value) =>
+        value.toString(16).padStart(2, '0')
+      ).join('')
+    }
+  }, expectedElementCount)
 }
 
 export async function getPersistedDocumentCheckpoint(
@@ -549,37 +590,7 @@ export const setSelectedGradient = async (
   }, gradient)
 }
 
-/**
- * Perform an Undo operation
- */
-export async function undo(page: Page) {
-  // Click on the toolbar area (neutral zone) to gain focus without triggering tools
-  const toolbar = getToolbar(page)
-  await toolbar.click({ position: { x: 5, y: 5 } })
-
-  // Press the shortcut
-  await page.keyboard.down('Meta')
-  await page.keyboard.press('Z')
-  await page.keyboard.up('Meta')
-  await page.waitForTimeout(500)
-}
-
-/**
- * Perform a Redo operation
- */
-export async function redo(page: Page) {
-  // Click on the toolbar area (neutral zone) to gain focus without triggering tools
-  const toolbar = getToolbar(page)
-  await toolbar.click({ position: { x: 5, y: 5 } })
-
-  // Press the shortcut
-  await page.keyboard.down('Meta')
-  await page.keyboard.down('Shift')
-  await page.keyboard.press('Z')
-  await page.keyboard.up('Shift')
-  await page.keyboard.up('Meta')
-  await page.waitForTimeout(1000) // Extra time for redo to process
-}
+export { undo, redo } from './execution-evidence'
 
 /**
  * Check if an element is selected by checking the Properties Panel

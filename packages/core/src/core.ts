@@ -4,7 +4,7 @@ import type {
   PropertySchema,
   PositionData
 } from '@asyra/utils'
-import { isRecord } from '@asyra/utils'
+import { isRecord, idCounter } from '@asyra/utils'
 import factory, {
   Factory,
   type SharedPublication,
@@ -14,7 +14,11 @@ import inputSystem, {
   InputSystem,
   type InputEventCombo
 } from '@asyra/input-system'
-import sceneTree, { componentRegistry, SceneTree } from '@asyra/scene-tree'
+import sceneTree, {
+  componentRegistry,
+  SceneTree,
+  type Group
+} from '@asyra/scene-tree'
 import props, {
   commitDeclarativePropertyTypeDefinition,
   getDeclarativePropertyTypeDefinition,
@@ -228,6 +232,12 @@ class Core implements CoreAPIs {
   preflightRestoreProperties!: CoreAPIs['preflightRestoreProperties']
   applyRestoreProperties!: CoreAPIs['applyRestoreProperties']
   updatePropertyComponents!: CoreAPIs['updatePropertyComponents']
+  readElementPropertyTargets!: CoreAPIs['readElementPropertyTargets']
+  updateElementPropertyTargets!: CoreAPIs['updateElementPropertyTargets']
+  updateSharedPropertySources!: CoreAPIs['updateSharedPropertySources']
+  resetElementPropertyOverrides!: CoreAPIs['resetElementPropertyOverrides']
+  detachElementPropertyTargets!: CoreAPIs['detachElementPropertyTargets']
+  shareElementPropertyTargets!: CoreAPIs['shareElementPropertyTargets']
   updateElementProperties!: CoreAPIs['updateElementProperties']
   patchElementProperties!: CoreAPIs['patchElementProperties']
   applyCanonicalChanges!: CoreAPIs['applyCanonicalChanges']
@@ -583,9 +593,9 @@ class Core implements CoreAPIs {
     const element = this.deps.sceneTree.getElementById(elementId)
     if (!element) return undefined
     const type = element.get('type')
-    const children = this.isContainerType(type)
-      ? (element as import('@asyra/utils').GroupInstanceTypes).get('children')
-      : []
+    const childCount = this.isContainerType(type)
+      ? (element as Group).getCanonicalChildCount()
+      : 0
     return {
       id: element.get('id'),
       type,
@@ -593,7 +603,7 @@ class Core implements CoreAPIs {
       parentId: element.get('parentId'),
       visible: element.get('visible'),
       lock: element.get('lock'),
-      childCount: children.length
+      childCount
     }
   }
 
@@ -622,6 +632,11 @@ class Core implements CoreAPIs {
 
   getCurrentWorkspaceId(): string {
     return this.deps.sceneTree.workspace
+  }
+
+  /** Reserves identities only; does not create elements or document history. */
+  allocateIds(types: readonly string[]): readonly string[] {
+    return idCounter.allocate(types)
   }
 
   getAllElementData() {

@@ -402,6 +402,111 @@ function observationFixture(t) {
   }
 }
 
+test('large file evidence survives report ingestion and aggregate verification without inflating the report', (t) => {
+  const fs = require('node:fs')
+  const { exportBundle } = require('../observation-files.cjs')
+  const { collect, projectObservations } = require('../workflow-results.cjs')
+  const bytes = Buffer.from(
+    JSON.stringify({ profile: 'retained detail '.repeat(350000) })
+  )
+  assert.ok(bytes.length > 4 * 1024 * 1024)
+  const passingReport = (attachment) => {
+    const value = report([
+      {
+        status: 'passed',
+        retry: 0,
+        errors: [],
+        attachments: [attachment]
+      }
+    ])
+    value.suites[0].suites[0].specs[0].tests[0].status = 'expected'
+    return value
+  }
+  const inline = observationFixture(t)
+    .start()
+    .finish(
+      passingReport({
+        name: 'profile',
+        contentType: 'application/json',
+        body: bytes.toString('base64')
+      })
+    )
+  assert.equal(inline.report, null)
+  assert.ok(
+    inline.issues.some((issue) => issue.includes('4 MiB observation limit'))
+  )
+
+  const fixture = observationFixture(t)
+  const revision = require('node:child_process')
+    .execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' })
+    .trim()
+  const identity = {
+    repository: 'example/repository',
+    base: 'a'.repeat(40),
+    head: revision,
+    integration: revision,
+    run: '123',
+    attempt: '1'
+  }
+  const invocation = fixture.start(
+    Object.fromEntries(
+      Object.entries(identity).map(([key, value]) => [
+        'FLOW_RESULT_' + key.toUpperCase(),
+        value
+      ])
+    )
+  )
+  const originalPath = path.join(
+    fixture.repository,
+    'apps/asyra-design/test-results/profile.json'
+  )
+  fs.mkdirSync(path.dirname(originalPath), { recursive: true })
+  fs.writeFileSync(originalPath, bytes)
+  const observation = invocation.finish(
+    passingReport({
+      name: 'profile',
+      contentType: 'application/json',
+      path: originalPath
+    })
+  )
+  assert.deepEqual(observation.issues, [])
+  assert.equal(observation.cases[0].status, 'passed')
+  assert.ok(
+    fs.statSync(path.join(fixture.repository, invocation.reportPath)).size <
+      4 * 1024 * 1024
+  )
+  const retained = observation.retainedArtifacts[0]
+  assert.equal(retained.size, bytes.length)
+  assert.deepEqual(
+    fs.readFileSync(path.join(fixture.repository, retained.retainedPath)),
+    bytes
+  )
+  const directory = path.join(fixture.repository, 'tmp/bundles')
+  const bundle = path.join(directory, 'flow-observations-design-123-1')
+  exportBundle(fixture.repository, bundle, identity)
+  const envelope = collect(observation.report, 'design', identity)
+  const verify = () =>
+    projectObservations(
+      fixture.repository,
+      directory,
+      identity,
+      ['functional'],
+      [envelope]
+    )
+  assert.deepEqual(verify().blockers, [])
+  assert.equal(verify().producers.design.status, 'observed')
+  fs.unlinkSync(originalPath)
+  assert.deepEqual(verify().blockers, [])
+  const archived = path.join(bundle, retained.retainedPath)
+  assert.deepEqual(fs.readFileSync(archived), bytes)
+  fs.writeFileSync(archived, 'corrupt')
+  assert.equal(verify().producers.design.status, 'unverified')
+  assert.ok(verify().blockers.length)
+  fs.unlinkSync(archived)
+  assert.equal(verify().producers.design.status, 'unverified')
+  assert.ok(verify().blockers.length)
+})
+
 test('new case mappings never retroactively resolve an earlier unmapped observation', (t) => {
   const fs = require('node:fs')
   const fixture = observationFixture(t)

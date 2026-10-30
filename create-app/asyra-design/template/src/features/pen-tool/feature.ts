@@ -1,4 +1,5 @@
 import {
+  SessionCancelPolicies,
   type EVENT_OPTIONS,
   type PositionData,
   type SystemContextSnapshot,
@@ -417,7 +418,7 @@ const updateVectorPointTargetPosition = (
       targetState.pointId,
       position,
       options
-    )
+    ).value
   }
 
   return elementApis.updateVectorAnchorPointHandlePosition(
@@ -426,7 +427,7 @@ const updateVectorPointTargetPosition = (
     targetState.target,
     position,
     options
-  )
+  ).value
 }
 
 const applyBezierDragForNewPoint = (
@@ -581,7 +582,7 @@ const removeSelectedSinglePointSubpathOnCancel = (
     return false
   }
 
-  const removed = elementApis.removeLastSinglePointSubpath(elementId)
+  const removed = elementApis.removeLastSinglePointSubpath(elementId).value
   if (!removed) {
     return false
   }
@@ -600,7 +601,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
   {
     priority: 15,
     exclusive: true,
-    cancelPolicy: 'commit-current',
+    cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
     session: {
       onStart: (snapshot: SystemContextSnapshot) => {
         if (snapshot.primaryTool !== PrimaryToolType.PEN) {
@@ -690,7 +691,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
               {
                 structuralOperationIntent
               }
-            )
+            ).value
             if (!connected) {
               return null
             }
@@ -758,7 +759,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
               {
                 structuralOperationIntent
               }
-            )
+            ).value
 
             if (insertedPoint) {
               selectionApis.selectElements([pathEditingVectorId])
@@ -819,7 +820,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
               sharedDelivery: 'immediate',
               structuralOperationIntent
             }
-          )
+          ).value
           selectionApis.selectElements([pathEditingVectorId])
           setSelectedAnchorPoint(pathEditingVectorId, newSelectedPoint)
           if (startNewSubpath) {
@@ -843,7 +844,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
         const elementId = elementApis.createVectorElementFromSinglePoint(
           firstPoint.id,
           dragStartWorkspace
-        )
+        ).value
         if (!elementId) {
           return null
         }
@@ -916,7 +917,7 @@ export const selectVectorPointFeature = defineFeature<
 >(FeatureNames.SELECT_VECTOR_POINT, InputSystemEvents.INPUT_DRAG, {
   priority: 30,
   exclusive: true,
-  cancelPolicy: 'commit-current',
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {
       if (snapshot.primaryTool === PrimaryToolType.PEN) {

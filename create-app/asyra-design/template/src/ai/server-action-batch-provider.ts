@@ -1,3 +1,5 @@
+import { readEvaluationWindow } from './evaluation-window'
+import { isExecutionActivity } from '@asyra/ai-agent-runtime'
 import {
   AiProviderError,
   createGenericHttpAiProvider,
@@ -11,9 +13,21 @@ import { measureBrowserDragAsyncPhase } from '@asyra/utils'
 import {
   ACTION_BATCH_ENDPOINT,
   AI_BATCH_RECEIPT_HEADER,
-  AI_BATCH_EXECUTION_HEADER
+  AI_BATCH_EXECUTION_HEADER,
+  AI_BATCH_MAXIMUM_REQUEST_BYTES
 } from './action-batch-endpoint'
-import type { AiToolProgress } from './action-batch-protocol'
+import type {
+  AiToolProgress,
+  BrowserBatchFailureEnvelope
+} from './action-batch-protocol'
+import { describeBatchFailure } from './action-failure'
+
+/** Local manual evaluation only; the evaluator supplies one immutable window before Send. */
+export const browserEvaluationWindow = () => {
+  if (!import.meta.env.DEV || typeof location === 'undefined') return undefined
+  const value = new URL(location.href).searchParams.get('aiEvaluationWindow')
+  return value === null ? undefined : readEvaluationWindow(JSON.parse(value))
+}
 
 export { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
 
@@ -47,12 +61,78 @@ const backendFailure = (code: unknown): AiProviderError => {
 const isResponse = (value: AiFetchResponse): value is Response =>
   'headers' in value && typeof (value.headers as Headers)?.get === 'function'
 
+/** Delivery cannot undo execution or turn missing output into usable data. */
+const encodeReceipt = (
+  receipt: AiBatchReceipt | BrowserBatchFailureEnvelope
+): string => {
+  const body = JSON.stringify(receipt)
+  const bytes = new TextEncoder().encode(body).byteLength
+  if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) return body
+  if ('batchFailure' in receipt)
+    throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+  const previous = receipt.failure
+  let settlement: NonNullable<AiBatchReceipt['failure']>['settlement'] =
+    'completed'
+  if (previous) {
+    settlement = previous.settlement
+    if (settlement !== 'unknown' && receipt.actionResults.length)
+      settlement = 'partial'
+  }
+  const failure: AiBatchReceipt = {
+    actionResults: [],
+    context: {},
+    failure: {
+      code: 'ACTION_BATCH_RECEIPT_TOO_LARGE',
+      message:
+        'Execution returned, but its output exceeds the receipt transport budget. Output is unavailable. Do not replay completed actions.',
+      stage: 'delivery',
+      actionName:
+        previous?.actionName ??
+        (receipt.actionResults.length === 1
+          ? receipt.actionResults[0].actionName
+          : null),
+      actionId:
+        previous?.actionId ??
+        (receipt.actionResults.length === 1
+          ? receipt.actionResults[0].actionId
+          : null),
+      actionExecutionMs: previous?.actionExecutionMs ?? null,
+      settlement,
+      contextFresh: false,
+      observedResult: {
+        bytes,
+        limit: AI_BATCH_MAXIMUM_REQUEST_BYTES,
+        returnedActionCount: receipt.actionResults.length,
+        ...(previous
+          ? {
+              originalFailure: {
+                code: previous.code,
+                stage: previous.stage,
+                settlement: previous.settlement
+              }
+            }
+          : {})
+      }
+    }
+  }
+  const encodedFailure = JSON.stringify(failure)
+  if (
+    new TextEncoder().encode(encodedFailure).byteLength >
+    AI_BATCH_MAXIMUM_REQUEST_BYTES
+  )
+    throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+  return encodedFailure
+}
+
 const readActivityStream = async (
   response: Response,
   signal: AbortSignal,
   onProgress?: (event: AiToolProgress) => void,
   executeBatch?: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
-  sendReceipt?: (token: string, receipt: AiBatchReceipt) => Promise<void>
+  sendReceipt?: (
+    token: string,
+    receipt: AiBatchReceipt | BrowserBatchFailureEnvelope
+  ) => Promise<void>
 ): Promise<AiActionBatch> => {
   const reader = response.body?.getReader()
   if (!reader) throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
@@ -65,6 +145,8 @@ const readActivityStream = async (
   let bytes = 0
   let batch: AiActionBatch | undefined
   const consume = async (line: string) => {
+    // Stop can happen between frames already buffered in the same network chunk.
+    signal.throwIfAborted()
     let event: Record<string, unknown>
     try {
       event = JSON.parse(line)
@@ -83,7 +165,21 @@ const readActivityStream = async (
         typeof event.batch !== 'object'
       )
         throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-      const receipt = await executeBatch(event.batch as AiActionBatch)
+      const started = performance.now()
+      let receipt: AiBatchReceipt
+      try {
+        receipt = await executeBatch(event.batch as AiActionBatch)
+      } catch (error) {
+        signal.throwIfAborted()
+        await sendReceipt(event.receiptToken, {
+          batchFailure: describeBatchFailure(
+            error,
+            (event.batch as AiActionBatch).batchId,
+            Math.max(0, performance.now() - started)
+          )
+        })
+        return
+      }
       if (signal.aborted) throw backendFailure('ACTION_BATCH_ABORTED')
       await sendReceipt(event.receiptToken, receipt)
       return
@@ -102,9 +198,13 @@ const readActivityStream = async (
       (event.status !== 'running' && event.status !== 'completed')
     )
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    const activity = event.activity as AiToolProgress['activity']
+    if (activity !== undefined && !isExecutionActivity(activity))
+      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
     if (!signal.aborted) {
       try {
         onProgress?.({
+          ...(activity ? { activity } : {}),
           tool: event.tool,
           status: event.status,
           ...(typeof event.message === 'string' && event.message.length <= 1000
@@ -166,6 +266,15 @@ export const createServerActionBatchProvider = (
           code: 'AI_PROVIDER_DISPOSED',
           message: 'The provider is disposed.'
         })
+      const evaluationWindow = browserEvaluationWindow()
+      if (evaluationWindow)
+        input = {
+          ...input,
+          metadata: {
+            ...((input.metadata as Record<string, never>) ?? {}),
+            evaluationWindow: { ...evaluationWindow }
+          }
+        }
       const provider = createGenericHttpAiProvider({
         endpoint: ACTION_BATCH_ENDPOINT,
         timeoutMs: null,
@@ -200,11 +309,23 @@ export const createServerActionBatchProvider = (
                       'content-type': 'application/json',
                       [AI_BATCH_RECEIPT_HEADER]: token
                     },
-                    body: JSON.stringify(receipt)
+                    body: encodeReceipt(receipt)
                   }
                 )
-                if (!acknowledged.ok)
-                  throw backendFailure('ACTION_BATCH_MODEL_FAILED')
+                if (!acknowledged.ok) {
+                  const code = isResponse(acknowledged)
+                    ? acknowledged.headers.get('x-ai-error-code')
+                    : null
+                  const diagnostic =
+                    code && /^ACTION_BATCH_[A-Z_]{1,80}$/.test(code)
+                      ? ` (${code})`
+                      : ''
+                  throw new AiProviderError({
+                    code: 'AI_PROVIDER_HTTP_STATUS',
+                    status: acknowledged.status,
+                    message: `The action receipt was not acknowledged${diagnostic}. Execution must not be replayed automatically.`
+                  })
+                }
               }
             )
             return { ok: true, status: 200, json: async () => batch }

@@ -1,0 +1,91 @@
+{
+  "sourceRun": "1792834534052",
+  "sourceRequest": "6726951a-ab09-4263-b2d0-9964bcef1c71",
+  "sourcePayload": "41-output.json",
+  "imageSHA256": "b21b702e8fe58f10c5e02e28e55eb36befc90e8afeebccd90f804bdf06ea3dc3",
+  "imageBytes": 298604,
+  "historicalForwardingError": "unconfirmed",
+  "receipt": {
+    "available": true,
+    "artifactId": "b34c6aaa-91c4-4b97-804c-edc3499c39e1",
+    "elementCount": 1931,
+    "findings": [],
+    "applicable": true,
+    "preparationInput": {
+      "kind": "source"
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    },
+    "actionResults": [
+      {
+        "actionId": "e2524afd-8889-46df-9f0d-3e319870c29b",
+        "actionName": "apply_prepared_design",
+        "result": {
+          "status": "complete",
+          "materialProvenance": {
+            "status": "available"
+          },
+          "compositionId": "design-b34c6aaa-91c4-4b97-804c-edc3499c39e1-0",
+          "appliedElementCount": 1931,
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          }
+        }
+      },
+      {
+        "actionId": "aa6ddf15-543c-495f-8733-64ba982333d8",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "elementId": "design-b34c6aaa-91c4-4b97-804c-edc3499c39e1-0",
+          "image": {
+            "type": "snapshot",
+            "width": 824,
+            "height": 1024,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 8078,
+              "height": 10037
+            }
+          },
+          "partial": false,
+          "imageScope": "overview",
+          "background": "#ffffff",
+          "evidence": {
+            "sessionId": "b88e178b-f5b0-4bf7-ac15-0f66f2b6551f",
+            "receiptId": "53b73675-0c43-4557-81d8-328dfe292230",
+            "revision": 0
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "e405b96d-fc44-4b37-abe5-122534c32fcc",
+          "revision": 2
+        }
+      }
+    ],
+    "inspectionDeferred": false,
+    "measurementDeferred": false,
+    "checks": {
+      "countsScope": "selected-checks",
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "unverified": 0,
+        "stale": 0
+      },
+      "visitedResults": 1
+    },
+    "receiptScope": "compact",
+    "completedSteps": [
+      "prepare_design",
+      "apply_prepared_design"
+    ]
+  }
+}

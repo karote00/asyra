@@ -1,0 +1,32 @@
+{
+  "development": [
+    {
+      "id": "ring",
+      "prompt": "Create a clean editable vector ring icon: outer diameter 240 px, inner diameter 144 px, centered at (300, 260). Use teal for the ring. The center must be genuinely transparent, not a white disk. No text or background. Keep the circular outline smooth."
+    },
+    {
+      "id": "composition",
+      "prompt": "Design an editable 720 by 360 px announcement card for a community repair workshop. Include the title 'Repair Together', the subtitle 'Saturday - 10 AM', and a clear 'Join us' action. Use a warm off-white card, dark navy type and one coral accent. Make the title dominant, keep readable spacing and align the content. Do not add other text or decorative illustrations."
+    },
+    {
+      "id": "precise-edit",
+      "seed": true,
+      "prompt": "Only change the rectangle named Target: increase its width from 80 px to 140 px while keeping its left edge, top edge and height fixed. Leave the named Keep Left and Keep Right rectangles completely unchanged, including their geometry and fills. Do not recreate or regroup any rectangle."
+    }
+  ],
+  "transfer": [
+    {
+      "id": "frame",
+      "prompt": "Draw an editable square outline frame, 210 by 210 px outside and 150 by 150 px inside, centered at (280, 240). Use purple. The center must be transparent with no background or cover shape. All four sides must have equal thickness. No text."
+    },
+    {
+      "id": "composition-transfer",
+      "prompt": "Design an editable 640 by 400 px invitation card: title 'Night Garden', subtitle 'Friday - 7 PM', and action 'Reserve a place'. Use a dark forest-green card, warm cream type and one pale-gold accent. Establish clear hierarchy and consistent alignment with generous margins. Include no other text or illustration."
+    },
+    {
+      "id": "precise-edit-transfer",
+      "seed": true,
+      "prompt": "Only change the rectangle named Target: increase its height from 60 px to 110 px while keeping its top edge, left edge and width fixed. Keep both Keep Left and Keep Right exactly unchanged. Preserve all three existing IDs and their fills; do not recreate or regroup them."
+    }
+  ]
+}

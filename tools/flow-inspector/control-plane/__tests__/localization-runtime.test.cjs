@@ -3,6 +3,10 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { main } = require('../cli.cjs')
 const { localizationFixture } = require('./localization-runtime-fixture.cjs')
+const executionCaseIds =
+  require('../../../../apps/asyra-design/flow-contracts.json')
+    .flows.flatMap((flow) => flow.cases.map((item) => item.id))
+    .sort()
 test(
   'ordinary App and Factory tests locate real source faults and recover without rewriting assertions',
   { timeout: 180000 },
@@ -354,7 +358,12 @@ test(
     t.after(() => fixture.restore())
     const baseline = await fixture.run('execution')
     assert.equal(baseline.result.code, 0, baseline.result.output)
-    assert.equal(baseline.record.cases.length, 41)
+    assert.deepEqual(
+      baseline.record.cases
+        .flatMap((item) => item.locations.map((location) => location.caseId))
+        .sort(),
+      executionCaseIds
+    )
     assert.ok(
       baseline.record.cases.every((item) => item.resolution === 'mapped'),
       JSON.stringify(baseline.record.issues)
@@ -442,10 +451,12 @@ test(
     fixture.restore()
     const recovery = await fixture.run('execution')
     assert.equal(recovery.result.code, 0, recovery.result.output)
-    assert.equal(
-      recovery.record.cases.filter((item) => item.resolution === 'mapped')
-        .length,
-      41
+    assert.deepEqual(
+      recovery.record.cases
+        .filter((item) => item.resolution === 'mapped')
+        .flatMap((item) => item.locations.map((location) => location.caseId))
+        .sort(),
+      executionCaseIds
     )
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }

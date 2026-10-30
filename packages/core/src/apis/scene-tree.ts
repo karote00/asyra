@@ -1,3 +1,4 @@
+import { ComputedFieldSelectionLimits } from '../types/scene-tree.js'
 import { sceneTreeInit, sceneTreeLoadData } from '@asyra/reactive-events'
 import {
   Bounds,
@@ -30,7 +31,8 @@ export interface SceneTreeRequests {
   sceneTreeSaveData: () => SceneTreeRawData
   getCurrentWorkspaceId: () => string
   getElementComputedData: (
-    elementId: string
+    elementId: string,
+    fields?: readonly string[]
   ) => Record<string, unknown> | undefined
   updateLocalComputedData: (updates: readonly LocalComputedDataUpdate[]) => void
   patchLocalComputedData: (
@@ -100,13 +102,10 @@ export const createSceneTreeAPIs = (
     const elementId = data.id ?? id(elementType)
 
     return {
-      elementId,
-      data: {
-        visible: true,
-        lock: false,
-        ...data,
-        id: elementId
-      }
+      visible: true,
+      lock: false,
+      ...data,
+      id: elementId
     }
   }
 
@@ -134,13 +133,11 @@ export const createSceneTreeAPIs = (
       return Object.freeze([])
     }
     const prepared = data.map(prepareElementData)
-    return freezeOrderedElementIds(
-      sceneTreeRequests.createElementsInParent(
-        prepared.map(({ data: elementData }) => elementData),
-        parentId,
-        index,
-        options
-      )
+    return sceneTreeRequests.createElementsInParent(
+      prepared,
+      parentId,
+      index,
+      options
     )
   }
 
@@ -197,36 +194,24 @@ export const createSceneTreeAPIs = (
       if (
         fields !== undefined &&
         (!Array.isArray(fields) ||
-          fields.length > 64 ||
+          fields.length > ComputedFieldSelectionLimits.fields ||
           fields.some(
             (field) =>
               typeof field !== 'string' ||
               field.length === 0 ||
-              field.length > 128
+              field.length > ComputedFieldSelectionLimits.fieldName
           ))
       ) {
         throw new Error(
-          'Computed field selection requires at most 64 nonempty field names of at most 128 characters.'
+          `Computed field selection requires at most ${ComputedFieldSelectionLimits.fields} nonempty field names of at most ${ComputedFieldSelectionLimits.fieldName} characters.`
         )
       }
-      const data = sceneTreeRequests.getElementComputedData(elementId)
-      if (!data) {
-        return undefined
-      }
-      const selected =
-        fields === undefined
-          ? data
-          : Object.fromEntries(
-              [...new Set(fields)]
-                .filter((field) =>
-                  Object.prototype.hasOwnProperty.call(data, field)
-                )
-                .map((field) => [field, data[field]])
-            )
+      const data = sceneTreeRequests.getElementComputedData(elementId, fields)
+      if (!data) return
       if (typeof globalThis.structuredClone === 'function') {
-        return globalThis.structuredClone(selected)
+        return globalThis.structuredClone(data)
       }
-      return JSON.parse(JSON.stringify(selected)) as Record<string, unknown>
+      return JSON.parse(JSON.stringify(data)) as Record<string, unknown>
     },
     sceneTreeInit() {
       sceneTreeInit()

@@ -26,11 +26,7 @@ interface FillColorRowProps {
   onColorPickerChangeStart: () => void
   onColorPickerChangeEnd: (next: { color: string; opacity: number }) => void
   onGradientEditorOpenChange: (open: boolean) => void
-  onGradientFillChange: (
-    patch: FillPatch,
-    options?: EVENT_OPTIONS,
-    sourceFill?: FillAttrs
-  ) => void
+  onGradientFillChange: (patch: FillPatch, options?: EVENT_OPTIONS) => void
   onStartInteraction: () => void
   onEndInteraction: () => void
   onFormatChange: (nextFormat: FillColorFormat) => void

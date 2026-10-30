@@ -16,6 +16,7 @@ import {
   basicApiDeliverySchema
 } from '../../src/ai/basic-api-results'
 import { toolRequestReference } from '../../src/ai/tool-contract'
+import { createDesignReviewAction } from '../../src/ai/review-action'
 
 const object = (properties: Record<string, unknown>) => ({
   type: 'object',
@@ -25,6 +26,26 @@ const receiptSchema = object({
   snapshotId: toolRequestReference,
   leaseId: toolRequestReference
 })
+// These recipe fixtures include the current mandatory mechanical follow-up.
+// Geometry correctness belongs to the review owner tests; this fixture supplies
+// an explicit measurement and stamp, never infers completion from a write.
+const measuredReview = () => {
+  const evidence = { sessionId: 'recipe-query-review', revision: 0 }
+  const review = vi.fn(async () => ({
+    complete: true,
+    truncated: false,
+    checkedElements: 1,
+    measuredTextCount: 0,
+    measuredTextIds: [],
+    findings: [],
+    evidence
+  }))
+  return {
+    review,
+    action: createDesignReviewAction(review, (stamp) => stamp === evidence)
+  }
+}
+
 const fixture = () => {
   const signal = new AbortController().signal
   const queries = createRetainedDesignContext(
@@ -222,6 +243,77 @@ it('blocks explicit release while another call borrows the same browser query an
   app.queries.dispose()
 })
 
+it('recovers a lost browser release acknowledgement without reviving the handle or releasing a sibling', async () => {
+  const app = fixture()
+  try {
+    for (const callId of ['producer', 'sibling'])
+      await app.leases.open({
+        requestId: 'request',
+        callId,
+        input: null,
+        inputSchema: { type: 'null' }
+      })
+    const receipt = app.read()
+    await app.publish(receipt)
+    app.setCall('sibling')
+    const sibling = app.queries.read(
+      {
+        scope: 'ids',
+        elementIds: ['part'],
+        fields: ['x'],
+        delivery: 'reference'
+      },
+      app.signal
+    )
+    await app.publish(sibling)
+    app.release.mockImplementationOnce(async (snapshotId) => {
+      app.queries.read(
+        { scope: 'snapshot', snapshotId, release: true },
+        app.signal
+      )
+      throw new Error('Release acknowledgement lost')
+    })
+    await expect(
+      app.leases.release({ requestId: 'request', callId: 'producer' })
+    ).rejects.toThrow('Release acknowledgement lost')
+    expect(() =>
+      app.queries.get(receipt.snapshotId, receipt.leaseId, app.signal)
+    ).toThrow(/missing|lease/)
+    await expect(
+      app.leases.open({
+        requestId: 'request',
+        callId: 'invalid-consumer',
+        input: receipt,
+        inputSchema: receiptSchema
+      })
+    ).rejects.toThrow(/unavailable/)
+    expect(
+      app.queries.get(sibling.snapshotId, sibling.leaseId, app.signal)
+        .orderedIds
+    ).toEqual(['part'])
+    await app.leases.release({ requestId: 'request', callId: 'producer' })
+    await app.leases.release({ requestId: 'request', callId: 'producer' })
+    expect(app.release.mock.calls.map(([id]) => id)).toEqual([
+      receipt.snapshotId,
+      receipt.snapshotId
+    ])
+    expect(() => app.ownership.assertOwned(receipt.snapshotId)).toThrow()
+    expect(
+      app.queries.get(sibling.snapshotId, sibling.leaseId, app.signal)
+        .orderedIds
+    ).toEqual(['part'])
+    await app.leases.release({ requestId: 'request', callId: 'sibling' })
+    expect(app.release.mock.calls.map(([id]) => id)).toEqual([
+      receipt.snapshotId,
+      receipt.snapshotId,
+      sibling.snapshotId
+    ])
+  } finally {
+    await app.leases.dispose()
+    app.queries.dispose()
+  }
+})
+
 it('cleans unpublished browser data when host ownership capacity refuses it', async () => {
   const app = fixture()
   app.ownership.publish = () => {
@@ -234,276 +326,329 @@ it('cleans unpublished browser data when host ownership capacity refuses it', as
   app.queries.dispose()
 })
 
-it('composes a real browser query and fill consumer without exporting rows, then releases intermediate query data', async () => {
-  const app = fixture()
-  const { createLocalToolHost } = await import('../local-tool-host')
-  const { createLocalOperationTools } = await import('../local-operation-tools')
-  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
-  const { createDocumentContextAction, createDocumentContextReleaseAction } =
-    await import('../../src/ai/context-action')
-  const { createRetainedFillAction } =
-    await import('../../src/ai/retained-fill-action')
-  const update = vi.fn()
-  const observed: ReturnType<typeof app.read>[] = []
-  const read = createDocumentContextAction((query, signal) => {
-    const result = app.queries.read(query, signal)
-    observed.push(result)
-    return result
-  })
-  const actions = [
-    read,
-    createDocumentContextReleaseAction(app.queries.read),
-    createRetainedFillAction(app.queries, {
-      targets: (ids) =>
-        ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` })),
-      metadata: () => ({ lock: false }),
-      owners: () => ['part'],
-      update
-    })
+it.each([
+  ['selection', { scope: 'selection', fields: ['x'] }],
+  ['children', { scope: 'children', fields: ['x'] }],
+  [
+    'region',
+    {
+      scope: 'region',
+      bounds: { x: 0, y: 0, width: 100, height: 100 },
+      fields: ['x']
+    }
   ]
-  const stored = new Map<string, AiToolStoreEntry>()
-  let storeVersion = 0
-  const host = createLocalToolHost({
-    requestId: 'query-composition',
-    signal: app.signal,
-    capacity: 10,
-    receiptCapacity: 10,
-    artifactCapacity: 20,
-    limits: {
-      bytes: 24000,
-      steps: 10,
-      bindings: 200,
-      bindingDepth: 32,
-      issues: 10
-    },
-    store: {
-      read: async (key) => stored.get(key),
-      list: async () => [...stored.values()],
-      write: async (input) => {
-        if (stored.get(input.key)?.version !== input.expectedVersion)
-          throw new Error('Store conflict')
-        const entry = {
-          key: input.key,
-          record: input.record,
-          version: String(++storeVersion)
-        }
-        stored.set(input.key, entry)
-        return entry
-      }
-    },
-    createGroups: (ownership) => [
-      {
-        name: 'design_operations',
-        description: 'Canonical query and mapping owners',
-        owner: createLocalOperationTools(
-          actions.map(createAiToolContract),
-          {
-            modelActions: (actions) => actions,
-            resolveBatch: (batch) => batch
-          },
-          async (batch) => ({
-            context: null,
-            actionResults: await Promise.all(
-              batch.actions.map(async (call) => {
-                const action = actions.find((item) => item.name === call.name)
-                if (!action) throw new Error('Unknown action')
-                return {
-                  actionId: call.id,
-                  actionName: call.name,
-                  result: JSON.parse(
-                    JSON.stringify(
-                      await action.execute(call.arguments as never, {
-                        signal: app.signal,
-                        runMutation: async (write, settled) => {
-                          const value = write()
-                          settled?.(value)
-                          return value
-                        }
-                      })
-                    )
-                  )
-                }
-              })
-            )
-          }),
-          { ownership, requestSignal: app.signal }
-        )
-      }
+])(
+  'composes a real %s query and fill consumer without exporting rows, then releases intermediate query data',
+  async (_scope, query) => {
+    const app = fixture()
+    const { createLocalToolHost } = await import('../local-tool-host')
+    const { createLocalOperationTools } =
+      await import('../local-operation-tools')
+    const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+    const { createDocumentContextAction, createDocumentContextReleaseAction } =
+      await import('../../src/ai/context-action')
+    const { createRetainedFillAction } =
+      await import('../../src/ai/retained-fill-action')
+    const update = vi.fn((entries: readonly { elementId: string }[]) => ({
+      value: null,
+      acceptedIds: entries.map((entry) => entry.elementId),
+      unavailableIds: [],
+      changed: entries.length > 0
+    }))
+    const measurement = measuredReview()
+    const observed: ReturnType<typeof app.read>[] = []
+    const read = createDocumentContextAction((query, signal) => {
+      const result = app.queries.read(query, signal)
+      observed.push(result)
+      return result
+    })
+    const actions = [
+      measurement.action,
+      read,
+      createDocumentContextReleaseAction(app.queries.read),
+      createRetainedFillAction(app.queries, {
+        targets: (ids) =>
+          ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` })),
+        metadata: () => ({ lock: false }),
+        update
+      })
     ]
-  })
-  const literal = (value: unknown) => ({ kind: 'literal', value })
-  const binding = (field: string) => ({
-    kind: 'step',
-    step: 'query',
-    path: '/actionResults/0/result/' + field
-  })
-  const proposal = {
-    format: 1,
-    name: 'shade-current-selection',
-    revision: 1,
-    description:
-      'Use current selected positions for one plural fill update without model row transfer.',
-    inputSchema: { type: 'null' },
-    outputSchema: { type: 'integer', minimum: 0 },
-    steps: [
-      {
-        id: 'query',
-        tool: 'design_operations.read_design_context',
-        revision: 4,
-        input: {
-          kind: 'object',
-          fields: { arguments: literal({ scope: 'selection', fields: ['x'] }) }
+    const stored = new Map<string, AiToolStoreEntry>()
+    let storeVersion = 0
+    const host = createLocalToolHost({
+      requestId: 'query-composition',
+      signal: app.signal,
+      capacity: 10,
+      receiptCapacity: 10,
+      artifactCapacity: 20,
+      limits: {
+        bytes: 24000,
+        steps: 10,
+        bindings: 200,
+        bindingDepth: 32,
+        issues: 10
+      },
+      store: {
+        read: async (key) => stored.get(key),
+        list: async () => [...stored.values()],
+        write: async (input) => {
+          if (stored.get(input.key)?.version !== input.expectedVersion)
+            throw new Error('Store conflict')
+          const entry = {
+            key: input.key,
+            record: input.record,
+            version: String(++storeVersion)
+          }
+          stored.set(input.key, entry)
+          return entry
         }
       },
-      {
-        id: 'map',
-        tool: 'design_operations.map_retained_fills',
-        revision: 4,
-        input: {
-          kind: 'object',
-          fields: {
-            arguments: {
-              kind: 'object',
-              fields: {
-                mappings: {
-                  kind: 'array',
-                  items: [
-                    {
-                      kind: 'object',
-                      fields: {
-                        snapshotId: binding('snapshotId'),
-                        leaseId: binding('leaseId'),
-                        coordinateSpace: literal('parent-local'),
-                        axis: literal('x'),
-                        domain: literal([0, 100]),
-                        index: literal(0),
-                        outside: literal('clamp'),
-                        stops: literal([
-                          { at: 0, color: '#000000' },
-                          { at: 1, color: '#ffffff' }
-                        ])
-                      }
-                    }
-                  ]
-                }
-              }
+      createGroups: (ownership) => [
+        {
+          name: 'design_operations',
+          description: 'Canonical query and mapping owners',
+          owner: createLocalOperationTools(
+            actions.map(createAiToolContract),
+            {
+              modelActions: (actions) => actions,
+              resolveBatch: (batch) => batch
             },
-            inspection: literal('defer')
-          }
+            async (batch) => ({
+              context: null,
+              actionResults: await Promise.all(
+                batch.actions.map(async (call) => {
+                  const action = actions.find((item) => item.name === call.name)
+                  if (!action) throw new Error('Unknown action')
+                  return {
+                    actionId: call.id,
+                    actionName: call.name,
+                    result: JSON.parse(
+                      JSON.stringify(
+                        await action.execute(call.arguments as never, {
+                          signal: app.signal,
+                          runMutation: async (write, settled) => {
+                            const value = write()
+                            settled?.(value)
+                            return value
+                          }
+                        })
+                      )
+                    )
+                  }
+                })
+              )
+            }),
+            { ownership, requestSignal: app.signal }
+          )
         }
-      }
-    ],
-    output: {
-      kind: 'step',
-      step: 'map',
-      path: '/actionResults/0/result/appliedCount'
+      ]
+    })
+    const dependencyRevision = (name: string) => {
+      const definition = host
+        .definitions()
+        .find((entry) => entry.registeredName === name)
+      if (!definition) throw new Error(`Missing exposed dependency: ${name}`)
+      return definition.revision
     }
-  }
-  try {
-    const submitted = JSON.parse(
-      (
-        await host.invoke({
-          name: 'tool_library.submit_tool',
-          input: { submissionId: 'shading', proposal }
-        })
-      ).text
-    )
-    expect(submitted, JSON.stringify(submitted)).toMatchObject({ ok: true })
-    const result = JSON.parse(
-      (
-        await host.invoke({
-          name: 'tool_library.invoke_tool',
-          input: { name: proposal.name, revision: 1, input: null }
-        })
-      ).text
-    )
-    expect(result, JSON.stringify(result)).toMatchObject({
-      execution: { status: 'success', value: 1 },
-      storage: { status: 'saved' }
+    const literal = (value: unknown) => ({ kind: 'literal', value })
+    const binding = (field: string) => ({
+      kind: 'step',
+      step: 'query',
+      path: '/actionResults/0/result/' + field
     })
-    expect(update).toHaveBeenCalledExactlyOnceWith([
-      { elementId: 'part', fillId: 'fill-part', patch: { color: '#1a1a1a' } }
-    ])
-    expect(observed).toHaveLength(1)
-    expect(observed[0]).toMatchObject({
-      elements: [],
-      elementIds: [],
-      total: 1,
-      delivery: 'reference'
-    })
-    expect(() => app.queries.get(observed[0].snapshotId)).toThrow(/missing/)
-    const query = JSON.parse(
-      (
-        await host.invoke({
-          name: 'design_operations.read_design_context',
-          input: { arguments: { scope: 'selection', fields: ['x'] } }
-        })
-      ).text
-    ).actionResults[0].result
-    const mapped = JSON.parse(
-      (
-        await host.invoke({
-          name: 'design_operations.execute_design_batch',
+    const proposal = {
+      format: 1,
+      name: 'shade-current-selection',
+      revision: 1,
+      description:
+        'Use current selected positions for one plural fill update without model row transfer.',
+      inputSchema: { type: 'null' },
+      outputSchema: { type: 'integer', minimum: 0 },
+      steps: [
+        {
+          id: 'query',
+          tool: 'design_operations.read_design_context',
+          revision: dependencyRevision('design_operations.read_design_context'),
           input: {
-            operations: [
-              {
-                name: AiActionNames.MAP_RETAINED_FILLS,
-                arguments: {
-                  mappings: [
-                    {
-                      snapshotId: query.snapshotId,
-                      leaseId: query.leaseId,
-                      coordinateSpace: 'parent-local',
-                      axis: 'x',
-                      domain: [0, 100],
-                      index: 0,
-                      outside: 'clamp',
-                      stops: [
-                        { at: 0, color: '#000000' },
-                        { at: 1, color: '#ffffff' }
-                      ]
-                    }
-                  ]
-                }
-              }
-            ],
-            inspection: 'defer'
+            kind: 'object',
+            fields: { arguments: literal(query) }
           }
-        })
-      ).text
-    )
-    expect(mapped.toolOutcome, JSON.stringify(mapped)).toMatchObject({
-      status: 'success'
-    })
-    const retained = mapped.actionResults[0].result.retained
-    expect(retained).toBeDefined()
-    const recovered = JSON.parse(
-      (
-        await host.invoke({
-          name: 'design_operations.read_design_context',
+        },
+        {
+          id: 'map',
+          tool: 'design_operations.map_retained_fills',
+          revision: dependencyRevision('design_operations.map_retained_fills'),
           input: {
-            arguments: {
-              scope: 'snapshot',
-              snapshotId: retained.snapshotId,
-              delivery: 'receipt'
+            kind: 'object',
+            fields: {
+              arguments: {
+                kind: 'object',
+                fields: {
+                  mappings: {
+                    kind: 'array',
+                    items: [
+                      {
+                        kind: 'object',
+                        fields: {
+                          snapshotId: binding('snapshotId'),
+                          leaseId: binding('leaseId'),
+                          coordinateSpace: literal('parent-local'),
+                          axis: literal('x'),
+                          domain: literal([0, 100]),
+                          index: literal(0),
+                          outside: literal('clamp'),
+                          stops: literal([
+                            { at: 0, color: '#000000' },
+                            { at: 1, color: '#ffffff' }
+                          ])
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              inspection: literal('defer')
             }
           }
-        })
-      ).text
-    )
-    expect(
-      recovered.actionResults?.[0]?.result?.receipt,
-      JSON.stringify(recovered)
-    ).toMatchObject({
-      appliedCount: 1,
-      mutationScope: { elementIds: ['part'] }
-    })
-    expect(update).toHaveBeenCalledTimes(2)
-  } finally {
-    await host.dispose()
-    app.queries.dispose()
+        }
+      ],
+      output: {
+        kind: 'step',
+        step: 'map',
+        path: '/actionResults/0/result/appliedCount'
+      }
+    }
+    try {
+      const oldProposal = {
+        ...proposal,
+        steps: proposal.steps.map((step) => ({ ...step, revision: 4 }))
+      }
+      const rejected = JSON.parse(
+        (
+          await host.invoke({
+            name: 'tool_library.submit_tool',
+            input: { submissionId: 'old-shading', proposal: oldProposal }
+          })
+        ).text
+      )
+      expect(rejected).toMatchObject({ ok: false, code: 'admission' })
+      expect(rejected.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'dependency', path: '/steps/0' }),
+          expect.objectContaining({ code: 'dependency', path: '/steps/1' })
+        ])
+      )
+      expect(observed).toHaveLength(0)
+      expect(update).not.toHaveBeenCalled()
+      const submitted = JSON.parse(
+        (
+          await host.invoke({
+            name: 'tool_library.submit_tool',
+            input: { submissionId: 'shading', proposal }
+          })
+        ).text
+      )
+      expect(submitted, JSON.stringify(submitted)).toMatchObject({ ok: true })
+      const result = JSON.parse(
+        (
+          await host.invoke({
+            name: 'tool_library.invoke_tool',
+            input: { name: proposal.name, revision: 1, input: null }
+          })
+        ).text
+      )
+      expect(result, JSON.stringify(result)).toMatchObject({
+        execution: { status: 'success', value: 1 },
+        storage: { status: 'saved' }
+      })
+      expect(measurement.review).toHaveBeenCalledExactlyOnceWith(
+        'part',
+        app.signal
+      )
+      expect(update).toHaveBeenCalledExactlyOnceWith([
+        { elementId: 'part', fillId: 'fill-part', patch: { color: '#1a1a1a' } }
+      ])
+      expect(observed).toHaveLength(1)
+      expect(observed[0]).toMatchObject({
+        elements: [],
+        elementIds: [],
+        total: 1,
+        delivery: 'reference'
+      })
+      expect(() => app.queries.get(observed[0].snapshotId)).toThrow(/missing/)
+      const query = JSON.parse(
+        (
+          await host.invoke({
+            name: 'design_operations.read_design_context',
+            input: { arguments: { scope: 'selection', fields: ['x'] } }
+          })
+        ).text
+      ).actionResults[0].result
+      const mapped = JSON.parse(
+        (
+          await host.invoke({
+            name: 'design_operations.execute_design_batch',
+            input: {
+              operations: [
+                {
+                  name: AiActionNames.MAP_RETAINED_FILLS,
+                  arguments: {
+                    mappings: [
+                      {
+                        snapshotId: query.snapshotId,
+                        leaseId: query.leaseId,
+                        coordinateSpace: 'parent-local',
+                        axis: 'x',
+                        domain: [0, 100],
+                        index: 0,
+                        outside: 'clamp',
+                        stops: [
+                          { at: 0, color: '#000000' },
+                          { at: 1, color: '#ffffff' }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ],
+              inspection: 'defer'
+            }
+          })
+        ).text
+      )
+      expect(mapped.toolOutcome, JSON.stringify(mapped)).toMatchObject({
+        status: 'success'
+      })
+      const retained = mapped.actionResults[0].result.retained
+      expect(retained).toBeDefined()
+      const recovered = JSON.parse(
+        (
+          await host.invoke({
+            name: 'design_operations.read_design_context',
+            input: {
+              arguments: {
+                scope: 'snapshot',
+                snapshotId: retained.snapshotId,
+                delivery: 'receipt'
+              }
+            }
+          })
+        ).text
+      )
+      expect(
+        recovered.actionResults?.[0]?.result?.receipt,
+        JSON.stringify(recovered)
+      ).toMatchObject({
+        appliedCount: 1,
+        mutationScope: { elementIds: ['part'] }
+      })
+      expect(update).toHaveBeenCalledTimes(2)
+    } finally {
+      await host.dispose()
+      app.queries.dispose()
+    }
   }
-})
+)
 
 it.each(['page', 'columns', 'reference'] as const)(
   'validates the actual %s receipt against the canonical query output contract',
@@ -710,7 +855,9 @@ it.each(['recipe', 'native', 'partial'] as const)(
         {
           id: 'edit',
           tool: 'design_operations.api_element_setElementsVisible',
-          revision: 4,
+          revision: actions.find(
+            (action) => action.name === 'api_element_setElementsVisible'
+          )?.revision,
           input: {
             kind: 'object',
             fields: {

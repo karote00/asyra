@@ -1,5 +1,25 @@
+import { wholeViewJudgments } from './fixtures/review-inputs'
 import { expect, it } from 'vitest'
-import { operationInputIssue } from '../operation-input-schema'
+import {
+  designEvidenceSchema,
+  designEvidenceDefinitions,
+  reviewPlanExample
+} from '../local-design-review'
+import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import {
+  nativeToolInputSchema,
+  operationContractIssue,
+  operationInputIssue
+} from '../operation-input-schema'
+
+it('enforces declared object property counts', () => {
+  const schema = { type: 'object', minProperties: 1, maxProperties: 2 }
+  expect(operationInputIssue({}, schema)).toContain('too few properties')
+  expect(operationInputIssue({ x: 0 }, schema)).toBeUndefined()
+  expect(operationInputIssue({ x: 0, y: 0, z: 0 }, schema)).toContain(
+    'too many properties'
+  )
+})
 
 it('does not bypass overlapping oneOf branches when one branch has a matching discriminator', () => {
   expect(
@@ -80,3 +100,499 @@ it('keeps a general branch when another branch constrains a type enum', () => {
     )
   ).toBeUndefined()
 })
+
+it('reports only the selected phase branch without weakening overlapping unions', () => {
+  const issue = operationInputIssue(
+    { phase: 'visual', checks: 'invalid' },
+    {
+      oneOf: [
+        {
+          properties: { phase: { const: 'facts' }, facts: { type: 'array' } },
+          required: ['facts']
+        },
+        {
+          properties: {
+            phase: { enum: ['visual', 'structure'] },
+            checks: { type: 'array' }
+          },
+          required: ['checks']
+        }
+      ]
+    }
+  )
+  expect(issue).toContain('arguments.checks: expected array')
+  expect(issue).not.toContain('facts')
+  expect(issue).not.toContain('unexpected constant')
+})
+
+it('reports each shared phase field error once and still checks outer constraints', () => {
+  const properties = { phase: { const: 'facts' }, scope: { type: 'string' } }
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['phase'],
+    properties,
+    oneOf: [{ type: 'object', properties, required: ['phase', 'scope'] }]
+  }
+  const issue = operationInputIssue(
+    { phase: 'facts', scope: 1, extra: true },
+    schema
+  )
+  expect(issue?.match(/arguments.scope: expected string/g)).toHaveLength(1)
+  expect(issue).toContain('arguments.extra: unknown field')
+  expect(issue).not.toContain('arguments.extra: disallowed value')
+  expect(
+    operationInputIssue({ phase: 'facts', scope: 'tower' }, schema)
+  ).toBeUndefined()
+})
+
+it('keeps unknown-field diagnostics bounded without repeating disallowed-value errors', () => {
+  const issue = operationInputIssue(
+    Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`field${i}`, i])),
+    { type: 'object', additionalProperties: false }
+  )
+  expect(issue).toContain('retry for remaining diagnostics')
+  expect(issue).not.toContain('field19:')
+  expect(issue).not.toContain('disallowed value')
+})
+
+it.each(['segment-control', null])(
+  'accepts declared nullable vector control IDs: %j',
+  (value) => {
+    expect(
+      operationInputIssue(value, { type: ['string', 'null'] })
+    ).toBeUndefined()
+  }
+)
+it.each([3, {}, [], true])(
+  'rejects invalid nullable vector control IDs at admission: %j',
+  (value) => {
+    expect(operationInputIssue(value, { type: ['string', 'null'] })).toContain(
+      'expected string or null'
+    )
+  }
+)
+it('enforces unique IDs before shared target operations reach their owner', () => {
+  const schema = { type: 'array', uniqueItems: true, items: { type: 'string' } }
+  expect(operationInputIssue(['a', 'b'], schema)).toBeUndefined()
+  expect(operationInputIssue(['a', 'a'], schema)).toContain('duplicate item')
+  expect(
+    operationInputIssue(['a', 'a'], { ...schema, uniqueItems: false })
+  ).toBeUndefined()
+})
+it('compares unique structured items independently of object key order', () => {
+  const schema = { type: 'array', uniqueItems: true }
+  expect(
+    operationInputIssue(
+      [
+        { a: 1, b: 2 },
+        { b: 2, a: 1 }
+      ],
+      schema
+    )
+  ).toContain('duplicate item')
+  expect(operationInputIssue([{ a: 1 }, { a: 2 }], schema)).toBeUndefined()
+})
+
+it('compacts redundant native choices while preserving overlap and contradictory constraints', () => {
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['mode', 'mode'],
+    properties: { mode: { type: ['string', 'string'], enum: ['a', 'b', 'a'] } },
+    anyOf: [
+      { properties: { mode: { const: 'a' } } },
+      { properties: { mode: { const: 'a' } } },
+      { properties: { mode: { const: 'b' } } }
+    ]
+  }
+  const converted = nativeToolInputSchema(schema) as {
+    anyOf: { properties: { mode: { enum?: unknown } }; required: string[] }[]
+  }
+  expect(converted.anyOf).toHaveLength(2)
+  expect(converted.anyOf[0].properties.mode.enum).toBeUndefined()
+  expect(converted.anyOf[0].required).toEqual(['mode'])
+  for (const value of [
+    {},
+    { mode: 'a' },
+    { mode: 'b' },
+    { mode: 'c' },
+    { mode: null },
+    { mode: 1 },
+    { mode: 'a', extra: 1 }
+  ])
+    expect(!operationInputIssue(value, converted)).toBe(
+      !operationInputIssue(value, schema)
+    )
+  for (const candidate of [
+    { oneOf: [{ const: 'a' }, { const: 'a' }] },
+    { const: 'a', enum: ['b'] },
+    { allOf: [{ type: 'string' }, { type: 'string' }, { const: 'a' }] }
+  ])
+    for (const value of ['a', 'b', 1, null, {}])
+      expect(
+        !operationInputIssue(value, nativeToolInputSchema(candidate))
+      ).toBe(!operationInputIssue(value, candidate))
+  expect(schema.anyOf).toHaveLength(3)
+  const first = { value: 1 }
+  const second = { value: 1 }
+  for (const objectChoices of [
+    { enum: [first, second, first] },
+    { anyOf: [{ enum: [first] }, { enum: [second] }] },
+    { allOf: [{ const: first }, { const: second }] }
+  ])
+    for (const value of [first, second, { value: 1 }])
+      expect(
+        !operationInputIssue(value, nativeToolInputSchema(objectChoices))
+      ).toBe(!operationInputIssue(value, objectChoices))
+})
+
+it('preserves real review and action schema admission after native conversion', () => {
+  const schema = designEvidenceSchema
+  const converted = nativeToolInputSchema(schema)
+  const candidates = [
+    reviewPlanExample,
+    { ...reviewPlanExample, phase: 'unknown' },
+    { ...reviewPlanExample, extra: true },
+    { ...reviewPlanExample, detailRequired: 'yes' },
+    ...Object.keys(reviewPlanExample).map((key) =>
+      Object.fromEntries(
+        Object.entries(reviewPlanExample).filter(([name]) => name !== key)
+      )
+    ),
+    { phase: 'facts' },
+    { phase: 'visual', checks: [] },
+    { phase: 'structure', ...wholeViewJudgments(['image'], []) }
+  ]
+  expect(operationInputIssue(reviewPlanExample, converted)).toBeUndefined()
+  for (const input of candidates)
+    expect(!operationInputIssue(input, converted), JSON.stringify(input)).toBe(
+      !operationInputIssue(input, schema)
+    )
+  for (const api of basicApiContracts) {
+    const native = nativeToolInputSchema(api.inputSchema)
+    for (const input of [
+      {},
+      { unknown: true },
+      null,
+      [],
+      { elementId: 'known' }
+    ])
+      expect(!operationInputIssue(input, native), api.name).toBe(
+        !operationInputIssue(input, api.inputSchema)
+      )
+  }
+  expect(nativeToolInputSchema(converted)).toEqual(converted)
+})
+
+it('materializes common union fields for native declarations without weakening admission', () => {
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['name', 'type'],
+    properties: {
+      name: { type: 'string' },
+      type: { enum: ['group', 'frame'] },
+      width: { type: 'number', minimum: 0 }
+    },
+    anyOf: [
+      { properties: { type: { const: 'group' }, width: false } },
+      { properties: { type: { const: 'frame' } }, required: ['width'] }
+    ]
+  }
+  const native = nativeToolInputSchema(schema) as {
+    anyOf: { properties: Record<string, unknown>; required: string[] }[]
+  }
+  expect(native.anyOf[0].properties.name).toEqual({ type: 'string' })
+  expect(native.anyOf[0].properties).not.toHaveProperty('width')
+  expect(native.anyOf[1].required).toEqual(['name', 'type', 'width'])
+  for (const input of [
+    { name: 'g', type: 'group' },
+    { name: 'f', type: 'frame', width: 10 },
+    { type: 'group' },
+    { name: 'g', type: 'group', width: 10 },
+    { name: 'f', type: 'frame' },
+    { name: 'f', type: 'frame', width: -1 },
+    { name: 'g', type: 'group', extra: true }
+  ])
+    expect(!operationInputIssue(input, native), JSON.stringify(input)).toBe(
+      !operationInputIssue(input, schema)
+    )
+  expect(schema.properties).toHaveProperty('width')
+})
+it('retains nullable control IDs, definitions and nested array union fields in native schemas', () => {
+  const schema = {
+    type: 'object',
+    properties: {
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            control: { type: ['string', 'null'] },
+            kind: { type: 'string' }
+          },
+          oneOf: [{ required: ['control'] }, { required: ['kind'] }]
+        }
+      }
+    },
+    $defs: { node: { type: 'string' } }
+  }
+  const native = nativeToolInputSchema(schema) as {
+    $defs: unknown
+    properties: {
+      items: {
+        items: { oneOf: { properties: { control: { type: string[] } } }[] }
+      }
+    }
+  }
+  expect(native.$defs).toEqual(schema.$defs)
+  expect(
+    native.properties.items.items.oneOf[0].properties.control.type
+  ).toEqual(['string', 'null'])
+})
+
+it('does not admit extra union fields by merging two independently closed objects', () => {
+  for (const schema of [
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: { a: { type: 'string' } },
+      anyOf: [{ properties: { b: { type: 'string' } } }]
+    },
+    {
+      type: 'object',
+      properties: { a: { type: 'string' } },
+      anyOf: [
+        { additionalProperties: false, properties: { b: { type: 'string' } } }
+      ]
+    }
+  ]) {
+    for (const value of [{}, { a: 'a' }, { b: 'b' }, { a: 'a', b: 'b' }]) {
+      expect(
+        !operationInputIssue(value, nativeToolInputSchema(schema)),
+        JSON.stringify({ schema, value })
+      ).toBe(!operationInputIssue(value, schema))
+    }
+  }
+})
+
+it('preserves admission of every advertised evidence tool through native conversion', () => {
+  const examples: Record<string, object> = {
+    define_design_criteria: reviewPlanExample,
+    record_design_facts: {},
+    record_design_calculations: {
+      calculations: [
+        {
+          id: 'length',
+          value: 0.8,
+          unit: 'px',
+          sourceFactIds: ['survey'],
+          verification: 'Recomputed exact projection.'
+        }
+      ]
+    },
+    select_design_references: { referenceImageIndexes: [0] },
+    review_drawing: {
+      phase: 'visual',
+      ...wholeViewJudgments(
+        ['inspection'],
+        [
+          {
+            criterionId: 'shape',
+            status: 'pass',
+            evidence: 'Matches reference.',
+            binding: {
+              requestId: 'schema-only',
+              requirementRevision: 1,
+              checkRevision: 1,
+              signature: 'schema-only',
+              dependencies: [
+                {
+                  inspectionId: 'inspection',
+                  elementId: 'drawing',
+                  scope: 'overview:whole'
+                }
+              ]
+            }
+          }
+        ]
+      )
+    }
+  }
+  expect(Object.keys(examples).sort()).toEqual(
+    designEvidenceDefinitions.map((item) => item.name).sort()
+  )
+  for (const definition of designEvidenceDefinitions) {
+    const native = nativeToolInputSchema(definition.inputSchema)
+    for (const input of [
+      examples[definition.name],
+      { ...examples[definition.name], unrelated: true },
+      null,
+      []
+    ]) {
+      expect(
+        operationInputIssue(input, native) === undefined,
+        definition.name
+      ).toBe(operationInputIssue(input, definition.inputSchema) === undefined)
+    }
+    expect(
+      operationInputIssue(examples[definition.name], native),
+      definition.name
+    ).toBeUndefined()
+  }
+})
+
+it('preserves composed capture inputs and strict target validation through native conversion', () => {
+  const tool = designEvidenceDefinitions.find(
+    (item) => item.name === 'review_drawing'
+  )
+  if (!tool) throw new Error('Missing review tool')
+  const native = nativeToolInputSchema(tool.inputSchema)
+  const checks = [
+    {
+      criterionId: 'shape',
+      status: 'pass',
+      evidence: 'Current shape',
+      inspectionIds: ['overview'],
+      binding: {
+        requestId: 'schema-only',
+        requirementRevision: 1,
+        checkRevision: 1,
+        signature: 'schema-only',
+        dependencies: [
+          {
+            inspectionId: 'overview',
+            elementId: 'drawing',
+            scope: 'overview:whole'
+          }
+        ]
+      }
+    }
+  ]
+  const targets = [
+    { elementId: 'drawing', checks: [{ criterionId: 'shape' }] },
+    {
+      elementId: 'detail',
+      checks: [{ criterionId: 'shape' }],
+      region: { x: -10, y: 5, width: 100, height: 100 }
+    }
+  ]
+  for (const phase of ['structure', 'visual']) {
+    for (const [input, valid] of [
+      [{ inspections: targets }, true],
+      [{ inspectionIds: ['overview'], inspections: [targets[1]] }, true],
+      [{ inspectionIds: ['overview'], checks }, true],
+      [
+        { bindChecks: [{ criterionId: 'shape', inspectionIds: ['overview'] }] },
+        true
+      ],
+      [{ inspections: targets, checks, inspectionIds: ['overview'] }, false],
+      [
+        {
+          bindChecks: [{ criterionId: 'shape', inspectionIds: ['overview'] }],
+          checks,
+          inspectionIds: ['overview']
+        },
+        false
+      ],
+      [
+        {
+          inspectionIds: ['overview'],
+          checks: checks.map(({ binding: _binding, ...check }) => check)
+        },
+        false
+      ],
+      [{}, false],
+      [{ inspections: [] }, false],
+      [{ inspections: [{ elementId: '' }] }, false],
+      [
+        {
+          inspections: [
+            {
+              elementId: 'detail',
+              region: { x: 0, y: 0, width: 1025, height: 100 }
+            }
+          ]
+        },
+        false
+      ],
+      [{ inspectionIds: [undefined], inspections: targets }, false],
+      [{ inspections: targets, unexpected: true }, false]
+    ] as const) {
+      for (const schema of [tool.inputSchema, native])
+        expect(
+          operationInputIssue({ phase, ...input }, schema) === undefined
+        ).toBe(valid)
+    }
+  }
+})
+
+it('validates positional receipt schemas without retyping the diagnostic tail', () => {
+  const schema = {
+    type: 'array',
+    minItems: 1,
+    prefixItems: [{ type: 'number' }],
+    items: { type: 'string' }
+  }
+  expect(operationInputIssue([1, 'ok'], schema)).toBeUndefined()
+  expect(operationInputIssue(['bad', 'ok'], schema)).toContain('[0]')
+  expect(operationInputIssue([1, 2], schema)).toContain('[1]')
+  expect(operationInputIssue([], schema)).toContain('too few')
+  expect(operationInputIssue([1], { ...schema, items: false })).toBeUndefined()
+  expect(
+    operationInputIssue([1, 'extra'], { ...schema, items: false })
+  ).toBeDefined()
+})
+
+it('keeps common invocation examples at their union scope during native conversion', () => {
+  const example = { draft: { type: 'group' } }
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    examples: [example],
+    properties: { draft: { type: 'object' }, repair: { type: 'object' } },
+    oneOf: [{ required: ['draft'] }, { required: ['repair'] }]
+  }
+  const converted = nativeToolInputSchema(schema) as {
+    examples: unknown[]
+    oneOf: Record<string, unknown>[]
+  }
+  expect(converted.examples).toEqual([example])
+  expect(
+    converted.oneOf.every((branch) => !Object.hasOwn(branch, 'examples'))
+  ).toBe(true)
+  for (const input of [
+    example,
+    { repair: {} },
+    {},
+    { draft: {}, repair: {} },
+    { draft: {}, extra: true }
+  ]) {
+    expect(!!operationInputIssue(input, converted)).toBe(
+      !!operationInputIssue(input, schema)
+    )
+  }
+})
+
+it.each(['fields', 'items'] as const)(
+  'keeps bounded output %s diagnostics from requesting operation replay',
+  (kind) => {
+    const value =
+      kind === 'fields'
+        ? Object.fromEntries(
+            Array.from({ length: 20 }, (_, i) => [`field${i}`, i])
+          )
+        : Array.from({ length: 20 }, () => 'invalid')
+    const schema =
+      kind === 'fields'
+        ? { type: 'object', additionalProperties: false }
+        : { type: 'array', items: { type: 'number' } }
+    const issue = operationContractIssue(value, schema, { stage: 'output' })
+    expect(issue).toContain('output')
+    expect(issue).toContain('Additional output diagnostics omitted')
+    expect(issue).not.toContain('retry')
+    expect(issue).not.toContain('field19:')
+    expect(issue).not.toContain('[19]')
+  }
+)

@@ -8,6 +8,7 @@ import {
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import {
   nativeToolInputSchema,
+  operationContractIssue,
   operationInputIssue
 } from '../operation-input-schema'
 
@@ -543,3 +544,55 @@ it('validates positional receipt schemas without retyping the diagnostic tail', 
     operationInputIssue([1, 'extra'], { ...schema, items: false })
   ).toBeDefined()
 })
+
+it('keeps common invocation examples at their union scope during native conversion', () => {
+  const example = { draft: { type: 'group' } }
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    examples: [example],
+    properties: { draft: { type: 'object' }, repair: { type: 'object' } },
+    oneOf: [{ required: ['draft'] }, { required: ['repair'] }]
+  }
+  const converted = nativeToolInputSchema(schema) as {
+    examples: unknown[]
+    oneOf: Record<string, unknown>[]
+  }
+  expect(converted.examples).toEqual([example])
+  expect(
+    converted.oneOf.every((branch) => !Object.hasOwn(branch, 'examples'))
+  ).toBe(true)
+  for (const input of [
+    example,
+    { repair: {} },
+    {},
+    { draft: {}, repair: {} },
+    { draft: {}, extra: true }
+  ]) {
+    expect(!!operationInputIssue(input, converted)).toBe(
+      !!operationInputIssue(input, schema)
+    )
+  }
+})
+
+it.each(['fields', 'items'] as const)(
+  'keeps bounded output %s diagnostics from requesting operation replay',
+  (kind) => {
+    const value =
+      kind === 'fields'
+        ? Object.fromEntries(
+            Array.from({ length: 20 }, (_, i) => [`field${i}`, i])
+          )
+        : Array.from({ length: 20 }, () => 'invalid')
+    const schema =
+      kind === 'fields'
+        ? { type: 'object', additionalProperties: false }
+        : { type: 'array', items: { type: 'number' } }
+    const issue = operationContractIssue(value, schema, { stage: 'output' })
+    expect(issue).toContain('output')
+    expect(issue).toContain('Additional output diagnostics omitted')
+    expect(issue).not.toContain('retry')
+    expect(issue).not.toContain('field19:')
+    expect(issue).not.toContain('[19]')
+  }
+)

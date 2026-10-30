@@ -5,7 +5,7 @@ import {
   inspectAiToolResult,
   admitAiRecipe
 } from '@asyra/ai-agent-runtime'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationContractIssue } from '../operation-input-schema'
 import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
@@ -127,7 +127,7 @@ it('does not let successful child receipts erase incomplete parent settlement', 
   ).toMatchObject({ status: 'partial', settlement: 'partial' })
 })
 
-it('includes compact successful acknowledgements when combining child settlements', () => {
+it('does not treat obsolete aggregate counts as owner evidence', () => {
   expect(
     localToolOutcome({
       batchSummary: { acknowledgedActions: [{ actionName: 'edit', count: 1 }] },
@@ -135,7 +135,7 @@ it('includes compact successful acknowledgements when combining child settlement
         { result: { status: 'failed', settlement: 'not-started' } }
       ]
     })
-  ).toMatchObject({ status: 'partial', settlement: 'partial' })
+  ).toMatchObject({ status: 'failed', settlement: 'not-started' })
 })
 
 it.each(
@@ -290,10 +290,10 @@ it.each([
   [{ actionResults: [{ result: { status: 'partial' } }] }, false, 'partial'],
   [
     {
-      actionResults: [{ result: { available: false } }],
-      batchSummary: {
-        acknowledgedActions: [{ actionName: 'update', count: 2 }]
-      }
+      actionResults: [
+        { result: { status: 'complete' } },
+        { result: { available: false } }
+      ]
     },
     false,
     'partial'
@@ -770,6 +770,7 @@ it('validates the declared native output schema even when the owner forgot a res
   expect(reply.success).toBe(false)
   expect(JSON.parse(reply.text)).toMatchObject({
     code: 'TOOL_RESULT_INVALID',
+    message: 'output.artifactId: required field is missing',
     stage: 'decoding',
     settlement: 'unknown',
     executionResult: { wrong: true }
@@ -860,7 +861,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
   expect(
     inspectAiToolResult(contract, interrupted, {
       outcome: { status: 'partial', settlement: 'partial' },
-      validate: operationInputIssue
+      validate: operationContractIssue
     }).status
   ).toBe('partial')
   expect(
@@ -869,14 +870,14 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
       { count: 1, status: 'partial' },
       {
         outcome: { status: 'partial', settlement: 'partial' },
-        validate: operationInputIssue
+        validate: operationContractIssue
       }
     ).status
   ).toBe('partial')
   expect(
     inspectAiToolResult(contract, interrupted, {
       outcome: { status: 'success', settlement: 'completed' },
-      validate: operationInputIssue
+      validate: operationContractIssue
     })
   ).toMatchObject({ status: 'invalid', settlement: 'completed' })
   const admitted = admitAiRecipe(
@@ -904,7 +905,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
     },
     {
       resolve: () => contract,
-      validate: operationInputIssue,
+      validate: operationContractIssue,
       limits: {
         bytes: 10000,
         steps: 4,
@@ -932,4 +933,104 @@ it('preserves an owner-declared terminal failure without changing retryable fail
     localToolFailureReply('Correct the input.', 'INVALID_INPUT').text
   )
   expect(retryable.recoverable).toBe(true)
+})
+
+it.each(['measurementIssues', 'inspectionIssues'])(
+  'preserves completed writes but reports failed %s delivery as partial',
+  (field) => {
+    const outcome = localToolOutcome({
+      actionResults: [
+        {
+          result: {
+            status: 'complete',
+            toolOutcome: { status: 'success', settlement: 'completed' }
+          }
+        }
+      ],
+      [field]: [
+        {
+          elementId: 'region',
+          message: 'Check delivery failed; recover checks only.'
+        }
+      ]
+    })
+    expect(outcome).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
+    })
+    expect(outcome.issues).toContainEqual(
+      expect.objectContaining({
+        message: 'Check delivery failed; recover checks only.'
+      })
+    )
+  }
+)
+
+it('does not reinterpret domain parts as workflow execution receipts', () => {
+  expect(
+    localToolOutcome({
+      parts: [{ status: 'failed', evidence: 'A negative visual judgment.' }]
+    })
+  ).toMatchObject({ status: 'success', settlement: 'completed' })
+  expect(
+    localToolOutcome({
+      parts: [
+        { completedSteps: [], status: 'failed', settlement: 'not-started' }
+      ]
+    })
+  ).toMatchObject({ status: 'failed', settlement: 'not-started' })
+})
+
+it.each(['partial', 'unknown', 'completed'] as const)(
+  'preserves cancellation with %s owner settlement without replacing the receipt',
+  async (settlement) => {
+    const controller = new AbortController()
+    const result = {
+      actionResults: [
+        {
+          actionId: 'draw',
+          actionName: 'draw',
+          result: {
+            status: 'partial',
+            appliedElementCount: 1
+          }
+        }
+      ],
+      failure: { code: 'AI_EXECUTION_FAILED', settlement }
+    }
+    await expect(
+      invokeLocalTool(
+        {
+          call: async () => {
+            controller.abort()
+            return JSON.stringify(result)
+          }
+        },
+        definition,
+        {},
+        controller.signal
+      )
+    ).rejects.toMatchObject({
+      receipt: { settlement, result }
+    })
+  }
+)
+
+it('keeps ordinary cancellation without an acknowledged owner result', async () => {
+  const controller = new AbortController()
+  const reason = new Error('Cancelled before acknowledgement')
+  await expect(
+    invokeLocalTool(
+      {
+        call: async () => {
+          controller.abort(reason)
+          throw reason
+        }
+      },
+      definition,
+      {},
+      controller.signal,
+      () => ({ batches: [] })
+    )
+  ).rejects.toBe(reason)
 })

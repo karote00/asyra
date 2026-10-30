@@ -1,0 +1,66 @@
+{
+  "source": {
+    "run": "knowledge-quality-knowledge-taipei-101-1793002315768",
+    "callId": "exec-4fc12a71-cbc2-4ed3-821f-df81278382ac",
+    "inputSha256": "7abb957dc8971db8022f384c4af0149209dd6c78571a451c2162759e264ed8c2",
+    "sourcePath": "/children/53",
+    "derivation": "Original face coordinates; independent solid fill substitutes the unrelated material template."
+  },
+  "projection": {
+    "azimuth": 35,
+    "elevation": 25,
+    "scale": 1,
+    "originX": 11000,
+    "originY": 48000
+  },
+  "face": {
+    "type": "projected-face",
+    "key": "crownFinX-2050",
+    "name": "crownFinX-2050",
+    "vertices": [
+      {
+        "x": 2200,
+        "y": -2140,
+        "z": 40400
+      },
+      {
+        "x": 2200,
+        "y": -1960,
+        "z": 40400
+      },
+      {
+        "x": 2180,
+        "y": -1990,
+        "z": 41450
+      },
+      {
+        "x": 2180,
+        "y": -2110,
+        "z": 41200
+      }
+    ],
+    "fill": "#226688"
+  },
+  "replacement": [
+    {
+      "x": 2200,
+      "y": -2140,
+      "z": 40400
+    },
+    {
+      "x": 2200,
+      "y": -1960,
+      "z": 40400
+    },
+    {
+      "x": 2200,
+      "y": -1990,
+      "z": 41450
+    },
+    {
+      "x": 2200,
+      "y": -2110,
+      "z": 41200
+    }
+  ]
+}

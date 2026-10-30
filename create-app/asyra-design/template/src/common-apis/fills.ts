@@ -1,6 +1,8 @@
-import type { ElementPropertyPatchUpdate } from '@asyra/core'
+import type {
+  ElementPropertyPatchUpdate,
+  ElementPropertyTarget
+} from '@asyra/core'
 import {
-  FillGradientTypes,
   PropertyTypes,
   createDefaultFill,
   id,
@@ -11,10 +13,20 @@ import {
 } from '@asyra/utils'
 import { FILL_PATCH_KEYS, type FillWritableKey } from '../constants'
 import core from '../contexts'
-import { getChangedDefinedPatchEntries } from './property-patch'
 import { transactionApis } from './transaction'
+import { mutationReceipt, type MutationReceipt } from './mutation-receipt'
+import { isNonLinearGradient } from './gradient-handle-geometry'
 
 export type FillPatch = Partial<Pick<FillAttrs, FillWritableKey>>
+
+export interface FillTarget {
+  readonly elementId: string
+  readonly fillId: string
+}
+
+export interface FillFieldsUpdate extends FillTarget {
+  readonly patch: FillPatch
+}
 
 export interface PrimaryFillColorUpdate {
   readonly color: string
@@ -24,11 +36,8 @@ export interface PrimaryFillColorUpdate {
 const createFillRecordPatch = (
   elementId: string,
   fillId: string,
-  fill: FillAttrs
+  fill: FillPatch
 ): ElementPropertyPatchUpdate => {
-  if (fill.id !== fillId) {
-    throw new Error(`Fill record key "${fillId}" does not match its id`)
-  }
   const fields: Record<string, unknown> = {}
   for (const key of FILL_PATCH_KEYS) {
     const value = fill[key]
@@ -50,6 +59,57 @@ const createFillRecordPatch = (
   }
 }
 
+const assertUniqueFillTargets = (elementIds: readonly string[]) => {
+  if (new Set(elementIds).size !== elementIds.length)
+    throw new Error('Fill row targets must contain unique element IDs')
+}
+
+// Logical child slots stay stable when effective bindings are isolated or re-shared.
+const fillPropertyTargetsAtIndex = (
+  elementIds: readonly string[],
+  index: number
+): ElementPropertyTarget[] => {
+  assertUniqueFillTargets(elementIds)
+  if (!Number.isInteger(index) || index < 0)
+    throw new Error('Fill row index must be a non-negative integer')
+  const roots = core.readElementPropertyTargets(
+    elementIds.map((elementId) => ({
+      elementId,
+      propertyName: PropertyTypes.FILLS,
+      path: []
+    }))
+  )
+  return roots.map((root, offset) => {
+    const slot = root.children[index]
+    if (!slot)
+      throw new Error(`Missing Fill row ${index} for ${elementIds[offset]}`)
+    return {
+      elementId: elementIds[offset],
+      propertyName: PropertyTypes.FILLS,
+      path: [{ key: slot.key, childId: slot.childId }],
+      expectedRootId: root.propertyId,
+      expectedPropertyId: slot.propertyId
+    }
+  })
+}
+
+// Resolve relationships at the canonical caller boundary, once per owner.
+const fillRowsAtIndex = (elementIds: readonly string[], index: number) => {
+  assertUniqueFillTargets(elementIds)
+  if (!Number.isSafeInteger(index) || index < 0)
+    throw new Error('Invalid Fill row index')
+  return elementIds.map((elementId) => {
+    const fills = core.getElementComputedData(elementId, ['fills'])?.fills
+    if (!Array.isArray(fills) || !fills[index]?.id)
+      throw new Error(`Missing Fill row ${index} on ${elementId}`)
+    return {
+      elementId,
+      fills: fills as FillAttrs[],
+      fill: fills[index] as FillAttrs
+    }
+  })
+}
+
 export type GradientHandleIndex = 0 | 1
 
 export interface GradientHandleGeometry {
@@ -60,9 +120,6 @@ export interface GradientHandleGeometry {
   height: number
   canvasHandles: [PositionData, PositionData]
 }
-
-const isNonLinearGradient = (gradientType: FillGradientData['gradientType']) =>
-  gradientType !== FillGradientTypes.LINEAR
 
 const getDisplayStartHandle = (
   gradient: FillGradientData
@@ -99,76 +156,6 @@ const getStoredHandleFromDisplay = (
   return {
     x: displayHandle.x * 2 - endHandle.x,
     y: displayHandle.y * 2 - endHandle.y
-  }
-}
-
-const getHandleDeltaScale = (
-  gradient: FillGradientData,
-  handleIndex: GradientHandleIndex
-) => (handleIndex === 0 && isNonLinearGradient(gradient.gradientType) ? 2 : 1)
-
-const computeNextGradientForHandleWithDelta = (
-  baseGradient: FillGradientData,
-  handleIndex: GradientHandleIndex,
-  width: number,
-  height: number,
-  delta: PositionData
-): FillGradientData => {
-  const currentHandle = baseGradient.gradientHandles[handleIndex]
-  const deltaScale = getHandleDeltaScale(baseGradient, handleIndex)
-  const deltaX = (delta.x / width) * deltaScale
-  const deltaY = (delta.y / height) * deltaScale
-
-  if (!currentHandle) {
-    return baseGradient
-  }
-
-  if (handleIndex === 1 && isNonLinearGradient(baseGradient.gradientType)) {
-    const [startHandle, endHandle] = baseGradient.gradientHandles
-    if (!startHandle || !endHandle) {
-      return {
-        ...baseGradient,
-        gradientHandles: baseGradient.gradientHandles.map((handle, index) =>
-          index === handleIndex
-            ? {
-                x: currentHandle.x + deltaX,
-                y: currentHandle.y + deltaY
-              }
-            : handle
-        )
-      }
-    }
-
-    return {
-      ...baseGradient,
-      gradientHandles: baseGradient.gradientHandles.map((handle, index) => {
-        if (index === 0) {
-          return {
-            x: startHandle.x - deltaX,
-            y: startHandle.y - deltaY
-          }
-        }
-        if (index === 1) {
-          return {
-            x: endHandle.x + deltaX,
-            y: endHandle.y + deltaY
-          }
-        }
-        return handle
-      })
-    }
-  }
-
-  return {
-    ...baseGradient,
-    gradientHandles: baseGradient.gradientHandles.map((handle, index) =>
-      index === handleIndex
-        ? {
-            x: currentHandle.x + deltaX,
-            y: currentHandle.y + deltaY
-          }
-        : handle
-    )
   }
 }
 
@@ -232,18 +219,66 @@ const getCanvasPositionFromClient = (clientPos: PositionData): PositionData => {
 }
 
 export const fillApis = {
-  addFill: (elementId: string, options?: EVENT_OPTIONS): string | null => {
-    if (!core.getElementData(elementId)) {
-      return null
-    }
-    const fill = createDefaultFill({ id: id('fill') })
-    transactionApis.runTransaction(() => {
+  getFillTargetsAtIndex: (
+    elementIds: readonly string[],
+    index: number
+  ): FillTarget[] => {
+    if (!Number.isInteger(index) || index < 0)
+      throw new Error('Invalid Fill row index')
+    return [...new Set(elementIds)].map((elementId) => {
+      const fills = core.getElementComputedData(elementId, ['fills'])?.fills
+      const fill = Array.isArray(fills) ? fills[index] : undefined
+      if (!fill?.id)
+        throw new Error(`Missing Fill row ${index} on ${elementId}`)
+      return { elementId, fillId: fill.id }
+    })
+  },
+
+  addFills: (
+    elementIds: readonly string[],
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<string[]> => {
+    const entries = [...new Set(elementIds)].map((elementId) => ({
+      elementId,
+      fill: createDefaultFill({ id: id('fill') })
+    }))
+    if (!entries.length)
+      return mutationReceipt([], { acceptedIds: [], changed: false })
+    const evidence = transactionApis.runTransaction(() =>
       core.patchElementProperties(
-        [createFillRecordPatch(elementId, fill.id, fill)],
+        entries.map(({ elementId, fill }) =>
+          createFillRecordPatch(elementId, fill.id, fill)
+        ),
         options
       )
-    })
-    return fill.id
+    )
+    return mutationReceipt(
+      entries.map(({ fill }) => fill.id),
+      evidence
+    )
+  },
+
+  addFill: (elementId: string, options?: EVENT_OPTIONS): string | null => {
+    if (!core.getElementData(elementId)) return null
+    return fillApis.addFills([elementId], options).value[0] ?? null
+  },
+
+  removeFills: (
+    targets: readonly FillTarget[],
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<null> => {
+    if (!targets.length)
+      return mutationReceipt(null, { acceptedIds: [], changed: false })
+    const evidence = transactionApis.runTransaction(() =>
+      core.patchElementProperties(
+        targets.map(({ elementId, fillId }) => ({
+          elementId,
+          records: [{ key: PropertyTypes.FILLS, remove: [fillId] }]
+        })),
+        options
+      )
+    )
+    return mutationReceipt(null, evidence)
   },
 
   removeFill: (
@@ -251,38 +286,14 @@ export const fillApis = {
     fillId: string,
     options?: EVENT_OPTIONS
   ): boolean => {
-    const computed = core.getElementComputedData(elementId) as
-      { fills?: unknown } | undefined
-    const fills = computed?.fills
+    const fills = core.getElementComputedData(elementId, ['fills'])?.fills
     if (
       !fillId ||
       !Array.isArray(fills) ||
-      !fills.some(
-        (candidate) =>
-          candidate &&
-          typeof candidate === 'object' &&
-          (candidate as { id?: unknown }).id === fillId
-      )
-    ) {
+      !fills.some((fill) => fill?.id === fillId)
+    )
       return false
-    }
-
-    transactionApis.runTransaction(() => {
-      core.patchElementProperties(
-        [
-          {
-            elementId,
-            records: [
-              {
-                key: PropertyTypes.FILLS,
-                remove: [fillId]
-              }
-            ]
-          }
-        ],
-        options
-      )
-    })
+    fillApis.removeFills([{ elementId, fillId }], options)
     return true
   },
 
@@ -312,22 +323,6 @@ export const fillApis = {
   getPrimaryFillColor: (elementId: string): string | null => {
     const fill = getPrimaryFill(elementId)
     return typeof fill?.color === 'string' ? fill.color : null
-  },
-
-  getNextGradientForHandleWithDelta: (
-    baseGradient: FillGradientData,
-    handleIndex: GradientHandleIndex,
-    width: number,
-    height: number,
-    delta: PositionData
-  ): FillGradientData => {
-    return computeNextGradientForHandleWithDelta(
-      baseGradient,
-      handleIndex,
-      width,
-      height,
-      delta
-    )
   },
 
   getNextGradientForHandleAtClientPosition: (
@@ -534,100 +529,46 @@ export const fillApis = {
       clientPos
     )
     if (!geometry || !geometry.fill.gradient || !nextGradient) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    fillApis.updateFillField(
+    const evidence = fillApis.updateFillField(
       elementId,
       fillId,
-      geometry.fill,
       'gradient',
       nextGradient,
       options
     )
 
-    return nextGradient
-  },
-
-  getNextGradientForHandleWithWorkspaceDelta: (
-    elementId: string,
-    fillId: string,
-    handleIndex: GradientHandleIndex,
-    baseGradient: FillGradientData,
-    delta: PositionData
-  ) => {
-    const fillData = getElementFill(elementId, fillId)
-    if (!fillData) {
-      return null
-    }
-
-    return computeNextGradientForHandleWithDelta(
-      baseGradient,
-      handleIndex,
-      fillData.width,
-      fillData.height,
-      delta
-    )
-  },
-
-  updateGradientHandleWithWorkspaceDelta: (
-    elementId: string,
-    fillId: string,
-    handleIndex: GradientHandleIndex,
-    baseGradient: FillGradientData,
-    delta: PositionData,
-    options?: EVENT_OPTIONS
-  ) => {
-    const fillData = getElementFill(elementId, fillId)
-    if (!fillData) {
-      return null
-    }
-
-    const nextGradient = computeNextGradientForHandleWithDelta(
-      baseGradient,
-      handleIndex,
-      fillData.width,
-      fillData.height,
-      delta
-    )
-
-    fillApis.updateFillField(
-      elementId,
-      fillId,
-      fillData.fill,
-      'gradient',
-      nextGradient,
-      options
-    )
-
-    return nextGradient
+    return mutationReceipt(nextGradient, evidence)
   },
 
   updatePrimaryFillColors: (
     updates: readonly PrimaryFillColorUpdate[],
     options?: EVENT_OPTIONS
-  ): readonly boolean[] => {
+  ): readonly ('changed' | 'unchanged' | 'unavailable')[] => {
+    const results: ('changed' | 'unchanged' | 'unavailable')[] = []
     const prepared = updates.map(({ color, elementId }) => {
       const fill = getPrimaryFill(elementId)
-      if (
-        !fill ||
-        typeof color !== 'string' ||
-        color.length === 0 ||
-        fill.color === color
-      ) {
+      if (!fill || typeof color !== 'string' || color.length === 0) {
+        results.push('unavailable')
         return null
       }
+      if (fill.color === color) {
+        results.push('unchanged')
+        return null
+      }
+      results.push('changed')
       return {
         elementId,
         fillId: fill.id,
-        nextFill: {
-          ...fill,
-          color
-        }
+        patch: { color }
       }
     })
     if (!prepared.some((update) => update !== null)) {
-      return Object.freeze(prepared.map(() => false))
+      return Object.freeze(results)
     }
 
     transactionApis.runTransaction(() => {
@@ -638,7 +579,7 @@ export const fillApis = {
                 createFillRecordPatch(
                   update.elementId,
                   update.fillId,
-                  update.nextFill
+                  update.patch
                 )
               ]
             : []
@@ -646,7 +587,7 @@ export const fillApis = {
         options
       )
     })
-    return Object.freeze(prepared.map((update) => update !== null))
+    return Object.freeze(results)
   },
 
   updatePrimaryFillColor: (
@@ -662,50 +603,133 @@ export const fillApis = {
         }
       ],
       options
-    )[0] ?? false,
+    )[0] === 'changed',
+
+  /** New values only. Resolve current child identity once per owner, then write in input order. */
+  updateFillsAtIndex: (
+    elementIds: readonly string[],
+    index: number,
+    patch: FillPatch | readonly FillPatch[],
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<null> => {
+    const aligned = Array.isArray(patch) ? patch : undefined
+    if (aligned && aligned.length !== elementIds.length)
+      throw new Error('Fill patches must be aligned with elementIds')
+    const targets = fillRowsAtIndex(elementIds, index)
+    return fillApis.updateFillFieldsBatch(
+      targets.map(({ elementId, fill }, offset) => ({
+        elementId,
+        fillId: fill.id,
+        patch: aligned ? aligned[offset] : (patch as FillPatch)
+      })),
+      options
+    )
+  },
+
+  /** Explicit source selection; later selected-owner edits remain local overrides. */
+  shareFillAtIndex: (
+    sourceElementId: string,
+    elementIds: readonly string[],
+    index: number,
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<null> => {
+    assertUniqueFillTargets(elementIds)
+    const [sourceTarget, ...targets] = fillPropertyTargetsAtIndex(
+      [...new Set([sourceElementId, ...elementIds])],
+      index
+    )
+    const [source] = core.readElementPropertyTargets([sourceTarget])
+    if (source.mode === 'source-backed')
+      throw new Error(
+        'Choose an independent source or detach the source row before sharing its effective values'
+      )
+    if (!targets.length)
+      return mutationReceipt(null, { acceptedIds: [], changed: false })
+    const evidence = transactionApis.runTransaction(() =>
+      core.shareElementPropertyTargets(
+        targets.map((target) => ({ target, sourceId: source.propertyId })),
+        options
+      )
+    )
+    return mutationReceipt(null, evidence)
+  },
+
+  /** Materialize this owner row through the canonical owner without editing its source. */
+  detachFillsAtIndex: (
+    elementIds: readonly string[],
+    index: number,
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<null> => {
+    const targets = fillPropertyTargetsAtIndex(elementIds, index)
+    if (!targets.length)
+      return mutationReceipt(null, { acceptedIds: [], changed: false })
+    const evidence = transactionApis.runTransaction(() =>
+      core.detachElementPropertyTargets(targets, options)
+    )
+    return mutationReceipt(null, evidence)
+  },
+
+  updateFillFieldsBatch: (
+    updates: readonly FillFieldsUpdate[],
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<null> => {
+    for (const { elementId, fillId, patch } of updates) {
+      if (!Object.values(patch).some((value) => value !== undefined)) {
+        const fills = core.getElementComputedData(elementId, ['fills'])?.fills
+        if (!Array.isArray(fills) || !fills.some((fill) => fill.id === fillId))
+          throw new Error(`Missing Fill ${fillId} on ${elementId}`)
+      }
+      for (const key of Object.keys(patch)) {
+        if (!FILL_PATCH_KEYS.some((allowed) => allowed === key)) {
+          throw new Error(
+            `Unsupported Fill field "${key}". Gradient fields belong inside "gradient".`
+          )
+        }
+      }
+    }
+    const patches = updates
+      .filter(({ patch }) =>
+        FILL_PATCH_KEYS.some((key) => patch[key] !== undefined)
+      )
+      .map(({ elementId, fillId, patch }) =>
+        createFillRecordPatch(elementId, fillId, patch)
+      )
+    if (!patches.length)
+      return mutationReceipt(null, {
+        acceptedIds: [...new Set(updates.map(({ elementId }) => elementId))],
+        changed: false
+      })
+    const evidence = transactionApis.runTransaction(() =>
+      core.patchElementProperties(patches, options)
+    )
+    return mutationReceipt(null, {
+      acceptedIds: [...new Set(updates.map(({ elementId }) => elementId))],
+      changed: evidence.changed
+    })
+  },
 
   updateFillFields: (
     elementId: string,
     fillId: string,
-    currentFill: FillAttrs,
     patch: FillPatch,
     options?: EVENT_OPTIONS
   ) => {
-    const changedEntries = getChangedDefinedPatchEntries(
-      FILL_PATCH_KEYS,
-      currentFill,
-      patch
+    return fillApis.updateFillFieldsBatch(
+      [{ elementId, fillId, patch }],
+      options
     )
-    if (changedEntries.length === 0) {
-      return
-    }
-
-    const nextFill = {
-      ...currentFill,
-      ...Object.fromEntries(changedEntries)
-    } as FillAttrs
-    transactionApis.runTransaction(() => {
-      core.patchElementProperties(
-        [createFillRecordPatch(elementId, fillId, nextFill)],
-        options
-      )
-    })
   },
   updateFillField: <K extends FillWritableKey>(
     elementId: string,
     fillId: string,
-    currentFill: FillAttrs,
     key: K,
     value: FillAttrs[K],
     options?: EVENT_OPTIONS
   ) => {
-    fillApis.updateFillFields(
+    return fillApis.updateFillFields(
       elementId,
       fillId,
-      currentFill,
-      {
-        [key]: value
-      } as FillPatch,
+      { [key]: value } as FillPatch,
       options
     )
   }

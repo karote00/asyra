@@ -1,5 +1,6 @@
 import {
   createDesignContextReader,
+  validateDesignContextQuery,
   validateDesignContextFilter,
   matchesDesignContextFilter,
   assertDesignContextCount,
@@ -20,6 +21,8 @@ export type RetainedContextQuery = (
       release?: boolean
     }
 ) & { delivery?: 'page' | 'reference' | 'columns' | 'receipt' | 'transient' }
+
+type QueryLeaseScope = 'request' | 'consumer'
 
 export class RetainedQueryError extends Error {}
 
@@ -58,7 +61,12 @@ export const createRetainedDesignContext = (
   >()
   const leases = new Map<
     string,
-    { snapshotId: string; signal?: AbortSignal; abort: () => void }
+    {
+      snapshotId: string
+      signal?: AbortSignal
+      scope: QueryLeaseScope
+      abort: () => void
+    }
   >()
   const releaseLease = (leaseId: string, signal?: AbortSignal) => {
     const lease = leases.get(leaseId)
@@ -74,15 +82,25 @@ export const createRetainedDesignContext = (
       if (lease.signal === signal) releaseLease(id)
     for (const [id, entry] of entries) if (entry.signal === signal) release(id)
   }
-  const acquire = (snapshotId: string, signal?: AbortSignal) => {
+  const acquire = (
+    snapshotId: string,
+    signal?: AbortSignal,
+    scope: QueryLeaseScope = 'request'
+  ) => {
     signal?.throwIfAborted()
-    for (const [id, lease] of leases)
-      if (lease.snapshotId === snapshotId && lease.signal === signal) return id
+    if (scope === 'request')
+      for (const [id, lease] of leases)
+        if (
+          lease.snapshotId === snapshotId &&
+          lease.signal === signal &&
+          lease.scope === 'request'
+        )
+          return id
     const entry = entries.get(snapshotId)
     if (!entry) throw new RetainedQueryError('Retained query missing.')
     const id = crypto.randomUUID()
     const abort = () => releaseLease(id)
-    leases.set(id, { snapshotId, signal, abort })
+    leases.set(id, { snapshotId, signal, scope, abort })
     entry.leases.add(id)
     signal?.addEventListener('abort', abort, { once: true })
     return id
@@ -170,7 +188,8 @@ export const createRetainedDesignContext = (
   }
   const refine = (
     input: Extract<RetainedContextQuery, { scope: 'snapshot' }>,
-    signal?: AbortSignal
+    signal: AbortSignal | undefined,
+    leaseScope: QueryLeaseScope
   ) => {
     const parent = get(input.snapshotId, undefined, signal)
     validateDesignContextFilter(input.filter)
@@ -213,9 +232,13 @@ export const createRetainedDesignContext = (
           elements: parent.result.elements.filter((row) =>
             selected.has(row.id)
           ),
-          elementIds: parent.result.elementIds?.filter((id) =>
-            selected.has(id)
-          ),
+          ...(parent.result.elementIds === undefined
+            ? {}
+            : {
+                elementIds: parent.result.elementIds.filter((id) =>
+                  selected.has(id)
+                )
+              }),
           missingIds: parent.result.missingIds.filter((id) => selected.has(id))
         }
       }
@@ -227,7 +250,8 @@ export const createRetainedDesignContext = (
         input.offset,
         input.limit,
         input.delivery,
-        signal
+        signal,
+        leaseScope
       ),
       observation: {
         reused: Boolean(prior),
@@ -240,14 +264,24 @@ export const createRetainedDesignContext = (
       }
     }
   }
-  const read = (input: RetainedContextQuery, signal?: AbortSignal) => {
+  // Consumer reads share retained rows but release only their own lease.
+  const read = (
+    input: RetainedContextQuery,
+    signal?: AbortSignal,
+    leaseScope: QueryLeaseScope = 'request'
+  ) => {
     signal?.throwIfAborted()
     if (disposed)
       throw new RetainedQueryError('Retained query owner is disposed.')
-    stop ??= observe(() => {
-      revision++
-      keys.clear()
-    })
+    if (!input || typeof input !== 'object' || Array.isArray(input))
+      throw new RetainedQueryError('Invalid document context query.')
+    if (
+      input.delivery !== undefined &&
+      !['page', 'reference', 'columns', 'receipt', 'transient'].includes(
+        input.delivery
+      )
+    )
+      throw new RetainedQueryError('Invalid document context delivery.')
     if (
       input.delivery === 'transient' &&
       (input.scope !== 'region' ||
@@ -260,8 +294,11 @@ export const createRetainedDesignContext = (
       throw new RetainedQueryError(
         'Transient delivery requires complete region IDs without paging or fields.'
       )
+    if (input.scope !== 'snapshot') {
+      const { delivery: _delivery, ...query } = input
+      validateDesignContextQuery(query)
+    }
     if (input.scope === 'snapshot') {
-      assertRequest(input.snapshotId, signal)
       if (
         Object.keys(input).some(
           (key) =>
@@ -284,6 +321,24 @@ export const createRetainedDesignContext = (
         throw new RetainedQueryError(
           'Snapshot reads accept only snapshotId, pagination, delivery, filter, expectedCount and release.'
         )
+      if (
+        typeof input.snapshotId !== 'string' ||
+        !input.snapshotId.length ||
+        (input.offset !== undefined &&
+          (!Number.isSafeInteger(input.offset) || input.offset < 0)) ||
+        (input.expectedCount !== undefined &&
+          (!Number.isSafeInteger(input.expectedCount) ||
+            input.expectedCount < 0))
+      )
+        throw new RetainedQueryError(
+          'Snapshot identity, offset and expectedCount must be valid before refinement.'
+        )
+      validateDesignContextFilter(input.filter)
+      assertRequest(input.snapshotId, signal)
+      stop ??= observe(() => {
+        revision++
+        keys.clear()
+      })
       if (input.release) {
         if (input.filter !== undefined || input.expectedCount !== undefined)
           throw new RetainedQueryError('Release cannot refine a snapshot.')
@@ -346,7 +401,7 @@ export const createRetainedDesignContext = (
           available: true,
           scope: 'snapshot',
           snapshotId: value.snapshotId,
-          leaseId: acquire(value.snapshotId, signal),
+          leaseId: acquire(value.snapshotId, signal, leaseScope),
           total: value.result.total,
           coordinateSpace: value.coordinateSpace,
           elements: [],
@@ -367,7 +422,7 @@ export const createRetainedDesignContext = (
             : { receipt: JSON.parse(text) as Record<string, unknown> })
         }
       }
-      if (input.filter !== undefined) return refine(input, signal)
+      if (input.filter !== undefined) return refine(input, signal, leaseScope)
       assertDesignContextCount(
         get(input.snapshotId, undefined, signal).result.total,
         input.expectedCount
@@ -377,7 +432,8 @@ export const createRetainedDesignContext = (
         input.offset,
         input.limit,
         input.delivery,
-        signal
+        signal,
+        leaseScope
       )
       return {
         ...result,
@@ -393,6 +449,10 @@ export const createRetainedDesignContext = (
     }
     if (input.delivery === 'receipt')
       throw new RetainedQueryError('Receipt recovery requires scope=snapshot.')
+    stop ??= observe(() => {
+      revision++
+      keys.clear()
+    })
     const { delivery, ...query } = input
     if (disposed)
       throw new RetainedQueryError('Retained query owner is disposed.')
@@ -491,23 +551,7 @@ export const createRetainedDesignContext = (
       else if (query.scope === 'ids') selected = query.elementIds ?? []
       else throw new RetainedQueryError('Invalid document context scope.')
       if (query.scope !== 'region') work.candidateCount = selected.length
-      // Validate the original contract before retaining any output. Reuse the already selected identities.
-      const validationSource = {
-        ...cachedSource,
-        getElementIdsInBounds: () => selected,
-        getSelectedElementIds: () => selected,
-        getElementChildren: () => ({
-          available,
-          elementIds: selected.slice(0, 1),
-          total: selected.length,
-          nextOffset: selected.length > 1 ? 1 : null
-        }),
-        getElementComputedData: () => ({})
-      }
-      createDesignContextReader(validationSource)({
-        ...query,
-        ...(query.allMatches ? {} : { offset: 0, limit: 1 })
-      })
+      assertDesignContextCount(selected.length, query.expectedCount)
       const result = selected.length
         ? reader({
             scope: 'ids',
@@ -568,7 +612,8 @@ export const createRetainedDesignContext = (
         offset,
         query.allMatches ? snapshot.result.total : limit,
         delivery,
-        signal
+        signal,
+        leaseScope
       ),
       observation: {
         ...work,
@@ -617,7 +662,8 @@ export const createRetainedDesignContext = (
     offset = 0,
     limit = 50,
     delivery: RetainedContextQuery['delivery'],
-    signal?: AbortSignal
+    signal: AbortSignal | undefined,
+    leaseScope: QueryLeaseScope
   ) => {
     if (delivery === 'reference') {
       const value = get(id)
@@ -638,10 +684,13 @@ export const createRetainedDesignContext = (
         missingIds: [],
         missingCount: value.result.missingIds.length,
         delivery,
-        leaseId: acquire(id, signal)
+        leaseId: acquire(id, signal, leaseScope)
       }
     }
-    const result = { ...page(id, offset, limit), leaseId: acquire(id, signal) }
+    const result = {
+      ...page(id, offset, limit),
+      leaseId: acquire(id, signal, leaseScope)
+    }
     if (delivery === 'columns')
       return {
         ...result,

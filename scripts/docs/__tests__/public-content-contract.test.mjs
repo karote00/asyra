@@ -46,9 +46,15 @@ test('content manifest owns the exact stable documentation inventory', async () 
       .filter((id) => inspector.pageIds.includes(id)),
     inspector.pageIds
   )
-  assert.equal(contract.pages[0].path, 'index.md')
-  for (const page of contract.pages.slice(1)) {
-    assert.equal(page.path, `${page.id}.md`)
+  assert.equal(
+    contract.pages.find((page) => page.id === 'overview').path,
+    'index.md'
+  )
+  for (const page of contract.pages) {
+    assert.equal(
+      page.path,
+      page.id === 'overview' ? 'index.md' : `${page.id}.md`
+    )
   }
 })
 

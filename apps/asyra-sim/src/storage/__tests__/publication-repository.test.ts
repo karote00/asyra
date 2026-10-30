@@ -4,10 +4,14 @@ import { IndexedProjectRepository } from '../indexed-db'
 import { encodeProject, type ProjectSnapshot } from '../project-format'
 import {
   EntityTypes,
+  PROPS_ACTIONS,
   SCENE_TREE_ACTIONS,
   SharedDataChannelNames
 } from '@asyra/utils'
-import { restoreJournal } from '../publication-journal'
+import {
+  canonicalPublicationSlices,
+  restoreJournal
+} from '../publication-journal'
 import { journalFixture } from './journal-fixture'
 
 beforeEach(() => vi.stubGlobal('IDBKeyRange', IDBKeyRange))
@@ -27,6 +31,29 @@ const project = {
   savedAt: '2026-09-08T00:00:00Z',
   payload: encodeProject(snapshot)
 }
+
+it('preserves exact property retirement before subsequent restore instead of dropping it', () => {
+  const entry = journalFixture()
+  const properties = [{ id: 'test-property', type: 'test', value: 1 }]
+  const publication = {
+    ...entry.publication,
+    slices: entry.publication.slices.map((slice) => ({
+      ...slice,
+      batches: slice.batches.map((batch) => ({
+        ...batch,
+        deliveries: batch.deliveries.map((delivery) => ({
+          ...delivery,
+          payload: { action: PROPS_ACTIONS.REMOVE_PROPERTY, data: properties }
+        }))
+      }))
+    }))
+  }
+  const original = structuredClone(publication)
+  expect(canonicalPublicationSlices(publication)).toEqual([
+    [{ kind: 'property-components', updates: [], removals: properties }]
+  ])
+  expect(publication).toEqual(original)
+})
 
 it('atomically appends each publication, rejects duplicate and stale writes, and checkpoints the acknowledged tail', async () => {
   const factory = new IDBFactory()

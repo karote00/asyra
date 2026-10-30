@@ -2,9 +2,17 @@ import { Unit } from '../constants/index.js'
 import { PropertyType } from './enum.js'
 import type { AnchorPointType } from './constants.js'
 
+export interface PropertyInheritance {
+  sourceId: string
+  overrides: Record<string, unknown>
+  childBindings: Record<string, string>
+}
+
 export interface PropertyRawData {
   id: string
   type: PropertyType
+  sharedSource?: true
+  inheritance?: PropertyInheritance
 }
 
 export interface PositionComponentRawData extends PropertyRawData {

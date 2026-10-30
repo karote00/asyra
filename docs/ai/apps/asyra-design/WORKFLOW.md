@@ -80,6 +80,16 @@ Quality gates:
 - [ ] no regression in tool switching/selection/property panel for touched area
 - [ ] visual completion claims include synchronized live-app review evidence when applicable
 
+### Maintained server regression coverage
+
+Every maintained `server/__tests__/*.test.ts` suite must be reachable through
+`test:server-response-harness` or `test:local`; the architecture gate enforces
+this inventory. Standalone convenience commands do not replace ordinary coverage.
+Native delivery cases require the fixture-pinned local Codex version (selected by
+`NATIVE_DELIVERY_CODEX` when needed). They use a loopback fixed-response provider,
+project-local isolated state and cleanup receipts, never a live model. Missing or
+mismatched prerequisites fail explicitly; do not skip cases or relax assertions.
+
 ## Phase 5: Docs Sync
 
 Update app docs when contracts change:

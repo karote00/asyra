@@ -104,6 +104,12 @@ prove a typed downstream binding. Recipe composition must obtain an owner-specif
 schema or reject a binding that requires unknown structure; it cannot infer fields
 from a successful example. The recipe validator rejects such bindings without changing primitive invocation.
 
+Static composition may exclude an otherwise opaque alternative when a guaranteed
+source property contradicts that alternative's necessary root property constraint.
+This proves only non-overlap: it does not admit an opaque selected branch, infer
+missing properties or ignore overlapping alternatives. Unknown/disjunction-only
+constraints remain unproved; execution still uses the complete host schema.
+
 ## Execution variants
 
 - A primitive resolves to the host's registered implementation.

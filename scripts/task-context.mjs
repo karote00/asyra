@@ -21,7 +21,9 @@ function text(value, field) {
 export function documentPath(value, field = 'plan.path') {
   text(value, field)
   requireValue(
-    /^docs\/ai\/(framework|apps\/[a-z0-9-]+|tools\/[a-z0-9-]+)\//.test(value) &&
+    /^docs\/ai\/(framework|knowledge|apps\/[a-z0-9-]+|tools\/[a-z0-9-]+)\//.test(
+      value
+    ) &&
       value.endsWith('.md') &&
       !value.split('/').some((part) => ['', '.', '..'].includes(part)) &&
       !value.includes('\\') &&
@@ -60,7 +62,7 @@ export function validateContext(input) {
   } else {
     documentPath(input.plan?.path)
     requireValue(
-      /^docs\/ai\/(framework|apps\/[a-z0-9-]+|tools\/[a-z0-9-]+)\/plans\/(?!completed\/)/.test(
+      /^docs\/ai\/(framework|knowledge|apps\/[a-z0-9-]+|tools\/[a-z0-9-]+)\/plans\/(?!completed\/)/.test(
         input.plan.path
       ),
       'plan.path must identify the original active plan'

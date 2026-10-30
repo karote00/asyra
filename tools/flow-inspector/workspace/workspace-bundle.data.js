@@ -124,30 +124,36 @@
             "inputs": [
               "brief and attachments",
               "bounded canonical context",
-              "conversation target references"
+              "conversation target references",
+              "selected conversation settled user and assistant messages"
             ],
             "outputs": [
               "artifact:request-context"
             ],
             "conditions": [
-              "Resolve references against current document identity"
+              "Resolve references against current document identity",
+              "Project existing settled turns with their exact request/original objective, presentation answer, identity and actual outcome. Deliver the newest contiguous whole-turn suffix in chronological order within the App UTF-8 history budget, explicitly counting omissions. Stop at the first non-fitting pair; do not serialize raw results. No raw action arguments, progress, image bytes, retained session keys, inferred decisions or new state. Preserve clarification, retry, cancellation and partial outcomes; history cannot revalidate targets or authorize replay."
             ],
             "bypasses": [
-              "New conversations omit prior targets"
+              "New conversations omit prior targets and prior messages"
             ],
             "allowedContributors": [
               "conversation lifecycle",
-              "public canonical observations"
+              "public canonical observations",
+              "settled answer presentation"
             ],
             "forbiddenContributors": [
               "renderer state as authority",
-              "cross-request geometry cache"
+              "cross-request geometry cache",
+              "native thread or Knowledge session continuity"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/src/ai/conversation.ts",
               "apps/asyra-design/src/ai/__tests__/conversation.test.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/ai/__tests__/presentation.test.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/src/ai/action-failure.ts",
               "apps/asyra-design/src/ai/action-batch-protocol.ts"
@@ -165,9 +171,12 @@
             "ownerPackage": "@asyra/asyra-design",
             "purpose": "provider",
             "inputs": [
+              "artifact:retained-capacity-plan",
+              "optional explicit local evaluation work deadline and report timeout",
               "artifact:prepared-review",
               "artifact:request-context",
               "registered capability definitions",
+              "optional caller-held Knowledge result contextKeys in the current session",
               "read-only effective native provider configuration",
               "artifact:inspection-evidence",
               "artifact:execution-receipt"
@@ -176,6 +185,51 @@
               "artifact:tool-program"
             ],
             "conditions": [
+              "Every native, registered and batch model exit selects declared decision and recovery fields after complete internal receipt validation, resource transfer and recording. Host diagnostics and refreshed context stay internal. Explicit domain maps, small reads, requested fields, negative/stale checks and partial acknowledgements retain their semantics. Published model schemas and actual delivery agree; projection performs no owner reads, recomputation or replay and adds no prerequisite acquisition. Necessary complete contracts may use existing bounded pagination; cost comparisons use equivalent information and reject nonessential diagnostics, not legitimate restrictions. Existing delivery/reference owners remain authoritative; no new registry or cache.",
+              "Executable usage derives model-visible success and partial results from registered delivery schemas, including native and batch envelopes. Preserve canonical internal receipt/resource schemas for recipe bindings and explicit full dependency contracts; full response cannot bypass bounded delivery. Projection failures preserve settlement, validated semantic executionResult and no-replay recovery. Enclosing model outcomes reflect child delivery failures without promoting incomplete work or changing execution settlement. Partial contracts include owner failure evidence without a successful view; reusable and recovery projection uses the exact invoked revision. No field-name heuristics, tool exceptions, new state or extra acquisition; validate the external host output against the acquired guide. Consume host.definitions execution routes; derive registered invoke_tool input and execution.value result envelopes from the library owner and execute the delivered example. Admit host outcome metadata without opening closed business schemas or nested objects; preserve local references. Negative navigation oracles use actual schema pointers and saved incorrect output.",
+              "Selected result alternatives come only from the same canonical owner operation declaration used by inputScope. Preserve complete full/unscoped results, partial and admission/recovery contracts. Capture/bind omit record-only result fields while retaining context, coverage and exact next-step constraints. No inferred tool-name pruning, changed execution, extra acquisition or replay; equal-information byte/page/call gates remain mandatory with unchanged native limits.",
+              "Compact usage may flatten bare anyOf/allOf and remove identical alternatives only while preserving local reference targets, oneOf multiplicity, annotations and complete business constraints. Guidance selection does not prepare a discarded parameter schema; final route assembly owns that work. Attribute full acquisition bytes to sections and continuation envelopes without changing native limits. Compare total contract acquisition against equivalent complete owner declarations, recording body bytes and continuation escaping separately. Preserve historical costs as evidence, not ceilings for incomplete contracts; report actual total bytes/pages/calls.",
+              "Selected action results restrict secondary receipts to the existing registered automatic inspection partition and its owner schemas. Successful registered execution requires its value even under partial outer status; preserve empty no-op, failed/not-started and acknowledged partial receipts. No new capability list or replay. Selected scoped, unscoped and batch usage share actual-route input and whole external reply declarations. usageGuide.results is one standard schema; result explanations remain instructions. Raw owner, host receipt and model projection are explicit contract stages, never inferred from metadata field names. The invocation owner contributes truthful pre-execution failure envelopes without fabricated execution. Per-registration verification selects scopes and validates outer and inner failures, closed compositions and downstream receipts without replay, extra acquisition or new state.",
+              "Recovery composes preparation-owned arguments with workflow controls without restoring consumed preparation selectors. Ordered remaining-only recovery consumes the failed part guide, preserves raw unstarted inputs, completed parents and continuation identities, and never replays applied work.",
+              "Preset typography value constraints are public immutable standard schemas shared by existing native property validators and App edit declarations; preserve legal values, defaults, state-dependent checks and input isolation without a second validator or registry.",
+              "Usage completeness follows exact selection, not effect or implementation route. Exact non-scoped native, read, prepare, batch and final-response tools deliver canonical parameters/results, actual envelope and recovery; unresolved owner scopes and exploration remain explicit menus. Missing examples never remove required contracts. Separate scope acquisition from same-scope refresh, preserve paging and retained reads, and prove complete acquisition cost plus real consumer results without another cache or replay.",
+              "Registered owner contracts are the only schema/example/route authority. Selected usage publishes executable JSON Schema using standard local references, not a parameter dialect. Prune only unreachable alternatives; preserve full/field discovery, bounds, cross-field constraints and executable owner recovery. Runtime recipe proof may exclude an opaque sibling using necessary root-property constraints on guaranteed inputs, but never admits selected opaque or overlapping branches. Permanent per-entry tests execute delivered examples and real semantic owners, reject missing coverage, and measure bytes/work without extra prerequisite calls or mutation replay.",
+              "Exploratory usage publishes executable owner-specific fieldQuery from the existing exact selector and canonical navigation, without refresh-selector reconstruction or eager all-field reads. Unavailable field scopes use compact root/branch navigation without traversing unrelated leaves, preserving original issues, successful siblings and exact recovery. Shared-path multi-owner queries, deep/full constraints and retained refresh remain valid; no pointer inference, new cache, preliminary call or mutation replay. Verify saved mixed input, downstream reference selection, byte budgets and traversal counts through delivered examples.",
+              "Native adapter selects direct tools and standard Responses transport from its executable public model metadata. Request-owned configuration is cleaned on every terminal path; no global edits, interpreter, generated forwarding program, duplicate cache or test-only launcher. Other provider adapters consume the same public JSON owner contracts independently.",
+              "Optional ID allocation uses existing on-demand Core API discovery and dispatch; deliver exact source-key/reference/document-identity distinctions and valid owner examples without preloading or a mandatory query. Individual registered API audits inspect true declarations and owners, not regex matches or malformed-input admission alone.",
+              "Core and App property patch discovery preserve the canonical required records array, including records:[] with ordinary values and empty no-op; ordinary value updates retain their independent updateElementProperties route.",
+              "Validate each published executable example against its registered route before delivery; audit registered APIs individually against actual input/output/status owners. Initial guidance treats first visible content as a good-to-have experience goal, not a mandatory stage, deadline or completion criterion. Permit useful editable progress and necessary research first; do not force previews, splitting or extra calls for timing. Preserve real input validation, reference obligations, completion review and first-content observation without forced order.",
+              "Selected batch-operation usage derives complete invocation, selected argument/result constraints and recovery from admitted action and existing batch owners using standard JSON Schema projection. Preserve exact selection, target binding, inspection policy, ordered partial receipts, cancellation and no-replay recovery. Omit unrelated operation enums/result branches; menu guidance uses the existing exact usage query. Full/schema paths and complete menus remain independent. No new registry, execution route, model call or cache; unavailable/ambiguous owners fail explicitly.",
+              "Existing invocation middleware and direct result inspection pass input/output stage to the host validator. Recipe invocation forwards this contract; App diagnostics use arguments for inputs and output for results while preserving schema references, observed results and settlement. Validation never retries execution.",
+              "Forward settled conversation messages unchanged through existing provider input, with interpretation guidance only when history is present and no first-use guidance growth. Prior messages are historical context, not current evidence, replayable operations or caller-held Knowledge. Current instructions prevail; explicit omissions cannot be guessed. Preserve request-scoped native/Knowledge lifetimes, no extra requests, refresh and no-replay recovery.",
+              "App Knowledge delivery projects document source and replacedSource to id/revision only after exact provenance equality with one same-reply source record. Complete sources remain authoritative; mismatches or ambiguity stay explicit. Runtime immutable results, advisory trust, override order, context identities and retainedFrom remain unchanged. Project before existing bounded paging with linear metadata-only work; no body scan, new state, added call, inferred model receipt or write replay. Published same-reply resolution and actual consumer tests must preserve all provenance through reuse, rehydrate and cancellation.",
+              "Exact fromResult redisplay uses existing request-owned Knowledge and discovery result maps with selected ids/names. Preserve original resolved dependencies/overrides, immutable full text, complete selected contracts and view/scope limits without source reads or schema reprojection. New selected identities cannot imply possession of omitted content. Recheck current permissions, generation/context or registry revision, cancellation and bounded lifetime. Missing/foreign/stale results recover by ordinary selected reads; no fuzzy goal authority, new store, model call or replay.",
+              "Cross-query Knowledge reuse is explicit caller-held result input to the existing Runtime session. Retain full compositions and immutable wire responses in its existing bounded map. Only equal resolved target/source/replacedSource/text becomes retainedFrom in ordered documents; complete sources and new constraints remain. Opaque result identities isolate sessions. Recheck permission, generation, context and cancellation; missing/foreign/evicted references return read-only recovery without reuseFrom. Rehydrate restores full advice; ordinary reads stay complete. Page retries keep bytes stable, no extra calls, new store, inferred model receipt or write replay.",
+              "Selected projected-face usage delivers explicit vertices and projected native ovals from the canonical schema/examples in the same acquisition. Preserve complete cross-field limits and recovery, and execute the actual returned example through the existing main workflow without new tools or preliminary discovery.",
+              "Optional Knowledge ids scope metadata to registered roots and visible children through Runtime knowledge access; omit ids for the complete catalog. No name-prefix hierarchy, topic allowlist, eager bodies or new state. Hidden/missing roots never broaden. Selected cycles reject; unrelated graphs do not participate. Direct reads and required dependencies outside navigation remain valid. Local execution-flow validation runs existing Runtime and App consumer suites before the Inspector proof; any consumer failure blocks that local gate.",
+              "Optional explicit main-workflow reviewChecks reuse review-owned capture selection and validate before writes. After successful automatic capture, compose delegates current-image binding to the existing review owner and delivers its context, exact next invocation and completion constraints. Absent selection preserves preview/defer and independent binding. No inferred scope, automatic judgment, new state, recapture or replay. Partial writes never bind later-part checks to earlier images; failed follow-ups retain receipts/images and review-only recovery. Preserve multiscale dependencies and local invalidation; reduce total selected delivery and model round trips.",
+              "Compact workflow delivery projects only pure preparation work/reuse and drawing timing from known receipt locations after validation, canonical consumption and inner observations. Preserve operation results, findings, limits, image evidence, outcomes and recovery across single and parts; full bypasses projection. No arbitrary nested deletion, new state, extra calls or replay; raw diagnostics remain in existing trace records.",
+              "Cancellation preserves causal owner receipts through existing invocation failures and request-root receipt ancestry. After tool drainage, bounded reporting consumes factual receipts without geometry, new tools, retries or model-inferred settlement. Empty evidence remains ordinary abort; siblings never inherit unrelated results.",
+              "Selected draft/parts content derives optional repetition from the existing owner scope declaration and canonical member union. Include only selected member alternatives and the canonical members mode; explicit pattern retains full faces/members contracts. Preserve all nested restrictions and ordinary independent nodes, execute existing valid examples, and deliver the complete selection through existing bounded continuation without a separate lookup or unselected schemas. Repair and unrelated content bypass this closure; malformed owner declarations fail at compose. No new registry, execution syntax, inference or mutation replay.",
+              "For selected face/grid/pattern usage, existing valid-example filtering delivers root materials, sibling layer patterns and interposed independent nodes. Deliver the registered invocation before long parameters, complete in the first page, without increasing total first-use bytes/pages. Preserve canonical geometry/materials/order and resolve generated keys through artifact references; never silently rewrite explicit names/references. Mixed component order remains independently valid. Preserve pattern-only and independent examples, complete restrictions and no-replay recovery. No startup reading growth, additional query or increased selected reply volume; no automatic representation choice.",
+              "Owner selection separates component contents from outer translation before scope acquisition. Its existing illustrative query leads to an executable scope-valid example without eager schemas or new calls. Preserve independent geometry, face-only patterns and layer order; templates do not reduce expanded budgets. Existing parts/ranges and receipts recover only confirmed remaining work, including cancellation, without replay. Safe retained capacity plans are consumed by the main tool in the same invocation.",
+              "Initial provider Main tool scope forwards canonical owner selection verbatim once before the first scoped query. Deferred registration is not first-query guidance. Preserve legal independent/mixed choices without eager child schemas, additional discovery, a new selector or execution changes. Bounded scope-error recovery retains legal choices and executable correction without repeating full selection prose.",
+              "Deliver mixed-component pattern selection, complete member constraints and executable canonical examples through existing selected discovery and main-tool dispatch. Preserve bounded delivery, valid face-only patterns, partial receipts and no replay; no additional preflight, tool or inferred geometry.",
+              "Existing startup and selected usage deliver canonical aggregate expansion limits and draft/parts selection before submission. Count grid cells times motifs, selected pattern instances times faces, vector placements and all ordinary/container nodes. Work windows and compressed templates do not increase artifact capacity. Reuse ordered parts with actual owner receipts; no mandatory preflight, new counter or replay. Safe capacity plans proceed through the main tool; genuine budget rejection preserves no-write status and retained source recovery.",
+              "Explicit local evaluation windows stop App tool work and interrupt the active native work turn at cutoff. Only after acknowledgement start a bounded public report turn in the same thread. Deny App operations and final drawing actions during reporting; preserve transport errors and ordinary requests.",
+              "Query checks existing exact identity indexes before lexical matching; exact hits reuse names resolution, ambiguity handling and action/native routes without descriptive matches. One unambiguous native exact query accepts inputScope through the same canonical projection as names; no view returns full selected schemas and usage returns the selected guide. Unscoped query preserves default menus. Fuzzy or action-only queries cannot acquire a native scope; ambiguity remains explicit and invalid scope uses owner choices. Preserve schemaPaths exclusion, usage/full contracts and no-match lexical/category exploration. Exact query rejects nonzero inventory offset; content paging, revision checks, refresh and no-replay recovery remain. Related catalog growth does not inflate exact delivery or add exchanges.",
+              "The existing selection reply and direct selected usage distinguish draft roots from child nodeTypes, including nested containers. Every draft guide retains group/frame root constraints. Selecting optionalInputs includes documentation without making fields required; changing only the root or omitting an already documented plan needs no reread. Preserve nested-frame discovery, dimensions, group restrictions, criteria-before-review and no-replay recovery without new state or exchanges.",
+              "Workflow menu and unscoped usage expose owner-declared next-part selection conditions in the existing read. Distinguish independent world faces, translated multi-face repeats and four-corner planar grids without inferred scope, required Knowledge or planning calls. Opted-in selection usage replaces long prose and nested output-path inventories, retaining routes, root inputs and valid examples. Selected usage preserves complete constraints/results/recovery; full/field reads remain independent. Focused query plus guide uses at most two replies with less total delivery, invariant under unrelated catalog growth; first-part grid and later grid continuation both use actual owners without replay.",
+              "Exact lookup applies one schemaPaths list independently to each identity; different per-tool fields use separate same-round queries. Preserve whole requested scope per identity and successful siblings, publish explicit narrower valid-path recovery, and preserve scoped recovery and the existing full refresh route. Discovery owner aggregates all/some/no requested identity coverage as success/partial/failed through invocation and bounded pages; completed read settlement is not coverage. Missing/ambiguous identities are unavailable; empty lexical search, menus and valid pagination remain successful. Published forwarding assembles partial-result pages without promoting coverage or replaying writes.",
+              "Owner-declared optional root input groups require explicit same-read selection; required fields cannot be omitted, omitted groups are forbidden in that scoped contract, and full unscoped lookup remains complete. Exact ready-part usage plus inputScope derives readable complete input constraints from the canonical selected schema and uses owner-authored operation effects, result interpretation and no-replay recovery. Publish only scope-valid owner examples through registered routes. Keep canonical validation at the execution owner and deliver its complete model-visible result contract in executable usage. One representative selected guide fits the unchanged delivery budget; preserve full/field lookup, paging and scope/view refresh. No duplicate registry, validator or execution state.",
+              "Default provider instructions omit exhaustive tool names. Existing purpose/exact discovery is the normal route; explicit category pagination retains intentional complete inventory. Unrelated catalog growth does not inflate selected small-task delivery or calls; native deferred registration remains separate.",
+              "Exact discovery projects owner-declared operation/node scopes from canonical schemas. Preserve full applicable cross-field constraints, successful/partial/recovery outputs, registered routes and lifecycle; reject unsupported or ambiguous scopes without fallback. Usage lists immediate fields and union branch roots at argument-wrapper boundaries, not exhaustive branch leaves; exact field lookup/recovery remains available. Menu/usage exposes choices, known scope needs no extra lookup; full/field queries stay independent. Scope survives refresh and continuations. No new executor, registry, cache or mutation replay.",
+              "Knowledge discovery exposes optional children from the existing authorized metadata catalog; navigation never triggers reads. Existing descriptions expose parent sufficiency and detailed-child selection conditions before body reads; choose by the unresolved decision, not hierarchy depth, without a prerequisite parent read or automatic selector. Direct selected leaf reads resolve only mandatory references/extends/overrides, preserving restrictions, revisions, deduplication and explicit failures. Thin parent guidance never eagerly loads siblings. Existing refresh, paging, cancellation and no-Knowledge bypass remain; no duplicate registry, cache or model call.",
+              "Discovery and provider instructions describe the same direct bounded tool replies. Follow contiguous revision-bound pages via returned next arguments. Existing owner result handles supply explicit redisplay and refresh; never replay mutations or increase native limits. Real native successor requests prove exact text delivery.",
+              "Discovery and Knowledge owners deliver complete small results or bounded revision-bound JSON fragments through existing read routes. Preserve all constraints and advice; a last fragment does not certify prior coverage. Existing delivery ownership retains continuation content, with request/query/revision, permission, cancellation and disposal checks. Prior App returns do not prove model receipt. No duplicate store, product replay or output-limit increase.",
+              "Workflow outcomes include required measurement/capture delivery: failed follow-up after acknowledged writes is partial with preserved write settlement, parts and check-only recovery. Delivered negative judgments and explicit deferral remain valid. Compact/full replies agree; incomplete results never become successful recipe bindings.",
+              "Delivered App material advice distinguishes selected-owner local overrides from explicit shared-source edits, reset and detach; local correction never requires detachment and portable Knowledge remains advisory.",
+              "Provider and internal workflow invocations own causal receipt subtrees. Acknowledged browser effects reach the current call and its ancestors only, never siblings; previous-part receipts cannot reclassify a later preparation rejection. Preserve geometry repair details and explicit no-canvas-dispatch settlement independently from retained draft artifacts. Parent partial/unknown settlement remains truthful, cancellation preserves acknowledged work and no write is automatically replayed.",
               "Only canonical componentMappings select native image components; reject obsolete ovalPathIds before execution. Suitable direct tools need no recipe; primary-agent authorship supplies missing recipes and Runtime alone admits their exact dependency graph.",
               "Preserve registered identities; common immutable input/output, revision, effect and lifecycle contracts derive compact provider definitions. Browser and native adapters share canonical action effects; host validation rejects malformed output while preserving actual settlement and never replaying execution.",
               "Derive region target fields from the unique region-capable registered context alternative, preserving shared constraints; reject ambiguous declarations and validate the original complete context schema before writes.",
@@ -192,46 +246,61 @@
               "The request host registers namespace-qualified native and composed identities in one Runtime registry, dispatches both through the same secured leaf executor and scheduler, and projects pinned nested control schemas for ownership. Cleanup failure preserves execution evidence; shutdown waits and supports release retry without reopening. The request library coordinates Runtime registry/interpreter/persistence and the secured leaf executor. Successful compositions save independently; failed saving retains bounded genuine root/child proof for dependency-first save-only retry. Actual automatic saving has its own invocation under the live native control, with complete start/end and execution phase; diagnostic failure cannot replace product or storage outcomes. No parent scheduler barrier or product replay; disposal follows settled invocations.",
               "Design supplies a bounded durable Runtime tool store with transactional expected-version writes; no model-selected paths, silent reset, memory-only saved claims or product replay after storage failure.",
               "Keep successful output separate from declared partial receipts. Host outcomes choose the schema; recipe proof consumes only successful output and never treats partial evidence as a usable successor input.",
+              "Preserve exact Factory member settlement on thrown Core/owner failures through the existing transaction error and Runtime prepared-batch receipt: discarded/rolled-back is not-started for the failed member, committed is completed; earlier acknowledged results remain partial enclosing work. Missing status/failed rollback never certifies no writes. Failed rollback closes the existing invocation to new writes; preserve original cause at outer settlement.",
               "App prompt directs internal edits without approval and contextual external-tool or security questions through request_clarification; await the answer when permission is needed and retain prior authorization without bypassing host security",
               "Validate the advertised input including nullable unions and unique-item constraints at one invocation boundary before dispatch; preserve specific preparation rejection reasons without calling the canvas owner",
               "Use one failure receipt boundary for every registered owner, never owner opt-ins, tool-name recovery lists or automatic replay of uncertain writes",
               "Deliver bounded model-authored current-work messages through existing progress without replacing them with tool labels or introducing an extra model request; messages are intent, never success evidence",
               "Return admission, execution, decoding and delivery failures to the model without aborting the turn; preserve acknowledged work and unknown settlement explicitly; Stop and broken transport or provider protocol remain terminal",
               "Document completion confirms the existing captured durable publication target, never calls a full serializer to imply persistence. Explicit export exposes a browser-owned downloadable immutable artifact and typed bounded metadata; remove raw document serializer AI routes without changing Framework APIs or retaining aliases.",
-              "Deliver original PNG, JPEG and WebP reference bytes at admitted dimensions; advertise and verify the actual Code Mode string-result forwarding contract without MCP content-array assumptions or base64 text output; verify actual model image visibility independently of acquisition; keep canvas snapshot limits scoped to inspection",
+              "Deliver admitted original pixels directly as native inputImage content beside structured receipt text. Preserve bytes/order and existing inspection identities for explicit redisplay and binding without redraw or recapture. Verify real native successor requests separately from visual judgments; no generated forwarding code or new retention owner.",
               "Distinguish usable output, unavailable preparation and partial receipts from transport completion",
               "Resolve exact semantic operation identities and categories against current admitted schemas; never infer an adapter from lexical similarity",
               "Batch schema, admission and discovery use the same admitted action set. Explicit review/capture advertises the actual native wrapper and input wrapping; ambiguous or missing registration is unavailable. All lookup/recovery views preserve this route. Compact lexical menus include native/saved capabilities without consuming full schema delivery; explicit usage/full views work with every selector and preserve page/revision boundaries; schema fragments require exact identities; reference research stays separate and no query automatically dispatches another tool.",
               "Batch known semantic operations through request-local registry indexes; exact names may resolve unique semantic identities, while ambiguous identities return candidates without choosing an execution route",
               "Advertise registry-derived category choices and return current recovery choices on unknown lookup without a canvas exchange",
               "Classify redundant model routes with explicit replacements while preserving public UI methods and primitive capability coverage",
+              "Known final-response identities resolve to their authoritative response schema and final-only route, never native/edit dispatch. One acquisition policy distinguishes current contracts, missing fields, executable schemas and actual delivery recovery. App guidance maps optional portable advice to chosen parameters and independent judgments without introducing a Knowledge admission gate.",
+              "Chosen-method advice follows exact discovery, initial independent local/whole criteria, actual representative capture, returned binding and exact recorded verdicts before dependent repetition. Capture success is not judgment and record success is not pass. Local pass with whole pending, current supersession, scoped stale recovery and unknown settlement preserve existing result ownership. No Knowledge gate, extra reviewer, new ledger or drawing replay; independent ready work and alternative methods remain valid.",
+              "Material correction guidance consumes current native fills and canonical property ownership, emits complete per-target gradients, and preserves omitted fields and unrelated verdicts. Palette-only changes do not replace coordinate domains. Constant-phase or loaded native fills cannot reconstruct unknown world source; compact preparation receipts are not material-edit values. Existing apply, cancellation, inspection and durability owners remain authoritative; no new editor or hidden reapplication.",
               "Distinguish computed projections from canonical value and record mutations in registered descriptors",
               "One immutable registered delivery declaration identifies an owner-produced model view and its exact schema. Complete typed results feed internal checks, resources and recipes before external projection; missing or invalid delivery preserves execution settlement and never replays writes.",
               "Resolve prepared target identities at the unique registered argument path; reject conflicts and ambiguity before dispatch; preserve reference order for aligned new-value patches",
               "Validate supplied union discriminators and report only the applicable branch when uniquely selected; preserve ambiguous alternatives",
-              "Use native discovery and Code Mode; configured model and effort remain unchanged",
+              "Use native deferred discovery and direct JSON tool calls with direct text/image results; configured model, effort and output limits remain unchanged",
+              "Startup scoped-lookup guidance derives selected owner choices and a validated query example from the canonical main-tool declaration before the first query. Invalid scopes name failed fields and current choices through the existing failed/not-started channel; no inferred aliases, extra menu prerequisite, exhaustive startup catalog or mutation replay.",
               "All discovery pages share count/offset/complete/next. Returned continuations carry the request-local catalog revision; host invalidation refreshes the existing inventory, but only changed ordered descriptors advance that revision. Failed/no-op library operations preserve page identity; fingerprint work occurs only on inventory refresh without retaining page snapshots; stale continuations require an explicit selector restart without silently skipping changed entries. Validate continuation arguments through the same input owner and registered category choices. Count returned API and native-tool entries together, reject invalid boundaries and continuations at invocation output, and accept empty complete results. Compact menus do not consume exact-schema delivery.",
               "Keep shared guidance concise and expose task-specific image procedures through discovered tool definitions",
+              "Initial attachment metadata uses existing image-owner identities and only owner-admitted dimensions, without full decoding. Async reference selection prepares only explicit-use sources through that owner before synchronous review mutation; reuse existing validation promises and imported evidence. Pending/rejected candidates and source-only facts need no decode. Preserve independent validation, AI suitability decisions, exact uses/regions and existing observation. Unknown IDs, decode failure/timeout and cancellation cannot commit selection; retain successful preparations and prior evidence for failed-only recovery without download or canvas replay. No new cache, tool, AI prerequisite or first-drawing gate.",
+              "Review owner branches expose capture/bind/record choices through existing scoped usage and validated canonical examples. Compose projects grouped phase variants without requiring construction nodes, preserves every selected restriction and existing full/field/refresh paths, and returns receipt/recovery guidance. Inspect retains capture, signed binding, judgments, invalidation and partial recovery. Consume returned next.arguments; no fabricated evidence, extra menu prerequisite, new state, forced order or mutation replay. Prove lower total delivery and contract reads through actual consumers.",
               "Startup guidance defers stage procedures to tool contracts; a ready first part requires no model-authored plan, and chosen spatial projection uses the existing preparation owner without prescribing a viewpoint",
+              "When preparation returns a retained repair template, compose supplies its own registered entry and admitted non-draft workflow options; preserve parent, plan, review and material context without copying original geometry or previous replacements. Model supplies corrected values; no replay or extra discovery.",
               "The existing combined workflow owns deterministic handoffs, preserves prepared identities and completed step outcomes on later failure, observes each internal call and never replays uncertain writes",
               "Export typed single/ordered/partial and validated recovery resources through the common host before cleanup. A fresh consumer must resolve the returned handle without recomputation; failed/unknown settlement never becomes successful execution or durable eligibility.",
-              "The combined preparation route accepts either complete source or an explicit retained-draft repair and forwards the same input to preparation; invalid repair never reaches apply",
+              "The combined preparation route accepts complete source, explicit retained-draft field repair or owner-computed partition repair. Consume successful retained-source capacity plans through the existing ordered parts executor in the same invocation, including the first part. Preserve explicit sequence links, one continuation root and truthful child progress; offer remaining-only invocations after real failure from actual receipts. Invalid or uncertain work never automatically retries",
               "Admit ordered ready-part envelopes and backward parent links before writes; prepare and apply each part before compiling its successor, using actual acknowledged composition IDs, preserving completed receipts and stopping on failure without replay",
               "Compose optional first-write criteria through the existing review owner after preparation and before mutation; reject invalid criteria without canvas writes",
+              "Selected construction contracts and executable examples expose explicit inline or same-scope face-referenced grid boundaries without preliminary lookup. Preserve complete constraints and recovery; measure total delivery including guide cost rather than input bytes alone.",
               "Explain construction choices from supplied coordinate and repetition semantics; preserve direct edits and arbitrary 2D paths, with executable examples and no forced camera or subject-based routing",
               "Preserve original request terms and constraints when organizing the existing plan; separate assumptions without an extra translation call",
               "Initial decisions need no execution or inspection receipt; later decisions consume only receipts actually produced",
               "Research missing information after reusing available evidence; batch independent gaps and emit retained coherent parts before completing detail planning",
-              "Allow category-scoped schema retrieval in one call while keeping default discovery compact",
-              "Provide exact usage and schema-pointer fragments with local reference closure without consuming full-definition delivery; reject unknown paths recoverably, preserve requested scope on explicit refresh, offer scoped recovery separately from full recovery and record declared or unknown recovery reasons without inferring model retention",
+              "Allow category-scoped schema retrieval with bounded content continuation while keeping default discovery compact",
+              "Selected composition usage presents the scope-valid owner invocation before parameter prose without increasing first-use delivery. Layer-major repetitions use sibling patterns at their painter positions, including independent interposed nodes; mixed components remain legal. Preserve root material references and generated-key target resolution. No automatic source rewriting, forced repetition, new query or inferred geometry.",
+              "High-level preparation and criteria examples belong to canonical inputSchema.examples, not prose-only copies. Usage validates an example and returns its actual invocation envelope; native conversion keeps common examples at their whole-union scope, never incompatible branches; local definition pointers remain navigable without recursive expansion. Exact lookup still defaults to full; known-contract calls bypass lookup. Scoped recovery never replays product work.",
+              "Provide exact usage and schema-pointer fragments with local reference closure without suppressing subsequent full-definition reads; reject unknown paths recoverably, preserve requested scope on explicit refresh, offer scoped recovery separately from full recovery and record declared or unknown recovery reasons without inferring model retention. Usage derives input/output pointers and element binding cardinality from canonical schemas; publish only owner-authored examples valid under the current input contract and wrap them in the actual execution route. Missing examples are explicit, illustrative IDs are not live credentials, and returned content never implies model comprehension",
               "Compact only equivalent redundant native constraints; preserve oneOf multiplicity, contradictions and common union fields",
-              "Exact mixed schema lookup resolves independently per registered identity. Unknown paths return that identity, revision, failed paths and actual root/field paths without consuming delivery state; successful siblings remain delivered. No inferred pointer rewrite or silent full-schema fallback.",
-              "Return full action definitions once per request and exact revision, then references with explicit refresh after context loss or delivery failure; compact menus do not consume delivery",
-              "Distribute common union fields for native declarations without changing admission; exact native lookup returns canonical schemas and definitions once per request revision with explicit refresh when Code Mode abbreviates nested fields; never maintain a separate schema copy",
+              "Usage derives compact union and wrapper navigation from registered schemas. Each entry continues through its exact operation or qualified native selector. Invalid schema paths recover to valid requested paths or same-entry usage, never the known invalid scope; truthful coverage and valid siblings survive. Both action and native executions remain legal, with canonical constraints and no write replay or extra preliminary query.",
+              "Exact mixed schema lookup resolves independently per registered identity. Unknown paths return that identity, revision, failed paths and actual root/field paths without suppressing future reads; successful siblings retain their requested content. No inferred pointer rewrite or silent full-schema fallback.",
+              "Return selected action content with exact revision on repeated reads; preserve explicit refresh and bound oversized content without claiming model receipt",
+              "Distribute common union fields for native declarations without changing admission; exact native lookup returns canonical schemas and definitions through bounded content delivery with explicit refresh; never maintain a separate schema copy",
               "Apply the same isolation policy at child launch and thread creation: disable personal hooks, legacy notification commands and both multi-agent variants without modifying user configuration",
               "Read effective native configuration once per invocation and disable each inherited MCP server for the ephemeral thread without writing user config; invalid configuration stops before inference",
+              "Selected grid usage includes inline and root-local shared motifs with an executable owner example; preserve exact constraints and recovery without increasing first-read bytes, pages or lookups. Known direct calls remain legal.",
               "Resolve mixed exact action and native tool lookups from actual registered groups with distinct execution routes; same-name action and native wrapper each deliver their actual input contract in the first exact lookup with independent revision/recovery accounting; preserve known matches when another name is missing",
-              "Preflight every binding shape, registered path and argument conflict for an operation before resolving retained sources. Report independent issues with operation/target/argument locations together; targets supply omitted slots, never overwrite explicit values. Preserve the existing plural-only multiple-binding grammar.",
+              "Preflight every binding shape, registered path and argument conflict for an operation before resolving retained sources. Report independent issues with operation/target/argument locations together; targets supply omitted slots, never overwrite explicit values. Cardinality is declared on the canonical element-identity argument schema: all, each or one. Bind only annotated slots; reserve all paths before lookup, permit at most one fan-out, require exact-one anchors, reject incompatible union paths and preserve input order without Cartesian expansion.",
+              "App provider composition owns direct untrusted Knowledge tool-result delivery. Real successor requests prove complete same-turn content without duplicate bodies or extra turns. Retained data alone does not prove delivery; preserve exact dependency matching, source, override, order, paging and explicit full recovery without new cache or replay.",
+              "Selected material-method and representative-review Knowledge decisions deliver their necessary closure in one complete bounded reply. Optional invocation examples and parameter walkthroughs remain discoverable children, never eager references; preserve representation limits, truthful receipts and no-replay recovery. Explicit detailed or multi-topic reads retain pagination and rehydrate.",
               "Review ready retained parts with partial visual checks; leave other criteria pending without waiting for whole-structure approval"
             ],
             "bypasses": [
@@ -247,12 +316,55 @@
               "fixed subject or style classifier"
             ],
             "cacheDimensions": [
-              "request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse"
+              "request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse",
+              "existing request-local Knowledge session map: selected IDs, contexts, generation, context epoch and explicit reuse selection; immutable full/wire results, 64-query capacity, invalidation and disposal"
             ],
             "implementationBoundary": [
+              "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json",
+              "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json",
+              "packages/preset/src/props/components/text-component.ts",
+              "packages/preset/src/index.ts",
+              "packages/preset/src/__tests__/native-text.test.ts",
+              "docs/ai/framework/packages/preset.md",
+              "apps/asyra-design/src/ai/design-edit-action.ts",
+              "apps/asyra-design/src/ai/__tests__/design-edit-action.test.ts",
+              "apps/asyra-design/src/ai/design-fill.ts",
+              "apps/asyra-design/e2e/fixtures/basic-api-cases.ts",
+              "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/missing-brief-checks-20261027.json",
+              "apps/asyra-design/src/ai/__tests__/tool-schema.test.ts",
+              "apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts",
+              "apps/asyra-design/server/__tests__/image-delivery.integration.test.ts",
+              "apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery/inspection.png",
+              "apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery/inspection.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/compact-receipt-20261024.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/context-discovery-20261023.json",
+              "apps/asyra-design/server/__tests__/shared-motifs.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/layered-pattern-20261023.json",
+              "apps/asyra-design/server/__tests__/layered-pattern-assertions.ts",
+              "apps/asyra-design/e2e/design-construction.spec.ts",
+              "apps/asyra-design/server/design-budget.ts",
+              "apps/asyra-design/server/design-construction-schema.ts",
+              "apps/asyra-design/server/__tests__/face-boundary.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/face-boundary-20261025.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/expansion-budget-20261022.json",
+              "apps/asyra-design/src/ai/__tests__/server-action-batch-provider.test.ts",
+              "apps/asyra-design/src/ai/evaluation-window.ts",
+              "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+              "apps/asyra-design/e2e/fixtures/receipt-provider.mjs",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/ordered-preparation-20261019.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/inspection-discovery-20261022.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/operation-selection-20261022.json",
               "apps/asyra-design/server/local-vector-artifact.ts",
               "apps/asyra-design/server/__tests__/local-vector-artifact.test.ts",
+              "packages/ai-agent-runtime/src/recipe-schema.ts",
+              "packages/ai-agent-runtime/src/__tests__/recipe-admission.test.ts",
+              "packages/ai-agent-runtime/TOOL_SPECIFICATION.md",
+              "docs/ai/framework/packages/ai-agent-runtime.md",
               "packages/ai-agent-runtime/src/tool-contract.ts",
+              "packages/ai-agent-runtime/src/recipe-execution.ts",
               "packages/ai-agent-runtime/src/json-value.ts",
               "packages/ai-agent-runtime/src/action-registry.ts",
               "packages/ai-agent-runtime/src/__tests__/action-registry.test.ts",
@@ -289,15 +401,20 @@
               "apps/asyra-design/server/local-tool-store.ts",
               "apps/asyra-design/server/__tests__/local-tool-store.test.ts",
               "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/server/native-provider-config.ts",
+              "apps/asyra-design/server/__tests__/native-provider-config.test.ts",
               "apps/asyra-design/server/local-design-workflow.ts",
+              "apps/asyra-design/server/design-workflow-discovery.ts",
               "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
               "apps/asyra-design/server/local-tool-invocation.ts",
               "apps/asyra-design/server/__tests__/local-tool-invocation.test.ts",
+              "apps/asyra-design/server/__tests__/tool-contract-assertions.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/src/ai/prescribed-position-contract.ts",
               "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
+              "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
               "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
               "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
@@ -309,13 +426,60 @@
               "apps/asyra-design/e2e/local-ai-provider.spec.ts",
               "apps/asyra-design/server/operation-input-schema.ts",
               "apps/asyra-design/server/local-operation-batch.ts",
+              "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
               "apps/asyra-design/server/__tests__/operation-input-schema.test.ts",
               "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/knowledge/design.architectural-illustration.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.spatial.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.materials.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.materials.method.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.materials.method.parameters.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.materials.correction.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.materials.review.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.contracts.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.contracts.operations.md",
+              "apps/asyra-design/knowledge/design.architectural-illustration.repetition.md",
+              "domain-knowledge/illustration.architecture.md",
+              "scripts/__tests__/domain-knowledge.test.mjs",
+              "domain-knowledge/illustration.architecture.spatial.md",
+              "domain-knowledge/illustration.architecture.projection.md",
+              "domain-knowledge/illustration.architecture.repetition.md",
+              "domain-knowledge/illustration.architecture.materials.md",
+              "domain-knowledge/illustration.architecture.materials.method.md",
+              "apps/asyra-design/server/local-knowledge.ts",
+              "apps/asyra-design/server/local-information-delivery.ts",
+              "apps/asyra-design/server/__tests__/local-information-delivery.test.ts",
+              "apps/asyra-design/server/__tests__/information-delivery.integration.test.ts",
+              "apps/asyra-design/server/__tests__/local-knowledge.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-source-delivery-20261025.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/rejected-knowledge-consumer-20261025.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-dependency-reuse-20261024.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-topic-selection-20261021.json",
+              "packages/ai-agent-runtime/src/knowledge.ts",
+              "packages/ai-agent-runtime/src/knowledge-types.ts",
+              "packages/ai-agent-runtime/src/__tests__/knowledge.test.ts",
+              "apps/asyra-design/src/ai/__tests__/knowledge-handoff.test.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
               "apps/asyra-design/src/ai/actions.ts",
               "apps/asyra-design/server/local-image-tools.ts",
+              "apps/asyra-design/server/__tests__/local-image-tools.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/attachment-reference-20261025.json",
               "apps/asyra-design/server/__tests__/local-image-ownership.test.ts",
               "apps/asyra-design/server/local-design-tools.ts",
               "apps/asyra-design/server/design-preparation-examples.ts",
+              "apps/asyra-design/server/local-design-review.ts",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
+              "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
+              "apps/asyra-design/server/__tests__/batch-usage.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/batch-usage-20261026.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/review-usage-20261025.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/discovery-delivery-20261020.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/invalid-query-scope-20261022.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/exact-query-scope-20261027.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/field-query-recovery-20261027.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/usage-acquisition-20261028.json",
               "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
               "apps/asyra-design/server/local-reference-tools.ts",
               "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
@@ -326,7 +490,6 @@
               "apps/asyra-design/src/ai/basic-api-results.ts",
               "apps/asyra-design/src/ai/arrangement-action.ts",
               "apps/asyra-design/src/ai/organization-action.ts",
-              "apps/asyra-design/src/ai/design-edit-action.ts",
               "apps/asyra-design/src/ai/review-action.ts",
               "apps/asyra-design/src/ai/prescribed-position-action.ts",
               "apps/asyra-design/src/ai/__tests__/prescribed-position-action.test.ts",
@@ -344,12 +507,45 @@
               "packages/ai-agent-runtime/src/provider.ts",
               "packages/ai-agent-runtime/src/types.ts",
               "packages/ai-agent-runtime/src/runtime.ts",
+              "apps/asyra-design/src/ai/transaction.ts",
+              "apps/asyra-design/src/ai/__tests__/transaction.test.ts",
+              "apps/asyra-design/src/ai/__tests__/core-owner-results.integration.test.ts",
               "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts"
             ],
             "specRefs": [
+              "#model-visible-result-contracts",
+              "#retained-material-preparation-recovery",
+              "#unified-public-tool-contract-delivery",
+              "#identity-allocation-and-composed-owner-receipts",
+              "#pre-execution-guidance-and-recoverable-input-validation",
+              "#first-visible-change-admission",
+              "#selected-retained-information-delivery",
+              "#image-result-delivery-and-recovery",
+              "#main-workflow-visual-judgment-handoff",
+              "#compact-workflow-delivery",
+              "#shared-normalized-motifs",
+              "#layer-preserving-repetition-delivery",
+              "#optional-repetition-in-selected-contents",
+              "#composition-examples-within-selected-usage",
+              "#component-selection-and-bounded-repetition",
+              "#translated-mixed-components",
+              "#expansion-budget-selection",
+              "#source-referenced-expansion-recovery",
+              "#bounded-evaluation-work-and-self-report",
+              "#exact-name-query-selection",
+              "#next-part-operation-selection",
+              "#first-query-scope-choices",
+              "#inspection-discovery-field-ownership-and-receipts",
+              "#owner-results-and-workflow-outcomes",
               "#tool-first-correction-contract",
               "#shared-tool-contract",
-              "#capability-discovery-and-composition"
+              "#capability-discovery-and-composition",
+              "#selected-operation-usage-guide",
+              "#unified-usage-acquisition",
+              "#selected-batch-operation-usage",
+              "#selective-nested-knowledge-delivery",
+              "#cross-query-knowledge-dependency-delivery",
+              "#face-referenced-surface-boundaries"
             ],
             "failureOwnerStepId": "compose"
           },
@@ -366,11 +562,24 @@
               "request-local immutable handles"
             ],
             "outputs": [
-              "artifact:prepared-artifact"
+              "artifact:prepared-artifact",
+              "artifact:retained-capacity-plan"
             ],
             "conditions": [
+              "Preparation-owned repair arguments preserve materialSourceId only for retained input before material resolution. Resolved retained source already embeds immutable linearFields; repair consumes those values without reinjection. Preserve genuine inline/source conflict, current ownership, geometry validation and cancellation; no new retained state or writes.",
+              "Optional omitted construction checks mean no requested checks, never a passed review. Supplied notes and numeric checks match canonical semantics. Input failures retain source and exact issues with executable repair; known missing object fields may be corrected under full schema validation, but unknown/prototype/array-insertion paths and stale identities reject. Preparation and recovery never replay applied work or discard workflow context. Rejected never-started parts retain every draft and preserve ordered envelope context in one main recovery guide; empty replacements reuse only fully validated retained source. Incomplete retention or envelope errors never advertise a complete executable guide. Execution failures preserve remaining-only recovery.",
+              "Source keys identify nodes independently of boundary references and display names. Ambiguous face/grid references report exact duplicate source paths before writes and reuse retained-source field repair without guessed names, changed geometry or replay; preserve unique references and explicit corners.",
+              "The backend Group-bounds entry consumes only the existing public Utils geometry-bounds module and its pure point-transform dependency. No Utils barrel, unrelated helpers, lodash, Core, Render, DOM or registration enters this graph; preserve the single analytic bounds owner.",
+              "Prepared oval dimensions and rotation pass through official admission without repeating world projection. The shared pure geometry owner derives current transformed bounds; world fields use local paint coordinates. Explicit vertices remain polygons.",
+              "Planar ellipse center/u/v and explicit polygon vertices are exclusive face inputs; segments is invalid. Construction prepares existing oval descriptors through shared projection once per template, preserving world extents, local paint, rotation, identities and pattern order. Public preset geometry supplies transformed bounds. Ordinary object budgets apply without sampled paths. No render access, approximation, new tool/cache or canonical writes in prepare.",
+              "Budget admission precedes immutable source snapshot and compilation. Pattern face admission reads each vertex collection once to derive aggregate and largest primitive counts, independently of instance count; snapshot and template projection retain separate owners. Rejected budgets do not clone or compile. Artifact lookup does not reread caller input; preserve cancellation, isolation, release and current recovery without new cache or skipped validation.",
+              "An explicit evaluation window may lower the request-local expanded-object limit to 2000; absence retains 10000 and other values reject. Existing budget inspection, preparation session and retained-source partition planning share that effective limit with delivered usage. No mutable global policy, geometry change, new store or model-controlled override; compiler/browser production ceilings and other guards remain unchanged.",
+              "Pattern owns flat ordered projected-face/surface-grid members as an exclusive alternative to faces. Compile each member template once per preparation and translate ordinary vectors through existing axes/ranges. Preserve material fields, grid palettes/offsets, painter order, deterministic key mapping and parents; reject recursion, mixed forms, transforms, extent and aggregate budget excess. Preparation never executes partitions; compose owns their sequential application. No new hierarchy or cross-request cache.",
+              "Material revision consumes an owned immutable source and explicit existing world field; the same compiler produces selected material patches with original creation identities and field membership. Preserve geometry and unrelated fields; publish a separate immutable revision with real cleanup, never permit that revision as creation, and allow explicit future drafts to reuse its fields without inline conflicts. Missing source and invalid fields publish nothing; no visual approval or canonical writes occur in preparation.",
               "Prepared assessment identity uses semantic attachment content and document session, not a fresh receipt UUID or global observation revision. Every fresh receipt is still validated before publishing/reusing a pass and retained for apply admission; new session, changed basis/bounds/parent/source or failed currency cannot inherit a valid result. Equivalent receipt renewal preserves same-source conflict evidence.",
               "Use existing preparation owners and retain original resolution",
+              "Budget eligibility preserves a schema-valid descriptive root brief with empty checks in retained partitions and prepared reviews. Nonempty whole-design numeric checks and malformed briefs produce explicit no-write limitations with unchanged retained source; never drop checks or treat partial bounds as whole-design acceptance. Ordinary single-artifact checks remain valid. Existing repair retention owns partition limitation diagnostics; compose consumes safe parts without a model resubmission or a second root.",
+              "Source partition recovery requires disjoint source key families. Duplicate keys and overlapping generated prefixes remain unsupported without renaming or bypassing global uniqueness; ordinary independent parts remain legal.",
               "Publish immutable prepared handles with real cleanup and freshness hooks; target sets alias their backing artifact. Failed publication removes only new local state, alias admission is atomic, and explicit release cannot invalidate borrowed artifacts.",
               "Admit bounded signed projected and draft offsets before existing Group bounds normalization; final Group-relative child offsets are nonnegative and world geometry is unchanged; preserve positive dimensions, vector-local geometry and explicit Frame overflow findings",
               "Resolve source-page image declarations and linked-image relationships through bounded DNS-pinned acquisition; prefer the declared linked resource over its preview without site rules or URL rewriting; retain selected candidate identity and actual dimensions, distinguish redisplay from acquisition, and leave subject suitability to the model",
@@ -381,16 +590,22 @@
               "Compile explicit draft-local shared Fill definitions once at first use and emit canonical child-ID references thereafter; fillTemplates reuse immutable value compilation while emitting independent canonical Fill IDs; equal inline values remain independent and missing definitions reject before apply",
               "Preserve supported original raster encoding after decode validation, use decoder-default pixel safety consistently in import and direct image consumers, and retain byte limits without PNG inflation or resampling",
               "Compile ready repeated geometry independently of whole-structure review; final review requirements remain owned by inspect",
+              "Budget owner computes contiguous complete-instance partitions of eligible flat projected groups without compiling geometry. Existing source retention owns immutable partition references and returns an available bounded plan to the main workflow for safe capacity excess without claiming compiled artifacts or writes; standalone prepare_design success still guarantees a compiled artifact for existing recipe bindings; preparation validates source lifetime and binds continuing artifacts to the first root. Reject unsupported relations, shared bindings or indivisible excess without geometry changes",
               "Partition cumulative source work into cancellable cooperative preparation windows inside one artifact; count each pattern face as a primitive rather than imposing independent source-list caps; consume constructed output once; preserve global keys, hierarchy, layout, relations and painter order; reject expanded geometry/depth excess or indivisible oversized primitives without simplifying detail",
               "An explicit preserve-vectors image region extracts oriented source pixels without resampling, returns region-local coordinates and source region; oversized conversion reports observed and allowed bytes, not an unavailable converter; successful request-local reuse distinguishes attachment and region",
               "Admit signed curve controls against measured curve bounds and report malformed pairs by semantic node and edge",
               "Draft keys are optional root selectors, never canonical IDs; unnamed roots use the generated element ID and no root name is reserved",
               "Resolve exact keys directly and repeated prefixes through an immutable artifact-owned index; preserve source order, reject misses and release index state with the artifact",
+              "Nonplanar projected faces retain the exact source-relative pointer, maximum deviation and existing tolerance through preparation failure into the existing retained-draft replacement route; include pattern templates. Never guess geometry, alter tolerance, apply rejected output or replay completed work.",
               "Rejected source drafts identify exact conflict paths; explicit bounded request-local field repairs re-enter the same admission without canonical writes or mutation of prepared artifacts. Publish diagnostics with request ownership, reject new retention at capacity without eviction, and remove actual source on terminal cleanup. Prepared and target handles declare request lifetimes; release is control-plane.",
               "Reference reuse preserves current source attribution and structured failure stage, reason, HTTP status, transient classification and attempts; retry a classified transient read at most once within the original deadline, never permanent failure or cancellation; retain candidate failure evidence during failover",
               "Acquire candidate image URLs in one batch with bounded concurrent I/O, ordered per-source receipts, original images and request-local in-flight reuse; one source failure does not discard siblings; cancellation prevents attachment admission",
               "No cross-request retention without measured reuse and equivalence",
               "Expand request-local vector templates and placements without losing geometry, painter order or stable keys",
+              "Executable App representation examples use the existing typed preparation entry points: multi-face patterns preserve declared instance/face painter order, native independent fills, current generated-key targeting and expanded budgets. Advice does not infer repeats or require Knowledge; irregular details remain explicit. Same pattern consumers support optional world material fields without granting visual approval.",
+              "Compile explicit draft-local world linearFields on projected and translated pattern faces into ordinary independent native gradients. Resolve exact materialField keys, reject fill/palette conflicts, validate finite distinct endpoints and ordered stops, and pull back affine world phase through the admitted plane and normalized vector bounds. Preserve per-instance phase, constant color/opacity, reversal and non-square geometry; reject unsupported or unrepresentable input before writes. Reuse plane derivation only within preparation, preserve actual source-work budgets and artifact lifetime, and never infer visual approval, change rendering or persist a new live material relation.",
+              "Resolve explicit surface-grid boundary face references from exactly one quadrilateral projected-face in the same root or pattern source scope before ordinary compilation. Forward declarations preserve painter order; no outer-scope, ambiguous or ellipse targets. Existing source selection resolves before dropping unselected faces, retaining original source for repairs; never recreate a source face or replay completed parts. Preserve inline boundaries, geometry validation, materials, identities and truthful budgets; no live relation or new retained state.",
+              "Resolve draft-local motifTemplates once per construction invocation to validated normalized motifs and camera offsets; inline arrays remain independent. Budget admission counts definitions once and full output per reference. Grids retain independent boundaries, counts, palette indexing, keys and order; pattern members and retained source/parts reuse the same definitions. Invalid definitions or missing references reject before writes; no semantic preset, inference or cross-invocation cache.",
               "Expand declarative planar convex surface grids from normalized cell motifs using one projected boundary; preserve explicit cell-major or motif-major order, keys, caller-authored per-cell fills, motif world offsets and exact editable vector output; reject unsupported planes and degeneracy rather than approximate them"
             ],
             "bypasses": [
@@ -407,10 +622,28 @@
               "automatic detail removal"
             ],
             "cacheDimensions": [
-              "request-local immutable prepared artifact identity, key map and bounded target subsets; lazy prefix index and subsets retire with the artifact; rejected draft revision retains bounded source only for explicit revalidation",
+              "request-local immutable prepared artifact identity, key map and bounded target subsets; lazy prefix index and subsets retire with the artifact; retained draft revision owns bounded source for partition continuation or explicit repair",
               "request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failed image acquisition remains retryable; page candidate inventory survives representative failure for explicit pagination and is superseded by a successful explicit candidate selection; original image delivery once per attachment with explicit refresh"
             ],
             "implementationBoundary": [
+              "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json",
+              "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/missing-brief-checks-20261027.json",
+              "packages/utils/package.json",
+              "packages/utils/src/render/geometry-bounds.ts",
+              "packages/utils/src/render/geometry.ts",
+              "apps/asyra-design/__tests__/framework-runtime-boundary.test.mjs",
+              "packages/preset/src/group-bounds.ts",
+              "packages/preset/src/components/group.ts",
+              "packages/preset/src/__tests__/group-bounds.test.ts",
+              "packages/preset/src/__tests__/group-operations.test.ts",
+              "apps/asyra-design/server/design-face.ts",
+              "apps/asyra-design/server/__tests__/projected-ellipse.test.ts",
+              "apps/asyra-design/server/__tests__/shared-motifs.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json",
+              "apps/asyra-design/e2e/design-construction.spec.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/pattern-budget-recovery-20261023.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/translated-component-20261022.json",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/local-prepared-design-review.ts",
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
@@ -426,6 +659,10 @@
               "apps/asyra-design/server/design-draft-repair.ts",
               "apps/asyra-design/server/__tests__/design-target-index.test.ts",
               "apps/asyra-design/server/__tests__/design-draft-repair.test.ts",
+              "apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts",
+              "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/nonplanar-recovery-20261026.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101",
               "apps/asyra-design/src/ai/prepared-design.ts",
               "apps/asyra-design/src/ai/design-fill.ts",
               "apps/asyra-design/server/design-budget.ts",
@@ -437,14 +674,35 @@
               "apps/asyra-design/server/__tests__/fixtures/reference-linked-image.html",
               "apps/asyra-design/server/__tests__/reference-image-download.test.ts",
               "apps/asyra-design/server/design-construction.ts",
+              "apps/asyra-design/server/design-linear-field.ts",
+              "apps/asyra-design/server/__tests__/design-linear-field.test.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+              "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+              "apps/asyra-design/server/__tests__/recorded-ornaments.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/ornament-input-20261019.json.gz",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/ornament-output-20261019.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/material-field-20261019.json",
               "apps/asyra-design/server/design-construction-schema.ts",
+              "apps/asyra-design/server/__tests__/face-boundary.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/face-boundary-20261025.json",
               "apps/asyra-design/server/design-preparation-examples.ts",
               "apps/asyra-design/server/__tests__/design-patterns.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/component-selection-20261022.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/composition-materials-20261022.json",
               "apps/asyra-design/server/__tests__/fixtures/recorded-facade-grid.json",
               "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
               "apps/asyra-design/server/__tests__/design-preparation.test.ts"
             ],
             "specRefs": [
+              "#retained-material-preparation-recovery",
+              "#unified-public-tool-contract-delivery",
+              "#pre-execution-guidance-and-recoverable-input-validation",
+              "#face-referenced-surface-boundaries",
+              "#projected-ovals",
+              "#shared-normalized-motifs",
+              "#preparation-source-reads-and-immutable-lifetime",
+              "#source-referenced-expansion-recovery",
+              "#translated-mixed-components",
               "#preparation-and-execution"
             ],
             "failureOwnerStepId": "prepare"
@@ -457,6 +715,7 @@
             "ownerPackage": "@asyra/asyra-design",
             "purpose": "operation-adapter",
             "inputs": [
+              "optional explicit local evaluation mutation deadline",
               "artifact:tool-program",
               "artifact:prepared-artifact",
               "artifact:prepared-review",
@@ -470,26 +729,44 @@
               "artifact:execution-receipt"
             ],
             "conditions": [
+              "Identity allocation delegates through Core to the existing idCounter: validate the complete ordered registered-type list before allocation, preserve namespace and loaded positions, return immutable IDs without document writes/history, and reject exhaustion without prefix consumption. Composed geometry/material/mapping consumers preserve canonical changed and target receipts through existing interpretation; no void/truthiness success, speculative reread or replay.",
+              "Core owns ordinary creation input normalization and delivers ordered descriptors directly to Scene Tree without unused envelopes or a second projection. Preserve default/override ordering, supplied/generated IDs, caller isolation, empty and scalar/plural input, complete frozen results and geometry/materials/order/parentage. Scene Tree admission, transaction failure, acknowledged partial results, remaining-only recovery, history and durable collaboration/reload remain authoritative. Prove actual work counts through real owners; no cache, extra exchange, skipped validation, compatibility path or replay.",
+              "Scene Tree owns the detached frozen ordered ID result of each ordinary creation batch. Core request/facade and App adapters forward the same result without further copies. Preserve all identities/order, scalar and empty semantics, invalid input/parent rejection, isolation from mutable input/membership, old snapshots, complete and compact receipts, partial failure/cancellation, history, durable reload and no-replay recovery. No new cache, transport, compatibility copy, batch enlargement or UI snapshot change; prove actual downstream copy counts through real owners.",
+              "Original retained oval rotation is admitted; changed transforms or binding reject. Group normalization preserves world placement and material validity. Official creation and preset rendering own application, never a direct tool render call. Shared Utils analytic oval bounds feed Preset normalization and Core scene world bounds/zoom-fit; preserve ancestor translation, invalid hierarchy and other shapes.",
+              "Preset projects every canonical batch synchronously to complete immutable UI snapshots. Proven fresh depth-first tail additions reuse exact current hierarchy preparation without visiting unrelated subtrees. Cold, interior, mixed or invalidated edits retain complete derivation. Preserve old snapshots, current partial results, cancellation, history and collaboration; no delayed publication, batch enlargement, second tree or replay.",
+              "Resolve retained prepared artifacts into the sole current compact delivery without repeated property-ID values, key maps or vector record IDs. Check point/segment/network id equality with map keys before omission; browser admission rejects redundant IDs, restores exact keys once and retains complete canonical validation before mutation. Preserve graph references and immutable canonical source. No prior wire branch, geometry recomputation, new cache, extra model turn or replay. Measure pack/restore costs separately from unchanged canonical work. Explicit full receipts, partial results, history, collaboration and persistence retain canonical identity.",
+              "Retained-fill action failures preserve the existing transaction-settlement error and original cause unchanged; never erase known settlement or replace a stale-target reason with a generic action error.",
+              "Interrupted prepared application captures only synchronous acknowledged members. Carry detached partial owner results through the existing Runtime failure/actionResults path; preserve cancellation and final transaction authority. Never count failed members or relabel rollback as retained writes. No replay, new History owner or persistence policy.",
+              "Optional local evaluation deadlines are checked at the actual synchronous mutation boundary, after idle waiting. Preserve committed members and ordinary history settlement; do not admit late writes or replay completed changes.",
+              "The 31 previously opaque non-Core document writers declare explicit mutation receipts retaining original value, acceptedIds, unavailableIds and changed from original owner validation and apply evidence. Fulfilled unchanged targets are no-change; mixed unavailable targets are partial and all unavailable targets fail. Empty patches validate target identity. Vector empty-patch shortcuts follow target validation; transient Feature paths retain computed-patch authority. Direct consumers project retained values explicitly, never receipt truthiness. Reject malformed output with settlement and successful identities preserved; no opaque-owner fallback, replay, visual-scope inference or new state owner.",
+              "Core mutations declare property-mutation or changed-flag semantics from the original owner. Core property receipts preserve accepted identities and changed from existing Props/Scene apply evidence, including bindings, retirement and unowned sources. Direct App property wrappers preserve changed and accepted caller identities across existing group normalization; empty values still validate targets. Validate declared target alignment; never infer no mutation from empty visual scope. Empty and unchanged valid requests are no-change. Invalid owner output fails its result contract with evidence and settlement retained; never opaque unknown application, guessed success or replay. Direct Group signatures match the canonical receipt. Vector scale/position retain boolean/ID-list values inside explicit non-Core receipts without changing geometry. Transport loss remains a distinct settlement failure.",
+              "Primary-color owners retain ordered changed/unchanged/unavailable results. Valid no-ops remain successful; unavailable targets are partial or failed. Ambiguous owner returns never certify application, and malformed or misaligned receipts preserve actual settlement without replay. Composition aggregation distinguishes unchanged from unavailable.",
+              "Material-only application consumes an owned compiled revision and original request-scoped creation provenance. Capture only declared source members at creation; compare canonical geometry, ancestor transforms and Fill binding through Core reads before one selected-owner plural write. Screen-coordinate round trips and tolerance widening cannot establish validity. Rejections identify unavailable members, geometry/ancestry or binding differences; numeric diagnostics cannot authorize a model override. Unknown, expired, reparented or changed source rejects before writes; unrelated edits and viewport changes do not expire provenance. Retire provenance on request settlement, file reload and dispose. Capture failure reports unavailable provenance without replaying completed creation; no visual approval or shared-source mutation is inferred.",
               "Browser delivery admits receipt bytes before transmission; oversized output yields an explicit bounded delivery failure preserving known execution settlement and exact batch/action identity. Healthy exchanges continue; broken transport preserves acknowledgement uncertainty. Never replay completed work or certify omitted output. Core export bytes stay with a browser artifact/download owner beyond request cleanup; generation changes cannot relabel a snapshot.",
               "Factory alone owns history replay through outer settlement. App history opts into immediate Feature execution, never interaction queue admission. Existing session commit-current finalizes the drag before replay; current async handler settlement is allowed but queued work cannot run ahead or interleave. Repeated history during finalization/replay is ignored without retention; cleanup failure or runtime closure stops replay. No App busy mirror or second history owner. Accepted direction remains immutable.",
               "repair_design_checks consumes requestId, the complete current tool-check selection and explicit set-prescribed-child-position policy. Preflight every pending finding, unique exact child coverage, captured parent-local basis bound by the canonical attachment receipt to the exact parent/workspace, current canonical dependency receipts and ordinary permissions before any write. Mixed/unsupported findings and stale policy stop without mutation. Invoke existing App/Core mutations; no guessed positions, reparent, deletion or implicit scope expansion.",
+              "Prescribed-position mutation checks mechanical stamps at the issuing deterministic reviewer and parent basis stamps at the attachment owner inside the same synchronous preflight. Both owners are explicit dependencies; no visual fallback, async recheck inside mutation or retained second authority. Foreign, retired, disposed or queue-invalidated receipts stop before the first write.",
               "Read-only queue-time repair preflight reports an input rejection before writing. Exact failed-action identity plus not-started settlement and no acknowledgement preserves known no-write recovery; unknown or partial writer failures still retain unresolved mutation scope. Fresh explicitly prescribed policy may retry, never automatic rebasing or write replay.",
               "Check repair returns actual settlement and the complete fresh successor selection. Later cancellation/owner failure preserves acknowledged writes, Undo and canonical recovery; partial/unknown output never supplies success bindings or repeats initial recipe writes. Reuse post-write owner checks rather than scan twice. Coordinator never holds the leaf scheduler barrier while awaiting a child.",
               "Structural recovery receipts and queries remain byte-bounded in the same retained-context owner, without a fixed query-count quota. Pinned receipts remain recoverable; stale receipts cannot authorize edits and live query pins cannot be evicted for capacity.",
               "Registered owner-produced model views cover retained mapping and structural results; complete mutation scope and canonical typed outputs reach internal consumers first. Receipt readback is byte-bounded and advertises exact immutable JSON-text page offsets; external projection cannot remove failure settlement, invent a handle or force full oversized output.",
+              "Runtime checks the execution signal both before handing a writer to the existing host mutation executor and when that executor enters the writer. Cancellation during admission prevents a new write; cancellation after a completed write never erases its settlement observer or return value.",
+              "Single-target visibility consumes the existing App plural flag-status owner inside the mutation boundary: changed is complete, unchanged is no-change, unavailable is failed with not-started settlement. Boolean-only replies cannot certify target availability; cancellation before mutation performs no write.",
               "Element selection checks all requested identities at the common element-selection owner inside synchronous mutation admission. Any nonexistent target rejects the whole replacement, preserving prior selection and Undo history. The App action and basic element selection/toggle routes share this owner; generic Core and vector channels retain their separate contracts.",
               "The existing mutation executor reports settlement synchronously after canonical publication and before yielding. Structural group/ungroup/move results publish ordered live membership and immutable full receipts through the existing retained-context owner. Compact delivery exports typed snapshot/lease/count references only after original receipt checking; declared element-list consumers resolve inside synchronous mutation admission. Historical receipt reads do not refresh target authority. Post-write retention/publication failure preserves settlement and cannot replay or authorize a dependent write.",
               "Reviewed attachment parent, workspace and canonical inspection stamp are checked inside the first synchronous mutation callback, after queue admission; reject expired or missing evidence before writes. Own admitted later slices may advance the stamp and retain ordinary per-slice canonical checks; never recheck review after successful mutation or replay it.",
               "Every delivered reusable query snapshot is pinned until explicit release, request settlement, cancellation or disposal. Page and column delivery preserve the same ownership as reference delivery; capacity backpressure preserves accepted consumers. Borrowed leases remain with their caller, locally acquired query mappings release their own leases, and revision checks remain authoritative before one plural write",
               "AI query delivery defaults to references; explicit page and column reads remain available. Separate control-plane release from query production so successful retained reads guarantee live handle schemas; the separately registered resolve_design_targets action declares a value-only result without changing retained read contracts. The host publishes actual browser snapshot and lease identities, refuses borrowed release and acknowledges terminal remote cleanup; browser request-finally owns cleanup on cancellation.",
               "Retained query references enforce their creating request identity on remote reads, release and mutation consumption; same-workspace foreign handles reject and terminal cleanup affects only that request.",
-              "Retained query references carry workspace and canonical revision, cache only selected membership and columns, and reject stale or evicted consumption inside synchronous mutation admission before any writes; bounded position-to-fill mappings use canonical plural fills and explicit parent-local coordinates",
+              "Retained query references carry workspace and canonical revision, cache only selected membership and columns, and reject stale or evicted consumption inside synchronous mutation admission before any writes; bounded position-to-fill mappings use canonical plural owner-local fills and explicit parent-local coordinates; shared sources permit distinct local masks, and mutation receipts include only selected owners without expanding to unchanged source users",
               "Ordinary creation appends canonical membership without copying prior siblings; public children snapshots remain independent, pre-handoff failures remove attempted membership and accepted handoff retains Factory recovery ownership",
               "Preset UI membership preparation belongs to its observer lifetime and exact published map/flat identities. Structural deltas update affected memberships without rereading unrelated rows; immutable complete flattened output and existing ordering remain. Load, reseed, foreign publication, failure, incomplete membership and disposal invalidate reuse.",
               "Plural subtree deletion shares canonical hierarchy and orphan-property preparation for the call, preserves deleted-instance retention and reversible evidence, and rejects invalid targets before mutation",
               "Workspace region queries use renderer-owned spatial candidates; owner changes invalidate affected bounds, viewport pan/zoom preserves workspace extents, and current canonical filters choose mutation targets",
               "Explicit region-query batch targets resolve complete identities once through the registered reader before writes and feed ordinary mutation admission; incomplete results cannot write. Transient complete-region identity delivery publishes no reusable handle and reserves no retained capacity. A matching retained selection can supply copied identities without changing caller leases; other page/reference/column delivery remains pinned.",
+              "Canonical query admission validates scope-specific fields and complete result/page constraints before source reads, cache lookup, retention or lease allocation. Registered action and native schemas preserve these alternatives. Unsupported children filters return actionable input failure; explicit current snapshot refinement remains supported. Rejection preserves other request leases and never reinterprets selectors or replays writes.",
               "Canonical finite name/type/hierarchy/lock predicates filter workspace candidates or current retained snapshot identities before delivery. Refinement repeats no spatial query, preserves independent leases and stale rejection, returns compact references by default and rejects exact expectedCount mismatch before target use.",
+              "Refinement preserves raw result mode before output validation: element rows omit optional identity arrays entirely; identity mode preserves ordered arrays including empty selections. Page/column delivery and retained mutation consumption reuse the same source without requery. Validation failures retain stage and settlement without replay.",
               "Local bounds lookup does not enumerate a broad parent subtree; filter current spatial candidates before paging and return identity-only observations when requested, with ordinary mutation admission retaining authority",
               "Relative hierarchy placement resolves current anchor identities internally and preserves existing canonical validation and grouped geometry behavior",
               "Reject duplicate Fill-row destination IDs before reads or writes; resolve each current row and apply aligned or uniform new patches in one batch; plural visibility reports ordered changed/unchanged/unavailable outcomes in one receipt",
@@ -499,12 +776,13 @@
               "Preserve ordered writes and read-after-write dependencies",
               "Cancelled queued work cannot write",
               "Declared return contracts preserve ordered item results; failed creations cannot be reported as complete, and void acknowledgements never assert measured mutations",
-              "Compact native receipts aggregate successful valueless basic mutations and project successful declared structural results to ordered identities/counts; retain query data and uncertain results, with explicit full receipts available",
+              "Compact native receipts preserve unconfirmed basic mutations and project successful declared structural results to ordered identities/counts; never aggregate ambiguous valueless results as success. Retain query data and uncertain results, with explicit full receipts available",
               "The App owns one lazy Factory history group per invocation. Every synchronous member publishes normally; research and waits hold no transaction or interaction lock. Admission observes the Core instance idle boundary and rechecks after settlement; user and remote edits are not enrolled. Stop/failure seals successful members, and only a nonempty own seal is correlated as AI history.",
               "Fill row patches share input data without linking ownership; distinct Fill collections may reference the same canonical child ID; share/detach reuses those relationships and ordinary Undo",
               "Stroke field batches consume new fields only, validate all targets before mutation and retain omitted fields; per-call bounds preparation is shared for repeated targets without retaining state across calls",
               "Prepared artifacts are required only for prepared operations; direct registered edits use their own admitted parameters",
               "Optional parentId attaches ready parts in parent-local coordinates to a current workspace container; canonical capability, membership and locks are rechecked at each write; compact receipts retain real part identities",
+              "Admit prepared partition continuation against its original root and unchanged anchor/ancestry; reuse canonical creation and Group normalization while preserving original parent graph, geometry, fills and painter order. Skip the acknowledged root, reject stale or duplicate members and never replay completed slices",
               "A browser batch rejection is acknowledged without closing the stream; runtime returns completed actions, failure stage and unknown settlement, refreshes context before later permission decisions and never replays failed batches"
             ],
             "bypasses": [
@@ -526,6 +804,58 @@
               "Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only"
             ],
             "implementationBoundary": [
+              "packages/utils/src/sid/idCounter.ts",
+              "packages/utils/src/sid/__tests__/idCounter.test.ts",
+              "apps/asyra-design/src/ai/__tests__/identity-and-composed-receipts.integration.test.ts",
+              "apps/asyra-design/server/__tests__/creation-results.integration.test.ts",
+              "packages/utils/src/render/geometry-bounds.ts",
+              "packages/utils/src/render/__tests__/geometry-bounds.test.ts",
+              "packages/core/src/apis/scene-bounds.ts",
+              "packages/core/src/apis/__tests__/scene-bounds.test.ts",
+              "packages/preset/src/group-bounds.ts",
+              "packages/preset/src/components/oval.ts",
+              "packages/preset/src/__tests__/oval-render-strategy.test.ts",
+              "package.json",
+              "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
+              "apps/asyra-design/src/ai/prepared-design.ts",
+              "apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/prepared-delivery-20261023.json.gz",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/vector-delivery-20261025.json",
+              "apps/asyra-design/src/ai/__tests__/interrupted-design.integration.test.ts",
+              "packages/ai-agent-runtime/src/__tests__/interrupted-results.test.ts",
+              "apps/asyra-design/e2e/design-construction.spec.ts",
+              "apps/asyra-design/src/ai/evaluation-window.ts",
+              "apps/asyra-design/src/features/delete-vector-point/index.ts",
+              "apps/asyra-design/src/features/pen-tool/feature.ts",
+              "apps/asyra-design/src/properties/vector-point.tsx",
+              "apps/asyra-design/src/controllers/element-row-actions.ts",
+              "apps/asyra-design/src/contents/Element.tsx",
+              "apps/asyra-design/src/common-apis/element/__tests__/transient-vector-preview.test.ts",
+              "apps/asyra-design/src/features/pen-tool/__tests__/transient-preview-cancel.test.ts",
+              "apps/asyra-design/src/ai/basic-vector-api-contracts.ts",
+              "docs/ai/apps/asyra-design/API_SURFACES.md",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/src/common-apis/mutation-receipt.ts",
+              "apps/asyra-design/src/ai/__tests__/non-core-owner-results.integration.test.ts",
+              "apps/asyra-design/src/common-apis/element/update-element-properties.ts",
+              "apps/asyra-design/src/common-apis/element/__tests__/group-geometry-mutation.test.ts",
+              "packages/core/src/apis/element-properties.ts",
+              "packages/core/src/apis/property-intents.ts",
+              "packages/core/src/apis/props.ts",
+              "packages/core/src/types/element-properties.ts",
+              "packages/core/src/types/property-intents.ts",
+              "packages/core/src/types/props.ts",
+              "packages/core/src/types/property-mutation-receipt.ts",
+              "packages/preset/src/components/group.ts",
+              "apps/asyra-design/src/common-apis/element/vector-apis.ts",
+              "apps/asyra-design/src/common-apis/element/__tests__/vector-parent-creation.test.ts",
+              "packages/core/src/index.ts",
+              "packages/core/src/__tests__/element-property-api.test.ts",
+              "packages/core/src/__tests__/canonical-owner-coordination.test.ts",
+              "packages/core/src/__tests__/property-intent-history.test.ts",
+              "packages/core/src/__tests__/hierarchy-transaction.test.ts",
+              "apps/asyra-design/src/ai/prepared-material-action.ts",
+              "apps/asyra-design/src/ai/__tests__/prepared-material-action.test.ts",
               "apps/asyra-design/src/ai/document-export.ts",
               "apps/asyra-design/src/ai/__tests__/document-export.test.ts",
               "apps/asyra-design/src/config/key-combinations.ts",
@@ -549,6 +879,9 @@
               "apps/asyra-design/src/common-apis/__tests__/inspection-dependencies.test.ts",
               "apps/asyra-design/e2e/fixtures/action-usage-cases.ts",
               "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json",
               "packages/ai-agent-runtime/src/types.ts",
               "apps/asyra-design/server/local-query-artifacts.ts",
               "apps/asyra-design/server/__tests__/local-query-artifacts.test.ts",
@@ -577,10 +910,8 @@
               "packages/scene-tree/src/__tests__/scene-mutation.test.ts",
               "packages/core/src/apis/scene-tree.ts",
               "packages/core/src/types/scene-tree.ts",
-              "packages/core/src/__tests__/canonical-owner-coordination.test.ts",
               "packages/core/src/__tests__/scene-tree-api.test.ts",
               "apps/asyra-design/e2e/fixtures/basic-api-cases.ts",
-              "packages/core/src/__tests__/hierarchy-transaction.test.ts",
               "apps/asyra-design/src/common-apis/element/apis.ts",
               "apps/asyra-design/src/common-apis/element/__tests__/subtree-delete.test.ts",
               "apps/asyra-design/src/ai/basic-api-dispositions.ts",
@@ -588,6 +919,7 @@
               "apps/asyra-design/src/ai/basic-api-catalog.ts",
               "apps/asyra-design/src/ai/__tests__/startup.test.ts",
               "apps/asyra-design/src/ai/__tests__/basic-api-actions.test.ts",
+              "apps/asyra-design/src/ai/__tests__/core-owner-results.integration.test.ts",
               "apps/asyra-design/src/common-apis/__tests__/design-context.test.ts",
               "apps/asyra-design/src/common-apis/__tests__/hierarchy.test.ts",
               "apps/asyra-design/src/ai/context-action.ts",
@@ -609,7 +941,6 @@
               "packages/core/src/apis/render.ts",
               "packages/core/src/apis/create-apis.ts",
               "packages/core/src/types/render.ts",
-              "packages/core/src/index.ts",
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/local-tool-scheduler.ts",
               "apps/asyra-design/server/__tests__/local-tool-scheduler.test.ts",
@@ -620,12 +951,15 @@
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
+              "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
               "apps/asyra-design/server/local-operation-batch.ts",
+              "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
               "apps/asyra-design/server/local-design-workflow.ts",
               "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
               "packages/ai-agent-runtime/src/provider.ts",
               "packages/ai-agent-runtime/src/runtime.ts",
               "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts",
+              "packages/ai-agent-runtime/src/__tests__/execution.test.ts",
               "apps/asyra-design/server/batch-exchange.ts",
               "apps/asyra-design/server/__tests__/batch-exchange.test.ts",
               "apps/asyra-design/src/ai/action-batch-protocol.ts",
@@ -669,6 +1003,16 @@
               "apps/asyra-design/e2e/basic-api-actions.spec.ts"
             ],
             "specRefs": [
+              "#identity-allocation-and-composed-owner-receipts",
+              "#ordinary-creation-input-normalization",
+              "#ordinary-creation-result-handoff",
+              "#creation-batch-ui-projection",
+              "#prepared-design-delivery",
+              "#source-referenced-expansion-recovery",
+              "#bounded-evaluation-work-and-self-report",
+              "#owner-results-and-workflow-outcomes",
+              "#core-owner-result-contracts",
+              "#non-core-owner-result-contracts",
               "#preparation-and-execution"
             ],
             "failureOwnerStepId": "apply"
@@ -695,22 +1039,39 @@
               "artifact:prepared-review"
             ],
             "conditions": [
+              "Standalone capture result declarations and model projection include the inspectionId and revision added by this existing operation owner; preserve retained-image binding and unavailable capture recovery without recapture or a second store.",
+              "Visual coverage, pending-criterion and correction projections select main-agent results through the existing result store before cloning payloads. Preserve all selected judgments, detached full/exact reads and explicit selected count scope. Mechanical blockers remain independent; prevalidation and committed-state reads cannot share stale snapshots. Preserve local passes, whole-view/deferred obligations, invalidation, cancellation and no replay. No cache, extra model call, capture or write; prove actual clone work and semantic equivalence through dispatcher/reviewer/store consumers.",
+              "Publish unchanged computed-field selection limits from the Core snapshot owner through its public export and App schema; preserve full and empty selections without extra reads or new cache.",
+              "Admit unit-only supersedes with declared unitId, exact revision and redesign reason before capture, bind and record. Whole-criterion correction removes only the invalid supersedes field using retained image assignments and existing binding; never invent units, recapture, replay or weaken scope/whole-view protection.",
+              "Workspace mechanical review consumes canonical non-geometric root metadata and ordered descendants without requiring or fabricating root bounds. Preserve actual child geometry/text and Frame checks, hidden-node semantics, subtree membership/order stamps, local invalidation, load retirement, cancellation and retained verdict reuse. Final review consumes that receipt; unavailable checks expose existing retained findings and query recovery without redraw, recapture, replay or a new state owner. Empty mechanical scope never certifies visual acceptance.",
+              "Selected computed fields flow from the Core facade through its request adapter and Element to the existing Computed snapshot owner before materialization. Read only requested own enumerable values once; never enumerate or copy omitted fields. Core validates before access and detaches the owner result. Full reads remain independently valid. Preserve current values, workspace/empty/missing semantics, verdicts, coverage, local invalidation, cancellation and no-replay recovery; no new cache, exchange or canonical write. Prove counts through real owners and the default reviewer.",
+              "Mechanical reviewer structural reads use existing scalar Core metadata and complete ordered child queries only for nonempty containers. Never save or clone full elements or unused props for structural fields. Preserve the existing verdict cache, local invalidation, computed/text work, complete findings/coverage, cancellation, mixed-source rejection and no-replay recovery; no new cache, API, exchange or canonical write. Prove actual save/copy counts through the default adapter and real owners.",
+              "Image capture target preflight consumes one current scalar Core metadata observation for existence, type and childCount; never save or clone full children/properties for eligibility. Preserve missing/noncurrent/empty/scope guards, existing snapshot framing and pixels, read-only state, evidence invalidation, partial results and failed-only retry. No cache, fallback full-data query, new exchange or replay. Count preflight copying through real canonical owners separately from necessary snapshot work.",
+              "Scalar Core metadata consumes exact current canonical child counts without materializing full child snapshots, including after membership changes and for registered derived containers. The existing Group membership owner remains authoritative. Preserve complete immutable child observations and inspection invalidation; no count cache, type-name list, observer suppression, extra call or replay. Prove reduced copied identities through the live App inspection and batched creation path.",
+              "Current workspace overview resolves the actual scene container through Core and the existing Render snapshot owner; preserve transforms, painter order and visibility without document grouping, camera capture or new tools. Workspace detail/region and missing/empty/noncurrent targets return owner reasons, not blank proof.",
+              "Inspection owners explicitly settle completed reads even when imagery is unavailable. All failed captures are failed/completed; mixed results retain partial coverage and completed read settlement. Preserve cancellation/transport uncertainty and never normalize unknown writes. Existing image/check stores retain successes for retry, workspace subtree changes stale broad proof while unrelated local passes survive; load/switch retire old proof.",
+              "Projected oval bounds use the same public geometry as preparation and Group normalization. Do not bypass unsupported transformed containers or certify unchecked geometry.",
+              "Visual receipt freshness consumes committed effective computed changes plus canonical structure and load boundaries. Raw shared source writes alone do not invalidate masked consumers. Canonical mutation-scope observation retains actual source/binding changes separately; no visual freshness rule can hide acknowledged canonical effects.",
+              "Capture and binding handoffs derive acceptanceContext from the canonical current plan: one method and requirement revision plus selected criterion requirement, description and optional unit. Keep it outside executable next.arguments and at the same revision as bindings. Unbound recovery does not invent selection or readiness. No extra store, dependency, model or judgment is introduced.",
+              "Canonical check receipts explicitly identify request or selected count scope without asserting visual acceptance or durability. Review capture/bind/record replies identify their operation; only committed judgments return compact exact identity, criterion/unit, origin, status and revision acknowledgements including passes. Keep committed receipts on later partial failure, preserve successful images on binding failure, and never infer readiness from capture. Optional structureAccepted is only a structural verdict; accepted remains whole-request completion.",
               "Tool-first correction: verify_design_checks consumes the actual requestId and a nonempty unique exact-revision tool-origin check selection. Recheck descriptors and dependency receipts come from the same request check owner, never diagnostic strings, ID prefixes, viewport or a second store. Wrong request, origin, unknown identity and conflicting revision reject before work.",
               "Aggregate checking reuses current owner evidence and coalesces overlapping stale reads under existing budgets. Validate canonical dependencies before publishing after asynchronous work. Return required verification status and stable nonempty normalized unresolved-work progress, requestId and every acknowledged selected revision including independent passes and confirmed terminal retirements. Missing lookup is not retirement; recreated identity rejects old revisions. Incomplete results retain exact completed/pending selections but cannot bind success.",
               "Mechanical repairability requires an actually supported typed capability for every remaining finding. Unsupported/source/visual work remains decision-required. Runtime uses the repair receipt selection for its mandatory next check; all-retired selection remains nonempty until explicit terminal verification. Repeated or cyclic progress stops without replay. Mechanical pass does not establish visual judgment, recipe eligibility or document durability. No nested model invocation; read_design_checks remains a read.",
+              "Visual correction projects each unresolved check identity, criterion/unit, status, revision, full evidence and image dependencies from the existing store across submissions. Resolve referenced image targets/regions once; preserve unavailable IDs and exact-unit fact bindings separately, never inferred edit targets. Optional existing-query guidance admits caller-selected repair intent; no repair tool list, schema preload, automatic mutation, new state or replay. Existing mutation receipts, local invalidation, independent passes and whole-view obligations remain authoritative.",
               "Primary correction handoffs use current shared pending results, preserving evidence outside the submitted subset. Later failed structure judgments revoke final acceptance without discarding unrelated passes; structure recovery alone never grants final acceptance. Published judgments also govern existing-content review without a preceding mutation.",
               "Stage 2 repair capability coverage belongs to the Design repair owner before writes, not generic Runtime or the checker guessing its caller. Bind successor check selections from acknowledged current revisions; receipt refresh alone is not semantic progress.",
               "Mechanical reads and freshness validation use bounded exact-target exchanges, preserve acknowledged independent results, and continue only a proven unexecuted read suffix after fail-fast failure. Missing, duplicated or cancelled results never become passed evidence.",
               "Explicitly aligned native reference crops may be compared with current isolated target-region pixels on white using fixed baseline, region and tolerances. No resampling, camera inference or model call. Unsupported evidence remains unverified. Retain compact pixel findings in the common check store, validate canonical image dependencies before reuse and after asynchronous work, and reuse unchanged results without decoding. Pixel checks never certify visual meaning.",
-              "Canonical canvas measurements join the same check store by exact target. Complete rechecks replace that target including removed children; incomplete work remains unresolved. Scoped browser receipt validation invalidates only actual changed units without remeasurement. All unresolved mechanical findings block completion.",
+              "Reviewer-certified coveredMeasurementTargets selects actual successful capture descendants for automatic measurementTargets=descendants, excluding the root; explicit ID lists and empty selections remain exact. Consume completed traversal coverage without more geometry reads. Never send cumulative candidates or enumerate retained obligations per capture: intersect returned IDs by current membership, then use existing bounded validation and commit guards. Empty/absent coverage sends no extra exchange. Preserve geometry/text findings, standalone and inherited context, parent reconciliation, local invalidation and no-replay partial recovery. Prove linear complete exchange and serialized-payload work through material owner and direct consumers. No new state, inferred ancestry, all-object model payload or paint-only bypass.",
+              "Canonical canvas measurements reconcile existing obligations only through reviewer-certified compatible supported-rule/subtree coverage. The validation action accepts bounded measurementTargets with mechanical evidence, never visual scope. Issue independent target receipts sharing immutable reviewed verdicts; nested standalone normalization excludes external containment and rejects incompatible inherited visibility. Commit acknowledged successors only while selected revisions and stamps match; late, partial, cancelled or unavailable coverage cannot erase pending work. Subsequent reads, selected verification and final settlement consume the same ledger. Local unrelated edits preserve independent successors; all unresolved required findings block completion.",
               "Mechanical passes require one exact action acknowledgement, coherent availability/completeness and a canonical stamp. Currency or explicit-check failure preserves prior evidence as unresolved and retires the reusable stamp; later coherent checks may recover. Return bounded check counts and firstPendingId, not all retained evidence. Canonical removal retires only its tool obligation, invalidates dependents and preserves monotonic revisions; explicit reads refresh only selected transitive dependencies and independent failures remain readable.",
               "Canonical deterministic review owns typed mechanical verdict and stable unresolved-state progress inside evidence capture. Only complete supported checks with no findings pass; declared mechanical findings are repairable, unknown/incomplete checks require primary-agent decision. Verdicts never certify visual acceptance.",
               "Successful artifact publication records existing compiler findings once in the same request-owned check store; explicit source review reuses that unit. An owned explicit predecessor can consolidate a correction into its original source obligation without deleting unrelated or visual obligations. Immutable source checks never prove current canvas effects or artifact availability.",
               "Prepared-content checks consume compiler-admitted source and deterministic findings with current attachment; no model request, assessor callback or fallback is permitted. Partial coverage cannot hide canonical failures; visual meaning remains unverified.",
-              "Retain tool and primary-agent results with distinct provenance and dependency versions. Return unresolved or stale work by default, retain passes for explicit reads, and invalidate changed dependencies including previous passes. Unknown scope invalidates conservatively; no fabricated local scene freshness.",
+              "Retain tool and primary-agent results with distinct provenance and dependency versions. All default outward consumers deliver a bounded check summary; explicit IDs or revision-bound detail pages expose every finding without truncation. Internal full records remain authoritative. Repeated reads cannot revive superseded stamps. Invalidate actual changed dependencies including previous passes; unknown scope remains conservative.",
               "Attachment currency uses the actual parent ancestry, editable membership, bounds and workspace basis signature. Known affected changes lazily revalidate the small signature; unchanged child geometry preserves evidence. Unknown/load/disposal invalidate. Preparation refresh validates retained receipts, never compares them to a new workspace snapshot.",
               "Capture actual attachment parent identity, local bounds and workspace basis through Core with a canonical inspection stamp; read only ancestor metadata and needed fields, include attachment context in prepared review, revalidate after assessment and retain exact parent/stamp for browser apply admission",
-              "Automatic mechanical checks retain full findings in the existing check store and return compact summaries by default. Direct review, exact retained reads and explicit full batch/workflow responses preserve full results. A missing or incomplete mutation scope creates one terminal request obligation in the same store, blocks subsequent document writes before dispatch and reports unsupported completion; read/check/capture remain available and ordinary mechanical failures remain retryable. No parallel scope state, invented reconciliation or write replay.",
+              "Automatic mechanical checks retain full findings in the existing check store and return compact summaries by default. Direct review retains its target findings; common-store replies use bounded summaries by default and exact retained reads or explicit revision-bound pages preserve full requested evidence. Explicit full batch/workflow responses preserve their requested action receipts. A missing or incomplete mutation scope creates one terminal request obligation in the same store, blocks subsequent document writes before dispatch and reports unsupported completion; read/check/capture remain available and ordinary mechanical failures remain retryable. No parallel scope state, invented reconciliation or write replay.",
               "Consume only exact matching mutation acknowledgement scopes, including direct edits without a prior composition. No-change preserves existing evidence; unknown coverage remains unresolved. Consume scope before compact delivery and never derive targets from read-result field names.",
               "Expose one strict plan schema and executable guidance for standalone and composed first-write admission; allow first criteria after partial drawing while retaining the original request; lock established criteria after mutation and require current full review before approval",
               "Acknowledge plan storage with IDs and fact validity only; retain full request-local criteria and facts for review without echoing submitted narrative or implying visual acceptance",
@@ -728,20 +1089,22 @@
               "Return structured unresolved criteria with complete evidence, known bound IDs and actual inspection targets/regions; keep inspection-local coordinates explicit, infer no workspace bounds and require fresh final review",
               "Return completed visual findings with their freshness or coverage failure when evidence changes during assessment; stale findings remain diagnostic only and never authorize detail or completion",
               "Primary-agent reference decisions supply exact criterion roles and limitations; pixel tools require explicit source regions and never infer alignment or purpose. Changed reference selection invalidates dependent criteria only, preserving unrelated passes.",
-              "Review handoffs describe delivered image target/region and declared unit bindings with exact existing revisions. Never infer judgments, supersede scopes automatically or weaken evidence-menu admission.",
+              "Review handoffs describe delivered image target/region and declared unit bindings with exact existing revisions. A rejected binding retains actual successful images and declared ordered selections in a partial bindChecks template. Canonical scope validation supplies current revisions for all recoverable scope conflicts; requiredInputs names missing redesign reasons. Ordinary bind admission revalidates the completed template, with no query, capture or write needed to reconstruct known inputs. Unknown selections remain explicit. Never infer judgments, supersede scopes automatically, replay edits or weaken evidence-menu admission.",
               "Expose self-contained phase schemas with only applicable inputs; retain cross-field and current-evidence checks without repairing model arguments",
               "Retain request-linked named criterion descriptions through structure and final review; bind facts and checks by criterion ID",
               "Return images and evidence without implicit subtree summaries; explicit context queries own object retrieval",
               "All implicit drawing inspections use overview; explicit regions or detail remain native-resolution",
               "Retain completed deterministic node verdicts only under a live canonical observer. Actual affected nodes/ancestors, parent dimensions, inherited visibility and text inputs govern reuse; unknown/load/disposal invalidate. Cancelled or mixed-source work cannot publish results. Aggregate reports separately from canonical reads, rule evaluation and text measurement.",
+              "Mechanical receipts belong to the deterministic reviewer and bind actual supported rule inputs and exact traversal context. Known changes revalidate retained verdicts; paint/order alone preserve equal mechanical inputs. Unknown/load/disposal retire receipts; cancelled or mixed-source work publishes none. Validation dispatches by issued owner identity, reports causal failure and never treats mechanical coverage as image or attachment evidence. Root checks do not imply external-parent containment; coverage reconciliation remains downstream.",
               "Capture performs no deterministic subtree scan. Final assessment validates retained measurement evidence through its browser owner and computes only missing or stale required target checks; incomplete measurement blocks completion.",
               "Explicit criterion/unit capture bindings identify the intended checks and canonical scope. Return exact submission descriptors with request, requirement/check revisions, delivered image identities and dependencies. Primary-agent verdicts fill those descriptors; currency is revalidated before atomic recording. Never infer semantic units, combine whole-view and regional scope or erase independent passes on rejected submissions.",
+              "Mechanical containment consumes Frame dimensions only; Group ancestry remains intact and Group content bounds derive read-only through the existing Preset rectangle-union owner for checks inside Frames. No Group snapshot boundary, geometry rewrite or inferred custom-container constraint; cancelled or incomplete traversal cannot publish current evidence.",
               "Review capture declares checks per target; existing images bind through bindChecks. Only request-authenticated per-check descriptors may submit verdicts. Validate exact phase, identity, image dependencies and requirement/result revisions before and after asynchronous evidence validation. Exact same current verdict is idempotent; partial capture never binds a reduced check. Internal domain recording is not an exposed tool route.",
               "Capture calls deliver actual images and IDs without requiring or recording judgments; the primary agent submits findings on a later call with current IDs. Failed captures retain successful images and exact recovery targets; no model call, filtering failures or lower-resolution substitution",
               "Validate each browser-issued scoped visual receipt independently, allowing different capture ages only while actual dependencies remain current. Track target subtree, regional membership including entrants/exits, contributing ancestry and canonical shared-property owners. Unknown effects or document replacement invalidate conservatively; pan/zoom and selection do not.",
               "Bind criterion results to their supplied inspection IDs, preserve unrelated passes across scene edits, revoke completion on mutation and require current whole-request coverage before final acceptance. No wholesale evidence clearing for known local edits.",
               "Validate request-owned scope against current canonical containment; regrouping must neither lose scope nor accept unrelated overview targets",
-              "Unit dependency scope is exact: additions or replacements require exact revision/reason supersession. Reject mixed uncropped-target and same-target cropped evidence before recording judgments; return enclosing IDs for explicit narrowing. Independent regional target overviews and explicit multi-target checks remain valid.",
+              "Unit dependency scope is exact: additions or replacements require exact revision/reason supersession. Allow necessary same-target overview and crop evidence in one conclusion; sign and invalidate every cited image through the existing owners. Local-only conclusions retain only their explicit dependencies, while broad evidence deliberately carries broad invalidation. No inherited batch scope or automatic evidence narrowing. A regional overview never replaces the separate whole-view judgment. Independent regional target overviews and explicit multi-target checks remain valid.",
               "Require explicit requiredUnits on every visual criterion: empty means intentionally whole-view, nonempty unique IDs mean regional. Data criteria omit units. Every judgment names its own inspectionIds; enclosing images never implicitly become dependencies. The review owner derives actual submitted image selection for validation and commit; unused menu entries cannot veto local judgment recovery. Captures and deferred-detail decisions retain their declared image requirements. Final acceptance still validates retained passed evidence. Reject omitted scope atomically before storing criteria or applying prepared content. Initial criteria may follow the first ready drawing; established obligations cannot change after judgments or drawing mutations. Regional plans preserve explicit whole-view agreement and canonical requested-target coverage; unit names do not certify crop coverage. No omission or whole-criterion substitution may erase a regional obligation.",
               "Accumulate sparse judgments in the existing check store. Derive pending coverage, correction handoff, accepted evidence and settlement from the same required obligations and current results. Missing units block completion. Validate candidates before recording; a valid local judgment remains recorded when other obligations or whole-view coverage are incomplete. Capture delivers evidence without judgment or unrelated overview requirements, plus pending coverage and a sparse recording handoff; partial capture never creates passes and preserves successful images.",
               "Validate submitted and relevant retained receipts through their canonical owner in bounded transport batches, without requiring all passed images to be resent. Final settlement uses the same effective accepted set and independent mechanical/source/detail conditions. Preserve unrelated passes on local changes; genuinely changed whole-view or criterion-scoped source dependencies reopen their own judgments. Incomplete validation and cancellation cannot publish a pass. Scope replacement preserves exact revision/reason and actual dependent invalidation; a reason is not tool proof of semantic equivalence.",
@@ -761,6 +1124,8 @@
               "existing App inspection and measurement",
               "primary drawing agent findings bound to current inspection evidence",
               "public Scene Tree and Props observations",
+              "Core selected-field validation and isolation with Element/Computed snapshot ownership",
+              "Preset pure rectangle union for read-only Group content geometry",
               "document load lifecycle"
             ],
             "forbiddenContributors": [
@@ -770,10 +1135,30 @@
               "nested model execution from preparation or drawing review tools"
             ],
             "cacheDimensions": [
-              "deterministic node verdict: canonical element ID, actual change invalidation, inherited visibility and parent dimensions, child dependency IDs and completed text measurement; browser runtime observer lifetime, never an editable scene mirror",
+              "deterministic node verdict: canonical element ID, actual change invalidation, inherited visibility, traversal parent identity and applicable Frame dimensions, child dependency IDs and completed text measurement; browser runtime observer lifetime, never an editable scene mirror",
               "runtime-issued visual receipt, target/subtree or local region, canonical dependency IDs and regional membership, criterion inspection bindings; request lifetime, complete immutable source recipe, explicit criterion/key coverage, deterministic findings, element count, canonical attachment context/stamp, exact requirement/reference/source assertion evidence and supplied predecessor findings/currency"
             ],
             "implementationBoundary": [
+              "apps/asyra-design/test-data/knowledge-evaluation/visual-result-selection-20261028.json",
+              "packages/core/src/types/scene-tree.ts",
+              "packages/core/src/contracts/index.ts",
+              "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
+              "packages/core/src/apis/scene-tree.ts",
+              "packages/core/src/apis/create-apis.ts",
+              "packages/core/src/__tests__/scene-tree-api.test.ts",
+              "packages/scene-tree/src/components/element.ts",
+              "packages/scene-tree/src/components/computed.ts",
+              "packages/scene-tree/src/__tests__/computed-selection.test.ts",
+              "packages/utils/src/sceneTree/instanceTypes.ts",
+              "packages/render/src/render.ts",
+              "packages/render/src/layers/viewport/viewport-layer.ts",
+              "packages/render/src/layers/scene/render-layer.ts",
+              "packages/render/src/__tests__/render.test.ts",
+              "apps/asyra-design/e2e/drawing-inspection.spec.ts",
+              "apps/asyra-design/server/__tests__/workspace-inspection.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/workspace-inspection-20261024.json",
+              "apps/asyra-design/server/local-tool-invocation.ts",
+              "packages/preset/src/group-bounds.ts",
               "apps/asyra-design/src/ai/tool-contract.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/server/local-image-check.ts",
@@ -799,15 +1184,22 @@
               "apps/asyra-design/server/local-design-workflow.ts",
               "apps/asyra-design/server/ai-domain-prompt.ts",
               "apps/asyra-design/server/__tests__/design-review-stages.test.ts",
+              "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
+              "apps/asyra-design/server/__tests__/visual-correction.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/correction-handoff-20261023.json",
               "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
               "apps/asyra-design/server/__tests__/operation-input-schema.test.ts",
               "apps/asyra-design/server/__tests__/fixtures/review-inputs.ts",
               "apps/asyra-design/server/__tests__/fixtures/recorded-101/exact-review-binding-20261017.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/acceptance-context-20261020.json",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/src/ai/prescribed-position-contract.ts",
               "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
+              "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/mechanical-coverage-20261025.json",
               "apps/asyra-design/src/common-apis/design-review.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
               "apps/asyra-design/src/common-apis/inspection.ts",
               "apps/asyra-design/src/ai/inspection.ts",
               "apps/asyra-design/src/ai/inspection-schema.ts",
@@ -817,6 +1209,11 @@
               "apps/asyra-design/src/common-apis/design-edit.ts",
               "apps/asyra-design/src/ai/__tests__/review-action.test.ts",
               "packages/core/src/core.ts",
+              "packages/scene-tree/src/components/group.ts",
+              "packages/core/src/__tests__/app-runtime-facade.test.ts",
+              "apps/asyra-design/server/__tests__/metadata-inspection.integration.test.ts",
+              "apps/asyra-design/server/__tests__/mechanical-inspection.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/vector-delivery-20261025.json",
               "packages/core/src/index.ts",
               "packages/core/src/__tests__/element-property-api.test.ts",
               "apps/asyra-design/src/common-apis/inspection-dependencies.ts",
@@ -824,6 +1221,10 @@
               "apps/asyra-design/src/common-apis/inspection-evidence.ts",
               "apps/asyra-design/src/common-apis/__tests__/inspection-evidence.test.ts",
               "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+              "apps/asyra-design/e2e/recorded-document-reload.spec.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json",
               "apps/asyra-design/src/ai/inspection-evidence.ts",
               "apps/asyra-design/src/ai/__tests__/inspection.test.ts",
               "apps/asyra-design/src/ai/__tests__/runtime-input.test.ts",
@@ -835,9 +1236,17 @@
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts"
             ],
             "specRefs": [
+              "#visual-review-result-selection",
+              "#pre-execution-guidance-and-recoverable-input-validation",
+              "#workspace-mechanical-review",
+              "#computed-snapshot-selection",
+              "#mechanical-review-structural-reads",
+              "#image-inspection-target-preflight",
+              "#metadata-child-count-handoff",
               "#tool-first-correction-contract",
               "#evidence-and-completion",
-              "#capture-and-deterministic-review-responsibility"
+              "#capture-and-deterministic-review-responsibility",
+              "#mechanical-coverage-selection"
             ],
             "failureOwnerStepId": "inspect"
           },
@@ -852,27 +1261,30 @@
               "artifact:inspection-evidence",
               "artifact:execution-receipt",
               "clarification or classified failure",
-              "ordered public tool progress and execution summaries"
+              "ordered public tool progress and execution summaries",
+              "settled work, request cancellation and owned retained-query identities"
             ],
             "outputs": [
               "artifact:visible-outcome"
             ],
             "conditions": [
-              "Keep request objective, stage intent and call purpose separate. Primary-agent public commentary supplies concrete stage intent before input preparation; retain it across individual native research and App tool invocations until new commentary, retry, saving or terminal settlement. Completed call identities cannot rejoin a purpose through replayed or late start events. Tool completion does not complete the authored stage or clear replacement commentary. Never copy inherited text as authored call purpose.",
-              "Every ordered invocation start/end updates canonical activity even when its projected text is unchanged. Completion removes call-scoped purpose; never retain a completed work subject as current activity. Explicit request-commentary completion retires that purpose. With no authored purpose show only an honest observed phase, not the original objective. Genuinely live common principal invocation purpose takes presentation precedence over retained stage context. Display meaningful observed work separately from authored purpose; queued/admission events identify preparation for the known operation until execution starts; repeated admission does not revive queued wording after execution. Diagnostics preserve every phase. With no active calls, identify retained prose as stage context rather than ongoing execution. Independent concurrent principal work uses shared purpose rather than the latest sibling; descendant purposes remain diagnostic. Reducer decisions record selected purpose identity/source, accepted live-leaf phase label and active-call count. Rejected events cannot change diagnostic phase; completion removes the finished phase and exposes surviving leaves or the provider. Raw incoming phases remain separate event evidence.",
+              "Keep request objective, stage intent and call purpose separate. Primary-agent public commentary supplies concrete stage intent before input preparation; retire it at the next principal start; fresh idle commentary may replace settled context. Completed call identities cannot rejoin a purpose through replayed or late start events. Tool completion records only its canonical outcome, never an inferred model stage. Never copy inherited text as authored call purpose.",
+              "Every ordered invocation start/end updates canonical activity even when its projected text is unchanged. Completion removes live call ownership and retains its canonical receipt in existing closed-call metadata as explicitly settled context. Explicit request-commentary completion retires that purpose. With no active root or fresh commentary show the latest group settlement as completed, partial, failed or outcome-unconfirmed. Generic end events cannot prove success; preserve every root identity until the group settles. Never use the original objective as idle fallback. Genuinely live common principal invocation purpose takes presentation precedence over retained stage context. Display meaningful observed work separately from authored purpose; queued/admission events identify preparation for the known operation until execution starts; repeated admission does not revive queued wording after execution. Diagnostics preserve every phase. With no active calls, identify retained prose as stage context rather than ongoing execution. Independent concurrent principal work uses shared purpose rather than the latest sibling; descendant purposes remain diagnostic. Reducer decisions record selected purpose identity/source, accepted live-leaf phase label and active-call count. Rejected events cannot change diagnostic phase; completion removes the finished phase and exposes surviving leaves or the provider. Raw incoming phases remain separate event evidence.",
               "Keep purpose identity, scope and authored revision across phase-only updates. Principal invocations own public status; descendants never replace them. Independent roots use their shared live purpose or stage context; preserve actual leaf phases and counts in diagnostics independently of visible deduplication. Conversation and panel preserve that objective through clarification and retry.",
               "Render authored principal purpose before secondary operation state. Retained prose with no executing App root is explicitly task context. Provider-observed batch effects derive from the actual registered actions at dispatch; mixed or unknown effects cannot claim drawing. Descendant dispatch effects may describe the principal execution without exposing child names or replacing its purpose.",
               "Current activity consumes the turn-owned incremental projection; raw progress and collapsed history are not replayed on each publication. Historical snapshots remain point-in-time reads.",
               "Preserve successful work and intended Undo commits",
               "Terminal host and store cleanup are separately observed after active calls settle. Attempt each owner and record errors and duration without replacing the original product result/failure, replaying writes or claiming successful cleanup.",
+              "Work cutoff closes model operation admission but not request-owned resource cleanup. Only the internal retained-query release owner selects lifecycle cleanup through the existing observed browser dispatcher; no model flag or action-name bypass. Preserve real request cancellation, permissions, borrow ownership and synchronous mutation cutoff. Browser request-finally releases request data on cancellation/transport loss. Failed release remains retryable while work stays closed; successful releases and completed writes are never replayed.",
               "Show settled explanations in the conversation without a duplicate canvas completion/Undo overlay; ordinary toolbar and keyboard history actions remain available",
               "Project scoped request and call purposes in their authored language separately from observed owner phases; preserve parent and active sibling purposes, remove completed child phases, reject stale events, deduplicate history by authored purpose identity/revision while actual semantic operation changes immediately; admission alone does not claim execution; each principal invocation owns its public status, descendants never replace it, and independent roots retain concurrent ownership without dropping diagnostic events; preserve historical snapshots and let lifecycle state override current work",
               "The App activity state machine owns legal lifecycle transitions: saving and stopping accept settlement, settled rejects late progress, approval resumes on admitted running progress, and authoritative conversation outcomes remain distinct from provider evidence",
               "Activity provenance is explicit: authored work starts replace older work, system labels and late acknowledgements do not; call identity and producer order survive transport and stale invocation events are ignored",
-              "The provider classifies registered-operation descriptions as system activity while retaining their diagnostic expectedResult/expectationSource. Recorded purpose uses the same normalized kind as UI activity. New request commentary replaces stage context; retry, saving and terminal settlement retire it. Root/child call completion removes only call ownership and cannot infer stage completion. Distinct concurrent operation labels remain visible together with their count.",
+              "The provider classifies registered-operation descriptions as system activity while retaining their diagnostic expectedResult/expectationSource. Recorded purpose uses the same normalized kind as UI activity. New request commentary may provide context only when no principal is active. The next principal start retires that preceding commentary permanently; commentary during active principals is informational and cannot revive after settlement. Retry, saving and terminal settlement retire context. Root/child completion removes its call ownership without restoring retired commentary; immutable objective remains in the conversation, never the idle activity fallback. Distinct concurrent operation labels remain visible together with their count.",
               "Bound the visible current-purpose message to three lines while preserving full DOM and title text. Presentation does not change source purpose, language, lifecycle or freshness.",
               "Retained query mutations validate membership revision, locks and complete targets inside the synchronous mutation boundary; invalidated or evicted results produce recoverable rejection before writes",
               "Confirm the captured publication sequence through the current document generation and backend durable watermark; keep drawing completion distinct from durable, unavailable and local-only storage",
+              "Canonical property publication retains exact final relationships and order alongside lifecycle records, including links to existing shared properties. Updates to retiring components precede removal, and creation precedes updates to new components. Lifecycle and final values are ordered operations in one atomic publication, retaining unique property owners within each Core batch. Live remote apply and durable reduction consume the same operations; malformed evidence rejects, and remote apply produces no local History or echo.",
               "Wait outside the publication queue; later edits do not extend the target, and cancellation, disconnect, Reset or backend failure cannot approve persistence",
               "Questions pause a segment; answers start the next",
               "Accurately report partial work and unresolved failure",
@@ -900,6 +1312,10 @@
               "apps/asyra-design/src/app/__tests__/context-menu-app-integration.test.tsx",
               "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
               "apps/asyra-design/package.json",
+              "apps/asyra-design/src/collaboration/operations.ts",
+              "apps/asyra-design/src/collaboration/document-publication.ts",
+              "apps/asyra-design/src/init/__tests__/collaboration-operations.test.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
               "apps/asyra-design/server/document-persistence-queue.ts",
               "apps/asyra-design/server/__tests__/document-persistence-queue.test.ts",
               "apps/asyra-design/collaboration-server.ts",
@@ -907,6 +1323,7 @@
               "apps/asyra-design/src/collaboration/protocol.ts",
               "apps/asyra-design/src/collaboration/collaboration-transport-worker.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/evaluation-window.ts",
               "apps/asyra-design/src/collaboration/websocket-provider.ts",
               "apps/asyra-design/src/collaboration/lifecycle.ts",
               "apps/asyra-design/src/init/__tests__/collaboration-protocol.test.ts",
@@ -918,6 +1335,11 @@
               "apps/asyra-design/src/ai/__tests__/startup.test.ts",
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/local-query-artifacts.ts",
+              "apps/asyra-design/server/local-tool-host.ts",
+              "apps/asyra-design/server/local-tool-leases.ts",
+              "apps/asyra-design/src/common-apis/retained-design-context.ts",
               "apps/asyra-design/src/ai/conversation.ts",
               "apps/asyra-design/src/ai/__tests__/conversation.test.ts",
               "packages/ai-agent-runtime/src/provider.ts",
@@ -929,6 +1351,8 @@
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
               "apps/asyra-design/server/action-batch.ts",
               "apps/asyra-design/server/__tests__/action-batch.test.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
               "apps/asyra-design/src/ai/activity-state.ts",
               "apps/asyra-design/src/ai/presentation.ts",
               "apps/asyra-design/src/ai/__tests__/presentation.test.ts",
@@ -936,8 +1360,10 @@
               "apps/asyra-design/src/ai/__tests__/document-interaction-lock.integration.test.ts"
             ],
             "specRefs": [
+              "#work-deadline-and-resource-cleanup",
               "#purpose-lifetime",
-              "#evidence-and-completion"
+              "#evidence-and-completion",
+              "#material-relationship-publication"
             ],
             "failureOwnerStepId": "settle"
           },
@@ -949,24 +1375,36 @@
             "ownerPackage": "@asyra/ai-agent-runtime",
             "purpose": "trace-owner",
             "inputs": [
+              "frozen E2E source identity, public runtime/history/document snapshots, backend checkpoint and explicit planned reloads",
+              "explicit bounded evaluation window and attributed public self-report",
               "observed provider lifecycle events",
               "host dispatch, middleware, domain outcome/report policy and explicit call provenance",
               "tool queue and execution spans",
               "App tool inputs, outputs and receipt summaries",
               "saved execution records, explicit period filters and optional user feedback",
               "explicit post-run assessment request and named criteria",
-              "explicit post-run diagnostic assessment identity, separate from drawing checks"
+              "explicit post-run diagnostic assessment identity, separate from drawing checks",
+              "exact-thread, unique-process native diagnostic rows in a bounded evaluation window",
+              "explicit offline scripted executions and permanent saved-reply fixtures"
             ],
             "outputs": [
               "artifact:execution-trace"
             ],
             "conditions": [
+              "Ordinary drawing and quality evaluation prompts expose optional Knowledge resources without a reading prerequisite or fixed stage. Existing scenario composition preserves request requirements, attachments and deadlines; observations record actual use, and zero reads are valid. Preserve historical prompts and distinguish changed prompt conditions. No forced-reading arm, model run or additional orchestration is implied.",
+              "A bounded multi-turn consultation or drawing observation preserves the ordinary predecessor answer before submitting the follow-up. Only the final request uses the existing evaluation self-report window; a first-turn process watchdog and the final report watchdog share the original work deadline. A terminal partial predecessor may continue only after its ordinary answer, request identity and document are saved and App input is idle; preserve partial status and send only the declared follow-up. Missing evidence, unsettled or non-idle input, failed/cancelled outcome or expiry stops the sequence. A captured final partial report is not artwork acceptance. Ordinary answers cannot substitute for attributed final reports; no direct diagnostic product mutation, second result store or automatic retry.",
+              "E2E source drift, unplanned participant navigation or closure invalidates environment continuity separately from strict save/history/collaboration assertions. One explicit planned reload permits one runtime replacement only. Preserve named phases, original errors and unavailable evidence in existing Playwright attachments; no automatic retry, weakened assertion or product owner mutation.",
+              "Record the explicit evaluation artifact limit alongside the unchanged production ceiling; obtain actual delivered policy and recovery behavior from linked provider records. A lower test budget cannot certify an untriggered overflow or recovery.",
+              "Explicit evaluation work and report budgets remain separate. Capture model-authored report text and screenshot without video, close the work context before fresh-context reload; failed reports and captures remain failures with bounded external cleanup. Never infer causal latency from self-report.",
+              "Consume the existing executed conversation result and matching terminal host-marked report receipt; preserve legal action-ID reuse in earlier batches. Project bounded report text and request/turn identity to the existing rendered message; capture exactly the observed request and verify the same assistant result message before screenshot; user/history text is not a substitute. No full-network-body reread, raw-provider fallback, duplicate report store or execution replay; missing, ambiguous, failed and cancelled reports remain failures.",
+              "Declare observable public item and App invocation boundaries and unavailable pre-dispatch native items, parameter deltas/bytes and generation-versus-stall attribution through the existing trace sink. Compare real native progressive and silent unfinished inputs without inferring missing events as zero bytes, stalls, thinking or execution. Preserve dispatch, cancellation, disconnect and no-replay behavior.",
               "Drawing and prepared-check execution cannot enter a visual-assessment-only provider route. Explicit execution-report diagnostics remain separate; recorded historical purposes are not rewritten.",
               "File-backed collection retains bounded recent retry digests and verifies older sequences against durable evidence with bounded sequential reads; restoration does not retain all hashes. Explicit host budgets and conflict rejection remain authoritative.",
               "Diagnostic outbox append accepts atomic ordered single-request byte-partitioned batches (256 KiB, individual records remain capture/transport bounded), preserves the pending-byte bound, and delivers durable prefixes without waiting for later storage work. Failed atomic batches retain enclosing gaps; no product work is replayed.",
               "Reserve bounded diagnostic control capacity before payload capture. Capture/storage loss retains an enclosing missing sequence range where storage permits; recovery reports that gap and cannot certify completeness or fabricate missing events. Failed reserve or gap persistence is separately explicit and never changes product outcome.",
               "Persist diagnostic records in a host outbox before sending; retain unacknowledged streams on failure and recover through idempotent durable collection without replaying product operations",
               "Measure recording serialization, queue and write costs outside recursive trace emission; retain explicitly supplied original image assets locally by immutable digest and distinguish redacted URL resource variants without exposing credentials",
+              "The App adapter retains exact submitted native tool images through the existing asset sink, linked by callId and contentIndex; no recapture or resampling. Suppressed or transport-failed replies cannot claim submission. Offline readers verify asset bytes, digest and image-count completeness; recording loss never replays product work.",
               "Shared invocation observes success, rejection, error and cancellation without bypassing canonical policies; next executes at most once",
               "Forward actual pinned tool revisions and admitted parent recipe name/revision/step IDs from the common Runtime invocation observer, preserving repeated leaf causality without inferring it from tool names.",
               "Timestamp transport chunks without retaining bytes; report activity visibility independently from lifecycle coverage and export explicit local traces",
@@ -984,8 +1422,13 @@
               "Retain process and matching-thread MCP startup names, states, structured failure reasons and classified warnings before inference; explicitly omit private diagnostic text",
               "Retain public native retry/error kinds, willRetry and numeric HTTP/RPC status without free text; observations never alter native retry or turn settlement",
               "Record required-stream failure and optional diagnostic-stream loss as bounded transport metadata; raw error text stays omitted and diagnostics cannot change drawing settlement",
+              "Offline evaluation supplements public events with read-only exact-thread, unique-process, bounded-window native diagnostic item and host boundaries. Save allowed metadata with row/body provenance, no private text; missing or ambiguous evidence stays unavailable, unmatched items stay incomplete, and no temporal pairing implies identity or parameter progress. No runtime polling or settlement influence.",
+              "Retain matching public message, readable reasoning summary and plan deltas/final values through the existing redacting native-output payload sink; concise summary request adds no turn. Preserve exact turn/item identity, empty/missing/malformed/failed content, interrupted activity and linear delta writes; never retain raw reasoning or infer missing work. Offline analysis verifies hashes and merges activities with tool/lifecycle events and no-recorded-activity intervals, separately from first content and quality acceptance.",
               "Distinguish wire bytes, eager schema bytes and reported usage",
               "Persist ordered sanitized records locally; incomplete streams never imply success",
+              "Offline native delivery proofs may script loopback Responses events and retain actual subsequent native requests through the existing sink; preserve native version, fixture identity, default limits, bounded process cleanup and explicit unobserved boundaries. No model inference or product refresh changes.",
+              "Cross-execution offline proofs retain scripted exec identities, actual successor requests and public notifications; verify revision-bound complete fragment assembly and later retained reads separately from compact/full output transformations. Missing coverage rejects assembly; no hidden storage or historical model behavior is inferred.",
+              "Retain selected public native discovery and Knowledge result content through the existing payload sink with original text digests, bytes and explicit missing/malformed provenance; decode JSON before redaction. Native echo is not model visibility; uncorrelated exec/wait bodies stay omitted. Recording failure never replays or changes product work.",
               "Retain bounded summaries and separate sanitized App tool payload snapshots locally, with digest, bytes and explicit redactions",
               "Project evidence-linked reports without certifying visuals or inferring missing facts",
               "Separate transport completion from receipt-based usable, partial, rejected, failed or unknown tool outcomes; report nested action failures separately without double counting or inferred recovery",
@@ -995,10 +1438,13 @@
               "Missing provider fields remain unavailable"
             ],
             "allowedContributors": [
+              "App E2E harness using public Core history/save, backend checkpoints and Playwright lifecycle/attachments",
               "usage instrumentation",
               "bounded receipt timings",
               "read-only record projection and separately attributed feedback",
-              "isolated native provider transport for an explicit post-run assessment"
+              "isolated native provider transport for an explicit post-run assessment",
+              "offline read-only evaluation collector with sanitized diagnostic provenance",
+              "fixed loopback native handoff verification without model inference"
             ],
             "forbiddenContributors": [
               "private reasoning inference",
@@ -1008,6 +1454,32 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "apps/asyra-design/e2e/execution-evidence.ts",
+              "apps/asyra-design/e2e/test-utils.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+              "apps/asyra-design/e2e/fixtures/execution-continuity.json",
+              "apps/asyra-design/src/ai/evaluation-window.ts",
+              "apps/asyra-design/src/ai/__tests__/evaluation-window.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/report-capture-20261023.json",
+              "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+              "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx",
+              "apps/asyra-design/test-data/knowledge-evaluation/README.md",
+              "apps/asyra-design/test-data/knowledge-evaluation/run-101.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/architecture-101.json",
+              "apps/asyra-design/test-data/knowledge-evaluation/quality-cases.json",
+              "apps/asyra-design/test-data/knowledge-evaluation/quality.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/architecture-protocol.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/__tests__/architecture-protocol.test.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/run-consultation.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/__tests__/consultation.test.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/capture-lifecycle.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/__tests__/capture-reliability.test.mjs",
+              "apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts",
+              "apps/asyra-design/server/local-provider-activity.ts",
+              "apps/asyra-design/test-data/knowledge-evaluation/public-activity.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/native-boundaries.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-boundaries.test.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/__tests__/public-activity.test.mjs",
               "packages/ai-agent-runtime/src/profiler/record-outbox.ts",
               "packages/ai-agent-runtime/src/node/file-record-collector.ts",
               "packages/ai-agent-runtime/src/node/__tests__/record-collector.test.ts",
@@ -1061,6 +1533,9 @@
               "apps/asyra-design/e2e/local-ai-provider.spec.ts",
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-delivery.test.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery",
               "apps/asyra-design/server/local-action-observation.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/src/ai/action-failure.ts",
@@ -1071,13 +1546,18 @@
               "apps/asyra-design/server/__tests__/local-ai-evaluation.test.ts",
               "apps/asyra-design/server/ai-model-provider.ts",
               "apps/asyra-design/server/__tests__/ai-model-provider.test.ts",
-              "apps/asyra-design/server/local-ai-provider.ts"
+              "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/test-data/knowledge-evaluation/analyze.mjs",
+              "apps/asyra-design/test-data/knowledge-evaluation/__tests__/analysis.test.mjs"
             ],
             "specRefs": [
+              "#e2e-execution-continuity",
+              "#bounded-evaluation-work-and-self-report",
               "#tool-first-correction-contract",
               "#diagnostic-delivery-lifetime",
               "#ownership-and-diagnostics",
               "#shared-runtime-profiler",
+              "#unfinished-native-output-visibility",
               "#execution-recording",
               "#execution-evaluation"
             ],
@@ -1085,6 +1565,17 @@
           }
         ],
         "artifacts": [
+          {
+            "id": "artifact:retained-capacity-plan",
+            "ownerStepId": "prepare",
+            "consumerStepIds": [
+              "compose"
+            ],
+            "terminal": false,
+            "title": "Retained capacity plan",
+            "channel": "App execution",
+            "description": "Existing immutable source and bounded partition references; successful preparation, never compiled geometry or a canvas receipt."
+          },
           {
             "id": "artifact:prepared-review",
             "ownerStepId": "inspect",
@@ -1178,6 +1669,16 @@
         ],
         "routes": [
           {
+            "id": "capacity-plan-to-compose",
+            "from": "prepare",
+            "to": "compose",
+            "kind": "feedback",
+            "producedArtifacts": [
+              "artifact:retained-capacity-plan"
+            ],
+            "predicate": "A retained safe-capacity plan returns to the existing ordered parts executor in the same invocation; each part must independently prepare and receive canonical application acknowledgement."
+          },
+          {
             "id": "prepare-to-inspect",
             "from": "prepare",
             "to": "inspect",
@@ -1243,7 +1744,7 @@
             "producedArtifacts": [
               "artifact:prepared-artifact"
             ],
-            "predicate": "Preparation succeeds and the chosen operation consumes its handle.",
+            "predicate": "A compiled artifact is applicable and the chosen operation consumes its handle; a retained capacity plan alone cannot enter application.",
             "from": "prepare",
             "kind": "handoff"
           },
@@ -1443,7 +1944,7 @@
               "The browser request carries the submitted intent, attachment metadata and data URL, bounded App context without a domain prompt or image-tool catalog, registered action descriptions, attempt number, and abort ownership without reading canonical document persistence.",
               "The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies either HTTP endpoint, model, and API key, or the explicit local-codex backend, model, and local subscription login for an ordinary request.",
               "The backend sends the API key only in the provider authorization header; it never enters the browser, App context, logs, provider request body, action batch, canonical state, persistence, or Collaboration.",
-              "Local code-mode composes only registered App tools through the same backend admission and canonical receipts. Exclusive calls queue in arrival order; adjacent read-only contour analyses may overlap. Combined semantic preparation/application reuses its request artifact once, requests compact identity/count evidence at the canonical action source or explicit full mappings, keeps permission context fresh, and defers repeated intermediate measurement until stage inspection, requires a successful current measurement and visual review before completion, and preserves cancellation and failure ownership. Edits require complete composition measurement; affected-subtree reuse requires authoritative document revision and invalidation evidence, which request-local tool history alone cannot supply. Traversal checks the entire subtree in cancellable cooperative chunks, never truncating completion at 200 nodes. Further same-revision captures reuse measurement. Request-owned prepared keyToId references resolve original identities without canvas scans; current actions validate existence and permission. Ordered execute_design_batch validates every registered input before one canonical exchange, preserving Runtime transaction semantics and reviewing once at the stage boundary. Explicit-ID context reads request only selected property fields, defaulting to identity metadata. Native script output is diagnostic, never canonical output.",
+              "Native direct calls compose only registered App tools through the same backend admission and canonical receipts. Exclusive calls queue in arrival order; adjacent read-only contour analyses may overlap. Combined semantic preparation/application reuses its request artifact once, requests compact identity/count evidence at the canonical action source or explicit full mappings, keeps permission context fresh, and defers repeated intermediate measurement until stage inspection, requires a successful current measurement and visual review before completion, and preserves cancellation and failure ownership. Edits require complete composition measurement; affected-subtree reuse requires authoritative document revision and invalidation evidence, which request-local tool history alone cannot supply. Traversal checks the entire subtree in cancellable cooperative chunks, never truncating completion at 200 nodes. Further same-revision captures reuse measurement. Request-owned prepared keyToId references resolve original identities without canvas scans; current actions validate existence and permission. Ordered execute_design_batch validates every registered input before one canonical exchange, preserving Runtime transaction semantics and reviewing once at the stage boundary. Explicit-ID context reads request only selected property fields, defaulting to identity metadata. Native script output is diagnostic, never canonical output.",
               "Ordinary local turns use native registered tool schemas once, retain final-response control schemas in text, and proceed through parameter-only routine operations with App-owned status labels. The model only asks for material missing input or genuine ambiguity and returns a concise factual outcome; required approvals, original evidence and both review stages remain enforced by their existing owners.",
               "Provider-native live web search may research concepts, styles, public facts or references without an attachment. Only safe research activity is projected; raw search queries and page bodies are not UI status. No site-specific search tool or domain ordering is registered. Original public URLs use safe import; source-local failures and unsuitable assets require continued research with changed sources, queries or supported methods instead of premature user handoff. Reference import is separately bounded; a search result is not an imported image receipt. Shell, credentials, local file tools and external integrations remain unavailable.",
               "The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns complete AiActionBatch values with batchId and already-prepared arguments. Sequential intermediate batches await canonical receipts before the model continues.",
@@ -8154,6 +8655,7 @@
               "Batch and publication retry are idempotent.",
               "The shared App wire decoder reconstructs each trusted publication exactly once and the App organizer converts it to ordered canonical changes without a second recursive product-schema validation or independent route/payload interpretation.",
               "Each publication boundary applies atomically and no acknowledgement advances past a failed publication.",
+              "Exact-record retirement preserves every JSON field, reference and array position. Binary signed zero and checkpoint zero compare equally without tolerance or field omission; genuine changes and duplicate retirement remain conflicts.",
               "A successful request stores the updated checkpoint and returns the highest contiguous durable sequence."
             ],
             "bypasses": [
@@ -11005,6 +11507,7 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/ai/document-export.ts",
+              "apps/asyra-design/src/ai/server-action-batch-provider.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/src/features/ai-agent/index.ts",
               "apps/asyra-design/src/ai/startup.ts",
@@ -11091,6 +11594,7 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "apps/asyra-design/src/ai/prepared-material-action.ts",
               "apps/asyra-design/src/ai/prepared-design.ts",
               "apps/asyra-design/src/ai/prepared-design-admission.ts",
               "apps/asyra-design/src/ai/design-actions.ts",
@@ -11119,7 +11623,8 @@
               "artifact:inspect-design-outcome"
             ],
             "conditions": [
-              "Bind observations to current canonical content and keep overview distinct from native detail."
+              "Bind observations to current canonical content and keep overview distinct from native detail.",
+              "Mechanical receipt validity follows supported rule inputs at the browser reviewer; image and attachment evidence retain independent dependencies. Validate real server freshness, cancellation, history and document replacement through the existing action boundary."
             ],
             "bypasses": [
               "Unavailable capture and stale evidence remain explicit rather than proving current geometry."
@@ -11132,8 +11637,12 @@
               "Observation records or test assertions as canonical product state",
               "Guessed ownership or test-specific runtime output"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "Existing browser reviewer verdicts keyed by element and actual checked traversal context; issued mechanical receipts reference exact supported coverage within that observer lifetime."
+            ],
             "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-review.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/src/ai/prescribed-position-action.ts",
@@ -19995,7 +20504,7 @@
       "kind": "flow-v2",
       "group": "Framework",
       "subgroup": "Architecture and Runtime",
-      "lifecycle": "retained",
+      "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
       "standalonePath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.html",
       "labels": [
@@ -20016,9 +20525,9 @@
           "subtitle": "One plural canonical request, separate Props and Scene owners, local-only computed projection, one existing Factory journal and Undo boundary, one minimal SharedPublication path, bounded bytes, and remote side-effect isolation."
         },
         "authority": {
-          "specPath": "docs/ai/framework/plans/completed/canonical-projection-and-collaboration-contract-realignment-plan.md",
+          "specPath": "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
           "inspectorPath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
-          "semanticOwner": "Asyra Design Pre-Release Canonical Projection and Collaboration Contract Realignment Plan",
+          "semanticOwner": "Current canonical Framework owners and socket-authoritative App contract",
           "inspectorOwner": "Canonical projection and collaboration owner handoff flow"
         },
         "links": [
@@ -20032,13 +20541,7 @@
             "id": "realignment-plan",
             "kind": "authority",
             "label": "Canonical projection and collaboration contract",
-            "href": "../../../docs/ai/framework/plans/completed/canonical-projection-and-collaboration-contract-realignment-plan.md"
-          },
-          {
-            "id": "performance-plan",
-            "kind": "completed-successor",
-            "label": "Completed Asyra Design drawing performance plan",
-            "href": "../../../docs/ai/apps/asyra-design/plans/completed/ai-conversational-drawing-performance-plan.md"
+            "href": "../../../docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
           },
           {
             "id": "transaction-inspector",
@@ -20081,24 +20584,29 @@
             "laneId": "intent-orchestration",
             "title": "Prepare one composition request",
             "ownerPackage": "Asyra Design AI actions and common APIs",
-            "purpose": "Translate one accepted AI composition into one Group and one all-children plural Core request inside one outer Factory transaction.",
+            "purpose": "Translate accepted App creation or property intent into the corresponding public plural Core request inside the existing Factory transaction.",
             "inputs": [
               "validated AI composition descriptor",
               "Feature-owned AbortSignal",
-              "one outer Factory transaction"
+              "one outer Factory transaction",
+              "Validated local override, explicit source update, reset, detach or share intent with canonical child slots and optional expected identities"
             ],
             "outputs": [
               "artifact:local-composition-request",
-              "artifact:progressive-stage-request"
+              "artifact:progressive-stage-request",
+              "artifact:property-intent-result"
             ],
             "conditions": [
-              "The App creates one Group and calls Core.createElementsInParent once with all accepted children.",
+              "The App creates one Group and submits one all-children request to Core.createElementsInParent.",
               "Canonical descriptor property overrides enter the prepared Props creation batch and never depend on a mixed computed/property write.",
               "The single-element convenience delegates to the same plural batch-of-one implementation.",
               "Group and children remain one intended action and one outer Factory transaction.",
               "The App obtains one active shared-delivery handle directly from Factory transaction execution; Core does not receive, store, or return that handle.",
               "The App batch-result and delivery-handle migration completes before Core deletes Core.createElementsInParentBatch; this is implementation dependency ordering, not a compatibility contract.",
-              "Progressive visibility is downstream artifact delivery and never repeats the Core mutation."
+              "Progressive visibility is downstream artifact delivery and never repeats the Core mutation.",
+              "Property operations use Core registered target reads and plural intent APIs. Local edits never mutate the shared source. Sharing a source-backed row requires explicit independent source selection; the convenience API rejects it rather than silently discarding its overrides. Read results distinguish logical child slots, effective bindings and independent source identities. Acceptance is not durable save confirmation.",
+              "App method advice distinguishes selected-owner overrides, explicit source changes, reset and detach. Existing tools with changed write meaning advance their registered revision; portable Knowledge remains advisory and tool-neutral.",
+              "Exact property target views or locally accepted owner IDs; recoverable validation failure without a written prefix."
             ],
             "bypasses": [
               "Clarification and no-change turns create no Group or canonical request.",
@@ -20109,7 +20617,8 @@
               "registered Asyra Design AI actions",
               "Asyra Design common element APIs",
               "@asyra/core public plural element API",
-              "@asyra/factory active shared-delivery handle"
+              "@asyra/factory active shared-delivery handle",
+              "@asyra/core public property intent and target-read APIs"
             ],
             "forbiddenContributors": [
               "fixed 256-item Core request loops",
@@ -20124,12 +20633,14 @@
               "apps/asyra-design/src/ai",
               "apps/asyra-design/src/ai/__tests__",
               "apps/asyra-design/src/common-apis",
-              "apps/asyra-design/src/common-apis/__tests__"
+              "apps/asyra-design/src/common-apis/__tests__",
+              "apps/asyra-design/knowledge/design.architectural-illustration.md",
+              "apps/asyra-design/server/local-knowledge.ts",
+              "apps/asyra-design/server/__tests__/local-knowledge.test.ts",
+              "apps/asyra-design/e2e/fixtures/basic-api-cases.ts"
             ],
             "specRefs": [
-              "#target-architecture",
-              "#core-creation-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-one-composition-request"
           },
@@ -20172,7 +20683,9 @@
               "Core.applyCanonicalChanges accepts one ordered remote canonical request and invokes its typed owner facades inside one caller-owned Factory transaction.",
               "Core invokes every prepared owner mutation required by the request in canonical evidence order inside the caller-owned outer Factory transaction.",
               "Factory rollback provides cross-owner atomicity after an unexpected apply failure.",
-              "All canonical callers migrate to the typed element-property APIs before the local computed semantic handoff; the transient vector preview remains an explicit local-only handoff dependency rather than being misclassified as a canonical caller."
+              "All canonical callers migrate to the typed element-property APIs before the local computed semantic handoff; the transient vector preview remains an explicit local-only handoff dependency rather than being misclassified as a canonical caller.",
+              "Coordinate distinct local override, explicit source edit, reset and detach intents. Obtain complete Props and Scene preparations before applying either owner; no new scheduler or history control.",
+              "Canonical property-components input carries exact creations, per-field layer changes and explicit removals. Core coordinates the existing prepared Props owner; Scene alone validates and applies element-property-bindings. It never replays owner-local intentions to allocate replacement remote identities. Canonical element and subtree removal apply Scene only; explicit following Props retirement records own property lifecycle. Local full-removal APIs retain their prepared orphan lifecycle. Canonical input has no collection-intent records field."
             ],
             "bypasses": [
               "An empty local descriptor batch is inert.",
@@ -20235,12 +20748,7 @@
               "packages/scene-tree/src/__tests__"
             ],
             "specRefs": [
-              "#target-architecture",
-              "#core-creation-contract",
-              "#canonical-element-property-update-contract",
-              "#shared-element-property-relation-contract",
-              "#props-manager-batch-contract",
-              "#scene-tree-lifecycle-and-apply-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "coordinate-canonical-owner-preparations"
           },
@@ -20277,7 +20785,14 @@
               "ElementPropertyRelation identity is the ownerElementId and ownerPropertyName tuple, while one compatible componentId may serve many relation tuples.",
               "Prepared exact orphan property graph removal accepts only deduplicated orphan root IDs and complete retained root property IDs from a Core-coordinated Scene release, traverses the Props property-graph from orphan roots, stops at each retained Scene root, and removes a root or descendant only when no remaining canonical relation retains it.",
               "A later invalid property item leaves no property, instance, relationship, registry, or evidence prefix.",
-              "A public single-item convenience delegates to updateProperties with the same batch-of-one owner path."
+              "A public single-item convenience delegates to updateProperties with the same batch-of-one owner path.",
+              "PropertyInheritance retains sourceId, sparse overrides and childBindings by source child identity. Independent records retain registered fields; sharedSource preserves explicit source intent.",
+              "Journal override presence and child bindings as field/link deltas. Equal-valued explicit overrides are canonical changes; reset removes presence and follows the current source.",
+              "Validate same-type independent registered sources and effective schemas; reject missing sources, chains, cycles, unknown fields, unsupported opaque types and deletion of sources with live dependent overrides before writes.",
+              "Source and child dependencies use the existing indexed property graph. A leaf edit does not freeze inherited collection membership.",
+              "Canonical record creation and retirement reuse the prepared batch owner through create-exact-property-records and remove-exact-property-records: preserve exact identities, schema, sparse inheritance and compatible tombstones; reject external live references and undeclared retirement. An explicit empty retirement set declares no lifecycle removal, rather than authorizing local intent inference.",
+              "An overridden target with remaining field masks or child bindings rejects sharing until explicit reset or detach. Independent or fully reset targets may bind to an independent same-type source; no silent local-intent discard.",
+              "Lifecycle evidence orderedIds exactly match first owner occurrence in its grouped shared records. Preserve caller-facing result order separately and dependency-safe graph application order; never duplicate payloads or weaken Factory ordering validation."
             ],
             "bypasses": [
               "An empty property request produces an empty valid prepared mutation and no property evidence.",
@@ -20312,14 +20827,14 @@
               "packages/utils/src/types/props-manager.ts",
               "packages/preset/src/props/components/fills-component.ts",
               "packages/preset/src/props/components/strokes-component.ts",
-              "packages/preset/src/__tests__/children-map-property-component.test.ts"
+              "packages/preset/src/__tests__/children-map-property-component.test.ts",
+              "packages/utils/src/propsManager/rawDataTypes.ts",
+              "packages/utils/src/propsManager/instanceTypes.ts",
+              "packages/utils/src/constants/props.ts",
+              "packages/reactive-events/src/props-manager"
             ],
             "specRefs": [
-              "#props-manager-batch-contract",
-              "#canonical-element-property-update-contract",
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates",
-              "#pre-release-removal-policy"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-and-apply-property-batch"
           },
@@ -20347,7 +20862,6 @@
               "Scene independently owns element identity, element hierarchy, and element-slot-to-root relations; Props independently owns property and component identity, lifecycle, and the property-child graph.",
               "ElementPropertyRelation is many-to-one with identity defined by the ownerElementId and ownerPropertyName tuple; a compatible componentId may repeat across relation tuples.",
               "Scene owns one derived reverse relation index from componentId to ordered ElementPropertyRelation values and keeps it equivalent through load, insert, remove, restore, rollback, Undo, and Redo.",
-              "The complete resolved targets group by propertyId: equivalent shared writes produce one mutation, while conflicting field or record writes atomically reject before Props preflight.",
               "PreparedCanonicalElementInsertion exposes the frozen owner relations already validated by Scene; Core passes them unchanged into the Props create-exact-property-graph operation instead of rebuilding Scene slot semantics.",
               "A prepared removal records released relations, retained relations, deduplicated orphan root property IDs, complete retained root property IDs from all prepared remaining element relations, and the exact relation-set read required to reject a stale relation set before mutation.",
               "Scene.prepareSubtreeRemoval accepts one root, derives the complete child-first post-order closure, emits one CHANGE_SUBTREE record, and delegates mutation to the same applyPreparedElementMutation owner.",
@@ -20359,7 +20873,10 @@
               "Apply owns Scene maps, raw element state, parent children, hierarchy order, and ordered Scene evidence only.",
               "Each apply emits one plural Scene event and one shared record per element in order for ADD_ELEMENTS and REMOVE_ELEMENTS; Factory publication slices may group those records but must not split one record or create another Scene mutation or history action.",
               "A later invalid Scene item leaves no map, parent-list, hierarchy-order, tombstone, or Scene evidence prefix.",
-              "A public single-item convenience delegates to the same one-item prepared Scene mutation."
+              "A public single-item convenience delegates to the same one-item prepared Scene mutation.",
+              "Explicit source resolved targets group by propertyId: equivalent writes produce one mutation, while conflicting source writes atomically reject before Props preflight. Owner-local targets retain distinct element and root binding identity; they cannot collapse into shared-source writes.",
+              "UPDATE_ELEMENT_PROPERTY_BINDINGS carries per-root before and after property IDs with the canonical root name. Scene atomically changes bindings and its existing reverse relation index, preserving unrelated roots.",
+              "Scene resolves each root binding. Props resolves registered child paths; Core coordinates the retained logical gesture target and rejects stale identity. Scene does not allocate or clone property sources."
             ],
             "bypasses": [
               "A rejected element-to-property request returns no partial resolved target set and performs no mutation.",
@@ -20408,15 +20925,11 @@
               "packages/factory/src/data-transact.ts",
               "packages/factory/src/__tests__/data-transact.test.ts",
               "packages/preset/src/subscriptions/data-channel.ts",
-              "packages/preset/src/__tests__/selection-subscriptions.test.ts"
+              "packages/preset/src/__tests__/selection-subscriptions.test.ts",
+              "packages/utils/src/sceneTree/instanceTypes.ts"
             ],
             "specRefs": [
-              "#scene-tree-lifecycle-and-apply-contract",
-              "#canonical-element-property-update-contract",
-              "#canonical-and-local-projection-contracts",
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates",
-              "#pre-release-removal-policy"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-and-apply-scene-mutation"
           },
@@ -20448,7 +20961,10 @@
               "The local producer switch and ordinary Preset consumer registration form one semantic handoff with no dual computed delivery.",
               "Asyra Design computed derived-state consumers normalize scalar, ordered batch, and patch events and perform each required continuation or icon synchronization exactly once per event.",
               "Preset declares its existing @asyra/reactive-events workspace package as a runtime dependency because the production consumer imports its subscriber directly.",
-              "Computed projection creates no history, SharedDataChannel batch, Collaboration publication, or persistence snapshot."
+              "Computed projection creates no history, SharedDataChannel batch, Collaboration publication, or persistence snapshot.",
+              "Resolve effective values through current source/binding dependencies. Unchanged masked values preserve value-only passes; relationship criteria retain their actual identity dependencies. No flattened canonical mirror.",
+              "UPDATE_PROPERTY payload.id identifies the changed property. Factory canonicalEvidence orderedIds are ordering metadata and may include element or other owner identities; they are never substituted for semantic property dependency inputs.",
+              "App visual freshness consumes the committed effective projection; masked source fields producing no effective change preserve existing visual receipts. Canonical mutation scope remains a separate observation mode and retains source/binding effects. Structure and document load remain explicit invalidation boundaries; no retained second value cache."
             ],
             "bypasses": [
               "A semantic computed no-op emits no canonical failure.",
@@ -20518,13 +21034,14 @@
               "turbo.json",
               "docs/ai/framework/API_SURFACES.md",
               "docs/ai/framework/packages/core.md",
-              "docs/ai/framework/packages/scene-tree.md"
+              "docs/ai/framework/packages/scene-tree.md",
+              "packages/core/src/__tests__/property-intent-history.test.ts",
+              "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+              "apps/asyra-design/src/common-apis/__tests__/inspection-evidence.test.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#shared-element-property-relation-contract",
-              "#target-architecture",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "derive-local-computed-projection"
           },
@@ -20568,7 +21085,8 @@
               "Shared-delivery bookkeeping records only the existing journal delivery outcome and never mirrors canonical payloads into another applied-result object.",
               "The production fast path performs no post-action save, equality comparison, finalize-save, full-document comparison, evidence clone, or recursive immutable-tree scan.",
               "A local committed action, Undo, or Redo may emit one shared publication and one persistence trigger; staged slices do not create another persistence trigger.",
-              "A remote transaction applies through the ordinary canonical owners but creates no Undo, echo publication, or local persistence trigger."
+              "A remote transaction applies through the ordinary canonical owners but creates no Undo, echo publication, or local persistence trigger.",
+              "Preserve per-field presence and per-link deltas in one intended Undo action, with current Session policies. Compensation, Undo and Redo restore relationships without overwriting unrelated peer fields."
             ],
             "bypasses": [
               "A no-change transaction emits no history action, publication, or persistence trigger.",
@@ -20608,11 +21126,7 @@
               "packages/reactive-events/src/__tests__"
             ],
             "specRefs": [
-              "#shareddatachannel-contract",
-              "#factory-ownership-contract",
-              "#canonical-and-local-projection-contracts",
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "record-and-deliver-transaction-batch"
           },
@@ -20637,7 +21151,8 @@
               "The same local computed projection updates Render and affected UI context exactly once through distinct Preset consumers without duplicating Render delivery.",
               "Render receives applied local computed batches before the next coordinate query; UI receives the same batches after successful outer commit. Rollback discards pending UI batches and inverse replay projects restored canonical values.",
               "Local and remote state use the same ordinary Render strategy.",
-              "Render and UI consume no History artifact, rollback evidence, inverse evidence, or SharedPublication payload."
+              "Render and UI consume no History artifact, rollback evidence, inverse evidence, or SharedPublication payload.",
+              "Scene root property binding deltas update the existing raw Render mirror and affected UI row without hierarchy invalidation or unrelated reads. Computed property values remain supplied by the separate local computed projection. Existing mirror mismatch resync is the failure owner."
             ],
             "bypasses": [
               "A canonical no-change produces no Render invalidation.",
@@ -20667,9 +21182,7 @@
               "packages/preset/src/__tests__"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#target-architecture",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "project-render-state"
           },
@@ -20691,7 +21204,8 @@
               "Filter local-only channels and derive ordered canonical changes only at the publishing App boundary. Heterogeneous Scene batches preserve consecutive operation-family order without changing the source slice. Each source move delivery retains its simultaneous move set; distinct sequential deliveries must not be flattened into one move, including creation/removal-adjacent moves.",
               "Preserve publication, artifact, transaction, semantic slice and publication-level compensation identity; transmit no duplicate raw owner events.",
               "Retain the prepared immutable publication for retries. Receivers consume explicit operations without reconstructing source channel adjacency.",
-              "Report preparation failure with original source identity through a required App callback before returning to Factory; observer isolation must not hide the failed handoff."
+              "Report preparation failure with original source identity through a required App callback before returning to Factory; observer isolation must not hide the failed handoff.",
+              "Publish explicit property field/link deltas and Scene root binding changes. Keep partial outcomes, accepted state and durability separate; no second mutation on save retry."
             ],
             "bypasses": [
               "A publication containing only local channels produces no document publication.",
@@ -20717,7 +21231,7 @@
               "apps/asyra-design/src/init/__tests__/document-publication.test.ts"
             ],
             "specRefs": [
-              "#collaboration-provider-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-document-publication"
           },
@@ -20770,9 +21284,7 @@
               "packages/collaboration/src/providers/memory"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#pre-release-removal-policy",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "publish-shared-publication"
           },
@@ -20829,9 +21341,7 @@
               "apps/asyra-design/__tests__/collaboration-server.test.mjs"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#profiling-contract",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "transport-publication-bytes"
           },
@@ -20858,7 +21368,8 @@
               "The App calls exactly one Core.applyCanonicalChanges with one ordered CanonicalChange request for the accepted publication.",
               "A property-only remote follow-up derives computed state locally before Render.",
               "The Provider consumer promise resolves only after App canonical apply completes successfully.",
-              "Actor B creates no Undo, echo publication, persistence capture, provider save, or IndexedDB write."
+              "Actor B creates no Undo, echo publication, persistence capture, provider save, or IndexedDB write.",
+              "Preflight and apply the same property inheritance and element binding deltas, preserving source order, no echo and no local history. Reject a malformed complete graph without partial application."
             ],
             "bypasses": [
               "Policy or canonical preflight failure occurs before mutation and rejects the consumer Promise.",
@@ -20894,9 +21405,7 @@
               "apps/asyra-design/src/init/__tests__/collaboration-operations.test.ts"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#collaboration-provider-contract",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "apply-remote-publication"
           },
@@ -20904,9 +21413,9 @@
             "id": "persist-local-commit",
             "order": 1,
             "laneId": "durability",
-            "title": "Persist eligible local commits",
-            "ownerPackage": "@asyra/core persistence coordinator",
-            "purpose": "Capture and serialize one detached snapshot for each eligible local action, Undo, and Redo while bypassing every remote transaction.",
+            "title": "Persist accepted document publications",
+            "ownerPackage": "Asyra Design socket session and document backend",
+            "purpose": "Persist the accepted publication sequence for local action, Undo and Redo through the current socket-authoritative document contract; report durability separately from local and peer apply.",
             "inputs": [
               "artifact:local-persistence-trigger"
             ],
@@ -20914,42 +21423,51 @@
               "artifact:persistence-status"
             ],
             "conditions": [
-              "Local action, Undo, and Redo each capture one complete detached snapshot at commit.",
-              "Snapshots and provider acknowledgements preserve FIFO order.",
-              "One provider failure does not coalesce, drop, or block a later eligible snapshot."
+              "Persist canonical field/link deltas in accepted publication sequence, with exact publication identity and bytes for resend.",
+              "Source acceptance is not durability; save confirms its captured target and later edits do not extend that target.",
+              "Failed persistence retains accepted edits and recovery evidence. Retry persistence without replaying drawing or allocating new identities.",
+              "Reload preflights source/binding structure before replacing the current document and supports a subsequent edit and save."
             ],
             "bypasses": [
-              "A remote transaction performs zero client capture, save hook, provider save, and IndexedDB write.",
-              "Rollback and validation rejection save no snapshot.",
-              "A missing provider reports persistence-skipped without capture."
+              "A remote browser performs zero duplicate capture, provider save or IndexedDB persistence of the accepted source publication.",
+              "Rejected canonical mutation creates no new accepted publication.",
+              "Disconnected edits retain the existing recovery/outbox state; never return false durable success."
             ],
             "allowedContributors": [
               "artifact:local-persistence-trigger",
-              "@asyra/core persistence queue",
-              "@asyra/persistence provider"
+              "App socket-authoritative session",
+              "App canonical publication codec and durable reducer"
             ],
             "forbiddenContributors": [
-              "remote client persistence",
-              "coalesced local snapshots",
-              "live mutable provider data",
-              "Collaboration or server checkpoint policy"
+              "second ordering authority",
+              "browser Framework execution in the backend",
+              "flattened inherited values as canonical storage",
+              "product mutation replay on save retry"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "packages/core/src",
-              "packages/core/src/__tests__",
-              "packages/persistence/src",
-              "packages/persistence/src/providers/__tests__"
+              "apps/asyra-design/src/collaboration",
+              "apps/asyra-design/src/init",
+              "apps/asyra-design/server/document-canonical-reducer.ts",
+              "apps/asyra-design/server/__tests__",
+              "apps/asyra-design/e2e"
             ],
             "specRefs": [
-              "#factory-ownership-contract",
-              "#integration-and-performance-gates",
-              "#definition-of-done"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "persist-local-commit"
           }
         ],
         "routes": [
+          {
+            "id": "route-property-intent-result-terminal",
+            "from": "prepare-one-composition-request",
+            "kind": "terminal",
+            "predicate": "A property target read or intent returns its public target view, locally accepted owner IDs or recoverable failure; acceptance does not confirm durable save.",
+            "producedArtifacts": [
+              "artifact:property-intent-result"
+            ]
+          },
           {
             "id": "route-local-composition-to-core",
             "from": "prepare-one-composition-request",
@@ -21444,6 +21962,13 @@
             "channel": "Core persistence status",
             "consumerStepIds": [],
             "terminal": true
+          },
+          {
+            "id": "artifact:property-intent-result",
+            "ownerStepId": "prepare-one-composition-request",
+            "channel": "Public target views, locally accepted owner IDs or recoverable failure; not durable save confirmation",
+            "consumerStepIds": [],
+            "terminal": true
           }
         ],
         "invariants": [
@@ -21463,7 +21988,7 @@
               "artifact:ui-context-projection"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21486,7 +22011,7 @@
               "artifact:shared-publication"
             ],
             "specRefs": [
-              "#shared-element-property-relation-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21503,8 +22028,7 @@
               "artifact:shared-publication"
             ],
             "specRefs": [
-              "#factory-ownership-contract",
-              "#target-architecture"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21520,8 +22044,7 @@
               "artifact:shared-publication"
             ],
             "specRefs": [
-              "#shareddatachannel-contract",
-              "#collaboration-provider-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21538,8 +22061,7 @@
               "artifact:remote-apply-settlement"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#profiling-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21557,8 +22079,7 @@
               "artifact:remote-apply-settlement"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#factory-ownership-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           }
         ],
@@ -21578,8 +22099,7 @@
               "apply-remote-publication"
             ],
             "specRefs": [
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21595,9 +22115,7 @@
               "record-and-deliver-transaction-batch"
             ],
             "specRefs": [
-              "#props-manager-batch-contract",
-              "#scene-tree-lifecycle-and-apply-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21612,8 +22130,7 @@
               "apply-remote-publication"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21628,8 +22145,7 @@
               "apply-remote-publication"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21646,8 +22162,7 @@
               "persist-local-commit"
             ],
             "specRefs": [
-              "#integration-and-performance-gates",
-              "#definition-of-done"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           }
         ]

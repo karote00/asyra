@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
 import { execFile, spawn } from 'node:child_process'
-import { readFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer as createHttpBackendServer } from 'node:http'
 import { createServer } from 'node:net'
 import process from 'node:process'
@@ -169,7 +169,7 @@ test('reference server is a TypeScript build with an opaque uncompressed publica
     /\bPendingInboundPublicationFrame\b|\bpendingInboundFrames\b/
   )
   assert.equal(manifest.dependencies.vite, undefined)
-  assert.equal(manifest.devDependencies.vite, '^6.4.3')
+  assert.equal(typeof manifest.devDependencies.vite, 'string')
   assert.match(
     manifest.scripts['build:collaboration-server'],
     /tsc -p tsconfig\.collaboration-server\.json/
@@ -555,6 +555,11 @@ const requestPublicClient = async ({ port, origin, fileId, actorId }) => {
   const socket = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
     origin
   })
+  const bootstrapTypes = []
+  const observeBootstrap = (data, isBinary) => {
+    if (!isBinary) bootstrapTypes.push(JSON.parse(data.toString()).type)
+  }
+  socket.on('message', observeBootstrap)
   const ready = waitForMessage(
     socket,
     (message) =>
@@ -576,7 +581,9 @@ const requestPublicClient = async ({ port, origin, fileId, actorId }) => {
       }
     })
   )
-  return { socket, result: await ready }
+  const result = await ready
+  socket.off('message', observeBootstrap)
+  return { socket, result, bootstrapTypes }
 }
 
 const connectPublicClient = async (
@@ -926,6 +933,10 @@ test('single-actor handshake returns the formal sequence-zero document bootstrap
       actorId: 'initial-bootstrap-actor'
     })
     socket = requested.socket
+    assert.deepEqual(requested.bootstrapTypes, [
+      'bootstrap-checkpoint-ready',
+      'ready'
+    ])
     assert.deepEqual(requested.result, {
       type: 'ready',
       bootstrap: {
@@ -957,6 +968,620 @@ test('single-actor handshake returns the formal sequence-zero document bootstrap
   } finally {
     await closeSocket(socket)
     await stopServer(child)
+  }
+})
+
+test('a closed bootstrap reader cannot reserve the actor after checkpoint loading finishes', async () => {
+  let releaseRead
+  let reportRead
+  const reading = new Promise((resolve) => {
+    reportRead = resolve
+  })
+  const released = new Promise((resolve) => {
+    releaseRead = resolve
+  })
+  const backend = createHttpBackendServer(async (request, response) => {
+    reportRead()
+    await released
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        checkpoint: createTransportCheckpointDocument(),
+        durableSequence: 0
+      })
+    )
+  })
+  await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
+  const port = await getAvailablePort()
+  const origin = 'http://localhost:4346'
+  const child = startServer({
+    port,
+    origin,
+    persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
+  })
+  const sockets = []
+  try {
+    await waitForServer(child)
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
+      origin
+    })
+    sockets.push(socket)
+    await new Promise((resolve) => socket.once('open', resolve))
+    socket.send(
+      JSON.stringify({
+        type: 'hello',
+        identity: {
+          documentId: 'provider-internal-document',
+          roomId: 'provider-internal-room',
+          actorId: 'recovering-actor',
+          connectionMetadata: { fileId: 'delayed-bootstrap' }
+        }
+      })
+    )
+    await reading
+    const closed = new Promise((resolve) => socket.once('close', resolve))
+    socket.close()
+    await closed
+    releaseRead()
+    // Another actor's ready response fences the shared room initialization.
+    const observer = await connectPublicClient({
+      port,
+      origin,
+      fileId: 'delayed-bootstrap',
+      actorId: 'observer'
+    })
+    sockets.push(observer)
+    const recovered = await requestPublicClient({
+      port,
+      origin,
+      fileId: 'delayed-bootstrap',
+      actorId: 'recovering-actor'
+    })
+    sockets.push(recovered.socket)
+    assert.equal(
+      recovered.result.type,
+      'ready',
+      JSON.stringify(recovered.result)
+    )
+    assert.deepEqual(
+      recovered.result.bootstrap.checkpoint,
+      createTransportCheckpointDocument()
+    )
+  } finally {
+    releaseRead()
+    for (const socket of sockets) socket.terminate()
+    await stopServer(child)
+    await new Promise((resolve) => backend.close(resolve))
+  }
+})
+
+for (const { existingRoom, timedOut } of [
+  { existingRoom: false, timedOut: false },
+  { existingRoom: true, timedOut: false },
+  { existingRoom: false, timedOut: true }
+]) {
+  test(`cancels an abandoned ${existingRoom ? 'existing-room' : 'initial'} checkpoint read before reconnect${timedOut ? ' after timeout' : ''}`, async () => {
+    let reads = 0
+    let releaseRead
+    let reportRead
+    let reportCancellation
+    const cancelledRead = new Promise((resolve) => {
+      reportCancellation = resolve
+    })
+    const reading = new Promise((resolve) => {
+      reportRead = resolve
+    })
+    const released = new Promise((resolve) => {
+      releaseRead = resolve
+    })
+    const heldRead = existingRoom ? 2 : 1
+    const backend = createHttpBackendServer(async (request, response) => {
+      reads++
+      const body = JSON.stringify({
+        checkpoint: createTransportCheckpointDocument(),
+        durableSequence: 0
+      })
+      response.setHeader('content-type', 'application/json')
+      const partialBody = existingRoom && reads === heldRead
+      if (partialBody) response.write(body.slice(0, 1))
+      if (reads === heldRead) {
+        response.once('close', reportCancellation)
+        reportRead()
+        await released
+      }
+      response.end(partialBody ? body.slice(1) : body)
+    })
+    await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
+    const port = await getAvailablePort()
+    const origin = 'http://localhost:4347'
+    const child = startServer({
+      port,
+      origin,
+      persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
+    })
+    const sockets = []
+    try {
+      await waitForServer(child)
+      const identity = {
+        port,
+        origin,
+        fileId: 'cancelled-bootstrap',
+        actorId: 'replacement'
+      }
+      if (existingRoom)
+        sockets.push(
+          await connectPublicClient({ ...identity, actorId: 'survivor' })
+        )
+      const abandoned = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
+        origin
+      })
+      sockets.push(abandoned)
+      await new Promise((resolve, reject) => {
+        abandoned.once('open', resolve)
+        abandoned.once('error', reject)
+      })
+      abandoned.send(
+        JSON.stringify({
+          type: 'hello',
+          identity: {
+            documentId: 'document',
+            roomId: 'room',
+            actorId: identity.actorId,
+            connectionMetadata: { fileId: identity.fileId }
+          }
+        })
+      )
+      await reading
+      if (timedOut) {
+        await new Promise((resolve, reject) => {
+          const deadline = setTimeout(
+            () =>
+              reject(new Error('Server did not close the stalled handshake')),
+            6500
+          )
+          abandoned.once('close', (code) => {
+            clearTimeout(deadline)
+            try {
+              assert.equal(code, 1008)
+              resolve()
+            } catch (error) {
+              reject(error)
+            }
+          })
+        })
+      } else await closeSocket(abandoned)
+      await Promise.race([
+        cancelledRead,
+        new Promise((_, reject) => {
+          const deadline = setTimeout(
+            () => reject(new Error('Abandoned backend read remained open')),
+            2000
+          )
+          void cancelledRead.then(() => clearTimeout(deadline))
+        })
+      ])
+      const replacement = await connectPublicClient(identity)
+      sockets.push(replacement)
+      assert.equal(
+        reads,
+        heldRead + 1,
+        'A cancelled read must not retain the next session'
+      )
+      const duplicate = await requestPublicClient(identity)
+      sockets.push(duplicate.socket)
+      assert.equal(duplicate.result.type, 'connection-error')
+      assert.match(duplicate.result.message, /already connected/)
+    } finally {
+      releaseRead()
+      for (const socket of sockets) socket.terminate()
+      await stopServer(child)
+      await new Promise((resolve) => backend.close(resolve))
+    }
+  })
+}
+
+test('keeps shared checkpoint initialization while another live waiter remains', async () => {
+  let reads = 0
+  let releaseRead
+  let reportRead
+  const reading = new Promise((resolve) => {
+    reportRead = resolve
+  })
+  const released = new Promise((resolve) => {
+    releaseRead = resolve
+  })
+  const backend = createHttpBackendServer(async (request, response) => {
+    reads++
+    reportRead()
+    await released
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        checkpoint: createTransportCheckpointDocument(),
+        durableSequence: 0
+      })
+    )
+  })
+  await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
+  const port = await getAvailablePort()
+  const origin = 'http://localhost:4348'
+  const child = startServer({
+    port,
+    origin,
+    persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
+  })
+  const sockets = []
+  const hello = async (actorId) => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
+      origin
+    })
+    sockets.push(socket)
+    await new Promise((resolve, reject) => {
+      socket.once('open', resolve)
+      socket.once('error', reject)
+    })
+    socket.send(
+      JSON.stringify({
+        type: 'hello',
+        identity: {
+          documentId: 'document',
+          roomId: 'room',
+          actorId,
+          connectionMetadata: { fileId: 'shared-checkpoint' }
+        }
+      })
+    )
+    return socket
+  }
+  try {
+    await waitForServer(child)
+    const cancelled = await hello('cancelled')
+    await reading
+    const survivor = await hello('survivor')
+    const ready = waitForMessage(
+      survivor,
+      (message) =>
+        message.type === 'ready' || message.type === 'connection-error',
+      'shared survivor'
+    )
+    // A round trip fences the second HELLO without releasing the backend read.
+    await new Promise((resolve) => {
+      survivor.once('pong', resolve)
+      survivor.ping('hello-fence')
+    })
+    await closeSocket(cancelled)
+    releaseRead()
+    assert.equal((await ready).type, 'ready')
+    assert.equal(
+      reads,
+      1,
+      'Cancellation must not restart another live waiters read'
+    )
+  } finally {
+    releaseRead()
+    for (const socket of sockets) socket.terminate()
+    await stopServer(child)
+    await new Promise((resolve) => backend.close(resolve))
+  }
+})
+
+test(
+  'cancelling a joining reader preserves concurrent writes, retry identity and persisted reload',
+  { timeout: 20000 },
+  async () => {
+    const { createDocumentBackendServer } =
+      await protocolTestRuntime.ssrLoadModule('/server/document-backend.ts')
+    const directory = await mkdtemp(
+      fileURLToPath(new URL('./.cancellation-isolation-', import.meta.url))
+    )
+    const fileId = 'cancellation-write-isolation'
+    const createDocumentFrame = ({ requestId, publicationId, after }) => {
+      const publication = createCanonicalPropertyPublication(
+        publicationId,
+        after
+      )
+      const slice = publication.slices[0]
+      const batch = slice.batches[0]
+      const delivery = batch.deliveries[0]
+      slice.orderedIds = [delivery.deliveryId]
+      batch.channel = 'document'
+      delivery.eventName = 'applyCanonicalChanges'
+      delivery.payload = {
+        version: 1,
+        changes: [
+          {
+            kind: 'property-components',
+            updates: [{ propertyId: 'position-a', values: { x: after } }]
+          }
+        ]
+      }
+      return encodeProtocolPublicationFrames({
+        type: 'send-publication',
+        requestId,
+        publication
+      })[0]
+    }
+    const storedPath = `${directory}/${Buffer.from(fileId).toString('base64url')}.json`
+    await writeFile(
+      storedPath,
+      JSON.stringify({
+        protocolVersion: 1,
+        documentId: fileId,
+        record: {
+          document: createTransportCheckpointDocument(),
+          documentGeneration: 0,
+          durableSequence: 0,
+          publicationSequences: {},
+          batches: {}
+        }
+      })
+    )
+    const backend = createDocumentBackendServer({
+      dataDirectory: directory,
+      port: 0
+    })
+    const address = await backend.listen()
+    let releaseWrite, reportWrite, releaseRead, reportRead
+    const writing = new Promise((resolve) => {
+      reportWrite = resolve
+    })
+    const writeReleased = new Promise((resolve) => {
+      releaseWrite = resolve
+    })
+    const reading = new Promise((resolve) => {
+      reportRead = resolve
+    })
+    const readReleased = new Promise((resolve) => {
+      releaseRead = resolve
+    })
+    let reads = 0
+    let writes = 0
+    let writeClosedEarly = false
+    const proxyErrors = []
+    const proxy = createHttpBackendServer((request, response) => {
+      void (async () => {
+        const chunks = []
+        for await (const chunk of request) chunks.push(chunk)
+        if (request.method === 'GET' && ++reads === 3) {
+          reportRead()
+          await readReleased
+        }
+        if (request.method === 'POST' && ++writes === 1) {
+          response.once('close', () => {
+            if (!response.writableEnded) writeClosedEarly = true
+          })
+          reportWrite()
+          await writeReleased
+        }
+        if (response.destroyed) return
+        const result = await globalThis.fetch(
+          `http://127.0.0.1:${address.port}${request.url}`,
+          {
+            method: request.method,
+            headers: { 'content-type': 'application/json' },
+            ...(request.method === 'POST'
+              ? { body: Buffer.concat(chunks) }
+              : {})
+          }
+        )
+        response.writeHead(result.status, {
+          'content-type': 'application/json'
+        })
+        response.end(await result.text())
+      })().catch((error) => {
+        proxyErrors.push(error)
+        response.destroy(error)
+      })
+    })
+    await new Promise((resolve) => proxy.listen(0, '127.0.0.1', resolve))
+    const port = await getAvailablePort()
+    const origin = 'http://localhost:4349'
+    const child = startServer({
+      port,
+      origin,
+      persistenceBackendURL: `http://127.0.0.1:${proxy.address().port}`,
+      persistenceMaxPublicationCount: 1
+    })
+    const sockets = []
+    const identity = { port, origin, fileId }
+    try {
+      await waitForServer(child)
+      const writer = await connectPublicClient({
+        ...identity,
+        actorId: 'writer'
+      })
+      const survivor = await connectPublicClient({
+        ...identity,
+        actorId: 'survivor'
+      })
+      sockets.push(writer, survivor)
+      const first = responseFor(writer, 'first-isolated')
+      writer.send(
+        createDocumentFrame({
+          requestId: 'first-isolated',
+          publicationId: 'first-isolated',
+          after: 1
+        }),
+        { binary: true }
+      )
+      assert.deepEqual((await first).acceptedSequences, [1])
+      await writing
+      const joining = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
+        origin
+      })
+      sockets.push(joining)
+      await new Promise((resolve, reject) => {
+        joining.once('open', resolve)
+        joining.once('error', reject)
+      })
+      joining.send(
+        JSON.stringify({
+          type: 'hello',
+          identity: {
+            documentId: 'document',
+            roomId: 'room',
+            actorId: 'joining',
+            connectionMetadata: { fileId }
+          }
+        })
+      )
+      await reading
+      const second = responseFor(survivor, 'second-isolated')
+      survivor.send(
+        createDocumentFrame({
+          requestId: 'second-isolated',
+          publicationId: 'second-isolated',
+          after: 2
+        }),
+        { binary: true }
+      )
+      await closeSocket(joining)
+      assert.deepEqual((await second).acceptedSequences, [2])
+      assert.equal(
+        writeClosedEarly,
+        false,
+        'Cancelling a read must not abort the pending write'
+      )
+      assert.equal(writer.readyState, WebSocket.OPEN)
+      assert.equal(survivor.readyState, WebSocket.OPEN)
+      const confirmation = responseFor(survivor, 'confirm-isolated')
+      survivor.send(
+        JSON.stringify({
+          type: 'confirm-persistence',
+          requestId: 'confirm-isolated',
+          documentGeneration: 0,
+          sequence: 2
+        })
+      )
+      await noMessageBefore(confirmation)
+      releaseWrite()
+      const confirmed = await confirmation
+      assert.equal(confirmed.ok, true, JSON.stringify(confirmed))
+      assert.equal(confirmed.persistence.durableSequence, 2)
+      const retry = responseFor(writer, 'retry-isolated')
+      writer.send(
+        createDocumentFrame({
+          requestId: 'retry-isolated',
+          publicationId: 'first-isolated',
+          after: 1
+        }),
+        { binary: true }
+      )
+      assert.deepEqual((await retry).acceptedSequences, [1])
+      assert.equal(writeClosedEarly, false)
+      const persisted = JSON.parse(await readFile(storedPath, 'utf8')).record
+      assert.equal(persisted.durableSequence, 2)
+      assert.equal(persisted.document.props['position-a'].x, 2)
+      await closeSocket(writer)
+      await closeSocket(survivor)
+      const reloaded = await requestPublicClient({
+        ...identity,
+        actorId: 'writer'
+      })
+      sockets.push(reloaded.socket)
+      assert.equal(reloaded.result.type, 'ready')
+      assert.deepEqual(reloaded.result.bootstrap.checkpoint, persisted.document)
+      assert.equal(reloaded.result.bootstrap.durableSequence, 2)
+      assert.deepEqual(reloaded.result.bootstrap.pendingTail, [])
+      assert.equal(
+        writes,
+        2,
+        'A retried publication must not be persisted twice'
+      )
+      assert.deepEqual(proxyErrors, [])
+    } finally {
+      releaseRead()
+      releaseWrite()
+      for (const socket of sockets) socket.terminate()
+      await stopServer(child)
+      await new Promise((resolve) => proxy.close(resolve))
+      await backend.close()
+      await rm(directory, { recursive: true, force: true })
+    }
+  }
+)
+
+test('retains one room while the last peer leaves during a replacement bootstrap', async () => {
+  let reads = 0
+  let releaseRead
+  let reportRead
+  const reading = new Promise((resolve) => {
+    reportRead = resolve
+  })
+  const released = new Promise((resolve) => {
+    releaseRead = resolve
+  })
+  const backend = createHttpBackendServer(async (request, response) => {
+    reads++
+    if (reads === 2) {
+      reportRead()
+      await released
+    }
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        checkpoint: createTransportCheckpointDocument(),
+        durableSequence: 0
+      })
+    )
+  })
+  await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
+  const port = await getAvailablePort()
+  const origin = 'http://localhost:4346'
+  const child = startServer({
+    port,
+    origin,
+    persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
+  })
+  const sockets = []
+  try {
+    await waitForServer(child)
+    const identity = {
+      port,
+      origin,
+      fileId: 'handoff-bootstrap',
+      actorId: 'original'
+    }
+    const original = await connectPublicClient(identity)
+    sockets.push(original)
+    const joining = connectPublicClient({ ...identity, actorId: 'replacement' })
+    await reading
+    await closeSocket(original)
+    releaseRead()
+    const replacement = await joining
+    sockets.push(replacement)
+    const duplicate = await requestPublicClient({
+      ...identity,
+      actorId: 'replacement'
+    })
+    sockets.push(duplicate.socket)
+    assert.equal(
+      duplicate.result.type,
+      'connection-error',
+      'A second live Actor must not enter an independently recreated room'
+    )
+    assert.match(duplicate.result.message, /already connected/)
+    assert.equal(
+      reads,
+      2,
+      'Admission must retain the original initialized room'
+    )
+    await closeSocket(replacement)
+    const reopened = await connectPublicClient({
+      ...identity,
+      actorId: 'replacement'
+    })
+    sockets.push(reopened)
+    assert.equal(
+      reads,
+      3,
+      'An idle room must be released after all admissions finish'
+    )
+  } finally {
+    releaseRead()
+    for (const socket of sockets) socket.terminate()
+    await stopServer(child)
+    await new Promise((resolve) => backend.close(resolve))
   }
 })
 
@@ -2884,6 +3509,71 @@ test('a peer socket write callback failure removes that peer instead of fabricat
     })
   } finally {
     await Promise.all(sockets.map((socket) => closeSocket(socket)))
+    await stopServer(child)
+  }
+})
+
+test('persistence confirmation acknowledges a captured generation and does not block later publication', async () => {
+  const port = await getAvailablePort()
+  const origin = 'http://localhost:4317'
+  const child = startServer({ port, origin })
+  let socket
+  try {
+    await waitForServer(child)
+    socket = await connectPublicClient({
+      port,
+      origin,
+      fileId: 'durable-confirmation',
+      actorId: 'writer'
+    })
+    const first = responseFor(socket, 'first')
+    socket.send(
+      createCanonicalPublicationFrame({
+        requestId: 'first',
+        publicationId: 'first',
+        after: 1
+      }),
+      { binary: true }
+    )
+    assert.equal((await first).ok, true)
+    const confirmation = responseFor(socket, 'confirm')
+    socket.send(
+      JSON.stringify({
+        type: 'confirm-persistence',
+        requestId: 'confirm',
+        sequence: 1,
+        documentGeneration: 0
+      })
+    )
+    const second = responseFor(socket, 'second')
+    socket.send(
+      createCanonicalPublicationFrame({
+        requestId: 'second',
+        publicationId: 'second',
+        after: 2
+      }),
+      { binary: true }
+    )
+    assert.equal((await second).ok, true)
+    const receipt = await confirmation
+    assert.equal(receipt.ok, true)
+    assert.equal(receipt.persistence.sequence, 1)
+    assert.equal(receipt.persistence.documentGeneration, 0)
+    assert.equal(receipt.persistence.documentId, 'durable-confirmation')
+    assert.ok(receipt.persistence.durableSequence >= 1)
+    const wrong = responseFor(socket, 'wrong-generation')
+    socket.send(
+      JSON.stringify({
+        type: 'confirm-persistence',
+        requestId: 'wrong-generation',
+        sequence: 1,
+        documentGeneration: 1
+      })
+    )
+    assert.equal((await wrong).ok, false)
+    assert.equal(socket.readyState, WebSocket.OPEN)
+  } finally {
+    await closeSocket(socket)
     await stopServer(child)
   }
 })

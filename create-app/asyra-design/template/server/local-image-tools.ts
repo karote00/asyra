@@ -1,4 +1,18 @@
+import {
+  toolResultBoolean,
+  toolResultCount,
+  toolResultObject,
+  toolResultString,
+  toolRequestReference,
+  toolSemantics
+} from '../src/ai/tool-contract'
+import sharp from 'sharp'
+import {
+  observeLocalToolExecution,
+  type LocalToolObservation
+} from './local-tool-invocation'
 import { LocalToolAccess } from './local-tool-scheduler'
+import type { LocalToolOwnership } from './local-tool-leases'
 import {
   ContourReviewLimits,
   CONTOUR_QUALITY_SCHEMA,
@@ -6,7 +20,7 @@ import {
   reviewVectorContours,
   applyContourRefinements
 } from './local-vector-contour-review'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, createHash } from 'node:crypto'
 import {
   IMAGE_LAYER_SCHEMA,
   separateImageBackground
@@ -14,7 +28,7 @@ import {
 import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import { LocalComponentAnalysisLimits as limits } from './local-component-analysis-limits'
 import { Buffer } from 'node:buffer'
-import { AiImageToolIds } from './ai-domain-prompt'
+import { AiImageToolIds, AI_IMAGE_TOOL_GUIDANCE } from './ai-domain-prompt'
 import type { AiProviderInput } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
 import { analyzeVectorComponents } from './local-vector-component-analysis'
@@ -34,22 +48,234 @@ interface ConversionInput {
 }
 const convertImage = async (input: ConversionInput): Promise<string> => {
   const { convertVTracerBuffer } = await import('../vtracer-tool-server.mjs')
+  input.signal.throwIfAborted()
+  const decoder = sharp(input.bytes, { failOn: 'warning' }).timeout({
+    seconds: 10
+  })
+  const metadata = await decoder.metadata()
+  if (metadata.orientation && metadata.orientation !== 1) {
+    // The native tracer ignores EXIF. Orient only its input, preserving source
+    // bytes and every original pixel; region/layer extraction already does this.
+    const bytes = await decoder.autoOrient().png().toBuffer()
+    input.signal.throwIfAborted()
+    return convertVTracerBuffer({ ...input, bytes, contentType: 'image/png' })
+  }
   return convertVTracerBuffer(input)
 }
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+const vectorArtifactByteLimit = 8 * 1024 * 1024
+const oversizedVectorResult = (svg: string, attachmentIndex: number) => {
+  const observedBytes = Buffer.byteLength(svg)
+  return observedBytes > vectorArtifactByteLimit
+    ? JSON.stringify({
+        available: false,
+        recoverable: true,
+        code: 'VECTOR_ARTIFACT_BYTE_LIMIT',
+        attachmentIndex,
+        observedBytes,
+        limitBytes: vectorArtifactByteLimit,
+        message:
+          'Conversion ran, but the vector output exceeds the artifact byte limit. Select a smaller native-pixel region in the preserve-vectors plan, or another suitable source or method. No image was resized and no artifact or canvas changes were created.'
+      })
+    : undefined
+}
+
+export const imageRegionSchema = {
+  type: 'object',
+  additionalProperties: false,
+  description:
+    'Optional native-pixel rectangle in the oriented attachment. Extract only the requested visible detail without resampling. The resulting artifact uses region-local coordinates; sourceRegion maps it back to this attachment.',
+  required: ['x', 'y', 'width', 'height'],
+  properties: {
+    x: { type: 'integer', minimum: 0 },
+    y: { type: 'integer', minimum: 0 },
+    width: { type: 'integer', minimum: 1 },
+    height: { type: 'integer', minimum: 1 }
+  }
+}
+const readImageRegion = (value: unknown) => {
+  if (value === undefined) return undefined
+  if (
+    !isRecord(value) ||
+    Object.keys(value).length !== 4 ||
+    !['x', 'y', 'width', 'height'].every(
+      (key) =>
+        Number.isSafeInteger(value[key]) &&
+        Number(value[key]) >= (key === 'x' || key === 'y' ? 0 : 1)
+    )
+  )
+    throw new Error(
+      'Image region must contain integer x, y, width and height within the oriented source image.'
+    )
+  return {
+    x: Number(value.x),
+    y: Number(value.y),
+    width: Number(value.width),
+    height: Number(value.height)
+  }
+}
+
 export const createLocalImageTools = (
   input: Pick<AiProviderInput, 'metadata'>,
-  convert: (input: ConversionInput) => Promise<string> = convertImage
+  convert: (input: ConversionInput) => Promise<string> = convertImage,
+  ownership?: LocalToolOwnership,
+  observation: LocalToolObservation = {}
 ) => {
   const metadata = input.metadata
   const attachments =
     isRecord(metadata) && Array.isArray(metadata.imageAttachments)
-      ? [...metadata.imageAttachments]
+      ? metadata.imageAttachments.map((image) =>
+          isRecord(image) ? { ...image } : image
+        )
       : []
+  const originalAttachmentCount = attachments.length
+  const identities = new Map<
+    number,
+    { referenceId: string; sha256: string; bytes: number }
+  >()
+  const admittedDimensions = new Map<
+    string,
+    { width: number; height: number }
+  >()
+  const referenceIndexes = new Map<string, number>()
+  const referenceIdentity = (index: number) => {
+    const attachment = attachments[index]
+    if (
+      !Number.isSafeInteger(index) ||
+      index < 0 ||
+      !isRecord(attachment) ||
+      typeof attachment.dataUrl !== 'string' ||
+      !/^data:image\/(png|jpeg|webp);base64,/.test(attachment.dataUrl)
+    )
+      throw new Error('Select an existing reference attachment index.')
+    let identity = identities.get(index)
+    if (!identity) {
+      const bytes = Buffer.from(attachment.dataUrl.split(',')[1], 'base64')
+      const sha256 = createHash('sha256').update(bytes).digest('hex')
+      identity = {
+        referenceId: `reference:${sha256}`,
+        sha256,
+        bytes: bytes.length
+      }
+      identities.set(index, identity)
+      referenceIndexes.set(identity.referenceId, index)
+    }
+    return {
+      attachmentIndex: index,
+      ...identity,
+      ...(admittedDimensions.has(identity.referenceId)
+        ? { validation: admittedDimensions.get(identity.referenceId) }
+        : {})
+    }
+  }
+  const validateReferences = (
+    indexes: number[],
+    referenceIds: string[] = []
+  ) => {
+    const retainedIndexes = referenceIds.map((referenceId) => {
+      const index = referenceIndexes.get(referenceId)
+      if (index === undefined)
+        throw new Error(
+          'Unknown retained reference identity; import or validate the image first.'
+        )
+      return index
+    })
+    return [...new Set([...indexes, ...retainedIndexes])].map(referenceIdentity)
+  }
+  const resolveSources = (sources: string[]) =>
+    sources.map((source) => {
+      if (source.startsWith('attachment:')) {
+        const index = source.slice('attachment:'.length)
+        if (!/^(0|[1-9][0-9]*)$/.test(index))
+          throw new Error('Invalid reference attachment identity.')
+        return referenceIdentity(Number(index)).referenceId
+      }
+      if (source.startsWith('reference:')) {
+        if (!referenceIndexes.has(source))
+          throw new Error(
+            'Unknown reference identity; import or validate the reference first.'
+          )
+        return source
+      }
+      // Non-image citations keep their existing assertion semantics. Only registered
+      // image identities are mechanically resolved; this never verifies a claim.
+      if (/^https?:\/\//i.test(source)) {
+        const url = new URL(source)
+        if (url.username || url.password)
+          throw new Error('Source URLs cannot contain credentials.')
+      }
+      return source
+    })
+  const validations = new Map<string, Promise<unknown>>()
+  const prepareReferences = (indexes: number[], signal: AbortSignal) =>
+    observeLocalToolExecution(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: indexes },
+      async () => {
+        signal.throwIfAborted()
+        // Resolve the entire identity set before starting any expensive work.
+        validateReferences(indexes)
+        const results = await Promise.all(
+          indexes.map(async (index) => {
+            const identity = referenceIdentity(index as number)
+            let pending = validations.get(identity.referenceId)
+            const reused = !!pending
+            if (!pending) {
+              pending = (async () => {
+                const attachment = attachments[index as number] as {
+                  dataUrl: string
+                }
+                const bytes = Buffer.from(
+                  attachment.dataUrl.split(',')[1],
+                  'base64'
+                )
+                const decoder = sharp(bytes, { failOn: 'warning' }).timeout({
+                  seconds: 10
+                })
+                const metadata = await decoder.metadata()
+                await decoder.stats()
+                return {
+                  width: metadata.autoOrient.width,
+                  height: metadata.autoOrient.height,
+                  encoding: metadata.format,
+                  validity: 'decoded',
+                  suitability: 'requires-visual-assessment'
+                }
+              })()
+              validations.set(identity.referenceId, pending)
+            }
+            try {
+              const validation = (await pending) as {
+                width: number
+                height: number
+              }
+              admittedDimensions.set(identity.referenceId, validation)
+              return { ...identity, reused, validation }
+            } catch (error) {
+              if (validations.get(identity.referenceId) === pending)
+                validations.delete(identity.referenceId)
+              return {
+                ...identity,
+                reused,
+                validation: {
+                  validity: 'invalid',
+                  reason:
+                    error instanceof Error ? error.message : 'Decode failed'
+                }
+              }
+            }
+          })
+        )
+        signal.throwIfAborted()
+        return JSON.stringify({ references: results })
+      },
+      observation,
+      'Decode only needed retained references; retain successful validation without judging visual suitability'
+    )
   const artifacts = new Map<string, LocalVectorArtifact>()
-  const converted = new Map<number, string>()
+  const converted = new Map<string, string>()
   const analyses = new Map<string, ReturnType<typeof analyzeVectorComponents>>()
   const contourReviews = new Map<
     string,
@@ -66,10 +292,136 @@ export const createLocalImageTools = (
     }
   >()
   let analysisQueue = Promise.resolve()
+  const reportsByArtifact = new Map<string, Set<string>>()
+  const conversionByArtifact = new Map<string, string>()
+  const discardArtifact = (id: string) => {
+    artifacts.delete(id)
+    contourSources.delete(id)
+    for (const reportId of reportsByArtifact.get(id) ?? []) {
+      analyses.delete(reportId)
+      contourReviews.delete(reportId)
+    }
+    reportsByArtifact.delete(id)
+    const key = conversionByArtifact.get(id)
+    if (key !== undefined) converted.delete(key)
+    conversionByArtifact.delete(id)
+  }
+  const publishArtifact = (artifact: LocalVectorArtifact) => {
+    const id = artifact.imageArtifactId
+    artifacts.set(id, artifact)
+    try {
+      ownership?.publish(
+        id,
+        () => discardArtifact(id),
+        () => {
+          if (!artifacts.has(id))
+            throw new Error('Image artifact has been released')
+        }
+      )
+    } catch (error) {
+      discardArtifact(id)
+      throw error
+    }
+  }
+  const publishReport = (id: string, artifactId: string) => {
+    try {
+      ownership?.publishAliases([{ handle: id, ownerHandle: artifactId }])
+      let reports = reportsByArtifact.get(artifactId)
+      if (!reports) reportsByArtifact.set(artifactId, (reports = new Set()))
+      reports.add(id)
+    } catch (error) {
+      analyses.delete(id)
+      contourReviews.delete(id)
+      throw error
+    }
+  }
+  const vectorSummaryFields = {
+    imageArtifactId: toolRequestReference,
+    width: toolResultCount,
+    height: toolResultCount,
+    paths: { type: 'array' },
+    componentTargets: { type: 'object' },
+    sourceBounds: { type: 'object' },
+    sourceRegion: { type: 'object' },
+    representationPlan: { type: 'object' },
+    background: { type: 'object' },
+    separation: { type: 'object' }
+  }
   const definitions = [
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject({
+          references: {
+            type: 'array',
+            minItems: 1,
+            items: toolResultObject({
+              referenceId: toolResultString,
+              attachmentIndex: toolResultCount,
+              sha256: toolResultString,
+              bytes: toolResultCount,
+              reused: toolResultBoolean,
+              validation: toolResultObject(
+                {
+                  validity: { enum: ['decoded', 'invalid'] },
+                  width: toolResultCount,
+                  height: toolResultCount,
+                  encoding: toolResultString,
+                  suitability: toolResultString,
+                  reason: toolResultString
+                },
+                ['validity']
+              )
+            })
+          }
+        }),
+        'read',
+        ['references']
+      ),
+      name: AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      composition: 'control-plane' as const,
+      executionAccess: LocalToolAccess.INDEPENDENT,
+      description:
+        'Validate retained reference images in one batch without searching or downloading again. Returns stable content identity, exact dimensions, encoding and byte count. Mechanical validity does not verify the subject, viewpoint, factual accuracy or suitability for fine detail: inspect the image and retain those limitations. Use referenceId in source facts; attachmentIndex remains the image selection handle.',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['attachmentIndexes'],
+        properties: {
+          attachmentIndexes: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 24,
+            uniqueItems: true,
+            items: { type: 'integer', minimum: 0 }
+          }
+        }
+      }
+    },
+    {
+      type: 'function',
+      ...toolSemantics(
+        toolResultObject(
+          {
+            reviewId: toolRequestReference,
+            imageArtifactId: toolRequestReference,
+            proposals: { type: 'array' },
+            paths: { type: 'array' },
+            quality: { type: 'object' },
+            omittedProposals: toolResultCount,
+            policyExcludedProposals: toolResultCount,
+            limitation: { type: ['string', 'null'] },
+            units: { type: 'string' },
+            requiresVisualReview: toolResultBoolean
+          },
+          ['reviewId', 'imageArtifactId', 'proposals']
+        ),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+      composition: 'allowed' as const,
       executionAccess: LocalToolAccess.INDEPENDENT,
       description:
         'Measure selected contour straightness and tangent breaks before drawing. Supply quality.mode (faithful preserves source irregularities; cleanup permits bounded edits) and final drawing targetSize. Faithful reviews have no cleanup proposals. Cleanup is limited to 0.5 source pixels AND 0.5 output drawing pixels; viewport zoom is irrelevant. Returns an opaque reviewId and bounded straighten/smooth-join proposals with source-pixel locations, metrics and limitations, never coordinate arrays. You decide intent: a small kink can be an intentional corner. Up to 16 selected paths per call. Compound/unsafe contours are report-only; no proposal does not establish visual correctness.',
@@ -79,7 +431,7 @@ export const createLocalImageTools = (
         required: ['imageArtifactId', 'pathIds', 'quality'],
         properties: {
           quality: CONTOUR_QUALITY_SCHEMA,
-          imageArtifactId: { type: 'string' },
+          imageArtifactId: toolRequestReference,
           pathIds: {
             type: 'array',
             minItems: 1,
@@ -92,7 +444,24 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject(
+          {
+            ...vectorSummaryFields,
+            changes: { type: 'array' },
+            maxDisplacementPx: { type: 'number' },
+            maxDisplacementOutputPx: { type: 'number' },
+            quality: { type: 'object' },
+            requiresVisualReview: toolResultBoolean
+          },
+          ['imageArtifactId', 'changes']
+        ),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
+      composition: 'allowed' as const,
       description:
         'Apply an explicit non-overlapping subset of same-request contour proposals. Creates a NEW artifact without touching the canvas; use its returned imageArtifactId in existing drawing actions. Retains anchors, fills, order and coordinate frame; validates combined topology and <=0.5 source-pixel displacement against the original trace across all refinements. Returns before/after evidence. Rejected proposals do not change any artifact. Choose according to the original reference; metrics cannot certify visual fidelity.',
       inputSchema: {
@@ -100,7 +469,7 @@ export const createLocalImageTools = (
         additionalProperties: false,
         required: ['reviewId', 'proposalIds'],
         properties: {
-          reviewId: { type: 'string' },
+          reviewId: toolRequestReference,
           proposalIds: {
             type: 'array',
             minItems: 1,
@@ -113,16 +482,30 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject(vectorSummaryFields, ['imageArtifactId']),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.VECTORIZE_IMAGE_LAYERS,
+      composition: 'control-plane' as const,
       description:
-        'Separate an AI-selected solid native rect/oval background BEFORE tracing the residual foreground. Specify source-pixel bounds/fill, colorTolerance (0 exact to 32), and clipToBackground (true explicitly discards everything outside that region). Optional foregroundColors explicitly quantizes this region to the selected flat foreground palette plus background (instead of colorTolerance); omit for shading or uncertain colors. Only matching pixels inside that region are replaced by the native base, including matching interior details; this is compositing, not semantic object segmentation. Use only when a solid native base matches the intended design, never gradients/textures. Returns one imageArtifactId carrying background plus foreground; insert/replace it once, do not add another background. Coordinates share the returned sourceBounds, so exclusions never stretch foreground. Up to four calls allow revised parameters. No match fails; review the returned evidence and actual rendered result.',
+        'Separate an AI-selected solid native rect/oval background BEFORE tracing the residual foreground. Specify source-pixel bounds/fill, colorTolerance (0 exact to 32), and clipToBackground (true explicitly discards everything outside that region). Optional foregroundColors explicitly quantizes this region to the selected flat foreground palette plus background (instead of colorTolerance); omit for shading or uncertain colors. Only matching pixels inside that region are replaced by the native base, including matching interior details; this is compositing, not semantic object segmentation. Use only when a solid native base matches the intended design, never gradients/textures. Returns one imageArtifactId carrying background plus foreground; insert/replace it once, do not add another background. Coordinates share the returned sourceBounds, so exclusions never stretch foreground. No match fails; review the returned evidence and actual rendered result.',
       inputSchema: IMAGE_LAYER_SCHEMA
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject(vectorSummaryFields, ['imageArtifactId']),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.VTRACER,
+      composition: 'control-plane' as const,
       description:
-        'Prepare an image after YOUR visual decomposition decision. Required plan selects separate-background with native rect/oval parameters for an intended solid base, or preserve-vectors with a concrete reason no supported native base improves the reference. Do not choose preserve-vectors merely because foreground is complex or merged with the base. Native plans separate first and trace only foreground. Vectorize one submitted PNG/JPEG/WebP attachment. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Review all shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
+        'Prepare an image after YOUR visual decomposition decision. Required plan selects separate-background with native rect/oval parameters for an intended solid base, or preserve-vectors with a concrete reason no supported native base improves the reference. Do not choose preserve-vectors merely because foreground is complex or merged with the base. Native plans separate first and trace only foreground. Vectorize one submitted PNG/JPEG/WebP attachment. A preserve-vectors plan may select a native-pixel region for a local detail or oversized conversion; no resampling occurs and the returned coordinates are local to that region. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Consider relevant shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -136,7 +519,8 @@ export const createLocalImageTools = (
                 required: ['strategy', 'reason'],
                 properties: {
                   strategy: { const: 'preserve-vectors', type: 'string' },
-                  reason: { type: 'string', minLength: 1, maxLength: 500 }
+                  reason: { type: 'string', minLength: 1, maxLength: 500 },
+                  region: imageRegionSchema
                 }
               },
               {
@@ -171,7 +555,24 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject(
+          {
+            analysisId: toolRequestReference,
+            imageArtifactId: toolRequestReference,
+            paths: { type: 'array' },
+            units: { type: 'string' },
+            limits: { type: 'object' },
+            requiresVisualReview: toolResultBoolean
+          },
+          ['analysisId', 'imageArtifactId', 'paths']
+        ),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+      composition: 'allowed' as const,
       executionAccess: LocalToolAccess.INDEPENDENT,
       description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Independent calls may be submitted concurrently within the provider in-flight limit, without a request-total quota. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,
       inputSchema: {
@@ -179,7 +580,7 @@ export const createLocalImageTools = (
         additionalProperties: false,
         required: ['imageArtifactId', 'pathIds'],
         properties: {
-          imageArtifactId: { type: 'string' },
+          imageArtifactId: toolRequestReference,
           pathIds: {
             type: 'array',
             minItems: 1,
@@ -192,15 +593,97 @@ export const createLocalImageTools = (
     }
   ]
   return {
+    resultIssue: (name: string, value: unknown): string | undefined => {
+      if (!isRecord(value)) return 'Image tool returned no result object'
+      if (value.available === false) return
+      if (name === AiImageToolIds.VALIDATE_REFERENCE_IMAGES) {
+        if (
+          !Array.isArray(value.references) ||
+          !value.references.length ||
+          value.references.some(
+            (entry) =>
+              !isRecord(entry) ||
+              !Number.isSafeInteger(entry.attachmentIndex) ||
+              typeof entry.referenceId !== 'string' ||
+              !isRecord(entry.validation) ||
+              !['decoded', 'invalid'].includes(
+                String(entry.validation.validity)
+              )
+          )
+        )
+          return 'Reference validation omitted its identities or validation results'
+        for (const entry of value.references) {
+          if (
+            referenceIdentity(entry.attachmentIndex).referenceId !==
+            entry.referenceId
+          )
+            return 'Reference validation identity is not retained in this request'
+        }
+        return
+      }
+      if (
+        typeof value.imageArtifactId !== 'string' ||
+        !artifacts.has(value.imageArtifactId)
+      )
+        return 'Image tool omitted a retained imageArtifactId'
+      if (
+        name === AiImageToolIds.REVIEW_VECTOR_CONTOURS &&
+        (typeof value.reviewId !== 'string' ||
+          !contourReviews.has(value.reviewId) ||
+          !Array.isArray(value.proposals))
+      )
+        return 'Contour review omitted its retained review or proposals'
+      if (
+        name === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
+        (typeof value.analysisId !== 'string' ||
+          !analyses.has(value.analysisId) ||
+          !Array.isArray(value.paths))
+      )
+        return 'Component analysis omitted its retained analysis or paths'
+    },
+    validateReferences,
+    prepareReferences,
+    resolveSources,
+    referenceImages: (indexes?: number[]) => {
+      const selected =
+        indexes ??
+        Array.from({ length: originalAttachmentCount }, (_, index) => index)
+      return selected.map((index) => {
+        const attachment = attachments[index]
+        if (
+          !Number.isSafeInteger(index) ||
+          index < 0 ||
+          !isRecord(attachment) ||
+          typeof attachment.dataUrl !== 'string'
+        )
+          throw new Error('Select an existing reference attachment index.')
+        return { role: 'reference' as const, dataUrl: attachment.dataUrl }
+      })
+    },
     addReference: (image: {
       dataUrl: string
       mediaType: string
       size: number
+      validation?: {
+        width: number
+        height: number
+        encoding: string
+        validity: 'decoded'
+        suitability: 'requires-visual-assessment'
+      }
     }) => {
-      attachments.push(image)
+      attachments.push({ ...image })
+      const identity = referenceIdentity(attachments.length - 1)
+      if (image.validation) {
+        validations.set(identity.referenceId, Promise.resolve(image.validation))
+        admittedDimensions.set(identity.referenceId, image.validation)
+      }
       return attachments.length - 1
     },
-    definitions,
+    definitions: definitions.map((definition) => ({
+      ...definition,
+      description: `${definition.description} ${AI_IMAGE_TOOL_GUIDANCE[definition.name as keyof typeof AI_IMAGE_TOOL_GUIDANCE] ?? ''}`
+    })),
     modelActions: (actions: AiProviderInput['actions']) =>
       actions.map((action) => {
         if (action.name === AiActionNames.INSERT_VECTOR_COMPOSITION)
@@ -267,14 +750,9 @@ export const createLocalImageTools = (
           )
             throw new Error('Invalid replacement')
           const mappings = reference.componentMappings ?? []
-          const ovalIds = reference.ovalPathIds ?? []
-          if (!Array.isArray(mappings) || !Array.isArray(ovalIds))
+          if (!Array.isArray(mappings))
             throw new Error('Invalid component selection')
-          if (
-            mappings.length ||
-            ovalIds.length ||
-            reference.analysisIds !== undefined
-          ) {
+          if (mappings.length || reference.analysisIds !== undefined) {
             const receiptIds = reference.analysisIds
             if (
               !Array.isArray(receiptIds) ||
@@ -293,11 +771,7 @@ export const createLocalImageTools = (
                 throw new Error('Missing or mismatched component analysis')
               return report
             })
-            const selections = [
-              ...mappings,
-              ...ovalIds.map((pathId) => ({ pathId, componentType: 'oval' }))
-            ]
-            for (const selection of selections) {
+            for (const selection of mappings) {
               if (
                 !isRecord(selection) ||
                 !evidence.some((analysis) =>
@@ -352,6 +826,20 @@ export const createLocalImageTools = (
       signal: AbortSignal
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Image tool cancelled')
+      if (name === AiImageToolIds.VALIDATE_REFERENCE_IMAGES) {
+        if (
+          !isRecord(args) ||
+          Object.keys(args).length !== 1 ||
+          !Array.isArray(args.attachmentIndexes) ||
+          !args.attachmentIndexes.length ||
+          args.attachmentIndexes.length > 24 ||
+          new Set(args.attachmentIndexes).size !== args.attachmentIndexes.length
+        )
+          throw new Error(
+            'Provide unique existing reference attachmentIndexes.'
+          )
+        return prepareReferences(args.attachmentIndexes as number[], signal)
+      }
       if (name === AiImageToolIds.REVIEW_VECTOR_CONTOURS) {
         if (
           !isRecord(args) ||
@@ -402,6 +890,7 @@ export const createLocalImageTools = (
           }
           signal.throwIfAborted()
           contourReviews.set(review.reviewId, review)
+          publishReport(review.reviewId, artifact.imageArtifactId)
           return JSON.stringify({
             ...review,
             policyExcludedProposals: candidates.length - all.length,
@@ -467,7 +956,7 @@ export const createLocalImageTools = (
           throw new Error(
             'Contour refinement exceeds the output quality budget'
           )
-        artifacts.set(result.artifact.imageArtifactId, result.artifact)
+        publishArtifact(result.artifact)
         contourSources.set(result.artifact.imageArtifactId, {
           original: lineage.original,
           generation: lineage.generation + 1,
@@ -524,6 +1013,7 @@ export const createLocalImageTools = (
           if (!report || signal.aborted) throw new Error('Image tool cancelled')
           // Publish one complete receipt, never a partially analyzed package.
           analyses.set(report.analysisId, report)
+          publishReport(report.analysisId, artifact.imageArtifactId)
           return JSON.stringify(report)
         })
         analysisQueue = task.then(
@@ -558,7 +1048,7 @@ export const createLocalImageTools = (
             (key) =>
               !(
                 plan.strategy === 'preserve-vectors'
-                  ? ['strategy', 'reason']
+                  ? ['strategy', 'reason', 'region']
                   : [
                       'strategy',
                       'reason',
@@ -624,8 +1114,12 @@ export const createLocalImageTools = (
             profile: 'photo-faithful',
             signal
           })
-          if (signal.aborted || Buffer.byteLength(svg) > 8 * 1024 * 1024)
-            throw new Error('Image tool unavailable')
+          signal.throwIfAborted()
+          const oversized = oversizedVectorResult(
+            svg,
+            args.attachmentIndex as number
+          )
+          if (oversized) return oversized
           artifact = parseLocalVectorArtifact(svg)
           if (
             artifact.width !== layers.width ||
@@ -636,7 +1130,7 @@ export const createLocalImageTools = (
         artifact.background = layers.background
         artifact.sourceBounds = layers.sourceBounds
         signal.throwIfAborted()
-        artifacts.set(artifact.imageArtifactId, artifact)
+        publishArtifact(artifact)
         return JSON.stringify({
           ...vectorArtifactSummary(artifact),
           representationPlan: representationPlan ?? {
@@ -646,24 +1140,74 @@ export const createLocalImageTools = (
           separation: layers.separation
         })
       }
-      const previous = converted.get(args.attachmentIndex as number)
-      if (previous)
-        return JSON.stringify({ ...JSON.parse(previous), representationPlan })
+      const sourceRegion = readImageRegion(representationPlan?.region)
+      const conversionKey = JSON.stringify([
+        args.attachmentIndex,
+        sourceRegion ?? null
+      ])
+      const previous = converted.get(conversionKey)
+      if (previous) {
+        const retained = JSON.parse(previous)
+        ownership?.borrow(retained.imageArtifactId)
+        return JSON.stringify({ ...retained, representationPlan })
+      }
+      let selectedBytes = bytes
+      let selectedContentType = String(attachment.mediaType)
+      if (sourceRegion) {
+        const decoder = sharp(bytes, {
+          failOn: 'warning'
+        }).timeout({ seconds: 10 })
+        const metadata = await decoder.metadata()
+        const { width, height } = metadata.autoOrient
+        if (
+          (metadata.pages ?? 1) !== 1 ||
+          sourceRegion.x + sourceRegion.width > width ||
+          sourceRegion.y + sourceRegion.height > height
+        )
+          throw new Error(
+            'Image region exceeds the oriented source image bounds.'
+          )
+        signal.throwIfAborted()
+        selectedBytes = await decoder
+          .autoOrient()
+          .extract({
+            left: sourceRegion.x,
+            top: sourceRegion.y,
+            width: sourceRegion.width,
+            height: sourceRegion.height
+          })
+          .png()
+          .toBuffer()
+        selectedContentType = 'image/png'
+      }
+      signal.throwIfAborted()
       const svg = await convert({
-        bytes,
-        contentType: String(attachment.mediaType),
+        bytes: selectedBytes,
+        contentType: selectedContentType,
         profile: 'photo-faithful',
         signal
       })
-      if (signal.aborted || Buffer.byteLength(svg) > 8 * 1024 * 1024)
-        throw new Error('Image tool unavailable')
+      signal.throwIfAborted()
+      const oversized = oversizedVectorResult(
+        svg,
+        args.attachmentIndex as number
+      )
+      if (oversized) return oversized
       const artifact = parseLocalVectorArtifact(svg)
+      if (
+        sourceRegion &&
+        (artifact.width !== sourceRegion.width ||
+          artifact.height !== sourceRegion.height)
+      )
+        throw new Error('Image region coordinate frame mismatch')
       const summary = JSON.stringify({
         ...vectorArtifactSummary(artifact),
+        ...(sourceRegion ? { sourceRegion } : {}),
         representationPlan
       })
-      artifacts.set(artifact.imageArtifactId, artifact)
-      converted.set(args.attachmentIndex as number, summary)
+      publishArtifact(artifact)
+      converted.set(conversionKey, summary)
+      conversionByArtifact.set(artifact.imageArtifactId, conversionKey)
       return summary
     }
   }

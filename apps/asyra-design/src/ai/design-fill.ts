@@ -1,5 +1,7 @@
 import { FillGradientTypes, type FillGradientData } from '@asyra/utils'
 
+export type DesignGradientData = FillGradientData
+
 const color = { type: 'string', pattern: '^#[0-9A-Fa-f]{6}$' }
 const unit = { type: 'number', minimum: 0, maximum: 1 }
 const handle = { type: 'number', minimum: -10000, maximum: 10000 }
@@ -41,7 +43,7 @@ export const designInlineFillSchema = {
     }
   ],
   description:
-    'Solid #RRGGBB or native gradient data. Handles are normalized to the final 2D element bounds (0..1 spans its box), not world-space coordinates. Stops must be ordered by position; equal positions allow hard edges. Use native gradients for continuous shading rather than many thin shapes. Pattern face gradients repeat in each projected element box; they are not automatic 3D lighting.'
+    'Solid #RRGGBB or continuous native gradient. Handles: final 2D box (0..1), not world. Stops ascend; ties form hard edges. Patterns repeat gradients per projected box; no automatic 3D lighting.'
 }
 
 const record = (v: unknown): v is Record<string, unknown> =>
@@ -54,7 +56,7 @@ const finite = (v: unknown, min: number, max: number): v is number =>
 const isColor = (v: unknown): v is string =>
   typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)
 
-export const isDesignGradient = (v: unknown): v is FillGradientData => {
+export const isDesignGradient = (v: unknown): v is DesignGradientData => {
   if (
     !record(v) ||
     !exact(v, ['gradientType', 'gradientHandles', 'gradientStops']) ||
@@ -91,7 +93,7 @@ export const isDesignGradient = (v: unknown): v is FillGradientData => {
 
 export const isDesignInlineFill = (
   v: unknown
-): v is string | FillGradientData => isColor(v) || isDesignGradient(v)
+): v is string | DesignGradientData => isColor(v) || isDesignGradient(v)
 
 export const isDesignSharedFill = (v: unknown): v is { shared: string } =>
   record(v) &&
@@ -109,12 +111,13 @@ export const isDesignFillTemplate = (v: unknown): v is { template: string } =>
 
 export const isDesignFill = (
   v: unknown
-): v is string | FillGradientData | { shared: string } | { template: string } =>
+): v is
+  string | DesignGradientData | { shared: string } | { template: string } =>
   isDesignInlineFill(v) || isDesignSharedFill(v) || isDesignFillTemplate(v)
 
 export const designFillSchema = {
   anyOf: [
-    ...designInlineFillSchema.anyOf,
+    designInlineFillSchema,
     {
       type: 'object',
       additionalProperties: false,
@@ -129,8 +132,7 @@ export const designFillSchema = {
     }
   ],
   description:
-    designInlineFillSchema.description +
-    ' Use {shared: key} to reuse a draft.sharedFills definition. This is a draft-local key, not an existing property ID. Inline equal values remain independent. Use {template: key} with draft.fillTemplates to reuse a value definition while creating independent editable Fill IDs.'
+    '{shared:key} links a draft.sharedFills definition, not a document ID. Equal inline values stay independent. {template:key} reuses draft.fillTemplates values with independent editable Fill IDs.'
 }
 
 export const designSharedFillsSchema = {
@@ -138,11 +140,11 @@ export const designSharedFillsSchema = {
   propertyNames: { type: 'string', minLength: 1, maxLength: 160 },
   additionalProperties: designInlineFillSchema,
   description:
-    'Optional explicit shared Fill definitions keyed by draft-local name. The first use creates a canonical Fill; other uses link its ID. Returned sharedFillIds maps used names to real IDs for later property edits. Definitions cannot reference other definitions. Existing document fills use the public fill linking APIs.'
+    'Draft-local: first use creates a Fill; later uses link its ID. Edit via sharedFillIds. No inter-definition references; existing fills use public linking APIs.'
 }
 
 export const designFillTemplatesSchema = {
   ...designSharedFillsSchema,
   description:
-    'Reusable value definitions, not shared canonical properties. Each fill:{template:key} creates its own independent Fill ID. Use sharedFills only for intentionally linked editing. Definitions cannot reference other definitions.'
+    'fill:{template:key} creates independent Fill IDs; sharedFills links edits. No inter-definition references.'
 }

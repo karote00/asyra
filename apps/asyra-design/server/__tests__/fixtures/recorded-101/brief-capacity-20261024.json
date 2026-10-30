@@ -1,0 +1,1290 @@
+{
+  "provenance": {
+    "run": "knowledge-quality-knowledge-taipei-101-1792830831162",
+    "payload": "19-input.json",
+    "sha256": "e46d47339271230039c04e6255c9a927cac1031fad3f0bdfe6974f1c41635057",
+    "derivation": "Unmodified tool arguments; original labels and brief retained as evidence."
+  },
+  "input": {
+    "draft": {
+      "type": "group",
+      "name": "台北101｜公分尺度建築插畫",
+      "projection": {
+        "azimuth": 35,
+        "elevation": 25,
+        "scale": 1,
+        "originX": 14000,
+        "originY": 48000
+      },
+      "fillTemplates": {
+        "stone": "#71878b",
+        "roof": "#a6b8b4",
+        "edge": "#c0d3cd",
+        "dark": "#17343c",
+        "frame": "#80a4a8",
+        "silver": "#d8e3dd",
+        "glass": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0.6
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#173f4b",
+              "opacity": 1
+            },
+            {
+              "position": 0.3333333333333333,
+              "color": "#396672",
+              "opacity": 1
+            },
+            {
+              "position": 0.6666666666666666,
+              "color": "#7d9fa7",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#315b68",
+              "opacity": 1
+            }
+          ]
+        },
+        "side": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0.6
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#163840",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#31565e",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#5d848a",
+              "opacity": 1
+            }
+          ]
+        }
+      },
+      "motifTemplates": {
+        "frames": [
+          {
+            "key": "vertical",
+            "name": "金屬直窗框",
+            "fill": {
+              "template": "frame"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.035,
+                "v": 0
+              },
+              {
+                "u": 0.035,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "horizontal",
+            "name": "金屬橫窗框",
+            "fill": {
+              "template": "edge"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.035
+              },
+              {
+                "u": 0,
+                "v": 0.035
+              }
+            ]
+          }
+        ]
+      },
+      "children": [
+        {
+          "type": "projected-face",
+          "key": "podiumE",
+          "name": "podiumE",
+          "vertices": [
+            {
+              "x": 8000,
+              "y": -6500,
+              "z": 0
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 0
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 2700
+            },
+            {
+              "x": 8000,
+              "y": -6500,
+              "z": 2700
+            }
+          ],
+          "fill": {
+            "template": "side"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podiumS",
+          "name": "podiumS",
+          "vertices": [
+            {
+              "x": -8000,
+              "y": 6500,
+              "z": 0
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 0
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 2700
+            },
+            {
+              "x": -8000,
+              "y": 6500,
+              "z": 2700
+            }
+          ],
+          "fill": {
+            "template": "glass"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podiumR",
+          "name": "podiumR",
+          "vertices": [
+            {
+              "x": -8000,
+              "y": -6500,
+              "z": 2700
+            },
+            {
+              "x": 8000,
+              "y": -6500,
+              "z": 2700
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 2700
+            },
+            {
+              "x": -8000,
+              "y": 6500,
+              "z": 2700
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "plinthE",
+          "name": "plinthE",
+          "vertices": [
+            {
+              "x": 3900,
+              "y": -3900,
+              "z": 2700
+            },
+            {
+              "x": 3900,
+              "y": 3900,
+              "z": 2700
+            },
+            {
+              "x": 3900,
+              "y": 3900,
+              "z": 6200
+            },
+            {
+              "x": 3900,
+              "y": -3900,
+              "z": 6200
+            }
+          ],
+          "fill": {
+            "template": "side"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "plinthS",
+          "name": "plinthS",
+          "vertices": [
+            {
+              "x": -3900,
+              "y": 3900,
+              "z": 2700
+            },
+            {
+              "x": 3900,
+              "y": 3900,
+              "z": 2700
+            },
+            {
+              "x": 3900,
+              "y": 3900,
+              "z": 6200
+            },
+            {
+              "x": -3900,
+              "y": 3900,
+              "z": 6200
+            }
+          ],
+          "fill": {
+            "template": "glass"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "plinthR",
+          "name": "plinthR",
+          "vertices": [
+            {
+              "x": -3900,
+              "y": -3900,
+              "z": 6200
+            },
+            {
+              "x": 3900,
+              "y": -3900,
+              "z": 6200
+            },
+            {
+              "x": 3900,
+              "y": 3900,
+              "z": 6200
+            },
+            {
+              "x": -3900,
+              "y": 3900,
+              "z": 6200
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerE",
+          "name": "lowerE",
+          "vertices": [
+            {
+              "x": 3000,
+              "y": -3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 11000
+            },
+            {
+              "x": 3000,
+              "y": -3000,
+              "z": 11000
+            }
+          ],
+          "fill": {
+            "template": "side"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerS",
+          "name": "lowerS",
+          "vertices": [
+            {
+              "x": -3000,
+              "y": 3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 11000
+            },
+            {
+              "x": -3000,
+              "y": 3000,
+              "z": 11000
+            }
+          ],
+          "fill": {
+            "template": "glass"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerR",
+          "name": "lowerR",
+          "vertices": [
+            {
+              "x": -3000,
+              "y": -3000,
+              "z": 11000
+            },
+            {
+              "x": 3000,
+              "y": -3000,
+              "z": 11000
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 11000
+            },
+            {
+              "x": -3000,
+              "y": 3000,
+              "z": 11000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "pattern",
+          "key": "bamboo",
+          "name": "八節竹節塔身",
+          "origin": {
+            "x": 0,
+            "y": 0,
+            "z": 11000
+          },
+          "axes": [
+            {
+              "count": 8,
+              "step": {
+                "x": 0,
+                "y": 0,
+                "z": 3600
+              }
+            }
+          ],
+          "members": [
+            {
+              "type": "projected-face",
+              "key": "east",
+              "name": "east",
+              "vertices": [
+                {
+                  "x": 2600,
+                  "y": -2600,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 0
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3500
+                },
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 3500
+                }
+              ],
+              "fill": {
+                "template": "side"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "south",
+              "name": "south",
+              "vertices": [
+                {
+                  "x": -2600,
+                  "y": 2600,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 0
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3500
+                },
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 3500
+                }
+              ],
+              "fill": {
+                "template": "glass"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "eastwindows",
+              "name": "eastwindows",
+              "boundary": [
+                {
+                  "x": 2600,
+                  "y": -2600,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 0
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3500
+                },
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 3500
+                }
+              ],
+              "rows": 16,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": {
+                "template": "frames"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "southwindows",
+              "name": "southwindows",
+              "boundary": [
+                {
+                  "x": -2600,
+                  "y": 2600,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 0
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3500
+                },
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 3500
+                }
+              ],
+              "rows": 16,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": {
+                "template": "frames"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "cap",
+              "name": "cap",
+              "vertices": [
+                {
+                  "x": -3100,
+                  "y": -3100,
+                  "z": 3500
+                },
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 3500
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3500
+                },
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 3500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lipS",
+              "name": "lipS",
+              "vertices": [
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 3435
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3435
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3500
+                },
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 3500
+                }
+              ],
+              "fill": {
+                "template": "silver"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lipE",
+              "name": "lipE",
+              "vertices": [
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 3435
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3435
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3500
+                },
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 3500
+                }
+              ],
+              "fill": {
+                "template": "edge"
+              }
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "crownE",
+          "name": "crownE",
+          "vertices": [
+            {
+              "x": 2250,
+              "y": -2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 42400
+            },
+            {
+              "x": 2250,
+              "y": -2250,
+              "z": 42400
+            }
+          ],
+          "fill": {
+            "template": "side"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crownS",
+          "name": "crownS",
+          "vertices": [
+            {
+              "x": -2250,
+              "y": 2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 42400
+            },
+            {
+              "x": -2250,
+              "y": 2250,
+              "z": 42400
+            }
+          ],
+          "fill": {
+            "template": "glass"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crownR",
+          "name": "crownR",
+          "vertices": [
+            {
+              "x": -2250,
+              "y": -2250,
+              "z": 42400
+            },
+            {
+              "x": 2250,
+              "y": -2250,
+              "z": 42400
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 42400
+            },
+            {
+              "x": -2250,
+              "y": 2250,
+              "z": 42400
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternE",
+          "name": "lanternE",
+          "vertices": [
+            {
+              "x": 1200,
+              "y": -1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 45300
+            },
+            {
+              "x": 1200,
+              "y": -1200,
+              "z": 45300
+            }
+          ],
+          "fill": {
+            "template": "side"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternS",
+          "name": "lanternS",
+          "vertices": [
+            {
+              "x": -1200,
+              "y": 1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 45300
+            },
+            {
+              "x": -1200,
+              "y": 1200,
+              "z": 45300
+            }
+          ],
+          "fill": {
+            "template": "glass"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternR",
+          "name": "lanternR",
+          "vertices": [
+            {
+              "x": -1200,
+              "y": -1200,
+              "z": 45300
+            },
+            {
+              "x": 1200,
+              "y": -1200,
+              "z": 45300
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 45300
+            },
+            {
+              "x": -1200,
+              "y": 1200,
+              "z": 45300
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "mastbaseE",
+          "name": "mastbaseE",
+          "vertices": [
+            {
+              "x": 430,
+              "y": -430,
+              "z": 45300
+            },
+            {
+              "x": 430,
+              "y": 430,
+              "z": 45300
+            },
+            {
+              "x": 430,
+              "y": 430,
+              "z": 47100
+            },
+            {
+              "x": 430,
+              "y": -430,
+              "z": 47100
+            }
+          ],
+          "fill": {
+            "template": "side"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "mastbaseS",
+          "name": "mastbaseS",
+          "vertices": [
+            {
+              "x": -430,
+              "y": 430,
+              "z": 45300
+            },
+            {
+              "x": 430,
+              "y": 430,
+              "z": 45300
+            },
+            {
+              "x": 430,
+              "y": 430,
+              "z": 47100
+            },
+            {
+              "x": -430,
+              "y": 430,
+              "z": 47100
+            }
+          ],
+          "fill": {
+            "template": "glass"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "mastbaseR",
+          "name": "mastbaseR",
+          "vertices": [
+            {
+              "x": -430,
+              "y": -430,
+              "z": 47100
+            },
+            {
+              "x": 430,
+              "y": -430,
+              "z": 47100
+            },
+            {
+              "x": 430,
+              "y": 430,
+              "z": 47100
+            },
+            {
+              "x": -430,
+              "y": 430,
+              "z": 47100
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "spireS",
+          "name": "spireS",
+          "vertices": [
+            {
+              "x": -170,
+              "y": 170,
+              "z": 47100
+            },
+            {
+              "x": 170,
+              "y": 170,
+              "z": 47100
+            },
+            {
+              "x": 30,
+              "y": 30,
+              "z": 50800
+            },
+            {
+              "x": -30,
+              "y": 30,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "silver"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "spireE",
+          "name": "spireE",
+          "vertices": [
+            {
+              "x": 170,
+              "y": -170,
+              "z": 47100
+            },
+            {
+              "x": 170,
+              "y": 170,
+              "z": 47100
+            },
+            {
+              "x": 30,
+              "y": 30,
+              "z": 50800
+            },
+            {
+              "x": 30,
+              "y": -30,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "stone"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "podiumEgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": 8000,
+              "y": -6500,
+              "z": 100
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 100
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 2500
+            },
+            {
+              "x": 8000,
+              "y": -6500,
+              "z": 2500
+            }
+          ],
+          "rows": 5,
+          "columns": 32,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "podiumSgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": -8000,
+              "y": 6500,
+              "z": 100
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 100
+            },
+            {
+              "x": 8000,
+              "y": 6500,
+              "z": 2500
+            },
+            {
+              "x": -8000,
+              "y": 6500,
+              "z": 2500
+            }
+          ],
+          "rows": 5,
+          "columns": 32,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lowerEgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": 3000,
+              "y": -3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 11000
+            },
+            {
+              "x": 3000,
+              "y": -3000,
+              "z": 11000
+            }
+          ],
+          "rows": 12,
+          "columns": 16,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lowerSgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": -3000,
+              "y": 3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 6200
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 11000
+            },
+            {
+              "x": -3000,
+              "y": 3000,
+              "z": 11000
+            }
+          ],
+          "rows": 12,
+          "columns": 16,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "crownEgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": 2250,
+              "y": -2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 42400
+            },
+            {
+              "x": 2250,
+              "y": -2250,
+              "z": 42400
+            }
+          ],
+          "rows": 7,
+          "columns": 14,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "crownSgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": -2250,
+              "y": 2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 39800
+            },
+            {
+              "x": 2250,
+              "y": 2250,
+              "z": 42400
+            },
+            {
+              "x": -2250,
+              "y": 2250,
+              "z": 42400
+            }
+          ],
+          "rows": 7,
+          "columns": 14,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lanternEgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": 1200,
+              "y": -1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 45300
+            },
+            {
+              "x": 1200,
+              "y": -1200,
+              "z": 45300
+            }
+          ],
+          "rows": 10,
+          "columns": 8,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lanternSgrid",
+          "name": "窗框",
+          "boundary": [
+            {
+              "x": -1200,
+              "y": 1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 42400
+            },
+            {
+              "x": 1200,
+              "y": 1200,
+              "z": 45300
+            },
+            {
+              "x": -1200,
+              "y": 1200,
+              "z": 45300
+            }
+          ],
+          "rows": 10,
+          "columns": 8,
+          "order": "motif-major",
+          "motifs": {
+            "template": "frames"
+          }
+        }
+      ],
+      "brief": {
+        "intent": "完整台北101可編輯建築插畫，不含施工設備與背景",
+        "viewpoint": "固定35度方位25度俯角平行三分之四投影",
+        "sources": [
+          "使用者空拍附件僅限量體與基座關係",
+          "使用者裝飾近照僅限裝飾形狀材質"
+        ],
+        "assumptions": [
+          "1 cm = 1 px；508公尺總高，其他量體尺寸為視覺估計，非工程測量",
+          "玻璃兩向立面採不同反射色域，金屬窗框獨立編輯；尚需檢查寫實材質與裝飾"
+        ],
+        "checks": []
+      }
+    },
+    "plan": {
+      "phase": "plan",
+      "method": "固定公分尺度世界座標投影；規律窗框採後端格網。附件不支持精密未知幾何。",
+      "references": [
+        "使用者兩張附件"
+      ],
+      "criteria": {
+        "overall": {
+          "requirement": "完整台北101及固定俯視三分之四視角",
+          "description": "基座至尖塔完整，竹節比例與可見頂面正確",
+          "verification": "visual",
+          "requiredUnits": []
+        },
+        "detail": {
+          "requirement": "高度詳細寫實材料窗框與裝飾",
+          "description": "檢查玻璃反射、窗框、金屬裝飾與陰影，無施工設備",
+          "verification": "visual",
+          "requiredUnits": []
+        }
+      },
+      "detailRequired": true
+    },
+    "inspection": "immediate",
+    "response": "compact",
+    "message": "建立台北101完整塔身與可編輯窗框"
+  }
+}

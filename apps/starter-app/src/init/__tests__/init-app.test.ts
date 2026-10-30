@@ -111,8 +111,18 @@ describe('starter runtime canonical App path', () => {
       const itemId = runtime.itemActions.addItem({ title: 'Movable' })
       await settleProjection()
       const beforeMoveDepth = runtime.core.getUndoHistoryDepth()
-      runtime.itemActions.moveItem(itemId, { x: 64, y: 82 })
+      const accepted = runtime.itemActions.moveItem(itemId, { x: 64, y: 82 })
+      expect(accepted).toEqual([itemId])
+      expect(Object.isFrozen(accepted)).toBe(true)
       await settleProjection()
+      expect(runtime.core.getUndoHistoryDepth()).toBe(beforeMoveDepth + 1)
+      expect(runtime.itemActions.moveItem(itemId, { x: 64, y: 82 })).toEqual([
+        itemId
+      ])
+      expect(runtime.itemActions.editItem(itemId, {})).toEqual([])
+      expect(
+        runtime.itemActions.editItem(itemId, { title: 'Movable' })
+      ).toEqual([itemId])
       expect(runtime.core.getUndoHistoryDepth()).toBe(beforeMoveDepth + 1)
       expect(runtime.projection.getSnapshot()[0]?.offset).toEqual({
         x: 64,

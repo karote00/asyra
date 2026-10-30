@@ -20,7 +20,29 @@ const fixture = () => {
   const source = {
     getCurrentWorkspaceId: vi.fn(() => 'workspace'),
     getSelectedElementIds: vi.fn(() => ['b', 'a']),
-    getElementData: vi.fn((id: string) => records[id]),
+    getElementMetadata: vi.fn((id: string) =>
+      records[id]
+        ? {
+            ...records[id],
+            childCount: Array.isArray(records[id].children)
+              ? records[id].children.length
+              : 0
+          }
+        : undefined
+    ),
+    getElementData: vi.fn(() => {
+      throw new Error('Full snapshot must not be read')
+    }),
+    getElementChildren: vi.fn((id: string, offset: number, limit: number) => {
+      const children = (records[id]?.children ?? []) as string[]
+      return {
+        available: Boolean(records[id]),
+        elementIds: children.slice(offset, offset + limit),
+        total: children.length,
+        nextOffset: offset + limit < children.length ? offset + limit : null
+      }
+    }),
+    getElementIdsInBounds: vi.fn(() => ['a', 'b']),
     getElementComputedData: vi.fn((_id: string, fields: readonly string[]) => {
       expect(fields).not.toContain('points')
       expect(fields).not.toContain('segments')
@@ -48,11 +70,7 @@ describe('bounded document context', () => {
         }
       ]
     })
-    expect(source.getElementData.mock.calls).toEqual([
-      ['workspace'],
-      ['a'],
-      ['gone']
-    ])
+    expect(source.getElementMetadata.mock.calls).toEqual([['a'], ['gone']])
     expect(source.getElementComputedData).toHaveBeenCalledTimes(1)
     expect(read({ scope: 'children', offset: 2 }).nextOffset).toBeNull()
   })
@@ -65,21 +83,19 @@ describe('bounded document context', () => {
       read({ scope: 'selection', fields: ['text'] }).elements[0].properties.text
     ).toBe('Changed')
     expect(first.elements[0].properties.text).toBe('Hello')
-    expect(source.getElementData).toHaveBeenCalledTimes(4)
+    expect(source.getElementMetadata).toHaveBeenCalledTimes(4)
     expect(source.getElementComputedData).toHaveBeenCalledTimes(4)
   })
-  it('reads native textColor using its canonical field name', () => {
+  it('reads native text fills using the shared canonical field', () => {
     const { read, source, computed } = fixture()
-    computed.textColor = '#123456'
+    computed.fills = [{ color: '#123456' }]
     const result = read({
       scope: 'selection',
       limit: 1,
-      fields: ['text', 'textColor', 'fills']
+      fields: ['text', 'fills']
     })
-    expect(source.getElementComputedData.mock.calls[0][1]).toContain(
-      'textColor'
-    )
-    expect(result.elements[0].properties.textColor).toBe('#123456')
+    expect(source.getElementComputedData.mock.calls[0][1]).toContain('fills')
+    expect(result.elements[0].properties.fills).toEqual([{ color: '#123456' }])
   })
   it('reports preview truncation without claiming complete data', () => {
     const { read, computed } = fixture()
@@ -88,7 +104,7 @@ describe('bounded document context', () => {
     const entry = read({
       scope: 'selection',
       limit: 1,
-      fields: ['text', 'textColor', 'fills']
+      fields: ['text', 'fills']
     }).elements[0]
     expect(entry.properties.text).toHaveLength(2000)
     expect(entry.properties.fills).toHaveLength(8)
@@ -109,7 +125,7 @@ describe('bounded document context', () => {
     const { read, source } = fixture()
     expect(() => read(query as never)).toThrow()
     expect(source.getCurrentWorkspaceId).not.toHaveBeenCalled()
-    expect(source.getElementData).not.toHaveBeenCalled()
+    expect(source.getElementMetadata).not.toHaveBeenCalled()
   })
   it('reports unavailable parent without a fallback document scan', () => {
     const { read, source } = fixture()
@@ -118,7 +134,8 @@ describe('bounded document context', () => {
       elements: [],
       nextOffset: null
     })
-    expect(source.getElementData.mock.calls).toEqual([['missing']])
+    expect(source.getElementMetadata).not.toHaveBeenCalled()
+    expect(source.getElementChildren).toHaveBeenCalledWith('missing', 0, 50)
     expect(source.getElementComputedData).not.toHaveBeenCalled()
   })
 })
@@ -127,7 +144,7 @@ it('reads explicit identities without traversing parents or calculating unused p
   const { read, source, records } = fixture()
   const query = { scope: 'ids', elementIds: ['b', 'a'], fields: [] } as never
   expect(read(query).elements.map((e) => e.id)).toEqual(['b', 'a'])
-  expect(source.getElementData.mock.calls).toEqual([['b'], ['a']])
+  expect(source.getElementMetadata.mock.calls).toEqual([['b'], ['a']])
   expect(source.getElementComputedData).not.toHaveBeenCalled()
   expect(source.getCurrentWorkspaceId).not.toHaveBeenCalled()
   delete records.b
@@ -144,7 +161,7 @@ it('computes only requested fields and does not split a known identity set into 
   const result = read({ scope: 'ids', elementIds: ids, fields: ['x'] } as never)
   expect(result.elements).toHaveLength(250)
   expect(result.nextOffset).toBeNull()
-  expect(source.getElementData).toHaveBeenCalledTimes(250)
+  expect(source.getElementMetadata).toHaveBeenCalledTimes(250)
   expect(source.getElementComputedData).toHaveBeenCalledTimes(250)
   expect(
     source.getElementComputedData.mock.calls.every(
@@ -160,7 +177,7 @@ it.each([
 ])('rejects invalid narrow queries before reads: %j', (query) => {
   const { read, source } = fixture()
   expect(() => read(query as never)).toThrow()
-  expect(source.getElementData).not.toHaveBeenCalled()
+  expect(source.getElementMetadata).not.toHaveBeenCalled()
 })
 
 it('defaults to identity metadata without unused computed data', () => {
@@ -171,4 +188,191 @@ it('defaults to identity metadata without unused computed data', () => {
     )
   ).toBe(true)
   expect(source.getElementComputedData).not.toHaveBeenCalled()
+})
+
+it('filters region candidates before paging and never reads unrelated geometry or full element snapshots', () => {
+  const { read, source, records } = fixture()
+  records.b.lock = true
+  records.other = { id: 'other', type: 'vector', parentId: 'elsewhere' }
+  const result = read({
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    filter: { type: 'vector', ancestorId: 'workspace', locked: true },
+    fields: ['x']
+  })
+  expect(result.elements.map((e) => e.id)).toEqual(['b'])
+  expect(result.total).toBe(1)
+  expect(source.getElementComputedData).toHaveBeenCalledExactlyOnceWith('b', [
+    'x'
+  ])
+  expect(source.getElementMetadata.mock.calls.flat()).not.toContain('other')
+  expect(source.getElementData).not.toHaveBeenCalled()
+  expect(
+    source.getElementMetadata.mock.calls.filter(([id]) => id === 'b')
+  ).toHaveLength(1)
+})
+it.each([
+  { scope: 'region' },
+  { scope: 'region', bounds: { x: 0, y: 0, width: -1, height: 1 } },
+  { scope: 'selection', bounds: { x: 0, y: 0, width: 1, height: 1 } },
+  {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 1, height: 1 },
+    filter: { typo: true }
+  }
+])('rejects invalid region contracts before reading %j', (query) => {
+  const { read, source } = fixture()
+  expect(() => read(query as never)).toThrow()
+  expect(source.getElementIdsInBounds).not.toHaveBeenCalled()
+})
+
+it('finds only the left region of one tier under a shared parent without enumerating its children', () => {
+  const { read, source, records } = fixture()
+  records.tower = { type: 'group', parentId: 'workspace', children: [] }
+  for (let tier = 0; tier < 8; tier++) {
+    for (const side of ['left', 'right']) {
+      const id = `tier-${tier}-${side}`
+      records[id] = { type: 'vector', parentId: 'tower', name: id }
+      ;(records.tower.children as string[]).push(id)
+    }
+  }
+  const bounds = { x: 0, y: 200, width: 40, height: 80 }
+  source.getElementIdsInBounds.mockImplementation((...args: unknown[]) => {
+    expect(args[0]).toEqual(bounds)
+    return ['tower', 'tier-2-left']
+  })
+  const result = read({
+    scope: 'region',
+    bounds,
+    filter: { ancestorId: 'tower', type: 'vector' },
+    result: 'ids'
+  } as never)
+  expect(result).toMatchObject({
+    available: true,
+    elementIds: ['tier-2-left'],
+    elements: [],
+    total: 1,
+    nextOffset: null
+  })
+  expect(source.getElementChildren).not.toHaveBeenCalled()
+  expect(source.getElementData).not.toHaveBeenCalled()
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  expect(
+    source.getElementMetadata.mock.calls
+      .flat()
+      .every((id) => ['tower', 'tier-2-left'].includes(id))
+  ).toBe(true)
+})
+
+it('pages compact spatial identities after filtering and observes fresh locks', () => {
+  const { read, source, records } = fixture()
+  records.a.type = 'vector'
+  const query = {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 10, height: 10 },
+    filter: { locked: false },
+    result: 'ids',
+    limit: 1
+  } as const
+  const first = read(query as never)
+  expect(first).toMatchObject({
+    elementIds: ['a'],
+    total: 2,
+    nextOffset: 1,
+    limit: 1
+  })
+  expect(read({ ...query, offset: first.nextOffset } as never)).toMatchObject({
+    elementIds: ['b'],
+    nextOffset: null
+  })
+  records.a.lock = true
+  expect(read(query as never)).toMatchObject({
+    elementIds: ['b'],
+    total: 1,
+    nextOffset: null
+  })
+  source.getElementIdsInBounds.mockReturnValue([])
+  expect(read(query as never)).toMatchObject({
+    elementIds: [],
+    total: 0,
+    nextOffset: null
+  })
+  expect(source.getElementChildren).not.toHaveBeenCalled()
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+})
+
+it.each([
+  { scope: 'selection', result: 'unknown' },
+  { scope: 'selection', result: 'ids', fields: ['fills'] }
+])('rejects contradictory identity projections before reads: %j', (query) => {
+  const { read, source } = fixture()
+  expect(() => read(query as never)).toThrow()
+  expect(source.getSelectedElementIds).not.toHaveBeenCalled()
+})
+
+it('resolves all identity-only region matches once for backend mutation handoff', () => {
+  const { read, source, records } = fixture()
+  const ids = Array.from({ length: 600 }, (_, i) => `region-${i}`)
+  ids.forEach((id) => {
+    records[id] = { type: 'vector', parentId: 'workspace' }
+  })
+  source.getElementIdsInBounds.mockReturnValue(ids)
+  const result = read({
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    result: 'ids',
+    allMatches: true
+  })
+  expect(result.elementIds).toEqual(ids)
+  expect(result.nextOffset).toBeNull()
+  expect(result.elements).toEqual([])
+  expect(source.getElementIdsInBounds).toHaveBeenCalledOnce()
+  expect(source.getElementMetadata).toHaveBeenCalledTimes(ids.length)
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  expect(() =>
+    read({ scope: 'children', result: 'ids', allMatches: true })
+  ).toThrow()
+  expect(() =>
+    read({
+      scope: 'region',
+      bounds: { x: 0, y: 0, width: 1, height: 1 },
+      result: 'ids',
+      allMatches: true,
+      limit: 20
+    })
+  ).toThrow()
+})
+
+it('combines literal name predicates before paging and enforces the complete match count', () => {
+  const { read, records, source } = fixture()
+  records.a.name = 'tier-3-left-window'
+  records.b.name = 'tier-3-right-window'
+  const query = {
+    scope: 'region' as const,
+    result: 'ids' as const,
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    filter: {
+      name: {
+        prefix: 'tier-3-left',
+        suffix: '-window',
+        equals: 'tier-3-left-window'
+      }
+    },
+    expectedCount: 1
+  }
+  expect(read(query).elementIds).toEqual(['a'])
+  expect(() => read({ ...query, expectedCount: 2 })).toThrow(/count/)
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  expect(
+    read({
+      ...query,
+      filter: { name: { equals: 'unknown' } },
+      expectedCount: 0
+    }).total
+  ).toBe(0)
+  source.getElementMetadata.mockClear()
+  expect(() =>
+    read({ ...query, filter: { name: { regex: '.*' } } } as never)
+  ).toThrow(/name filter/)
+  expect(source.getElementMetadata).not.toHaveBeenCalled()
 })

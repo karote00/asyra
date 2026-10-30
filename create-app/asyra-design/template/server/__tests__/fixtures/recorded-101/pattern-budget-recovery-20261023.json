@@ -1,0 +1,2293 @@
+{
+  "provenance": {
+    "run": "knowledge-quality-knowledge-taipei-101-1792686476663",
+    "payload": "30-input.json",
+    "sha256": "f187e3d7c1312120c775eaf8dc05ac3e02eb316c7c2c54cd540605e37dccd76d",
+    "derivation": "Unmodified tool arguments; user-authored labels retained as evidence."
+  },
+  "input": {
+    "draft": {
+      "type": "group",
+      "name": "台北101 塔身與尖塔",
+      "projection": {
+        "azimuth": 35,
+        "elevation": 24,
+        "scale": 1,
+        "originX": 12000,
+        "originY": 48000
+      },
+      "fillTemplates": {
+        "glassL": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0.9
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#183f4c",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#5c8790",
+              "opacity": 1
+            }
+          ]
+        },
+        "glassR": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0.9
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#387580",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#a1c2c1",
+              "opacity": 1
+            }
+          ]
+        },
+        "metal": "#b8c9c8",
+        "dark": "#12313c",
+        "stone": "#aeb8b4",
+        "roof": "#68817f",
+        "edge": "#8eafb1",
+        "shadow": "#112f3a"
+      },
+      "children": [
+        {
+          "type": "projected-face",
+          "key": "lowerL",
+          "name": "lowerL",
+          "vertices": [
+            {
+              "x": -3000,
+              "y": 3000,
+              "z": 3100
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 3100
+            },
+            {
+              "x": 2300,
+              "y": 2300,
+              "z": 11600
+            },
+            {
+              "x": -2300,
+              "y": 2300,
+              "z": 11600
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerR",
+          "name": "lowerR",
+          "vertices": [
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 3100
+            },
+            {
+              "x": 3000,
+              "y": -3000,
+              "z": 3100
+            },
+            {
+              "x": 2300,
+              "y": -2300,
+              "z": 11600
+            },
+            {
+              "x": 2300,
+              "y": 2300,
+              "z": 11600
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerroof",
+          "name": "lowerroof",
+          "vertices": [
+            {
+              "x": -2300,
+              "y": -2300,
+              "z": 11600
+            },
+            {
+              "x": 2300,
+              "y": -2300,
+              "z": 11600
+            },
+            {
+              "x": 2300,
+              "y": 2300,
+              "z": 11600
+            },
+            {
+              "x": -2300,
+              "y": 2300,
+              "z": 11600
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lowerLgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": -3000,
+              "y": 3000,
+              "z": 3100
+            },
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 3100
+            },
+            {
+              "x": 2300,
+              "y": 2300,
+              "z": 11600
+            },
+            {
+              "x": -2300,
+              "y": 2300,
+              "z": 11600
+            }
+          ],
+          "rows": 20,
+          "columns": 18,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "lowerRgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": 3000,
+              "y": 3000,
+              "z": 3100
+            },
+            {
+              "x": 3000,
+              "y": -3000,
+              "z": 3100
+            },
+            {
+              "x": 2300,
+              "y": -2300,
+              "z": 11600
+            },
+            {
+              "x": 2300,
+              "y": 2300,
+              "z": 11600
+            }
+          ],
+          "rows": 20,
+          "columns": 18,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "pattern",
+          "key": "eight-tiers",
+          "name": "八節竹節塔身",
+          "origin": {
+            "x": 0,
+            "y": 0,
+            "z": 11600
+          },
+          "axes": [
+            {
+              "count": 8,
+              "step": {
+                "x": 0,
+                "y": 0,
+                "z": 3750
+              }
+            }
+          ],
+          "members": [
+            {
+              "type": "projected-face",
+              "key": "bambooL",
+              "name": "bambooL",
+              "vertices": [
+                {
+                  "x": -2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": -2650,
+                  "y": 2650,
+                  "z": 3400
+                }
+              ],
+              "fill": {
+                "template": "glassL"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "bambooR",
+              "name": "bambooR",
+              "vertices": [
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2250,
+                  "y": -2250,
+                  "z": 0
+                },
+                {
+                  "x": 2650,
+                  "y": -2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                }
+              ],
+              "fill": {
+                "template": "glassR"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "bambooroof",
+              "name": "bambooroof",
+              "vertices": [
+                {
+                  "x": -2650,
+                  "y": -2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": -2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": -2650,
+                  "y": 2650,
+                  "z": 3400
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "bambooLgrid",
+              "name": "帷幕金屬窗框",
+              "boundary": [
+                {
+                  "x": -2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": -2650,
+                  "y": 2650,
+                  "z": 3400
+                }
+              ],
+              "rows": 8,
+              "columns": 20,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "樓層橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.045
+                    }
+                  ]
+                },
+                {
+                  "key": "sp",
+                  "name": "層間暗帶",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.16
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "bambooRgrid",
+              "name": "帷幕金屬窗框",
+              "boundary": [
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2250,
+                  "y": -2250,
+                  "z": 0
+                },
+                {
+                  "x": 2650,
+                  "y": -2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                }
+              ],
+              "rows": 8,
+              "columns": 20,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "樓層橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.045
+                    }
+                  ]
+                },
+                {
+                  "key": "sp",
+                  "name": "層間暗帶",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.16
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "lipL",
+              "name": "lipL",
+              "vertices": [
+                {
+                  "x": -2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2720,
+                  "y": 2720,
+                  "z": 3570
+                },
+                {
+                  "x": -2720,
+                  "y": 2720,
+                  "z": 3570
+                }
+              ],
+              "fill": {
+                "template": "glassL"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lipR",
+              "name": "lipR",
+              "vertices": [
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": -2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2720,
+                  "y": -2720,
+                  "z": 3570
+                },
+                {
+                  "x": 2720,
+                  "y": 2720,
+                  "z": 3570
+                }
+              ],
+              "fill": {
+                "template": "glassR"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "liproof",
+              "name": "liproof",
+              "vertices": [
+                {
+                  "x": -2720,
+                  "y": -2720,
+                  "z": 3570
+                },
+                {
+                  "x": 2720,
+                  "y": -2720,
+                  "z": 3570
+                },
+                {
+                  "x": 2720,
+                  "y": 2720,
+                  "z": 3570
+                },
+                {
+                  "x": -2720,
+                  "y": 2720,
+                  "z": 3570
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "lipLgrid",
+              "name": "帷幕金屬窗框",
+              "boundary": [
+                {
+                  "x": -2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2720,
+                  "y": 2720,
+                  "z": 3570
+                },
+                {
+                  "x": -2720,
+                  "y": 2720,
+                  "z": 3570
+                }
+              ],
+              "rows": 1,
+              "columns": 20,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "樓層橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.045
+                    }
+                  ]
+                },
+                {
+                  "key": "sp",
+                  "name": "層間暗帶",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.16
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "lipRgrid",
+              "name": "帷幕金屬窗框",
+              "boundary": [
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2650,
+                  "y": -2650,
+                  "z": 3400
+                },
+                {
+                  "x": 2720,
+                  "y": -2720,
+                  "z": 3570
+                },
+                {
+                  "x": 2720,
+                  "y": 2720,
+                  "z": 3570
+                }
+              ],
+              "rows": 1,
+              "columns": 20,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "樓層橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.045
+                    }
+                  ]
+                },
+                {
+                  "key": "sp",
+                  "name": "層間暗帶",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.16
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "neckL",
+              "name": "neckL",
+              "vertices": [
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3750
+                },
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 3750
+                }
+              ],
+              "fill": {
+                "template": "glassL"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "neckR",
+              "name": "neckR",
+              "vertices": [
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 3750
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3750
+                }
+              ],
+              "fill": {
+                "template": "glassR"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "neckroof",
+              "name": "neckroof",
+              "vertices": [
+                {
+                  "x": -2400,
+                  "y": -2400,
+                  "z": 3750
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 3750
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3750
+                },
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 3750
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "neckLgrid",
+              "name": "帷幕金屬窗框",
+              "boundary": [
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3750
+                },
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 3750
+                }
+              ],
+              "rows": 1,
+              "columns": 20,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "樓層橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.045
+                    }
+                  ]
+                },
+                {
+                  "key": "sp",
+                  "name": "層間暗帶",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.16
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "neckRgrid",
+              "name": "帷幕金屬窗框",
+              "boundary": [
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 3570
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 3750
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 3750
+                }
+              ],
+              "rows": 1,
+              "columns": 20,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "樓層橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.045
+                    }
+                  ]
+                },
+                {
+                  "key": "sp",
+                  "name": "層間暗帶",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.07
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.16
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "crownL",
+          "name": "crownL",
+          "vertices": [
+            {
+              "x": -1500,
+              "y": 1500,
+              "z": 41600
+            },
+            {
+              "x": 1500,
+              "y": 1500,
+              "z": 41600
+            },
+            {
+              "x": 1250,
+              "y": 1250,
+              "z": 46000
+            },
+            {
+              "x": -1250,
+              "y": 1250,
+              "z": 46000
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crownR",
+          "name": "crownR",
+          "vertices": [
+            {
+              "x": 1500,
+              "y": 1500,
+              "z": 41600
+            },
+            {
+              "x": 1500,
+              "y": -1500,
+              "z": 41600
+            },
+            {
+              "x": 1250,
+              "y": -1250,
+              "z": 46000
+            },
+            {
+              "x": 1250,
+              "y": 1250,
+              "z": 46000
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "crownroof",
+          "name": "crownroof",
+          "vertices": [
+            {
+              "x": -1250,
+              "y": -1250,
+              "z": 46000
+            },
+            {
+              "x": 1250,
+              "y": -1250,
+              "z": 46000
+            },
+            {
+              "x": 1250,
+              "y": 1250,
+              "z": 46000
+            },
+            {
+              "x": -1250,
+              "y": 1250,
+              "z": 46000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "crownLgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": -1500,
+              "y": 1500,
+              "z": 41600
+            },
+            {
+              "x": 1500,
+              "y": 1500,
+              "z": 41600
+            },
+            {
+              "x": 1250,
+              "y": 1250,
+              "z": 46000
+            },
+            {
+              "x": -1250,
+              "y": 1250,
+              "z": 46000
+            }
+          ],
+          "rows": 12,
+          "columns": 12,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "crownRgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": 1500,
+              "y": 1500,
+              "z": 41600
+            },
+            {
+              "x": 1500,
+              "y": -1500,
+              "z": 41600
+            },
+            {
+              "x": 1250,
+              "y": -1250,
+              "z": 46000
+            },
+            {
+              "x": 1250,
+              "y": 1250,
+              "z": 46000
+            }
+          ],
+          "rows": 12,
+          "columns": 12,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternL",
+          "name": "lanternL",
+          "vertices": [
+            {
+              "x": -700,
+              "y": 700,
+              "z": 46000
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 46000
+            },
+            {
+              "x": 600,
+              "y": 600,
+              "z": 47900
+            },
+            {
+              "x": -600,
+              "y": 600,
+              "z": 47900
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternR",
+          "name": "lanternR",
+          "vertices": [
+            {
+              "x": 700,
+              "y": 700,
+              "z": 46000
+            },
+            {
+              "x": 700,
+              "y": -700,
+              "z": 46000
+            },
+            {
+              "x": 600,
+              "y": -600,
+              "z": 47900
+            },
+            {
+              "x": 600,
+              "y": 600,
+              "z": 47900
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lanternroof",
+          "name": "lanternroof",
+          "vertices": [
+            {
+              "x": -600,
+              "y": -600,
+              "z": 47900
+            },
+            {
+              "x": 600,
+              "y": -600,
+              "z": 47900
+            },
+            {
+              "x": 600,
+              "y": 600,
+              "z": 47900
+            },
+            {
+              "x": -600,
+              "y": 600,
+              "z": 47900
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lanternLgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": -700,
+              "y": 700,
+              "z": 46000
+            },
+            {
+              "x": 700,
+              "y": 700,
+              "z": 46000
+            },
+            {
+              "x": 600,
+              "y": 600,
+              "z": 47900
+            },
+            {
+              "x": -600,
+              "y": 600,
+              "z": 47900
+            }
+          ],
+          "rows": 6,
+          "columns": 8,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "lanternRgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": 700,
+              "y": 700,
+              "z": 46000
+            },
+            {
+              "x": 700,
+              "y": -700,
+              "z": 46000
+            },
+            {
+              "x": 600,
+              "y": -600,
+              "z": 47900
+            },
+            {
+              "x": 600,
+              "y": 600,
+              "z": 47900
+            }
+          ],
+          "rows": 6,
+          "columns": 8,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "spire-baseL",
+          "name": "spire-baseL",
+          "vertices": [
+            {
+              "x": -280,
+              "y": 280,
+              "z": 47900
+            },
+            {
+              "x": 280,
+              "y": 280,
+              "z": 47900
+            },
+            {
+              "x": 220,
+              "y": 220,
+              "z": 48900
+            },
+            {
+              "x": -220,
+              "y": 220,
+              "z": 48900
+            }
+          ],
+          "fill": {
+            "template": "glassL"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "spire-baseR",
+          "name": "spire-baseR",
+          "vertices": [
+            {
+              "x": 280,
+              "y": 280,
+              "z": 47900
+            },
+            {
+              "x": 280,
+              "y": -280,
+              "z": 47900
+            },
+            {
+              "x": 220,
+              "y": -220,
+              "z": 48900
+            },
+            {
+              "x": 220,
+              "y": 220,
+              "z": 48900
+            }
+          ],
+          "fill": {
+            "template": "glassR"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "spire-baseroof",
+          "name": "spire-baseroof",
+          "vertices": [
+            {
+              "x": -220,
+              "y": -220,
+              "z": 48900
+            },
+            {
+              "x": 220,
+              "y": -220,
+              "z": 48900
+            },
+            {
+              "x": 220,
+              "y": 220,
+              "z": 48900
+            },
+            {
+              "x": -220,
+              "y": 220,
+              "z": 48900
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "spire-baseLgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": -280,
+              "y": 280,
+              "z": 47900
+            },
+            {
+              "x": 280,
+              "y": 280,
+              "z": 47900
+            },
+            {
+              "x": 220,
+              "y": 220,
+              "z": 48900
+            },
+            {
+              "x": -220,
+              "y": 220,
+              "z": 48900
+            }
+          ],
+          "rows": 4,
+          "columns": 4,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "surface-grid",
+          "key": "spire-baseRgrid",
+          "name": "帷幕金屬窗框",
+          "boundary": [
+            {
+              "x": 280,
+              "y": 280,
+              "z": 47900
+            },
+            {
+              "x": 280,
+              "y": -280,
+              "z": 47900
+            },
+            {
+              "x": 220,
+              "y": -220,
+              "z": 48900
+            },
+            {
+              "x": 220,
+              "y": 220,
+              "z": 48900
+            }
+          ],
+          "rows": 4,
+          "columns": 4,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "v",
+              "name": "垂直窗框",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 0
+                },
+                {
+                  "u": 0.045,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "h",
+              "name": "樓層橫框",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.045
+                },
+                {
+                  "u": 0,
+                  "v": 0.045
+                }
+              ]
+            },
+            {
+              "key": "sp",
+              "name": "層間暗帶",
+              "fill": {
+                "template": "shadow"
+              },
+              "vertices": [
+                {
+                  "u": 0.045,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.07
+                },
+                {
+                  "u": 1,
+                  "v": 0.16
+                },
+                {
+                  "u": 0.045,
+                  "v": 0.16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "spire-light",
+          "name": "spire-light",
+          "vertices": [
+            {
+              "x": -130,
+              "y": 130,
+              "z": 48900
+            },
+            {
+              "x": 130,
+              "y": 130,
+              "z": 48900
+            },
+            {
+              "x": 25,
+              "y": 25,
+              "z": 50800
+            },
+            {
+              "x": -25,
+              "y": 25,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "metal"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "spire-side",
+          "name": "spire-side",
+          "vertices": [
+            {
+              "x": 130,
+              "y": 130,
+              "z": 48900
+            },
+            {
+              "x": 130,
+              "y": -130,
+              "z": 48900
+            },
+            {
+              "x": 25,
+              "y": -25,
+              "z": 50800
+            },
+            {
+              "x": 25,
+              "y": 25,
+              "z": 50800
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        }
+      ]
+    },
+    "inspection": "immediate",
+    "message": "繪製八節塔身、窗框、頂冠與尖塔"
+  }
+}

@@ -67,3 +67,42 @@ it('accepts an admitted large canonical ID receipt without a smaller hidden tran
   expect(exchange.accept(frame.receiptToken, admitted)).toBe(true)
   expect(await pending).toBe(admitted)
 })
+
+it('accepts an exact browser failure and rejects the exchange without waiting for abort', async () => {
+  const exchange = createBatchExchange()
+  let frame!: PreparedBatchFrame
+  const pending = exchange.execute(
+    batch,
+    new AbortController().signal,
+    (value) => {
+      frame = value
+    }
+  )
+  const outcome = pending.catch((error) => error)
+  const batchFailure = {
+    batchId: batch.batchId,
+    actionName: null,
+    code: 'BROWSER_BATCH_EXECUTION_FAILED',
+    message: 'Batch admission failed.',
+    handlerMs: null,
+    executionMs: 12
+  }
+  expect(
+    exchange.accept(frame.receiptToken, {
+      batchFailure: { ...batchFailure, batchId: 'foreign' }
+    })
+  ).toBe(false)
+  expect(
+    exchange.accept(frame.receiptToken, {
+      batchFailure: { ...batchFailure, actionName: 'foreign' }
+    })
+  ).toBe(false)
+  expect(
+    exchange.accept(frame.receiptToken, {
+      batchFailure: { ...batchFailure, handlerMs: -1 }
+    })
+  ).toBe(false)
+  expect(exchange.accept(frame.receiptToken, { batchFailure })).toBe(true)
+  expect(await outcome).toMatchObject({ failure: batchFailure })
+  expect(exchange.accept(frame.receiptToken, { batchFailure })).toBe(false)
+})

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 const observed = vi.hoisted(() => ({
   channels: new Map<string, (change?: unknown) => void>(),
   loaded: () => undefined as unknown,
+  computed: (_events: unknown[]) => undefined as unknown,
   stopped: vi.fn(),
   getElementData: vi.fn(),
   getElementMetadata: vi.fn(),
@@ -37,13 +38,21 @@ vi.mock('../index', () => ({ inspectionApis: { inspect: vi.fn() } }))
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
   yieldToCooperativeHost: async () => undefined,
+  subscribeToEventBatches: (listener: (events: unknown[]) => void) => {
+    observed.computed = listener
+    return { unsubscribe: observed.stopped }
+  },
   subscribeToFileLoadComplete: (listener: () => void) => {
     observed.loaded = listener
     return { unsubscribe: observed.stopped }
   }
 }))
 import { SharedDataChannelNames, SCENE_TREE_ACTIONS } from '@asyra/utils'
-import { createInspectionEvidence } from '../inspection-evidence'
+import {
+  createInspectionEvidence,
+  observeInspectionChanges
+} from '../inspection-evidence'
+import { EventTypes } from '@asyra/core'
 import { createInspectionValidationAction } from '../../ai/inspection'
 
 const setup = () => {
@@ -92,7 +101,11 @@ describe('canonical inspection evidence lifetime', () => {
       change()
       return { available: true, image: { dataUrl: 'mixed' } }
     })
-    expect(mixed).toMatchObject({ available: false })
+    expect(mixed).toMatchObject({
+      available: false,
+      code: 'INSPECTION_DOCUMENT_CHANGED',
+      settlement: 'completed'
+    })
     expect(mixed).not.toHaveProperty('image')
     expect(mixed).not.toHaveProperty('evidence')
     const next = await evidence.capture(() => ({ available: true }))
@@ -110,6 +123,11 @@ describe('canonical inspection evidence lifetime', () => {
     expect(
       await evidence.capture(() => ({ available: false }))
     ).not.toHaveProperty('evidence')
+    expect(await evidence.capture(() => undefined)).toMatchObject({
+      available: false,
+      code: 'INSPECTION_RESULT_INVALID',
+      settlement: 'completed'
+    })
     const unavailable = createInspectionEvidence(() => {
       throw new Error('No observer')
     })
@@ -121,12 +139,24 @@ describe('canonical inspection evidence lifetime', () => {
   })
 })
 
-it('invalidates through the public Scene Tree, Props and document-load routes', async () => {
+it('invalidates through structure, committed effective changes and document-load routes', async () => {
   observed.stopped.mockClear()
   const evidence = createInspectionEvidence()
   for (const change of [
     () => observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.(),
-    () => observed.channels.get(SharedDataChannelNames.PROPS)?.(),
+    () =>
+      observed.computed([
+        {
+          type: EventTypes.UPDATE_COMPUTED_DATA,
+          payload: {
+            id: 'a',
+            owner: 'computed',
+            key: 'fills',
+            before: [],
+            after: [{}]
+          }
+        }
+      ]),
     () => observed.loaded()
   ]) {
     const result = await evidence.capture(() => ({ available: true }))
@@ -630,6 +660,7 @@ it.each([
           ]
         })
       const retainedBefore = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
         includePassed: true
       })
       changeDuringValidation = drift
@@ -641,7 +672,7 @@ it.each([
         const retained = JSON.parse(
           await tools.call(
             AiDesignToolIds.READ_DESIGN_CHECKS,
-            { includePassed: true },
+            { view: 'details', includePassed: true },
             new AbortController().signal
           )
         )
@@ -653,6 +684,7 @@ it.each([
         expect(initial).toMatchObject({ accepted: false, status: 'partial' })
         expect(batchSizes.length - dispatchCount).toBe(1)
         const retainedAfter = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+          view: 'details',
           includePassed: true
         })
         expect(retainedAfter.items).toEqual(retainedBefore.items)
@@ -662,7 +694,9 @@ it.each([
       }
       if (drift) {
         expect(initial).toMatchObject({ accepted: false, status: 'partial' })
-        const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+        const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+          view: 'details'
+        })
         expect(
           pending.items
             .map(
@@ -676,6 +710,7 @@ it.each([
       }
       expect(initial.accepted).toBe(true)
       const before = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
         includePassed: true
       })
       const memberships = observed.getElementIdsInBounds.mock.calls.length
@@ -684,7 +719,9 @@ it.each([
         id: 'window-2',
         changes: [{ key: 'visible', before: true, after: false }]
       })
-      const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+      const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details'
+      })
       expect(
         pending.items
           .map(
@@ -703,6 +740,7 @@ it.each([
       )
       await tools.validateCompletion(signal)
       const after = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
         includePassed: true
       })
       for (const unit of units.filter((unit) => unit !== 'tier-2')) {
@@ -732,3 +770,45 @@ it.each([
     }
   }
 )
+
+it('keeps canonical mutations separate from effective visual freshness and disposes both', async () => {
+  const canonical = vi.fn()
+  const stop = observeInspectionChanges(canonical)
+  observed.channels.get(SharedDataChannelNames.PROPS)?.()
+  expect(canonical).toHaveBeenCalledOnce()
+  stop()
+  const evidence = createInspectionEvidence()
+  const captured = await evidence.capture(() => ({ available: true }))
+  expect(observed.channels.has(SharedDataChannelNames.PROPS)).toBe(false)
+  observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
+    action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+    id: 'a',
+    changes: [{ key: 'fills', before: 'source', after: 'local' }]
+  })
+  observed.computed([{ type: EventTypes.SELECT_ELEMENTS, payload: ['a'] }])
+  observed.computed([
+    {
+      type: EventTypes.UPDATE_COMPUTED_DATA,
+      payload: {
+        id: 'a',
+        owner: 'computed',
+        key: 'name',
+        before: 'old',
+        after: 'new'
+      }
+    }
+  ])
+  expect(evidence.isCurrent(captured.evidence)).toBe(true)
+  observed.computed([
+    {
+      type: EventTypes.UPDATE_COMPUTED_DATA_PATCH,
+      payload: {
+        id: 'a',
+        patch: { fills: {} }
+      }
+    }
+  ])
+  expect(evidence.isCurrent(captured.evidence)).toBe(false)
+  evidence.dispose()
+  expect(observed.channels.size).toBe(0)
+})

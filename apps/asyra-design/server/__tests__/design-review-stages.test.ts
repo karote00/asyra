@@ -1,3 +1,4 @@
+import correctionFixture from './fixtures/recorded-101/correction-handoff-20261023.json'
 import exactReviewBinding from './fixtures/recorded-101/exact-review-binding-20261017.json'
 import recordedBindings from './fixtures/recorded-101/review-bindings-20261017.json'
 import { wholeViewJudgments } from './fixtures/review-inputs'
@@ -230,7 +231,7 @@ describe('construction and comparison review', () => {
         phase: 'structure',
         ...wholeViewJudgments(ids, [check('Viewpoint')])
       })
-    ).toMatchObject({ readyForDetail: true, accepted: false })
+    ).toMatchObject({ structureAccepted: true, accepted: false })
     expect(r.getIssue()).toBeTruthy()
     r.mutate()
     expect(() =>
@@ -335,7 +336,7 @@ it('retains deferred work through mutations and requires a current final disposi
 
       deferredDetails
     })
-  ).toMatchObject({ readyForDetail: true, deferredDetails })
+  ).toMatchObject({ structureAccepted: true, deferredDetails })
   r.mutate()
   const visual = {
     phase: 'visual',
@@ -973,7 +974,7 @@ it('retains observable structure checks linked to the original request by stable
         }
       ])
     })
-  ).toMatchObject({ readyForDetail: true, accepted: false })
+  ).toMatchObject({ structureAccepted: true, accepted: false })
   expect(
     review.record({
       phase: 'visual',
@@ -1047,12 +1048,7 @@ it('provides executable fact and binding examples in the native-discoverable des
 })
 
 it('advertises an executable deferred-detail example including the required reason', () => {
-  const description =
-    designEvidenceSchema.properties.deferredDetails.description
-  const match = description.match(/Example: (\{.*\})/)
-  expect(match).not.toBeNull()
-  if (!match) throw new Error('Missing deferred-detail example')
-  const item = JSON.parse(match[1])
+  const item = designEvidenceSchema.properties.deferredDetails.examples[0][0]
   const input = { ...plan, deferredDetails: [item] }
   expect(
     operationInputIssue(schemaReviewInput(input), designEvidenceSchema)
@@ -1140,7 +1136,7 @@ it('routes visual and data evidence separately without dropping the data require
     )
   }
   expect(r.record(args)).toMatchObject({
-    readyForDetail: true
+    structureAccepted: true
   })
   expect(
     r.record({
@@ -1150,7 +1146,7 @@ it('routes visual and data evidence separately without dropping the data require
         check('scale', 'unverified')
       ])
     })
-  ).toMatchObject({ readyForDetail: false })
+  ).toMatchObject({ structureAccepted: false })
 })
 
 it('preserves an explicit reference when resubmitting a plan without reference changes', () => {
@@ -1344,9 +1340,9 @@ it('hands all unresolved criteria and inspected scope to correction without acce
   expect(result.correction).toMatchObject({
     diagnosticOnly: true,
     requiresFreshReview: true,
-    criteria: [
-      { criterionId: 'Viewpoint', elementIds: [] },
-      { criterionId: 'Finish', elementIds: [] }
+    checks: [
+      { criterionId: 'Viewpoint', factElementIds: [] },
+      { criterionId: 'Finish', factElementIds: [] }
     ],
     inspections: [
       { elementId: 'drawing' },
@@ -1355,7 +1351,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
   })
   r.mutate()
   expect(r.correctionContext()).toMatchObject({
-    criteria: [{ criterionId: 'Viewpoint' }, { criterionId: 'Finish' }],
+    checks: [{ criterionId: 'Viewpoint' }, { criterionId: 'Finish' }],
     inspections: []
   })
   const passed = {
@@ -1368,7 +1364,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
       ...wholeViewJudgments(inspectionIds, passed.checks)
     })
   ).toThrow()
-  expect(r.correctionContext().criteria).toHaveLength(2)
+  expect(r.correctionContext().checks).toHaveLength(2)
   expect(r.isAccepted()).toBe(false)
   const fresh = [
     r.inspect('drawing', true, true)?.inspectionId as string,
@@ -1376,7 +1372,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
   ]
   expect(
     r.record({ phase: 'visual', ...wholeViewJudgments(fresh, passed.checks) })
-  ).toMatchObject({ accepted: true, correction: { criteria: [] } })
+  ).toMatchObject({ accepted: true, correction: { checks: [] } })
 })
 
 it('preserves accepted review for identical facts bindings and reference selection', () => {
@@ -2743,8 +2739,8 @@ describe('declared regional acceptance', () => {
     const inspection = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
-    expect(declaration.revision).toBe(4)
-    expect(inspection.revision).toBe(8)
+    expect(declaration.revision).toBe(5)
+    expect(inspection.revision).toBe(16)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],
@@ -3327,7 +3323,7 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
     }))
   }
   const original = review.readChecks({ includePassed: true })
-  expect(() => review.record(input)).toThrow(/regional.*whole-target/i)
+  expect(() => review.record(input, { validateOnly: true })).not.toThrow()
   expect(review.readChecks({ includePassed: true })).toEqual(original)
   const overview = input.inspectionIds[0]
   const local = {
@@ -3380,9 +3376,7 @@ it('preserves pending judgment evidence across partial correction and structure 
     ...wholeViewJudgments(inspectionIds, [check('Finish')])
   })
   expect(partial.correction).toMatchObject({
-    criteria: [
-      { criterionId: 'Viewpoint', evidence: ['Observed Viewpoint fail'] }
-    ]
+    checks: [{ criterionId: 'Viewpoint', evidence: 'Observed Viewpoint fail' }]
   })
   const finish = review
     .readChecks({ includePassed: true })
@@ -3391,7 +3385,7 @@ it('preserves pending judgment evidence across partial correction and structure 
     phase: 'structure',
     ...wholeViewJudgments(inspectionIds, [check('Viewpoint')])
   })
-  expect(review.correctionContext().criteria).toEqual([])
+  expect(review.correctionContext().checks).toEqual([])
   expect(
     review
       .readChecks({ includePassed: true })
@@ -3429,9 +3423,7 @@ it('revokes final acceptance on a later structure failure and recovers without l
   expect(review.getIssue()).toContain('Observed Viewpoint fail')
   expect(review.correctionContext()).toMatchObject({
     requiresFreshReview: true,
-    criteria: [
-      { criterionId: 'Viewpoint', evidence: ['Observed Viewpoint fail'] }
-    ]
+    checks: [{ criterionId: 'Viewpoint', evidence: 'Observed Viewpoint fail' }]
   })
   const failed = review.readChecks({ includePassed: true })
   expect(() =>
@@ -3703,9 +3695,7 @@ it('replays recorded crown rejection and explicit local redesign from the delive
   review.record(judgment(1))
   capture(2)
   const before = review.readChecks({ includePassed: true })
-  expect(() => review.record(judgment(3))).toThrow(
-    /mixes whole-target and local/
-  )
+  expect(() => review.record(judgment(3))).toThrow(/scope changed/)
   expect(() => review.record(judgment(4))).toThrow(/current result revision/)
   expect(review.readChecks({ includePassed: true })).toEqual(before)
   const handoff = review.judgmentHandoff(
@@ -3775,6 +3765,30 @@ describe('explicit review binding handoff', () => {
         evidence: 'Observed the requested surface.'
       }))
     }
+    const receipt = review.recordBoundReview({ ...submit, final: false })
+    expect(receipt).toMatchObject({
+      reviewOperation: 'record',
+      accepted: false,
+      recordedChecks: [
+        {
+          id: 'visual:Viewpoint',
+          criterionId: 'Viewpoint',
+          origin: 'main-agent',
+          status: 'pass',
+          revision: expect.any(Number)
+        },
+        {
+          id: 'visual:Finish',
+          criterionId: 'Finish',
+          origin: 'main-agent',
+          status: 'pass',
+          revision: expect.any(Number)
+        }
+      ]
+    })
+    expect(receipt.recordedChecks?.every((item) => !('evidence' in item))).toBe(
+      true
+    )
     review.recordBoundReview(submit)
     const before = review.readChecks({ includePassed: true })
     review.recordBoundReview(submit)
@@ -3828,7 +3842,7 @@ describe('explicit review binding handoff', () => {
   })
 })
 
-it('replays the latest recorded mixed crown input before binding and preserves unrelated passes through local recovery', () => {
+it('admits recorded multiscale input without changing unrelated passes before local recovery', () => {
   const review = createLocalDesignReview()
   review.record({
     ...plan,
@@ -3886,7 +3900,7 @@ it('replays the latest recorded mixed crown input before binding and preserves u
   const before = review.readChecks({ includePassed: true })
   expect(() =>
     review.bindReview('visual', select(exactReviewBinding.rejected))
-  ).toThrow(/mixes whole-target and local/)
+  ).not.toThrow()
   expect(review.readChecks({ includePassed: true })).toEqual(before)
   const corrected = review.bindReview(
     'visual',
@@ -3942,4 +3956,307 @@ it('replays the latest recorded mixed crown input before binding and preserves u
       .readChecks({ includePassed: true })
       .items.find((item) => item.criterionId === 'view')
   ).toEqual(passed.items.find((item) => item.criterionId === 'view'))
+})
+
+it('routes a mechanical blocker without demanding a new accepted visual judgment', () => {
+  const results = createDesignCheckResults()
+  const review = createLocalDesignReview({ results })
+  review.record({ ...plan, detailRequired: false })
+  const image = requireTestValue(
+    review.inspect('root', true, true)
+  ).inspectionId
+  review.record({
+    phase: 'visual',
+    ...wholeViewJudgments([image], [check('Viewpoint'), check('Finish')])
+  })
+  expect(review.isAccepted()).toBe(true)
+  results.record({
+    id: 'mechanical-root',
+    origin: 'tool',
+    status: 'fail',
+    evidence: 'Constraint needs repair.',
+    dependencies: {}
+  })
+  const handoff = review.selectReferences([]).review
+  expect(handoff).toMatchObject({
+    accepted: false,
+    requiresFreshReview: false,
+    requiredCriterionIds: [],
+    next: {
+      tool: 'read_design_checks',
+      arguments: { ids: ['mechanical-root'] }
+    }
+  })
+  results.record({
+    id: 'mechanical-root',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'Constraint repaired.',
+    dependencies: {}
+  })
+  expect(review.selectReferences([]).review).toMatchObject({
+    accepted: true,
+    requiresFreshReview: false
+  })
+  expect(review.isAccepted()).toBe(true)
+})
+
+it('delivers individual correction scopes across sparse reviews without inferring edit targets', () => {
+  const review = createLocalDesignReview()
+  review.record({
+    ...plan,
+    structureCriteria: [],
+    detailRequired: false,
+    criteria: {
+      Whole: reviewCriteria(['Whole']).Whole,
+      Surface: {
+        ...reviewCriteria(['Surface']).Surface,
+        requiredUnits: ['left', 'right', 'base']
+      }
+    }
+  })
+  const capture = (elementId: string, overview: boolean, region?: object) => {
+    const image = review.inspect(elementId, true, overview, region)
+    if (!image) throw new Error('Missing image')
+    return image.inspectionId
+  }
+  const left = capture('assembly', false, { x: 0, y: 0, width: 20, height: 30 })
+  const right = capture('assembly', false, {
+    x: 20,
+    y: 0,
+    width: 20,
+    height: 30
+  })
+  const base = capture('base', false)
+  const submit = (
+    unitId: string,
+    image: string,
+    status: string,
+    evidence: string
+  ) => {
+    const args = review.bindReview('visual', [
+      { criterionId: 'Surface', unitId, inspectionIds: [image] }
+    ])
+    return review.recordBoundReview({
+      ...args,
+      checks: args.checks.map((check) => ({ ...check, status, evidence }))
+    })
+  }
+  submit('left', left, 'fail', 'Left highlight is discontinuous')
+  submit('right', right, 'unverified', 'Right reflection needs a closer view')
+  const result = submit('base', base, 'pass', 'Base material agrees')
+  const correction = result.correction
+  expect(correction).not.toHaveProperty('criteria')
+  expect(correction).toMatchObject({
+    diagnosticOnly: true,
+    checks: [
+      {
+        criterionId: 'Whole',
+        status: 'unverified',
+        inspectionIds: [],
+        factElementIds: []
+      },
+      {
+        criterionId: 'Surface',
+        unitId: 'left',
+        status: 'fail',
+        evidence: 'Left highlight is discontinuous',
+        inspectionIds: [left],
+        factElementIds: []
+      },
+      {
+        criterionId: 'Surface',
+        unitId: 'right',
+        status: 'unverified',
+        evidence: 'Right reflection needs a closer view',
+        inspectionIds: [right],
+        factElementIds: []
+      }
+    ],
+    inspections: [
+      {
+        inspectionId: left,
+        elementId: 'assembly',
+        region: { x: 0, y: 0, width: 20, height: 30 },
+        coordinateSpace: 'element-local'
+      },
+      {
+        inspectionId: right,
+        elementId: 'assembly',
+        region: { x: 20, y: 0, width: 20, height: 30 },
+        coordinateSpace: 'element-local'
+      }
+    ],
+    unavailableInspectionIds: [],
+    discovery: {
+      tool: 'describe_design_apis',
+      arguments: { view: 'full' },
+      requiredInputs: ['query']
+    }
+  })
+  const passed = review
+    .readChecks({ includePassed: true })
+    .items.find((item) => item.unitId === 'base')
+  const unchanged = review.readChecks({ includePassed: true })
+  expect(review.correctionContext()).toEqual(correction)
+  expect(review.readChecks({ includePassed: true })).toEqual(unchanged)
+  review.invalidateInspections([left], 'The left surface was edited')
+  expect(review.correctionContext()).toMatchObject({
+    checks: expect.arrayContaining([
+      expect.objectContaining({
+        unitId: 'left',
+        status: 'stale',
+        evidence: 'Left highlight is discontinuous',
+        inspectionIds: [left],
+        reason: 'The left surface was edited'
+      })
+    ]),
+    unavailableInspectionIds: [left],
+    inspections: [expect.objectContaining({ inspectionId: right })]
+  })
+  const replacement = capture('assembly', false, {
+    x: 0,
+    y: 0,
+    width: 20,
+    height: 30
+  })
+  submit('left', replacement, 'pass', 'Corrected highlight agrees')
+  expect(
+    review
+      .readChecks({ includePassed: true })
+      .items.find((item) => item.unitId === 'base')
+  ).toEqual(passed)
+  expect(review.correctionContext().checks.map((item) => item.unitId)).toEqual([
+    undefined,
+    'right'
+  ])
+  expect(review.isAccepted()).toBe(false)
+})
+
+it('replays the saved failed material judgment with complete correction evidence and no extra read', () => {
+  const review = createLocalDesignReview()
+  review.record(correctionFixture.plan)
+  review.mutate()
+  const observed = correctionFixture.judgment.checks[0]
+  const image = review.inspect(
+    observed.binding.dependencies[0].elementId,
+    true,
+    true
+  )
+  if (!image) throw new Error('Missing current image')
+  const bound = review.bindReview('visual', [
+    { criterionId: observed.criterionId, inspectionIds: [image.inspectionId] }
+  ])
+  const result = review.recordBoundReview({
+    ...bound,
+    checks: bound.checks.map((check) => ({
+      ...check,
+      status: observed.status,
+      evidence: observed.evidence
+    }))
+  })
+  expect(result.accepted).toBe(false)
+  const correction = result.correction
+  expect(
+    correction.checks.find(
+      (check) => check.criterionId === observed.criterionId
+    )
+  ).toMatchObject({
+    status: 'fail',
+    evidence: observed.evidence,
+    inspectionIds: [image.inspectionId],
+    factElementIds: []
+  })
+  expect(correction.inspections).toEqual([
+    {
+      inspectionId: image.inspectionId,
+      elementId: observed.binding.dependencies[0].elementId,
+      overview: true,
+      detail: false
+    }
+  ])
+  // Compare the complete exchange with the old reply plus its missing pending-result read.
+  const priorExchange =
+    JSON.stringify(correctionFixture.receipt) +
+    JSON.stringify({ view: 'details' }) +
+    JSON.stringify(review.deliverChecks({ view: 'details' }))
+  const currentExchange = JSON.stringify(result)
+  expect(Buffer.byteLength(currentExchange)).toBeLessThan(
+    Buffer.byteLength(priorExchange)
+  )
+  expect(correction.checks.map((check) => check.criterionId)).toEqual([
+    'overall',
+    'material',
+    'ornament'
+  ])
+})
+
+it('keeps fact targets on the exact correction unit and shares only explicitly cited image metadata', () => {
+  const review = createLocalDesignReview()
+  review.record({
+    ...plan,
+    structureCriteria: [],
+    detailRequired: false,
+    criteria: {
+      Whole: reviewCriteria(['Whole']).Whole,
+      Surface: {
+        ...reviewCriteria(['Surface']).Surface,
+        requiredUnits: ['a', 'b']
+      }
+    },
+    facts: [sourceFact],
+    factBindings: [
+      {
+        factId: sourceFact.id,
+        criterionId: 'Surface',
+        unitId: 'a',
+        elementIds: ['fact-only-target']
+      }
+    ]
+  })
+  const image = review.inspect('assembly', true, true)
+  if (!image) throw new Error('Missing image')
+  const bound = review.bindReview(
+    'visual',
+    ['a', 'b'].map((unitId) => ({
+      criterionId: 'Surface',
+      unitId,
+      inspectionIds: [image.inspectionId]
+    }))
+  )
+  review.recordBoundReview({
+    ...bound,
+    checks: bound.checks.map((check) => ({
+      ...check,
+      status: 'fail',
+      evidence: 'Same wording is not the same check identity'
+    }))
+  })
+  expect(review.correctionContext()).toMatchObject({
+    checks: [
+      { criterionId: 'Whole', factElementIds: [] },
+      {
+        unitId: 'a',
+        factElementIds: ['fact-only-target'],
+        inspectionIds: [image.inspectionId]
+      },
+      { unitId: 'b', factElementIds: [], inspectionIds: [image.inspectionId] }
+    ],
+    inspections: [{ inspectionId: image.inspectionId, elementId: 'assembly' }]
+  })
+  const before = review.readChecks({ includePassed: true })
+  expect(() =>
+    review.recordBoundReview({
+      ...bound,
+      checks: [
+        {
+          ...bound.checks[0],
+          unitId: 'foreign',
+          status: 'pass',
+          evidence: 'Invalid'
+        }
+      ]
+    })
+  ).toThrow()
+  expect(review.readChecks({ includePassed: true })).toEqual(before)
 })

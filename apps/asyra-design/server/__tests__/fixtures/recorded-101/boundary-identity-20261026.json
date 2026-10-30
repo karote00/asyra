@@ -1,0 +1,1175 @@
+{
+  "sourceRun": "1793017937929",
+  "callIndex": 7,
+  "input": {
+    "draft": {
+      "type": "group",
+      "name": "\u53f0\u5317101\uff5c\u516c\u5206\u6bd4\u4f8b\u5efa\u7bc9\u63d2\u756b",
+      "projection": {
+        "azimuth": 36,
+        "elevation": 24,
+        "scale": 1,
+        "originX": 14000,
+        "originY": 50000
+      },
+      "fillTemplates": {
+        "rim": "#95bab8",
+        "edge": "#d0dfd6",
+        "dark": "#17383e",
+        "roof": "#688c8d",
+        "stone": "#b4c4be",
+        "recess": "#152f35",
+        "bronze": "#858572"
+      },
+      "linearFields": {
+        "front": {
+          "frame": "world",
+          "start": {
+            "x": -2900,
+            "y": 0,
+            "z": 0
+          },
+          "end": {
+            "x": 2900,
+            "y": 0,
+            "z": 0
+          },
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#29565d",
+              "opacity": 1
+            },
+            {
+              "position": 0.14285714285714285,
+              "color": "#427e88",
+              "opacity": 1
+            },
+            {
+              "position": 0.2857142857142857,
+              "color": "#6b9eaa",
+              "opacity": 1
+            },
+            {
+              "position": 0.42857142857142855,
+              "color": "#8ab4bb",
+              "opacity": 1
+            },
+            {
+              "position": 0.5714285714285714,
+              "color": "#4a7b87",
+              "opacity": 1
+            },
+            {
+              "position": 0.7142857142857143,
+              "color": "#34616d",
+              "opacity": 1
+            },
+            {
+              "position": 0.8571428571428571,
+              "color": "#658f99",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#a0bac0",
+              "opacity": 1
+            }
+          ]
+        },
+        "side": {
+          "frame": "world",
+          "start": {
+            "x": 0,
+            "y": -2900,
+            "z": 0
+          },
+          "end": {
+            "x": 0,
+            "y": 2900,
+            "z": 0
+          },
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#23464f",
+              "opacity": 1
+            },
+            {
+              "position": 0.14285714285714285,
+              "color": "#315a65",
+              "opacity": 1
+            },
+            {
+              "position": 0.2857142857142857,
+              "color": "#437985",
+              "opacity": 1
+            },
+            {
+              "position": 0.42857142857142855,
+              "color": "#274d5a",
+              "opacity": 1
+            },
+            {
+              "position": 0.5714285714285714,
+              "color": "#376775",
+              "opacity": 1
+            },
+            {
+              "position": 0.7142857142857143,
+              "color": "#547e88",
+              "opacity": 1
+            },
+            {
+              "position": 0.8571428571428571,
+              "color": "#31535e",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#416c78",
+              "opacity": 1
+            }
+          ]
+        }
+      },
+      "motifTemplates": {
+        "windows": [
+          {
+            "key": "h",
+            "name": "\u6c34\u5e73\u7a97\u6846",
+            "fill": {
+              "template": "rim"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.028
+              },
+              {
+                "u": 0,
+                "v": 0.028
+              }
+            ]
+          },
+          {
+            "key": "v",
+            "name": "\u5782\u76f4\u7a97\u6846",
+            "fill": {
+              "template": "rim"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.028,
+                "v": 0
+              },
+              {
+                "u": 0.028,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "shadow",
+            "name": "\u7a97\u6846\u9670\u5f71",
+            "fill": {
+              "template": "dark"
+            },
+            "vertices": [
+              {
+                "u": 0.028,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0.028,
+                "v": 1
+              }
+            ]
+          }
+        ]
+      },
+      "brief": {
+        "intent": "\u5b8c\u6574\u53f0\u5317101\u9ad8\u5ea6\u7d30\u7bc0\u5beb\u5be6\u5efa\u7bc9\u63d2\u756b",
+        "viewpoint": "\u56fa\u5b9a36\u00b0\u65b9\u4f4d\u300124\u00b0\u4fef\u8996\u6b63\u6295\u5f71",
+        "sources": [
+          "\u50c5\u4f7f\u7528\u9644\u5716\uff1b\u7a7a\u62cd\u9650\u91cf\u9ad4\uff0c\u7279\u5beb\u9650\u5982\u610f\u88dd\u98fe"
+        ],
+        "assumptions": [
+          "\u7e3d\u9ad850800cm\u3002\u57fa\u5ea7144m\u3001\u5854\u8eab\u7d0447\u201356m\u53ca\u5404\u5c64\u9ad8\u5ea6\u70ba\u8996\u89ba\u4f30\u8a08\uff0c\u975e\u7cbe\u5bc6\u6e2c\u7e6a\u3002",
+          "\u73bb\u7483\u53cd\u5c04\u63a1\u9023\u7e8c\u6a6b\u5411\u74b0\u5883\u4eae\u5e36\uff1b\u5de6\u4e0a\u5149\u6e90\u3001\u5074\u9762\u8f03\u6697\u3002\u5468\u570d\u900f\u660e\u3002"
+        ],
+        "checks": []
+      },
+      "children": [
+        {
+          "type": "projected-face",
+          "key": "podium-x",
+          "name": "podium-x",
+          "vertices": [
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2400
+            },
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 2400
+            }
+          ],
+          "fill": {
+            "template": "stone"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podium-y",
+          "name": "podium-y",
+          "vertices": [
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 0
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2400
+            },
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 2400
+            }
+          ],
+          "fill": {
+            "template": "stone"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podium-top",
+          "name": "podium-top",
+          "vertices": [
+            {
+              "x": -7200,
+              "y": -7200,
+              "z": 2400
+            },
+            {
+              "x": 7200,
+              "y": -7200,
+              "z": 2400
+            },
+            {
+              "x": 7200,
+              "y": 7200,
+              "z": 2400
+            },
+            {
+              "x": -7200,
+              "y": 7200,
+              "z": 2400
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "podium-x",
+          "name": "podium-x",
+          "boundary": {
+            "face": "podium-x"
+          },
+          "rows": 4,
+          "columns": 34,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "podium-y",
+          "name": "podium-y",
+          "boundary": {
+            "face": "podium-y"
+          },
+          "rows": 4,
+          "columns": 34,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podium-rim-x",
+          "name": "podium-rim-x",
+          "vertices": [
+            {
+              "x": 7300,
+              "y": -7300,
+              "z": 2330
+            },
+            {
+              "x": 7300,
+              "y": 7300,
+              "z": 2330
+            },
+            {
+              "x": 7300,
+              "y": 7300,
+              "z": 2470
+            },
+            {
+              "x": 7300,
+              "y": -7300,
+              "z": 2470
+            }
+          ],
+          "fill": {
+            "template": "rim"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podium-rim-y",
+          "name": "podium-rim-y",
+          "vertices": [
+            {
+              "x": -7300,
+              "y": 7300,
+              "z": 2330
+            },
+            {
+              "x": 7300,
+              "y": 7300,
+              "z": 2330
+            },
+            {
+              "x": 7300,
+              "y": 7300,
+              "z": 2470
+            },
+            {
+              "x": -7300,
+              "y": 7300,
+              "z": 2470
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podium-rim-top",
+          "name": "podium-rim-top",
+          "vertices": [
+            {
+              "x": -7300,
+              "y": -7300,
+              "z": 2470
+            },
+            {
+              "x": 7300,
+              "y": -7300,
+              "z": 2470
+            },
+            {
+              "x": 7300,
+              "y": 7300,
+              "z": 2470
+            },
+            {
+              "x": -7300,
+              "y": 7300,
+              "z": 2470
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lower-x",
+          "name": "lower-x",
+          "vertices": [
+            {
+              "x": 2900,
+              "y": -2900,
+              "z": 2470
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 2470
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 12500
+            },
+            {
+              "x": 2900,
+              "y": -2900,
+              "z": 12500
+            }
+          ],
+          "materialField": "side"
+        },
+        {
+          "type": "projected-face",
+          "key": "lower-y",
+          "name": "lower-y",
+          "vertices": [
+            {
+              "x": -2900,
+              "y": 2900,
+              "z": 2470
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 2470
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 12500
+            },
+            {
+              "x": -2900,
+              "y": 2900,
+              "z": 12500
+            }
+          ],
+          "materialField": "front"
+        },
+        {
+          "type": "projected-face",
+          "key": "lower-top",
+          "name": "lower-top",
+          "vertices": [
+            {
+              "x": -2900,
+              "y": -2900,
+              "z": 12500
+            },
+            {
+              "x": 2900,
+              "y": -2900,
+              "z": 12500
+            },
+            {
+              "x": 2900,
+              "y": 2900,
+              "z": 12500
+            },
+            {
+              "x": -2900,
+              "y": 2900,
+              "z": 12500
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lower-x-win",
+          "name": "lower-x-win",
+          "boundary": {
+            "face": "lower-x"
+          },
+          "rows": 24,
+          "columns": 20,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lower-y-win",
+          "name": "lower-y-win",
+          "boundary": {
+            "face": "lower-y"
+          },
+          "rows": 24,
+          "columns": 20,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-x",
+          "name": "tier1-x",
+          "vertices": [
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 12500
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 12500
+            },
+            {
+              "x": 2800,
+              "y": 2800,
+              "z": 16000
+            },
+            {
+              "x": 2800,
+              "y": -2800,
+              "z": 16000
+            }
+          ],
+          "materialField": "side"
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier1-x-grid",
+          "name": "tier1-x-grid",
+          "boundary": {
+            "face": "tier1-x"
+          },
+          "rows": 8,
+          "columns": 18,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-y",
+          "name": "tier1-y",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 12500
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 12500
+            },
+            {
+              "x": 2800,
+              "y": 2800,
+              "z": 16000
+            },
+            {
+              "x": -2800,
+              "y": 2800,
+              "z": 16000
+            }
+          ],
+          "materialField": "front"
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier1-y-grid",
+          "name": "tier1-y-grid",
+          "boundary": {
+            "face": "tier1-y"
+          },
+          "rows": 8,
+          "columns": 18,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-roof",
+          "name": "tier1-roof",
+          "vertices": [
+            {
+              "x": -2800,
+              "y": -2800,
+              "z": 16000
+            },
+            {
+              "x": 2800,
+              "y": -2800,
+              "z": 16000
+            },
+            {
+              "x": 2800,
+              "y": 2800,
+              "z": 16000
+            },
+            {
+              "x": -2800,
+              "y": 2800,
+              "z": 16000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-lip-x",
+          "name": "tier1-lip-x",
+          "vertices": [
+            {
+              "x": 2820,
+              "y": -2820,
+              "z": 15935
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 15935
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 16020
+            },
+            {
+              "x": 2820,
+              "y": -2820,
+              "z": 16020
+            }
+          ],
+          "fill": {
+            "template": "rim"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-lip-y",
+          "name": "tier1-lip-y",
+          "vertices": [
+            {
+              "x": -2820,
+              "y": 2820,
+              "z": 15935
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 15935
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 16020
+            },
+            {
+              "x": -2820,
+              "y": 2820,
+              "z": 16020
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-lip-top",
+          "name": "tier1-lip-top",
+          "vertices": [
+            {
+              "x": -2820,
+              "y": -2820,
+              "z": 16020
+            },
+            {
+              "x": 2820,
+              "y": -2820,
+              "z": 16020
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 16020
+            },
+            {
+              "x": -2820,
+              "y": 2820,
+              "z": 16020
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-neck-x",
+          "name": "tier1-neck-x",
+          "vertices": [
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 16020
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 16020
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 16100
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 16100
+            }
+          ],
+          "fill": {
+            "template": "dark"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-neck-y",
+          "name": "tier1-neck-y",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 16020
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 16020
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 16100
+            },
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 16100
+            }
+          ],
+          "fill": {
+            "template": "dark"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1-neck-top",
+          "name": "tier1-neck-top",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": -2350,
+              "z": 16100
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 16100
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 16100
+            },
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 16100
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-x",
+          "name": "tier2-x",
+          "vertices": [
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 16100
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 16100
+            },
+            {
+              "x": 2800,
+              "y": 2800,
+              "z": 19600
+            },
+            {
+              "x": 2800,
+              "y": -2800,
+              "z": 19600
+            }
+          ],
+          "materialField": "side"
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier2-x-grid",
+          "name": "tier2-x-grid",
+          "boundary": {
+            "face": "tier2-x"
+          },
+          "rows": 8,
+          "columns": 18,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-y",
+          "name": "tier2-y",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 16100
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 16100
+            },
+            {
+              "x": 2800,
+              "y": 2800,
+              "z": 19600
+            },
+            {
+              "x": -2800,
+              "y": 2800,
+              "z": 19600
+            }
+          ],
+          "materialField": "front"
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier2-y-grid",
+          "name": "tier2-y-grid",
+          "boundary": {
+            "face": "tier2-y"
+          },
+          "rows": 8,
+          "columns": 18,
+          "order": "motif-major",
+          "motifs": {
+            "template": "windows"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-roof",
+          "name": "tier2-roof",
+          "vertices": [
+            {
+              "x": -2800,
+              "y": -2800,
+              "z": 19600
+            },
+            {
+              "x": 2800,
+              "y": -2800,
+              "z": 19600
+            },
+            {
+              "x": 2800,
+              "y": 2800,
+              "z": 19600
+            },
+            {
+              "x": -2800,
+              "y": 2800,
+              "z": 19600
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-lip-x",
+          "name": "tier2-lip-x",
+          "vertices": [
+            {
+              "x": 2820,
+              "y": -2820,
+              "z": 19535
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 19535
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 19620
+            },
+            {
+              "x": 2820,
+              "y": -2820,
+              "z": 19620
+            }
+          ],
+          "fill": {
+            "template": "rim"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-lip-y",
+          "name": "tier2-lip-y",
+          "vertices": [
+            {
+              "x": -2820,
+              "y": 2820,
+              "z": 19535
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 19535
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 19620
+            },
+            {
+              "x": -2820,
+              "y": 2820,
+              "z": 19620
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-lip-top",
+          "name": "tier2-lip-top",
+          "vertices": [
+            {
+              "x": -2820,
+              "y": -2820,
+              "z": 19620
+            },
+            {
+              "x": 2820,
+              "y": -2820,
+              "z": 19620
+            },
+            {
+              "x": 2820,
+              "y": 2820,
+              "z": 19620
+            },
+            {
+              "x": -2820,
+              "y": 2820,
+              "z": 19620
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-neck-x",
+          "name": "tier2-neck-x",
+          "vertices": [
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 19620
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 19620
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 19700
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 19700
+            }
+          ],
+          "fill": {
+            "template": "dark"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-neck-y",
+          "name": "tier2-neck-y",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 19620
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 19620
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 19700
+            },
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 19700
+            }
+          ],
+          "fill": {
+            "template": "dark"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier2-neck-top",
+          "name": "tier2-neck-top",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": -2350,
+              "z": 19700
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 19700
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 19700
+            },
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 19700
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        }
+      ]
+    },
+    "plan": {
+      "phase": "plan",
+      "method": "\u516c\u5206\u4e16\u754c\u5ea7\u6a19\uff0c1 cm=1 px\uff1b\u65b9\u4f4d36\u00b0\u3001\u4fef\u89d224\u00b0\u6b63\u6295\u5f71\u3002508m\u7e3d\u9ad8\u63a1\u5df2\u77e5\u5efa\u7bc9\u9ad8\u5ea6\uff0c\u5c40\u90e8\u5c3a\u5bf8\u4f9d\u4f4e\u89e3\u6790\u9644\u4ef6\u4f30\u8a08\uff0c\u975e\u6e2c\u7e6a\u3002\u6b63\u9762\u85cd\u7da0\u73bb\u7483\u8f03\u660e\u4eae\uff0c\u5074\u9762\u8f03\u6697\uff1b\u9023\u7e8c\u6a6b\u5411\u53cd\u5c04\u8272\u57df\u8de8\u7af9\u7bc0\u4e0d\u91cd\u555f\u3002\u91d1\u5c6c\u6846\u8207\u906e\u7c37\u7368\u7acb\u53ef\u7de8\u8f2f\u3002",
+      "references": [
+        "\u4f7f\u7528\u8005\u7a7a\u62cd\u9644\u4ef6\uff1a\u50c5\u91cf\u9ad4\u3001\u57fa\u5730\u95dc\u4fc2\u3001\u8f2a\u5ed3",
+        "\u4f7f\u7528\u8005\u88dd\u98fe\u7279\u5beb\uff1a\u50c5\u5982\u610f\u9020\u578b\u8207\u91d1\u5c6c\u6750\u8cea"
+      ],
+      "criteria": {
+        "overall": {
+          "requirement": "\u5b8c\u6574\u53f0\u5317101\u81ea\u57fa\u5ea7\u81f3\u5c16\u5854\uff1b\u56fa\u5b9a\u4fef\u8996\u4e09\u5206\u4e4b\u56db\u8996\u89d2\u3001\u900f\u660e\u5468\u570d\u3001\u4e0d\u756b\u65bd\u5de5\u6a5f\u5177\u6216\u6587\u5b57\u3002",
+          "description": "\u6aa2\u8996\u5b8c\u6574\u8f2a\u5ed3\u3001\u516b\u7bc0\u5916\u64f4\u7af9\u7bc0\u3001\u9802\u9762\u8207\u57fa\u5730\u95dc\u4fc2\u3002",
+          "verification": "visual",
+          "requiredUnits": []
+        },
+        "materials": {
+          "requirement": "\u771f\u5be6\u73bb\u7483\u3001\u91d1\u5c6c\u3001\u5149\u5f71\u8207\u9023\u7e8c\u7acb\u9762\u53cd\u5c04\u3002",
+          "description": "\u6aa2\u8996\u76f8\u9130\u5169\u7bc0\u73bb\u7483\u3001\u7a97\u6846\u3001\u9802\u84cb\u9670\u5f71\u8207\u6750\u8cea\u5c0d\u6bd4\u3002",
+          "verification": "visual",
+          "requiredUnits": [
+            "representative"
+          ]
+        },
+        "details": {
+          "requirement": "\u8a73\u7d30\u7a97\u6846\u3001\u7acb\u9762\u7d50\u69cb\u3001\u53ef\u898b\u88dd\u98fe\u8207\u5c16\u5854\u3002",
+          "description": "\u6aa2\u8996\u5854\u8eab\u3001\u57fa\u5ea7\u3001\u9802\u51a0\u8207\u5982\u610f\u88dd\u98fe\u53ef\u7de8\u8f2f\u7d30\u7bc0\u3002",
+          "verification": "visual",
+          "requiredUnits": []
+        }
+      },
+      "detailRequired": true
+    },
+    "inspection": "defer",
+    "response": "compact",
+    "message": "\u5efa\u7acb\u88d9\u6a13\u8207\u5169\u7bc0\u5854\u8eab\uff0c\u6aa2\u67e5\u5c3a\u5ea6\u53ca\u6750\u8cea"
+  }
+}

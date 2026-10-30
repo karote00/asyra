@@ -1,0 +1,26 @@
+{
+  "id": "taipei-101",
+  "modules": [
+    "colors",
+    "icons"
+  ],
+  "contexts": [],
+  "deadlineMs": 600000,
+  "attachments": [
+    {
+      "path": "tmp/knowledge-reference-assets/reference-0.jpg",
+      "sha256": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+    },
+    {
+      "path": "tmp/knowledge-reference-assets/reference-1.jpg",
+      "sha256": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+    }
+  ],
+  "prompt": "Draw the entire Taipei 101, from its base to the tip of its spire, as a highly detailed, realistic architectural illustration using editable 2D shapes. Use a fixed elevated three-quarter view looking down at the building, with clearly visible top surfaces and consistent perspective. Preserve its distinctive silhouette, projecting bamboo-shaped tiers, fa\u00e7ade structure, window frames, and visible ornamentation. Render realistic materials, lighting, and shadows. Include these details in the finished drawing without simplifying the building into broad shapes or a schematic. Draw the surfaces visible from the chosen viewpoint. Use real-world dimensions at 1 cm = 1 px before applying perspective; projected lengths should reflect the viewing angle. Use the attached aerial image only for broad massing, visible base relationships and silhouette; it is low resolution and includes temporary construction equipment that must not be drawn. Use the ornament close-up only for ornament shape/material. The images do not establish precise unseen geometry. Do not search for other reference images.",
+  "criteria": [
+    "Recognizable full tower with eight tier units and crown/spire",
+    "Consistent projected edge families and alignment",
+    "Visible foreground podium relationships retained instead of a generic plinth",
+    "Coherent face lighting and material cues without unsupported detail claims"
+  ]
+}

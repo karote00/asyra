@@ -58,6 +58,7 @@ test('render contracts retain slow timing measurements without a timing threshol
 
 test('render contracts still reject violations of work and sample-count limits', () => {
   const violations = [
+    ['total sample count', 'sampleFrames', 11],
     ['full rehydrate during delta', 'fullRehydrateCallsDuringDelta', 1],
     ['delta apply count', 'renderSnapshotDeltaApplies', 11],
     ['element save work', 'elementSaveCallsDuringDelta', 13],

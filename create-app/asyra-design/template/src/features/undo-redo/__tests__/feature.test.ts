@@ -6,7 +6,11 @@ const mocks = vi.hoisted(() => ({
       _name: string,
       _event: string,
       definition: {
-        execution: (snapshot: { keyShift: boolean }) => unknown
+        executionMode?: string
+        execution: (snapshot: {
+          keyShift: boolean
+          detail?: { historyDirection?: string }
+        }) => unknown
       }
     ) => ({
       api: {},
@@ -57,7 +61,10 @@ describe('Undo/Redo feature cooperative replay', () => {
         })
     )
 
-    const result = execution({ keyShift: false })
+    const result = execution({
+      keyShift: true,
+      detail: { historyDirection: 'undo' }
+    })
     let settled = false
     void Promise.resolve(result).then(() => {
       settled = true
@@ -72,11 +79,26 @@ describe('Undo/Redo feature cooperative replay', () => {
     await expect(result).resolves.toEqual({ undid: true })
   })
 
-  it('awaits Redo when Shift selects the forward replay', async () => {
-    await expect(execution({ keyShift: true })).resolves.toEqual({
+  it('awaits the issued Redo intent even when the live modifier changed', async () => {
+    await expect(
+      execution({ keyShift: false, detail: { historyDirection: 'redo' } })
+    ).resolves.toEqual({
       redid: true
     })
     expect(mocks.redo).toHaveBeenCalledOnce()
     expect(mocks.undo).not.toHaveBeenCalled()
   })
+  it.each([undefined, 'invalid'])(
+    'does not infer missing or invalid intent from modifiers - %s',
+    async (direction) => {
+      expect(
+        await execution({
+          keyShift: true,
+          detail: { historyDirection: direction }
+        })
+      ).toBeNull()
+      expect(mocks.undo).not.toHaveBeenCalled()
+      expect(mocks.redo).not.toHaveBeenCalled()
+    }
+  )
 })

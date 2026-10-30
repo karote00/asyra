@@ -1,0 +1,1995 @@
+{
+  "sourceRun": "1792853203510",
+  "provenance": "Verified unredacted provider payloads and saved preparation inputs. Canonical digests sort object keys and preserve every array order; source inputs are immutable evidence.",
+  "cases": [
+    {
+      "name": "saved-vector-delivery-304",
+      "source": {
+        "providerSequence": 304,
+        "inputSha256": "d73a62051006e8715661c82225c1d880a18cd26333e38d85f2aca1afbce2c6eb",
+        "inputBytes": 8588993,
+        "identity": "68e1023e-2e0f-4e38-84bf-9be854ae0fa1",
+        "canonicalSha256": "57eb419c2b5f74ee8e415d216b957d2e9fc1e26815ea86b3c0bcb5461478b2ee"
+      },
+      "input": {
+        "draft": {
+          "type": "group",
+          "name": "台北101｜公分原寸投影",
+          "projection": {
+            "azimuth": 35,
+            "elevation": 24,
+            "scale": 1,
+            "originX": 14000,
+            "originY": 49000
+          },
+          "fillTemplates": {
+            "glass": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#224a51",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#7ba5aa",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#224a51",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#7ba5aa",
+                  "opacity": 1
+                }
+              ]
+            },
+            "dark": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#152e39",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#436c79",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#152e39",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#436c79",
+                  "opacity": 1
+                }
+              ]
+            },
+            "metal": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#638889",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#c4d4cb",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#638889",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#c4d4cb",
+                  "opacity": 1
+                }
+              ]
+            },
+            "shadow": "#122c35",
+            "roof": "#768c8c",
+            "stone": "#a6b6b0"
+          },
+          "children": [
+            {
+              "type": "projected-face",
+              "key": "podiumx",
+              "name": "podiumx",
+              "vertices": [
+                {
+                  "x": 7300,
+                  "y": -6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 3000
+                },
+                {
+                  "x": 7300,
+                  "y": -6000,
+                  "z": 3000
+                }
+              ],
+              "fill": {
+                "template": "dark"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "podiumy",
+              "name": "podiumy",
+              "vertices": [
+                {
+                  "x": -7300,
+                  "y": 6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 3000
+                },
+                {
+                  "x": -7300,
+                  "y": 6000,
+                  "z": 3000
+                }
+              ],
+              "fill": {
+                "template": "glass"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "podiumtop",
+              "name": "podiumtop",
+              "vertices": [
+                {
+                  "x": -7300,
+                  "y": -6000,
+                  "z": 3000
+                },
+                {
+                  "x": 7300,
+                  "y": -6000,
+                  "z": 3000
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 3000
+                },
+                {
+                  "x": -7300,
+                  "y": 6000,
+                  "z": 3000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lowerx",
+              "name": "lowerx",
+              "vertices": [
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 13500
+                },
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 13500
+                }
+              ],
+              "fill": {
+                "template": "dark"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lowery",
+              "name": "lowery",
+              "vertices": [
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 13500
+                },
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 13500
+                }
+              ],
+              "fill": {
+                "template": "glass"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lowertop",
+              "name": "lowertop",
+              "vertices": [
+                {
+                  "x": -3100,
+                  "y": -3100,
+                  "z": 13500
+                },
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 13500
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 13500
+                },
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 13500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "lowx",
+              "name": "lowx",
+              "boundary": [
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 13500
+                },
+                {
+                  "x": 3100,
+                  "y": -3100,
+                  "z": 13500
+                }
+              ],
+              "rows": 24,
+              "columns": 24,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "水平窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.065
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.065
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "lowy",
+              "name": "lowy",
+              "boundary": [
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 3000
+                },
+                {
+                  "x": 3100,
+                  "y": 3100,
+                  "z": 13500
+                },
+                {
+                  "x": -3100,
+                  "y": 3100,
+                  "z": 13500
+                }
+              ],
+              "rows": 24,
+              "columns": 24,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "水平窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.065
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.065
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "brief": {
+            "intent": "完整台北101細緻可編輯建築插畫",
+            "viewpoint": "35度方位、24度仰角的固定高視點正投影，1公分=1世界像素",
+            "sources": [
+              "使用者空拍附件僅供量體與基座關係；不描繪吊車",
+              "裝飾附件僅供形狀與材質"
+            ],
+            "assumptions": [
+              "高度50800公分；其他尺寸為視覺估計，非工程測量",
+              "玻璃藍綠反射、金屬亮邊，左前方日照；尚待材質視覺檢查"
+            ],
+            "checks": []
+          }
+        },
+        "inspection": "immediate",
+        "message": "基座與下段帷幕"
+      }
+    },
+    {
+      "name": "saved-vector-delivery-483",
+      "source": {
+        "providerSequence": 483,
+        "inputSha256": "6384a6733a4a4efae128eaa96f541b71bfd4a344dd27d2b0c0a7da0f9064cacf",
+        "inputBytes": 23248274,
+        "identity": "ac6aa0a9-cb80-47be-bf12-1aa91d3266e6",
+        "canonicalSha256": "c04409cbd35b1d09981940623c1473d1da610380258d97bb036259f227722bd0"
+      },
+      "input": {
+        "draft": {
+          "type": "group",
+          "name": "八段竹節與塔冠尖塔",
+          "projection": {
+            "azimuth": 35,
+            "elevation": 24,
+            "scale": 1,
+            "originX": 14000,
+            "originY": 49000
+          },
+          "fillTemplates": {
+            "glass": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#224a51",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#7ba5aa",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#224a51",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#7ba5aa",
+                  "opacity": 1
+                }
+              ]
+            },
+            "dark": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#152e39",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#436c79",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#152e39",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#436c79",
+                  "opacity": 1
+                }
+              ]
+            },
+            "metal": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#638889",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#c4d4cb",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#638889",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#c4d4cb",
+                  "opacity": 1
+                }
+              ]
+            },
+            "shadow": "#122c35",
+            "roof": "#768c8c",
+            "stone": "#a6b6b0"
+          },
+          "children": [
+            {
+              "type": "pattern",
+              "key": "bamboo",
+              "name": "八段竹節帷幕",
+              "origin": {
+                "x": 0,
+                "y": 0,
+                "z": 13500
+              },
+              "axes": [
+                {
+                  "count": 8,
+                  "step": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 3500
+                  }
+                }
+              ],
+              "members": [
+                {
+                  "type": "projected-face",
+                  "key": "east",
+                  "name": "east",
+                  "vertices": [
+                    {
+                      "x": 2700,
+                      "y": -2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 2700,
+                      "y": 2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": 3150,
+                      "y": -3150,
+                      "z": 3450
+                    }
+                  ],
+                  "fill": {
+                    "template": "dark"
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "south",
+                  "name": "south",
+                  "vertices": [
+                    {
+                      "x": -2700,
+                      "y": 2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 2700,
+                      "y": 2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": -3150,
+                      "y": 3150,
+                      "z": 3450
+                    }
+                  ],
+                  "fill": {
+                    "template": "glass"
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "ledge",
+                  "name": "ledge",
+                  "vertices": [
+                    {
+                      "x": -3150,
+                      "y": -3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": 3150,
+                      "y": -3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": -3150,
+                      "y": 3150,
+                      "z": 3450
+                    }
+                  ],
+                  "fill": {
+                    "template": "roof"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "eastgrid",
+                  "name": "竹節窗框",
+                  "boundary": [
+                    {
+                      "x": 2700,
+                      "y": -2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 2700,
+                      "y": 2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": 3150,
+                      "y": -3150,
+                      "z": 3450
+                    }
+                  ],
+                  "rows": 8,
+                  "columns": 22,
+                  "order": "motif-major",
+                  "motifs": [
+                    {
+                      "key": "v",
+                      "name": "垂直窗框",
+                      "fill": {
+                        "template": "metal"
+                      },
+                      "vertices": [
+                        {
+                          "u": 0,
+                          "v": 0
+                        },
+                        {
+                          "u": 0.045,
+                          "v": 0
+                        },
+                        {
+                          "u": 0.045,
+                          "v": 1
+                        },
+                        {
+                          "u": 0,
+                          "v": 1
+                        }
+                      ]
+                    },
+                    {
+                      "key": "h",
+                      "name": "水平窗框",
+                      "fill": {
+                        "template": "metal"
+                      },
+                      "vertices": [
+                        {
+                          "u": 0,
+                          "v": 0
+                        },
+                        {
+                          "u": 1,
+                          "v": 0
+                        },
+                        {
+                          "u": 1,
+                          "v": 0.065
+                        },
+                        {
+                          "u": 0,
+                          "v": 0.065
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "southgrid",
+                  "name": "竹節窗框",
+                  "boundary": [
+                    {
+                      "x": -2700,
+                      "y": 2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 2700,
+                      "y": 2700,
+                      "z": 0
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": -3150,
+                      "y": 3150,
+                      "z": 3450
+                    }
+                  ],
+                  "rows": 8,
+                  "columns": 22,
+                  "order": "motif-major",
+                  "motifs": [
+                    {
+                      "key": "v",
+                      "name": "垂直窗框",
+                      "fill": {
+                        "template": "metal"
+                      },
+                      "vertices": [
+                        {
+                          "u": 0,
+                          "v": 0
+                        },
+                        {
+                          "u": 0.045,
+                          "v": 0
+                        },
+                        {
+                          "u": 0.045,
+                          "v": 1
+                        },
+                        {
+                          "u": 0,
+                          "v": 1
+                        }
+                      ]
+                    },
+                    {
+                      "key": "h",
+                      "name": "水平窗框",
+                      "fill": {
+                        "template": "metal"
+                      },
+                      "vertices": [
+                        {
+                          "u": 0,
+                          "v": 0
+                        },
+                        {
+                          "u": 1,
+                          "v": 0
+                        },
+                        {
+                          "u": 1,
+                          "v": 0.065
+                        },
+                        {
+                          "u": 0,
+                          "v": 0.065
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "projected-face",
+                  "key": "xe",
+                  "name": "xe",
+                  "vertices": [
+                    {
+                      "x": 3150,
+                      "y": -3150,
+                      "z": 3350
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3350
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": 3150,
+                      "y": -3150,
+                      "z": 3450
+                    }
+                  ],
+                  "fill": {
+                    "template": "metal"
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "ye",
+                  "name": "ye",
+                  "vertices": [
+                    {
+                      "x": -3150,
+                      "y": 3150,
+                      "z": 3350
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3350
+                    },
+                    {
+                      "x": 3150,
+                      "y": 3150,
+                      "z": 3450
+                    },
+                    {
+                      "x": -3150,
+                      "y": 3150,
+                      "z": 3450
+                    }
+                  ],
+                  "fill": {
+                    "template": "metal"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "crownbasex",
+              "name": "crownbasex",
+              "vertices": [
+                {
+                  "x": 2200,
+                  "y": -2200,
+                  "z": 41500
+                },
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 41500
+                },
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 43100
+                },
+                {
+                  "x": 2200,
+                  "y": -2200,
+                  "z": 43100
+                }
+              ],
+              "fill": {
+                "template": "dark"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crownbasey",
+              "name": "crownbasey",
+              "vertices": [
+                {
+                  "x": -2200,
+                  "y": 2200,
+                  "z": 41500
+                },
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 41500
+                },
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 43100
+                },
+                {
+                  "x": -2200,
+                  "y": 2200,
+                  "z": 43100
+                }
+              ],
+              "fill": {
+                "template": "glass"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crownbasetop",
+              "name": "crownbasetop",
+              "vertices": [
+                {
+                  "x": -2200,
+                  "y": -2200,
+                  "z": 43100
+                },
+                {
+                  "x": 2200,
+                  "y": -2200,
+                  "z": 43100
+                },
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 43100
+                },
+                {
+                  "x": -2200,
+                  "y": 2200,
+                  "z": 43100
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crownx",
+              "name": "crownx",
+              "vertices": [
+                {
+                  "x": 1250,
+                  "y": -1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 46900
+                },
+                {
+                  "x": 1250,
+                  "y": -1250,
+                  "z": 46900
+                }
+              ],
+              "fill": {
+                "template": "dark"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crowny",
+              "name": "crowny",
+              "vertices": [
+                {
+                  "x": -1250,
+                  "y": 1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 46900
+                },
+                {
+                  "x": -1250,
+                  "y": 1250,
+                  "z": 46900
+                }
+              ],
+              "fill": {
+                "template": "glass"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crowntop",
+              "name": "crowntop",
+              "vertices": [
+                {
+                  "x": -1250,
+                  "y": -1250,
+                  "z": 46900
+                },
+                {
+                  "x": 1250,
+                  "y": -1250,
+                  "z": 46900
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 46900
+                },
+                {
+                  "x": -1250,
+                  "y": 1250,
+                  "z": 46900
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lanternx",
+              "name": "lanternx",
+              "vertices": [
+                {
+                  "x": 650,
+                  "y": -650,
+                  "z": 46900
+                },
+                {
+                  "x": 650,
+                  "y": 650,
+                  "z": 46900
+                },
+                {
+                  "x": 650,
+                  "y": 650,
+                  "z": 47900
+                },
+                {
+                  "x": 650,
+                  "y": -650,
+                  "z": 47900
+                }
+              ],
+              "fill": {
+                "template": "dark"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lanterny",
+              "name": "lanterny",
+              "vertices": [
+                {
+                  "x": -650,
+                  "y": 650,
+                  "z": 46900
+                },
+                {
+                  "x": 650,
+                  "y": 650,
+                  "z": 46900
+                },
+                {
+                  "x": 650,
+                  "y": 650,
+                  "z": 47900
+                },
+                {
+                  "x": -650,
+                  "y": 650,
+                  "z": 47900
+                }
+              ],
+              "fill": {
+                "template": "glass"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lanterntop",
+              "name": "lanterntop",
+              "vertices": [
+                {
+                  "x": -650,
+                  "y": -650,
+                  "z": 47900
+                },
+                {
+                  "x": 650,
+                  "y": -650,
+                  "z": 47900
+                },
+                {
+                  "x": 650,
+                  "y": 650,
+                  "z": 47900
+                },
+                {
+                  "x": -650,
+                  "y": 650,
+                  "z": 47900
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "spirelight",
+              "name": "spirelight",
+              "vertices": [
+                {
+                  "x": -220,
+                  "y": 0,
+                  "z": 47900
+                },
+                {
+                  "x": 220,
+                  "y": 0,
+                  "z": 47900
+                },
+                {
+                  "x": 35,
+                  "y": 0,
+                  "z": 50800
+                },
+                {
+                  "x": -35,
+                  "y": 0,
+                  "z": 50800
+                }
+              ],
+              "fill": {
+                "template": "metal"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "spireside",
+              "name": "spireside",
+              "vertices": [
+                {
+                  "x": 220,
+                  "y": 0,
+                  "z": 47900
+                },
+                {
+                  "x": 0,
+                  "y": 220,
+                  "z": 47900
+                },
+                {
+                  "x": 0,
+                  "y": 35,
+                  "z": 50800
+                },
+                {
+                  "x": 35,
+                  "y": 0,
+                  "z": 50800
+                }
+              ],
+              "fill": {
+                "template": "dark"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "cx",
+              "name": "塔冠窗框",
+              "boundary": [
+                {
+                  "x": 1250,
+                  "y": -1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 46900
+                },
+                {
+                  "x": 1250,
+                  "y": -1250,
+                  "z": 46900
+                }
+              ],
+              "rows": 12,
+              "columns": 10,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "水平窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.065
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.065
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "cy",
+              "name": "塔冠窗框",
+              "boundary": [
+                {
+                  "x": -1250,
+                  "y": 1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 43100
+                },
+                {
+                  "x": 1250,
+                  "y": 1250,
+                  "z": 46900
+                },
+                {
+                  "x": -1250,
+                  "y": 1250,
+                  "z": 46900
+                }
+              ],
+              "rows": 12,
+              "columns": 10,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "v",
+                  "name": "垂直窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "h",
+                  "name": "水平窗框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.065
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.065
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "inspection": "immediate",
+        "message": "八段竹節與尖塔"
+      }
+    },
+    {
+      "name": "saved-vector-delivery-546",
+      "source": {
+        "providerSequence": 546,
+        "inputSha256": "72d0e68980126130402a8f31d76ebbcf3e0c83fb05ab65b78a585e9303344e8b",
+        "inputBytes": 2128964,
+        "identity": "e5a94f83-bafc-4e64-adf9-f36be636d69e",
+        "canonicalSha256": "78d82728994ec4417d23b04111aa7dae887894c9a4bf7fda206838e879a79a80"
+      },
+      "input": {
+        "draft": {
+          "type": "group",
+          "name": "基座窗柱與如意飾件",
+          "projection": {
+            "azimuth": 35,
+            "elevation": 24,
+            "scale": 1,
+            "originX": 14000,
+            "originY": 49000
+          },
+          "fillTemplates": {
+            "glass": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#224a51",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#7ba5aa",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#224a51",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#7ba5aa",
+                  "opacity": 1
+                }
+              ]
+            },
+            "dark": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#152e39",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#436c79",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#152e39",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#436c79",
+                  "opacity": 1
+                }
+              ]
+            },
+            "metal": {
+              "gradientType": "linear",
+              "gradientHandles": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.7
+                }
+              ],
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#638889",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.48,
+                  "color": "#c4d4cb",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.65,
+                  "color": "#638889",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#c4d4cb",
+                  "opacity": 1
+                }
+              ]
+            },
+            "shadow": "#122c35",
+            "roof": "#768c8c",
+            "stone": "#a6b6b0"
+          },
+          "children": [
+            {
+              "type": "surface-grid",
+              "key": "px",
+              "name": "裙樓窗柱",
+              "boundary": [
+                {
+                  "x": 7300,
+                  "y": -6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 3000
+                },
+                {
+                  "x": 7300,
+                  "y": -6000,
+                  "z": 3000
+                }
+              ],
+              "rows": 4,
+              "columns": 36,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "pier",
+                  "name": "石質立柱",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.2,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.2,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "lintel",
+                  "name": "樓層腰線",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.18
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.18
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "py",
+              "name": "裙樓窗柱",
+              "boundary": [
+                {
+                  "x": -7300,
+                  "y": 6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 0
+                },
+                {
+                  "x": 7300,
+                  "y": 6000,
+                  "z": 3000
+                },
+                {
+                  "x": -7300,
+                  "y": 6000,
+                  "z": 3000
+                }
+              ],
+              "rows": 4,
+              "columns": 36,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "pier",
+                  "name": "石質立柱",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.2,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.2,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "lintel",
+                  "name": "樓層腰線",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.18
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.18
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "pattern",
+              "key": "ruyi",
+              "name": "各節如意飾件",
+              "origin": {
+                "x": 0,
+                "y": 0,
+                "z": 16400
+              },
+              "axes": [
+                {
+                  "count": 8,
+                  "step": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 3500
+                  }
+                }
+              ],
+              "members": [
+                {
+                  "type": "projected-face",
+                  "key": "lobe-1",
+                  "name": "如意金屬捲雲",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "ellipse": {
+                    "center": {
+                      "x": -160,
+                      "y": 3210,
+                      "z": 0
+                    },
+                    "u": {
+                      "x": 230,
+                      "y": 0,
+                      "z": 0
+                    },
+                    "v": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 170
+                    }
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "inset-1",
+                  "name": "如意內凹",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "ellipse": {
+                    "center": {
+                      "x": -165,
+                      "y": 3213,
+                      "z": 5
+                    },
+                    "u": {
+                      "x": 160,
+                      "y": 0,
+                      "z": 0
+                    },
+                    "v": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 110
+                    }
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "curl-1",
+                  "name": "如意捲心",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "ellipse": {
+                    "center": {
+                      "x": -105,
+                      "y": 3216,
+                      "z": 0
+                    },
+                    "u": {
+                      "x": 75,
+                      "y": 0,
+                      "z": 0
+                    },
+                    "v": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 60
+                    }
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "lobe1",
+                  "name": "如意金屬捲雲",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "ellipse": {
+                    "center": {
+                      "x": 160,
+                      "y": 3210,
+                      "z": 0
+                    },
+                    "u": {
+                      "x": 230,
+                      "y": 0,
+                      "z": 0
+                    },
+                    "v": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 170
+                    }
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "inset1",
+                  "name": "如意內凹",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "ellipse": {
+                    "center": {
+                      "x": 165,
+                      "y": 3213,
+                      "z": 5
+                    },
+                    "u": {
+                      "x": 160,
+                      "y": 0,
+                      "z": 0
+                    },
+                    "v": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 110
+                    }
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "curl1",
+                  "name": "如意捲心",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "ellipse": {
+                    "center": {
+                      "x": 105,
+                      "y": 3216,
+                      "z": 0
+                    },
+                    "u": {
+                      "x": 75,
+                      "y": 0,
+                      "z": 0
+                    },
+                    "v": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 60
+                    }
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "stem",
+                  "name": "stem",
+                  "vertices": [
+                    {
+                      "x": -55,
+                      "y": 3218,
+                      "z": -30
+                    },
+                    {
+                      "x": 55,
+                      "y": 3218,
+                      "z": -30
+                    },
+                    {
+                      "x": 25,
+                      "y": 3218,
+                      "z": -380
+                    },
+                    {
+                      "x": -25,
+                      "y": 3218,
+                      "z": -380
+                    }
+                  ],
+                  "fill": {
+                    "template": "metal"
+                  }
+                },
+                {
+                  "type": "projected-face",
+                  "key": "drop",
+                  "name": "如意圓飾",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "ellipse": {
+                    "center": {
+                      "x": 0,
+                      "y": 3220,
+                      "z": -420
+                    },
+                    "u": {
+                      "x": 130,
+                      "y": 0,
+                      "z": 0
+                    },
+                    "v": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 100
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "inspection": "defer",
+        "message": "基座窗柱與如意金屬裝飾"
+      }
+    }
+  ]
+}

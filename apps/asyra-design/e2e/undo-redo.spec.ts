@@ -789,7 +789,9 @@ test.describe('Undo/Redo Actions', () => {
           y: (start.y + end.y) / 2
         }
       )
-      return result?.point?.id
+      if (!result.changed || result.unavailableIds.length)
+        throw new Error('Vector split did not settle')
+      return result.value?.point.id
     }, setup.elementId)
     expect(splitPointId).toBeTruthy()
     await expectCanonicalPropertyUndo()

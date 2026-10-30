@@ -1,0 +1,24 @@
+{
+  "source": {
+    "run": "1792662315890",
+    "requestId": "4c5587cb-40fc-4d88-98a8-f614599c9d90",
+    "callId": "exec-5e711e43-d542-4cd7-aec2-f71fa2fa706b"
+  },
+  "input": {
+    "names": [
+      "prepare_and_apply_design"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "create",
+      "nodeTypes": [
+        "group",
+        "projected-face",
+        "pattern"
+      ],
+      "optionalInputs": [
+        "plan"
+      ]
+    }
+  }
+}

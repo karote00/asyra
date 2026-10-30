@@ -1,0 +1,14 @@
+{
+  "scope": "children",
+  "parentId": "design-0306d3ea-332a-4c58-b76f-c4fff4ec2178-0",
+  "filter": {
+    "type": "group"
+  },
+  "delivery": "page",
+  "fields": [
+    "x",
+    "y",
+    "width",
+    "height"
+  ]
+}

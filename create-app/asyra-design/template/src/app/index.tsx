@@ -3,7 +3,7 @@ import ToolBar from '../toolbar'
 import Contents from '../contents'
 import Properties from '../properties'
 import { toTailwindPixelSize } from '../tailwind-size'
-import { COLUMN_WIDTH } from '../constants'
+import { COLUMN_WIDTH, CONVERSATION_PANEL_WIDTH } from '../constants'
 import RenderApp from '../render-app'
 import {
   createGroupCommandDescriptors,
@@ -23,7 +23,6 @@ import {
 import { useAppContextMenuSession } from './context-menu-session'
 import { GroupContextMenu } from './group-context-menu'
 import { AiConversationPanel } from './ai-conversation-panel'
-import { AiHistoryMessageBar } from './ai-history-message-bar'
 import type { AiConfirmationBroker } from '../ai/confirmation'
 import type { AiConversationController } from '../ai/conversation'
 import type { AiHistoryProjection } from '../common-apis/history'
@@ -184,7 +183,7 @@ const App: React.FC<AppProps> = ({
       `,
         gridTemplateColumns: `${toTailwindPixelSize(
           COLUMN_WIDTH
-        )}px 1fr ${toTailwindPixelSize(COLUMN_WIDTH)}px`,
+        )}px 1fr ${aiOpen ? CONVERSATION_PANEL_WIDTH : `${toTailwindPixelSize(COLUMN_WIDTH)}px`}`,
         gridTemplateRows: 'auto 1fr'
       }}
     >
@@ -209,10 +208,6 @@ const App: React.FC<AppProps> = ({
           onClose={() => closeAiPanel({})}
         />
       ) : null}
-      <AiHistoryMessageBar
-        conversation={ai.conversation}
-        history={ai.history}
-      />
       <Contents />
       <Properties />
       <div

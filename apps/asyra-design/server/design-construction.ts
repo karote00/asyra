@@ -1,3 +1,10 @@
+import {
+  DesignKeyConflictError,
+  readFaceVertices,
+  projectFaceEllipse,
+  resolveSurfaceBoundaries
+} from './design-face'
+import { createLinearFieldFill, readLinearFields } from './design-linear-field'
 import { setImmediate as yieldTurn } from 'node:timers/promises'
 import { createDesignSourceWork, sourcePathCommandCount } from './design-budget'
 import { randomUUID } from 'node:crypto'
@@ -18,12 +25,21 @@ export interface DesignBrief {
   }[]
 }
 type Node = Record<string, unknown>
-export class DesignKeyConflictError extends Error {
-  constructor(readonly conflicts: { key: string; paths: string[] }[]) {
+export class DesignGeometryError extends Error {
+  constructor(
+    readonly issue: {
+      code: 'NONPLANAR_FACE'
+      key: string
+      path: string
+      deviation: number
+      tolerance: number
+      unit: 'world'
+    }
+  ) {
     super(
-      'Invalid design construction: duplicate keys. Replace the conflicting source keys at the reported paths.'
+      `Projected face ${issue.key}.vertices: Invalid design construction: nonplanar face. Maximum deviation ${issue.deviation} exceeds tolerance ${issue.tolerance} in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera.`
     )
-    this.name = 'DesignKeyConflictError'
+    this.name = 'DesignGeometryError'
   }
 }
 interface Point3 {
@@ -82,14 +98,15 @@ const readBrief = (value: unknown): DesignBrief | undefined => {
     if (!Array.isArray(v) || v.length > 16) return fail('brief notes')
     return v.map((s) => label(s, 'brief note'))
   }
-  if (!Array.isArray(value.checks) || value.checks.length > limits.checks)
+  const checks = value.checks === undefined ? [] : value.checks
+  if (!Array.isArray(checks) || checks.length > limits.checks)
     return fail('brief checks')
   return {
     intent: label(value.intent, 'intent'),
     viewpoint: label(value.viewpoint, 'viewpoint'),
     sources: notes(value.sources),
     assumptions: notes(value.assumptions),
-    checks: value.checks.map((c) => {
+    checks: checks.map((c) => {
       if (!record(c)) return fail('check')
       fields(c, ['key', 'property', 'expected', 'tolerance'], 'check')
       if (!properties.includes(String(c.property)))
@@ -131,7 +148,7 @@ const camera = (value: unknown) => {
     y: oy + scale * (se * (sa * p.x + ca * p.y) - ce * p.z)
   })
 }
-const planar = (points: Point3[]) => {
+const planar = (points: Point3[], source?: { key: string; path: string }) => {
   const a = points[0]
   const diff = (b: Point3) => ({ x: b.x - a.x, y: b.y - a.y, z: b.z - a.z })
   let normal: Point3 | undefined
@@ -154,13 +171,25 @@ const planar = (points: Point3[]) => {
     1,
     ...points.map((p) => Math.hypot(...Object.values(diff(p))))
   )
+  const tolerance = extent * 1e-8
+  let deviation = 0
   for (const point of points) {
     const d = diff(point)
-    if (
-      Math.abs(normal.x * d.x + normal.y * d.y + normal.z * d.z) >
-      extent * 1e-8
+    deviation = Math.max(
+      deviation,
+      Math.abs(normal.x * d.x + normal.y * d.y + normal.z * d.z)
     )
-      fail('nonplanar face')
+  }
+  if (deviation > tolerance) {
+    if (source)
+      throw new DesignGeometryError({
+        code: 'NONPLANAR_FACE',
+        ...source,
+        deviation,
+        tolerance,
+        unit: 'world'
+      })
+    fail('nonplanar face')
   }
 }
 
@@ -172,6 +201,7 @@ export function* constructDesignSteps(
   void,
   {
     draft: Node
+    materialFields: Record<string, string>
     brief?: DesignBrief
     sourceWork: ReturnType<
       ReturnType<typeof createDesignSourceWork>['summary']
@@ -187,6 +217,7 @@ export function* constructDesignSteps(
   },
   void
 > {
+  input = resolveSurfaceBoundaries(input)
   if (!record(input)) return fail('draft')
   const rootLayout = input.layout ?? 'absolute'
   const rootKey =
@@ -194,6 +225,13 @@ export function* constructDesignSteps(
       ? generatedRootId
       : label(input.key, 'node key', 160)
   const brief = readBrief(input.brief)
+  const linearFields = readLinearFields(input.linearFields)
+  const materialFields: Record<string, string> = Object.create(null)
+  const materialNames = new WeakMap<Node, string>()
+  const materialFills = new WeakMap<
+    Node,
+    ReturnType<typeof createLinearFieldFill>
+  >()
   const projection = camera(input.projection)
   let projectionCalls = 0
   const project = projection
@@ -215,18 +253,58 @@ export function* constructDesignSteps(
     node: Node,
     key: string,
     parent?: string,
-    template = false
+    template = false,
+    worldBounds?: { min: Point3; max: Point3 },
+    sourcePath = ''
   ): Node => {
-    fields(node, ['key', 'name', 'type', 'fill', 'vertices'], 'projected face')
+    fields(
+      node,
+      ['key', 'name', 'type', 'fill', 'materialField', 'vertices', 'ellipse'],
+      'projected face'
+    )
+    if (node.materialField !== undefined && node.fill !== undefined)
+      return fail('materialField conflicts with fill')
     if (!project || parent !== rootKey || rootLayout !== 'absolute')
       return fail('projected face requires a shared camera and absolute root')
-    if (
-      !Array.isArray(node.vertices) ||
-      node.vertices.length < 3 ||
-      (vertexCount += node.vertices.length) > limits.expandedPathCommands
+    if (node.ellipse !== undefined) {
+      const oval = projectFaceEllipse(node, project)
+      if (worldBounds) Object.assign(worldBounds, oval.bounds)
+      if (!template) {
+        number(oval.x, 'projected x')
+        number(oval.y, 'projected y')
+      }
+      const compiled: Node = {
+        key,
+        name: node.name,
+        type: 'oval',
+        x: oval.x,
+        y: oval.y,
+        width: oval.width,
+        height: oval.height,
+        rotation: oval.rotation,
+        fill: node.fill
+      }
+      if (node.materialField !== undefined) {
+        const material = createLinearFieldFill(
+          linearFields,
+          node.materialField,
+          oval.world,
+          oval.local,
+          { x: 0, y: 0, width: oval.width, height: oval.height }
+        )
+        compiled.fill = template ? undefined : material()
+        materialFills.set(compiled, material)
+        materialNames.set(compiled, String(node.materialField))
+        if (!template) materialFields[key] = String(node.materialField)
+      }
+      return compiled
+    }
+    const sourceVertices = readFaceVertices(
+      node,
+      limits.expandedPathCommands - vertexCount
     )
-      return fail('face vertex limit')
-    const vertices = node.vertices.map((v) => {
+    vertexCount += sourceVertices.length
+    const vertices = sourceVertices.map((v) => {
       if (!record(v)) return fail('face vertex')
       fields(v, ['x', 'y', 'z'], 'face vertex')
       return {
@@ -236,14 +314,28 @@ export function* constructDesignSteps(
       }
     })
     try {
-      planar(vertices)
+      planar(vertices, { key, path: `${sourcePath}/vertices` })
     } catch (error) {
+      if (error instanceof DesignGeometryError) throw error
       throw new Error(
         `Projected face ${key}.vertices: ${error instanceof Error ? error.message : 'invalid plane'}. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera.`
       )
     }
     const points = vertices.map(project)
-    return vectorFromPoints(node, key, points, template)
+    const compiled = vectorFromPoints(node, key, points, template)
+    if (node.materialField !== undefined) {
+      const material = createLinearFieldFill(
+        linearFields,
+        node.materialField,
+        vertices,
+        points
+      )
+      compiled.fill = template ? undefined : material()
+      materialFills.set(compiled, material)
+      materialNames.set(compiled, String(node.materialField))
+      if (!template) materialFields[key] = String(node.materialField)
+    }
+    return compiled
   }
   const vectorFromPoints = (
     node: Node,
@@ -286,7 +378,11 @@ export function* constructDesignSteps(
       z: number(v.z, 'pattern z')
     }
   }
-  function* expand(value: Node, parent: string): Generator<void, Node[], void> {
+  function* expand(
+    value: Node,
+    parent: string,
+    sourcePath: string
+  ): Generator<void, Node[], void> {
     fields(
       value,
       [
@@ -294,6 +390,7 @@ export function* constructDesignSteps(
         'name',
         'type',
         'faces',
+        'members',
         'axes',
         'origin',
         'fills',
@@ -304,19 +401,26 @@ export function* constructDesignSteps(
     if (!project || parent !== rootKey || rootLayout !== 'absolute')
       return fail('pattern requires shared projection and absolute root')
     if (
-      ['key', 'name', 'origin', 'axes', 'faces'].some(
-        (k) => value[k] === undefined
-      ) ||
+      ['key', 'name', 'origin', 'axes'].some((k) => value[k] === undefined) ||
       (Array.isArray(value.faces) &&
         value.faces.some(
-          (f) =>
-            !record(f) ||
-            ['key', 'name', 'vertices'].some((k) => !Object.hasOwn(f, k))
+          (f) => !record(f) || ['key', 'name'].some((k) => !Object.hasOwn(f, k))
         ))
     )
       return fail(
-        'pattern requires key, name, origin:{x,y,z}, axes:[{count,step:{x,y,z}}], faces:[{key,name,vertices:[{x,y,z},...],fill?}]. All names and keys are required, including each face. No canvas changes were made.'
+        'pattern requires key, name, origin:{x,y,z}, axes:[{count,step:{x,y,z}}], exactly one of faces:[{key,name,vertices:[{x,y,z},...] or ellipse:{center,u,v},fill?}] or members:[projected-face|surface-grid]. All names and keys are required, including each face. No canvas changes were made.'
       )
+    const mixed = value.members !== undefined
+    if (
+      mixed === (value.faces !== undefined) ||
+      (mixed && value.fills !== undefined)
+    )
+      return fail(
+        'pattern requires either faces or members; members forbids pattern fills'
+      )
+    const members = mixed ? value.members : value.faces
+    if (!Array.isArray(members) || !members.length)
+      return fail('pattern requires nonempty faces or members')
     const key = label(value.key, 'pattern key', 80),
       name = label(value.name, 'pattern name', 60)
     const origin = point3(value.origin)
@@ -362,11 +466,7 @@ export function* constructDesignSteps(
       (n, range) => n + range.end - range.start,
       0
     )
-    if (
-      !Array.isArray(value.faces) ||
-      !value.faces.length ||
-      nodeCount + count * value.faces.length > limits.expandedNodes
-    )
+    if (nodeCount + count * members.length > limits.expandedNodes)
       return fail('pattern node limit')
     const fills = value.fills
     if (
@@ -375,25 +475,66 @@ export function* constructDesignSteps(
     )
       return fail('pattern fills')
     const seen = new Set<string>()
+    // Template compilation is bounded work, not a second charge to final output.
+    const templateWork = createDesignSourceWork()
     const templates: {
       compiled: Node
       bounds: { min: Point3; max: Point3 }
       faceKey: string
     }[] = []
-    for (const v of value.faces) {
-      if (!record(v)) return fail('pattern face')
-      fields(v, ['key', 'name', 'fill', 'vertices'], 'pattern face')
-      const faceKey = label(v.key, 'pattern face key', 40)
+    for (const [memberIndex, member] of members.entries()) {
+      if (!record(member)) return fail('pattern member')
+      if (mixed && member.type === 'surface-grid') {
+        const memberKey = label(member.key, 'pattern grid key', 80)
+        if (seen.has(memberKey)) return fail('duplicate pattern member key')
+        seen.add(memberKey)
+        const beforeVertices = vertexCount
+        const bounds = {
+          min: { x: Infinity, y: Infinity, z: Infinity },
+          max: { x: -Infinity, y: -Infinity, z: -Infinity }
+        }
+        const compiled = yield* expandGrid(member, parent, bounds, templateWork)
+        vertexCount += (vertexCount - beforeVertices) * (count - 1)
+        if (vertexCount > limits.expandedPathCommands)
+          return fail('pattern vertex limit')
+        for (const node of compiled)
+          templates.push({ compiled: node, bounds, faceKey: String(node.key) })
+        continue
+      }
+      if (mixed && member.type !== 'projected-face')
+        return fail(
+          'pattern members support projected-face and surface-grid only'
+        )
+      const v = mixed ? { ...member } : member
+      if (mixed) delete v.type
+      fields(
+        v,
+        ['key', 'name', 'fill', 'materialField', 'vertices', 'ellipse'],
+        'pattern face'
+      )
+      if (v.materialField !== undefined && fills !== undefined)
+        return fail('materialField conflicts with pattern fills')
+      const faceKey = label(v.key, 'pattern face key', mixed ? 80 : 40)
       if (seen.has(faceKey)) return fail('duplicate pattern face key')
       seen.add(faceKey)
+      if (v.ellipse !== undefined) {
+        if (sourceWork.admit(0)) yield
+        const bounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } }
+        const compiled = face(
+          { ...v, type: 'projected-face' },
+          faceKey,
+          parent,
+          true,
+          bounds
+        )
+        templates.push({ compiled, bounds, faceKey })
+        continue
+      }
       // Read and admit source vertices once; no per-instance source traversal.
-      const vertices = v.vertices
-      if (
-        !Array.isArray(vertices) ||
-        vertices.length < 3 ||
-        vertexCount + vertices.length * count > limits.expandedPathCommands
+      const vertices = readFaceVertices(
+        v,
+        (limits.expandedPathCommands - vertexCount) / count
       )
-        return fail('pattern vertices')
       if (sourceWork.admit(vertices.length)) yield
       const points = vertices.map(point3)
       const bounds = {
@@ -410,18 +551,23 @@ export function* constructDesignSteps(
           key: faceKey,
           name: label(v.name, 'pattern face name', 60),
           fill: v.fill,
+          materialField: v.materialField,
           type: 'projected-face',
           vertices: points
         },
         faceKey,
         parent,
-        true
+        true,
+        undefined,
+        `${sourcePath}/${mixed ? 'members' : 'faces'}/${memberIndex}`
       )
       vertexCount += (count - 1) * points.length
       if (vertexCount > limits.expandedPathCommands)
         return fail('pattern vertex limit')
       templates.push({ compiled, bounds, faceKey })
     }
+    if (nodeCount + count * templates.length > limits.expandedNodes)
+      return fail('pattern node limit')
     const zero = project({ x: 0, y: 0, z: 0 }),
       result: Node[] = []
     for (const range of selectedRanges) {
@@ -442,6 +588,10 @@ export function* constructDesignSteps(
             number(bounds.min[k] + offset[k], 'pattern world extent')
             number(bounds.max[k] + offset[k], 'pattern world extent')
           }
+          const material = materialFills.get(compiled)
+          const materialName = materialNames.get(compiled)
+          if (materialName)
+            materialFields[`${key}-${i}-${faceKey}`] = materialName
           result.push({
             ...compiled,
             key: `${key}-${i}-${faceKey}`,
@@ -454,6 +604,7 @@ export function* constructDesignSteps(
               Number(compiled.y) + projected.y - zero.y,
               'pattern projected y'
             ),
+            ...(material ? { fill: material(offset) } : {}),
             ...(Array.isArray(fills) ? { fill: fills[i % fills.length] } : {})
           })
         }
@@ -461,9 +612,83 @@ export function* constructDesignSteps(
     }
     return result
   }
+  interface CompiledMotif {
+    key: string
+    name: string
+    fill: unknown
+    fills?: unknown[]
+    offset: { x: number; y: number }
+    worldOffset: Point3
+    vertices: { u: number; v: number }[]
+  }
+
+  const motifDefinitions = new Map<string, CompiledMotif[]>()
+  function* compileMotifs(
+    source: unknown
+  ): Generator<void, CompiledMotif[], void> {
+    const projectMotif = project
+    if (!projectMotif)
+      return fail('surface grid motifs require shared projection')
+    if (!Array.isArray(source) || !source.length)
+      return fail('surface grid motifs')
+    const motifs: CompiledMotif[] = []
+    const keys = new Set<string>()
+    for (const item of source) {
+      if (!record(item)) return fail('surface grid motif')
+      fields(
+        item,
+        ['key', 'name', 'fill', 'fills', 'offset', 'vertices'],
+        'surface grid motif'
+      )
+      const motifKey = label(item.key, 'surface grid motif key', 40)
+      if (keys.has(motifKey)) return fail('duplicate surface grid motif key')
+      keys.add(motifKey)
+      if (item.fill !== undefined && !isDesignFill(item.fill))
+        return fail('surface grid motif fill')
+      const fills = item.fills
+      if (
+        fills !== undefined &&
+        (!Array.isArray(fills) || !fills.length || !fills.every(isDesignFill))
+      )
+        return fail('surface grid motif fills')
+      let offset = { x: 0, y: 0 }
+      let worldOffset = { x: 0, y: 0, z: 0 }
+      if (item.offset !== undefined) {
+        const shift = point3(item.offset)
+        worldOffset = shift
+        const zero = projectMotif({ x: 0, y: 0, z: 0 })
+        const moved = projectMotif(shift)
+        offset = { x: moved.x - zero.x, y: moved.y - zero.y }
+      }
+      const rawVertices = item.vertices
+      if (!Array.isArray(rawVertices) || rawVertices.length < 3)
+        return fail('surface grid motif vertices')
+      if (sourceWork.admit(rawVertices.length)) yield
+      const vertices = rawVertices.map((point) => {
+        if (!record(point)) return fail('surface grid motif point')
+        fields(point, ['u', 'v'], 'surface grid motif point')
+        return {
+          u: number(point.u, 'surface grid u', 0, 1),
+          v: number(point.v, 'surface grid v', 0, 1)
+        }
+      })
+      motifs.push({
+        key: motifKey,
+        name: label(item.name, 'surface grid motif name', 60),
+        fill: item.fill,
+        fills: fills as unknown[] | undefined,
+        offset,
+        worldOffset,
+        vertices
+      })
+    }
+    return motifs
+  }
   function* expandGrid(
     value: Node,
-    parent: string
+    parent: string,
+    worldBounds?: { min: Point3; max: Point3 },
+    work = expansionWork
   ): Generator<void, Node[], void> {
     fields(
       value,
@@ -509,68 +734,38 @@ export function* constructDesignSteps(
       winding = Math.sign(cross)
     }
     const count = rows * columns
-    if (
-      !Array.isArray(value.motifs) ||
-      !value.motifs.length ||
-      nodeCount + count * value.motifs.length > limits.expandedNodes
-    )
+    let motifs: CompiledMotif[]
+    if (Array.isArray(value.motifs)) motifs = yield* compileMotifs(value.motifs)
+    else {
+      if (!record(value.motifs)) return fail('surface grid motifs')
+      fields(value.motifs, ['template'], 'surface grid motif reference')
+      const template = label(
+        value.motifs.template,
+        'surface grid motif template',
+        160
+      )
+      const definition = motifDefinitions.get(template)
+      if (!definition) return fail(`unknown motif template ${template}`)
+      motifs = definition
+    }
+    if (nodeCount + count * motifs.length > limits.expandedNodes)
       return fail('surface grid node limit')
-    const motifs: {
-      key: string
-      name: string
-      fill: unknown
-      fills?: unknown[]
-      offset: { x: number; y: number }
-      vertices: { u: number; v: number }[]
-    }[] = []
-    const keys = new Set<string>()
-    for (const item of value.motifs) {
-      if (!record(item)) return fail('surface grid motif')
-      fields(
-        item,
-        ['key', 'name', 'fill', 'fills', 'offset', 'vertices'],
-        'surface grid motif'
-      )
-      const motifKey = label(item.key, 'surface grid motif key', 40)
-      if (keys.has(motifKey)) return fail('duplicate surface grid motif key')
-      keys.add(motifKey)
-      if (item.fill !== undefined && !isDesignFill(item.fill))
-        return fail('surface grid motif fill')
-      const fills = item.fills
-      if (
-        fills !== undefined &&
-        (!Array.isArray(fills) || !fills.length || !fills.every(isDesignFill))
-      )
-        return fail('surface grid motif fills')
-      let offset = { x: 0, y: 0 }
-      if (item.offset !== undefined) {
-        const shift = point3(item.offset)
-        const zero = project({ x: 0, y: 0, z: 0 })
-        const moved = project(shift)
-        offset = { x: moved.x - zero.x, y: moved.y - zero.y }
-      }
-      if (!Array.isArray(item.vertices) || item.vertices.length < 3)
-        return fail('surface grid motif vertices')
-      if (sourceWork.admit(item.vertices.length)) yield
-      vertexCount += count * item.vertices.length
+    for (const motif of motifs) {
+      vertexCount += count * motif.vertices.length
       if (vertexCount > limits.expandedPathCommands)
         return fail('surface grid vertex limit')
-      const vertices = item.vertices.map((point) => {
-        if (!record(point)) return fail('surface grid motif point')
-        fields(point, ['u', 'v'], 'surface grid motif point')
-        return {
-          u: number(point.u, 'surface grid u', 0, 1),
-          v: number(point.v, 'surface grid v', 0, 1)
-        }
-      })
-      motifs.push({
-        key: motifKey,
-        name: label(item.name, 'surface grid motif name', 60),
-        fill: item.fill,
-        fills: fills as unknown[] | undefined,
-        offset,
-        vertices
-      })
+      if (worldBounds)
+        for (const point of boundary)
+          for (const axis of ['x', 'y', 'z'] as const) {
+            worldBounds.min[axis] = Math.min(
+              worldBounds.min[axis],
+              point[axis] + motif.worldOffset[axis]
+            )
+            worldBounds.max[axis] = Math.max(
+              worldBounds.max[axis],
+              point[axis] + motif.worldOffset[axis]
+            )
+          }
     }
     const result: Node[] = []
     const total = count * motifs.length
@@ -585,7 +780,7 @@ export function* constructDesignSteps(
             ? index % motifs.length
             : Math.floor(index / count)
         ]
-      if (expansionWork.admit(motif.vertices.length)) yield
+      if (work.admit(motif.vertices.length)) yield
       const points = motif.vertices.map((point) => {
         const u = ((cell % columns) + point.u) / columns
         const v = (Math.floor(cell / columns) + point.v) / rows
@@ -608,7 +803,8 @@ export function* constructDesignSteps(
               : motif.fill
           },
           `${key}-${cell}-${motif.key}`,
-          points
+          points,
+          worldBounds !== undefined
         )
       )
     }
@@ -690,9 +886,12 @@ export function* constructDesignSteps(
       delete node.relations
       delete node.projection
       delete node.sharedFills
+      delete node.linearFields
       delete node.fillTemplates
+      delete node.motifTemplates
     }
-    if (node.type === 'projected-face') node = face(node, key, parent)
+    if (node.type === 'projected-face')
+      node = face(node, key, parent, false, undefined, path)
     nodes.set(key, { node, parent })
     if (node.children !== undefined) {
       if (
@@ -711,7 +910,7 @@ export function* constructDesignSteps(
           for (const item of yield* expandGrid(child, key))
             children.push(yield* copy(item, key, depth + 1, true, childPath))
         } else if (record(child) && child.type === 'pattern') {
-          for (const item of yield* expand(child, key))
+          for (const item of yield* expand(child, key, childPath))
             children.push(yield* copy(item, key, depth + 1, true, childPath))
         } else
           children.push(yield* copy(child, key, depth + 1, false, childPath))
@@ -719,6 +918,14 @@ export function* constructDesignSteps(
       node.children = children
     }
     return node
+  }
+  if (input.motifTemplates !== undefined) {
+    if (!record(input.motifTemplates))
+      return fail('motifTemplates must be a named map')
+    for (const [name, source] of Object.entries(input.motifTemplates)) {
+      label(name, 'motif template key', 160)
+      motifDefinitions.set(name, yield* compileMotifs(source))
+    }
   }
   const draft = yield* copy(input)
   const conflicts = [...keyPaths]
@@ -840,6 +1047,7 @@ export function* constructDesignSteps(
   return {
     draft,
     brief,
+    materialFields,
     sourceWork: {
       ...sourceWork.summary(),
       projectionCalls,

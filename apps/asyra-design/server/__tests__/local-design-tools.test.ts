@@ -1,3 +1,4 @@
+import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import {
   nativeToolInputSchema,
   operationInputIssue
@@ -6,7 +7,10 @@ import { inspectDesignBudget } from '../design-budget'
 import { invokeLocalTool } from '../local-tool-invocation'
 import { designPreparationExamples } from '../design-preparation-examples'
 import { describe, expect, it, vi } from 'vitest'
-import { admitPreparedDesign } from '../../src/ai/prepared-design-admission'
+import {
+  admitPreparedDesign,
+  admitPreparedDesignDelivery
+} from '../../src/ai/prepared-design-admission'
 import { createLocalDesignTools as createOwner } from '../local-design-tools'
 import { withToolContractAssertions } from './tool-contract-assertions'
 const createLocalDesignTools = (...args: Parameters<typeof createOwner>) =>
@@ -19,7 +23,7 @@ import {
 import { createLocalImageTools } from '../local-image-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
-import type { PreparedDesign } from '../../src/ai/prepared-design'
+import type { PreparedDesignDelivery } from '../../src/ai/prepared-design'
 import type {
   AiActionBatch,
   AiBatchReceipt
@@ -81,9 +85,7 @@ describe('local semantic design tools', () => {
     expect(prepare).toMatchObject({
       composition: 'allowed',
       outputSchema: {
-        properties: {
-          artifactId: { 'x-runtime-value': 'request-artifact' }
-        }
+        properties: { artifactId: { 'x-runtime-value': 'request-artifact' } }
       }
     })
     expect(retain).toMatchObject({
@@ -175,9 +177,10 @@ describe('local semantic design tools', () => {
     )
     expect(prepared.available).toBe(true)
     const batch = tools.resolveBatch(request(prepared.artifactId))
-    const design = (batch.actions[0].arguments as { design: PreparedDesign })
-      .design
-    expect(design.keyToId.page).toBe(design.rootId)
+    const design = (
+      batch.actions[0].arguments as { design: PreparedDesignDelivery }
+    ).design
+    expect(admitPreparedDesignDelivery(design).keyToId.page).toBe(design.rootId)
     expect(design.rootId).not.toBe('page')
     const invalid = JSON.parse(
       await tools.call(
@@ -241,12 +244,15 @@ describe('local semantic design tools', () => {
     const first = tools.resolveBatch(request(receipt.artifactId))
     const second = tools.resolveBatch(request(receipt.artifactId))
     const firstDesign = (
-      first.actions[0].arguments as { design: PreparedDesign }
+      first.actions[0].arguments as { design: PreparedDesignDelivery }
     ).design
     const secondDesign = (
-      second.actions[0].arguments as { design: PreparedDesign }
+      second.actions[0].arguments as { design: PreparedDesignDelivery }
     ).design
-    expect(firstDesign).toBe(secondDesign)
+    expect(firstDesign).toEqual(secondDesign)
+    expect(firstDesign.entries[1].descriptor.fills).toBe(
+      secondDesign.entries[1].descriptor.fills
+    )
     expect(compile).toHaveBeenCalledTimes(1)
     expect(firstDesign.entries[1].descriptor.text).toBe('Keep exploring')
   })
@@ -358,7 +364,7 @@ describe('local semantic design tools', () => {
     )
     expect(execute).toHaveBeenCalledTimes(3)
     expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-      design: { version: 1, entries: expect.any(Array) }
+      design: { version: 3, entries: expect.any(Array) }
     })
     expect(execute.mock.calls[1][0].actions[0].name).toBe(
       AiActionNames.REVIEW_DESIGN
@@ -454,9 +460,10 @@ it('keeps brief evidence on the server receipt and sends the existing canonical 
     )
   )
   const batch = tools.resolveBatch(request(receipt.artifactId))
-  const design = (batch.actions[0].arguments as { design: PreparedDesign })
-    .design
-  expect(() => admitPreparedDesign(design)).not.toThrow()
+  const design = (
+    batch.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
+  expect(() => admitPreparedDesignDelivery(design)).not.toThrow()
   expect(design).not.toHaveProperty('review')
   expect(receipt.review.intent).toBe('Journal')
 })
@@ -476,8 +483,8 @@ it('compiles a ready repeated stage while whole-structure review remains pending
   expect(result.applicable).toBe(true)
   expect(compile).toHaveBeenCalledOnce()
   const prepared = tools.resolveBatch(request(result.artifactId)).actions[0]
-    .arguments as { design: PreparedDesign }
-  expect(() => admitPreparedDesign(prepared.design)).not.toThrow()
+    .arguments as { design: PreparedDesignDelivery }
+  expect(() => admitPreparedDesignDelivery(prepared.design)).not.toThrow()
 })
 
 it('releases only explicitly discarded preparation artifacts without affecting retained ones', async () => {
@@ -715,7 +722,10 @@ it('advertises executable examples that prepare once and preserve their authored
       actions,
       createDesignPreparationSession(prepareDesign, compile)
     )
-    expect(tools.definitions[0].description).toContain(JSON.stringify(example))
+    expect(tools.definitions[0].inputSchema.examples).toContainEqual(example)
+    expect(tools.definitions[0].description).not.toContain(
+      JSON.stringify(example)
+    )
     expect(
       operationInputIssue(
         example,
@@ -742,8 +752,10 @@ it('keeps representation examples on their actual geometry and layout owners', a
   const session = createDesignPreparationSession()
   const tools = createLocalDesignTools(actions, session)
   const prepareExample = async (type: string) => {
-    const example = designPreparationExamples.find((example) =>
-      example.draft.children.some((child) => child.type === type)
+    const example = designPreparationExamples.find(
+      (example) =>
+        (type !== 'projected-face' || example.draft.children.length === 1) &&
+        example.draft.children.some((child) => child.type === type)
     )
     if (!example) throw new Error(`Missing example for ${type}`)
     const receipt = JSON.parse(
@@ -752,11 +764,11 @@ it('keeps representation examples on their actual geometry and layout owners', a
     return session.resolve(receipt.artifactId)
   }
   const face = await prepareExample('projected-face')
-  expect(face.entries[1].descriptor).toMatchObject({
-    type: 'vector',
-    width: 10,
-    height: 20
-  })
+  expect(face.entries[1].descriptor.type).toBe('oval')
+  expect(face.entries[1].descriptor).not.toHaveProperty('points')
+  // The native major axis may rotate; the projected footprint stays 10 by 20.
+  expect(Number(face.entries[0].descriptor.width)).toBeCloseTo(10, 10)
+  expect(Number(face.entries[0].descriptor.height)).toBeCloseTo(20, 10)
   const cards = await prepareExample('rect')
   expect(cards.entries.slice(1).map((entry) => entry.descriptor.x)).toEqual([
     0, 50
@@ -818,6 +830,7 @@ it('repairs representative live input failures without research, compilation ret
       valid.draft,
       expect.any(String),
       expect.any(Function),
+      expect.any(Function),
       expect.any(Function)
     )
   }
@@ -852,7 +865,7 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
           type: 'object',
           required: ['elementId', 'properties'],
           properties: {
-            elementId: { type: 'string' },
+            elementId: { type: 'string', 'x-design-element-binding': 'each' },
             properties: { type: 'object' }
           }
         }
@@ -903,10 +916,11 @@ it('defaults application to compact receipts while retaining all prepared identi
   Object.assign(fullRequest.actions[0].arguments, { response: 'full' })
   const full = tools.resolveBatch(fullRequest)
   expect(full.actions[0].arguments).toMatchObject({ response: 'full' })
-  const design = (compact.actions[0].arguments as { design: PreparedDesign })
-    .design
+  const design = (
+    compact.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
   expect(tools.resolveTargets({ artifactId: prepared.artifactId })).toEqual(
-    Object.values(design.keyToId)
+    Object.values(admitPreparedDesignDelivery(design).keyToId)
   )
 })
 
@@ -918,12 +932,17 @@ it.each([false, true])(
       actions,
       createDesignPreparationSession(prepareDesign, compile)
     )
-    const child = designPreparationExamples[2].draft.children[0]
+    const example = designPreparationExamples.find((item) =>
+      item.draft.children.some((child) => child.type === 'vector-pattern')
+    )
+    if (!example || !('sharedFills' in example.draft))
+      throw new Error('Missing shared-fill vector pattern example')
+    const child = example.draft.children[0]
     const input = {
       draft: {
         type: 'group',
         name: 'Curve motif',
-        sharedFills: designPreparationExamples[2].draft.sharedFills,
+        sharedFills: example.draft.sharedFills,
         children: nested
           ? [
               {
@@ -1144,8 +1163,9 @@ it('uses the same vector discriminator in reusable templates without changing ex
   expect(receipt).toMatchObject({ available: true, elementCount: 449 })
   expect(compile).toHaveBeenCalledOnce()
   const explicit = tools.resolveBatch(request(receipt.artifactId))
-  const design = (explicit.actions[0].arguments as { design: PreparedDesign })
-    .design
+  const design = (
+    explicit.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
   expect(
     design.entries.filter((entry) => entry.descriptor.type === 'vector')
   ).toHaveLength(448)
@@ -1462,4 +1482,355 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
     AiActionNames.READ_DESIGN_ATTACHMENT,
     AiActionNames.VALIDATE_INSPECTION_EVIDENCE
   ])
+})
+
+it('discovers and invokes world material preparation through current schemas and retained recovery', async () => {
+  const session = createDesignPreparationSession()
+  const tools = createLocalDesignTools(actions, session)
+  const source = designPreparationExamples.find(
+    (e) => 'linearFields' in e.draft && 'glass' in e.draft.linearFields
+  )
+  expect(source).toBeDefined()
+  if (
+    !source ||
+    !('linearFields' in source.draft) ||
+    !('glass' in source.draft.linearFields)
+  )
+    throw new Error('Missing field example')
+  const definition = tools.definitions.find((d) => d.name === 'prepare_design')
+  if (!definition) throw new Error('Missing prepare definition')
+  expect(operationInputIssue(source, definition.inputSchema)).toBeUndefined()
+  expect(
+    operationInputIssue(source, nativeToolInputSchema(definition.inputSchema))
+  ).toBeUndefined()
+  const success = JSON.parse(
+    await tools.call('prepare_design', source, signal())
+  )
+  expect(success).toMatchObject({ available: true, applicable: true })
+  const batch = tools.resolveBatch(request(success.artifactId))
+  const design = (
+    batch.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
+  const canonical = session.resolve(success.artifactId)
+  expect(admitPreparedDesignDelivery(design)).toEqual(canonical)
+  expect(
+    admitPreparedDesignDelivery(JSON.parse(JSON.stringify(design)))
+  ).toEqual(JSON.parse(JSON.stringify(canonical)))
+  const invalid = { draft: structuredClone(source.draft) }
+  if (!('glass' in invalid.draft.linearFields))
+    throw new Error('Missing cloned field')
+  Object.assign(invalid.draft.linearFields.glass, {
+    end: invalid.draft.linearFields.glass.start
+  })
+  const rejected = JSON.parse(
+    await tools.call('prepare_design', invalid, signal())
+  )
+  expect(rejected).toMatchObject({ available: false })
+  expect(tools.resolveBatch(request(success.artifactId))).toEqual(batch)
+  const cancelled = new AbortController()
+  cancelled.abort()
+  await expect(
+    tools.call('prepare_design', source, cancelled.signal)
+  ).rejects.toThrow()
+  expect(tools.resolveBatch(request(success.artifactId))).toEqual(batch)
+})
+
+it('executes the multi-face representation example with common material, native exceptions and exact retained targets', async () => {
+  const example = designPreparationExamples.find(
+    (e) => e.draft.name === 'Repeated visible detail'
+  )
+  if (!example) throw new Error('Missing multi-face example')
+  const draft = example.draft as unknown as {
+    children: { type: string; faces?: unknown[] }[]
+  }
+  expect(draft.children[0].faces).toHaveLength(2)
+  expect(draft.children[1].type).toBe('projected-face')
+  const session = createDesignPreparationSession()
+  const tools = createLocalDesignTools(actions, session)
+  const receipt = JSON.parse(
+    await tools.call('prepare_design', example, signal())
+  )
+  expect(receipt).toMatchObject({
+    available: true,
+    applicable: true,
+    elementCount: 14
+  })
+  const retained = JSON.parse(
+    await tools.call(
+      'retain_design_targets',
+      { targets: [{ artifactId: receipt.artifactId, keyPrefix: 'panes-2-' }] },
+      signal()
+    )
+  )
+  expect(retained.targets[0].count).toBe(2)
+  const { artifactId, targetSetId } = retained.targets[0]
+  const ids = tools.resolveTargets({ artifactId, targetSetId })
+  const design = session.resolve(receipt.artifactId)
+  expect(ids).toEqual([
+    design.keyToId['panes-2-glass'],
+    design.keyToId['panes-2-rim']
+  ])
+  expect(design.keyToId.exception).toBeDefined()
+  const glass = design.entries.filter((e) => e.key?.endsWith('-glass'))
+  expect(glass).toHaveLength(6)
+  expect(glass[0].descriptor.fills).not.toEqual(glass[1].descriptor.fills)
+  session.release([receipt.artifactId])
+  expect(() => tools.resolveTargets({ artifactId, targetSetId })).toThrow()
+})
+
+it('hands a material revision to its material-only consumer and reuses the same fields for extension', async () => {
+  const owner = createLocalDesignTools([
+    ...actions,
+    {
+      name: 'apply_prepared_material',
+      description: 'Apply compiled material',
+      inputSchema: { type: 'object' }
+    }
+  ])
+  const materialDefinition = owner.definitions.find(
+    (tool) => tool.name === 'prepare_material_revision'
+  )
+  if (!materialDefinition) throw new Error('Missing material definition')
+  const example = (materialDefinition.inputSchema as { examples: unknown[] })
+    .examples[0]
+  expect(
+    operationInputIssue(example, materialDefinition.inputSchema)
+  ).toBeUndefined()
+  const field = {
+    frame: 'world',
+    start: { x: 0, y: 0, z: 0 },
+    end: { x: 0, y: 0, z: 100 },
+    gradientStops: [
+      { position: 0, color: '#112233', opacity: 1 },
+      { position: 1, color: '#eeeeee', opacity: 1 }
+    ]
+  }
+  const source = {
+    type: 'group',
+    name: 'Surfaces',
+    projection: {
+      azimuth: 30,
+      elevation: 20,
+      scale: 1,
+      originX: 0,
+      originY: 0
+    },
+    linearFields: { glass: field },
+    children: [
+      {
+        type: 'projected-face',
+        key: 'wall',
+        name: 'Wall',
+        materialField: 'glass',
+        vertices: [
+          { x: 0, y: 0, z: 0 },
+          { x: 20, y: 0, z: 0 },
+          { x: 20, y: 0, z: 30 },
+          { x: 0, y: 0, z: 30 }
+        ]
+      }
+    ]
+  }
+  const first = JSON.parse(
+    await owner.call('prepare_design', { draft: source }, signal())
+  )
+  const { createLocalDesignReview } = await import('../local-design-review')
+  const review = createLocalDesignReview()
+  review.record({
+    phase: 'plan',
+    method: 'Review the selected surface',
+    references: [],
+    criteria: {
+      surface: {
+        requirement: 'Requested surface',
+        description: 'Inspect its material',
+        verification: 'visual',
+        requiredUnits: []
+      }
+    },
+    structureCriteria: [],
+    detailRequired: false
+  })
+  const image = review.inspect('original-surface', true, true)
+  if (!image) throw new Error('Missing image')
+  const bound = review.bindReview('visual', [
+    { criterionId: 'surface', inspectionIds: [image.inspectionId] }
+  ])
+  review.recordBoundReview({
+    ...bound,
+    checks: bound.checks.map((check) => ({
+      ...check,
+      status: 'fail',
+      evidence: 'The chosen field needs a new palette'
+    }))
+  })
+  const guidance = review.correctionContext().discovery
+  if (!guidance) throw new Error('Missing discovery handoff')
+  const query = createLocalOperationTools(
+    actions,
+    owner,
+    async () => {
+      throw new Error('Discovery must not mutate')
+    },
+    {
+      getNativeTools: () =>
+        owner.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design'
+        }))
+    }
+  )
+  const found = JSON.parse(
+    await query.call(
+      guidance.tool,
+      { ...guidance.arguments, query: materialDefinition.name },
+      signal()
+    )
+  )
+  expect(found.tools).toHaveLength(1)
+  expect(found.tools[0].inputSchema).toEqual(materialDefinition.inputSchema)
+  expect(found.tools[0].execution.kind).toBe('native-tool')
+  const revision = JSON.parse(
+    await owner.call(
+      found.tools[0].execution.tool,
+      {
+        artifactId: first.artifactId,
+        field: 'glass',
+        definition: {
+          ...field,
+          gradientStops: field.gradientStops.map((stop) => ({
+            ...stop,
+            color: '#336688'
+          }))
+        }
+      },
+      signal()
+    )
+  )
+  expect(revision).toMatchObject({
+    available: true,
+    applied: false,
+    elementCount: 1
+  })
+  const packet = owner.resolveBatch({
+    batchId: 'revise',
+    actions: [
+      {
+        id: 'material',
+        name: 'apply_prepared_material',
+        arguments: { materialRevisionId: revision.materialRevisionId },
+        summary: 'Correct continuous material'
+      }
+    ]
+  })
+  expect(packet.actions[0].arguments).toMatchObject({
+    rootId: expect.any(String),
+    updates: [{ elementId: expect.any(String), gradient: expect.any(Object) }]
+  })
+  expect(() =>
+    owner.resolveBatch(request(revision.materialRevisionId))
+  ).toThrow(/material|creation/i)
+  const { linearFields: _fields, ...next } = source
+  const extension = JSON.parse(
+    await owner.call(
+      'prepare_design',
+      { draft: next, materialSourceId: revision.materialRevisionId },
+      signal()
+    )
+  )
+  expect(extension).toMatchObject({ available: true, applicable: true })
+  expect(owner.resolveRecipe(extension.artifactId).recipe).toMatchObject({
+    linearFields: {
+      glass: { gradientStops: [{ color: '#336688' }, { color: '#336688' }] }
+    }
+  })
+})
+
+it.each([10000, 2000])(
+  'prepares safe capacity as an owned partition plan without compilation at %i',
+  async (limit) => {
+    const compile = vi.fn(prepareDesignAsync)
+    const session = createDesignPreparationSession(
+      prepareDesign,
+      compile,
+      undefined,
+      limit
+    )
+    const tools = createOwner(actions, session)
+    const definition = tools.definitions.find(
+      (tool) => tool.name === 'prepare_design'
+    )
+    if (!definition) throw new Error('Missing preparation definition')
+    const reply = await invokeLocalTool(
+      {
+        ...tools,
+        call: (name, args, signal) => tools.call(name, args, signal, true)
+      },
+      { ...definition, outputSchema: tools.capacityOutputSchema },
+      { draft: capacityFixture.input.draft },
+      signal()
+    )
+    const value = JSON.parse(reply.text)
+    expect(reply.success).toBe(true)
+    expect(value).toMatchObject({
+      available: true,
+      toolOutcome: { status: 'success', settlement: 'completed' }
+    })
+    expect(value.artifactId).toBeUndefined()
+    expect(value.applicable).toBeUndefined()
+    expect(value.code).toBeUndefined()
+    expect(value.budget.observed.expandedNodes).toBe(13095)
+    expect(value.budget.allowed.expandedNodes).toBe(limit)
+    expect(value.retainedDraft.partitions.length).toBeGreaterThan(1)
+    expect(session.describeRejectedDraft(value.draftId)).toEqual(
+      value.retainedDraft
+    )
+    expect(compile).not.toHaveBeenCalled()
+    const forged = createOwner(actions)
+    expect(forged.resultIssue('prepare_design', value)).toMatch(
+      /unavailable|owned/i
+    )
+  }
+)
+
+it('keeps exhausted source retention a genuine no-write failure', async () => {
+  const compile = vi.fn(prepareDesignAsync)
+  const session = createDesignPreparationSession(prepareDesign, compile)
+  const tools = createOwner(actions, session)
+  const definition = tools.definitions.find(
+    (tool) => tool.name === 'prepare_design'
+  )
+  if (!definition) throw new Error('Missing preparation definition')
+  for (let index = 0; index < 4; index++) {
+    const plan = await invokeLocalTool(
+      {
+        ...tools,
+        call: (name, args, signal) => tools.call(name, args, signal, true)
+      },
+      { ...definition, outputSchema: tools.capacityOutputSchema },
+      { draft: capacityFixture.input.draft },
+      signal()
+    )
+    expect(plan.success).toBe(true)
+  }
+  const rejected = JSON.parse(
+    (
+      await invokeLocalTool(
+        {
+          ...tools,
+          call: (name, args, signal) => tools.call(name, args, signal, true)
+        },
+        { ...definition, outputSchema: tools.capacityOutputSchema },
+        { draft: capacityFixture.input.draft },
+        signal()
+      )
+    ).text
+  )
+  expect(rejected).toMatchObject({
+    available: false,
+    retention: 'unavailable',
+    toolOutcome: { status: 'failed', settlement: 'not-started' }
+  })
+  expect(rejected.draftId).toBeUndefined()
+  expect(compile).not.toHaveBeenCalled()
 })

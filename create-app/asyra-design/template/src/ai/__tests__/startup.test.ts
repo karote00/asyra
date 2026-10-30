@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import * as agentRuntime from '@asyra/ai-agent-runtime'
 import { createAiStartup } from '../startup'
 
 describe('AI startup', () => {
@@ -65,4 +66,59 @@ describe('AI startup', () => {
     expect(disposeHistory).toHaveBeenCalledOnce()
     expect(disposeConfirmation).toHaveBeenCalledOnce()
   })
+})
+
+it('allows every registered App action without confirmation while denying unknown actions', async () => {
+  const compose = vi.spyOn(agentRuntime, 'createAiAgentRuntime')
+  const confirmation = {
+    dispose: vi.fn(async () => undefined),
+    requestConfirmation: vi.fn(async () => false)
+  }
+  const history = {
+    correlateCommittedAction: vi.fn(),
+    dispose: vi.fn(),
+    getCurrentActionId: vi.fn(() => null)
+  }
+  const startup = createAiStartup({
+    createConfirmation: () => confirmation as never,
+    createHistory: () => history as never,
+    createProvider: () => ({ requestActionBatch: vi.fn() })
+  })
+  try {
+    const input = compose.mock.calls[0][0]
+    const decisions = await Promise.all(
+      input.actionDefinitions.map(async (definition) => ({
+        name: definition.name,
+        decision: await input.permissionPolicy.evaluate({
+          action: {
+            id: definition.name,
+            name: definition.name,
+            arguments: {},
+            summary: {},
+            execute: definition.execute
+          },
+          context: {}
+        })
+      }))
+    )
+    expect(decisions.filter(({ decision }) => decision !== 'allow')).toEqual([])
+    await expect(
+      input.permissionPolicy.evaluate({
+        action: {
+          id: 'unknown',
+          name: 'unregistered_external_action',
+          arguments: {},
+          summary: {},
+          execute: async () => null
+        },
+        context: {}
+      })
+    ).resolves.toBe('deny')
+    expect(confirmation.requestConfirmation).not.toHaveBeenCalled()
+  } finally {
+    await startup.runtime.dispose()
+    await startup.confirmation.dispose()
+    startup.history.dispose()
+    compose.mockRestore()
+  }
 })

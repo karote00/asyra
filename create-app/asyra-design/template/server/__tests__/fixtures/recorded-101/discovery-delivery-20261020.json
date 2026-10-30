@@ -1,0 +1,100 @@
+{
+  "provenance": {
+    "run": "1792471047468",
+    "provider": "838931ee-5bd6-4993-8c40-c205018f13fa.jsonl",
+    "sourceRevision": "c187aaf19de1867850d9b704a087c723ea420beb",
+    "derivation": "Exact discovery inputs verified against preserved provider records and payload SHA-256. No model replay or causal comparison."
+  },
+  "calls": [
+    {
+      "callId": "exec-b4062a71-c0e3-488f-8ef7-1c799346d9eb",
+      "inputSha256": "a3d5c51ddfd8c91fc8d367019e30025ad72fcf5244d75d0f5d80448542218b93",
+      "input": {
+        "names": [
+          "prepare_and_apply_design",
+          "validate_reference_images",
+          "define_design_criteria"
+        ],
+        "view": "full"
+      }
+    },
+    {
+      "callId": "exec-26c0c35f-da01-4dac-aa9f-098516d2b73d",
+      "inputSha256": "8179083abb164ae1f117402ec7e0f09d6965bb585f8311dad77fc1ce8f414830",
+      "input": {
+        "names": [
+          "prepare_and_apply_design"
+        ],
+        "refresh": true,
+        "refreshReason": "delivery-failure"
+      }
+    },
+    {
+      "callId": "exec-74d14ae8-28ea-4b65-92cc-97dc991ef762",
+      "inputSha256": "db7c3144a167968d9dc6a8e5cb357b37719b3f2a59cfca25048ee1d588094599",
+      "input": {
+        "names": [
+          "select_design_references",
+          "review_drawing",
+          "record_design_facts"
+        ]
+      }
+    },
+    {
+      "callId": "exec-77610170-914a-47b0-a31d-6f957cf90e0f",
+      "inputSha256": "3463faed0957317477adaf42da7b183020bf4c9e319d55e66527de8410f87059",
+      "input": {
+        "operations": [
+          "hierarchy.moveElementsRelative"
+        ],
+        "view": "full"
+      }
+    },
+    {
+      "callId": "exec-216092b8-9ed2-484f-b2b0-b978e8ab3900",
+      "inputSha256": "4ad8243e2904503ec32ab9c60bcdb3b920bfc991ccbb08f501f8e0f2ca6b6615",
+      "input": {
+        "names": [
+          "read_design_context"
+        ]
+      }
+    },
+    {
+      "callId": "exec-e405cb85-027c-49ba-8112-8cfdf2c53930",
+      "inputSha256": "c80736d8bf468b3b82a5ee41a4cee2f51a60ebf4229f5ba2a50e5c4432538bfd",
+      "input": {
+        "names": [
+          "execute_design_batch"
+        ]
+      }
+    },
+    {
+      "callId": "exec-9606fdfe-e639-4b39-8771-d5c425b6cc98",
+      "inputSha256": "677eb3e16b3b27da2f4a7eacc8163f79768d6700a8c4694f259e1be70bc90409",
+      "input": {
+        "names": [
+          "prepare_material_revision",
+          "apply_prepared_material"
+        ]
+      }
+    },
+    {
+      "callId": "exec-3fe0dfba-065c-4a1b-94fd-6e899b33357a",
+      "inputSha256": "1544cbf561cd7ea11b97e5fc73102550c240e982628be6788651d2b485773a01",
+      "input": {
+        "names": [
+          "read_design_checks"
+        ]
+      }
+    },
+    {
+      "callId": "exec-b5b6ff0b-1720-4eee-8555-5396f33a53f0",
+      "inputSha256": "9777d0b2de30b5ac1342d0a93077428c00816299491528b6ffab025dabbc11fa",
+      "input": {
+        "names": [
+          "review_design"
+        ]
+      }
+    }
+  ]
+}

@@ -5,11 +5,19 @@ export type AiJsonValue =
   | readonly AiJsonValue[]
   | { readonly [key: string]: AiJsonValue }
 
-export interface AiActionDescription {
+interface CompactAiActionDescription {
   readonly name: string
   readonly description: string
   readonly inputSchema: AiJsonValue
 }
+
+/** Host transport may carry the canonical descriptor; model discovery stays compact. */
+export type AiActionDescription =
+  CompactAiActionDescription | import('@asyra/ai-agent-runtime').AiToolContract
+
+// Progress identity and phase are owned by the Runtime contract.
+import type { ExecutionActivity } from '@asyra/ai-agent-runtime'
+export type { ExecutionActivity } from '@asyra/ai-agent-runtime'
 
 export interface AiActionBatchAction {
   readonly id: string
@@ -33,12 +41,26 @@ export interface AiProviderInput<TContext = unknown> {
 }
 
 export interface AiToolProgress {
+  readonly activity?: ExecutionActivity
   readonly tool: string
   readonly status: 'running' | 'completed'
   readonly message?: string
 }
 
 export interface AiBatchReceipt {
+  /** Failure of this batch only. Completed actions must not be replayed. */
+  readonly failure?: {
+    readonly code: string
+    readonly message: string
+    readonly stage: string
+    readonly actionName: string | null
+    readonly actionId: string | null
+    readonly actionExecutionMs: number | null
+    readonly settlement: 'not-started' | 'completed' | 'partial' | 'unknown'
+    readonly contractStage?: 'registration' | 'input' | 'output'
+    readonly observedResult?: AiJsonValue
+    readonly contextFresh: boolean
+  }
   readonly actionResults: readonly {
     readonly actionId: string
     readonly actionName: string
@@ -48,3 +70,17 @@ export interface AiBatchReceipt {
 }
 
 export type ExecuteAiBatch = (batch: AiActionBatch) => Promise<AiBatchReceipt>
+
+/** Failed exchange acknowledgement, not proof of mutation rollback. */
+export interface BrowserBatchFailure {
+  readonly batchId: string
+  readonly actionName: string | null
+  readonly code: 'BROWSER_BATCH_EXECUTION_FAILED'
+  readonly message: string
+  readonly handlerMs: number | null
+  readonly executionMs: number
+}
+
+export interface BrowserBatchFailureEnvelope {
+  readonly batchFailure: BrowserBatchFailure
+}

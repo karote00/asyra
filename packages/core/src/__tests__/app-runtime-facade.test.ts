@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Core } from '../core.js'
+import {
+  Group,
+  componentRegistry,
+  createDynamicComponent
+} from '@asyra/scene-tree'
+import { subscribeToDiagnosticCounters } from '@asyra/utils'
 
 const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
   const inputRegistry = {
@@ -28,6 +34,7 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
     }
   )
   const sceneElement = {
+    getCanonicalChildCount: vi.fn(() => 3),
     get: (key: string) =>
       (
         ({
@@ -383,4 +390,88 @@ it('projects engine-backed viewport positions to fresh detached coordinate data'
   expect(core.getViewportPosition()).toEqual({ x: 12, y: 48 })
   expect(first.y).toBe(24)
   expect(position.onChange).not.toHaveBeenCalled()
+})
+
+it('reads current canonical metadata without materializing lazy child snapshots', () => {
+  const type = 'metadata-container'
+  const Component = createDynamicComponent(
+    type,
+    type,
+    'Container',
+    [],
+    {},
+    true
+  )
+  componentRegistry.register({
+    type,
+    idPrefix: type,
+    namePrefix: 'Container',
+    constructor: Component,
+    properties: [],
+    defaults: {},
+    isContainer: true
+  })
+  const group = new Component({
+    id: 'count-owner',
+    name: 'Container',
+    parentId: 'workspace-1'
+  }) as Group
+  const { core } = createCoreForTest()
+  core.deps.sceneTree.getElementById = vi.fn((id) =>
+    id === group.get('id') ? group : undefined
+  )
+  let copies = 0
+  const stop = subscribeToDiagnosticCounters((name, count) => {
+    if (name === 'scene-tree:membership:snapshot-items') copies += count
+  })
+  try {
+    const read = (count: number) => {
+      const before = copies
+      expect(core.getElementMetadata('count-owner')).toEqual({
+        id: 'count-owner',
+        name: 'Container',
+        type,
+        parentId: 'workspace-1',
+        visible: true,
+        lock: false,
+        childCount: count
+      })
+      expect(copies - before).toBe(0)
+    }
+    expect(core.getElementMetadata('missing')).toBeUndefined()
+    read(0)
+    group.insertChildrenFromCanonicalBatch(0, ['a', 'b', 'c'])
+    read(3)
+    const snapshot = group.get('children')
+    expect(copies).toBe(3)
+    expect(core.getElementChildren('count-owner', 1, 1)).toMatchObject({
+      elementIds: ['b'],
+      total: 3
+    })
+    group.insertChildrenFromCanonicalBatch(1, ['d'])
+    read(4)
+    expect(snapshot).toEqual(['a', 'b', 'c'])
+    expect(core.getElementChildren('count-owner', 0, 10).elementIds).toEqual([
+      'a',
+      'd',
+      'b',
+      'c'
+    ])
+    group.removeChildrenFromCanonicalBatch(['b', 'd'])
+    read(2)
+    group.replaceChildrenFromCanonicalBatch(['c', 'a'])
+    read(2)
+    const page = core.getElementChildren('count-owner', 0, 10)
+    page.elementIds.reverse()
+    expect(core.getElementChildren('count-owner', 0, 10).elementIds).toEqual([
+      'c',
+      'a'
+    ])
+    group.load({ children: [] })
+    read(0)
+    expect(snapshot).toEqual(['a', 'b', 'c'])
+  } finally {
+    stop()
+    componentRegistry.unregister(type)
+  }
 })

@@ -1,6 +1,7 @@
 import {
   canRetryAiTurn,
   projectAiQuestion,
+  summarizeAiTurn,
   createAiActivityProjection
 } from './presentation'
 import type { AiActivityProjectionState } from './activity-state'
@@ -13,6 +14,9 @@ import type {
 
 export type AiConversationOutcome =
   'cancelled' | 'failed' | 'no-change' | 'partial' | 'success'
+
+// App history-delivery cost policy; complete messages are never sliced to fit.
+export const AI_CONVERSATION_HISTORY_MAXIMUM_BYTES = 32 * 1024
 
 export interface AiTargetHints {
   readonly compositionId: string | null
@@ -279,6 +283,43 @@ const readActionResults = (
     return []
   }
   return value.actionResults.filter(isPlainObject)
+}
+
+const projectConversationHistory = (
+  settledTurns: readonly AiSettledTurn[]
+): AiJsonValue | undefined => {
+  if (!settledTurns.length) return
+  const encoder = new TextEncoder()
+  const turns: AiJsonValue[] = []
+  let pairBytes = 0
+  let omittedTurns = settledTurns.length
+  for (let index = settledTurns.length - 1; index >= 0; index -= 1) {
+    const turn = settledTurns[index]
+    const intent = turn.requestIntent ?? turn.intent
+    const pair = {
+      turnId: turn.turnId,
+      intent,
+      ...(turn.originalIntent && turn.originalIntent !== intent
+        ? { originalIntent: turn.originalIntent }
+        : {}),
+      message: summarizeAiTurn(turn).message,
+      outcome: turn.outcome
+    }
+    const bytes = encoder.encode(JSON.stringify(pair)).length
+    const envelopeBytes = encoder.encode(
+      JSON.stringify({ turns: [], omittedTurns: index })
+    ).length
+    // Each prior included pair adds one comma. Never skip an oversized gap.
+    if (
+      envelopeBytes + pairBytes + bytes + turns.length >
+      AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
+    )
+      break
+    turns.push(pair)
+    pairBytes += bytes
+    omittedTurns = index
+  }
+  return { turns: turns.reverse(), omittedTurns }
 }
 
 const outcomeForResult = (
@@ -698,7 +739,9 @@ export const createAiConversationController = (
 
       let result: unknown
       try {
+        const conversationHistory = projectConversationHistory(settledTurns)
         const metadata: AiJsonValue = {
+          ...(conversationHistory ? { conversationHistory } : {}),
           ...(replyTo
             ? { replyTo: { turnId: replyTo.turnId, intent: originalIntent } }
             : {}),

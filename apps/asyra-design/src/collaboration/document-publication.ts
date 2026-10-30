@@ -86,7 +86,11 @@ const isCanonicalChange = (value: unknown): value is CanonicalChange => {
   switch (value.kind) {
     case 'property-components':
       return (
-        fields(value, ['kind', 'updates'], ['records']) &&
+        fields(
+          value,
+          ['kind', 'updates'],
+          ['creations', 'removals', 'layers']
+        ) &&
         array(
           value.updates,
           (update) =>
@@ -96,20 +100,49 @@ const isCanonicalChange = (value: unknown): value is CanonicalChange => {
             !Object.hasOwn(update.values, 'id') &&
             !Object.hasOwn(update.values, 'type')
         ) &&
-        (value.records === undefined ||
+        (value.creations === undefined || array(value.creations, component)) &&
+        (value.removals === undefined || array(value.removals, component)) &&
+        (value.layers === undefined ||
           array(
-            value.records,
-            (record) =>
-              fields(record, ['propertyId', 'key'], ['set', 'remove']) &&
-              isNonBlankString(record.propertyId) &&
-              isNonBlankString(record.key) &&
-              record.key !== 'id' &&
-              record.key !== 'type' &&
-              (record.set === undefined ||
-                (isRecord(record.set) &&
-                  Object.values(record.set).every(isRecord))) &&
-              (record.remove === undefined || strings(record.remove))
+            value.layers,
+            (item) =>
+              fields(item, ['propertyId', 'changes']) &&
+              isNonBlankString(item.propertyId) &&
+              array(
+                item.changes,
+                (edit) =>
+                  fields(edit, ['layer', 'key', 'state']) &&
+                  ['overrides', 'childBindings', 'sharedSource'].includes(
+                    edit.layer as string
+                  ) &&
+                  isNonBlankString(edit.key) &&
+                  isRecord(edit.state) &&
+                  (edit.state.present === false
+                    ? fields(edit.state, ['present'])
+                    : edit.state.present === true &&
+                      fields(edit.state, ['present', 'value']))
+              )
           ))
+      )
+    case 'element-property-bindings':
+      return (
+        fields(value, ['kind', 'changes']) &&
+        array(
+          value.changes,
+          (item) =>
+            fields(item, ['action', 'eventName', 'id', 'changes']) &&
+            item.action === 'updateElementPropertyBindings' &&
+            item.eventName === 'updateElementPropertyBindings' &&
+            isNonBlankString(item.id) &&
+            array(
+              item.changes,
+              (binding) =>
+                fields(binding, ['key', 'before', 'after']) &&
+                isNonBlankString(binding.key) &&
+                isNonBlankString(binding.before) &&
+                isNonBlankString(binding.after)
+            )
+        )
       )
     case 'element-data':
       return (

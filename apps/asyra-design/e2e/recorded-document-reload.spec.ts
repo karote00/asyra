@@ -241,7 +241,14 @@ for (const recoverInitialFailure of [false, true]) {
       // Feed actual browser receipts into the production review-result owner.
       // Visual verdicts here are caller fixtures, not automated visual certification.
       const retained = createLocalDesignReview()
-      retained.record(review.plan)
+      retained.record({
+        ...review.plan,
+        criteria: {
+          ...review.plan.criteria,
+          whole: { ...review.plan.criteria.whole, requiredUnits: [] },
+          view: { ...review.plan.criteria.view, requiredUnits: [] }
+        }
+      })
       const publish = (index: number, stamp: unknown) => {
         const input = review.capture.inspections[index]
         const image = retained.inspect(
@@ -265,7 +272,16 @@ for (const recoverInitialFailure of [false, true]) {
             .map((id) => ids[originalIds.indexOf(id)])
         })
       )
-      retained.record({ ...review.judgment, inspectionIds: ids, checks })
+      const bound = retained.bindReview('visual', checks)
+      retained.recordBoundReview({
+        ...bound,
+        final: false,
+        checks: bound.checks.map((check, index) => ({
+          ...check,
+          status: checks[index].status,
+          evidence: checks[index].evidence
+        }))
+      })
       const passedBase = retained
         .readChecks({ includePassed: true })
         .items.find((item) => item.unitId === 'base')
@@ -276,19 +292,21 @@ for (const recoverInitialFailure of [false, true]) {
         'Actual saved-document crown edit'
       )
       const correctedCrown = publish(1, result.correctedCrown)
-      const correction = retained.record({
-        phase: 'visual',
+      const correctedBinding = retained.bindReview('visual', [
+        {
+          criterionId: 'detail',
+          unitId: 'crown',
+          inspectionIds: [correctedCrown]
+        }
+      ])
+      const correction = retained.recordBoundReview({
+        ...correctedBinding,
         final: true,
-        inspectionIds: [correctedCrown],
-        checks: [
-          {
-            criterionId: 'detail',
-            unitId: 'crown',
-            status: 'pass',
-            inspectionIds: [correctedCrown],
-            evidence: 'Caller fixture accepts the corrected crown.'
-          }
-        ]
+        checks: correctedBinding.checks.map((check) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Caller fixture accepts the corrected crown.'
+        }))
       })
       expect(correction.accepted).toBe(false)
       const accumulated = retained.readChecks({ includePassed: true }).items
@@ -455,6 +473,143 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
   console.info(JSON.stringify(evidence))
   await testInfo.attach('transport-timings', {
     body: JSON.stringify(evidence),
+    contentType: 'application/json'
+  })
+})
+
+test('reuses saved Taipei101 mechanical coverage without per-target canonical reads', async ({
+  page,
+  baseURL
+}, testInfo) => {
+  test.skip(
+    process.env.E2E_LARGE_DOCUMENT !== 'true',
+    'Explicit large saved-document gate'
+  )
+  test.setTimeout(180000)
+  if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL)
+    throw new Error('Isolated test endpoints are required')
+  expect(new URL(baseURL).port).not.toBe('3000')
+  expect(new URL(process.env.E2E_DOCUMENT_BACKEND_URL).port).not.toBe('4201')
+  const root = resolve('e2e/fixtures/recorded-101')
+  const manifest = JSON.parse(
+    await readFile(resolve(root, 'manifest.json'), 'utf8')
+  )
+  const bytes = gunzipSync(await readFile(resolve(root, 'document.fixture.gz')))
+  expect(createHash('sha256').update(bytes).digest('hex')).toBe(manifest.sha256)
+  const identity = createTestDocumentIdentity()
+  const storage = resolve('test-results/document-backend')
+  await mkdir(storage, { recursive: true })
+  await writeFile(
+    resolve(
+      storage,
+      `${Buffer.from(identity.fileId).toString('base64url')}.json`
+    ),
+    JSON.stringify({
+      protocolVersion: 1,
+      documentId: identity.fileId,
+      record: {
+        document: JSON.parse(bytes.toString()),
+        documentGeneration: 0,
+        durableSequence: 0,
+        publicationSequences: {},
+        batches: {}
+      }
+    })
+  )
+  const recorded = JSON.parse(
+    await readFile(
+      resolve('server/__tests__/fixtures/recorded-101/review-handoff.json'),
+      'utf8'
+    )
+  )
+  await page.goto(identity.url)
+  await waitForAppReady(page)
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const { getActiveCollaborationHandle } =
+            await import('../src/testing/runtime-access')
+          return getActiveCollaborationHandle()?.getStatus()
+        }),
+      { timeout: 30000 }
+    )
+    .toBe('connected')
+  expect(await canonicalDigest(page)).toBe(manifest.canonicalSha256)
+  const work = await page.evaluate(async (rootId: string) => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { createDesignReviewer } =
+      await import('../src/common-apis/design-review')
+    const { observeInspectionChanges } =
+      await import('../src/common-apis/inspection-evidence')
+    const counts = { reads: 0, computed: 0, measurements: 0 }
+    const reviewer = createDesignReviewer(
+      {
+        observeChanges: observeInspectionChanges,
+        read: (id) => {
+          counts.reads++
+          return core.getElementData(id)
+        },
+        computed: (id, fields) => {
+          counts.computed++
+          return core.getElementComputedData(id, fields)
+        },
+        measure: (ids) => {
+          counts.measurements += ids.length
+          return core.measureElementContentBounds(ids)
+        }
+      },
+      undefined,
+      true
+    )
+    try {
+      const captured = await reviewer.capture(rootId)
+      if (!captured.complete || !captured.evidence)
+        throw new Error(
+          JSON.stringify({
+            complete: captured.complete,
+            findings: captured.findings.slice(0, 4)
+          })
+        )
+      const coverage = await reviewer.coverage(captured.evidence)
+      if (!coverage) throw new Error('Missing complete coverage')
+      const ids = coverage.checks
+        .filter((check) => check.elementId !== rootId && check.inherited)
+        .slice(0, 128)
+        .map((check) => check.elementId)
+      const before = { ...counts }
+      const first = []
+      const second = []
+      for (const output of [first, second]) {
+        for (let offset = 0; offset < ids.length; offset += 64) {
+          const result = await reviewer.reconcile(
+            captured.evidence,
+            ids.slice(offset, offset + 64)
+          )
+          if (!result.current) throw new Error('Coverage lost currency')
+          output.push(...result.measurements)
+        }
+      }
+      return {
+        before,
+        after: counts,
+        targets: ids.length,
+        first,
+        second,
+        observation: captured.observation
+      }
+    } finally {
+      reviewer.dispose()
+    }
+  }, recorded.capture.inspections[0].elementId)
+  expect(work.targets).toBe(128)
+  expect(work.before.reads).toBeGreaterThan(work.targets)
+  expect(work.after).toEqual(work.before)
+  expect(work.second).toEqual(work.first)
+  expect(work.first.every((entry) => entry.available)).toBe(true)
+  expect(await canonicalDigest(page)).toBe(manifest.canonicalSha256)
+  await testInfo.attach('saved-geometry-coverage-work', {
+    body: JSON.stringify({ source: manifest.sourceRun, ...work }),
     contentType: 'application/json'
   })
 })

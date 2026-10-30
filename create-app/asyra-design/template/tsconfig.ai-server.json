@@ -14,18 +14,20 @@
     "server/action-batch.ts",
     "server/ai-model-provider.ts",
     "server/local-ai-provider.ts",
+    "server/execution-report-cli.ts",
+    "server/__tests__/local-ai-evaluation.test.ts",
     "server/__tests__/ai-model-provider.test.ts",
-    "server/__tests__/local-ai-provider.test.ts",
     "server/__tests__/local-ai-admission.test.ts",
     "server/ai-status.ts",
+    "server/local-tool-management.ts",
+    "server/__tests__/local-tool-management.test.ts",
     "server/__tests__/ai-status.test.ts",
     "server/__tests__/local-image-tools.test.ts",
-    "server/__tests__/local-ai-live.test.ts",
     "server/design-preparation.ts",
     "server/__tests__/design-preparation.test.ts",
     "server/__tests__/local-design-tools.test.ts",
     "server/__tests__/local-tool-scheduler.test.ts",
     "server/__tests__/local-design-workflow.test.ts",
-    "server/__tests__/execution-flow-proof.test.ts"
+    "server/__tests__/local-knowledge.test.ts"
   ]
 }

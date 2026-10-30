@@ -1,0 +1,318 @@
+{
+  "sourceRun": "reusable-tools-1792179056926",
+  "plan": {
+    "phase": "plan",
+    "method": "依參考照片建立公分世界幾何，以統一平行相機投影；局部尺寸為照片估計。分階段補齊原生向量細節。",
+    "references": [
+      "https://www.onenessarchitects.com/project/Taipei-101"
+    ],
+    "referenceImageIndexes": [
+      3,
+      1,
+      6
+    ],
+    "criteria": {
+      "overall": {
+        "requirement": "完整台北101，由基座至尖端，寫實高細節建築插畫",
+        "description": "完整輪廓、八節竹節、基座與塔冠，不含背景或裝飾展示物",
+        "verification": "visual",
+        "requiredUnits": []
+      },
+      "camera": {
+        "requirement": "固定俯視三分之四，頂面明顯、投影一致",
+        "description": "兩可見立面與屋頂皆遵循相同相機",
+        "verification": "visual",
+        "requiredUnits": []
+      },
+      "details": {
+        "requirement": "立面、窗框、可見飾物與真實材質光影不得簡化",
+        "description": "逐區檢查獨立玻璃、金屬窗框、退台、裝飾、陰影",
+        "verification": "visual",
+        "requiredUnits": [
+          "base",
+          "tiers",
+          "crown"
+        ]
+      },
+      "scale": {
+        "requirement": "1cm=1px 後套用視角投影，原生可編輯2D形狀",
+        "description": "50800cm總高，公分世界座標，scale=1，原生向量",
+        "verification": "data"
+      }
+    },
+    "detailRequired": true,
+    "facts": [
+      {
+        "id": "height",
+        "statement": "結構設計資料記載台北101高508m、主塔101層。",
+        "scope": "全高；不建立各窗格精確尺寸",
+        "sources": [
+          "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+        ],
+        "verification": "原始結構工程簡報第4頁",
+        "dependencies": [
+          {
+            "key": "source:height",
+            "version": "retrieved-2026-10-17"
+          }
+        ]
+      },
+      {
+        "id": "appearance",
+        "statement": "建築師照片顯示八節向上擴張主體、藍綠玻璃、密集水平及垂直窗框、銀灰退台、縮小塔冠與細長尖塔；入口有如意紋。",
+        "scope": "可見外觀，照片不是尺寸測量或相機精確校準依據",
+        "sources": [
+          "https://www.onenessarchitects.com/project/Taipei-101"
+        ],
+        "verification": "已目視航拍、正面及入口照片",
+        "dependencies": [
+          {
+            "key": "source:appearance",
+            "version": "retrieved-2026-10-17"
+          }
+        ]
+      }
+    ]
+  },
+  "calls": [
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspections": [
+          {
+            "elementId": "design-d356f294-51d8-49db-a4ae-f88946152aa4-0",
+            "view": "overview"
+          }
+        ]
+      },
+      "inspectionIds": [
+        "a9b3621e-e769-47e1-8bcb-06cb2680237e"
+      ],
+      "startSeconds": 171.742577
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "a9b3621e-e769-47e1-8bcb-06cb2680237e"
+        ],
+        "checks": [
+          {
+            "criterionId": "camera",
+            "status": "pass",
+            "inspectionIds": [
+              "a9b3621e-e769-47e1-8bcb-06cb2680237e"
+            ],
+            "evidence": "已檢視完整圖：兩立面及每節頂面使用一致俯視投影，三分之四方向明確。"
+          },
+          {
+            "criterionId": "overall",
+            "status": "fail",
+            "inspectionIds": [
+              "a9b3621e-e769-47e1-8bcb-06cb2680237e"
+            ],
+            "evidence": "完整高度與八節輪廓已具備，但基座尚缺入口及低層建築細節，尖塔不應像玻璃窗格塔身。"
+          },
+          {
+            "criterionId": "details",
+            "unitId": "base",
+            "status": "fail",
+            "inspectionIds": [
+              "a9b3621e-e769-47e1-8bcb-06cb2680237e"
+            ],
+            "evidence": "基座目前僅連續帷幕牆，尚缺入口門框、遮簷、階梯與層次。"
+          },
+          {
+            "criterionId": "details",
+            "unitId": "crown",
+            "status": "fail",
+            "inspectionIds": [
+              "a9b3621e-e769-47e1-8bcb-06cb2680237e"
+            ],
+            "evidence": "塔冠有退台和窗格，但尖塔套用窗格圖樣不符合金屬桅杆外觀，須修正。"
+          }
+        ]
+      },
+      "inspectionIds": [
+        "a9b3621e-e769-47e1-8bcb-06cb2680237e"
+      ],
+      "startSeconds": 186.795344
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspections": [
+          {
+            "elementId": "design-d356f294-51d8-49db-a4ae-f88946152aa4-0",
+            "view": "overview"
+          },
+          {
+            "elementId": "design-d356f294-51d8-49db-a4ae-f88946152aa4-0",
+            "view": "detail",
+            "region": {
+              "x": 8200,
+              "y": 44500,
+              "width": 1024,
+              "height": 1024
+            }
+          },
+          {
+            "elementId": "design-d356f294-51d8-49db-a4ae-f88946152aa4-0",
+            "view": "detail",
+            "region": {
+              "x": 8200,
+              "y": 23000,
+              "width": 1024,
+              "height": 1024
+            }
+          },
+          {
+            "elementId": "design-267692f7-fb46-48f2-849a-479f221f80d0-0",
+            "view": "overview"
+          },
+          {
+            "elementId": "design-d356f294-51d8-49db-a4ae-f88946152aa4-0",
+            "view": "detail",
+            "region": {
+              "x": 8300,
+              "y": 2100,
+              "width": 700,
+              "height": 1024
+            }
+          }
+        ]
+      },
+      "inspectionIds": [
+        "e29f3e2c-4fdc-4e1b-a15b-f9181c849bee",
+        "0dd4f211-26ad-4005-8cfd-dfe7ff28ebb3",
+        "63ef8fec-61a3-4f0b-8239-7b631dc55ed9",
+        "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+        "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+      ],
+      "startSeconds": 289.146135
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "e29f3e2c-4fdc-4e1b-a15b-f9181c849bee",
+          "0dd4f211-26ad-4005-8cfd-dfe7ff28ebb3",
+          "63ef8fec-61a3-4f0b-8239-7b631dc55ed9",
+          "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+          "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+        ],
+        "checks": [
+          {
+            "criterionId": "details",
+            "unitId": "crown",
+            "status": "pass",
+            "inspectionIds": [
+              "e29f3e2c-4fdc-4e1b-a15b-f9181c849bee",
+              "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+              "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+            ],
+            "evidence": "已比較塔冠縮小外擴段與退台；尖塔已改為連續金屬曲面與接環，沒有玻璃窗格。"
+          },
+          {
+            "criterionId": "details",
+            "unitId": "tiers",
+            "status": "fail",
+            "inspectionIds": [
+              "e29f3e2c-4fdc-4e1b-a15b-f9181c849bee",
+              "63ef8fec-61a3-4f0b-8239-7b631dc55ed9"
+            ],
+            "evidence": "已有逐層玻璃、立面方向光差與竹節端部飾件，但局部窗格仍偏高，須加入各樓層內的水平分格及退台機械百葉，符合照片的細密立面。"
+          }
+        ]
+      },
+      "inspectionIds": [],
+      "startSeconds": 307.224094
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "e29f3e2c-4fdc-4e1b-a15b-f9181c849bee",
+          "0dd4f211-26ad-4005-8cfd-dfe7ff28ebb3",
+          "63ef8fec-61a3-4f0b-8239-7b631dc55ed9",
+          "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+          "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+        ],
+        "checks": [
+          {
+            "criterionId": "details",
+            "unitId": "crown",
+            "status": "pass",
+            "inspectionIds": [
+              "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+              "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+            ],
+            "evidence": "塔冠縮小外擴段、窗框與退台已保留；尖塔已改為金屬曲面與接環，沒有玻璃窗格。"
+          },
+          {
+            "criterionId": "details",
+            "unitId": "tiers",
+            "status": "fail",
+            "inspectionIds": [
+              "63ef8fec-61a3-4f0b-8239-7b631dc55ed9"
+            ],
+            "evidence": "已有逐層玻璃與方向光差，但局部窗格仍偏高，須加入各樓層內的水平分格及退台機械百葉，符合照片的細密立面。"
+          }
+        ]
+      },
+      "inspectionIds": [],
+      "startSeconds": 313.145666
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "e29f3e2c-4fdc-4e1b-a15b-f9181c849bee",
+          "0dd4f211-26ad-4005-8cfd-dfe7ff28ebb3",
+          "63ef8fec-61a3-4f0b-8239-7b631dc55ed9",
+          "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+          "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+        ],
+        "checks": [
+          {
+            "criterionId": "details",
+            "unitId": "crown",
+            "supersedes": {
+              "revision": 2,
+              "reason": "將先前總覽的待修正觀察，改以塔冠所屬群組及尖塔原尺寸局部作精確檢查。"
+            },
+            "status": "pass",
+            "inspectionIds": [
+              "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+              "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+            ],
+            "evidence": "塔冠縮小外擴段、窗框與退台已保留；尖塔已改為金屬曲面與接環，沒有玻璃窗格。"
+          },
+          {
+            "criterionId": "details",
+            "unitId": "tiers",
+            "status": "fail",
+            "inspectionIds": [
+              "63ef8fec-61a3-4f0b-8239-7b631dc55ed9"
+            ],
+            "evidence": "已有逐層玻璃與方向光差，但局部窗格仍偏高，須加入各樓層內的水平分格及退台機械百葉，符合照片的細密立面。"
+          }
+        ]
+      },
+      "inspectionIds": [
+        "e29f3e2c-4fdc-4e1b-a15b-f9181c849bee",
+        "0dd4f211-26ad-4005-8cfd-dfe7ff28ebb3",
+        "63ef8fec-61a3-4f0b-8239-7b631dc55ed9",
+        "9509fd20-87bc-41d4-b231-32c93c2e53ae",
+        "bad09c81-83cf-4b6a-b852-4f7dd1010431"
+      ],
+      "startSeconds": 319.901952
+    }
+  ]
+}

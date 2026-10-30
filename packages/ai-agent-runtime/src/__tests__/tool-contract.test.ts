@@ -314,7 +314,8 @@ describe('common tool contracts', () => {
     })
     expect(validate).toHaveBeenCalledExactlyOnceWith(
       false,
-      contract.outputSchema
+      contract.outputSchema,
+      { stage: 'output' }
     )
   })
 
@@ -446,7 +447,9 @@ it('validates the explicit value projection of a host receipt without changing i
     ]
   })
   expect(await invoker.invoke({ name: contract.name, input: {} })).toBe(receipt)
-  expect(validate).toHaveBeenLastCalledWith(7, contract.outputSchema)
+  expect(validate).toHaveBeenLastCalledWith(7, contract.outputSchema, {
+    stage: 'output'
+  })
 })
 
 it('retains immutable domain verification metadata and rejects non-check owners', () => {
@@ -477,4 +480,35 @@ it('retains immutable domain verification metadata and rejects non-check owners'
   expect(() =>
     createAiToolContract({ ...definition(), verification })
   ).toThrow()
+})
+
+it('supplies validation stage while retaining rejected output without executing twice', async () => {
+  const contract = createAiToolContract(definition())
+  const output = { completed: ['a'] }
+  const execute = vi.fn(async () => output)
+  const stages: unknown[] = []
+  const invoker = createAiInvoker({
+    execute,
+    middleware: [
+      createAiToolMiddleware({
+        resolve: () => contract,
+        validate: (_value, _schema, context?: { stage: string }) => {
+          stages.push(context?.stage)
+          return context?.stage === 'output'
+            ? 'output: expected boolean'
+            : undefined
+        },
+        classify: () => ({ status: 'success', settlement: 'completed' })
+      })
+    ]
+  })
+  await expect(
+    invoker.invoke({ name: contract.name, input: {} })
+  ).rejects.toMatchObject({
+    stage: 'output',
+    message: 'output: expected boolean',
+    inspection: { status: 'invalid', settlement: 'completed', value: output }
+  })
+  expect(stages).toEqual(['input', 'output'])
+  expect(execute).toHaveBeenCalledOnce()
 })

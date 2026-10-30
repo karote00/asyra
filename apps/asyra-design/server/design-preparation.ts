@@ -1,3 +1,4 @@
+import { inspectDesignBudget } from './design-budget'
 import { createDesignCheckResults } from './design-check-results'
 import { createHash } from 'node:crypto'
 import type { LocalToolOwnership } from './local-tool-leases'
@@ -106,6 +107,17 @@ const containerKeys = [
   'columns',
   'align'
 ]
+/** Canonical native-node fields shared by admission and public schema projection. */
+export const designNodeInputFields = (type: unknown): readonly string[] => [
+  ...(type === 'oval' ? ['rotation'] : []),
+  ...commonKeys.filter((key) =>
+    type === 'group' ? !['width', 'height', 'fill'].includes(key) : true
+  ),
+  ...(type === 'frame' ? containerKeys : []),
+  ...(type === 'group' ? ['children'] : []),
+  ...(type === 'text' ? textKeys : []),
+  ...(type === 'vector' ? ['rings'] : [])
+]
 const freeze = <T>(value: T): T => {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.values(value).forEach(freeze)
@@ -143,15 +155,7 @@ const admitDraft = (input: unknown): DraftNode => {
       (root && !isDesignContainerType(type))
     )
       return fail('unsupported component')
-    const allowed = [
-      ...commonKeys.filter((key) =>
-        type === 'group' ? !['width', 'height', 'fill'].includes(key) : true
-      ),
-      ...(type === 'frame' ? containerKeys : []),
-      ...(type === 'group' ? ['children'] : []),
-      ...(type === 'text' ? textKeys : []),
-      ...(type === 'vector' ? ['rings'] : [])
-    ]
+    const allowed = designNodeInputFields(type)
     if (Object.keys(source).some((key) => !allowed.includes(key)))
       return fail('unknown field')
     const key = source.key
@@ -264,6 +268,9 @@ const admitDraft = (input: unknown): DraftNode => {
         type === 'group' || deriveVectorDimensions
           ? 0
           : finite(source.height, 'height', Number.MIN_VALUE),
+      ...(type === 'oval' && source.rotation !== undefined
+        ? { rotation: finite(source.rotation, 'rotation', -limits.dimension) }
+        : {}),
       x: finite(source.x ?? 0, 'x', -limits.dimension),
       y: finite(source.y ?? 0, 'y', -limits.dimension),
       padding: finite(source.padding ?? 0, 'padding'),
@@ -312,8 +319,16 @@ const admitDraft = (input: unknown): DraftNode => {
       node.width = finite(bounds.width, 'group width')
       node.height = finite(bounds.height, 'group height')
       for (const child of node.children) {
-        child.x = finite(child.x - bounds.x, 'group child x')
-        child.y = finite(child.y - bounds.y, 'group child y')
+        child.x = finite(
+          child.x - bounds.x,
+          'group child x',
+          child.type === 'oval' ? -limits.dimension : 0
+        )
+        child.y = finite(
+          child.y - bounds.y,
+          'group child y',
+          child.type === 'oval' ? -limits.dimension : 0
+        )
       }
     }
     return node
@@ -334,7 +349,8 @@ function* prepareDesignSteps(
     constructionMs: number
     admissionMs: number
     compilationMs: number
-  }) => void
+  }) => void,
+  onMaterialFields?: (fields: Readonly<Record<string, string>>) => void
 ): Generator<void, AnalyzedDesign, void> {
   const sharedFills =
     record(input) && input.sharedFills !== undefined ? input.sharedFills : {}
@@ -407,10 +423,8 @@ function* prepareDesignSteps(
     return [{ ...compiled, id: `${elementId}-fill` }]
   }
   const constructionStarted = performance.now()
-  const { draft, brief, sourceWork } = yield* constructDesignSteps(
-    input,
-    `design-${identity}-0`
-  )
+  const { draft, brief, sourceWork, materialFields } =
+    yield* constructDesignSteps(input, `design-${identity}-0`)
   const constructionMs = performance.now() - constructionStarted
   onSourceWork?.(sourceWork)
   const admissionStarted = performance.now()
@@ -448,6 +462,9 @@ function* prepareDesignSteps(
       y,
       width: node.width,
       height: node.height,
+      ...(node.type === 'oval' && node.rotation !== undefined
+        ? { rotation: node.rotation }
+        : {}),
       visible: true,
       lock: false,
       props: {
@@ -618,11 +635,21 @@ function* prepareDesignSteps(
             .slice(0, row)
             .reduce((sum, value) => sum + value + node.gap, 0)
       }
+      const extent = deriveGroupBounds([
+        {
+          x: cx,
+          y: cy,
+          width: child.width,
+          height: child.height,
+          type: child.type,
+          rotation: typeof child.rotation === 'number' ? child.rotation : 0
+        }
+      ])
       const overflow = {
-        left: Math.max(0, -cx),
-        top: Math.max(0, -cy),
-        right: Math.max(0, cx + child.width - node.width),
-        bottom: Math.max(0, cy + child.height - node.height)
+        left: Math.max(0, -extent.x),
+        top: Math.max(0, -extent.y),
+        right: Math.max(0, extent.x + extent.width - node.width),
+        bottom: Math.max(0, extent.y + extent.height - node.height)
       }
       if (
         node.type === 'frame' &&
@@ -688,6 +715,7 @@ function* prepareDesignSteps(
     if (!passed) findings.push({ kind: 'requirement', ...check, actual })
     return { ...check, actual, passed }
   })
+  onMaterialFields?.(freeze(materialFields))
   const prepared = freeze({
     ...(brief ? { review: { ...brief, checks } } : {}),
     ...(textBoxOverlaps.length
@@ -722,17 +750,34 @@ export const prepareDesignAsync = (
 export const createDesignPreparationSession = (
   compile: typeof prepareDesign = prepareDesign,
   compileAsync: typeof prepareDesignAsync = prepareDesignAsync,
-  ownership?: LocalToolOwnership
+  ownership?: LocalToolOwnership,
+  expandedNodeLimit: number = limits.expandedNodes
 ) => {
+  if (expandedNodeLimit !== limits.expandedNodes && expandedNodeLimit !== 2000)
+    throw new Error('Invalid evaluation artifact budget')
+  const assertBudget = (input: unknown) => {
+    const issue = inspectDesignBudget(input, expandedNodeLimit)
+    if (issue) throw new Error(issue.message)
+  }
   const checkResults = createDesignCheckResults()
   const artifacts = new Map<string, PreparedDesign>()
   const recipes = new Map<string, unknown>()
+  const materialFields = new Map<string, Readonly<Record<string, string>>>()
+  const sourceIdentities = new Map<string, string>()
+  const materialRevisions = new Map<
+    string,
+    {
+      rootId: string
+      sourceArtifactId: string
+      updates: { elementId: string; gradient: unknown; color: unknown }[]
+    }
+  >()
   const targetSets = new Map<
     string,
     { artifactId: string; ids: readonly string[]; bytes: number }
   >()
   let targetBytes = 0
-  const rejectedDrafts = createDesignDraftRepairStore()
+  const rejectedDrafts = createDesignDraftRepairStore(expandedNodeLimit)
   const targetIndexes = new Map<
     string,
     ReturnType<typeof createDesignTargetIndex>
@@ -740,6 +785,9 @@ export const createDesignPreparationSession = (
   const removeArtifact = (artifactId: string) => {
     targetIndexes.delete(artifactId)
     recipes.delete(artifactId)
+    materialFields.delete(artifactId)
+    sourceIdentities.delete(artifactId)
+    materialRevisions.delete(artifactId)
     for (const [id, selected] of targetSets) {
       if (selected.artifactId === artifactId) {
         targetBytes -= selected.bytes
@@ -757,6 +805,8 @@ export const createDesignPreparationSession = (
       | undefined
   ) => {
     const { review, layoutReview, sharedFillIds, ...compiled } = result
+    if (!sourceIdentities.has(artifactId))
+      sourceIdentities.set(artifactId, artifactId)
     const artifact = freeze(compiled)
     artifacts.set(artifactId, artifact)
     try {
@@ -798,6 +848,7 @@ export const createDesignPreparationSession = (
     }
   }
   return {
+    expandedNodeLimit,
     checkResults,
     recipe(artifactId: string) {
       ownership?.assertOwned(artifactId)
@@ -811,6 +862,112 @@ export const createDesignPreparationSession = (
         findings: artifact.findings,
         elementCount: artifact.entries.length
       }
+    },
+    async reviseMaterial(
+      artifactId: string,
+      field: string,
+      definition: unknown,
+      signal: AbortSignal
+    ) {
+      signal.throwIfAborted()
+      ownership?.assertOwned(artifactId)
+      const original = artifacts.get(artifactId)
+      const recipe = recipes.get(artifactId)
+      const identity = sourceIdentities.get(artifactId)
+      if (!original || !record(recipe) || !identity)
+        throw new Error(
+          'Prepared material source is unavailable in this request.'
+        )
+      if (
+        !record(recipe.linearFields) ||
+        !Object.hasOwn(recipe.linearFields, field)
+      )
+        throw new Error('Select an existing explicit world material field.')
+      const revisedRecipe = freeze(
+        structuredClone({
+          ...recipe,
+          linearFields: { ...recipe.linearFields, [field]: definition }
+        })
+      )
+      let compiledFields: Readonly<Record<string, string>> = {}
+      const compiled = await compileAsync(
+        signal,
+        revisedRecipe,
+        identity,
+        undefined,
+        undefined,
+        (fields) => {
+          compiledFields = fields
+        }
+      )
+      signal.throwIfAborted()
+      const members = materialFields.get(artifactId) ?? {}
+      const selected = compiled.entries.filter(
+        (entry) => members[entry.key] === field
+      )
+      if (!selected.length)
+        throw new Error('Material field has no prepared members.')
+      if (
+        compiled.findings.some(
+          (finding) => finding.kind !== 'text-metrics-required'
+        )
+      )
+        throw new Error('Resolve source findings before revising material.')
+      const updates = selected.map(({ descriptor }) => {
+        const fills = descriptor.fills
+        const fill = Array.isArray(fills) ? fills[0] : undefined
+        if (!record(fill) || !isDesignGradient(fill.gradient))
+          throw new Error(
+            'Material revision did not produce a native gradient.'
+          )
+        return {
+          elementId: descriptor.id,
+          gradient: fill.gradient,
+          color: fill.color
+        }
+      })
+      const materialRevisionId = randomUUID()
+      materialFields.set(materialRevisionId, compiledFields)
+      recipes.set(materialRevisionId, revisedRecipe)
+      sourceIdentities.set(materialRevisionId, identity)
+      publish(materialRevisionId, compiled, undefined, undefined)
+      materialRevisions.set(
+        materialRevisionId,
+        freeze({
+          rootId: original.rootId,
+          sourceArtifactId: artifactId,
+          updates
+        })
+      )
+      return {
+        materialRevisionId,
+        elementCount: updates.length,
+        applied: false as const
+      }
+    },
+    materialRevision(id: string) {
+      ownership?.assertOwned(id)
+      const value = materialRevisions.get(id)
+      if (!value) throw new Error('Prepared material revision is unavailable.')
+      return value
+    },
+    materialMembers(id: string) {
+      ownership?.assertOwned(id)
+      const artifact = artifacts.get(id)
+      if (!artifact) throw new Error('Material source is unavailable.')
+      return Object.keys(materialFields.get(id) ?? {}).map(
+        (key) => artifact.keyToId[key]
+      )
+    },
+    isMaterialRevision: (id: string) => materialRevisions.has(id),
+    withMaterialSource(input: unknown, sourceId: string) {
+      ownership?.assertOwned(sourceId)
+      const source = recipes.get(sourceId)
+      if (!record(source) || !record(source.linearFields) || !record(input))
+        throw new Error('Prepared world material source is unavailable.')
+      if (input.linearFields !== undefined)
+        throw new Error('materialSourceId conflicts with inline linearFields.')
+      return { ...input, linearFields: structuredClone(source.linearFields) }
     },
     retainTargetSets(
       selections: readonly { artifactId: string; ids: readonly string[] }[]
@@ -891,7 +1048,10 @@ export const createDesignPreparationSession = (
       }
       return handle
     },
-    repairDraft(input: unknown) {
+    repairDraft(
+      input: unknown,
+      admitMissing?: (candidate: unknown) => boolean
+    ) {
       if (
         input &&
         typeof input === 'object' &&
@@ -899,19 +1059,67 @@ export const createDesignPreparationSession = (
         typeof input.draftId === 'string'
       )
         ownership?.assertOwned(input.draftId)
-      return rejectedDrafts.repair(input)
+      return rejectedDrafts.repair(input, admitMissing)
     },
     describeRejectedDraft: rejectedDrafts.describe,
-    async prepareAsync(input: unknown, signal: AbortSignal) {
+    async prepareAsync(
+      input: unknown,
+      signal: AbortSignal,
+      recovery?: {
+        draftId: string
+        partition: number
+        continueFromArtifact?: string
+      }
+    ) {
       signal.throwIfAborted()
+      let continuation: PreparedDesign | undefined
+      let artifactId: string = randomUUID()
+      if (recovery) {
+        ownership?.assertOwned(recovery.draftId)
+        input = rejectedDrafts.repair(recovery)
+        artifactId = `${recovery.draftId}-part-${recovery.partition}`
+        if (
+          recovery.partition === 0 &&
+          recovery.continueFromArtifact !== undefined
+        )
+          throw new Error(
+            'The first partition cannot continue an existing root.'
+          )
+        if (recovery.partition > 0) {
+          const first = `${recovery.draftId}-part-0`
+          if (recovery.continueFromArtifact !== first)
+            throw new Error(
+              'Continue the acknowledged first partition artifact.'
+            )
+          ownership?.assertOwned(first)
+          continuation = artifacts.get(first)
+          if (!continuation || sourceIdentities.get(first) !== first)
+            throw new Error('The original partition artifact is unavailable.')
+        }
+        const retained = artifacts.get(artifactId)
+        if (retained) {
+          ownership?.assertOwned(artifactId)
+          // Reusing a request artifact still needs the current call's export pin.
+          ownership?.borrow(artifactId)
+          return {
+            artifactId,
+            elementCount: retained.entries.length,
+            findings: retained.findings,
+            applicable: retained.findings.every(
+              (f) => f.kind === 'text-metrics-required'
+            )
+          }
+        }
+      }
+      assertBudget(input)
       const recipe = freeze(structuredClone(input))
-      const artifactId = randomUUID()
       let sourceWork:
         ReturnType<typeof constructDesign>['sourceWork'] | undefined
       let reuse:
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
-      const result = await compileAsync(
+      let compiledFields: Readonly<Record<string, string>> = {}
+      let result = await compileAsync(
         signal,
         recipe,
         artifactId,
@@ -920,13 +1128,63 @@ export const createDesignPreparationSession = (
         },
         (value) => {
           reuse = value
+        },
+        (fields) => {
+          compiledFields = fields
         }
       )
       signal.throwIfAborted()
+      if (continuation) {
+        const root = continuation.entries[0]
+        const anchor = continuation.entries[1]
+        if (
+          root.descriptor.type !== 'group' ||
+          !anchor ||
+          anchor.parentId !== continuation.rootId
+        )
+          throw new Error(
+            'Partition continuation requires the original flat group and anchor.'
+          )
+        const currentRoot = result.entries[0]
+        const dx = Number(currentRoot.descriptor.x) - Number(root.descriptor.x)
+        const dy = Number(currentRoot.descriptor.y) - Number(root.descriptor.y)
+        const { [currentRoot.key]: _oldRoot, ...otherKeys } = result.keyToId
+        const keyToId = { ...otherKeys, [root.key]: continuation.rootId }
+        const rootId = continuation.rootId
+        result = {
+          ...result,
+          rootId,
+          keyToId,
+          continuation: {
+            anchor: {
+              id: anchor.descriptor.id,
+              x: Number(root.descriptor.x) + Number(anchor.descriptor.x),
+              y: Number(root.descriptor.y) + Number(anchor.descriptor.y),
+              ...(anchor.descriptor.rotation !== undefined
+                ? { rotation: Number(anchor.descriptor.rotation) }
+                : {})
+            }
+          },
+          entries: [
+            root,
+            ...result.entries.slice(1).map((entry) => ({
+              ...entry,
+              parentId: rootId,
+              descriptor: {
+                ...entry.descriptor,
+                x: Number(entry.descriptor.x) + dx,
+                y: Number(entry.descriptor.y) + dy
+              }
+            }))
+          ]
+        }
+      }
+      materialFields.set(artifactId, compiledFields)
       recipes.set(artifactId, recipe)
       return publish(artifactId, result, sourceWork, reuse)
     },
     prepare(input: unknown) {
+      assertBudget(input)
       const recipe = freeze(structuredClone(input))
       const artifactId = randomUUID()
       let sourceWork:
@@ -934,6 +1192,7 @@ export const createDesignPreparationSession = (
       let reuse:
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
+      let compiledFields: Readonly<Record<string, string>> = {}
       const result = compile(
         recipe,
         artifactId,
@@ -942,8 +1201,12 @@ export const createDesignPreparationSession = (
         },
         (summary) => {
           reuse = summary
+        },
+        (fields) => {
+          compiledFields = fields
         }
       )
+      materialFields.set(artifactId, compiledFields)
       recipes.set(artifactId, recipe)
       return publish(artifactId, result, sourceWork, reuse)
     },

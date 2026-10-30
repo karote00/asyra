@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   createDesignCheckResults,
   designCheckResultsSchema
@@ -393,6 +393,7 @@ it('summarizes large retained failures without retransmitting their evidence', (
     })
   const summary = store.summary(ids)
   expect(summary).toEqual({
+    countsScope: 'selected-checks',
     counts: { pass: 0, fail: 0, unverified: 5000, stale: 0 },
     visitedResults: 5000,
     firstPendingId: ids[0]
@@ -486,4 +487,160 @@ it('admits a complete detached mechanical selection and rejects mixed ownership'
   expect(store.select([{ checkId: 'part', revision }])[0]).toMatchObject({
     result: { status: 'stale' }
   })
+})
+
+it('delivers bounded summaries and revision-bound complete details without cloning pending rows', () => {
+  const store = createDesignCheckResults()
+  for (let i = 0; i < 137; i++)
+    store.record({
+      id: `check-${i}`,
+      origin: 'tool',
+      status: 'fail',
+      evidence: 'x'.repeat(3000),
+      dependencies: { geometry: '1' }
+    })
+  const clone = vi.spyOn(globalThis, 'structuredClone')
+  const summary = store.deliver()
+  expect(clone).not.toHaveBeenCalled()
+  clone.mockRestore()
+  expect(summary).toMatchObject({
+    counts: { fail: 137 },
+    visitedResults: 0,
+    firstPendingId: 'check-0'
+  })
+  expect(summary).not.toHaveProperty('items')
+  expect(JSON.stringify(summary).length).toBeLessThan(300)
+  const found: string[] = []
+  let offset = 0
+  do {
+    const page = store.deliver({
+      view: 'details',
+      limit: 40,
+      offset,
+      revision: summary.revision
+    })
+    if (!page.items) throw new Error('Detail page omitted items')
+    expect(page.items.length).toBeLessThanOrEqual(40)
+    for (const item of page.items) {
+      found.push(item.id)
+      expect(item.evidence).toHaveLength(3000)
+    }
+    offset = page.nextOffset ?? 0
+  } while (offset)
+  expect(new Set(found).size).toBe(137)
+  expect(store.deliver().revision).toBe(summary.revision)
+  store.invalidate(['geometry'], 'Changed geometry')
+  expect(() =>
+    store.deliver({ view: 'details', offset: 40, revision: summary.revision })
+  ).toThrow('revision')
+  const current = store.deliver().revision
+  store.invalidate(['geometry'], 'Changed geometry')
+  expect(store.deliver().revision).toBe(current)
+  expect(store.firstPending('tool')).toEqual({ id: 'check-0', status: 'stale' })
+  expect(
+    store.deliver({ ids: ['check-136'], includePassed: true }).items
+  ).toHaveLength(1)
+  expect(() => store.deliver({ view: 'details', offset: 1 })).toThrow(
+    'revision'
+  )
+  store.retire('check-0', 'Canonical removal')
+  expect(() => store.deliver({ view: 'details', revision: current })).toThrow(
+    'revision'
+  )
+})
+
+it('labels selected counts separately from request counts without rescanning evidence', () => {
+  const store = createDesignCheckResults()
+  store.record({
+    id: 'geometry',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'Measured',
+    dependencies: {}
+  })
+  store.record({
+    id: 'material',
+    origin: 'main-agent',
+    status: 'unverified',
+    evidence: 'Wrong crop',
+    dependencies: {}
+  })
+  expect(store.summary(['geometry'])).toMatchObject({
+    countsScope: 'selected-checks',
+    counts: { pass: 1, unverified: 0 }
+  })
+  expect(store.deliver()).toMatchObject({
+    countsScope: 'request-checks',
+    counts: { pass: 1, unverified: 1 },
+    visitedResults: 0
+  })
+  expect(store.deliver({ ids: ['material'] })).toMatchObject({
+    countsScope: 'selected-checks',
+    counts: { pass: 0, unverified: 1 }
+  })
+  expect(store.deliver({ view: 'details', limit: 1 })).toMatchObject({
+    countsScope: 'request-checks',
+    counts: { pass: 1, unverified: 1 }
+  })
+})
+
+it('selects result origin before cloning while retaining full and exact reads', () => {
+  const store = createDesignCheckResults()
+  for (const [id, origin, status] of [
+    ['mechanical', 'tool', 'fail'],
+    ['visual-pass', 'main-agent', 'pass'],
+    ['visual-fail', 'main-agent', 'fail']
+  ] as const)
+    store.record({
+      id,
+      origin,
+      status,
+      evidence: id,
+      dependencies: { source: '1' }
+    })
+  const clone = vi.spyOn(globalThis, 'structuredClone')
+  try {
+    const selection = { includePassed: true, origin: 'main-agent' as const }
+    const result = store.read(selection)
+    expect(result.items.map((item) => item.id)).toEqual([
+      'visual-pass',
+      'visual-fail'
+    ])
+    expect(result.countsScope).toBe('selected-checks')
+    expect(result.counts).toEqual({ pass: 1, fail: 1, stale: 0, unverified: 0 })
+    expect(clone.mock.calls).toHaveLength(2)
+    result.items[0].dependencies.source = 'external'
+    expect(store.read(selection).items[0].dependencies.source).toBe('1')
+    const pending = store.read({ origin: 'main-agent' })
+    expect(pending.items.map((item) => item.id)).toEqual(['visual-fail'])
+    expect(pending.countsScope).toBe('selected-checks')
+    expect(pending.counts).toEqual({
+      pass: 0,
+      fail: 1,
+      stale: 0,
+      unverified: 0
+    })
+    expect(pending.visitedResults).toBe(2)
+    expect(
+      store
+        .read({ ...selection, ids: ['mechanical', 'visual-pass', 'missing'] })
+        .items.map((item) => item.id)
+    ).toEqual(['visual-pass'])
+    expect(store.read({ ...selection, ids: [] }).items).toEqual([])
+    expect(store.read({ includePassed: true }).items).toHaveLength(3)
+    expect(
+      store.read({ ids: ['mechanical'], includePassed: true }).items[0].status
+    ).toBe('fail')
+    store.invalidate(['source'], 'Changed source')
+    expect(
+      store.read(selection).items.every((item) => item.status === 'stale')
+    ).toBe(true)
+    expect(store.firstPending('tool')).toEqual({
+      id: 'mechanical',
+      status: 'stale'
+    })
+    expect(createDesignCheckResults().read(selection).items).toEqual([])
+  } finally {
+    clone.mockRestore()
+  }
 })

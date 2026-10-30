@@ -1,12 +1,14 @@
+import type { PropertyMutationReceipt } from '../types/property-mutation-receipt.js'
+import type { PropsManager } from '@asyra/props-manager'
 import type {
-  PropertyMutationBatchRequest,
-  PreparedPropertyMutationBatch,
-  PropertyMutationBatchResult
-} from '@asyra/props-manager'
-import type {
+  SceneTree,
   ResolvedElementPropertyTargets,
   ElementPropertyTargetRequest
 } from '@asyra/scene-tree'
+import {
+  applyPreparedPropertyIntent,
+  type PropertyIntentApplyRequests
+} from './property-intents.js'
 import type { EVENT_OPTIONS } from '@asyra/utils'
 import type {
   ElementPropertyAPIs,
@@ -14,17 +16,12 @@ import type {
   ElementPropertyValuesUpdate
 } from '../types/element-properties.js'
 
-export interface ElementPropertyRequests {
-  resolveElementPropertyTargets: (
-    requests: readonly ElementPropertyTargetRequest[]
-  ) => ResolvedElementPropertyTargets
-  preparePropertyMutationBatch: (
-    request: PropertyMutationBatchRequest
-  ) => PreparedPropertyMutationBatch
-  applyPreparedPropertyMutationBatch: (
-    preparedBatch: PreparedPropertyMutationBatch
-  ) => PropertyMutationBatchResult
-}
+export type ElementPropertyRequests = PropertyIntentApplyRequests &
+  Pick<
+    SceneTree,
+    'resolveElementPropertyTargets' | 'resolveElementPropertyBindings'
+  > &
+  Pick<PropsManager, 'prepareOwnerPropertyMutations'>
 
 const freezeOrderedElementIds = (
   resolvedTargets: ResolvedElementPropertyTargets
@@ -32,22 +29,42 @@ const freezeOrderedElementIds = (
 
 export const createElementPropertyAPIs = (
   requests: ElementPropertyRequests
-): ElementPropertyAPIs => {
+): Pick<
+  ElementPropertyAPIs,
+  'updateElementProperties' | 'patchElementProperties'
+> => {
   const applyResolvedTargets = (
     targetRequests: readonly ElementPropertyTargetRequest[],
     options?: EVENT_OPTIONS
-  ): readonly string[] => {
+  ): PropertyMutationReceipt => {
     if (targetRequests.length === 0) {
-      return Object.freeze([])
+      return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
     }
     const resolvedTargets =
       requests.resolveElementPropertyTargets(targetRequests)
-    const preparedProperties = requests.preparePropertyMutationBatch({
-      operations: resolvedTargets.mutations,
+    const roots = requests.resolveElementPropertyBindings(
+      resolvedTargets.relations.map((relation) => ({
+        elementId: relation.ownerElementId,
+        propertyName: relation.ownerPropertyName,
+        expectedRootId: relation.componentId
+      }))
+    )
+    const prepared = requests.prepareOwnerPropertyMutations(
+      resolvedTargets.mutations.map((mutation, index) => ({
+        target: {
+          root: roots[index].relation,
+          sharedRoot: roots[index].shared,
+          path: []
+        },
+        mutation
+      })),
       options
+    )
+    const changed = applyPreparedPropertyIntent(requests, prepared, options)
+    return Object.freeze({
+      acceptedIds: freezeOrderedElementIds(resolvedTargets),
+      changed
     })
-    requests.applyPreparedPropertyMutationBatch(preparedProperties)
-    return freezeOrderedElementIds(resolvedTargets)
   }
 
   return {

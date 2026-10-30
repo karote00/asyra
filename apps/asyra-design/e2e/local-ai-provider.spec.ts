@@ -1138,7 +1138,10 @@ test('canonical fill reference edits and plural record patches have distinct con
   )
   expect(evidence.rejected).toContain('fills')
   expect(evidence.afterRejection).toEqual(evidence.before)
-  expect(evidence.ids).toEqual([evidence.elementId])
+  expect(evidence.ids).toMatchObject({
+    acceptedIds: [evidence.elementId],
+    changed: true
+  })
   expect(evidence.after.fills).toEqual([
     expect.objectContaining({
       id: evidence.fillId,
@@ -1248,6 +1251,8 @@ test('ready design parts continue in an existing container with one undo entry',
   )
   const result = await page.evaluate(
     async ({ first, second }) => {
+      const { deliverPreparedDesign } =
+        await import('../src/ai/prepared-design')
       const { core } = await import('../src/testing/runtime-access')
       const { createPreparedDesignAction } =
         await import('../src/ai/design-actions')
@@ -1262,7 +1267,7 @@ test('ready design parts continue in an existing container with one undo entry',
         async (runMutation) => {
           const context = { signal: new AbortController().signal, runMutation }
           const receipt = await action.execute(
-            { design: first, response: 'compact' },
+            { design: deliverPreparedDesign(first), response: 'compact' },
             context as never
           )
           initialSurface = core.getElementComputedData(first.keyToId.surface, [
@@ -1273,7 +1278,7 @@ test('ready design parts continue in an existing container with one undo entry',
           ])
           await action.execute(
             {
-              design: second,
+              design: deliverPreparedDesign(second),
               parentId: receipt.compositionId,
               response: 'compact'
             },
@@ -1313,4 +1318,166 @@ test('ready design parts continue in an existing container with one undo entry',
   ).toBeNull()
   await redo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(finalDigest)
+})
+
+test('captures the admitted report after network body eviction without replaying drawing', async ({
+  page
+}, testInfo) => {
+  test.setTimeout(90000)
+  const { readEvaluationReport, captureEvaluationReport, captureReportImage } =
+    await import('../test-data/knowledge-evaluation/capture-lifecycle.mjs')
+  const fixture = JSON.parse(
+    await readFile(
+      'server/__tests__/fixtures/recorded-101/report-capture-20261023.json',
+      'utf8'
+    )
+  )
+  const artifact = parseLocalVectorArtifact(
+    '<svg width="100" height="100"><path d="M0,0L100,0L100,100L0,100Z" fill="#008080"/></svg>'
+  )
+  const drawing = prepareLocalVectorArtifact(artifact, {
+    imageArtifactId: artifact.imageArtifactId,
+    compositionRole: 'Capture fixture',
+    bounds: { x: 20, y: 20, width: 100, height: 100 },
+    excludePathIds: []
+  })
+  const sourceIds: string[] = []
+  let receipts = 0
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', async (route) => {
+    if (route.request().headers()['x-ai-batch-receipt']) {
+      receipts++
+      return route.fulfill({ json: { accepted: true } })
+    }
+    sourceIds.push(route.request().postDataJSON().metadata.sourceRequestId)
+    // Valid ignored transport metadata stresses only the diagnostic body cache.
+    const frames = [
+      {
+        type: 'activity',
+        tool: 'prepare_design',
+        status: 'completed',
+        padding: 'x'.repeat(12 * 1024 * 1024)
+      },
+      {
+        type: 'batch',
+        receiptToken: '11111111-1111-1111-1111-111111111111',
+        batch: {
+          batchId: 'one-write',
+          actions: [
+            {
+              id: 'draw',
+              name: 'insert_vector_composition',
+              arguments: drawing,
+              summary: 'Create one fixture'
+            }
+          ]
+        }
+      },
+      {
+        type: 'result',
+        batch: {
+          ...fixture.batch,
+          explanation: 'Evaluation self-report - not artwork acceptance'
+        }
+      }
+    ]
+    await route.fulfill({
+      contentType: 'application/x-ndjson',
+      body: frames.map((value) => JSON.stringify(value)).join('\n')
+    })
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const depth = await getUndoHistoryDepth(page)
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Network.enable', {
+    maxTotalBufferSize: 1024 * 1024,
+    maxResourceBufferSize: 1024 * 1024
+  })
+  let networkId: string | undefined
+  cdp.on('Network.responseReceived', (event) => {
+    if (event.response.mimeType === 'application/x-ndjson')
+      networkId = event.requestId
+  })
+  try {
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page
+      .getByLabel('Message Agent')
+      .fill('Draw one fixture then report without additional work.')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    const message = page.getByTestId('ai-agent-message').last()
+    await expect(message).toHaveAttribute('data-outcome', 'partial')
+    await expect(message).toContainText(
+      fixture.batch.actions[0].arguments.message
+    )
+    if (!networkId) throw new Error('Missing observed response identity')
+    await expect(
+      cdp.send('Network.getResponseBody', { requestId: networkId })
+    ).rejects.toThrow(/evicted|No resource with given identifier/)
+    await expect(message).toHaveAttribute(
+      'data-evaluation-report',
+      /model-self-report/
+    )
+    const report = await readEvaluationReport(page, sourceIds)
+    expect(report.text).toBe(fixture.batch.actions[0].arguments.message)
+    const meta: { evidence?: Record<string, { status: string }> } = {}
+    await captureEvaluationReport({
+      meta,
+      report,
+      writeText: (text: string) =>
+        writeFile(testInfo.outputPath('self-report.txt'), text),
+      captureImage: () =>
+        captureReportImage(
+          page,
+          report,
+          testInfo.outputPath('self-report.png')
+        ),
+      save: () => undefined
+    })
+    expect(meta.evidence?.['self-report']?.status).toBe('complete')
+    expect(sourceIds).toHaveLength(1)
+    expect(receipts).toBe(1)
+    expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+    expect(
+      await page.evaluate(
+        async (id) =>
+          Boolean(
+            (await import('../src/testing/runtime-access')).core.getElementData(
+              id
+            )
+          ),
+        drawing.groupDescriptor.id
+      )
+    ).toBe(true)
+    await expect(
+      readEvaluationReport(page, ['foreign-request'])
+    ).rejects.toThrow(/matching/)
+    await message
+      .locator('[data-message-role="user"]')
+      .evaluate((element, text) => {
+        element.textContent += text
+      }, report.text)
+    const renderedReport = message
+      .locator('[data-message-role="assistant"] p')
+      .last()
+    await renderedReport.evaluate((element) => {
+      element.textContent = 'Different terminal response'
+    })
+    await expect(
+      captureReportImage(page, report, testInfo.outputPath('wrong-text.png'))
+    ).rejects.toThrow(/rendered report/)
+    await renderedReport.evaluate((element, text) => {
+      element.textContent = text
+    }, report.text)
+    await message.evaluate((element) =>
+      element.setAttribute('data-turn-id', 'replacement-turn')
+    )
+    await expect(
+      captureReportImage(page, report, testInfo.outputPath('wrong-turn.png'))
+    ).rejects.toThrow(/identity/)
+  } finally {
+    await cdp.detach()
+  }
 })

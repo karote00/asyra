@@ -12,7 +12,7 @@ import {
 } from '@asyra/ai-agent-runtime'
 import { createLocalToolLibrary } from '../local-tool-library'
 import { createLocalToolScheduler } from '../local-tool-scheduler'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationContractIssue } from '../operation-input-schema'
 import { toolSemantics } from '../../src/ai/tool-contract'
 import { createLocalDesignTools } from '../local-design-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
@@ -85,7 +85,7 @@ it('admits actual recursive preparation inputs and preserves forbidden fields an
   const check = () =>
     admitAiRecipe(proposal, {
       resolve: (name) => (name === dependency.name ? dependency : undefined),
-      validate: operationInputIssue,
+      validate: operationContractIssue,
       limits: {
         steps: 4,
         bindings: 200,
@@ -174,7 +174,7 @@ const setup = (store = memory(), requestId = 'request-one', overrides = {}) => {
       bytes: 16000,
       issues: 8
     },
-    validate: operationInputIssue,
+    validate: operationContractIssue,
     execute: (call, definition) =>
       schedule(undefined, async () => ({
         status: 'success',

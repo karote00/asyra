@@ -52,9 +52,6 @@ vi.mock('../ai-conversation-panel', () => ({
     </aside>
   )
 }))
-vi.mock('../ai-history-message-bar', () => ({
-  AiHistoryMessageBar: () => null
-}))
 vi.mock('../../providers', () => ({
   useElementSelection: () => new Set(['a', 'b']),
   useFlattenedIdsData: () => ['a', 'b'],

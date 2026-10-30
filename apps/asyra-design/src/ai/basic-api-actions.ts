@@ -50,7 +50,44 @@ const owners = (): ApiOwners => ({
   viewport: viewportApis
 })
 
+const basicApiToolEffect = (effect: BasicApiContract['effect']) => {
+  if (effect === 'read') return 'read'
+  if (effect === 'prepare') return 'prepare'
+  return 'mutation'
+}
+
+const basicApiResources = (effect: BasicApiContract['effect']) => {
+  if (effect === 'prepare') return ['request']
+  if (effect === 'viewport' || effect === 'selection') return [effect]
+  return ['document']
+}
+
 const basicApiRevision = (contract: BasicApiContract): number => {
+  if (contract.result.kind === 'mutation-receipt') return 9
+  if (
+    [
+      'property-mutation',
+      'change-flag',
+      'created-items',
+      'moves',
+      'removed'
+    ].includes(contract.result.kind)
+  )
+    return 8
+  if (
+    ['created-items', 'status-items'].includes(contract.result.kind) &&
+    ['write', 'delete'].includes(contract.effect)
+  )
+    return 7
+  if (
+    contract.effect === 'write' &&
+    (['fill', 'stroke'].includes(contract.owner) ||
+      (contract.owner === 'core' &&
+        ['updateElementProperties', 'patchElementProperties'].includes(
+          contract.method
+        )))
+  )
+    return 7
   if (
     ['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
   )
@@ -71,10 +108,8 @@ export const createBasicApiActions = (
   basicApiContracts.map((contract) => ({
     ...toolSemantics(
       basicApiResultSchema(contract),
-      contract.effect === 'read' ? 'read' : 'mutation',
-      ['viewport', 'selection'].includes(contract.effect)
-        ? [contract.effect]
-        : ['document']
+      basicApiToolEffect(contract.effect),
+      basicApiResources(contract.effect)
     ),
     partialOutputSchema: basicApiResultSchema(contract, true),
     ...(basicApiDeliverySchema(contract)
@@ -187,7 +222,7 @@ export const createBasicApiActions = (
         const result = describeBasicApiResult(
           contract,
           value,
-          resolvedArgs.elementIds
+          resolvedArgs[contract.parameters[0]]
         )
         if (!documentMutation) return result
         const elementIds: string[] = [],
@@ -203,6 +238,11 @@ export const createBasicApiActions = (
         }
         const receipt = {
           ...result,
+          ...(atSettlement &&
+          'code' in result &&
+          result.code === 'OWNER_RESULT_INVALID'
+            ? { settlement: 'completed' }
+            : {}),
           mutationScope: { complete, elementIds, removedElementIds }
         }
         const kind = contract.result.kind
@@ -263,6 +303,7 @@ export const createBasicApiActions = (
       let settledResult: ReturnType<typeof finish> | undefined
       try {
         const value = await (contract.effect === 'read' ||
+        contract.effect === 'prepare' ||
         contract.effect === 'viewport'
           ? call()
           : runAiMutation(context, mutate, (value) => {

@@ -30,6 +30,7 @@ export const createOrganizationAction = (
     properties: {
       operation: { type: 'string', enum: ['group', 'ungroup', 'reorder'] },
       elementIds: {
+        'x-design-element-binding': 'all',
         type: 'array',
         minItems: 1,
         uniqueItems: true,

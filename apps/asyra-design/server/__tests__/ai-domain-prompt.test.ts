@@ -20,13 +20,54 @@ const imageGuidance = imageDefinitions
   .join('\n')
 
 describe('stage-owned App guidance', () => {
+  it('offers selective advisory knowledge without gating known-value edits', () => {
+    expect(AI_APP_PROMPT).toContain('discover_knowledge')
+    expect(AI_APP_PROMPT).toContain('read_knowledge')
+    expect(AI_APP_PROMPT).toContain(
+      'Select the sufficient parent or child directly'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'hierarchy depth does not mean more complete advice'
+    )
+    expect(AI_APP_PROMPT).toContain('unresolved need described in the catalog')
+    expect(AI_APP_PROMPT).toContain('do not read every parent or sibling')
+    expect(AI_APP_PROMPT).toContain('Omit contexts for general advice')
+    expect(AI_APP_PROMPT).toContain('reuse already delivered advice')
+    expect(AI_APP_PROMPT).toContain('rehydrate: true')
+    expect(AI_APP_PROMPT).toContain(
+      'Known-value edits can proceed without a lookup'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Missing or irrelevant knowledge does not block work'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'never permissions, tool schemas or proof of correctness'
+    )
+  })
+
+  it('connects advice to existing decisions without elevating authority or adding a planning gate', () => {
+    expect(general).toContain('default method reference')
+    expect(general).toContain('existing draft brief or criteria method')
+    expect(general).toContain(
+      'shared\ndomain advice never supplies API authority'
+    )
+    expect(general).toContain('Reuse unaffected decisions and passed evidence')
+    expect(general).toContain('do not label a per-cell enumeration procedural')
+    expect(general).toContain(
+      'full input/output and lifecycle contracts remain required'
+    )
+    expect(general).toContain(
+      'do not invent parameters, silently simplify appearance'
+    )
+  })
+
   it('uses existing activity fields for concrete work without extra reporting calls', () => {
     expect(general).toContain('existing message field')
     expect(general).toContain('action summary')
     expect(general).toContain('work purpose and target')
     expect(general).toContain('The App supplies the observed execution phase')
     expect(general).toContain('Before preparing inputs for a new stage')
-    expect(general).toContain('single tool finishes')
+    expect(general).toContain('commentary persists across tool calls')
     expect(general).toContain('Do not claim pixels are changing')
     expect(general).not.toContain('current action and target')
     expect(general).toContain('Window reflections')
@@ -35,7 +76,7 @@ describe('stage-owned App guidance', () => {
   })
 
   it('reviews reference-dependent ready recipes without requiring a complete geometry inventory', () => {
-    expect(general).toContain('Draw each coherent ready part')
+    expect(general).toContain('Draw when useful')
     expect(general).toContain('review_prepared_design')
     expect(general).toContain('It never calls a model')
     expect(general).toContain('primary agent reviews actual rendered images')
@@ -48,8 +89,18 @@ describe('stage-owned App guidance', () => {
     expect(general).not.toMatch(
       /Before the first mutation, save|Plan input example:|factBindings|dependencyChanges|instanceRanges/
     )
-    expect(general).toContain('Do not accumulate all stages in one draft')
+    expect(general).toContain(
+      'Choose coherent submission sizes within tool budgets'
+    )
     expect(general).toContain('parentId')
+  })
+  it('separates chosen-method local decisions from tool success and whole completion', () => {
+    expect(general).toContain('A successful capture or record is not a pass')
+    expect(general).toContain('criterion/unit/status/revision')
+    expect(general).toContain('local pass can coexist with whole-result')
+    expect(general).toContain('Repair only the failed boundary')
+    expect(general).toContain('Set final=true on the actual record submission')
+    expect(general).toContain('without Knowledge or approval tokens')
   })
   it('assigns reference purpose and pixel scope to the primary agent', () => {
     expect(general).toContain(
@@ -173,9 +224,9 @@ describe('stage-owned App guidance', () => {
         (tool) => tool.name === 'define_design_criteria'
       )
     )
-    const match = criteria.description.match(/Plan input example: (.+)/)
-    expect(match).not.toBeNull()
-    const example = JSON.parse(requireTestValue(match)[1])
+    const example = (criteria.inputSchema as { examples: unknown[] })
+      .examples[0]
+    expect(criteria.description).not.toContain(JSON.stringify(example))
     expect(operationInputIssue(example, criteria.inputSchema)).toBeUndefined()
     expect(createLocalDesignReview().record(example)).toMatchObject({
       recorded: true
@@ -212,4 +263,30 @@ it('separates remaining-work execution from replay and library availability reco
   expect(general).toContain('only the unresolved steps')
   expect(general).toContain('resume restores library availability')
   expect(general).toContain('not a saved execution position')
+})
+
+it('permits provisional visible content before optional design research and validation', () => {
+  expect(AI_APP_PROMPT).toContain('Draw when useful')
+  expect(AI_APP_PROMPT).toContain('edits later')
+  expect(AI_APP_PROMPT).toContain(
+    'not a prerequisite for first visible content'
+  )
+  expect(AI_APP_PROMPT).not.toContain(
+    'discover_knowledge before committing those decisions'
+  )
+})
+
+it('treats first visible content as an optional experience goal without weakening validation', () => {
+  expect(AI_APP_PROMPT).toContain('First frame is optional')
+  expect(AI_APP_PROMPT).toContain('not a deadline or completion gate')
+  expect(AI_APP_PROMPT).toContain('research may come first')
+  expect(AI_APP_PROMPT).toContain('No forced previews or splitting for timing')
+  expect(AI_APP_PROMPT).toContain(
+    'Preserve validation, references and final review'
+  )
+  expect(AI_APP_PROMPT).toContain('not a deadline')
+  expect(AI_APP_PROMPT).not.toContain('Draw each coherent ready part')
+  expect(AI_APP_PROMPT).not.toContain(
+    'Do not accumulate all stages in one draft'
+  )
 })

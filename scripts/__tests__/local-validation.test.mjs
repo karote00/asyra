@@ -2,8 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import {
   collectLocalInputs,
   selectLocalValidation,
@@ -364,4 +365,78 @@ test('local plan Flow admission uses the same repository test selection as CI', 
     commands.some(({ id }) => id === 'control-plane-tests'),
     false
   )
+})
+
+test('local flow validation executes existing suites and stops before proof on consumer failure', (t) => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
+  )
+  const appManifest = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'apps/asyra-design/package.json'),
+      'utf8'
+    )
+  )
+  assert.equal(
+    Object.values(appManifest.scripts).some((script) =>
+      script.includes('tools/flow-inspector/control-plane/')
+    ),
+    false
+  )
+  const command = manifest.scripts['test:design-execution-flow']
+  assert.equal(typeof command, 'string', 'Missing local flow validation entry')
+  fs.mkdirSync(path.join(repositoryRoot, 'tmp'), { recursive: true })
+  const directory = fs.mkdtempSync(
+    path.join(repositoryRoot, 'tmp/execution-gate-')
+  )
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  // Exercise the actual shell chain. Replace only external commands, not its control flow.
+  for (const executable of ['yarn', 'node']) {
+    const file = path.join(directory, executable)
+    fs.writeFileSync(
+      file,
+      `#!/bin/sh\nprintf '%s\\n' '${executable}'" $*" >> "$GATE_TRACE"\ncase "$*" in *"$GATE_FAILURE"*) exit 23;; esac\nexit 0\n`
+    )
+    fs.chmodSync(file, 0o755)
+  }
+  const expected = [
+    'yarn workspace @asyra/ai-agent-runtime build:ai-agent-runtime',
+    'yarn workspace @asyra/ai-agent-runtime test:local',
+    'yarn workspace @asyra/preset build:preset',
+    'yarn workspace @asyra/preset exec vitest run src/__tests__/selection-subscriptions.test.ts',
+    'yarn workspace @asyra/asyra-design test:server-response-harness',
+    'node tools/flow-inspector/control-plane/cli.cjs --manifest apps/asyra-design/flow-contracts.json verify'
+  ]
+  for (const [failure, count] of [
+    ['never-matches', 6],
+    ['build:ai-agent-runtime', 1],
+    ['test:local', 2],
+    ['build:preset', 3],
+    ['selection-subscriptions.test.ts', 4],
+    ['test:server-response-harness', 5],
+    ['verify', 6]
+  ]) {
+    const trace = path.join(directory, 'trace')
+    fs.writeFileSync(trace, '')
+    const result = spawnSync('/bin/sh', ['-c', command], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      timeout: 5000,
+      env: {
+        ...process.env,
+        PATH: directory + path.delimiter + process.env.PATH,
+        GATE_TRACE: trace,
+        GATE_FAILURE: failure
+      }
+    })
+    assert.equal(
+      result.status,
+      failure === 'never-matches' ? 0 : 23,
+      result.stderr
+    )
+    assert.deepEqual(
+      fs.readFileSync(trace, 'utf8').trim().split('\n'),
+      expected.slice(0, count)
+    )
+  }
 })

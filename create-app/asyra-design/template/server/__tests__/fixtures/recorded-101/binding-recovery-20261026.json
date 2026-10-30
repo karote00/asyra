@@ -1,0 +1,127 @@
+{
+  "capture": {
+    "phase": "visual",
+    "final": false,
+    "inspections": [
+      {
+        "elementId": "design-a325a9cd-bae9-4327-bf7b-b98dc9e7b15d-0",
+        "view": "overview",
+        "checks": [
+          {
+            "criterionId": "overall",
+            "referenceUses": [
+              {
+                "requestId": "d5a13fc3-a4e4-4073-bf5e-1764342eb2cc",
+                "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                "useId": "massing",
+                "revision": 1,
+                "requirementRevision": 1
+              }
+            ]
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "building",
+            "referenceUses": [
+              {
+                "requestId": "d5a13fc3-a4e4-4073-bf5e-1764342eb2cc",
+                "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                "useId": "ornament",
+                "revision": 2,
+                "requirementRevision": 1
+              }
+            ]
+          },
+          {
+            "criterionId": "material",
+            "unitId": "representative"
+          },
+          {
+            "criterionId": "scale"
+          }
+        ]
+      },
+      {
+        "elementId": "design-a325a9cd-bae9-4327-bf7b-b98dc9e7b15d-0",
+        "view": "detail",
+        "region": {
+          "x": 1800,
+          "y": 7400,
+          "width": 1024,
+          "height": 1024
+        },
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "building",
+            "referenceUses": [
+              {
+                "requestId": "d5a13fc3-a4e4-4073-bf5e-1764342eb2cc",
+                "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                "useId": "ornament",
+                "revision": 2,
+                "requirementRevision": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "elementId": "design-a325a9cd-bae9-4327-bf7b-b98dc9e7b15d-0",
+        "view": "detail",
+        "region": {
+          "x": 2800,
+          "y": 3500,
+          "width": 1024,
+          "height": 1024
+        },
+        "checks": [
+          {
+            "criterionId": "material",
+            "unitId": "representative"
+          }
+        ]
+      },
+      {
+        "elementId": "design-a325a9cd-bae9-4327-bf7b-b98dc9e7b15d-0",
+        "view": "detail",
+        "region": {
+          "x": 2800,
+          "y": 18500,
+          "width": 1024,
+          "height": 1024
+        },
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "building",
+            "referenceUses": [
+              {
+                "requestId": "d5a13fc3-a4e4-4073-bf5e-1764342eb2cc",
+                "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                "useId": "ornament",
+                "revision": 2,
+                "requirementRevision": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "captureSha256": "e7583542a376833eeea693b82ba5b82ecf247e9425d6588fa6467e807eed99a4",
+  "bindLookup": {
+    "names": [
+      "review_drawing"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "bind"
+    }
+  },
+  "bindLookupSha256": "468b7a89aa96d40e9a5e59a23978df9e2359e8dac4f5ff6c61e9b0b0c8ed0b36",
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1793007650398",
+  "bindLookupReplyBytes": 8900,
+  "captureUsageReplyBytes": 8915,
+  "captureUsageReplySha256": "ace44251b531031f0bdeeecc74a54fe6f02f339c225621d8a8057690589dd0f4"
+}

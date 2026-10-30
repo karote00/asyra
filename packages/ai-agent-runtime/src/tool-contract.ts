@@ -56,6 +56,13 @@ export interface AiToolContract {
   readonly lifecycle: Readonly<AiToolContractInput['lifecycle']>
 }
 
+/** Invocation phase is supplied by the boundary, not inferred from the value. */
+export type AiToolValidator = (
+  value: unknown,
+  schema: AiJsonValue,
+  context?: { readonly stage: 'input' | 'output' }
+) => string | undefined
+
 export interface AiToolOutcome {
   readonly status: 'success' | 'partial' | 'failed' | 'unknown'
   readonly settlement: 'not-started' | 'completed' | 'partial' | 'unknown'
@@ -277,7 +284,7 @@ export const inspectAiToolResult = (
   value: unknown,
   options: {
     outcome: AiToolOutcome
-    validate: (value: unknown, schema: AiJsonValue) => string | undefined
+    validate: AiToolValidator
   }
 ): AiToolResultInspection => {
   const { outcome } = options
@@ -301,7 +308,7 @@ export const inspectAiToolResult = (
   if (schema === undefined) return { ...outcome, value }
   let issue: string | undefined
   try {
-    issue = options.validate(value, schema)
+    issue = options.validate(value, schema, { stage: 'output' })
   } catch (error) {
     issue = error instanceof Error ? error.message : String(error)
     if (!issue) issue = 'Tool result validation failed'
@@ -332,7 +339,7 @@ export class AiToolContractError extends Error {
 export const createAiToolMiddleware =
   <T>(options: {
     resolve: (name: string) => AiToolContract | undefined
-    validate: (value: unknown, schema: AiJsonValue) => string | undefined
+    validate: AiToolValidator
     classify: (value: T, call: AiInvocationContext) => AiToolOutcome
     selectValue?: (value: T) => unknown
   }): AiInvocationMiddleware<T> =>
@@ -345,7 +352,9 @@ export const createAiToolMiddleware =
       )
     let issue: string | undefined
     try {
-      issue = options.validate(call.input, contract.inputSchema)
+      issue = options.validate(call.input, contract.inputSchema, {
+        stage: 'input'
+      })
     } catch (error) {
       issue = error instanceof Error ? error.message : String(error)
       if (!issue) issue = 'Tool input validation failed'

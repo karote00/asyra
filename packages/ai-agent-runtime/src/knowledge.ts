@@ -66,6 +66,7 @@ const admit = (value: AiKnowledgeMetadata): AiKnowledgeMetadata => {
     description: value.description,
     provenance: Object.freeze([...value.provenance]),
     contexts: list(value.contexts),
+    children: list(value.children),
     references: list(value.references),
     extends: list(value.extends),
     overrides: Object.freeze(
@@ -178,12 +179,25 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
       entries.delete(id)
       changed()
     },
-    openSession(principal: unknown, taskId: string): AiKnowledgeSession {
+    openSession(
+      principal: unknown,
+      taskId: string,
+      delivery: { retainResults?: boolean } = {}
+    ): AiKnowledgeSession {
       active()
       if (!boundedText(taskId, 256)) return fail('KNOWLEDGE_INVALID_IDENTITY')
       if (sessions.size >= 32) return fail('KNOWLEDGE_LIMIT')
+      const retainResults = delivery.retainResults === true
       const who = identity(principal, taskId)
-      const delivered = new Set<string>()
+      const delivered = new Map<
+        string,
+        {
+          contextKey: string
+          contexts: readonly string[]
+          full?: AiKnowledgeResult
+          response?: AiKnowledgeResult
+        }
+      >()
       let contextEpoch = 0
       let deliveryGeneration = generation
       let closed = false
@@ -203,18 +217,45 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
         !metadata.contexts?.length ||
         metadata.contexts.some((context) => contexts.includes(context))
       const session: AiKnowledgeSession = Object.freeze({
-        discover(contexts: readonly string[] = []) {
+        discover(contexts: readonly string[] = [], ids?: readonly string[]) {
           assertSession()
           const labels = list(contexts)
+          const roots = ids === undefined ? entries.keys() : list(ids)
+          if (ids !== undefined && !ids.length)
+            fail('KNOWLEDGE_INVALID_METADATA')
           requirePermission('discover', who)
+          const choices = new Map<string, AiKnowledgeMetadata>()
+          const visited = new Set<string>()
+          const visiting = new Set<string>()
+          const visit = (id: string, depth: number) => {
+            if (visiting.has(id)) fail('KNOWLEDGE_CYCLE')
+            if (visited.has(id)) return
+            visited.add(id)
+            const metadata = entries.get(id)
+            if (
+              !metadata ||
+              !relevant(metadata, labels) ||
+              !permitted('discover', who, metadata)
+            )
+              return
+            if (depth > 16) fail('KNOWLEDGE_LIMIT')
+            choices.set(id, metadata)
+            visiting.add(id)
+            for (const child of metadata.children ?? []) visit(child, depth + 1)
+            visiting.delete(id)
+          }
+          for (const id of roots) visit(id, 0)
           return Object.freeze(
-            [...entries.values()]
-              .filter(
-                (metadata) =>
-                  relevant(metadata, labels) &&
-                  permitted('discover', who, metadata)
-              )
+            [...choices.values()]
               .sort((a, b) => (a.id < b.id ? -1 : 1))
+              .map((metadata) =>
+                Object.freeze({
+                  ...metadata,
+                  children: Object.freeze(
+                    (metadata.children ?? []).filter((id) => choices.has(id))
+                  )
+                })
+              )
           )
         },
         async retrieve(
@@ -230,11 +271,113 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               return fail('KNOWLEDGE_INVALID_QUERY')
             const ids = list(query.ids)
             const contexts = list(query.contexts)
+            if (query.fromResult !== undefined) {
+              if (
+                !boundedText(query.fromResult, 128) ||
+                query.rehydrate !== undefined ||
+                query.reuseFrom !== undefined
+              )
+                return fail('KNOWLEDGE_INVALID_QUERY')
+              const original = [...delivered.values()].find(
+                (value) => value.contextKey === query.fromResult
+              )
+              if (!retainResults || !original?.full)
+                return fail('KNOWLEDGE_REUSE_UNAVAILABLE')
+              if (
+                query.contexts !== undefined &&
+                JSON.stringify(contexts) !== JSON.stringify(original.contexts)
+              )
+                return fail('KNOWLEDGE_INVALID_QUERY')
+              const full = original.full
+              const epoch = contextEpoch
+              const byTarget = new Map(
+                full.documents.map((doc) => [doc.target, doc])
+              )
+              const selected = new Set<string>()
+              const expandedOverrides = new Set<string>()
+              const visitRetained = (id: string, includeOverrides = true) => {
+                if (
+                  selected.has(id) &&
+                  (!includeOverrides || expandedOverrides.has(id))
+                )
+                  return
+                const document = byTarget.get(id)
+                const metadata = entries.get(id)
+                if (!document || !metadata)
+                  return fail('KNOWLEDGE_REUSE_UNAVAILABLE')
+                requirePermission('read', who, metadata)
+                if (!relevant(metadata, original.contexts))
+                  return fail('KNOWLEDGE_NOT_APPLICABLE')
+                selected.add(id)
+                if (includeOverrides) expandedOverrides.add(id)
+                for (const dependency of [
+                  ...(metadata.references ?? []),
+                  ...(metadata.extends ?? [])
+                ])
+                  visitRetained(dependency)
+                if (includeOverrides)
+                  for (const override of metadata.overrides ?? [])
+                    visitRetained(override.target)
+                if (document.source.id !== id)
+                  visitRetained(document.source.id, false)
+              }
+              for (const id of ids) visitRetained(id)
+              assertSession()
+              signal.throwIfAborted()
+              if (generation !== full.generation)
+                return fail('KNOWLEDGE_STALE_REVISION')
+              if (contextEpoch !== epoch) return fail('KNOWLEDGE_STALE_CONTEXT')
+              const key = JSON.stringify(['fromResult', query.fromResult, ids])
+              const previous = delivered.get(key)?.response
+              if (previous) return previous
+              const documents = Object.freeze(
+                full.documents.filter((doc) => selected.has(doc.target))
+              )
+              const sourceIds = new Set(
+                documents.flatMap((doc) => [
+                  doc.source.id,
+                  ...(doc.replacedSource ? [doc.replacedSource.id] : [])
+                ])
+              )
+              const result: AiKnowledgeResult = Object.freeze({
+                ...full,
+                contextKey: globalThis.crypto.randomUUID(),
+                alreadyDelivered: false,
+                documents,
+                sources: Object.freeze(
+                  full.sources.filter((value) => sourceIds.has(value.id))
+                )
+              })
+              if (delivered.size >= 64)
+                for (const [entryKey, entry] of delivered) {
+                  if (entry === original) continue
+                  delivered.delete(entryKey)
+                  break
+                }
+              delivered.set(key, {
+                contextKey: result.contextKey,
+                contexts: original.contexts,
+                full: result,
+                response: result
+              })
+              return result
+            }
             if (
               query.rehydrate !== undefined &&
               typeof query.rehydrate !== 'boolean'
             )
               return fail('KNOWLEDGE_INVALID_QUERY')
+            if (
+              query.reuseFrom !== undefined &&
+              (!Array.isArray(query.reuseFrom) ||
+                query.reuseFrom.length > 32 ||
+                query.reuseFrom.some((key) => !boundedText(key, 128)) ||
+                new Set(query.reuseFrom).size !== query.reuseFrom.length)
+            )
+              return fail('KNOWLEDGE_INVALID_QUERY')
+            const reuseFrom = query.rehydrate
+              ? []
+              : [...(query.reuseFrom ?? [])].sort()
             if (query.rehydrate) session.invalidateContext()
             const epoch = contextEpoch
             const version = generation
@@ -287,7 +430,13 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
                     priority: override.priority
                   })
               }
-            const key = JSON.stringify([ids, contexts, version, epoch])
+            const key = JSON.stringify([
+              ids,
+              contexts,
+              version,
+              epoch,
+              reuseFrom
+            ])
             const recheck = () => {
               assertSession()
               signal.throwIfAborted()
@@ -298,15 +447,25 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
             }
             recheck()
             const sources = Object.freeze(ordered.map(source))
-            if (delivered.has(key))
+            const retained = delivered.get(key)
+            if (retained?.response) return retained.response
+            if (retained)
               return Object.freeze({
                 trust: 'untrusted-advice',
                 generation: version,
-                contextKey: key,
+                contextKey: retained.contextKey,
                 alreadyDelivered: true,
                 documents: Object.freeze([]),
                 sources
               })
+            const held = reuseFrom.map((contextKey) => {
+              const previous = [...delivered.values()].find(
+                (value) => value.contextKey === contextKey
+              )
+              if (!retainResults || !previous?.full)
+                return fail('KNOWLEDGE_REUSE_UNAVAILABLE')
+              return previous.full
+            })
             let bytes = 0
             const texts = new Map<string, string>()
             const replacementTexts = new Map<string, Map<string, string>>()
@@ -365,16 +524,53 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
             )
               fail('KNOWLEDGE_LIMIT')
             recheck()
+            // Concurrent completions share the already published immutable identity.
+            const completed = delivered.get(key)?.response
+            if (completed) return completed
             if (delivered.size >= 64) delivered.clear()
-            delivered.add(key)
-            return Object.freeze({
+            const result: AiKnowledgeResult = Object.freeze({
               trust: 'untrusted-advice',
               generation: version,
-              contextKey: key,
+              contextKey: globalThis.crypto.randomUUID(),
               alreadyDelivered: false,
               documents: Object.freeze(documents),
               sources
             })
+            const response: AiKnowledgeResult = held.length
+              ? Object.freeze({
+                  ...result,
+                  documents: Object.freeze(
+                    result.documents.map((document) => {
+                      const previous = held.find((value) =>
+                        value.documents.some(
+                          (prior) =>
+                            prior.target === document.target &&
+                            prior.text === document.text &&
+                            prior.source.id === document.source.id &&
+                            prior.source.revision ===
+                              document.source.revision &&
+                            prior.replacedSource?.id ===
+                              document.replacedSource?.id &&
+                            prior.replacedSource?.revision ===
+                              document.replacedSource?.revision
+                        )
+                      )
+                      if (!previous) return document
+                      const { text: _text, ...identity } = document
+                      return Object.freeze({
+                        ...identity,
+                        retainedFrom: previous.contextKey
+                      })
+                    })
+                  )
+                })
+              : result
+            delivered.set(key, {
+              contextKey: result.contextKey,
+              contexts,
+              ...(retainResults ? { full: result, response } : {})
+            })
+            return response
           } finally {
             pendingReads -= 1
           }

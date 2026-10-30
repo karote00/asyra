@@ -14,8 +14,8 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "49e136f470416c0a4c6f6ddc1b9047d988263c83d7aa1939b5fa55a740f7b34d",
-        "guide": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
+        "contract": "450b2813e7ddb66ad5a366c39f549348771debf77dcea961606ba27b26c07a65",
+        "guide": "2fd827443c789e040b1912952faed99c3e6ffeb2607216efb62296ad2f1e2620",
         "manifest": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
       },
       "version": "0.5.1"
@@ -71,7 +71,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "ec1de2a7849e7312496dddd22f8a01e3af92d3879c78a1caa046fe760326a672",
+        "contract": "247c1a3eb94927e80954378b87a50d980776f231007d9316606c80b2b36dab50",
         "guide": "e2ddd1a4890f404a6e3717d4b7977e5925a2880c073fa60db037f13ac0b3452e",
         "manifest": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
       },
@@ -213,7 +213,7 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "954c2a688a62d2a4462458673139c79b00152c35d23a526feb8861b70d1c9607",
+        "contract": "b55ea31877b77cae7c0ba34733f58bbc87756ac006f21da7bf266eccaf4a2ec2",
         "guide": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },
@@ -235,7 +235,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "783f9b8631b907999a5317000397b0bb45d40351062772e74f872cceaf082560",
+        "contract": "07d095ec0d2ad634f99a3a137e295d12c8a50a2d2458de8ca7976b275f2558bc",
         "guide": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
         "manifest": "034085b2dea430349441d6f3338301f02d665f76b0129ccc166d3fe4fbefe666"
       },
@@ -284,7 +284,7 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "f9b362b1d98fae39e808c1e402505f0577b31c6a91d7a09a2679f80ffa63254b",
+        "contract": "cf3300f1b0fdf07637fae83686da2898a263ca9f2c01fa3aa328bf22960e110a",
         "guide": "4365de7999d88314d240e8240083c3636217fdad4443b515ad7bab85b57c8baf",
         "manifest": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
       },
@@ -348,7 +348,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "f59f2edd234f5773d1481d68c3e719e67a85b9d8f204e24bb47b52df34326028",
+        "contract": "b84a90f130ce420cfab63fdb1882a7474324db60915c954456a65f32904a76e7",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
         "manifest": "e46c47e2ec31a8f1a9405a0dd54e288bd2f27657ff03b13c944eb7cb623e3719"
       },
@@ -429,12 +429,13 @@
       "manifestPath": "packages/utils/package.json",
       "name": "@asyra/utils",
       "publicEntries": [
-        "."
+        ".",
+        "./geometry-bounds"
       ],
       "sourceDigests": {
-        "contract": "10f76368c0b6af1ecd727cf90700aaa63cd43c7096293179b77c0acbc6b2da35",
-        "guide": "c8f46c0786c0584519150eb8402069259a8a01b75ca01b44113220a5a492a4c7",
-        "manifest": "d13130904aebc87f640dbbe3ecd21d7c3a697c354ec1a94c083445230b41a5e6"
+        "contract": "84317bf178813363cd6fdacac82787d20c7ecdfe915f64fcfaf4ac9f46d8b123",
+        "guide": "ecdddc4ca47e48ab9d5c8ad2b0593d4da9e217cadb2c258c0c351e43aeb5e947",
+        "manifest": "8676cc307471ff6e85c1d9328b4609b3ae34538c1054ed2db580fa9dc58935e8"
       },
       "version": "0.5.2"
     }

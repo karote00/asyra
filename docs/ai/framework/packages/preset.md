@@ -111,6 +111,15 @@ is derived from the flattened object for cleanup and lifecycle iteration. Apps
 that install these Preset defaults reuse the exported keys rather than declaring
 parallel string constants. App-only properties remain app-owned.
 
+## Native typography value contract
+
+`TEXT_PROPERTY_VALUE_SCHEMAS` exposes immutable, standard JSON Schema constraints
+for the existing native text fields. `TEXT_PROPERTY_SCHEMA` validators and public
+App declarations consume the same owner constants; defaults alone do not describe
+valid enum/range values. The value contract does not imply target capability or
+permission and adds no state, registry, execution API or AI dependency. Existing
+valid-write and invalid-load fallback behavior remains unchanged.
+
 ## Composition Order
 
 ```text
@@ -218,6 +227,12 @@ recovery policy.
   map and flattened-array identities remain current. Later structural batches
   update affected memberships without rereading unrelated rows. Complete ordered
   flattened identity output is still materialized once per structural publication.
+  Proven fresh depth-first tail additions consume their admitted delta without
+  rediscovering roots or traversing unchanged subtrees. This does not defer
+  publication or mutate earlier snapshots. Interior edits and invalidated or
+  incomplete preparations still require complete ordered derivation. Formal
+  tests distinguish hierarchy work from necessary immutable output copying and
+  preserve every intermediate result, observer isolation and replay semantics.
   Reseeding, load, foreign publication, failure and disposal invalidate retained
   preparation; incomplete membership is not reused as a complete projection.
 
@@ -307,9 +322,14 @@ explicitGroupElementIds)` receives the caller-resolved official Group target
 `@asyra/preset/group-bounds` exports `deriveGroupBounds` and `GroupBounds` without
 loading Core, Render, DOM or component registration. It is the same bounds owner
 used by ordinary Preset Group operations and server-side design preparation.
+The entry depends only on `@asyra/utils/geometry-bounds` and its pure point
+transform dependency; no Utils barrel or unrelated helpers may enter this graph.
 The runtime root export remains available. Empty input returns zero bounds;
-nonfinite rectangle values are rejected. This helper measures rectangles only;
-it does not apply transactions, normalize hierarchy or register components.
+nonfinite geometry values are rejected. Rectangles retain their existing union
+semantics. An oval may provide its existing type and rotation (radians); the owner
+unions its analytic rotated extents while callers retain the original local
+origin. Other rotated shapes are not certified by this optional oval contract.
+This helper does not apply transactions, normalize hierarchy or register components.
 
 ## Optional shared spatial foundation
 

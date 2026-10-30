@@ -396,10 +396,10 @@ The exact implementation boundary is Inspector step
   source geometry with a previous Render frame.
 - Canonical element-property edits go through the plural
   `updateElementProperties(...)` replacement API or
-  `patchElementProperties(...)` record-delta API. Core first obtains one
-  read-only `ResolvedElementPropertyTargets` result and one
-  `PreparedPropertyMutationBatch`, then applies the Props-owned batch; callers
-  do not run per-field update/commit loops.
+  `patchElementProperties(...)` record-delta API. These APIs preserve selected-owner intent through the same property-intent
+  coordinator: inherited values become sparse overrides rather than shared-source
+  writes. Core preflights Props and Scene binding changes before applying either;
+  callers do not run per-field update/commit loops.
 - `createElementsInParent(...)` is the canonical plural creation facade.
   Core asks Props to prepare the complete owner-property batch, builds one
   owner-id relation index, asks Scene to prepare the complete insertion, then
@@ -414,7 +414,7 @@ The exact implementation boundary is Inspector step
   siblings and multiple parents; it never infers a contiguous range from replay
   order. Scene preflights these entries and Props preflights the exact graph
   before either owner applies. One
-  `property-components` change may combine ordered structural records and
+  `property-components` change may combine explicit creations/removals, sparse layers and
   value updates in one Props-owned mutation batch. For `subtree-restore`, Core
   first requests Scene Tree's `pending-restore` preflight, then preflights and
   restores Props before Scene Tree applies and revalidates active property
@@ -451,10 +451,22 @@ explicit ordinary app composition.
 - Preset/default registrations are explicit via `@asyra/preset`, not implicit core side effects.
 - Load/save flow executes in documented order.
 
+## Scene world bounds
+
+`getAllElementsBounds()` uses canonical scene geometry and ancestor translation.
+Oval extents use the shared Utils analytic ellipse calculation, including local
+rotation; viewport fitting must not use the unrotated oval rectangle. Group
+snapshot dimensions do not replace descendant geometry. Invalid geometry or
+hierarchy remains unavailable. This does not add arbitrary container transforms.
+
 ## Bounded document observations
 
 - `getElementMetadata(id)` returns detached scalar identity/type/name/parent,
   visibility/lock and `childCount`; it does not serialize properties or children.
+  Count reads consume current canonical container membership without materializing
+  a full child snapshot, including after membership changes and for registered
+  derived containers. Missing IDs remain unavailable and noncontainers report zero.
+  Full child observations retain their ordering and detached snapshot semantics.
 - `getElementChildren(id, offset = 0, limit = 50)` returns a detached current
   child page, total, nextOffset and availability. Container capability includes
   derived types. Restart pagination after membership changes.
@@ -501,3 +513,34 @@ Core exposes Render's typed `projectSpatialPoint`, `getSpatialRayAtClientPoint`,
 client conversion and explicit visual/entity mapping. Core neither reads SDK
 objects nor changes canonical state for these queries. See
 [Render spatial queries](render.md#spatial-query-facade).
+
+### Owner-local and shared-source property intentions
+
+`readElementPropertyTargets(targets)` returns mode, effective values, sparse
+`overrides`, `sourceId`/source values when inherited, and `children` with logical
+`childId` versus effective `propertyId`. Each target names an `elementId`, registered
+`propertyName`, and logical `path: [{ key, childId }]`; an empty path selects the
+root. Optional expected root/property/source IDs reject stale retained targets.
+
+- `updateElementPropertyTargets(updates)` edits only selected owners.
+- `updateSharedPropertySources(updates)` explicitly edits independent shared sources.
+- `resetElementPropertyOverrides(updates)` removes specified mask keys.
+- `detachElementPropertyTargets(targets)` materializes effective values once.
+- `shareElementPropertyTargets(updates)` binds to an independent same-type source.
+
+All are plural and preflight the whole batch. Mutation return IDs identify accepted
+owners (or sources for source updates), including valid no-ops; they do not assert
+that a field changed or that storage acknowledged it. Existing canonical mutation
+receipts determine actual changed scope. Existing Factory transactions own history,
+compensation and ordered delivery; document settlement owns durable acknowledgment.
+Logical paths survive owner isolation. Re-read after detachment/rebinding to refresh
+expected identities. Do not infer source editing from an element's current fan-out.
+
+### Workspace snapshots
+
+`captureElementSnapshot` accepts the actual current workspace identity for a bounded
+overview through the existing scene container. It preserves root transforms and
+order without moving canonical nodes or capturing viewport/selection overlays.
+Workspace native-resolution/region capture and an empty scene are unsupported;
+explicit element snapshots retain their existing detail behavior. Target resolution
+is local to snapshot and does not add the workspace to ordinary element lookup.

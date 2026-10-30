@@ -33,7 +33,9 @@ another task. The direct execution path calls it synchronously after `mutate`.
 Failed mutation execution has no successful settlement callback. The observer is
 for capturing receipts and revision-bound artifacts, never another transaction or
 a retry. Domain artifact capture must report its own failures without discarding
-an acknowledged mutation. Cancellation before admission prevents mutation; later
+an acknowledged mutation. Cancellation is checked before delegation and again
+when the executor enters the writer, so cancellation during asynchronous admission
+prevents mutation. Later
 cancellation cannot turn an acknowledged write into a not-started operation.
 
 ## Invocation Flow
@@ -128,6 +130,10 @@ Actions and action batches:
   classifier at `createAiInvoker().invoke()`. Registry declaration alone does not
   validate domain input/output. The host installs middleware at its secured
   invocation boundary; native adapters may use `inspectAiToolResult()` directly.
+  The existing validator callback receives stage context (`input` or `output`)
+  from middleware and result inspection. Hosts use it for accurate diagnostics;
+  schema authority, outcome classification and no-retry semantics stay unchanged.
+  Recipe invocation forwards the same callback; admission remains input validation.
 - `AiToolOutcome` separates success/partial/failed/unknown from settlement.
   `AiToolContractError` retains invalid output and settlement evidence. Batch
   failure receipts expose `contractStage` and redacted `observedResult`; validation
@@ -277,8 +283,19 @@ Registered executors can throw `AiActionExecutionError` with a static, bounded
 public explanation and recovery guidance. Runtime preserves that message with
 `AI_EXECUTION_FAILED` and stage `execution`; ordinary errors still receive the
 generic execution-failure message. Never wrap raw provider/transport/canonical
-exception text in this class. Failure policy, failed-action identity and transaction
-settlement remain authoritative and unchanged.
+exception text in this class. An executor may attach an owner-issued receipt
+(result and settlement) to this existing error when acknowledged work precedes failure. Runtime detaches/redacts it
+into the existing actionResults and failed-action observation; it is not a successful
+action or a retry instruction. Callback failure settlement preserves this evidence.
+Cancelled terminal results may retain actionResults when the transaction committed
+or its settlement is unknown; rolled-back results cannot claim retained mutations.
+Failure policy, failed-action identity and transaction settlement remain authoritative
+and unchanged. Receipt production belongs to the action owner, not diagnostics.
+
+An aborted action that already returned a result retains that result on the existing
+`AiExecutionError.receipt`; its `AI_EXECUTION_ABORTED` code and class remain unchanged.
+The same detached receipt shape is used by `AiActionExecutionError`. Neither carrier
+converts cancellation into success or overrides final transaction rollback.
 
 ## Shared Invocation and Execution Profiler
 
@@ -321,6 +338,18 @@ provider prompts, private reasoning and binary images are omitted. Recorded data
 is not automatically sent to the model, Asyra or any telemetry service. An explicit
 assessment transmits its documented bounded diagnostic summary to the host's
 chosen provider; this is not an automatic background upload.
+
+Host-selected public native result diagnostics use the existing
+`provider_item_completed`, `orchestration_completed`, or `provider_notification`
+trace with `nativeOutput`. Public progress, plan and reasoning-summary fields may
+use the notification path; private reasoning content must never enter it. Each
+delta is retained once, without accumulating and resaving prefixes. Completed
+public items remain distinct authoritative values.
+The recorder writes that structured value through the same sanitized payload sink,
+not the bounded trace summary. A throwing payload sink leaves a failed receipt
+where record storage remains available. Hosts must select public results and decode
+structured text before redaction; raw provider context is not permitted. Native
+completion is not proof of model visibility, and absent output stays unavailable.
 
 Trace export uses `runExecutionReportCli(['--request', id, '--trace'], ...)` or
 `exportExecutionTrace(parsed)`. Transport chunks expose timing, direction, stream
@@ -409,6 +438,9 @@ for the current declarative format and lifecycle.
   or bounded repair issues, without execution. Limits bound bytes, steps and
   bindings. The deliberately conservative schema subset proves field/type handoffs;
   the host's full validator remains authoritative for actual inputs and outputs.
+  Necessary root property constraints may prove an opaque sibling disjoint from a
+  guaranteed binding. This never admits an opaque selected branch or guesses an
+  optional discriminator; overlaps remain explicit admission failures.
 - Primitive tools opt into composition with `composition: 'allowed'` on their
   canonical descriptor. Control-plane tools use `composition: 'control-plane'`.
   An omitted declaration remains unavailable for composition, while ordinary
@@ -493,9 +525,21 @@ and delivery reuse unchanged. The controller binds one tenant and
 scope. A host creates `openSession(principal, taskId)` from trusted request context;
 never obtain these identities from model tool arguments.
 
-Sessions expose `discover(contexts)`, `retrieve({ ids, contexts, rehydrate? }, signal)`,
+Sessions expose `discover(contexts?, ids?)`, `retrieve({ ids, contexts, rehydrate?, reuseFrom?, fromResult? }, signal)`,
 `invalidateContext()` and `dispose()`. Context invalidation only clears delivery
-receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Retrieval traverses sorted
+receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Optional `children` lists navigation IDs,
+filtered to entries discoverable in the same contexts; missing children are omitted
+and visible navigation cycles reject. Optional `ids` select roots plus their transitively visible children using the
+registered navigation relations, not name prefixes. Overlapping roots deduplicate;
+results retain deterministic ordering. Omitted ids preserves the full visible catalog;
+explicit empty ids rejects rather than broadening. Missing, unauthorized or
+inapplicable roots/children are omitted. Only cycles in the selected visible graph
+reject scoped discovery; unrelated graphs are not traversed. No content is read or
+cached. Registration and permission changes take effect on each call; session
+disposal still rejects. Read dependencies outside the selection remain mandatory.
+Navigation never participates in retrieval,
+permission to read, or implicit parent loading. Descriptions/revisions remain on
+those same catalog entries; no parallel index exists. Retrieval traverses sorted
 references/extends/explicit override targets, deduplicates dependencies, rejects
 cycles/missing/inapplicable dependencies and returns source revisions/provenance.
 Extends adds advice. Provider `AiKnowledgeContent.text` is the module's own guidance.
@@ -530,3 +574,45 @@ resets reuse rather than dropping required content. Providers must honor the
 supplied abort signal and their own I/O deadlines. Runtime rejects oversized or
 wrong-revision results rather than truncating advice. No Agent update, extraction,
 poisoning persistence or approval/evolution workflow is provided.
+
+
+A trusted host may open a Knowledge session with `{ retainResults: true }` for a
+paged informational consumer. The existing session delivery map then retains the
+immutable composed result (at most 64 query results) instead of a reference-only
+marker. Repeated retrieval returns that content after permission, cancellation,
+generation and context checks; it does not assert that a model read it. Context
+invalidation, revision change and disposal clear the same owner state. Ordinary
+sessions retain their reference-only duplicate behavior. No App tool names or
+provider limits enter the Knowledge content contract.
+
+
+### Cross-query retained Knowledge references
+
+A retained-result session accepts `reuseFrom`, up to 32 unique opaque result
+contextKeys explicitly asserted still held by its caller. Keys identify results in
+that session, not predictable query signatures. The existing bounded session map
+retains full compositions and immutable wire responses; no additional registry exists.
+Without opt-in, existing full-content and ordinary reference-only repeat semantics
+remain. Non-retaining sessions reject reuse requests because no full result is held.
+
+Ordered documents may replace text with retainedFrom pointing to the same target in
+a supplied result only when resolved text and target/source/replacedSource match.
+Sources remain complete. Different overrides are not equivalent merely because they
+share a target. Callers retain referenced advice; Runtime does not assert model receipt.
+Missing/foreign/evicted references reject with KNOWLEDGE_REUSE_UNAVAILABLE. Recover
+with an ordinary read without reuseFrom. Rehydrate clears prior receipts and returns
+full advice, ignoring otherwise well-formed old reuse references. Permissions,
+revisions, epoch, cancellation and disposal are rechecked. Stable retries reuse the
+same response; invalidation retires both full and wire content. No raw provider cache
+or change to content limits, dependency traversal or mutation authority is introduced.
+
+### Selected retained Knowledge redisplay
+
+fromResult selects a live contextKey in the same retaining session. With exact ids,
+return full retained text plus necessary target/effective-source dependencies in
+original order and with original resolved overrides. Inherit original contexts;
+explicit mismatch, rehydrate or reuseFrom is invalid. Never call the content
+provider for this selection. Recheck permissions/generation/epoch/cancellation;
+foreign, evicted or invalidated results fail with KNOWLEDGE_REUSE_UNAVAILABLE and
+ordinary selected-read recovery. A selected result gets its own contextKey and
+complete source metadata. No new store, filesystem reader or semantic summarizer.

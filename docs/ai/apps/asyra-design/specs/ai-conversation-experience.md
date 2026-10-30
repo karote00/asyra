@@ -7,6 +7,10 @@ identity and position across active and settled work. Assistant output appears o
 the left. The App conversation controller owns request lifecycle, answered questions,
 continuation and recovery; the panel is a projection. One active request is admitted.
 A resolved provider attempt may ask a question rather than complete the user goal.
+Successor requests receive bounded complete prior messages from the selected
+conversation under [request continuity](ai-execution-flow.md#request-and-continuity),
+with actual outcomes and explicit omissions. This does not resume native tool
+sessions or make historical messages current canvas evidence.
 
 Each message displays only attachments submitted with that message. Answer and
 retry requests retain the original reference as request context without presenting

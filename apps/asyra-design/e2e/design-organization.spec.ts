@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import type { AiActionBatch } from '../src/ai/action-batch-protocol'
 import {
   createTestDocumentIdentity,
@@ -61,7 +62,7 @@ test('Agent organization preserves artwork and each request is one durable Undo'
     {
       id: 'create',
       name: 'apply_prepared_design',
-      arguments: { design },
+      arguments: { design: deliverPreparedDesign(design) },
       summary: 'Create three shapes'
     }
   ]

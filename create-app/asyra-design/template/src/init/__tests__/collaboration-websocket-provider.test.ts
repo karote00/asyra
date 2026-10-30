@@ -306,6 +306,10 @@ class TestCollaborationTransportWorker implements CollaborationTransportWorkerLi
     this.queuedTasks.splice(0).forEach((run) => queueMicrotask(run))
   }
 
+  deliver(response: CollaborationTransportWorkerResponse): void {
+    this.emit('message', { data: response })
+  }
+
   emitError(error: unknown): void {
     this.emit('error', { error })
   }
@@ -393,7 +397,11 @@ const createLoopbackServer = async (
           // Individual tests retain ownership of malformed wire payloads.
         }
       }
-      if (beginsBootstrap) return sendOriginal(normalized, args)
+      if (
+        beginsBootstrap ||
+        data === JSON.stringify({ type: 'bootstrap-checkpoint-ready' })
+      )
+        return sendOriginal(normalized, args)
       if (!bootstrapReleased) {
         bootstrapSuccessorMessages.push({ data: normalized, args })
         return
@@ -842,6 +850,168 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       expect(provider.getStatus()).toBe('failed')
     } finally {
       await provider.destroy()
+    }
+  })
+
+  it('observes checkpoint preparation without claiming a connected document', async () => {
+    const server = await createLoopbackServer((socket, message) => {
+      if (message.type === 'hello') {
+        socket.send(JSON.stringify({ type: 'bootstrap-checkpoint-ready' }))
+      }
+    })
+    const worker = new TestCollaborationTransportWorker()
+    const provider = new CollaborationWebSocketProvider({
+      endpoint: server.endpoint,
+      connectionTimeoutMs: 100,
+      transportWorkerFactory: () => worker,
+      identity: { documentId: 'document', roomId: 'room', actorId: 'actor' }
+    })
+    const outcome = provider.openDocumentSession().then(
+      () => 'connected',
+      (error) => error.code
+    )
+    try {
+      await vi.waitFor(() => {
+        expect(
+          worker.mainBoundMessages.filter(
+            ({ type }) => type === 'bootstrap-progress'
+          )
+        ).toEqual([
+          { type: 'bootstrap-progress', generation: 1, phase: 'socket-open' },
+          {
+            type: 'bootstrap-progress',
+            generation: 1,
+            phase: 'bootstrap-received'
+          },
+          {
+            type: 'bootstrap-progress',
+            generation: 1,
+            phase: 'checkpoint-ready'
+          }
+        ])
+      })
+      expect(provider.getStatus()).toBe('connecting')
+      expect(await outcome).toBe('connection-failed')
+    } finally {
+      await provider.destroy()
+    }
+  })
+
+  it.each(['duplicate', 'late'] as const)(
+    'rejects a %s checkpoint milestone without extending a session',
+    async (kind) => {
+      const server = await createLoopbackServer(
+        (socket, message) => {
+          if (message.type === 'hello') {
+            const marker = JSON.stringify({
+              type: 'bootstrap-checkpoint-ready'
+            })
+            socket.send(marker)
+            socket.send(
+              kind === 'late' ? JSON.stringify({ type: 'ready' }) : marker
+            )
+            if (kind === 'late') socket.send(marker)
+          }
+        },
+        { autoCompleteBootstrap: false }
+      )
+      const worker = new TestCollaborationTransportWorker()
+      const provider = new CollaborationWebSocketProvider({
+        endpoint: server.endpoint,
+        transportWorkerFactory: () => worker,
+        identity: { documentId: 'document', roomId: 'room', actorId: 'actor' }
+      })
+      const opened = provider.openDocumentSession().catch(() => undefined)
+      try {
+        await vi.waitFor(() => expect(provider.getStatus()).toBe('failed'))
+        expect(
+          worker.mainBoundMessages.filter(
+            (message) =>
+              message.type === 'bootstrap-progress' &&
+              message.phase === 'checkpoint-ready'
+          )
+        ).toHaveLength(1)
+        expect(worker.mainBoundMessages).toContainEqual(
+          expect.objectContaining({
+            type: 'failure',
+            message: expect.stringContaining('checkpoint preparation milestone')
+          })
+        )
+      } finally {
+        await provider.destroy()
+        await opened
+      }
+    }
+  )
+
+  it('bounds real bootstrap stages independently and ignores duplicate or stale progress', async () => {
+    vi.useFakeTimers()
+    const worker = new TestCollaborationTransportWorker()
+    worker.paused = true
+    const provider = new CollaborationWebSocketProvider({
+      endpoint: 'ws://127.0.0.1:1',
+      connectionTimeoutMs: 50,
+      transportWorkerFactory: () => worker,
+      identity: {
+        documentId: 'document',
+        roomId: 'room',
+        actorId: 'actor',
+        connectionMetadata: { fileId: 'file' }
+      }
+    })
+    const outcome = provider.openDocumentSession().then(
+      (value) => ({ value }),
+      (error) => ({ error })
+    )
+    try {
+      const generation = worker.posted[0].message.generation
+      worker.deliver({
+        type: 'bootstrap-progress',
+        generation,
+        phase: 'bootstrap-decoded'
+      })
+      for (const phase of [
+        'socket-open',
+        'bootstrap-received',
+        'checkpoint-ready',
+        'bootstrap-decoded'
+      ] as const) {
+        await vi.advanceTimersByTimeAsync(40)
+        worker.deliver({ type: 'bootstrap-progress', generation, phase })
+        expect(provider.getStatus()).toBe('connecting')
+      }
+      await vi.advanceTimersByTimeAsync(30)
+      worker.deliver({
+        type: 'bootstrap-progress',
+        generation,
+        phase: 'bootstrap-decoded'
+      })
+      worker.deliver({
+        type: 'bootstrap-progress',
+        generation: generation - 1,
+        phase: 'socket-open'
+      })
+      worker.deliver({
+        type: 'bootstrap-progress',
+        generation,
+        phase: 'socket-open'
+      })
+      worker.deliver({
+        type: 'timing',
+        generation,
+        phase: 'collaboration:inbound-receive-to-dispatch',
+        durationMs: 1
+      })
+      worker.deliver({ type: 'bootstrap-progress', generation } as never)
+      await vi.advanceTimersByTimeAsync(21)
+      expect(provider.getStatus()).toBe('failed')
+      expect(await outcome).toMatchObject({
+        error: { code: 'connection-failed' }
+      })
+      expect(worker.terminateCount).toBe(1)
+    } finally {
+      await provider.destroy()
+      vi.useRealTimers()
     }
   })
 
@@ -3178,4 +3348,95 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     expect('sendSyncUpdate' in provider).toBe(false)
     await provider.destroy()
   })
+})
+
+it('confirms the captured document version through the transport worker', async () => {
+  let captured: ClientMessage | undefined
+  const server = await createLoopbackServer((socket, message) => {
+    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+    if (message.type === 'confirm-persistence') {
+      captured = message
+      socket.send(
+        JSON.stringify({
+          type: 'response',
+          requestId: message.requestId,
+          ok: true,
+          persistence: {
+            documentId: 'app-file-17',
+            documentGeneration: 0,
+            sequence: 0,
+            durableSequence: 0
+          }
+        })
+      )
+    }
+  })
+  const provider = createProvider(server.endpoint)
+  try {
+    await provider.connect()
+    await provider.completeDocumentBootstrap()
+    await expect(provider.confirmPersistence()).resolves.toEqual({
+      documentId: 'app-file-17',
+      documentGeneration: 0,
+      sequence: 0,
+      durableSequence: 0
+    })
+    expect(captured).toMatchObject({
+      type: 'confirm-persistence',
+      sequence: 0,
+      documentGeneration: 0
+    })
+  } finally {
+    await provider.destroy()
+  }
+})
+
+it('rejects a durable receipt for a different document generation', async () => {
+  const server = await createLoopbackServer((socket, message) => {
+    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+    if (message.type === 'confirm-persistence')
+      socket.send(
+        JSON.stringify({
+          type: 'response',
+          requestId: message.requestId,
+          ok: true,
+          persistence: {
+            documentId: 'app-file-17',
+            documentGeneration: 1,
+            sequence: 0,
+            durableSequence: 0
+          }
+        })
+      )
+  })
+  const provider = createProvider(server.endpoint)
+  try {
+    await provider.connect()
+    await provider.completeDocumentBootstrap()
+    await expect(provider.confirmPersistence()).rejects.toThrow(
+      /captured document version/
+    )
+  } finally {
+    await provider.destroy()
+  }
+})
+
+it('cancels persistence confirmation while leaving the document session usable', async () => {
+  const server = await createLoopbackServer((socket, message) => {
+    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+  })
+  const provider = createProvider(server.endpoint)
+  try {
+    await provider.connect()
+    await provider.completeDocumentBootstrap()
+    const controller = new AbortController()
+    const result = expect(
+      provider.confirmPersistence(controller.signal)
+    ).rejects.toThrow('cancelled')
+    controller.abort(new Error('cancelled'))
+    await result
+    expect(provider.getStatus()).toBe('connected')
+  } finally {
+    await provider.destroy()
+  }
 })

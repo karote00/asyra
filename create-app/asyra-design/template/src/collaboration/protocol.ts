@@ -1,3 +1,11 @@
+export const collaborationBootstrapPhases = [
+  'socket-open',
+  'bootstrap-received',
+  'checkpoint-ready',
+  'bootstrap-decoded'
+] as const
+
+import { DocumentPublicationContract } from './app-protocol-types'
 import type {
   ProviderAwarenessDisconnect,
   ProviderAwarenessMessage,
@@ -26,9 +34,11 @@ export const CollaborationMessageTypes = {
   PEER_APPLIED: 'peer-applied',
   BOOTSTRAP_CONSUMED: 'bootstrap-consumed',
   RESET_DOCUMENT: 'reset-document',
+  CONFIRM_PERSISTENCE: 'confirm-persistence',
   SOURCE_PUBLICATION_SETTLEMENT: 'source-publication-settlement',
   SOURCE_FRAME_ADMITTED: 'source-frame-admitted',
   SOURCE_PUBLICATION_PROPOSED: 'source-publication-proposed',
+  BOOTSTRAP_CHECKPOINT_READY: 'bootstrap-checkpoint-ready',
   READY: 'ready',
   RESPONSE: 'response',
   PUBLICATION: 'publication',
@@ -83,6 +93,20 @@ export interface BootstrapConsumedRequest {
   readonly headSequence: number
 }
 
+export interface DocumentPersistenceReceipt {
+  readonly documentId: string
+  readonly documentGeneration: number
+  readonly sequence: number
+  readonly durableSequence: number
+}
+
+export interface ConfirmPersistenceRequest {
+  readonly type: typeof CollaborationMessageTypes.CONFIRM_PERSISTENCE
+  readonly requestId: string
+  readonly sequence: number
+  readonly documentGeneration: number
+}
+
 export interface ResetDocumentRequest {
   readonly type: typeof CollaborationMessageTypes.RESET_DOCUMENT
   readonly requestId: string
@@ -102,6 +126,7 @@ export type CollaborationRequestMessage =
   | PeerAppliedRequest
   | BootstrapConsumedRequest
   | ResetDocumentRequest
+  | ConfirmPersistenceRequest
 
 export type CollaborationClientMessage =
   | CollaborationHelloMessage
@@ -118,6 +143,10 @@ export type CollaborationRequestInput =
 export interface CollaborationFailurePayload {
   readonly code: string
   readonly message: string
+}
+
+export interface BootstrapCheckpointReadyMessage {
+  readonly type: typeof CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY
 }
 
 export interface ReadyMessage {
@@ -146,6 +175,7 @@ export interface SuccessfulResponseMessage {
   readonly requestId: string
   readonly ok: true
   readonly acceptedSequences?: readonly number[]
+  readonly persistence?: DocumentPersistenceReceipt
 }
 
 export interface FailedResponseMessage {
@@ -211,6 +241,7 @@ export interface ConnectionErrorMessage extends ProviderFailureMessage {
 }
 
 export type CollaborationServerMessage =
+  | BootstrapCheckpointReadyMessage
   | ReadyMessage
   | SuccessfulResponseMessage
   | FailedResponseMessage
@@ -348,6 +379,17 @@ const isSharedPublicationBatch = (
   return value.deliveries.every(isSharedPublicationDelivery)
 }
 
+const hasValidCompensationCorrelation = (
+  channel: string,
+  origin: SharedPublication['origin'],
+  delivery: SharedPublicationDelivery
+): boolean => {
+  const hasDeliveryTarget = Object.hasOwn(delivery, 'compensatesDeliveryId')
+  return channel === DocumentPublicationContract.channel
+    ? !hasDeliveryTarget
+    : (origin === 'rollback-compensation') === hasDeliveryTarget
+}
+
 export const isSharedPublication = (
   value: unknown
 ): value is SharedPublication => {
@@ -415,11 +457,11 @@ export const isSharedPublication = (
       for (const delivery of batch.deliveries) {
         if (
           deliveryIds.has(delivery.deliveryId) ||
-          isCompensation !==
-            Object.prototype.hasOwnProperty.call(
-              delivery,
-              'compensatesDeliveryId'
-            )
+          !hasValidCompensationCorrelation(
+            batch.channel,
+            value.origin as SharedPublication['origin'],
+            delivery
+          )
         ) {
           return false
         }
@@ -459,8 +501,9 @@ interface JsonTransportAnalysis {
 
 const MAX_RECURSIVE_JSON_TRANSPORT_DEPTH = 256
 
-const analyzeJsonTransportValue = (
-  value: unknown
+const analyzeFiniteTransportValue = (
+  value: unknown,
+  rejectNegativeZero = true
 ): JsonTransportAnalysis | null => {
   const ancestors = new Set<object>()
   const frames: JsonTransportTraversalFrame[] = [
@@ -484,7 +527,11 @@ const analyzeJsonTransportValue = (
       continue
     }
     if (typeof child === 'number') {
-      if (!Number.isFinite(child) || Object.is(child, -0)) return null
+      if (
+        !Number.isFinite(child) ||
+        (rejectNegativeZero && Object.is(child, -0))
+      )
+        return null
       continue
     }
     if (typeof child !== 'object' || ancestors.has(child)) return null
@@ -540,7 +587,10 @@ const analyzeJsonTransportValue = (
 }
 
 export const isJsonTransportValue = (value: unknown): boolean =>
-  analyzeJsonTransportValue(value) !== null
+  analyzeFiniteTransportValue(value) !== null
+
+export const isFiniteTransportValue = (value: unknown): boolean =>
+  analyzeFiniteTransportValue(value, false) !== null
 
 const PUBLICATION_FRAME_MAGIC = new Uint8Array([
   0x41, 0x53, 0x59, 0x52, 0x41, 0x50
@@ -612,7 +662,7 @@ interface PublicationWireChunk extends PublicationWireMetadata {
 }
 
 const PUBLICATION_PAYLOAD_MAGIC = new Uint8Array([0x41, 0x53, 0x59, 0x55])
-const PUBLICATION_PAYLOAD_VERSION = 1
+const PUBLICATION_PAYLOAD_VERSION = 2
 const PUBLICATION_PAYLOAD_FIXED_BYTES = 16
 const PUBLICATION_PAYLOAD_UNIT_LENGTH_BYTES = 4
 const PUBLICATION_FRAME_STRING_UTF8 = 0
@@ -965,23 +1015,6 @@ const publicationMessageParts = (
   }
 }
 
-const publicationWireUnits = (
-  publication: SharedPublication
-): readonly PublicationWireUnit[] =>
-  publication.slices.flatMap((slice) =>
-    slice.batches.flatMap((batch) =>
-      batch.deliveries.map((delivery) => ({
-        batch: {
-          batchId: batch.batchId,
-          sliceId: slice.sliceId,
-          orderedIds: slice.orderedIds,
-          channel: batch.channel
-        },
-        delivery
-      }))
-    )
-  )
-
 const publicationWireMetadata = (
   publication: SharedPublication
 ): PublicationWireMetadata => ({
@@ -1014,13 +1047,24 @@ const encodePublicationPayloadChunks = (
   softTargetBytes: number,
   headerByteLength: number
 ): readonly PublicationPayloadChunk[] => {
-  const units = publicationWireUnits(publication)
+  const units = publication.slices.flatMap((slice) =>
+    slice.batches.flatMap((batch) => batch.deliveries)
+  )
   if (units.length === 0) {
     throw new TypeError('[collaboration] publication has no wire deliveries')
   }
-  const metadataEncoding = prepareCompactBinaryEncoding(
-    publicationWireMetadata(publication)
-  )
+  const metadataEncoding = prepareCompactBinaryEncoding({
+    ...publicationWireMetadata(publication),
+    slices: publication.slices.map((slice) => ({
+      sliceId: slice.sliceId,
+      orderedIds: slice.orderedIds,
+      batches: slice.batches.map((batch) => ({
+        batchId: batch.batchId,
+        channel: batch.channel,
+        deliveryCount: batch.deliveries.length
+      }))
+    }))
+  })
   const metadata = encodePreparedCompactBinary(metadataEncoding)
   const encodedUnits = units.map((unit) => {
     const unitEncoding = prepareCompactBinaryEncoding(unit)
@@ -1223,11 +1267,11 @@ const isPublicationWireUnit = (
   hasExactOwnKeys(value, ['batch', 'delivery']) &&
   isPublicationWireBatchMetadata(value.batch) &&
   isSharedPublicationDelivery(value.delivery) &&
-  (metadata.origin === 'rollback-compensation') ===
-    Object.prototype.hasOwnProperty.call(
-      value.delivery,
-      'compensatesDeliveryId'
-    )
+  hasValidCompensationCorrelation(
+    value.batch.channel,
+    metadata.origin,
+    value.delivery
+  )
 
 interface MutablePublicationBatch {
   readonly metadata: PublicationWireBatchMetadata
@@ -1343,7 +1387,8 @@ const decodePublicationWirePayload = (
   if (PUBLICATION_PAYLOAD_MAGIC.some((byte, index) => bytes[index] !== byte)) {
     throw new TypeError('[collaboration] invalid publication wire payload')
   }
-  if (bytes[4] !== PUBLICATION_PAYLOAD_VERSION) {
+  const payloadVersion = bytes[4]
+  if (payloadVersion !== 1 && payloadVersion !== PUBLICATION_PAYLOAD_VERSION) {
     throw new TypeError(
       `[collaboration] unsupported publication payload version: ${String(bytes[4])}`
     )
@@ -1362,7 +1407,78 @@ const decodePublicationWirePayload = (
   if (metadataEnd > bytes.byteLength) {
     throw new TypeError('[collaboration] truncated publication wire metadata')
   }
-  const metadata = decodeCompactBinary(bytes.subarray(offset, metadataEnd))
+  // Each unit needs its length prefix and at least one encoded byte. Bound the
+  // layout before expanding counts from an untrusted transport envelope.
+  if (
+    unitCount >
+    Math.floor(
+      (bytes.byteLength - metadataEnd) /
+        (PUBLICATION_PAYLOAD_UNIT_LENGTH_BYTES + 1)
+    )
+  ) {
+    throw new TypeError(
+      '[collaboration] invalid publication wire delivery count'
+    )
+  }
+  const decodedMetadata = decodeCompactBinary(
+    bytes.subarray(offset, metadataEnd)
+  )
+  const indexedBatches: PublicationWireBatchMetadata[] = []
+  let metadata: unknown = decodedMetadata
+  if (payloadVersion === 2) {
+    if (!isRecord(decodedMetadata)) {
+      throw new TypeError('[collaboration] invalid publication wire metadata')
+    }
+    const { slices, ...base } = decodedMetadata
+    metadata = base
+    if (!Array.isArray(slices) || slices.length === 0) {
+      throw new TypeError('[collaboration] invalid publication wire layout')
+    }
+    const sliceIds = new Set<string>()
+    const batchIds = new Set<string>()
+    for (const slice of slices) {
+      if (
+        !isRecord(slice) ||
+        !hasExactOwnKeys(slice, ['sliceId', 'orderedIds', 'batches']) ||
+        !isNonBlankString(slice.sliceId) ||
+        sliceIds.has(slice.sliceId) ||
+        !isStringArray(slice.orderedIds) ||
+        !hasUniqueStrings(slice.orderedIds) ||
+        !Array.isArray(slice.batches) ||
+        slice.batches.length === 0
+      ) {
+        throw new TypeError('[collaboration] invalid publication wire layout')
+      }
+      sliceIds.add(slice.sliceId)
+      for (const batch of slice.batches) {
+        if (
+          !isRecord(batch) ||
+          !hasExactOwnKeys(batch, ['batchId', 'channel', 'deliveryCount']) ||
+          !isNonBlankString(batch.batchId) ||
+          batchIds.has(batch.batchId) ||
+          !isNonBlankString(batch.channel) ||
+          !isPositiveInteger(batch.deliveryCount) ||
+          batch.deliveryCount > unitCount - indexedBatches.length
+        ) {
+          throw new TypeError('[collaboration] invalid publication wire layout')
+        }
+        batchIds.add(batch.batchId)
+        const batchMetadata = {
+          batchId: batch.batchId,
+          channel: batch.channel,
+          sliceId: slice.sliceId,
+          orderedIds: slice.orderedIds
+        }
+        for (let index = 0; index < batch.deliveryCount; index += 1)
+          indexedBatches.push(batchMetadata)
+      }
+    }
+    if (indexedBatches.length !== unitCount) {
+      throw new TypeError(
+        '[collaboration] invalid publication wire delivery count'
+      )
+    }
+  }
   if (!isPublicationWireMetadata(metadata)) {
     throw new TypeError('[collaboration] invalid publication wire metadata')
   }
@@ -1378,8 +1494,28 @@ const decodePublicationWirePayload = (
     if (unitByteLength === 0 || unitEnd > bytes.byteLength) {
       throw new TypeError('[collaboration] truncated publication wire unit')
     }
-    const unit = decodeCompactBinary(bytes.subarray(offset, unitEnd))
-    if (!isPublicationWireUnit(unit, metadata)) {
+    const decodedUnit = decodeCompactBinary(bytes.subarray(offset, unitEnd))
+    let unit: PublicationWireUnit
+    if (payloadVersion === 1) {
+      if (!isPublicationWireUnit(decodedUnit, metadata)) {
+        throw new TypeError('[collaboration] invalid publication wire unit')
+      }
+      unit = decodedUnit
+    } else {
+      if (
+        !isSharedPublicationDelivery(decodedUnit) ||
+        !indexedBatches[index] ||
+        !hasValidCompensationCorrelation(
+          indexedBatches[index].channel,
+          metadata.origin,
+          decodedUnit
+        )
+      ) {
+        throw new TypeError('[collaboration] invalid publication wire unit')
+      }
+      unit = { batch: indexedBatches[index], delivery: decodedUnit }
+    }
+    if (!unit.batch) {
       throw new TypeError('[collaboration] invalid publication wire unit')
     }
     units.push(unit)
@@ -1575,9 +1711,11 @@ const collaborationControlMessageTypes = new Set<string>([
   CollaborationMessageTypes.PEER_APPLIED,
   CollaborationMessageTypes.BOOTSTRAP_CONSUMED,
   CollaborationMessageTypes.RESET_DOCUMENT,
+  CollaborationMessageTypes.CONFIRM_PERSISTENCE,
   CollaborationMessageTypes.SOURCE_PUBLICATION_SETTLEMENT,
   CollaborationMessageTypes.SOURCE_FRAME_ADMITTED,
   CollaborationMessageTypes.SOURCE_PUBLICATION_PROPOSED,
+  CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY,
   CollaborationMessageTypes.READY,
   CollaborationMessageTypes.RESPONSE,
   CollaborationMessageTypes.AWARENESS,
@@ -1587,7 +1725,7 @@ const collaborationControlMessageTypes = new Set<string>([
 ])
 
 export const encodeCollaborationControlMessage = (value: unknown): string => {
-  if (!analyzeJsonTransportValue(value)) {
+  if (!analyzeFiniteTransportValue(value)) {
     throw new TypeError(
       '[collaboration] control message contains a value that JSON cannot preserve'
     )
@@ -1632,7 +1770,7 @@ export const encodeCollaborationMessage = (
   ) {
     return encodeCollaborationControlMessage(value)
   }
-  const analysis = analyzeJsonTransportValue(value)
+  const analysis = analyzeFiniteTransportValue(value)
   if (!analysis) {
     throw new TypeError(
       '[collaboration] message contains a value that JSON cannot preserve'
@@ -1819,6 +1957,17 @@ export const parseCollaborationClientMessage = (
             headSequence: value.headSequence
           }
         : undefined
+    case CollaborationMessageTypes.CONFIRM_PERSISTENCE:
+      return isNonBlankString(value.requestId) &&
+        isNonNegativeSafeInteger(value.sequence) &&
+        isNonNegativeSafeInteger(value.documentGeneration)
+        ? {
+            type: value.type,
+            requestId: value.requestId,
+            sequence: value.sequence,
+            documentGeneration: value.documentGeneration
+          }
+        : undefined
     case CollaborationMessageTypes.RESET_DOCUMENT:
       return isNonBlankString(value.requestId)
         ? {
@@ -1844,6 +1993,8 @@ export const parseCollaborationServerMessage = (
     return
   }
   switch (value.type) {
+    case CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY:
+      return hasExactOwnKeys(value, ['type']) ? { type: value.type } : undefined
     case CollaborationMessageTypes.READY: {
       const bootstrap = parseDocumentSessionBootstrap(value.bootstrap)
       return bootstrap ? { type: value.type, bootstrap } : undefined
@@ -1854,6 +2005,17 @@ export const parseCollaborationServerMessage = (
       }
       if (value.ok) {
         const acceptedSequences = value.acceptedSequences
+        const persistence = value.persistence
+        if (
+          persistence !== undefined &&
+          (!isRecord(persistence) ||
+            !isNonBlankString(persistence.documentId) ||
+            !isNonNegativeSafeInteger(persistence.documentGeneration) ||
+            !isNonNegativeSafeInteger(persistence.sequence) ||
+            !isNonNegativeSafeInteger(persistence.durableSequence) ||
+            persistence.durableSequence < persistence.sequence)
+        )
+          return undefined
         if (
           Object.prototype.hasOwnProperty.call(value, 'acceptedSequences') &&
           !isContiguousPositiveIntegerArray(acceptedSequences)
@@ -1864,6 +2026,12 @@ export const parseCollaborationServerMessage = (
           type: value.type,
           requestId: value.requestId,
           ok: true,
+          ...(persistence
+            ? {
+                persistence:
+                  persistence as unknown as DocumentPersistenceReceipt
+              }
+            : {}),
           ...(isContiguousPositiveIntegerArray(acceptedSequences)
             ? { acceptedSequences }
             : {})

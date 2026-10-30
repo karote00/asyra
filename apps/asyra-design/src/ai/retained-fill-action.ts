@@ -7,8 +7,11 @@ import {
   toolResultStatus,
   actionToolSemantics
 } from './tool-contract'
+import { requireMutationReceipt } from './basic-api-results'
 import {
   AiActionExecutionError,
+  AiTransactionSettlementError,
+  AiToolContractError,
   runAiMutation,
   type AiActionDefinition
 } from '@asyra/ai-agent-runtime'
@@ -39,7 +42,15 @@ const colorChannels = (color: string) =>
 const mappingModelSchema = toolResultObject(
   {
     status: toolResultStatus,
-    appliedCount: toolResultCount,
+    changed: { type: 'boolean' },
+    acceptedIds: toolResultIds,
+    unavailableIds: toolResultIds,
+    settlement: { enum: ['completed', 'partial', 'not-started'] },
+    appliedCount: {
+      ...toolResultCount,
+      description:
+        'Accepted target count, including legal no-op targets; changed reports aggregate document mutation.'
+    },
     coordinateSpace: { const: 'parent-local' },
     retained: retainedElementSetSchema,
     delivery: toolResultObject({
@@ -47,7 +58,7 @@ const mappingModelSchema = toolResultObject(
       message: { type: 'string' }
     })
   },
-  ['status', 'appliedCount', 'coordinateSpace']
+  ['status', 'changed', 'settlement', 'appliedCount', 'coordinateSpace']
 )
 
 /** Explicit finite interpolation only. Artistic choices remain in the caller's mapping. */
@@ -56,12 +67,10 @@ export const createRetainedFillAction = (
   apis: {
     metadata: (id: string) => { lock?: boolean; parentId?: string } | undefined
     targets: typeof fillApis.getFillTargetsAtIndex
-    owners: (propertyIds: string[]) => string[]
     update: typeof fillApis.updateFillFieldsBatch
   } = {
     metadata: (id: string) => core.getElementMetadata(id),
     targets: fillApis.getFillTargetsAtIndex,
-    owners: (ids) => core.getPropertyOwnerElementIds(ids),
     update: fillApis.updateFillFieldsBatch
   }
 ): AiActionDefinition<{ mappings: FillMapping[] }> => ({
@@ -69,8 +78,15 @@ export const createRetainedFillAction = (
     AiActionNames.MAP_RETAINED_FILLS,
     toolResultObject({
       status: toolResultStatus,
+      changed: { type: 'boolean' },
+      acceptedIds: toolResultIds,
+      unavailableIds: toolResultIds,
       mutationScope: toolMutationScope,
-      appliedCount: toolResultCount,
+      appliedCount: {
+        ...toolResultCount,
+        description:
+          'Accepted target count, including legal no-op targets; changed reports aggregate document mutation.'
+      },
       snapshots: toolResultIds,
       retained: retainedElementSetSchema,
       modelResult: mappingModelSchema,
@@ -80,7 +96,11 @@ export const createRetainedFillAction = (
   partialOutputSchema: toolResultObject({
     status: toolResultStatus,
     mutationScope: toolMutationScope,
-    appliedCount: toolResultCount,
+    appliedCount: {
+      ...toolResultCount,
+      description:
+        'Accepted target count, including legal no-op targets; changed reports aggregate document mutation.'
+    },
     snapshots: toolResultIds,
     coordinateSpace: { const: 'parent-local' },
     modelResult: mappingModelSchema,
@@ -89,7 +109,7 @@ export const createRetainedFillAction = (
       message: { type: 'string' }
     })
   }),
-  revision: 4,
+  revision: 7,
   delivery: {
     path: '/modelResult',
     outputSchema: mappingModelSchema,
@@ -98,7 +118,7 @@ export const createRetainedFillAction = (
   composition: 'allowed',
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
-    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Shared fills with conflicting new values reject; detach them explicitly and requery when independent colors are intended.',
+    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Mapped fields become selected-owner local overrides. Different owners may use different colors on the same shared source without detaching; unchanged source users remain unaffected.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -122,6 +142,7 @@ export const createRetainedFillAction = (
           oneOf: [{ required: ['snapshotId'] }, { required: ['query'] }],
           properties: {
             query: {
+              ...documentContextSchema,
               type: 'object',
               additionalProperties: false,
               required: ['scope'],
@@ -253,7 +274,8 @@ export const createRetainedFillAction = (
                 fields: [mapping.axis],
                 delivery: 'reference'
               },
-              context.signal
+              context.signal,
+              'consumer'
             )
             snapshotId = receipt.snapshotId
             leaseId = receipt.leaseId
@@ -327,32 +349,24 @@ export const createRetainedFillAction = (
             consumedLeases.delete(leaseId)
           }
         }
-        // Mapping supplies simultaneous values; reject conflicting shared identities before the canonical write.
         const targets = apis.targets(ids, index)
-        const sharedValues = new Map<string, FillPatch>()
-        const updates = targets.map((target, offset) => {
-          const patch = patches[offset]
-          const prior = sharedValues.get(target.fillId)
-          if (
-            prior &&
-            (prior.color !== patch.color || prior.opacity !== patch.opacity)
-          )
-            throw new Error(
-              'Conflicting mapped values for a shared fill; detach explicitly and read again.'
-            )
-          sharedValues.set(target.fillId, patch)
-          return { ...target, patch }
-        })
-        apis.update(updates)
-        const affected = new Set(apis.owners([...sharedValues.keys()]))
+        const mutation = requireMutationReceipt(
+          apis.update(
+            targets.map((target, offset) => ({
+              ...target,
+              patch: patches[offset]
+            }))
+          ),
+          ids
+        )
         const receipt = {
+          ...mutation,
           mutationScope: {
-            complete: ids.every((id) => affected.has(id)),
-            elementIds: [...affected],
+            complete: true,
+            elementIds: mutation.changed ? mutation.acceptedIds : [],
             removedElementIds: []
           },
-          status: 'complete',
-          appliedCount: ids.length,
+          appliedCount: mutation.acceptedIds.length,
           snapshots: mappings.flatMap((mapping) =>
             mapping.snapshotId ? [mapping.snapshotId] : []
           ),
@@ -360,22 +374,44 @@ export const createRetainedFillAction = (
         }
         const summary = {
           status: receipt.status,
+          changed: mutation.changed,
+          settlement: mutation.settlement,
+          ...(mutation.unavailableIds.length
+            ? { unavailableIds: mutation.unavailableIds }
+            : {}),
           appliedCount: receipt.appliedCount,
           coordinateSpace: receipt.coordinateSpace
         }
         try {
-          const retained = queries.retainReceipt(ids, receipt, context.signal)
+          const retained = queries.retainReceipt(
+            mutation.acceptedIds,
+            receipt,
+            context.signal
+          )
           return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {
           const delivery = {
             status: 'unavailable',
             message: `${error instanceof Error ? error.message : 'Receipt retention failed.'} The write already settled; do not replay it.`
           }
-          return { ...receipt, delivery, modelResult: { ...summary, delivery } }
+          return {
+            ...receipt,
+            delivery,
+            modelResult: {
+              ...summary,
+              acceptedIds: mutation.acceptedIds,
+              delivery
+            }
+          }
         }
       })
     } catch (error) {
-      if (context.signal.aborted) throw error
+      if (
+        context.signal.aborted ||
+        error instanceof AiToolContractError ||
+        error instanceof AiTransactionSettlementError
+      )
+        throw error
       throw new AiActionExecutionError(
         error instanceof Error ? error.message : 'Retained fill mapping failed.'
       )

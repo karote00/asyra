@@ -1,0 +1,36 @@
+{
+  "source": {
+    "run": "1792610978725",
+    "provider": "b81cadcf-c7db-49a5-a55e-0276aea9f8ce",
+    "payloads": [
+      "28-input.json",
+      "31-input.json",
+      "32-output.json"
+    ]
+  },
+  "usage": {
+    "names": [
+      "define_design_criteria",
+      "review_drawing",
+      "validate_reference_images"
+    ],
+    "view": "usage"
+  },
+  "query": {
+    "names": [
+      "review_drawing",
+      "define_design_criteria"
+    ],
+    "schemaPaths": [
+      "/properties/inspections",
+      "/properties/criteria",
+      "/properties/method",
+      "/properties/detailRequired"
+    ]
+  },
+  "observedOutcome": {
+    "status": "success",
+    "settlement": "completed",
+    "issues": []
+  }
+}

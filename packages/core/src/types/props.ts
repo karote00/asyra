@@ -1,3 +1,4 @@
+import type { PropertyMutationReceipt } from './property-mutation-receipt.js'
 import {
   ElementPropertyRelation,
   PropsComponentRawData,
@@ -25,7 +26,7 @@ export interface PropsRawAPIs {
   updatePropertyComponents: (
     updates: readonly PropertyComponentValuesUpdate[],
     options?: EVENT_OPTIONS
-  ) => readonly string[]
+  ) => PropertyMutationReceipt
 }
 
 export type PropsAPIs = PropsRawAPIs

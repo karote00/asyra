@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises'
 import { createDesignPreparationSession } from '../server/design-preparation'
 import { test, expect, type Page } from '@playwright/test'
 import {
@@ -7,6 +8,8 @@ import {
   createRectangle,
   getTransactionSnapshot,
   getPersistedDocumentCheckpoint,
+  getCoreDocumentDigest,
+  getPersistedDocumentDigest,
   undo,
   redo
 } from './test-utils'
@@ -232,7 +235,7 @@ test('batch recolor preserves independent fill values and replays as one commit'
         ids.map((elementId) => ({ elementId, color: '#654321' }))
       )
     }, setup.ids)
-  ).toEqual([true, true])
+  ).toEqual(['changed', 'changed'])
   const expected = setup.before.map((fill) => ({ ...fill, color: '#654321' }))
   await expect.poll(readAll).toEqual(expected)
   expect((await getTransactionSnapshot(page)).undoCount).toBe(
@@ -367,9 +370,11 @@ test('multi-selection Fill UI edits both elements in one Undo action', async ({
   await page.screenshot({ path: testInfo.outputPath('multi-fill-panel.png') })
 })
 
-test('shared Fill property links propagate edits and detach with exact Undo/Redo', async ({
-  page
-}) => {
+test('shared Fill intents preserve local masks, peers, Undo/Redo and durable reload', async ({
+  page,
+  browser
+}, testInfo) => {
+  test.setTimeout(120_000)
   const first = await page.evaluate(
     async () =>
       (
@@ -377,65 +382,226 @@ test('shared Fill property links propagate edits and detach with exact Undo/Redo
       ).core.getSelectedElementIds()[0]
   )
   await createRectangle(page, 0.6, 0.6)
-  const ids = await page.evaluate(async (first) => {
-    const { core } = await import('../src/testing/runtime-access')
-    return [first, core.getSelectedElementIds()[0]]
-  }, first)
-  const read = () =>
-    page.evaluate(async (ids) => {
+  const ids = await page.evaluate(
+    async (first) => [
+      first,
+      (
+        await import('../src/testing/runtime-access')
+      ).core.getSelectedElementIds()[0]
+    ],
+    first
+  )
+  const read = (client: Page = page) =>
+    client.evaluate(async (ids) => {
       const { core } = await import('../src/testing/runtime-access')
       return ids.map(
         (id) =>
           (
-            core.getElementComputedData(id, ['fills'])?.fills as {
-              id: string
-              color: string
-            }[]
-          )[0]
+            core.getElementComputedData(id, ['fills'])?.fills as
+              { id: string; color: string; opacity: number }[] | undefined
+          )?.[0]
       )
     }, ids)
+  const invoke = (
+    name: string,
+    args: Record<string, unknown>,
+    client: Page = page
+  ) =>
+    client.evaluate(
+      async ({ name, args }) => {
+        const { createBasicApiActions } =
+          await import('../src/ai/basic-api-actions')
+        const { createAiTransactionRunner } =
+          await import('../src/ai/transaction')
+        const action = createBasicApiActions().find(
+          (action) => action.name === name
+        )
+        if (!action) throw new Error(`Missing action ${name}`)
+        return createAiTransactionRunner().run(
+          'Shared property intent',
+          (runMutation) =>
+            action.execute(args, {
+              signal: new AbortController().signal,
+              runMutation
+            })
+        )
+      },
+      { name, args }
+    )
+  const target = (elementId: string) =>
+    page.evaluate(async (elementId) => {
+      const { core } = await import('../src/testing/runtime-access')
+      const [root] = core.readElementPropertyTargets([
+        { elementId, propertyName: 'fills', path: [] }
+      ])
+      const slot = root.children[0]
+      return {
+        elementId,
+        propertyName: 'fills',
+        path: [{ key: slot.key, childId: slot.childId }],
+        expectedRootId: root.propertyId,
+        expectedPropertyId: slot.propertyId
+      }
+    }, elementId)
+  const evidence: { step: string; state: unknown }[] = []
+  const record = async (step: string) =>
+    evidence.push({
+      step,
+      state: await page.evaluate(async () => {
+        const { core, readTestCapture } =
+          await import('../src/testing/runtime-access')
+        return {
+          canonical: core.getCanonicalOwnerSnapshot(),
+          publications: readTestCapture('shared-property')
+        }
+      })
+    })
+  await page.evaluate(async () =>
+    (
+      await import('../src/testing/runtime-access')
+    ).startSharedPublicationCapture('shared-property')
+  )
   const initial = await read()
-  await page.evaluate(async (ids) => {
-    const { fillApis } = await import('../src/common-apis')
-    fillApis.shareFillAtIndex(ids[0], [ids[1]], 0)
-  }, ids)
-  await expect.poll(read).toEqual([initial[0], initial[0]])
-  await page.evaluate(async (ids) => {
-    const { fillApis } = await import('../src/common-apis')
-    fillApis.updateFillsAtIndex([ids[1]], 0, { color: '#334455' })
-  }, ids)
-  const linked = initial.map(() => ({ ...initial[0], color: '#334455' }))
-  await expect.poll(read).toEqual(linked)
-  await undo(page)
-  await expect.poll(read).toEqual([initial[0], initial[0]])
-  await undo(page)
-  await expect.poll(read).toEqual(initial)
-  await redo(page)
-  await redo(page)
-  await expect.poll(read).toEqual(linked)
-  await page.evaluate(async (ids) => {
-    const { fillApis } = await import('../src/common-apis')
-    fillApis.detachFillsAtIndex([ids[1]], 0)
-    fillApis.updateFillsAtIndex([ids[1]], 0, { color: '#abcdef' })
-  }, ids)
-  await expect.poll(read).toMatchObject([linked[0], { color: '#abcdef' }])
-  expect((await read())[1].id).not.toBe(linked[0].id)
-  await undo(page)
-  await undo(page)
-  await expect.poll(read).toEqual(linked)
-  await page.evaluate(async () => {
-    const { core } = await import('../src/testing/runtime-access')
-    const saved = await core.save()
-    core.load(saved)
-  })
-  await expect.poll(read).toEqual(linked)
-  await page.evaluate(async (ids) => {
-    const { fillApis } = await import('../src/common-apis')
-    fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#102030' })
-  }, ids)
-  await expect
-    .poll(read)
-    .toEqual(linked.map((fill) => ({ ...fill, color: '#102030' })))
+  const sourceId = initial[0]?.id
+  if (!sourceId) throw new Error('Missing independent source')
+  await page.evaluate(
+    async (ids) =>
+      (await import('../src/common-apis')).fillApis.shareFillAtIndex(
+        ids[0],
+        [ids[1]],
+        0
+      ),
+    ids
+  )
+  const shared = await read()
+  expect(shared).toMatchObject([
+    { color: initial[0]?.color },
+    { color: initial[0]?.color }
+  ])
+  expect(shared[1]?.id).not.toBe(sourceId)
+  const peerContext = await browser.newContext()
+  const peer = await peerContext.newPage()
+  try {
+    await peer.goto(page.url())
+    await waitForAppReady(peer)
+    await expect.poll(() => read(peer)).toEqual(shared)
+    const local = await target(ids[1])
+    await invoke('api_core_updateElementPropertyTargets', {
+      updates: [{ target: local, values: { color: '#334455' } }]
+    })
+    const overridden = await read()
+    expect(overridden).toMatchObject([shared[0], { color: '#334455' }])
+    await expect.poll(() => read(peer)).toEqual(overridden)
+    await undo(page)
+    await expect.poll(() => read()).toEqual(shared)
+    await redo(page)
+    await expect.poll(() => read()).toEqual(overridden)
+    await invoke(
+      'api_core_updateSharedPropertySources',
+      {
+        updates: [
+          { propertyId: sourceId, values: { color: '#abcdef', opacity: 0.6 } }
+        ]
+      },
+      peer
+    )
+    await expect
+      .poll(() => read())
+      .toMatchObject([
+        { color: '#abcdef', opacity: 0.6 },
+        { color: '#334455', opacity: 0.6 }
+      ])
+    await invoke('api_core_resetElementPropertyOverrides', {
+      updates: [{ target: await target(ids[1]), keys: ['color'] }]
+    })
+    await expect
+      .poll(() => read())
+      .toMatchObject([
+        { color: '#abcdef', opacity: 0.6 },
+        { color: '#abcdef', opacity: 0.6 }
+      ])
+    await undo(page)
+    await expect
+      .poll(() => read())
+      .toMatchObject([{ color: '#abcdef' }, { color: '#334455' }])
+    await redo(page)
+    const reset = await read()
+    await invoke('api_core_detachElementPropertyTargets', {
+      targets: [await target(ids[1])]
+    })
+    const detached = await read()
+    await record('detached')
+    await invoke(
+      'api_core_updateSharedPropertySources',
+      { updates: [{ propertyId: sourceId, values: { color: '#102030' } }] },
+      peer
+    )
+    await expect
+      .poll(() => read())
+      .toMatchObject([{ color: '#102030' }, { color: '#abcdef' }])
+    await undo(page)
+    await expect
+      .poll(() => read())
+      .toMatchObject([{ color: '#102030' }, { color: '#102030' }])
+    await redo(page)
+    await record('after-redo-detach')
+    await expect
+      .poll(() => read())
+      .toMatchObject([{ color: '#102030' }, detached[1]])
+    expect(reset[1]?.id).not.toBe(detached[1]?.id)
+    const beforeInvalid = await read()
+    await expect(
+      invoke('api_core_updateElementPropertyTargets', {
+        updates: [
+          { target: await target(ids[0]), values: { opacity: 0.2 } },
+          {
+            target: { elementId: 'missing', propertyName: 'fills', path: [] },
+            values: { opacity: 0.2 }
+          }
+        ]
+      })
+    ).rejects.toThrow()
+    expect(await read()).toEqual(beforeInvalid)
+    await invoke('api_core_shareElementPropertyTargets', {
+      updates: [{ target: await target(ids[1]), sourceId }]
+    })
+    const final = await read()
+    await expect.poll(() => read(peer)).toEqual(final)
+    const savedDigest = await getCoreDocumentDigest(page)
+    const fileId = new URL(page.url()).searchParams.get('fileId')
+    if (!fileId) throw new Error('Missing document identity')
+    await expect
+      .poll(() => getPersistedDocumentDigest(fileId), { timeout: 25_000 })
+      .toEqual(savedDigest)
+    await page.reload()
+    await waitForAppReady(page)
+    await expect.poll(() => read()).toEqual(final)
+    await invoke('api_core_updateElementPropertyTargets', {
+      updates: [{ target: await target(ids[1]), values: { opacity: 0.25 } }]
+    })
+    await expect
+      .poll(() => read(peer))
+      .toMatchObject([{ opacity: 0.6 }, { opacity: 0.25 }])
+    const nextDigest = await getCoreDocumentDigest(page)
+    await expect
+      .poll(() => getPersistedDocumentDigest(fileId), { timeout: 25_000 })
+      .toEqual(nextDigest)
+    await page.reload()
+    await waitForAppReady(page)
+    await expect
+      .poll(() => read())
+      .toMatchObject([{ opacity: 0.6 }, { opacity: 0.25 }])
+  } finally {
+    await writeFile(
+      testInfo.outputPath('shared-property-lifecycle.json'),
+      JSON.stringify(evidence, null, 2)
+    )
+    await testInfo.attach('shared-property-lifecycle', {
+      body: JSON.stringify(evidence, null, 2),
+      contentType: 'application/json'
+    })
+    await peerContext.close()
+  }
 })
 
 test('Stroke batches preserve intervening fields and multi-owner Undo/Redo', async ({
@@ -454,7 +620,10 @@ test('Stroke batches preserve intervening fields and multi-owner Undo/Redo', asy
     if (!second) throw new Error('Second target missing')
     const ids = [first, second]
     const targets = ids.map((elementId) => {
-      const strokeId = strokeApis.addStroke(elementId)
+      const receipt = strokeApis.addStroke(elementId)
+      if (!receipt.changed || receipt.unavailableIds.length)
+        throw new Error('Stroke creation did not settle')
+      const strokeId = receipt.value
       if (!strokeId) throw new Error('Missing created Stroke')
       return { elementId, strokeId }
     })
@@ -552,6 +721,7 @@ test('prepared shared fills remain canonical across slices, edits, Undo and pers
   })
   const design = session.resolve(prepared.artifactId)
   await page.evaluate(async (design) => {
+    const { deliverPreparedDesign } = await import('../src/ai/prepared-design')
     const { createPreparedDesignAction } =
       await import('../src/ai/design-actions')
     const { createAiTransactionRunner } = await import('../src/ai/transaction')
@@ -559,7 +729,7 @@ test('prepared shared fills remain canonical across slices, edits, Undo and pers
       'Prepared shared fill test',
       (runMutation) =>
         createPreparedDesignAction().execute(
-          { design },
+          { design: deliverPreparedDesign(design) },
           { signal: new AbortController().signal, runMutation }
         )
     )

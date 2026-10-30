@@ -1,16 +1,20 @@
+import { ComputedFieldSelectionLimits } from '@asyra/core/contracts'
 import {
   defineBasicApi,
   apiString,
+  apiId,
+  apiElementId,
   apiNumber,
   apiPosition,
   apiObject,
   apiArray,
   apiIds,
+  apiElementIds,
   apiRecord
 } from './basic-api-contracts'
 
 const elementPropertyUpdatesSchema = apiArray(
-  apiObject({ elementId: apiString, values: apiRecord })
+  apiObject({ elementId: apiElementId, values: apiRecord })
 )
 
 const elementCreationDataSchema = {
@@ -30,6 +34,8 @@ const elementCreationDataSchema = {
 }
 
 const getCurrentWorkspaceIdApi = defineBasicApi({
+  description:
+    'Read the canonical current workspace identity without serializing the document.',
   owner: 'core',
   method: 'getCurrentWorkspaceId',
   effect: 'read',
@@ -37,6 +43,8 @@ const getCurrentWorkspaceIdApi = defineBasicApi({
 })
 
 const getCanonicalElementCountApi = defineBasicApi({
+  description:
+    'Read the canonical element count for document diagnostics; does not enumerate element data.',
   owner: 'core',
   method: 'getCanonicalElementCount',
   effect: 'read',
@@ -44,6 +52,8 @@ const getCanonicalElementCountApi = defineBasicApi({
 })
 
 const getAllElementsBoundsApi = defineBasicApi({
+  description:
+    'Read overall element bounds; use for explicit framing or scope checks, not automatic navigation.',
   owner: 'core',
   method: 'getAllElementsBounds',
   effect: 'read',
@@ -51,6 +61,7 @@ const getAllElementsBoundsApi = defineBasicApi({
 })
 
 const getViewportPositionApi = defineBasicApi({
+  description: 'Read the canonical viewport translation.',
   owner: 'core',
   method: 'getViewportPosition',
   effect: 'read',
@@ -58,6 +69,7 @@ const getViewportPositionApi = defineBasicApi({
 })
 
 const getViewportScaleApi = defineBasicApi({
+  description: 'Read the canonical viewport zoom scale.',
   owner: 'core',
   method: 'getViewportScale',
   effect: 'read',
@@ -65,6 +77,7 @@ const getViewportScaleApi = defineBasicApi({
 })
 
 const getSelectedElementIdsApi = defineBasicApi({
+  description: 'Read canonical element selection identities.',
   owner: 'core',
   method: 'getSelectedElementIds',
   effect: 'read',
@@ -72,6 +85,8 @@ const getSelectedElementIdsApi = defineBasicApi({
 })
 
 const getUndoHistoryDepthApi = defineBasicApi({
+  description:
+    'Read the Undo stack depth for diagnostics; does not change history.',
   owner: 'core',
   method: 'getUndoHistoryDepth',
   effect: 'read',
@@ -79,6 +94,8 @@ const getUndoHistoryDepthApi = defineBasicApi({
 })
 
 const getRegistrationsApi = defineBasicApi({
+  description:
+    'Inspect registered framework definitions when the required capability is unknown; prefer getRegistration for one known definition.',
   owner: 'core',
   method: 'getRegistrations',
   effect: 'read',
@@ -86,6 +103,8 @@ const getRegistrationsApi = defineBasicApi({
 })
 
 const getRegistrationRelationsApi = defineBasicApi({
+  description:
+    'Inspect registered component/property relationships; does not inspect document instances.',
   owner: 'core',
   method: 'getRegistrationRelations',
   effect: 'read',
@@ -93,20 +112,17 @@ const getRegistrationRelationsApi = defineBasicApi({
 })
 
 const getProjectedElementCountApi = defineBasicApi({
+  description:
+    'Read the render projection count for diagnostics; this is not the canonical element count.',
   owner: 'core',
   method: 'getProjectedElementCount',
   effect: 'read',
   parameters: []
 })
 
-const renderIsReadyApi = defineBasicApi({
-  owner: 'core',
-  method: 'renderIsReady',
-  effect: 'read',
-  parameters: []
-})
-
 const hasRenderEngineProviderApi = defineBasicApi({
+  description:
+    'Check whether a render engine provider is registered; this is a host diagnostic.',
   owner: 'core',
   method: 'hasRenderEngineProvider',
   effect: 'read',
@@ -114,6 +130,8 @@ const hasRenderEngineProviderApi = defineBasicApi({
 })
 
 const isCompositionOpenApi = defineBasicApi({
+  description:
+    'Check framework composition lifecycle state; this does not indicate drawing completion.',
   owner: 'core',
   method: 'isCompositionOpen',
   effect: 'read',
@@ -121,17 +139,41 @@ const isCompositionOpenApi = defineBasicApi({
 })
 
 const getRuntimeStateApi = defineBasicApi({
+  description:
+    'Read framework runtime diagnostics; use narrow document reads for editing.',
   owner: 'core',
   method: 'getRuntimeState',
   effect: 'read',
   parameters: []
 })
 
+const getElementMetadataApi = defineBasicApi({
+  owner: 'core',
+  method: 'getElementMetadata',
+  effect: 'read',
+  parameters: [{ name: 'elementId', schema: apiElementId }],
+  description:
+    'Read canonical identity, name, type, parent, visibility, lock and childCount without copying property data or children. Prefer read_design_context for multiple IDs.'
+})
+
+const getElementChildrenApi = defineBasicApi({
+  owner: 'core',
+  method: 'getElementChildren',
+  effect: 'read',
+  parameters: [
+    { name: 'elementId', schema: apiElementId },
+    { name: 'offset', schema: { type: 'integer', minimum: 0 }, optional: true },
+    { name: 'limit', schema: { type: 'integer', minimum: 1 }, optional: true }
+  ],
+  description:
+    'Read a page of current direct child IDs with total and nextOffset; defaults to offset 0 and limit 50. Restart paging after hierarchy changes. For before/after placement use hierarchy.moveElementsRelative without reading siblings.'
+})
+
 const getElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementData',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }],
+  parameters: [{ name: 'elementId', schema: apiElementId }],
   description:
     'Returns detached canonical element data; property references are not resolved geometry.'
 })
@@ -141,11 +183,21 @@ const getElementComputedDataApi = defineBasicApi({
   method: 'getElementComputedData',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fields', schema: apiIds, optional: true }
+    { name: 'elementId', schema: apiElementId },
+    {
+      name: 'fields',
+      schema: {
+        ...apiArray({
+          ...apiString,
+          maxLength: ComputedFieldSelectionLimits.fieldName
+        }),
+        maxItems: ComputedFieldSelectionLimits.fields
+      },
+      optional: true
+    }
   ],
   description:
-    'Read only requested fields when possible; includes computed properties.'
+    'Read only requested fields when possible. This is a computed projection, not a canonical write payload: linked records such as fills/strokes are expanded objects. Keep their IDs and use patchElementProperties records to edit them; do not write expanded records back through updateElementProperties.'
 })
 
 const getAllElementDataApi = defineBasicApi({
@@ -167,6 +219,8 @@ const getCanonicalOwnerSnapshotApi = defineBasicApi({
 })
 
 const getSystemContextSnapshotApi = defineBasicApi({
+  description:
+    'Read interaction system context; this is not canonical element data.',
   owner: 'core',
   method: 'getSystemContextSnapshot',
   effect: 'read',
@@ -182,13 +236,17 @@ const isContainerTypeApi = defineBasicApi({
 })
 
 const hasProjectedElementApi = defineBasicApi({
+  description:
+    'Check whether an element has a render projection; canonical existence is a separate question.',
   owner: 'core',
   method: 'hasProjectedElement',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const getElementIdAtClientPosApi = defineBasicApi({
+  description:
+    'Hit-test the projection at browser client coordinates; returns the hit identity.',
   owner: 'core',
   method: 'getElementIdAtClientPos',
   effect: 'read',
@@ -196,6 +254,8 @@ const getElementIdAtClientPosApi = defineBasicApi({
 })
 
 const getMousePosInWorkspaceApi = defineBasicApi({
+  description:
+    'Convert browser pointer coordinates into workspace coordinates.',
   owner: 'core',
   method: 'getMousePosInWorkspace',
   effect: 'read',
@@ -208,6 +268,8 @@ const getMousePosInWorkspaceApi = defineBasicApi({
 })
 
 const workspaceToCanvasApi = defineBasicApi({
+  description:
+    'Convert workspace coordinates into canvas coordinates using the current viewport.',
   owner: 'core',
   method: 'workspaceToCanvas',
   effect: 'read',
@@ -215,41 +277,49 @@ const workspaceToCanvasApi = defineBasicApi({
 })
 
 const workspaceToElementLocalApi = defineBasicApi({
+  description:
+    'Convert a workspace position into a known element local coordinate space; returns null if the transform is unavailable.',
   owner: 'core',
   method: 'workspaceToElementLocal',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
 
 const elementLocalToWorkspaceApi = defineBasicApi({
+  description:
+    'Convert a known element local position into workspace coordinates; returns null if unavailable.',
   owner: 'core',
   method: 'elementLocalToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     { name: 'localPosition', schema: apiPosition }
   ]
 })
 
 const elementSourceToWorkspaceApi = defineBasicApi({
+  description:
+    'Convert source geometry coordinates to workspace coordinates; do not confuse source with local coordinates.',
   owner: 'core',
   method: 'elementSourceToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     { name: 'sourcePosition', schema: apiPosition }
   ]
 })
 
 const workspaceToElementSourceApi = defineBasicApi({
+  description:
+    'Convert workspace coordinates into source geometry coordinates for existing vector edits.',
   owner: 'core',
   method: 'workspaceToElementSource',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -263,6 +333,8 @@ const getUIPropertyApi = defineBasicApi({
 })
 
 const getSystemPropertyApi = defineBasicApi({
+  description:
+    'Read a known registered system-property value; does not subscribe or modify it.',
   owner: 'core',
   method: 'getSystemProperty',
   effect: 'read',
@@ -270,6 +342,8 @@ const getSystemPropertyApi = defineBasicApi({
 })
 
 const hasSystemPropertyApi = defineBasicApi({
+  description:
+    'Check whether a system property is registered before reading an unknown key.',
   owner: 'core',
   method: 'hasSystemProperty',
   effect: 'read',
@@ -277,6 +351,8 @@ const hasSystemPropertyApi = defineBasicApi({
 })
 
 const getComponentPropertyRelationsApi = defineBasicApi({
+  description:
+    'Read the property relationships registered for a component type, not a document instance.',
   owner: 'core',
   method: 'getComponentPropertyRelations',
   effect: 'read',
@@ -284,32 +360,22 @@ const getComponentPropertyRelationsApi = defineBasicApi({
 })
 
 const getPropertyChildRelationsApi = defineBasicApi({
+  description:
+    'Read registered child-property relationships for a property type.',
   owner: 'core',
   method: 'getPropertyChildRelations',
   effect: 'read',
   parameters: [{ name: 'parentPropertyType', schema: apiString }]
 })
 
-const createElementInParentApi = defineBasicApi({
-  owner: 'core',
-  method: 'createElementInParent',
-  effect: 'write',
-  parameters: [
-    { name: 'data', schema: elementCreationDataSchema },
-    { name: 'parentId', schema: apiString },
-    { name: 'index', schema: { type: 'integer' }, optional: true }
-  ],
-  description:
-    'Creates one element through the public Core owner. Use plural creation for a ready batch.'
-})
-
 const createElementsInParentApi = defineBasicApi({
   owner: 'core',
   method: 'createElementsInParent',
+  resultKind: 'created-items',
   effect: 'write',
   parameters: [
     { name: 'data', schema: apiArray(elementCreationDataSchema) },
-    { name: 'parentId', schema: apiString },
+    { name: 'parentId', schema: apiId },
     { name: 'index', schema: { type: 'integer' }, optional: true }
   ],
   description: 'Creates the supplied batch in order; returns stable IDs.'
@@ -318,15 +384,19 @@ const createElementsInParentApi = defineBasicApi({
 const updateElementPropertiesApi = defineBasicApi({
   owner: 'core',
   method: 'updateElementProperties',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
-    'Plural canonical property updates. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
+    'Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
 })
 
 const patchElementPropertiesApi = defineBasicApi({
   owner: 'core',
   method: 'patchElementProperties',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   effect: 'write',
   parameters: [
     {
@@ -334,12 +404,13 @@ const patchElementPropertiesApi = defineBasicApi({
       schema: apiArray(
         apiObject(
           {
-            elementId: apiString,
+            elementId: apiElementId,
             values: apiRecord,
             records: apiArray(
-              apiObject({ key: apiString, set: apiRecord, remove: apiIds }, [
-                'key'
-              ])
+              apiObject(
+                { key: apiId, set: apiRecord, remove: apiArray(apiString) },
+                ['key']
+              )
             )
           },
           ['elementId', 'records']
@@ -348,27 +419,32 @@ const patchElementPropertiesApi = defineBasicApi({
     }
   ],
   description:
-    'Patch canonical property records without replacing unrelated records.'
+    'Plural patches require records (use [] with ordinary values); updateElementProperties also supports ordinary values. Preserve unrelated records and relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; Reuse known fillId; if unknown, obtain it from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
 })
 
 const updatePropertyComponentsApi = defineBasicApi({
   owner: 'core',
   method: 'updatePropertyComponents',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['propertyId'],
   effect: 'write',
   parameters: [
     {
       name: 'updates',
-      schema: apiArray(apiObject({ propertyId: apiString, values: apiRecord }))
+      schema: apiArray(apiObject({ propertyId: apiId, values: apiRecord }))
     }
-  ]
+  ],
+  description:
+    'Plural updates of existing canonical property components by propertyId (not elementId). Use current component IDs; preserve relationship reference lists and patch linked records with patchElementProperties rather than copying computed projections.'
 })
 
 const updateElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'updateElementData',
+  resultKind: 'change-flag',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     {
       name: 'values',
       schema: apiObject(
@@ -385,38 +461,9 @@ const updateElementDataApi = defineBasicApi({
     'Update canonical element fields; property values belong to updateElementProperties.'
 })
 
-const removeSubtreeApi = defineBasicApi({
-  owner: 'core',
-  method: 'removeSubtree',
-  effect: 'delete',
-  parameters: [{ name: 'elementId', schema: apiString }],
-  description: 'Deletes the selected subtree through the canonical owner.'
-})
-
-const selectElementsApi = defineBasicApi({
-  owner: 'core',
-  method: 'selectElements',
-  effect: 'selection',
-  parameters: [{ name: 'elementIds', schema: apiIds }]
-})
-
-const selectVectorPointsApi = defineBasicApi({
-  owner: 'core',
-  method: 'selectVectorPoints',
-  effect: 'selection',
-  parameters: [{ name: 'pointIds', schema: apiIds }],
-  description:
-    'Uses canonical encoded vector-point selection IDs; use App selection helpers when starting from element/point pairs.'
-})
-
-const selectVectorSegmentsApi = defineBasicApi({
-  owner: 'core',
-  method: 'selectVectorSegments',
-  effect: 'selection',
-  parameters: [{ name: 'segmentIds', schema: apiIds }]
-})
-
 const selectByChannelApi = defineBasicApi({
+  description:
+    'Replace IDs in a registered selection channel; use typed selection operations for ordinary element or vector selection.',
   owner: 'core',
   method: 'selectByChannel',
   effect: 'selection',
@@ -426,28 +473,9 @@ const selectByChannelApi = defineBasicApi({
   ]
 })
 
-const saveApi = defineBasicApi({
-  owner: 'core',
-  method: 'save',
-  effect: 'read',
-  parameters: []
-})
-
-const propsSaveDataApi = defineBasicApi({
-  owner: 'core',
-  method: 'propsSaveData',
-  effect: 'read',
-  parameters: []
-})
-
-const sceneTreeSaveDataApi = defineBasicApi({
-  owner: 'core',
-  method: 'sceneTreeSaveData',
-  effect: 'read',
-  parameters: []
-})
-
 const getCanvasBoundsApi = defineBasicApi({
+  description:
+    'Read browser canvas bounds for coordinate conversion; may be unavailable before rendering starts.',
   owner: 'core',
   method: 'getCanvasBounds',
   effect: 'read',
@@ -455,13 +483,17 @@ const getCanvasBoundsApi = defineBasicApi({
 })
 
 const measureElementContentBoundsApi = defineBasicApi({
+  description:
+    'Measure content bounds for the supplied element IDs together; returns per-element measurements.',
   owner: 'core',
   method: 'measureElementContentBounds',
   effect: 'read',
-  parameters: [{ name: 'elementIds', schema: apiIds }]
+  parameters: [{ name: 'elementIds', schema: apiElementIds }]
 })
 
 const getRegistrationApi = defineBasicApi({
+  description:
+    'Read one known framework registration; prefer this to enumerating all registrations.',
   owner: 'core',
   method: 'getRegistration',
   effect: 'read',
@@ -471,6 +503,8 @@ const getRegistrationApi = defineBasicApi({
 })
 
 const hasSharedDataChannelApi = defineBasicApi({
+  description:
+    'Check whether a named shared publication channel is registered; does not inspect document edits.',
   owner: 'core',
   method: 'hasSharedDataChannel',
   effect: 'read',
@@ -480,13 +514,14 @@ const hasSharedDataChannelApi = defineBasicApi({
 const moveElementsApi = defineBasicApi({
   owner: 'core',
   method: 'moveElements',
+  resultKind: 'moves',
   effect: 'write',
   parameters: [
     {
       name: 'request',
       schema: apiObject({
-        elementIds: apiIds,
-        targetParentId: apiString,
+        elementIds: apiElementIds,
+        targetParentId: apiId,
         targetIndex: { type: 'integer' }
       })
     }
@@ -495,7 +530,120 @@ const moveElementsApi = defineBasicApi({
     'Prefer hierarchy.moveElements in this app to maintain automatic group bounds.'
 })
 
+const propertyTargetSchema = apiObject(
+  {
+    elementId: apiElementId,
+    propertyName: apiString,
+    path: apiArray(apiObject({ key: apiString, childId: apiId })),
+    expectedRootId: apiId,
+    expectedPropertyId: apiId,
+    expectedSourceId: apiId
+  },
+  ['elementId', 'propertyName', 'path']
+)
+
+const readElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'readElementPropertyTargets',
+  effect: 'read',
+  parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
+  description:
+    'Read property mode, effective values, sparse overrides and independent sourceId. Use an empty path to read the root and its children; children expose logical childId and effective propertyId. Build subsequent paths from those logical slots, not row indices or guessed IDs. Optional expected identities reject stale targets.'
+})
+const updateElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'updateElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, values: apiRecord })
+      )
+    }
+  ],
+  description:
+    'Edit only the selected owner targets; source-backed targets receive sparse local overrides, including equal-valued masks. Shared sources and unrelated owners remain unchanged. The whole batch preflights before writing. Returns locally accepted element IDs, not save confirmation.'
+})
+const updateSharedPropertySourcesApi = defineBasicApi({
+  owner: 'core',
+  method: 'updateSharedPropertySources',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['propertyId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(apiObject({ propertyId: apiId, values: apiRecord }))
+    }
+  ],
+  description:
+    'Explicitly edit independent shared property sources by source ID. Changes propagate to unmasked consumers; local overrides remain. Use only when intending to modify the shared style, not one selected object. Returns locally accepted source IDs, not element IDs or save confirmation.'
+})
+const resetElementPropertyOverridesApi = defineBasicApi({
+  owner: 'core',
+  method: 'resetElementPropertyOverrides',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, keys: apiArray(apiString) })
+      )
+    }
+  ],
+  description:
+    'Remove the named local field masks so values follow the current shared source again. Does not write a captured source value as an override. Returns locally accepted element IDs; no durability claim.'
+})
+const detachElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'detachElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
+  effect: 'write',
+  parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
+  description:
+    'Materialize current effective values into independent owner components and release their source links atomically. Other owners and sources remain unchanged. Undo restores the links. Returns locally accepted element IDs; read targets again for new bindings, save separately for durability.'
+})
+const shareElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'shareElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, sourceId: apiId })
+      )
+    }
+  ],
+  description:
+    'Rebind selected owner targets to an independent same-type source. Reset or detach existing local overrides first; sharing rejects remaining masks or child bindings. Logical child slots remain stable. A source-backed source is rejected; no source chains. Later owner edits remain local overrides. Returns locally accepted element IDs; read targets again for new bindings, save separately for durability.'
+})
+
 export const basicCoreApiContracts = [
+  defineBasicApi({
+    owner: 'core',
+    method: 'allocateIds',
+    effect: 'prepare',
+    resultKind: 'allocated-ids',
+    parameters: [{ name: 'types', schema: apiArray(apiString) }],
+    examples: [{ types: ['el', 'el'] }],
+    description:
+      'Allocate IDs atomically from the existing registered counters in input order; el is the general element counter. No objects or Undo entries are created. Use separate returned IDs as source keys for distinct nodes, and reuse the face key in boundary.face. Keep returned IDs for later references; prepared keyToId is authoritative for actual document IDs. Empty input is valid; invalid/unregistered types, ambiguous prefixes or exhaustion consume nothing. Counter state and reset are not exposed. Caller-authored unique keys remain valid.'
+  }),
+  readElementPropertyTargetsApi,
+  updateElementPropertyTargetsApi,
+  updateSharedPropertySourcesApi,
+  resetElementPropertyOverridesApi,
+  detachElementPropertyTargetsApi,
+  shareElementPropertyTargetsApi,
   getCurrentWorkspaceIdApi,
   getCanonicalElementCountApi,
   getAllElementsBoundsApi,
@@ -506,11 +654,12 @@ export const basicCoreApiContracts = [
   getRegistrationsApi,
   getRegistrationRelationsApi,
   getProjectedElementCountApi,
-  renderIsReadyApi,
   hasRenderEngineProviderApi,
   isCompositionOpenApi,
   getRuntimeStateApi,
   getElementDataApi,
+  getElementMetadataApi,
+  getElementChildrenApi,
   getElementComputedDataApi,
   getAllElementDataApi,
   getCanonicalOwnerSnapshotApi,
@@ -529,20 +678,12 @@ export const basicCoreApiContracts = [
   hasSystemPropertyApi,
   getComponentPropertyRelationsApi,
   getPropertyChildRelationsApi,
-  createElementInParentApi,
   createElementsInParentApi,
   updateElementPropertiesApi,
   patchElementPropertiesApi,
   updatePropertyComponentsApi,
   updateElementDataApi,
-  removeSubtreeApi,
-  selectElementsApi,
-  selectVectorPointsApi,
-  selectVectorSegmentsApi,
   selectByChannelApi,
-  saveApi,
-  propsSaveDataApi,
-  sceneTreeSaveDataApi,
   getCanvasBoundsApi,
   measureElementContentBoundsApi,
   getRegistrationApi,

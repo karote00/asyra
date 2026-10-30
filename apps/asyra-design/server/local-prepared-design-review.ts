@@ -5,7 +5,7 @@ import {
 } from './local-reference-decisions'
 import {
   createDesignCheckResults,
-  designCheckResultsSchema
+  designCheckDeliverySchema
 } from './design-check-results'
 import {
   toolResultBoolean,
@@ -63,29 +63,50 @@ export interface PreparedRecipePacket extends PreparedRecipeContext {
 export const preparedReviewDefinition = {
   type: 'function',
   ...toolSemantics(
-    toolResultObject({
-      available: { const: true },
-      artifactId: toolResultString,
-      recipeRevision: toolResultString,
-      evidenceRevision: toolResultString,
-      status: { enum: ['pass', 'fail', 'unverified'] },
-      appearance: { const: 'unverified' },
-      evidenceCurrent: toolResultBoolean,
-      reused: toolResultBoolean,
-      finalCanvasReviewRequired: { const: true },
-      coverage: toolResultObject({
-        keys: toolResultIds,
-        wholeRecipe: toolResultBoolean,
-        criterionIds: toolResultIds,
-        pendingCriterionIds: toolResultIds
-      }),
-      assessment: toolResultObject({ checks: { type: 'array' } }),
-      results: designCheckResultsSchema
-    }),
+    toolResultObject(
+      {
+        available: { const: true },
+        artifactId: toolResultString,
+        recipeRevision: toolResultString,
+        evidenceRevision: toolResultString,
+        status: { enum: ['pass', 'fail', 'unverified'] },
+        appearance: { const: 'unverified' },
+        evidenceCurrent: toolResultBoolean,
+        reused: toolResultBoolean,
+        finalCanvasReviewRequired: { const: true },
+        coverage: toolResultObject({
+          keys: toolResultIds,
+          wholeRecipe: toolResultBoolean,
+          criterionIds: toolResultIds,
+          pendingCriterionIds: toolResultIds
+        }),
+        assessment: toolResultObject(
+          { checks: { type: 'array' }, overall: { type: 'object' } },
+          ['checks']
+        ),
+        deterministicFindings: { type: 'array' },
+        unresolvedPriorConflict: toolResultBoolean,
+        results: designCheckDeliverySchema
+      },
+      [
+        'available',
+        'artifactId',
+        'recipeRevision',
+        'evidenceRevision',
+        'status',
+        'appearance',
+        'evidenceCurrent',
+        'reused',
+        'finalCanvasReviewRequired',
+        'coverage',
+        'assessment',
+        'results'
+      ]
+    ),
     'prepare',
     ['request-artifacts']
   ),
-  revision: 2,
+  revision: 3,
   name: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
@@ -513,7 +534,7 @@ export const createPreparedDesignReview = (options: {
         deterministicFindings,
         assessment,
         finalCanvasReviewRequired: true,
-        results: results.read()
+        results: results.deliver()
       }
     }
   }

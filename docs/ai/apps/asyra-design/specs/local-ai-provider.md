@@ -1,5 +1,25 @@
 # Local AI provider
 
+## Direct native tool delivery
+
+Tools expose vendor-independent JSON contracts and owner results. The local adapter
+registers deferred native declarations and delivers text and images directly through
+the native tool-response channel. No generated JavaScript program, interpreter
+storage or model-authored forwarding step participates. App-owned result handles,
+bounded content continuations and explicit refresh remain the recovery authority;
+recovering delivery must never replay a completed mutation or capture.
+
+Normal startup selects direct tools and standard Responses delivery from the native
+executable's public model metadata without changing global configuration or model
+limits. Missing configuration fails explicitly before model use. Request-owned
+configuration is released on every terminal path. Other providers consume the same
+public owner contracts through their own adapters, without native-runtime dependence.
+
+Formal offline tests must inspect the real successor request for full text, native
+images, exact search routing, paging, failures and cancellation. A stored result is
+not proof of model receipt. Generated templates use this same production path.
+
+
 ## Supported behavior
 
 Style comparisons describe the requested visible appearance unless the user
@@ -124,8 +144,8 @@ function retains its exact App name and schema with `deferLoading: true` inside
 its native namespace. Empty owners are omitted. A request-local binding map
 routes the exact namespace/name pair to the registered owner; missing, wrong or
 unknown namespaces fail before dispatch. Full schemas remain registered with
-the native service and discoverable for Code Mode; the initial instructions
-contain only namespace and tool-name metadata. This reduces eager schema
+the native service and discoverable as callable functions; initial instructions
+provide purpose-based discovery without enumerating every tool. This reduces eager schema
 exposure, not registration wire bytes, and does not promise a latency reduction.
 
 Codex may apply the user’s own global `AGENTS.md` or `AGENTS.override.md` from
@@ -136,7 +156,7 @@ Submitted intent, bounded context, registered action descriptions, accepted
 images, and the backend domain prompt enter the model request alongside that personal guidance. Native image
 inputs carry image bytes once; prompt metadata omits those bytes. Local Codex
 has no filesystem, shell, plugin, MCP, or image-generation tools. Native public
-web research and scoped code-mode composition of registered tools are available. The backend
+web research and direct registered-tool composition are available. The backend
 exposes its registered VTracer tool for submitted PNG/JPEG/WebP attachments and registered backend operation tools; image tool
 arguments select an attachment index, never a path or URL. Conversion uses the
 existing App worker and the owning request cancellation, without a cumulative call quota.
@@ -551,14 +571,12 @@ preparation error with the failing path before any item is dispatched. This does
 not retry canonical failures or replace current-target, permission or executor
 validation. Prepared internal geometry is not traversed by this model-input check.
 
-## Programmatic tool orchestration
+## Direct tool orchestration
 
-The local backend enables the installed Codex code-mode runtime for composing
-registered App tools. Code has no App filesystem, shell, package installation,
-credential, plugin or unrestricted network capability; native public web research
-remains separate. Native code-mode output is diagnostic only, never a canvas
-batch. Every nested App call uses the same schema admission, artifact resolver,
-permission, execution receipt and cancellation owner as a direct call.
+The native backend invokes registered App tools directly with JSON arguments.
+Every call uses schema admission, the artifact resolver, permission, execution
+receipt and cancellation owners. Public web research remains separate. Arbitrary
+program output cannot become a canvas batch or an App receipt.
 
 Concurrent calls are scheduled in arrival order using the registered owner's
 internal `executionAccess` declaration. Independent image analysis, new immutable
@@ -572,8 +590,8 @@ does not classify by tool names. Internal access metadata is omitted from native
 schemas. Cancellation or a fatal execution failure prevents queued calls from
 starting. The scheduler introduces no automatic retry and delegates canonical
 mutation boundaries to the App history-group adapter.
-Intermediate values live only in the native request session; no App cache crosses
-requests.
+Retained values belong to the existing request-owned App result stores; no cache
+crosses requests.
 
 When design application is registered, prepare_and_apply_design combines semantic
 preparation and application in one tool call. Invalid preparation never dispatches
@@ -582,8 +600,8 @@ operation owner, including layout measurement and immediate/deferred inspection.
 Its default response omits duplicated refreshed context, applied-ID lists and
 role mappings; it preserves preparation findings, root identity, inspection and
 measurement results. Full operation receipts can be explicitly requested for
-programmatic ID selection. Native code should retain those values and print only
-needed results, forwarding actual image items for visual judgment.
+programmatic ID selection. The adapter delivers selected receipt text and actual image content directly for
+visual judgment.
 
 Formal cases cover ordered concurrent writes, cancellation/failure queues,
 unchanged analysis concurrency, one preparation per combined call, no application
@@ -591,10 +609,8 @@ on invalid input, full/compact receipt equivalence, and native tool-output
 admission without authorizing shell/MCP tools. The live comparison is one headless
 recorded run; timing, tool events and observed quality are reported separately.
 
-Native code-mode completion accepts the default namespace as absent, null or
-functions. It cannot supply a final action batch. Unsupported item diagnostics
-record only bounded identifier-shaped item type, tool and namespace plus the
-rejection category; never raw output, generated code, image bytes or credentials.
+Unsupported completed items fail explicitly and cannot supply a final action batch.
+Diagnostics preserve bounded item identity and rejection category without secrets.
 
 ### Observable request timing
 
@@ -625,8 +641,7 @@ No raw request or response content is added to these diagnostics.
 
 The usage record reports the union of observed tool/research intervals and the
 remaining unattributed wall time. Overlapping calls count only once. Unattributed
-time can include model generation, provider/network waiting and native code-mode
-orchestration; it is never reported as measured private reasoning. Per-call timing
+time can include model generation, provider/network waiting and native transport; it is never reported as measured private reasoning. Per-call timing
 and summaries contain no image bytes, private reasoning or raw generated code.
 These diagnostics do not change request execution or introduce a time limit.
 
@@ -718,7 +733,7 @@ yarn workspace @asyra/asyra-design ai:report --request REQUEST_ID --assess proce
 
 Use `--assess visual` with the exact requested criteria to reuse an adequate
 current model visual review, without a new call. Otherwise one isolated assessment
-call may read the report projection; no App tools, web search, Code Mode or canvas
+call may read the report projection; no App tools, web search or canvas
 executor is supplied. No images are supplied, so this is opinion about available
 evidence, never visual certification. Provider absence/failure and invalid call
 citations are saved as unavailable/failed assessment, with no automatic retry.

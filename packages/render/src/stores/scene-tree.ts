@@ -7,6 +7,7 @@ import type {
   HierarchyMove,
   SceneTreeDataOwner,
   SubtreeChange,
+  UpdateElementPropertyBindingsChange,
   WorkspaceRawData
 } from '@asyra/utils'
 import {
@@ -1627,6 +1628,29 @@ class RenderSceneTree {
     this.pendingElementUpdates.add(elementId)
     this.scheduleFlush()
     return this.projectionOutcome(elementId, 'applied')
+  }
+
+  updateElementPropertyBindings(
+    elementId: string,
+    changes: UpdateElementPropertyBindingsChange['changes']
+  ) {
+    const entry = this.computedDataMirror.get(elementId)
+    const before = entry?.rawDataSnapshot.props
+    if (!isRecord(before)) return this.resyncElement(elementId)
+    const after = { ...before }
+    for (const change of changes) {
+      if (after[change.key] !== change.before)
+        return this.resyncElement(elementId)
+      after[change.key] = change.after
+    }
+    return this.updateElementBatch(elementId, [
+      {
+        owner: 'raw',
+        key: 'props',
+        before: before as DataTypes,
+        after: after as DataTypes
+      }
+    ])
   }
 
   updateElementBatch(

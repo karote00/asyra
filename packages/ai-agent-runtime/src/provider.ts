@@ -1,4 +1,4 @@
-import type { AiToolContractInput } from './tool-contract.js'
+import type { AiToolContractInput, AiToolOutcome } from './tool-contract.js'
 import type { AiActionDescription, AiJsonValue } from './types.js'
 
 /** Ordered public purpose and observed owner phase, independent of outcome. */
@@ -8,6 +8,8 @@ export interface ExecutionActivity {
   readonly sequence: number
   readonly parentCallId?: string
   readonly scope?: 'request' | 'call'
+  /** Canonical operation result; transport completion alone has no outcome. */
+  readonly outcome?: AiToolOutcome
   /** Actual dispatched work, not the enclosing tool capability. */
   readonly effect?: AiToolContractInput['effect'] | 'mixed'
   readonly phase?:
@@ -38,6 +40,15 @@ export const isExecutionActivity = (
         activity.parentCallId !== activity.callId)) &&
     (activity.scope === undefined ||
       ['request', 'call'].includes(activity.scope)) &&
+    (activity.outcome === undefined ||
+      (activity.outcome !== null &&
+        typeof activity.outcome === 'object' &&
+        ['success', 'partial', 'failed', 'unknown'].includes(
+          activity.outcome.status
+        ) &&
+        ['not-started', 'completed', 'partial', 'unknown'].includes(
+          activity.outcome.settlement
+        ))) &&
     (activity.effect === undefined ||
       ['read', 'prepare', 'mutation', 'external', 'mixed'].includes(
         activity.effect

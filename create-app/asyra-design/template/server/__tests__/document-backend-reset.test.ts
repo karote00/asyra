@@ -1,8 +1,13 @@
+import { prepareDocumentPublication } from '../../src/collaboration/document-publication'
 import type { SharedPublication } from '@asyra/factory'
 import { Buffer } from 'node:buffer'
-import { mkdir, rm } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...actual, writeFile: vi.fn(actual.writeFile) }
+})
 import { createFormalInitialDocument } from '../../src/collaboration/initial-document'
 import {
   CollaborationMessageTypes,
@@ -72,7 +77,7 @@ describe('document backend destructive Reset boundary', () => {
     }
     const encodedPublicationFrames = encodePublicationMessageFrames({
       type: CollaborationMessageTypes.PUBLICATION,
-      publication,
+      publication: prepareDocumentPublication(publication),
       fromActorId: 'actor-after-reset',
       sequence: 1
     }).map((frame) => Buffer.from(frame).toString('base64'))
@@ -175,4 +180,254 @@ describe('document backend destructive Reset boundary', () => {
       await backend.close()
     }
   })
+})
+
+it('records checkpoint admission, serialization, write and rename in durable order', async () => {
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  const events: string[] = []
+  const details: Record<string, unknown>[] = []
+  await store.transact(
+    'observed',
+    async (current, commit) => {
+      commit({ ...current, durableSequence: 7 })
+    },
+    {
+      span: (stage) => {
+        events.push(`${stage}:start`)
+        return () => {
+          events.push(`${stage}:end`)
+        }
+      },
+      detail: (value) => {
+        details.push(value)
+      }
+    }
+  )
+  expect(events).toEqual([
+    'checkpoint-admission-wait:start',
+    'checkpoint-admission-wait:end',
+    'checkpoint-read:start',
+    'checkpoint-read:end',
+    'checkpoint-serialization:start',
+    'checkpoint-serialization:end',
+    'checkpoint-write:start',
+    'checkpoint-write:end',
+    'checkpoint-rename:start',
+    'checkpoint-rename:end'
+  ])
+  expect(details).toContainEqual(
+    expect.objectContaining({ durableSequence: 7, bytes: expect.any(Number) })
+  )
+  expect((await store.readCheckpoint('observed')).durableSequence).toBe(7)
+})
+it('keeps checkpoint durability independent from diagnostic failures', async () => {
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  await store.transact(
+    'observer-failure',
+    async (current, commit) => {
+      commit({ ...current, durableSequence: 3 })
+    },
+    {
+      span: () => {
+        throw new Error('observer unavailable')
+      },
+      detail: () => {
+        throw new Error('observer unavailable')
+      }
+    }
+  )
+  expect((await store.readCheckpoint('observer-failure')).durableSequence).toBe(
+    3
+  )
+})
+
+it('keeps the previous cached and on-disk watermark when checkpoint writing fails', async () => {
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  await store.transact('failed-write', async (current, commit) => {
+    commit({ ...current, durableSequence: 1 })
+  })
+  vi.mocked(writeFile).mockRejectedValueOnce(
+    new Error('checkpoint write failed')
+  )
+  await expect(
+    store.transact('failed-write', async (current, commit) => {
+      commit({ ...current, durableSequence: 2 })
+    })
+  ).rejects.toThrow('checkpoint write failed')
+  expect((await store.readCheckpoint('failed-write')).durableSequence).toBe(1)
+  const freshStore = createFileDocumentMaterializationStore(dataDirectory)
+  expect(
+    (await freshStore.readCheckpoint('failed-write')).durableSequence
+  ).toBe(1)
+})
+
+it('retains document changes and retry identity across failed writes, Undo, Redo and fresh stores', async () => {
+  const { applyCanonicalChangesToDocument } =
+    await import('../document-canonical-reducer')
+  const apply = vi.fn(applyCanonicalChangesToDocument)
+  const open = () =>
+    createDocumentMaterializationService({
+      store: createFileDocumentMaterializationStore(dataDirectory),
+      authorize: async () => undefined,
+      applyCanonicalChanges: apply
+    })
+  const makeBatch = (
+    sequence: number,
+    origin: 'action' | 'undo' | 'redo',
+    before: string,
+    after: string
+  ) => {
+    const publication = prepareDocumentPublication({
+      publicationId: `publication-${sequence}`,
+      artifactId: `artifact-${sequence}`,
+      transactionId: sequence,
+      origin,
+      mode: 'atomic',
+      slices: [
+        {
+          sliceId: `slice-${sequence}`,
+          orderedIds: [`delivery-${sequence}`],
+          batches: [
+            {
+              batchId: `source-${sequence}`,
+              channel: 'sceneTree',
+              deliveries: [
+                {
+                  deliveryId: `delivery-${sequence}`,
+                  orderedIds: [`delivery-${sequence}`],
+                  eventName: 'updateElementData',
+                  payload: {
+                    action: 'updateElementData',
+                    eventName: 'updateElementData',
+                    id: 'workspace',
+                    changes: [{ key: 'name', before, after }]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })
+    return {
+      protocolVersion: 1,
+      documentId: 'reload-proof',
+      batchId: `request-${sequence}`,
+      expectedDurableSequence: sequence - 1,
+      firstSequence: sequence,
+      lastSequence: sequence,
+      entries: [
+        {
+          documentId: 'reload-proof',
+          sequence,
+          publicationId: publication.publicationId,
+          encodedPublicationFrames: encodePublicationMessageFrames({
+            type: CollaborationMessageTypes.SEND_PUBLICATION,
+            requestId: `wire-${sequence}`,
+            publication
+          }).map((frame) => Buffer.from(frame).toString('base64'))
+        }
+      ]
+    }
+  }
+  const first = makeBatch(1, 'action', 'Workspace', 'Edited')
+  vi.mocked(writeFile).mockRejectedValueOnce(
+    new Error('checkpoint write failed')
+  )
+  await expect(open().materialize(first)).rejects.toThrow(
+    'checkpoint write failed'
+  )
+  const failed =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'reload-proof'
+    )
+  expect(failed.durableSequence).toBe(0)
+  expect(failed.document.sceneTree.elements.workspace?.name).toBe('Workspace')
+  await open().materialize(first)
+  apply.mockClear()
+  await open().materialize(first)
+  expect(apply).not.toHaveBeenCalled()
+  await open().materialize(makeBatch(2, 'undo', 'Edited', 'Workspace'))
+  const undone =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'reload-proof'
+    )
+  expect(undone.document.sceneTree.elements.workspace?.name).toBe('Workspace')
+  const redo = makeBatch(3, 'redo', 'Workspace', 'Edited')
+  await open().materialize(redo)
+  const loaded =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'reload-proof'
+    )
+  expect(loaded.document.sceneTree.elements.workspace?.name).toBe('Edited')
+  expect(loaded.durableSequence).toBe(3)
+  expect(Object.keys(loaded.publicationDigests ?? {})).toHaveLength(3)
+  apply.mockClear()
+  await open().materialize(redo)
+  expect(apply).not.toHaveBeenCalled()
+})
+
+it('migrates old text fills before applying and persisting new property updates', async () => {
+  const { applyCanonicalChangesToDocument } =
+    await import('../document-canonical-reducer')
+  const document = createFormalInitialDocument()
+  document.sceneTree.elements.text = {
+    id: 'text',
+    type: 'text',
+    name: 'Saved text',
+    parentId: 'workspace',
+    visible: true,
+    lock: false,
+    props: { typography: 'typography' }
+  }
+  document.props.typography = {
+    id: 'typography',
+    type: 'typography',
+    text: 'Saved content',
+    textColor: '#314F32'
+  }
+  const record = {
+    document,
+    documentGeneration: 3,
+    durableSequence: 7,
+    publicationSequences: {},
+    batches: {}
+  }
+  await mkdir(dataDirectory, { recursive: true })
+  await writeFile(
+    resolve(
+      dataDirectory,
+      `${Buffer.from('old-text').toString('base64url')}.json`
+    ),
+    JSON.stringify({ protocolVersion: 1, documentId: 'old-text', record })
+  )
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  const loaded = await store.readCheckpoint('old-text')
+  expect(loaded.document.props['text-fill']).toMatchObject({
+    color: '#314F32',
+    opacity: 1
+  })
+  await store.transact('old-text', async (current, commit) => {
+    commit({
+      ...current,
+      document: applyCanonicalChangesToDocument(current.document, [
+        {
+          kind: 'property-components',
+          records: [],
+          updates: [{ propertyId: 'text-fill', values: { opacity: 0.35 } }]
+        }
+      ])
+    })
+  })
+  const restored =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'old-text'
+    )
+  expect(restored.document.props['text-fill']).toMatchObject({
+    color: '#314F32',
+    opacity: 0.35
+  })
+  expect(restored.document.props.typography).not.toHaveProperty('textColor')
+  expect(restored.documentGeneration).toBe(3)
+  expect(restored.durableSequence).toBe(7)
 })

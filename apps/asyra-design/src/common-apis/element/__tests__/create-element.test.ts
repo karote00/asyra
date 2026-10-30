@@ -305,7 +305,7 @@ describe('create-element explicit parent and coordinates', () => {
       sharedDelivery: 'transaction-end',
       undoable: true
     } as const
-    const coreResult = ['oval-1', 'vector-1']
+    const coreResult = Object.freeze(['oval-1', 'vector-1'])
     mocks.createElementsInParent.mockReturnValue(coreResult)
 
     const descriptors = Object.freeze([
@@ -356,7 +356,7 @@ describe('create-element explicit parent and coordinates', () => {
     )
 
     expect(result).toEqual(coreResult)
-    expect(result).not.toBe(coreResult)
+    expect(result).toBe(coreResult)
     expect(Object.isFrozen(result)).toBe(true)
     expect(mocks.createElementsInParent).toHaveBeenCalledOnce()
     expect(mocks.createElementsInParent).toHaveBeenCalledWith(
@@ -406,7 +406,9 @@ describe('create-element explicit parent and coordinates', () => {
         y: 0
       })
     ])
-    mocks.createElementsInParent.mockReturnValue(['oval-1', 'rect-1'])
+    mocks.createElementsInParent.mockReturnValue(
+      Object.freeze(['oval-1', 'rect-1'])
+    )
 
     expect(
       elementApis.createElementsInParent(descriptors, 'group-2', {
@@ -438,6 +440,10 @@ describe('create-element explicit parent and coordinates', () => {
   })
 
   it('routes changed child geometry through the shared property boundary', () => {
+    mocks.applyElementPropertyUpdate.mockReturnValue({
+      acceptedIds: ['new-element'],
+      changed: true
+    })
     elementApis.changeElementGeometry(
       'new-element',
       { x: 10, y: 20, width: 30, height: 40 },
@@ -478,6 +484,10 @@ describe('create-element explicit parent and coordinates', () => {
   })
 
   it('defers Group normalization while applying one non-vector gesture sample', () => {
+    mocks.updateElementProperties.mockReturnValue({
+      acceptedIds: ['rect-1', 'rect-2'],
+      changed: true
+    })
     mocks.getElementById.mockImplementation((elementId: string) => {
       const positions: Record<string, { x: number; y: number }> = {
         'rect-1': { x: 0, y: 0 },
@@ -523,6 +533,10 @@ describe('create-element explicit parent and coordinates', () => {
   })
 
   it('coordinates mixed Vector and ordinary positions through one transform owner batch', () => {
+    mocks.updateElementProperties.mockReturnValue({
+      acceptedIds: ['vector-1', 'rect-1', 'vector-2'],
+      changed: true
+    })
     mocks.getElementById.mockImplementation((elementId: string) => {
       const fixtures: Record<
         string,

@@ -10,14 +10,52 @@ export const TextSizing = {
   FIXED: 'fixed'
 } as const
 
+/** Canonical value constraints; target capabilities and write/load policy stay with their owners. */
+export const TEXT_PROPERTY_VALUE_SCHEMAS = Object.freeze({
+  textSizing: Object.freeze({
+    type: 'string',
+    enum: Object.freeze(Object.values(TextSizing))
+  }),
+  text: Object.freeze({ type: 'string', maxLength: 100_000 }),
+  fontFamily: Object.freeze({
+    type: 'string',
+    minLength: 1,
+    maxLength: 128,
+    pattern: '\\S'
+  }),
+  fontSize: Object.freeze({
+    type: 'number',
+    minimum: Number.MIN_VALUE,
+    maximum: 4096
+  }),
+  fontWeight: Object.freeze({
+    type: 'string',
+    enum: Object.freeze(['normal', 'bold'] as const)
+  }),
+  fontStyle: Object.freeze({
+    type: 'string',
+    enum: Object.freeze(['normal', 'italic'] as const)
+  }),
+  textAlign: Object.freeze({
+    type: 'string',
+    enum: Object.freeze(['left', 'center', 'right'] as const)
+  }),
+  lineHeight: Object.freeze({
+    type: 'number',
+    minimum: Number.MIN_VALUE,
+    maximum: 8192
+  }),
+  letterSpacing: Object.freeze({ type: 'number', minimum: -100, maximum: 100 })
+})
+
 export interface TextData {
   textSizing: (typeof TextSizing)[keyof typeof TextSizing]
   text: string
   fontFamily: string
   fontSize: number
-  fontWeight: 'normal' | 'bold'
-  fontStyle: 'normal' | 'italic'
-  textAlign: 'left' | 'center' | 'right'
+  fontWeight: (typeof TEXT_PROPERTY_VALUE_SCHEMAS.fontWeight.enum)[number]
+  fontStyle: (typeof TEXT_PROPERTY_VALUE_SCHEMAS.fontStyle.enum)[number]
+  textAlign: (typeof TEXT_PROPERTY_VALUE_SCHEMAS.textAlign.enum)[number]
   lineHeight: number
   letterSpacing: number
 }
@@ -48,13 +86,17 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.textSizing,
       validate: (value) =>
-        Object.values(TextSizing).some((mode) => mode === value)
+        TEXT_PROPERTY_VALUE_SCHEMAS.textSizing.enum.some(
+          (mode) => mode === value
+        )
     },
     {
       key: 'text',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.text,
-      validate: (value) => typeof value === 'string' && value.length <= 100_000
+      validate: (value) =>
+        typeof value === 'string' &&
+        value.length <= TEXT_PROPERTY_VALUE_SCHEMAS.text.maxLength
     },
     {
       key: 'fontFamily',
@@ -62,45 +104,69 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       defaultValue: DEFAULT_TEXT_DATA.fontFamily,
       validate: (value) =>
         typeof value === 'string' &&
-        value.trim().length > 0 &&
-        value.length <= 128
+        value.trim().length >=
+          TEXT_PROPERTY_VALUE_SCHEMAS.fontFamily.minLength &&
+        value.length <= TEXT_PROPERTY_VALUE_SCHEMAS.fontFamily.maxLength
     },
     {
       key: 'fontSize',
       kind: 'number',
       defaultValue: DEFAULT_TEXT_DATA.fontSize,
-      validate: (value) => finiteRange(value, Number.MIN_VALUE, 4096)
+      validate: (value) =>
+        finiteRange(
+          value,
+          TEXT_PROPERTY_VALUE_SCHEMAS.fontSize.minimum,
+          TEXT_PROPERTY_VALUE_SCHEMAS.fontSize.maximum
+        )
     },
     {
       key: 'fontWeight',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.fontWeight,
-      validate: (value) => value === 'normal' || value === 'bold'
+      validate: (value) =>
+        TEXT_PROPERTY_VALUE_SCHEMAS.fontWeight.enum.some(
+          (option) => option === value
+        )
     },
     {
       key: 'fontStyle',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.fontStyle,
-      validate: (value) => value === 'normal' || value === 'italic'
+      validate: (value) =>
+        TEXT_PROPERTY_VALUE_SCHEMAS.fontStyle.enum.some(
+          (option) => option === value
+        )
     },
     {
       key: 'textAlign',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.textAlign,
       validate: (value) =>
-        value === 'left' || value === 'center' || value === 'right'
+        TEXT_PROPERTY_VALUE_SCHEMAS.textAlign.enum.some(
+          (option) => option === value
+        )
     },
     {
       key: 'lineHeight',
       kind: 'number',
       defaultValue: DEFAULT_TEXT_DATA.lineHeight,
-      validate: (value) => finiteRange(value, Number.MIN_VALUE, 8192)
+      validate: (value) =>
+        finiteRange(
+          value,
+          TEXT_PROPERTY_VALUE_SCHEMAS.lineHeight.minimum,
+          TEXT_PROPERTY_VALUE_SCHEMAS.lineHeight.maximum
+        )
     },
     {
       key: 'letterSpacing',
       kind: 'number',
       defaultValue: DEFAULT_TEXT_DATA.letterSpacing,
-      validate: (value) => finiteRange(value, -100, 100)
+      validate: (value) =>
+        finiteRange(
+          value,
+          TEXT_PROPERTY_VALUE_SCHEMAS.letterSpacing.minimum,
+          TEXT_PROPERTY_VALUE_SCHEMAS.letterSpacing.maximum
+        )
     }
   ]
 }

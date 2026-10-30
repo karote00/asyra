@@ -5,7 +5,10 @@ import { createAiRuntimeInput } from '../../src/ai/runtime-input'
 import { createAiTransactionRunner } from '../../src/ai/transaction'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { operationInputIssue } from '../../server/operation-input-schema'
-import type { PreparedDesign } from '../../src/ai/prepared-design'
+import {
+  deliverPreparedDesign,
+  type PreparedDesign
+} from '../../src/ai/prepared-design'
 import type { PreparedDrawingArtifact } from '../../src/ai/prepared-drawing-artifact'
 
 // Heterogeneous tool results have independent semantic assertions below.
@@ -75,7 +78,12 @@ export const runActionUsageCase = async (
     )
   }
   try {
-    const created = await invoke('apply_prepared_design', { design })
+    const created = await invoke('apply_prepared_design', {
+      design: deliverPreparedDesign(design),
+      ...(name === 'apply_prepared_material'
+        ? { materialElementIds: [design.keyToId.a] }
+        : {})
+    })
     const root = created.compositionId
     const [a, b] = [created.keyToId.a, created.keyToId.b]
     assert(root && a && b, 'Preparation did not publish usable identities')
@@ -105,7 +113,35 @@ export const runActionUsageCase = async (
       equal(JSON.stringify(await core.save()), exportSource)
       equal(core.getUndoHistoryDepth(), exportHistoryDepth)
     }
+    const gradient = {
+      gradientType: 'linear',
+      gradientHandles: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 }
+      ],
+      gradientStops: [
+        { position: 0, color: '#102030', opacity: 1 },
+        { position: 1, color: '#eeeeee', opacity: 1 }
+      ]
+    }
     const cases: Record<string, Usage> = {
+      apply_prepared_material: {
+        input: {
+          rootId: root,
+          updates: [{ elementId: a, gradient, color: '#102030' }]
+        },
+        check: async (r) => {
+          equal(r.acceptedIds, [a])
+          equal(r.unavailableIds, [])
+          equal(r.changed, true)
+          equal(r.materialProvenance.status, 'available')
+          equal(props(a).fills[0].gradient, gradient)
+          equal(props(b).fills[0].color, '#445566')
+          const noOp = await invoke(name, cases[name].input)
+          equal(noOp.changed, false)
+          equal(noOp.acceptedIds, [a])
+        }
+      },
       export_document: {
         input: {},
         check: async (r) => {
@@ -210,7 +246,7 @@ export const runActionUsageCase = async (
         }
       },
       apply_prepared_design: {
-        input: { design: additional },
+        input: { design: deliverPreparedDesign(additional) },
         check: (r) => {
           assert(
             r.status === 'complete' && meta(r.compositionId),
@@ -505,7 +541,15 @@ export const runActionUsageCase = async (
           ]
         }
       },
-      apply_prepared_design: { input: { design } },
+      apply_prepared_design: {
+        input: { design: deliverPreparedDesign(design) }
+      },
+      apply_prepared_material: {
+        input: {
+          rootId: root,
+          updates: [{ elementId: missing, gradient, color: '#102030' }]
+        }
+      },
       review_design: {
         input: { elementId: missing },
         check: (r) =>
@@ -591,7 +635,7 @@ export const runActionUsageCase = async (
           updates: [{ elementId: missing, style: { fillColor: '#00FF00' } }]
         },
         check: (r) => {
-          equal(r.status, 'no-change')
+          equal(r.status, 'failed')
           equal(r.appliedElementIds, [])
         }
       }
@@ -631,6 +675,7 @@ export const runActionUsageCase = async (
           download_document_export: /The document export is unavailable/,
           apply_prescribed_positions: /Prescribed parent changed/,
           apply_prepared_design: /A design object already exists/,
+          apply_prepared_material: /member|changed/,
           review_design: /Inspection dependency no longer exists/,
           inspect_drawing: /Inspection dependency no longer exists/,
           arrange_design: /An arrangement target is unavailable/,

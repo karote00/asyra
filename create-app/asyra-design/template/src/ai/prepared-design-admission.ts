@@ -1,3 +1,4 @@
+import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
 import { isDesignGradient } from './design-fill'
 import { TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import {
@@ -5,13 +6,15 @@ import {
   DesignNodeTypes,
   isDesignContainerType,
   PREPARED_DESIGN_VERSION,
+  PREPARED_DESIGN_DELIVERY_VERSION,
+  PreparedVectorRecordFields,
   type PreparedDesign
 } from './prepared-design'
 
 const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 function check(value: unknown): asserts value {
-  if (!value) throw new Error('Prepared design is invalid.')
+  if (!value) throw new AiActionExecutionError('Prepared design is invalid.')
 }
 const finite = (v: unknown, maximum = limits.dimension * (limits.depth + 2)) =>
   typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= maximum
@@ -142,11 +145,81 @@ function validateVector(d: Record<string, unknown>): number {
   return pointKeys.length
 }
 
-/** Wire admission only: consumes prepared geometry without recomputing it. */
+/** Restore derivable identities, then validate the complete canonical artifact. */
+export function admitPreparedDesignDelivery(input: unknown): PreparedDesign {
+  check(
+    record(input) &&
+      keysOnly(input, [
+        'version',
+        'rootId',
+        'entries',
+        'findings',
+        'continuation'
+      ])
+  )
+  check(input.version === PREPARED_DESIGN_DELIVERY_VERSION)
+  check(
+    Array.isArray(input.entries) &&
+      input.entries.length > 0 &&
+      input.entries.length <= limits.expandedNodes
+  )
+  const keyToId: Record<string, string> = Object.create(null)
+  const entries = input.entries.map((entry: unknown) => {
+    check(
+      record(entry) &&
+        keysOnly(entry, ['key', 'parentId', 'descriptor']) &&
+        record(entry.descriptor)
+    )
+    const descriptor = entry.descriptor
+    check(typeof entry.key === 'string' && typeof descriptor.id === 'string')
+    const names = descriptor.props
+    check(
+      Array.isArray(names) &&
+        names.every((name) => typeof name === 'string') &&
+        new Set(names).size === names.length
+    )
+    check(!Object.hasOwn(keyToId, entry.key))
+    keyToId[entry.key] = descriptor.id
+    const restored: Record<string, unknown> = {
+      ...descriptor,
+      props: Object.fromEntries(
+        names.map((name) => [name, `${descriptor.id}-${name}`])
+      )
+    }
+    if (descriptor.type === 'vector') {
+      for (const field of PreparedVectorRecordFields) {
+        const records = descriptor[field]
+        check(record(records))
+        restored[field] = Object.fromEntries(
+          Object.entries(records).map(([key, value]) => {
+            check(record(value) && !Object.hasOwn(value, 'id'))
+            return [key, { ...value, id: key }]
+          })
+        )
+      }
+    }
+    return { ...entry, descriptor: restored }
+  })
+  return admitPreparedDesign({
+    ...input,
+    version: PREPARED_DESIGN_VERSION,
+    entries,
+    keyToId
+  })
+}
+
+/** Canonical admission consumes prepared geometry without recomputing it. */
 export function admitPreparedDesign(input: unknown): PreparedDesign {
   check(
     record(input) &&
-      keysOnly(input, ['version', 'rootId', 'entries', 'keyToId', 'findings'])
+      keysOnly(input, [
+        'version',
+        'rootId',
+        'entries',
+        'keyToId',
+        'findings',
+        'continuation'
+      ])
   )
   check(
     input.version === PREPARED_DESIGN_VERSION &&
@@ -165,9 +238,39 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
     Array.isArray(input.findings) &&
       input.findings.length <= limits.expandedNodes * 2
   )
+  if (input.continuation !== undefined) {
+    const continuation = input.continuation
+    check(
+      record(continuation) &&
+        keysOnly(continuation, ['anchor']) &&
+        record(continuation.anchor)
+    )
+    const anchor = continuation.anchor
+    check(
+      keysOnly(anchor, ['id', 'x', 'y', 'rotation']) &&
+        typeof anchor.id === 'string' &&
+        anchor.id.length > 0 &&
+        anchor.id.length <= 256 &&
+        finite(anchor.x) &&
+        finite(anchor.y) &&
+        (anchor.rotation === undefined ||
+          finite(anchor.rotation, limits.dimension))
+    )
+    check(
+      input.entries.length > 1 && input.entries[0]?.descriptor?.type === 'group'
+    )
+    check(
+      input.entries
+        .slice(1)
+        .every(
+          (entry: unknown) => record(entry) && entry.parentId === input.rootId
+        )
+    )
+  }
   const parents = new Map<string, { type: string; depth: number }>(),
     semanticKeys = new Set<string>(),
-    identities = new Set<string>()
+    identities = new Set<string>(),
+    fillIds = new Set<string>()
   let pointCount = 0,
     textCount = 0
   const claim = (id: unknown) => {
@@ -220,8 +323,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       check(
         entry.parentId === null &&
           isDesignContainerType(d.type) &&
-          d.id === input.rootId &&
-          entry.key === '$root'
+          d.id === input.rootId
       )
     else {
       check(typeof entry.parentId === 'string')
@@ -246,59 +348,69 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       'lock',
       'props'
     ]
+    if (d.type === 'oval') {
+      fields.push('rotation')
+      check(d.rotation === undefined || finite(d.rotation, limits.dimension))
+    }
     if (d.type === 'text') {
       props.push('typography')
       fields.push(...textFields)
       for (const f of TEXT_PROPERTY_SCHEMA.fields) check(f.validate?.(d[f.key]))
       textCount += String(d.text).length
       check(textCount <= limits.textCharacters)
-    } else {
-      props.push('fills')
-      fields.push('fills')
-      check(Array.isArray(d.fills) && d.fills.length <= 1)
-      if (d.type === 'group') check(d.fills.length === 0)
-      for (const f of d.fills) {
-        check(
-          record(f) &&
-            keysOnly(f, [
-              'id',
-              'type',
-              'kind',
-              'color',
-              'opacity',
-              'visible',
-              'colorFormat',
-              'defaultColorFormat',
-              'gradient'
-            ])
-        )
-        check(
-          f.id === `${d.id}-fill` &&
-            f.type === 'fill' &&
-            (f.kind === 'solid' || f.kind === 'gradient') &&
-            f.opacity === 1 &&
-            f.visible === true
-        )
-        check(
-          typeof f.color === 'string' &&
-            /^#[0-9a-f]{6}$/i.test(f.color) &&
-            f.colorFormat === 'hex' &&
-            f.defaultColorFormat === 'hex' &&
-            (f.kind === 'solid'
-              ? f.gradient === null
-              : isDesignGradient(f.gradient))
-        )
-        claim(f.id)
+    }
+    props.push('fills')
+    fields.push('fills')
+    check(Array.isArray(d.fills) && d.fills.length <= 1)
+    if (d.type === 'group') check(d.fills.length === 0)
+    for (const f of d.fills) {
+      if (typeof f === 'string') {
+        // Only prior definitions in this artifact may be shared. This admits
+        // canonical child relationships, never duplicate descriptor IDs.
+        check(fillIds.has(f))
+        continue
       }
-      if (isDesignContainerType(d.type)) {
-        fields.push('children')
-        check(Array.isArray(d.children) && d.children.length === 0)
-      }
-      if (d.type !== 'frame') {
-        props.push('strokes')
-        fields.push('strokes')
-        check(Array.isArray(d.strokes) && d.strokes.length === 0)
-      }
+      check(
+        record(f) &&
+          keysOnly(f, [
+            'id',
+            'type',
+            'kind',
+            'color',
+            'opacity',
+            'visible',
+            'colorFormat',
+            'defaultColorFormat',
+            'gradient'
+          ])
+      )
+      check(
+        f.id === `${d.id}-fill` &&
+          f.type === 'fill' &&
+          (f.kind === 'solid' || f.kind === 'gradient') &&
+          f.opacity === 1 &&
+          f.visible === true
+      )
+      check(
+        typeof f.color === 'string' &&
+          /^#[0-9a-f]{6}$/i.test(f.color) &&
+          f.colorFormat === 'hex' &&
+          f.defaultColorFormat === 'hex' &&
+          (f.kind === 'solid'
+            ? f.gradient === null
+            : isDesignGradient(f.gradient))
+      )
+      claim(f.id)
+      fillIds.add(f.id)
+    }
+    if (isDesignContainerType(d.type)) {
+      fields.push('children')
+      check(Array.isArray(d.children) && d.children.length === 0)
+    }
+    if (d.type !== 'frame' && d.type !== 'text') {
+      props.push('strokes')
+      fields.push('strokes')
+      check(Array.isArray(d.strokes) && d.strokes.length === 0)
     }
     if (d.type === 'vector') {
       props.push(...vectorFields)
