@@ -822,6 +822,40 @@ Rebased CI repair - 2026-10-30:
   source/release formatting and naming pass. Test-owned servers have exited.
   No source was changed during either browser verification. Exact-head remote
   verification remains outstanding; preserve the original failed trace.
+- CI artifact handoff iteration - run 40983742318 passes all product/E2E
+  producers but aggregate validation rejects the Design bundle. The original
+  5,252,214-byte functional report exceeds the unchanged 4 MiB ingestion guard;
+  its construction peer Undo profile alone occupies 2,647,208 base64 characters
+  as an inline attachment. Observation completion correctly retains an unavailable
+  report instead of inventing success. Fix the construction evidence producer,
+  not the gate: write its JSON diagnostics through Playwright outputPath and
+  attach by path, as the existing immutable attachment retention owner supports.
+  Keep every diagnostic value and original assertion, preserve error handling,
+  and retain original/archived evidence. No larger report budget, dropped report
+  fields, altered acceptance, product changes or extra runner invocation.
+  Scope: design-construction.spec.ts, playwright-results.test.cjs exercising
+  the real workflow-results consumer, and
+  these CI repair notes. First make the real construction case assert its JSON
+  evidence is file-backed/readable and prove failure on inline delivery. Then
+  verify the full construction file and formal report-to-bundle-to-aggregate
+  handoff with an attachment larger than the report guard and exact retained
+  bytes. Check that missing/corrupt evidence still blocks. Run direct observation
+  suites, types, lint/naming, formatting and commit-bound gates. Existing
+  observation/bundle contracts and Inspector semantics remain unchanged.
+- Artifact handoff validation: the actual face-boundary regression fails on the
+  old inline construction profile, then all nine construction cases pass in
+  2.6 minutes. Their native JSON report is 23,298 bytes and retains a complete
+  1,976,383-byte profile in a file attachment, plus four other construction JSON
+  files. These are local nine-case measurements, not the complete CI inventory.
+  After lint-only assertion cleanup, the face-boundary case passes again in
+  36.5 seconds. Direct observation/workflow/bundle suites pass 84 cases with 44
+  existing opt-in skips. The new large-attachment case preserves exact archived
+  bytes through ingestion/export/aggregate after the original file is removed;
+  inline oversize, corrupted bundles and missing bundles remain unverified.
+  Types, scoped lint, naming and formatting pass. Self-review confirms all four
+  construction payloads and original failure handling remain intact, participant
+  identity attachments remain inline, and no reader/storage budget changed.
+  Remote aggregate verification remains outstanding on the new pushed head.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.

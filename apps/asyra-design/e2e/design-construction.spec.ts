@@ -4,7 +4,7 @@ import { createBatchExchange } from '../server/batch-exchange'
 import { createLocalOperationTools } from '../server/local-operation-tools'
 import { createLocalDesignWorkflow } from '../server/local-design-workflow'
 import { invokeLocalTool } from '../server/local-tool-invocation'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 const recoveryFixture = JSON.parse(
   readFileSync(
     new URL(
@@ -69,6 +69,25 @@ import {
   undo,
   redo
 } from './test-utils'
+
+const attachConstructionEvidence = async (name: string, value: unknown) => {
+  const info = test.info()
+  const path = info.outputPath(name + '.json')
+  writeFileSync(path, JSON.stringify(value))
+  await info.attach(name, { contentType: 'application/json', path })
+}
+// Keep complete diagnostics outside the bounded machine-readable report.
+test.afterEach(() => {
+  const testInfo = test.info()
+  for (const attachment of testInfo.attachments) {
+    if (!attachment.name.startsWith('construction-')) continue
+    expect(attachment.contentType).toBe('application/json')
+    expect(Boolean(attachment.body), attachment.name).toBe(false)
+    const file = attachment.path
+    if (!file) throw new Error('Missing evidence file: ' + attachment.name)
+    expect(() => JSON.parse(readFileSync(file, 'utf8'))).not.toThrow()
+  }
+})
 
 const captureConstructionCollaboration = (
   page: import('@playwright/test').Page,
@@ -560,15 +579,12 @@ for (const [name, draft] of Object.entries({
       })
       await page.screenshot({ path: testInfo.outputPath('ovals-reloaded.png') })
     }
-    await testInfo.attach('construction-evidence', {
-      body: JSON.stringify({
-        receipt,
-        actual,
-        viewport: { width: 1440, height: 1000 },
-        appURL: process.env.APP_URL,
-        selected: false
-      }),
-      contentType: 'application/json'
+    await attachConstructionEvidence('construction-evidence', {
+      receipt,
+      actual,
+      viewport: { width: 1440, height: 1000 },
+      appURL: process.env.APP_URL,
+      selected: false
     })
   })
 }
@@ -1057,9 +1073,9 @@ for (const scenario of [
               captureConstructionCollaboration(peer),
               getPersistedDocumentCheckpoint(fileId)
             ])
-            await test.info().attach('construction-peer-undo-diagnostics', {
-              contentType: 'application/json',
-              body: JSON.stringify({
+            await attachConstructionEvidence(
+              'construction-peer-undo-diagnostics',
+              {
                 expected: before,
                 actorErrors: getCapturedBrowserErrors(page),
                 peerErrors: getCapturedBrowserErrors(peer),
@@ -1068,8 +1084,8 @@ for (const scenario of [
                     ? result
                     : { status: result.status, reason: String(result.reason) }
                 )
-              })
-            })
+              }
+            )
           } catch (diagnosticError) {
             test.info().annotations.push({
               type: 'diagnostic-capture-failed',
@@ -1090,10 +1106,10 @@ for (const scenario of [
                 runtime: profile.getRuntimeEvidence()
               }
             })
-            await test.info().attach('construction-peer-undo-profile', {
-              contentType: 'application/json',
-              body: JSON.stringify(evidence)
-            })
+            await attachConstructionEvidence(
+              'construction-peer-undo-profile',
+              evidence
+            )
           } catch (diagnosticError) {
             test.info().annotations.push({
               type: 'diagnostic-capture-failed',
@@ -1129,9 +1145,10 @@ for (const scenario of [
           const reloaded = await page.evaluate(async () =>
             (await import('../src/testing/runtime-access')).core.save()
           )
-          await test.info().attach('construction-reload-documents', {
-            contentType: 'application/json',
-            body: JSON.stringify({ expected: after, checkpoint, reloaded })
+          await attachConstructionEvidence('construction-reload-documents', {
+            expected: after,
+            checkpoint,
+            reloaded
           })
         } catch (diagnosticError) {
           test.info().annotations.push({
