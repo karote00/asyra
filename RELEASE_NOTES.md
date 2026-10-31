@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending - Prepared delivery history verification
+
+```update-note
+{
+  "change": "prepared-delivery-history-verification",
+  "owner": "Asyra Design verification",
+  "summary": "Run initial and repaired prepared-delivery history as independent integration cases with isolated module compositions and unchanged 30-second case limits.",
+  "reason": "The combined case exceeded its limit on CI. Both cases retain the complete recorded design, canonical reload, receipts and history assertions. Aggregate regression coverage distinguishes upstream failure from selected-check evidence failure.",
+  "impact": "no-action",
+  "sources": [
+    "apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts",
+    "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs"
+  ],
+  "guides": []
+}
+```
+
 ## Pending - Root lint execution evidence
 
 ```update-note

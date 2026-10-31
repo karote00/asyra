@@ -9,6 +9,36 @@ for the current delivery.
 
 ### Shared validation inventory and PR delivery
 
+Run `41210897918` has one upstream failure: the prepared delivery test combines
+initial history and repaired history in one 30-second case. Recorded owner phases
+total 30.79 seconds on CI; the same complete file passes locally (35 tests).
+Validate correctly rejects the failed Design matrix receipt; selected-check
+evidence now passes. Split the two history scenarios into independently composed
+cases, retaining the complete 4,114-entry fixture, receipt/projection assertions,
+canonical reload before recovery, every history assertion and 30-second limit
+per case. Scope: prepared-delivery integration test, aggregate regression tests
+if needed, and delivery notes. No runtime, template or acceptance changes.
+This is test scheduling within the existing execution boundary, not a change
+to Inspector semantics, ownership or product cases. Review both scenarios for
+preserved state/cleanup and run the entire official Design CI command, CI/local
+orchestration tests and aggregate evidence replay before pushing. Reproduce the
+failed aggregate with downloaded evidence; any hypothetical all-success replay
+is contract validation only, never replacement evidence for the failed CI run.
+
+Completed local verification: the original 35-test file passed locally while
+the recorded CI case exceeded 30 seconds. After separation and fresh module
+composition per scenario, all 36 tests pass; initial/repaired history take
+8.5/6.9 seconds in isolation and 8.6/6.8 seconds in the official full command.
+`yarn workspace @asyra/asyra-design test:ci` passes 4,767 tests across its five
+phases; 14 existing conditional server cases remain skipped without changes.
+Design typecheck, full lint (zero errors, 110 existing warnings), naming,
+formatting, 160 orchestration/aggregate tests and 29 document contracts pass.
+Downloaded evidence replay includes all 26 workspace receipts and both E2E
+observation bundles: it reproduces only the failed Design receipt blockers,
+with no observation or selected-check evidence blocker. The aggregate regression
+also proves valid root-lint evidence remains accepted when an upstream workspace
+fails. Logs: `tmp/readability/prepared-*` and `design-full-local.log`.
+
 Follow-up for run `41206334526`: all upstream jobs passed, but the lint
 producer omitted `executedFiles` after switching to the root lint command.
 The aggregate correctly rejected that incomplete evidence. Repair the producer

@@ -1079,6 +1079,33 @@ test('root lint producer evidence survives aggregation and rejects execution fai
     'passed'
   )
 
+  const workspaceResults = scope.relationshipMap.workspaceMatrix.map((entry) =>
+    workspaceResult(entry, scope)
+  )
+  workspaceResults[0].status = 'failed'
+  workspaceResults[0].testStatus = 'failure'
+  const upstreamFailure = assess(
+    envelopes(),
+    {
+      selectedCheckResults: results,
+      workspaceValidation: 'failure',
+      workspaceResults
+    },
+    scope
+  )
+
+  assert.equal(upstreamFailure.status, 'failed')
+  assert.ok(
+    upstreamFailure.blockers.some((blocker) =>
+      blocker.startsWith('workspace-validation:')
+    )
+  )
+  assert.ok(
+    upstreamFailure.blockers.every(
+      (blocker) => !blocker.startsWith('selected-checks:')
+    )
+  )
+
   const failed = await executeSelectedChecks(plan, {
     ...runners,
     lint: () =>

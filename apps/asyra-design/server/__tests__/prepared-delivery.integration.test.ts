@@ -376,7 +376,10 @@ it.each([
   }
 )
 
-it('executes resolver delivery through the dispatcher and real Core with full receipts and durable history', async () => {
+async function verifyPreparedDeliveryHistory(
+  scenario: 'initial-history' | 'repaired-history'
+) {
+  vi.resetModules()
   let phaseStartedAt = performance.now()
   const recordPhase = (phase: string) => {
     const completedAt = performance.now()
@@ -598,13 +601,16 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     expect(isDeepStrictEqual(omitted, created.props)).toBe(false)
     recordPhase('geometry-and-receipts')
     expect(factory.getUndoHistoryDepth()).toBe(1)
-    factory.undo()
-    deepStrictEqual((await core.save()).sceneTree, initial.sceneTree)
-    factory.redo()
-    const restored = await core.save()
-    deepStrictEqual(restored.props, created.props)
-    deepStrictEqual(restored.sceneTree, created.sceneTree)
-    recordPhase('undo-redo')
+    if (scenario === 'initial-history') {
+      factory.undo()
+      deepStrictEqual((await core.save()).sceneTree, initial.sceneTree)
+      factory.redo()
+      const restored = await core.save()
+      deepStrictEqual(restored.props, created.props)
+      deepStrictEqual(restored.sceneTree, created.sceneTree)
+      recordPhase('undo-redo')
+    }
+
     core.load(created)
     const reloaded = await core.save()
     deepStrictEqual(reloaded.props, created.props)
@@ -612,6 +618,10 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     expect(core.getUIProperty('flattenedElementIds')).toEqual(expectedIds)
     deepStrictEqual(uiSnapshots, savedSnapshots)
     recordPhase('reload')
+    if (scenario === 'initial-history') {
+      return
+    }
+
     const recoveryDesigns = createLocalDesignTools(definitions)
     const recoveryOperations = createLocalOperationTools(
       definitions,
@@ -676,6 +686,14 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     await runtime.dispose()
     vi.unstubAllGlobals()
   }
+}
+
+it('executes resolver delivery through the dispatcher and real Core with full receipts and durable history', async () => {
+  await verifyPreparedDeliveryHistory('initial-history')
+}, 30000)
+
+it('repairs resolver delivery after canonical reload with full receipts and durable history', async () => {
+  await verifyPreparedDeliveryHistory('repaired-history')
 }, 30000)
 
 const vectorDeliveryFixture = JSON.parse(
