@@ -81,14 +81,3 @@ comes first. Remove the monitor at either condition. Report the before/after job
 counts, check families and owners, removed or relocated checks and rationale,
 retained correctness safeguards and observed verification results. Keep job
 counts distinct from test-case counts. Publication and merge remain separate.
-
-## Closeout
-
-Completed: 2026-11-01
-Reviewed source: 31ae1df4ad314c8d1bdd1d12eeb254825584eabf
-Outcome: Development and release workflows now validate their own outputs.
-Repository script, publisher, CI/local-runner, current Inspector contract,
-documentation, naming, lint and formatting checks passed as recorded above.
-Decision: Implementation accepted on local evidence. PR CI and its final
-before/after report follow the delivery procedure; remote checks are pending.
-Exit criteria: Applicable local checks pass; workflow separation and protected paths are verified.
