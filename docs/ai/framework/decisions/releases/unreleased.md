@@ -230,3 +230,18 @@
   deployment or merge. Existing pending release notes retain their own lifecycle.
 - Completed record:
   [Release Update Summaries and Consumer Integration Guidance](/docs/ai/framework/plans/completed/release-update-guidance-plan.md).
+
+## 2026-11-01 - Independent workflow validation
+
+Development validates source and behavior; package and create-app publishers
+validate artifacts; owner decision streams supply project release updates.
+Changesets prepare package versions. Plan closeout records reviewed work and may
+follow an earlier implementation merge. Flow Inspector evaluates current contract
+results.
+
+CI now omits release-note and Changeset admission, package publication readiness,
+and repeated Inspector proof commands. Publisher integrity/retry checks, behavior
+regressions and execution resource guards remain. Local validation passed; remote
+CI and its comparison report follow delivery.
+
+Completed plan: [Workflow Validation Simplification](/docs/ai/framework/plans/completed/release-record-workflow-unification-plan.md).

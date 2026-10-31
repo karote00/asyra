@@ -4,11 +4,6 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
-## Workflow Validation Simplification
-
-- [Workflow Validation Simplification](plans/release-record-workflow-unification-plan.md)
-  - Local implementation and validation complete; review and closeout in progress.
-
 ## Code Readability Migration
 
 - [Code Readability Rule Migration](plans/code-readability-rule-migration-plan.md)
