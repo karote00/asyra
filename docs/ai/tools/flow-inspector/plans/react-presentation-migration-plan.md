@@ -7,6 +7,32 @@ for the current delivery.
 
 ## Task contract
 
+### Shared validation inventory and PR delivery
+
+The current delivery slice consolidates existing local and CI development
+commands in `scripts/validation-checks.mjs`. Full PR selection uses `ci:full`
+on the ordinary push-triggered PR workflow. Authorized edits cover the command
+catalog, local adapter, CI wiring, direct regression tests and owning guidance.
+Preserve every selected owner, supervision/resource limit, result identity and
+aggregation guard. Product behavior, template generation and release behavior
+are excluded. This internal orchestration refactor does not change Inspector
+product steps or their accepted semantics.
+
+Validation covers command inventory parity, real CLI invocation/failure
+propagation, stale/tampered evidence rejection, local-runner cleanup, CI scope,
+workspace scheduling and workflow aggregation, plus lint, naming and metadata
+gates. Stop if these require weakening checks. After validated commit and push,
+handoff to the user: do not manually dispatch, rerun or monitor CI.
+
+Local evidence for this slice: 207 orchestration/aggregation regressions and
+24 direct workflow/source contracts pass. Full repository lint passes with
+110 existing warnings and no errors; naming (15 tests) and changed-source
+format checks pass. The real full inventory resolves 37 commands, 26 workspaces,
+33 profile files and four browser suites without unresolved owners. Dependency
+and build-graph commands pass through the new evidence-verified CLI. Logs and
+the inventory are under `tmp/readability/full-catalog-*`. These are scoped local
+results, not a claim that the next full remote CI run has passed.
+
 PR #363 delivery correction: the scope job exceeded GitHub Actions' 1 MB
 job-output limit before product checks started. The bounded correction covers
 CI plan serialization, workspace artifact consumption, workflow wiring and

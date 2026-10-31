@@ -275,6 +275,7 @@
         "scripts/run-collaboration-e2e.sh",
         "scripts/balanced-ai-correctness-scope.mjs",
         "scripts/local-validation*.mjs",
+        "scripts/validation-checks.mjs",
         "docs/ai/workflows/local-affected-validation.md",
         "scripts/test-impact.mjs",
         "scripts/test-impact-workspaces.mjs"

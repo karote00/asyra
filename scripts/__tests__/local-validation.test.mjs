@@ -12,11 +12,211 @@ import {
 } from '../local-validation.mjs'
 import { classifyChanges, readWorkspaceManifests } from '../ci-scope.mjs'
 import * as localValidation from '../local-validation.mjs'
+import {
+  validationCheckCommands,
+  readValidationPlan
+} from '../validation-checks.mjs'
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../..'
 )
+
+test('full local and CI execution share the complete command inventory and artifact transport', (t) => {
+  const { root, base } = fixture(t)
+  const inputs = { changedPaths: [], baseRevision: null, headRevision: base }
+  const plan = selectLocalValidation({ repositoryRoot, inputs, full: true })
+  const output = path.join(root, 'evidence')
+  const commands = localCheckCommands(plan, output, repositoryRoot)
+  localValidation.writeLocalValidationEvidence(plan, commands, output)
+  const evidence = JSON.parse(
+    fs.readFileSync(path.join(output, 'scope-evidence.json'), 'utf8')
+  )
+  const ciPlan = readValidationPlan(evidence)
+  assert.deepEqual(
+    validationCheckCommands(ciPlan, output, repositoryRoot, evidence.identity),
+    commands
+  )
+  assert.equal(plan.executionPlan.mode, 'full')
+  assert.ok(commands.some(({ id }) => id === 'security-audit'))
+  assert.ok(commands.some(({ id }) => id === 'fieldscope-profiles'))
+  assert.ok(commands.some(({ id }) => id === 'control-plane-tests'))
+  const contracts = commands.find(({ id }) => id === 'control-plane-tests')
+  for (const name of [
+    'localization-runtime',
+    'playwright-results',
+    'snapshot'
+  ]) {
+    assert.ok(
+      contracts.args.includes(
+        `tools/flow-inspector/control-plane/__tests__/${name}.test.cjs`
+      )
+    )
+  }
+  assert.equal(plan.e2eSuites.length, 4)
+  assert.ok(plan.workspaceMatrix.length > 20)
+  for (const workspace of plan.workspaceMatrix) {
+    assert.equal(workspace.testSelection.mode, 'full')
+    const command = commands.find(({ id }) => id === workspace.name)
+    assert.equal(
+      command.env.CI_SCOPE_EVIDENCE_FILE,
+      path.join(output, 'scope-evidence.json')
+    )
+  }
+  assert.throws(
+    () =>
+      readValidationPlan({
+        ...evidence,
+        relationshipMapDigest: '0'.repeat(64)
+      }),
+    /digest/
+  )
+})
+
+test('PR full mode is label-selected on push without adding a manual trigger', () => {
+  const workflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/main.yml'),
+    'utf8'
+  )
+  const selections = [
+    ...workflow.matchAll(/CI_SCOPE_FULL_VALIDATION: (.+)/g)
+  ].map((match) => match[1])
+  assert.equal(selections.length, 2)
+  for (const selection of selections) {
+    assert.match(
+      selection,
+      /contains\(github.event.pull_request.labels\.\*\.name, 'ci:full'\)/
+    )
+  }
+  assert.match(
+    workflow,
+    /types: \[opened, synchronize, reopened, ready_for_review\]/
+  )
+  assert.doesNotMatch(workflow, /types:.*labeled/)
+  assert.match(
+    workflow,
+    /node scripts\/validation-checks.mjs --check security-audit/
+  )
+  assert.match(
+    workflow,
+    /node scripts\/validation-checks.mjs --check declarations/
+  )
+  assert.match(
+    workflow,
+    /node scripts\/validation-checks.mjs --check control-plane-tests/
+  )
+})
+
+test('catalog CLI executes admitted commands and rejects stale or unselected evidence', (t) => {
+  const { root, base } = fixture(t)
+  const inputs = { changedPaths: [], baseRevision: null, headRevision: base }
+  const plan = selectLocalValidation({ repositoryRoot, inputs, full: true })
+  plan.inputs.baseRevision = base
+  const output = path.join(root, 'evidence')
+  localValidation.writeLocalValidationEvidence(
+    plan,
+    localCheckCommands(plan, output, repositoryRoot),
+    output
+  )
+  const evidenceFile = path.join(output, 'scope-evidence.json')
+  const evidence = JSON.parse(fs.readFileSync(evidenceFile, 'utf8'))
+  const bin = path.join(root, 'bin')
+  const receipt = path.join(root, 'invocation.json')
+  fs.mkdirSync(bin)
+  fs.writeFileSync(
+    path.join(bin, 'yarn'),
+    `#!/usr/bin/env node
+import fs from 'node:fs'
+fs.writeFileSync(process.env.RECEIPT, JSON.stringify(process.argv.slice(2)))
+process.exit(Number(process.env.CHECK_EXIT || 0))
+`,
+    { mode: 0o755 }
+  )
+  const env = {
+    ...process.env,
+    PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+    RECEIPT: receipt,
+    CI_SCOPE_EVIDENCE_FILE: evidenceFile,
+    CI_RELATIONSHIP_MAP_DIGEST: evidence.relationshipMapDigest,
+    ...Object.fromEntries(
+      Object.entries(evidence.identity).map(([key, value]) => [
+        `CI_SCOPE_${key.toUpperCase()}`,
+        value
+      ])
+    )
+  }
+  const run = (id, overrides = {}) =>
+    spawnSync(
+      process.execPath,
+      ['scripts/validation-checks.mjs', '--check', id],
+      { cwd: repositoryRoot, env: { ...env, ...overrides }, encoding: 'utf8' }
+    )
+  const successful = run('dependencies')
+  assert.equal(successful.status, 0, successful.stderr)
+  assert.deepEqual(JSON.parse(fs.readFileSync(receipt)), ['deps:validate'])
+  assert.notEqual(run('dependencies', { CHECK_EXIT: '17' }).status, 0)
+  const workspace = plan.workspaceMatrix[0]
+  fs.mkdirSync(path.join(root, 'scripts'))
+  fs.mkdirSync(
+    path.join(root, 'tools/flow-inspector/control-plane/__tests__'),
+    { recursive: true }
+  )
+  fs.writeFileSync(
+    path.join(
+      root,
+      'tools/flow-inspector/control-plane/__tests__/contract.test.cjs'
+    ),
+    ''
+  )
+  fs.writeFileSync(
+    path.join(root, 'scripts/run-workspace-checks.mjs'),
+    "import fs from 'node:fs'; fs.writeFileSync(process.env.RECEIPT, JSON.stringify(process.env))"
+  )
+  const scheduled = JSON.stringify({ name: workspace.name })
+  const workspaceRun = spawnSync(
+    process.execPath,
+    [
+      path.join(repositoryRoot, 'scripts/validation-checks.mjs'),
+      '--check',
+      workspace.name
+    ],
+    {
+      cwd: root,
+      env: {
+        ...env,
+        WORKSPACE_CHECK_RESULTS_DIRECTORY: '.ci-workspace-results',
+        CI_WORKSPACE_MATRIX_ITEM: scheduled
+      },
+      encoding: 'utf8'
+    }
+  )
+  assert.equal(workspaceRun.status, 0, workspaceRun.stderr)
+  const forwarded = JSON.parse(fs.readFileSync(receipt))
+  assert.equal(forwarded.CI_SCOPE_EVIDENCE_FILE, evidenceFile)
+  assert.equal(
+    forwarded.WORKSPACE_CHECK_RESULTS_DIRECTORY,
+    '.ci-workspace-results'
+  )
+  assert.equal(forwarded.CI_WORKSPACE_MATRIX_ITEM, scheduled)
+  assert.equal(forwarded.CI_SCOPE_HEAD, evidence.identity.head)
+  fs.unlinkSync(receipt)
+  const stale = run('dependencies', { CI_SCOPE_ATTEMPT: 'stale' })
+  assert.notEqual(stale.status, 0)
+  assert.match(stale.stderr, /expected execution identity/)
+  assert.equal(fs.existsSync(receipt), false)
+  const missing = run('not-an-admitted-check')
+  assert.notEqual(missing.status, 0)
+  assert.match(missing.stderr, /admitted validation check/)
+  assert.equal(fs.existsSync(receipt), false)
+  evidence.relationshipMap.executionPlan.checks.dependencyValidation.mode =
+    'not-selected'
+  fs.writeFileSync(evidenceFile, JSON.stringify(evidence))
+  const tampered = run('dependencies')
+  assert.notEqual(tampered.status, 0)
+  assert.match(tampered.stderr, /digest/)
+  assert.equal(fs.existsSync(receipt), false)
+})
+
 function fixture(t) {
   const parent = path.join(repositoryRoot, 'tmp/local-validation-fixtures')
   fs.mkdirSync(parent, { recursive: true })

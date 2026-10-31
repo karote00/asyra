@@ -1,5 +1,28 @@
 # Asyra Release Notes
 
+## Pending - Shared full validation inventory
+
+```update-note
+{
+  "change": "shared-full-validation-inventory",
+  "owner": "Repository validation",
+  "summary": "Share development validation command definitions between local execution and CI. Add yarn validate:full and select full PR validation with the ci:full label on normal PR updates.",
+  "reason": "Duplicated command lists and separate manual workflow runs could diverge from local checks and the PR's own required checks. Preserve existing resource guards and exact execution evidence.",
+  "impact": "no-action",
+  "sources": [
+    ".github/workflows/main.yml",
+    "package.json",
+    "scripts/validation-checks.mjs",
+    "scripts/local-validation.mjs",
+    "scripts/ci-relationships.json",
+    "scripts/__tests__/local-validation.test.mjs",
+    "scripts/__tests__/workspace-automation.test.mjs",
+    "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs"
+  ],
+  "guides": []
+}
+```
+
 ## Pending - Detail scroll visibility and deterministic deadline proof
 
 ```update-note

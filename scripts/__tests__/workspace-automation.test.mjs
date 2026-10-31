@@ -389,12 +389,15 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
-  assert.match(workflow, /node scripts\/run-ci-checks\.mjs/)
+  assert.match(workflow, /node scripts\/validation-checks\.mjs --check shared/)
   assert.match(
     workflow,
     /workspace: \$\{\{ fromJson\(needs\.scope\.outputs\.workspace_matrix\) \}\}/
   )
-  assert.match(workflow, /run: node scripts\/run-workspace-checks\.mjs/)
+  assert.match(
+    workflow,
+    /run: node scripts\/validation-checks\.mjs --check "\$VALIDATION_WORKSPACE"/
+  )
   assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
   const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
   const workspaceJob = jobs.find((block) =>
@@ -431,7 +434,7 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   assert.match(workspaceJob, /name: Build then test the selected workspace/)
   assert.match(
     workspaceJob,
-    /id: workspace-checks[\s\S]*?run: node scripts\/run-workspace-checks\.mjs/
+    /id: workspace-checks[\s\S]*?run: node scripts\/validation-checks\.mjs --check "\$VALIDATION_WORKSPACE"/
   )
   const diagnosticsStep = workspaceJob
     .split(/(?=^ {6}- name: )/m)
@@ -759,8 +762,8 @@ test('CI, E2E, and release validation own their bounded integration gates', () =
   assert.equal(collaboration.scripts.clean, 'rm -rf dist')
   assert.match(designViteConfig, /outDir:\s*['"]dist\/frontend['"]/)
   assert.doesNotMatch(designViteConfig, /outDir:\s*['"]\.\.\/\.\.\/dist['"]/)
-  assert.match(ci, /yarn gen:turbo:check/)
-  assert.match(ci, /yarn deps:validate/)
+  assert.match(ci, /node scripts\/validation-checks\.mjs --check build-graph/)
+  assert.match(ci, /node scripts\/validation-checks\.mjs --check dependencies/)
   assert.match(ci, /if: github\.event_name == 'pull_request'/)
   assert.match(ci, /CHANGESET_BASE_SHA:.*pull_request\.base\.sha/)
   assert.match(ci, /CHANGESET_HEAD_SHA:.*pull_request\.head\.sha/)
@@ -1413,14 +1416,19 @@ test('shared CI builds Framework declarations before public documentation checks
     .split('\n  shared-validation:\n')[1]
     .split('\n  workspace-validation:\n')[0]
   const buildStep = sharedJob.indexOf('Build Framework declarations')
-  const scriptsTest = sharedJob.indexOf('node scripts/run-ci-checks.mjs')
+  const scriptsTest = sharedJob.indexOf(
+    'node scripts/validation-checks.mjs --check shared'
+  )
 
   assert.ok(buildStep >= 0 && buildStep < scriptsTest)
   assert.match(
     sharedJob,
-    /FRAMEWORK_DECLARATION_TASKS: \$\{\{ needs\.scope\.outputs\.framework_declaration_tasks \}\}/
+    /node scripts\/validation-checks\.mjs --check declarations/
   )
-  assert.match(sharedJob, /yarn turbo run "\$\{tasks\[@\]\}"/)
+  assert.ok(
+    sharedJob.indexOf('Download CI scope evidence for shared checks') <
+      buildStep
+  )
   assert.doesNotMatch(
     sharedJob,
     /build:(?:ai-agent-runtime|collaboration|core|factory)/

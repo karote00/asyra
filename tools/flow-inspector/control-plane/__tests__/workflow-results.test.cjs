@@ -562,7 +562,7 @@ test('Changesets and root documentation pass only through shared validation', ()
     path.join(root, '.github/workflows/main.yml'),
     'utf8'
   )
-  assert.match(main, /node scripts\/run-ci-checks\.mjs/)
+  assert.match(main, /node scripts\/validation-checks\.mjs --check shared/)
   assert.match(main, /run: yarn changeset:pr:check/)
 })
 
@@ -1467,7 +1467,10 @@ test('workflow waits on reusable producers and always collects after failed test
     step,
     /RUN_BALANCED_AI_CORRECTNESS: \$\{\{ steps\.balanced_ai_scope\.outputs\.run_balanced_ai_correctness \}\}/
   )
-  assert.match(main, /localization-runtime,playwright-results,snapshot/)
+  assert.match(
+    main,
+    /node scripts\/validation-checks\.mjs --check control-plane-tests/
+  )
 
   assert.match(e2e, /workflow-results.cjs collect design/)
   assert.match(e2e, /workflow-results.cjs collect collaboration/)

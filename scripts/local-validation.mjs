@@ -2,9 +2,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import { fileURLToPath, URL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { runLocalChecks } from './local-validation-runner.mjs'
+import {
+  readValidationPlan,
+  validationCheckCommands
+} from './validation-checks.mjs'
 import {
   classifyChanges,
   readWorkspaceManifests,
@@ -126,35 +130,18 @@ export function selectLocalValidation({
     readDocumentationDirectoriesAtCommit(inputs.baseRevision, repositoryRoot),
     { fullValidation: full, baseRevision: inputs.baseRevision, repositoryRoot }
   )
-  const { executionPlan, workspaceMatrix } = scope.relationshipMap
-  const policy = JSON.parse(
-    fs.readFileSync(new URL('./ci-relationships.json', import.meta.url), 'utf8')
-  )
-  const e2eSuites = executionPlan.checks.e2e.selected.map((id) => ({
-    id,
-    command:
-      policy.e2eSuites.find((suite) => suite.id === id)?.localCommand ?? null
-  }))
+  const selected = readValidationPlan(scope)
   return {
+    ...selected,
     version: 1,
     authority: 'local',
     inputs,
-    relationshipMapDigest: scope.relationshipMapDigest,
-    executionPlan,
-    workspaceMatrix,
-    profileFiles: scope.relationshipMap.fieldscopeProfileFiles,
-    profileCommand: scope.relationshipMap.fieldscopeProfileCommand,
-    e2eSuites,
-    e2eOwners: workspaceMatrix.map(({ name, e2eTask, e2eSelection }) => ({
-      workspace: name,
-      status: e2eTask ? e2eSelection.mode : 'not-defined'
-    })),
-    unresolved: [
-      ...executionPlan.unknownRelations,
-      ...e2eSuites
-        .filter(({ command }) => !command)
-        .map(({ id }) => `No local E2E command contract: ${id}`)
-    ]
+    e2eOwners: selected.workspaceMatrix.map(
+      ({ name, e2eTask, e2eSelection }) => ({
+        workspace: name,
+        status: e2eTask ? e2eSelection.mode : 'not-defined'
+      })
+    )
   }
 }
 
@@ -183,6 +170,7 @@ export function writeLocalValidationEvidence(plan, commands, outputDirectory) {
         version: 2,
         identity: localExecutionIdentity(plan, outputDirectory),
         relationshipMapDigest: plan.relationshipMapDigest,
+        relationshipMap: plan.relationshipMap,
         executionPlan: plan.executionPlan
       },
       null,
@@ -197,122 +185,12 @@ export function localCheckCommands(
   outputDirectory,
   repositoryRoot = process.cwd()
 ) {
-  if (plan.unresolved.length) {
-    throw new Error(
-      `Unresolved local obligations: ${plan.unresolved.join(', ')}`
-    )
-  }
-  const checks = plan.executionPlan.checks
-  const commands = []
-  const add = (id, executable, args, env = {}, evidence = { type: 'exit' }) =>
-    commands.push({ id, executable, args, env, evidence })
-  const identity = {
-    ...Object.fromEntries(
-      Object.entries(localExecutionIdentity(plan, outputDirectory)).map(
-        ([key, value]) => [`CI_SCOPE_${key.toUpperCase()}`, value]
-      )
-    ),
-    CI_RELATIONSHIP_MAP_DIGEST: plan.relationshipMapDigest
-  }
-  if (checks.securityAudit.mode === 'full') {
-    add('security-audit', 'yarn', ['security:audit'])
-  }
-  if (checks.dependencyValidation.mode !== 'not-selected') {
-    add('dependencies', 'yarn', ['deps:validate'])
-  }
-  if (checks.turboValidation.mode !== 'not-selected') {
-    add('build-graph', 'yarn', ['gen:turbo:check'])
-  }
-  if (
-    checks.frameworkDeclarations.mode !== 'not-selected' &&
-    checks.frameworkDeclarations.tasks.length
-  ) {
-    add('declarations', 'yarn', [
-      'turbo',
-      'run',
-      ...new Set(checks.frameworkDeclarations.tasks.map(({ task }) => task)),
-      '--concurrency=2'
-    ])
-  }
-  if (
-    ['lint', 'repositoryScripts', 'naming'].some(
-      (name) => checks[name].mode !== 'not-selected'
-    )
-  ) {
-    const resultPath = path.join(outputDirectory, 'shared.json')
-    add(
-      'shared',
-      process.execPath,
-      ['scripts/run-ci-checks.mjs'],
-      {
-        ...identity,
-        CI_SCOPE_EVIDENCE_FILE: path.join(
-          outputDirectory,
-          'scope-evidence.json'
-        ),
-        CI_CHECK_RESULTS_FILE: resultPath
-      },
-      { type: 'shared', path: resultPath }
-    )
-  }
-  for (const workspace of plan.workspaceMatrix) {
-    const directory = path.join(outputDirectory, 'workspaces')
-    add(
-      workspace.name,
-      process.execPath,
-      ['scripts/run-workspace-checks.mjs'],
-      {
-        ...identity,
-        CI_WORKSPACE_MATRIX_ITEM: JSON.stringify(workspace),
-        WORKSPACE_CHECK_RESULTS_DIRECTORY: directory
-      },
-      {
-        type: 'workspace',
-        path: path.join(directory, `${workspace.artifactId}.json`),
-        workspace: workspace.name
-      }
-    )
-  }
-  if (plan.profileFiles?.length) {
-    add('fieldscope-profiles', plan.profileCommand[0], [
-      ...plan.profileCommand.slice(1),
-      ...plan.profileFiles.flatMap((file) => ['--file', file])
-    ])
-  }
-  if (checks.controlPlane.mode !== 'not-selected') {
-    const directory = 'tools/flow-inspector/control-plane/__tests__'
-    const files = fs
-      .readdirSync(path.join(repositoryRoot, directory))
-      .filter((name) => name.endsWith('.test.cjs') && !name.startsWith('board'))
-      .sort()
-      .map((name) => `${directory}/${name}`)
-    if (!files.length) {
-      throw new Error('Selected control-plane tests are missing')
-    }
-    add(
-      'control-plane-tests',
-      process.execPath,
-      ['--test', '--test-concurrency=1', '--test-reporter=tap', ...files],
-      {},
-      { type: 'tap' }
-    )
-  }
-  for (const { id, command } of plan.e2eSuites) {
-    const reportPath = path.join(outputDirectory, `${id}.json`)
-    add(
-      `e2e-${id}`,
-      command.executable,
-      command.args,
-      {
-        ...command.env,
-        ...(command.evidence === 'playwright'
-          ? { PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath }
-          : {})
-      },
-      { type: command.evidence, path: reportPath }
-    )
-  }
-  return commands
+  return validationCheckCommands(
+    plan,
+    outputDirectory,
+    repositoryRoot,
+    localExecutionIdentity(plan, outputDirectory)
+  )
 }
 
 async function main() {
