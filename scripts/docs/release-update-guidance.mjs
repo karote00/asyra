@@ -4,17 +4,10 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
-const noteFile =
-  /(?:^|\/)(?:CHANGELOG|RELEASE_NOTES)\.md$|^docs\/public\/updates\/pending\.md$/u
-
-const nonempty = (value) => typeof value === 'string' && value.trim().length > 0
-
-const repositoryPath = (value) =>
-  nonempty(value) &&
-  !value.includes('\\') &&
-  !value.includes(':') &&
-  ![...value].some((character) => character.charCodeAt(0) < 32) &&
-  !value.split('/').some((part) => ['', '.', '..'].includes(part))
+export const decisionRecordPath = (file) =>
+  /^docs\/ai\/(?:framework\/|apps\/[^/]+\/|tools\/[^/]+\/)?decisions\/releases\/(?:unreleased|v\d+\.\d+\.\d+)\.md$/u.test(
+    file
+  )
 
 function requireValue(condition, message) {
   if (!condition) {
@@ -22,36 +15,63 @@ function requireValue(condition, message) {
   }
 }
 
-export function readNotes(source = '') {
-  const notes = []
-
-  for (const match of source.matchAll(
-    /^```update-note\s*\n([\s\S]*?)^```\s*$/gm
-  )) {
-    try {
-      notes.push(JSON.parse(match[1]))
-    } catch {
-      throw new Error('Invalid update-note JSON')
-    }
-  }
-
-  requireValue(
-    notes.length === [...source.matchAll(/^```update-note\b/gm)].length,
-    'Invalid update-note fence'
-  )
-
-  return notes
+export function recordLinks(content, file) {
+  return [...content.matchAll(/\[[^\]]+\]\(([^)\s]+)\)/gu)]
+    .map(([, target]) => target.split('#')[0])
+    .filter((target) => !/^[a-z][a-z\d+.-]*:/iu.test(target))
+    .map((target) => (target.startsWith('/') ? target.slice(1) : target))
+    .map((target) =>
+      path.posix.normalize(
+        target.startsWith('docs/')
+          ? target
+          : path.posix.join(path.posix.dirname(file), target)
+      )
+    )
 }
 
-// Readers bind all inputs to one checkout or Git snapshot for this invocation.
-export function validateUpdateGuidance({
-  changes,
-  notePaths,
-  read,
-  readBase,
-  exists,
-  existsBase
-}) {
+// Project release updates read the owner decision stream without duplicating it.
+export function readNotes(source = '', file = '') {
+  const owner = file.split('/decisions/releases/')[0]
+
+  return [
+    ...source.matchAll(/^## (.+)\r?\n([\s\S]*?)(?=^## |$(?![\s\S]))/gm)
+  ].map(([content, title]) => ({
+    owner,
+    change: title.trim(),
+    summary: title.trim(),
+    content: content.trim(),
+    guides: [
+      ...new Set(
+        recordLinks(content, file).filter(
+          (target) =>
+            target.startsWith('docs/public/updates/') && target.endsWith('.md')
+        )
+      )
+    ],
+    notePath: file
+  }))
+}
+
+export function validateReleaseNote(note, { read }) {
+  for (const guide of note.guides) {
+    const content = read(guide)
+    const manifest = JSON.parse(
+      read('docs/public/content-manifest.json') ?? '{"pages":[]}'
+    )
+
+    requireValue(Boolean(content), `Missing guide: ${guide}`)
+    requireValue(
+      /^## Canonical sources\s*$/m.test(content),
+      `Missing Canonical sources: ${guide}`
+    )
+    requireValue(
+      manifest.pages.some((page) => `docs/public/${page.path}` === guide),
+      `Guide is not registered: ${guide}`
+    )
+  }
+}
+
+export function validateUpdateGuidance({ changes, notePaths, read, readBase }) {
   const manifestPath = 'docs/public/content-manifest.json'
 
   if (
@@ -68,126 +88,78 @@ export function validateUpdateGuidance({
       page.path.startsWith('updates/releases/')
     )) {
       const file = `docs/public/${page.path}`
-      const original = readBase(file)
 
-      assertReleaseSummaryUnchanged(original, read(file))
-      if (!after.some((item) => item.path === page.path)) {
-        requireValue(
-          false,
-          `Release history removed from discovery: ${page.path}`
-        )
-      }
+      assertReleaseSummaryUnchanged(readBase(file), read(file))
+      requireValue(
+        after.some((item) => item.path === page.path),
+        `Release history removed from discovery: ${page.path}`
+      )
     }
   }
 
-  const required = changes.filter((file) => !file.endsWith('.md'))
-  const covered = new Set()
-  const identities = new Set()
-  const guides = new Set()
   let count = 0
 
-  for (const file of notePaths.filter((entry) => noteFile.test(entry))) {
-    const previous = changes.includes(file)
-      ? readNotes(readBase(file)).map((note) => JSON.stringify(note))
-      : []
-
-    for (const note of readNotes(read(file))) {
-      const changed =
-        changes.includes(file) && !previous.includes(JSON.stringify(note))
-
-      requireValue(
-        note && typeof note === 'object',
-        `${file}: Invalid update-note`
-      )
-      for (const field of ['change', 'owner', 'summary', 'reason']) {
-        requireValue(nonempty(note[field]), `${file}: ${field} is required`)
-      }
-
-      const identity = `${note.owner}:${note.change}`
-
-      requireValue(
-        !identities.has(identity),
-        `Duplicate update-note: ${identity}`
-      )
-      identities.add(identity)
-      requireValue(
-        ['integration', 'no-action'].includes(note.impact),
-        `${identity}: impact must be integration or no-action`
-      )
-      requireValue(
-        Array.isArray(note.sources) && note.sources.length > 0,
-        `${identity}: sources are required`
-      )
-      for (const source of note.sources) {
-        requireValue(repositoryPath(source), `${identity}: invalid source path`)
-        requireValue(
-          !changed || exists(source) || existsBase(source),
-          `${identity}: missing source ${source}`
-        )
-        if (changed) {
-          covered.add(source)
-        }
-      }
-
-      requireValue(
-        Array.isArray(note.guides),
-        `${identity}: guides must be an array`
-      )
-      requireValue(
-        note.impact !== 'integration' || note.guides.length > 0,
-        `${identity}: integration requires a guide`
-      )
-      for (const guide of note.guides) {
-        requireValue(
-          repositoryPath(guide) &&
-            guide.startsWith('docs/public/updates/') &&
-            guide.endsWith('.md') &&
-            ![
-              'docs/public/updates/index.md',
-              'docs/public/updates/pending.md'
-            ].includes(guide),
-          `${identity}: invalid guide path`
-        )
-        guides.add(guide)
-      }
-
-      if (changed) {
-        count++
+  for (const file of notePaths.filter(decisionRecordPath)) {
+    for (const note of readNotes(read(file), file)) {
+      if (
+        note.guides.length &&
+        (changes.includes(manifestPath) ||
+          note.guides.some((guide) => changes.includes(guide)))
+      ) {
+        validateReleaseNote(note, { read })
       }
     }
   }
 
-  if (guides.size) {
-    const manifest = JSON.parse(
-      read('docs/public/content-manifest.json') ?? '{}'
+  for (const file of changes.filter(decisionRecordPath)) {
+    const original = readBase(file)
+    const before = original ?? ''
+    const after = read(file)
+
+    requireValue(
+      typeof after === 'string',
+      `Decision history must be preserved: ${file}`
+    )
+    if (!file.endsWith('/unreleased.md')) {
+      requireValue(
+        original === undefined || before === after,
+        `Released decision history is immutable: ${file}`
+      )
+      continue
+    }
+
+    // Release cuts relocate the full prior stream into a versioned owner archive.
+    const archive = notePaths.find(
+      (candidate) =>
+        candidate.startsWith(file.slice(0, -'unreleased.md'.length)) &&
+        /\/v\d+\.\d+\.\d+\.md$/u.test(candidate) &&
+        changes.includes(candidate) &&
+        !readBase(candidate) &&
+        before.length > 0 &&
+        read(candidate)?.startsWith(before)
     )
 
-    for (const guide of guides) {
-      const content = read(guide)
+    requireValue(
+      after.startsWith(before) || Boolean(archive),
+      `Decision history must be append-only: ${file}`
+    )
+    const added = after.startsWith(before)
+      ? after.slice(before.length)
+      : `${read(archive).slice(before.length)}\n${after}`
 
-      requireValue(nonempty(content), `Missing guide: ${guide}`)
-      requireValue(
-        /^## Canonical sources\s*$/m.test(content),
-        `${guide}: missing Canonical sources`
-      )
-      requireValue(
-        manifest.pages?.some((page) => `docs/public/${page.path}` === guide),
-        `${guide}: guide is not registered in the public content manifest`
-      )
+    requireValue(
+      !added.trim() || /^## /u.test(added.trimStart()),
+      `Append a new decision entry: ${file}`
+    )
+
+    for (const record of readNotes(added, file)) {
+      validateReleaseNote(record, { read })
+
+      count++
     }
   }
 
-  const missing = required.filter((file) => !covered.has(file))
-
-  requireValue(
-    missing.length === 0,
-    `Missing update note for: ${missing.join(', ')}`
-  )
-
-  return {
-    mode: required.length ? 'declared-impact' : 'documentation-only',
-    notes: count
-  }
+  return { mode: 'owner-release-history', notes: count }
 }
 
 export function checkUpdateGuidance({
@@ -297,15 +269,14 @@ export function checkUpdateGuidance({
       : ['ls-files', '--cached', '--others', '--exclude-standard', '-z']
   )
     .split('\0')
-    .filter((file) => noteFile.test(file))
+    .filter(decisionRecordPath)
 
   return validateUpdateGuidance({
     changes: [...new Set(changes)],
     notePaths: [...new Set(notePaths)],
     read,
     readBase: snapshotReader(baseline),
-    exists,
-    existsBase: snapshotExists(baseline)
+    exists
   })
 }
 

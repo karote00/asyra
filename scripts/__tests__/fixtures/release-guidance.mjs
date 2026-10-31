@@ -3,6 +3,32 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { prepareGuidance, writeGuidance } from '../../release-guidance.mjs'
 
+export const frameworkNotes =
+  'docs/ai/framework/decisions/releases/unreleased.md'
+
+export function appendDecision(
+  root,
+  {
+    owner = 'docs/ai/framework',
+    change = 'candidate',
+    summary = 'Candidate implementation',
+    impact = 'no-action',
+    reason = 'Internal contract preserved',
+    guides = []
+  } = {}
+) {
+  const plan = `${owner}/plans/completed/${change}.md`
+  const file = `${owner}/decisions/releases/unreleased.md`
+
+  fs.mkdirSync(path.dirname(path.join(root, plan)), { recursive: true })
+  fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
+  fs.writeFileSync(path.join(root, plan), '# Completed fixture plan\n')
+  fs.appendFileSync(
+    path.join(root, file),
+    `## ${summary}\n\n- Release impact: ${impact}\n- Release reason: ${reason}\n- Completed record: [Plan](/${plan})\n${guides.map((guide) => `- Guide: [Integration](/${guide})\n`).join('')}\n`
+  )
+}
+
 export function initializeGuidance(root, packages, artifacts) {
   const git = (...args) =>
     execFileSync('git', args, {
@@ -30,20 +56,7 @@ export function initializeGuidance(root, packages, artifacts) {
     fs.writeFileSync(file, JSON.stringify(value))
   }
 
-  const note = {
-    change: 'candidate',
-    owner: 'Framework',
-    summary: 'Candidate implementation',
-    sources,
-    impact: 'no-action',
-    guides: [],
-    reason: 'Internal contract preserved'
-  }
-
-  fs.writeFileSync(
-    path.join(root, 'RELEASE_NOTES.md'),
-    `\`\`\`update-note\n${JSON.stringify(note)}\n\`\`\`\n`
-  )
+  appendDecision(root)
   git('add', '.')
   git('commit', '-qm', 'Candidate source')
   const sourceSha = git('rev-parse', 'HEAD')

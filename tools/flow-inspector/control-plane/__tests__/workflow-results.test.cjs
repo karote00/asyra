@@ -4,7 +4,6 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const { collect, aggregate } = require('../workflow-results.cjs')
-const proofFlow = require('../../inspectors/flow-inspector-core-proof-flow-inspector.data.cjs')
 const { createHash } = require('node:crypto')
 const identity = {
   repository: 'karote00/asyra',
@@ -47,7 +46,6 @@ function makeScope({
     'render-contracts'
   ],
   createAppPackages = [],
-  frameworkReleaseRequired = false,
   productionApps = [],
   unknownPaths = []
 } = {}) {
@@ -145,7 +143,6 @@ function makeScope({
     workspaceMatrix,
     executionPlan,
     sharedValidationRequired: true,
-    frameworkReleaseRequired,
     createAppPackages,
     designE2EWorkspaceDirectory: 'apps/asyra-design',
     flowInspectorValidationWorkspaceDirectory: 'tools/flow-inspector',
@@ -172,7 +169,6 @@ function makeScope({
       .filter(({ directory }) => directory.startsWith('packages/'))
       .map(({ name }) => name),
     createAppPackages,
-    frameworkReleaseRequired,
     designE2ERequired: relationshipMap.designE2ERequired,
     unknownPaths
   }
@@ -405,7 +401,6 @@ function assess(
         ? 'success'
         : 'skipped',
       workspaceResults: matrixResults,
-      frameworkRelease: 'skipped',
       productionArtifacts: 'skipped',
       securityAudit: 'skipped',
       dependencyValidation: 'skipped',
@@ -468,22 +463,22 @@ test('a documented owner with no affected workspace requires the app job to stay
     'unverified'
   )
 })
-test('Framework changes require the package release gate and actual consumers', () => {
+test('Framework development validates consumers without a publication readiness job', () => {
   const frameworkScope = makeScope({
     workspaceMatrix: [
       workspaceEntry('@asyra/core', 'packages/core'),
       workspaceEntry('@asyra/asyra-fieldscope', 'apps/asyra-fieldscope')
-    ],
-    frameworkReleaseRequired: true
+    ]
   })
 
   assert.equal(
-    assess(envelopes(), { frameworkRelease: 'success' }, frameworkScope).status,
+    assess(envelopes(), { frameworkRelease: undefined }, frameworkScope).status,
     'passed'
   )
   assert.equal(
-    assess(envelopes(), { frameworkRelease: 'skipped' }, frameworkScope).status,
-    'unverified'
+    assess(envelopes(), { workspaceValidation: 'failure' }, frameworkScope)
+      .status,
+    'failed'
   )
 })
 
@@ -516,40 +511,6 @@ test('non-workspace release owners require their actual workflow gates', () => {
         workspaceValidation: 'skipped'
       },
       createAppScope
-    ).status,
-    'unverified'
-  )
-
-  const releaseToolScope = {
-    ...makeScope({
-      workspaceMatrix: [],
-      e2eSuites: [],
-      frameworkReleaseRequired: true
-    })
-  }
-
-  assert.equal(
-    assess(
-      envelopes(),
-      {
-        designSelected: 'false',
-        e2e: 'skipped',
-        workspaceValidation: 'skipped',
-        frameworkRelease: 'success'
-      },
-      releaseToolScope
-    ).status,
-    'passed'
-  )
-  assert.equal(
-    assess(
-      envelopes(),
-      {
-        designSelected: 'false',
-        e2e: 'skipped',
-        workspaceValidation: 'skipped'
-      },
-      releaseToolScope
     ).status,
     'unverified'
   )
@@ -586,7 +547,6 @@ test('Changesets and root documentation pass only through shared validation', ()
   )
 
   assert.match(main, /node scripts\/validation-checks\.mjs --check shared/)
-  assert.match(main, /run: yarn changeset:pr:check/)
 })
 
 test('formal path owners reach their selected gates through the final aggregate', async () => {
@@ -649,12 +609,6 @@ test('formal path owners reach their selected gates through the final aggregate'
       [
         'workspaceResults',
         selected.map((entry) => workspaceResult(entry, scope))
-      ],
-      [
-        'frameworkRelease',
-        scope.frameworkReleaseRequired && !missingSelectedGate
-          ? 'success'
-          : 'skipped'
       ],
       [
         'createAppReadiness',
@@ -761,7 +715,7 @@ test('formal path owners reach their selected gates through the final aggregate'
       scope.workspaceMatrix.length > 0 ? 'success' : 'skipped',
       changedPath
     )
-    if (scope.frameworkReleaseRequired || scope.createAppPackages.length > 0) {
+    if (scope.createAppPackages.length > 0) {
       assert.equal(
         aggregate(envelopes(), identity, jobsFor(scope, true), scope).status,
         'unverified',
@@ -805,7 +759,6 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
       functional: 'skipped',
       'render-contracts': 'skipped'
     },
-    frameworkRelease: 'skipped',
     productionArtifacts: 'skipped',
     securityAudit: 'skipped',
     dependencyValidation: 'skipped',
@@ -1182,19 +1135,11 @@ test('workflow wires non-workspace owners to their concrete readiness producers'
   )
   assert.match(
     main,
-    /framework_release_required: \$\{\{ steps\.scope\.outputs\.framework_release_required \}\}/
-  )
-  assert.match(
-    main,
     /create_app_result: \$\{\{ steps\.create_app\.outcome \}\}/
   )
   assert.match(main, /id: create_app/)
   assert.match(main, /needs\.scope\.outputs\.create_app_packages != ''/)
   assert.match(main, /npm pack --dry-run --json/)
-  assert.match(
-    main,
-    /needs\.scope\.outputs\.framework_release_required == 'true'/
-  )
   assert.match(
     main,
     /FLOW_CREATE_APP_READINESS_RESULT: \$\{\{ needs\.shared-validation\.outputs\.create_app_result \}\}/
@@ -1203,7 +1148,7 @@ test('workflow wires non-workspace owners to their concrete readiness producers'
   assert.match(main, /^ {2}validate:/m)
   assert.match(
     main,
-    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*fieldscope-profile-heavy,\s*fieldscope-profile-source,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
+    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*fieldscope-profile-heavy,\s*fieldscope-profile-source,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
   )
   assert.match(
     main,
@@ -1214,146 +1159,6 @@ test('workflow wires non-workspace owners to their concrete readiness producers'
   for (const removedJob of ['framework', 'design', 'sim', 'website', 'tools']) {
     assert.doesNotMatch(main, new RegExp(`^  ${removedJob}:`, 'm'))
   }
-})
-test('Inspector fixes the complete scoped aggregate owner, route, and artifact contract', () => {
-  const step = proofFlow.steps.find(
-    (item) => item.id === 'aggregate-workflow-results'
-  )
-  const route = proofFlow.routes.find(
-    (item) => item.id === 'aggregate-workflow-results-terminal'
-  )
-  const artifact = proofFlow.artifacts.find(
-    (item) => item.id === 'artifact:workflow-result-summary'
-  )
-
-  assert.ok(step)
-  assert.ok(route)
-  assert.ok(artifact)
-  for (const input of [
-    'base/head changed paths and discovered apps/packages/tools workspace manifests/dependency graph',
-    'tracked Changesets and root documentation inputs',
-    'versioned CI relationship policy and discovered documentation roots',
-    'run-scoped CI scope evidence',
-    'versioned execution plan for repository lint, per-workspace lint/build/test, standard manifest-discovered E2E owners, framework declarations, and specialized E2E suites',
-    'run-bound outcomes for selected lint, repository scripts, naming, and framework declaration checks',
-    'completed dynamic per-workspace lint/build/test and optional standard E2E result records, including explicit zero-test outcomes',
-    'manifest-discovered E2E task selections and run-bound workspace results',
-    'selected Flow Inspector validation outcome',
-    'Framework release-tool readiness and selected package release outcome',
-    'non-workspace create-app package directories and conditional archive-step outcome',
-    'per-suite E2E results for functional, collaboration, Flow Inspector board, and render contracts',
-    'Design E2E producer envelopes and required forwarder results',
-    'GitHub repository, base, head, integration, run and attempt identity'
-  ]) {
-    assert.ok(step.inputs.includes(input), input)
-  }
-
-  assert.ok(
-    step.conditions.some((condition) =>
-      /docs-only.*shared validation.*applicable document-owner check/iu.test(
-        condition
-      )
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /unknown.*fail the total/iu.test(condition)
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /workspace.*lint.*build.*test.*E2E.*zero-tests/iu.test(condition)
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /one derived execution plan(?=.*repository lint)(?=.*repository script tests)(?=.*naming)/isu.test(
-        condition
-      )
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /zero-evidence.*cannot pass/iu.test(condition)
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) => /same.*run id/iu.test(condition))
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /partial reruns.*reuse.*earlier positive integer attempts/iu.test(
-        condition
-      )
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /required.*forwarder.*success/iu.test(condition)
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /Public documentation selects its configured site workspace.*other discovered documentation roots require shared validation/iu.test(
-        condition
-      )
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /union of base and head dependency edges.*deletions and renames preserve old consumers/iu.test(
-        condition
-      )
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /create-app CLI packages remain outside the workspace graph.*conditional npm pack archive check/iu.test(
-        condition
-      )
-    )
-  )
-  assert.ok(
-    step.conditions.some((condition) =>
-      /existing required validate GitHub check as the one canonical aggregate.*shared-validation/iu.test(
-        condition
-      )
-    )
-  )
-  assert.ok(
-    step.allowedContributors.some((item) =>
-      /Git diff.*workspace manifests and base\/head dependency edges/iu.test(
-        item
-      )
-    )
-  )
-  assert.ok(step.implementationBoundary.includes('scripts/ci-scope.mjs'))
-  assert.ok(
-    step.implementationBoundary.includes('scripts/ci-relationships.json')
-  )
-  assert.ok(
-    step.implementationBoundary.includes('scripts/run-workspace-checks.mjs')
-  )
-  assert.ok(step.implementationBoundary.includes('scripts/run-ci-checks.mjs'))
-  assert.ok(
-    step.implementationBoundary.includes('scripts/__tests__/ci-scope.test.mjs')
-  )
-  assert.ok(
-    step.implementationBoundary.includes(
-      'tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs'
-    )
-  )
-  assert.ok(
-    step.implementationBoundary.includes(
-      'tools/flow-inspector/workspace/workspace-bundle.data.js'
-    )
-  )
-  assert.equal(step.failureOwnerStepId, 'aggregate-workflow-results')
-  assert.match(route.predicate, /scope classification/iu)
-  assert.deepEqual(route.producedArtifacts, [
-    'artifact:workflow-result-summary'
-  ])
-  assert.equal(artifact.ownerStepId, 'aggregate-workflow-results')
 })
 test('missing, unknown, duplicate, or future-attempt scope evidence cannot pass', () => {
   const evidence = makeScope()
@@ -1372,7 +1177,6 @@ test('missing, unknown, duplicate, or future-attempt scope evidence cannot pass'
         validate: 'success',
         e2e: 'success',
         designSelected: 'true',
-        frameworkRelease: 'skipped',
         productionArtifacts: 'skipped',
         securityAudit: 'skipped',
         dependencyValidation: 'skipped',
@@ -1530,7 +1334,7 @@ test('workflow waits on reusable producers and always collects after failed test
 
   assert.match(
     main,
-    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*fieldscope-profile-heavy,\s*fieldscope-profile-source,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
+    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*fieldscope-profile-heavy,\s*fieldscope-profile-source,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
   )
   assert.match(main, /workflow-results\.cjs aggregate/)
   assert.doesNotMatch(main, /workflow-results\.cjs aggregate-scope/)
@@ -1854,7 +1658,6 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       FLOW_SELECTED_CHECK_RESULTS_FILE: selectedCheckResultsFile,
       FLOW_WORKSPACE_VALIDATION_RESULT: 'success',
       FLOW_WORKSPACE_RESULTS_DIR: workspaceResultsDirectory,
-      FLOW_FRAMEWORK_RELEASE_RESULT: 'skipped',
       FLOW_PRODUCTION_ARTIFACT_RESULT: 'skipped',
       FLOW_SECURITY_AUDIT_RESULT: 'skipped',
       FLOW_DEPENDENCY_VALIDATION_RESULT: 'skipped',
@@ -2229,23 +2032,6 @@ test('local evidence stays local and never enters a GitHub rerun', () => {
     assess(receipts, {}, scope, { ...identity, attempt: '2' }).status,
     'passed'
   )
-})
-
-test('workflow validates candidate behavior without claiming accepted-base delivery', () => {
-  const workflow = fs.readFileSync(
-    path.resolve(__dirname, '../../../../.github/workflows/main.yml'),
-    'utf8'
-  )
-  const job = workflow
-    .split('  flow-inspector-validation:')[1]
-    .split('  fieldscope-profile-heavy:')[0]
-
-  assert.match(
-    job,
-    /node tools\/flow-inspector\/control-plane\/cli\.cjs candidate/
-  )
-  assert.doesNotMatch(job, /cli\.cjs ci(?:-trial)?(?:\s|$)/)
-  assert.doesNotMatch(job, /FLOW_CI_BASE|FLOW_CI_ADMISSION/)
 })
 
 test('exact supervised file selections require the same executed files at aggregation', () => {

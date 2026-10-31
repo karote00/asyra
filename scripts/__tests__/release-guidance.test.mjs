@@ -9,7 +9,11 @@ import {
   artifactIntegrity,
   recordGuidanceResult
 } from '../release-guidance.mjs'
-import { initializeGuidance } from './fixtures/release-guidance.mjs'
+import {
+  initializeGuidance,
+  appendDecision,
+  frameworkNotes
+} from './fixtures/release-guidance.mjs'
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..')
 
@@ -65,6 +69,20 @@ const input = (f) => ({
   current: live(f)
 })
 
+test('artifact admission is independent of missing or unfinished release notes', (t) => {
+  const f = fixture(t)
+
+  fs.rmSync(path.join(f.root, 'docs'), { recursive: true })
+  f.git('add', '.')
+  f.git('commit', '-qm', 'No release documentation')
+  const sourceSha = f.git('rev-parse', 'HEAD')
+  const evidence = prepareGuidance({ ...input(f), sourceSha })
+
+  assert.equal(admitGuidance({ ...input(f), sourceSha, evidence }).length, 64)
+  assert.equal('notes' in evidence.deliveries[0], false)
+  assert.equal('guides' in evidence.deliveries[0], false)
+})
+
 test('release summary uses each predecessor and includes shared dependency changes', (t) => {
   const f = fixture(t)
 
@@ -87,40 +105,6 @@ test('release summary uses each predecessor and includes shared dependency chang
   })
 
   assert.deepEqual(later.deliveries[0].changes, [])
-})
-
-test('omitted notes and missing guides fail actual-delta reconciliation', (t) => {
-  const f = fixture(t)
-
-  fs.writeFileSync(path.join(f.root, 'RELEASE_NOTES.md'), '# No declarations\n')
-  f.git('add', '.')
-  f.git('commit', '-qm', 'Remove declaration')
-  assert.throws(
-    () =>
-      prepareGuidance({ ...input(f), sourceSha: f.git('rev-parse', 'HEAD') }),
-    /Missing update note/
-  )
-  fs.writeFileSync(
-    path.join(f.root, 'RELEASE_NOTES.md'),
-    '```update-note\n' +
-      JSON.stringify({
-        change: 'candidate',
-        owner: 'Framework',
-        summary: 'Required integration',
-        sources: ['packages/core/package.json', 'packages/utils/package.json'],
-        impact: 'integration',
-        guides: ['docs/public/updates/missing.md'],
-        reason: 'Preserve data'
-      }) +
-      '\n```\n'
-  )
-  f.git('add', '.')
-  f.git('commit', '-qm', 'Missing integration guide')
-  assert.throws(
-    () =>
-      prepareGuidance({ ...input(f), sourceSha: f.git('rev-parse', 'HEAD') }),
-    /Missing guide/
-  )
 })
 
 test('missing and stale guidance, baseline, source, artifact and summary are rejected', (t) => {
@@ -151,10 +135,10 @@ test('missing and stale guidance, baseline, source, artifact and summary are rej
   )
   const evidence = structuredClone(f.evidence)
 
-  evidence.deliveries[0].notes[0].summary = 'Altered'
+  evidence.deliveries[0].changes.push('packages/core/unreviewed.js')
   assert.throws(() => admitGuidance({ ...input(f), evidence }), /summary/)
   fs.appendFileSync(
-    path.join(f.root, 'RELEASE_NOTES.md'),
+    path.join(f.root, frameworkNotes),
     '\nUncommitted correction'
   )
   assert.throws(() => admitGuidance(input(f)), /clean tracked source/)
@@ -234,24 +218,18 @@ function cloudflareFixture(t) {
     path.join(f.root, 'docs/public/content-manifest.json'),
     JSON.stringify({ pages: [{ path: 'updates/app.md' }] })
   )
-  fs.appendFileSync(
-    path.join(f.root, 'RELEASE_NOTES.md'),
-    '```update-note\n' +
-      JSON.stringify({
-        change: 'app',
-        owner: 'Design',
-        summary: 'App release',
-        sources: [
-          'apps/asyra-design/package.json',
-          'scripts/cloudflare-release-guidance.mjs',
-          'docs/public/content-manifest.json'
-        ],
-        impact: 'integration',
-        guides: ['docs/public/updates/app.md'],
-        reason: 'Internal change'
-      }) +
-      '\n```\n'
-  )
+  appendDecision(f.root, {
+    owner: 'docs/ai/apps/asyra-design',
+    change: 'app',
+    summary: 'App release',
+    impact: 'integration',
+    guides: ['docs/public/updates/app.md']
+  })
+  appendDecision(f.root, {
+    owner: 'docs/ai',
+    change: 'deployment',
+    summary: 'Deployment tooling'
+  })
   f.git('add', '.')
   f.git('commit', '-qm', 'App source')
   const output = path.join(f.root, 'tmp/cloudflare-apps/asyra-design')
@@ -355,7 +333,7 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
   assert.ok(methods.every((method) => method === 'GET'))
 })
 
-test('create-app publishes the packed candidate and rejects missing or changed guidance', async (t) => {
+test('create-app requires artifact evidence without owner unreleased records', async (t) => {
   const { prepareCreateAppRelease } =
     await import('../create-app-release-artifacts.mjs')
   const { publishCreateApp } = await import('../publish-create-app.js')
@@ -384,20 +362,7 @@ test('create-app publishes the packed candidate and rejects missing or changed g
     fs.writeFileSync(path.join(f.root, file), JSON.stringify(content))
   }
 
-  fs.appendFileSync(
-    path.join(f.root, 'RELEASE_NOTES.md'),
-    '```update-note\n' +
-      JSON.stringify({
-        change: 'cli',
-        owner: 'CLI',
-        summary: 'CLI changes',
-        sources: Object.keys(files),
-        impact: 'no-action',
-        guides: [],
-        reason: 'No consumer action'
-      }) +
-      '\n```\n'
-  )
+  fs.rmSync(path.join(f.root, frameworkNotes))
   f.git('add', '.')
   f.git('commit', '-qm', 'CLI source')
   const sourceSha = f.git('rev-parse', 'HEAD')
@@ -450,7 +415,19 @@ test('create-app publishes the packed candidate and rejects missing or changed g
     /Missing release guidance/
   )
   assert.deepEqual(mutations, [])
-  prepareCreateAppRelease({ root: f.root, product, runCommand })
+  const candidate = prepareCreateAppRelease({
+    root: f.root,
+    product,
+    runCommand
+  })
+
+  assert.equal('notes' in candidate.deliveries[0], false)
+  assert.equal('guides' in candidate.deliveries[0], false)
+  assert.ok(
+    candidate.deliveries[0].changes.includes(
+      'release-configs/asyra-design.json'
+    )
+  )
   fs.writeFileSync(packedPath, 'Changed candidate')
   assert.throws(
     () => publishCreateApp({ root: f.root, product, runCommand }),
@@ -465,7 +442,7 @@ test('create-app publishes the packed candidate and rejects missing or changed g
   assert.deepEqual(mutations[1], ['git', 'tag', `${name}@1.1.0`, sourceSha])
 })
 
-test('removed dependencies remain in delta coverage and dependency-only changes require notes', (t) => {
+test('removed dependencies remain in artifact delta coverage without release notes', (t) => {
   const f = fixture(t)
   const corePath = path.join(f.root, 'packages/core/package.json')
   const core = JSON.parse(fs.readFileSync(corePath, 'utf8'))
@@ -489,92 +466,10 @@ test('removed dependencies remain in delta coverage and dependency-only changes 
     ]
   }
 
-  assert.throws(() => prepareGuidance(inputs), /Missing update note/)
-  fs.appendFileSync(
-    path.join(f.root, 'RELEASE_NOTES.md'),
-    '```update-note\n' +
-      JSON.stringify({
-        change: 'dependency',
-        owner: 'Framework',
-        summary: 'Remove dependency',
-        sources: [
-          'packages/core/package.json',
-          'packages/utils/removed-owner.js'
-        ],
-        impact: 'no-action',
-        guides: [],
-        reason: 'Internal dependencies only'
-      }) +
-      '\n```\n'
-  )
-  f.git('add', '.')
-  f.git('commit', '-qm', 'Declare dependency impact')
-  const candidate = prepareGuidance({
-    ...inputs,
-    sourceSha: f.git('rev-parse', 'HEAD')
-  })
+  const candidate = prepareGuidance(inputs)
 
   assert.ok(
     candidate.deliveries[0].changes.includes('packages/utils/removed-owner.js')
-  )
-})
-
-test('guide revisions remain bound even when only a retained integration guide changes', (t) => {
-  const f = fixture(t)
-  const guide = 'docs/public/updates/integration.md'
-
-  fs.mkdirSync(path.dirname(path.join(f.root, guide)), { recursive: true })
-  fs.writeFileSync(
-    path.join(f.root, guide),
-    '# Integrate\n\n## Canonical sources\n\nKeep custom fields and data.\n'
-  )
-  fs.writeFileSync(
-    path.join(f.root, 'docs/public/content-manifest.json'),
-    JSON.stringify({ pages: [{ path: 'updates/integration.md' }] })
-  )
-  const note = {
-    change: 'candidate',
-    owner: 'Framework',
-    summary: 'Integration required',
-    sources: [
-      'packages/core/package.json',
-      'packages/utils/package.json',
-      'docs/public/content-manifest.json'
-    ],
-    impact: 'integration',
-    guides: [guide],
-    reason: 'Preserve custom fields and data'
-  }
-
-  fs.writeFileSync(
-    path.join(f.root, 'RELEASE_NOTES.md'),
-    '```update-note\n' + JSON.stringify(note) + '\n```\n'
-  )
-  f.git('add', '.')
-  f.git('commit', '-qm', 'Guide revision one')
-  const previous = f.git('rev-parse', 'HEAD')
-  const first = prepareGuidance({ ...input(f), sourceSha: previous })
-
-  fs.appendFileSync(path.join(f.root, guide), '\nAlso verify reloaded data.\n')
-  f.git('add', '.')
-  f.git('commit', '-qm', 'Guide correction')
-  const next = prepareGuidance({
-    ...input(f),
-    sourceSha: f.git('rev-parse', 'HEAD'),
-    deliveries: f.deliveries.map((item) => ({
-      ...item,
-      baseline: { ...item.baseline, sourceSha: previous }
-    }))
-  })
-
-  assert.equal(next.deliveries[0].notes[0].impact, 'integration')
-  assert.notEqual(
-    next.deliveries[0].guides[0].hash,
-    first.deliveries[0].guides[0].hash
-  )
-  assert.deepEqual(
-    next.deliveries[0].guides.map((item) => item.path),
-    [guide]
   )
 })
 
@@ -646,7 +541,8 @@ test('one preparation shares snapshot and delta reads, and the next preparation 
   assert.equal(
     calls.filter(
       (args) =>
-        args[0] === 'show' && args[1] === `${f.sourceSha}:RELEASE_NOTES.md`
+        args[0] === 'show' &&
+        args[1] === `${f.sourceSha}:packages/core/package.json`
     ).length,
     1
   )
@@ -660,7 +556,7 @@ test('one preparation shares snapshot and delta reads, and the next preparation 
   assert.throws(() => prepareGuidance(input(f)), /committed source inputs/)
 })
 
-test('Cloudflare retries retain the original summary and guides after upload verification fails', async (t) => {
+test('Cloudflare retries retain the original artifact evidence after upload verification fails', async (t) => {
   const { cloudflareGuidance, recordCloudflareGuidance } =
     await import('../cloudflare-release-guidance.mjs')
   const f = cloudflareFixture(t)
@@ -681,8 +577,8 @@ test('Cloudflare retries retain the original summary and guides after upload ver
   const resumed = await cloudflareGuidance('prepare', 'asyra-design', f.options)
 
   assert.deepEqual(resumed, original)
-  assert.ok(resumed.deliveries[0].notes.length > 0)
-  assert.equal(resumed.deliveries[0].guides.length, 1)
+  assert.equal('notes' in resumed.deliveries[0], false)
+  assert.equal('guides' in resumed.deliveries[0], false)
   await cloudflareGuidance('check', 'asyra-design', f.options)
   f.provider.deploymentId = 'unrecorded-redeployment'
   await assert.rejects(
@@ -1017,7 +913,7 @@ test('newer Cloudflare sources require verified predecessor evidence and preserv
 
   assert.equal(next.deliveries[0].baseline.sourceSha, candidate.sourceSha)
   assert.ok(next.deliveries[0].changes.includes('apps/asyra-design/README.md'))
-  assert.deepEqual(next.deliveries[0].notes, [])
+  assert.equal('notes' in next.deliveries[0], false)
   await cloudflareGuidance('check', 'asyra-design', { ...f.options, sourceSha })
 })
 
@@ -1030,14 +926,10 @@ test('a mixed npm release retains unchanged-member and partial-retry baselines i
 
   core.version = '1.2.0'
   fs.writeFileSync(coreFile, JSON.stringify(core))
-  const notes = path.join(f.root, 'RELEASE_NOTES.md')
-
-  fs.writeFileSync(
-    notes,
-    fs
-      .readFileSync(notes, 'utf8')
-      .replace('Candidate implementation', 'Next core implementation')
-  )
+  appendDecision(f.root, {
+    change: 'next-core',
+    summary: 'Next core implementation'
+  })
   f.git('add', '.')
   f.git('commit', '-qm', 'Next core with unchanged utility package')
   const sourceSha = f.git('rev-parse', 'HEAD')
@@ -1167,7 +1059,7 @@ test('a verified Cloudflare deployment survives a failed retry and admits the ne
   assert.equal(next.deliveries[0].baseline.sourceSha, candidate.sourceSha)
   assert.equal(next.deliveries[0].baseline.deploymentId, 'verified-deployment')
   assert.ok(next.deliveries[0].changes.includes('apps/asyra-design/README.md'))
-  assert.deepEqual(next.deliveries[0].notes, [])
+  assert.equal('notes' in next.deliveries[0], false)
   await cloudflareGuidance('check', id, { ...f.options, sourceSha })
   assert.deepEqual(retry.outcomes[id], {
     status: 'failed',

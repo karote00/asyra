@@ -15,54 +15,6 @@ const EXCLUDED_RELEASE_OWNERS = Object.freeze({
   })
 })
 
-const REQUIRED_DOCUMENT_TOKENS = Object.freeze({
-  'README.md': ['Current support', 'docs/public/reference/support-release.md'],
-  'CHANGELOG.md': ['## [Unreleased]'],
-  'RELEASE_NOTES.md': [
-    'Framework pre-publication candidate',
-    'release decision remains `PENDING`',
-    'does not authorize'
-  ],
-  'SECURITY.md': ['private security advisory', 'Framework Security Boundaries'],
-  'docs/ai/framework/RELEASE_SUPPORT.md': [
-    'current Framework package manifests',
-    'release-readiness evidence',
-    'Node.js 24.x',
-    'Yarn 4.3.1',
-    'TypeScript 5.8.3',
-    'React 19',
-    '2D',
-    'CUSTOM',
-    '3D',
-    'HYBRID',
-    'create-asyra-design-app',
-    'setPersistence',
-    'RenderGraphics',
-    'EngineNeutralRenderStrategy'
-  ],
-  'docs/ai/framework/API_SURFACES.md': [
-    'setPersistence',
-    'RenderGraphics',
-    'EngineNeutralRenderStrategy',
-    'next major release'
-  ],
-  'docs/ai/workflows/package-release-validation.md': [
-    'release:packages',
-    'release:consumer',
-    'release:template',
-    'release:records'
-  ],
-  'apps/asyra-design/README.md': [
-    'Node.js 24.x',
-    'the package manager selected when the project was created'
-  ]
-})
-
-const COMPLETED_READINESS_PLAN =
-  'docs/ai/framework/plans/completed/framework-release-readiness-and-closeout-plan.md'
-const READINESS_INSPECTOR =
-  'tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs'
-
 const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
 const parseStableVersion = (name, version) => {
@@ -98,22 +50,6 @@ const compareVersions = (left, right) => {
   return 0
 }
 
-const assertFileContains = (repositoryRoot, relativePath, tokens) => {
-  const absolutePath = path.join(repositoryRoot, relativePath)
-
-  if (!fs.existsSync(absolutePath)) {
-    throw new Error(`Release record is missing ${relativePath}`)
-  }
-
-  const contents = fs.readFileSync(absolutePath, 'utf8')
-
-  for (const token of tokens) {
-    if (!contents.toLowerCase().includes(token.toLowerCase())) {
-      throw new Error(`Release record ${relativePath} is missing "${token}"`)
-    }
-  }
-}
-
 const readPendingChangesets = (repositoryRoot) =>
   fs
     .readdirSync(path.join(repositoryRoot, '.changeset'))
@@ -122,22 +58,6 @@ const readPendingChangesets = (repositoryRoot) =>
 
 export const validateFrameworkReleaseRecords = ({ repositoryRoot }) => {
   const resolvedRoot = path.resolve(repositoryRoot)
-
-  for (const [relativePath, tokens] of Object.entries(
-    REQUIRED_DOCUMENT_TOKENS
-  )) {
-    assertFileContains(resolvedRoot, relativePath, tokens)
-  }
-
-  assertFileContains(resolvedRoot, COMPLETED_READINESS_PLAN, [
-    'Final decision: `READY`',
-    'does not grant merge, tag'
-  ])
-  assertFileContains(resolvedRoot, READINESS_INSPECTOR, [
-    COMPLETED_READINESS_PLAN,
-    'artifact:ready-result',
-    'publication'
-  ])
 
   const excludedVersions = Object.fromEntries(
     Object.entries(EXCLUDED_RELEASE_OWNERS).map(([owner, expected]) => {
@@ -165,12 +85,6 @@ export const validateFrameworkReleaseRecords = ({ repositoryRoot }) => {
     )
     const manifest = readJson(manifestPath)
     const parsedVersion = parseStableVersion(name, manifest.version)
-
-    assertFileContains(
-      resolvedRoot,
-      path.join('packages', directory, 'README.md'),
-      [name, 'Node.js 24.x', 'RELEASE_SUPPORT.md']
-    )
 
     return {
       name,
@@ -221,7 +135,6 @@ export const validateFrameworkReleaseRecords = ({ repositoryRoot }) => {
     packages,
     excludedVersions,
     pendingChangesets: readPendingChangesets(resolvedRoot),
-    gate5ReadinessStatus: 'READY',
     releaseDecision: 'PENDING',
     publicationAuthorized: false
   }
@@ -249,6 +162,6 @@ if (isDirectExecution) {
     `${JSON.stringify(evidence, null, 2)}\n`
   )
   console.log(
-    `Framework release records ${evidence.status}: ${evidence.packages.length} packages in release family ${evidence.releaseFamily}; Gate 5 ${evidence.gate5ReadinessStatus}; publication not authorized`
+    `Framework release records ${evidence.status}: ${evidence.packages.length} packages in release family ${evidence.releaseFamily}; publication not authorized`
   )
 }

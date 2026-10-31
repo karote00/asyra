@@ -89,7 +89,11 @@ const data = {
         'accepted baseline mutation',
         'arbitrary command dispatch'
       ],
-      cacheDimensions: ['reader lifetime', 'retained artifact path and expected size/digest', 'file mtime/ctime and size'],
+      cacheDimensions: [
+        'reader lifetime',
+        'retained artifact path and expected size/digest',
+        'file mtime/ctime and size'
+      ],
       implementationBoundary: [
         'tools/flow-inspector/control-plane/observation-lifecycle.cjs',
         'tools/flow-inspector/control-plane/observation-files.cjs',
@@ -114,7 +118,12 @@ const data = {
         'tools/flow-inspector/control-plane/__tests__/localization-runtime.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/localization-runtime-fixture.cjs'
       ],
-      specRefs: ['#persisted-result-lifecycle', '#ordinary-test-failure-localization', '#current-observations-and-investigation-summaries', '#node-interactions'],
+      specRefs: [
+        '#persisted-result-lifecycle',
+        '#ordinary-test-failure-localization',
+        '#current-observations-and-investigation-summaries',
+        '#node-interactions'
+      ],
       failureOwnerStepId: 'localize-test-results'
     },
     {
@@ -233,7 +242,7 @@ const data = {
       purpose: 'Observational CI aggregation',
       inputs: [
         'base/head changed paths and discovered apps/packages/tools workspace manifests/dependency graph',
-        'tracked Changesets and root documentation inputs',
+        'changed repository tooling and documentation inputs',
         'versioned CI relationship policy and discovered documentation roots',
         'run-scoped CI scope evidence',
         'versioned execution plan for repository lint, per-workspace lint/build/test, standard manifest-discovered E2E owners, framework declarations, and specialized E2E suites',
@@ -241,7 +250,6 @@ const data = {
         'completed dynamic per-workspace lint/build/test and optional standard E2E result records, including explicit zero-test outcomes',
         'manifest-discovered E2E task selections and run-bound workspace results',
         'selected Flow Inspector validation outcome',
-        'Framework release-tool readiness and selected package release outcome',
         'non-workspace create-app package directories and conditional archive-step outcome',
         'per-suite E2E results for functional, collaboration, Flow Inspector board, and render contracts',
         'Design E2E producer envelopes and required forwarder results',
@@ -255,10 +263,10 @@ const data = {
         'Derive changed paths from Git base/head and classify them against discovered first-level apps/packages/tools workspace manifests, their declared dependency edges, manifest canonical build/test scripts, and the versioned CI relationship policy. Derive affected consumers transitively from the union of base and head dependency edges so deletions and renames preserve old consumers. Root shared inputs select every discovered workspace. Public documentation selects its configured site workspace; docs under app/package/tool roots select their matching workspace when defined, and other discovered documentation roots require shared validation. Never infer workspace ownership from a fixed workspace-name category list. Unknown paths, missing build/test tasks, or unclassified consumers invalidate scope and fail the total even if conservative jobs ran.',
         'Use one derived execution plan for repository lint, repository script tests, naming, per-workspace lint/build/test, standard E2E tasks discovered from each manifest test:e2e:ci script, specialized E2E suites, dynamic matrix scheduling, specialized gates, and final aggregation. Full validation selects every declared check and owner. Incremental validation selects changed applicable lint files, repository script tests for their declared owner inputs, workspace related tests only for supported source changes with existing test inputs, and E2E owners from their manifest scripts and declared suite input paths; configs, fixtures, deleted or renamed files, unsupported runners, shared inputs, and unknown paths use full owner checks or remain blockers. For each selected workspace, run lint, then its canonical build task to completion, then its declared test preflight and test:ci, followed by its selected test:e2e:ci; never schedule tests alongside builds. Bind every result to the plan and map digests plus the same repository/base/head/integration/run identity and an admitted producer attempt. Require exact selected success and declared unselected skips; missing, duplicate, unexpected, stale, failed, zero-tests, zero-evidence, or omitted outcomes cannot pass. Run Framework release readiness when Framework workspaces or release-validation owner inputs are affected. create-app CLI packages remain outside the workspace graph; list affected package directories and require the conditional npm pack archive check inside shared validation. Docs-only changes still require shared validation and applicable document-owner checks; Flow Inspector documentation selects its control-plane validation suite.',
         'Supervised exact-file results preserve the declared flagged test:affected or positional test:ci owner task. Both require identical selected and executed files. Declared isolated browser computation proofs use the shared source graph for known upstream inputs; ordinary and new integration specs remain selected, and unknown or removed inputs retain conservative checks.',
-        'Flow Inspector validation runs its control-plane contracts, prove and candidate commands against the candidate. This producer never selects a new accepted base or grants protected delivery; accepted-base admission and its policy mismatch blockers remain separate.',
-        'Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category, release and create-app results remain merge-blocking under the current check contract.',
+        'Selected Flow Inspector validation runs the current control-plane contract tests and reports their result.',
+        'Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category and create-app results remain merge-blocking under the current check contract.',
         'Bind scope evidence, each selected producer and the final result to the same repository, base, candidate head, integration revision and run id. Partial reruns may reuse successful evidence from earlier positive integer attempts with unchanged plan/map digests; preserve the original producer attempt and reject future or malformed attempts. Local evidence requires the exact local run/attempt pair. Latest GitHub dependency outcomes must succeed: an older successful receipt cannot override a later failed, cancelled, missing or skipped selected job.',
-        'One canonical aggregate consumes scope evidence, the complete execution plan, run-bound selected-check results, exact dynamic workspace lint/build/test/E2E result records, selected Flow Inspector and release results, specialized per-suite E2E outcomes, exact fixed Design case envelopes and required forwarder results. Every selected producer must succeed; every explicitly unselected producer must be skipped. Missing, failed, cancelled, unknown, empty, zero-test or unexpectedly skipped selected work fails the total. Existing E2E forwarders must themselves succeed for selected and unselected scopes; an unselected reusable E2E workflow must report skipped, while selected suites must report success and selected Design suites must provide exact case evidence.',
+        'One canonical aggregate consumes scope evidence, the complete execution plan, run-bound selected-check results, exact dynamic workspace lint/build/test/E2E result records, selected Flow Inspector results, specialized per-suite E2E outcomes, exact fixed Design case envelopes and required forwarder results. Every selected producer must succeed; every explicitly unselected producer must be skipped. Missing, failed, cancelled, unknown, empty, zero-test or unexpectedly skipped selected work fails the total. Existing E2E forwarders must themselves succeed for selected and unselected scopes; an unselected reusable E2E workflow must report skipped, while selected suites must report success and selected Design suites must provide exact case evidence.',
         'Consume validated complete observation bundles using the shared observation reader. Project every admitted case with current/history warnings, check repository/base/head/integration/run/attempt identity and artifact integrity, and retain existing required-job authority. Missing selected bundles, unresolved evidence and retained assertion failures block the aggregate, including cases outside the representative inventory. Consumption never launches product tests.',
         'Persist complete aggregate evidence to a project-contained result file before emitting bounded stdout verdicts, blockers, producer counts and the result path. Upload the evidence even for failed verdicts. Raw runner payloads never enter stdout; persistence failure fails the aggregate and never supplies a passing receipt.',
         'Validate the exact Design case inventory and every attempt outcome. Preserve confirmed assertion failures; missing or invalid case evidence is unverified. Job success is not case evidence or accepted conformance.'
@@ -269,7 +277,7 @@ const data = {
       allowedContributors: [
         'GitHub Actions scope, producer and forwarding job results bound to the workflow run',
         'Git diff of base/head changed paths with checked-out workspace manifests and base/head dependency edges',
-        'versioned shared/documentation/release/create-app relationship policy and dynamically discovered documentation roots',
+        'versioned shared/documentation/create-app relationship policy and dynamically discovered documentation roots',
         'existing Playwright JSON reporter and exact fixed-case collector'
       ],
       forbiddenContributors: [
@@ -1755,4 +1763,6 @@ const data = {
 }
 
 globalThis.FLOW_INSPECTOR_DATA = data
-if (typeof module !== 'undefined') {module.exports = data}
+if (typeof module !== 'undefined') {
+  module.exports = data
+}

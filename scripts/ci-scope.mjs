@@ -631,9 +631,6 @@ function classifyChanges(
   const changedWorkspaceNames = new Set()
   const runtimeNames = new Set()
   const changedCreateAppDirectories = new Set()
-  const releasePaths = new Set(
-    relationshipPolicy.frameworkReleaseReadinessPaths
-  )
   const allManifestViews = [headManifests, baseManifests]
   const createAppViews = [createAppManifests, baseCreateAppManifests]
   const recognizedDocumentationRoots = new Set([
@@ -641,7 +638,6 @@ function classifyChanges(
     ...baseDocumentationRoots
   ])
   let selectEveryWorkspace = Boolean(options.fullValidation)
-  let frameworkReleaseRequired = false
   let rootImpact = {
     workspaces: new Set(),
     rootDependencies: [],
@@ -733,14 +729,6 @@ function classifyChanges(
       continue
     }
 
-    const releaseInput = [...releasePaths].some(
-      (pattern) => matchesPattern(changedPath, pattern).matched
-    )
-
-    if (releaseInput) {
-      frameworkReleaseRequired = true
-    }
-
     let matched = false
 
     for (const rule of relationshipPolicy.workspaceInputRules) {
@@ -772,7 +760,6 @@ function classifyChanges(
     }
 
     if (
-      releaseInput ||
       Object.values(relationshipPolicy.repositoryScriptGroups).some(
         (group) =>
           group.ownsInputs &&
@@ -1162,15 +1149,6 @@ function classifyChanges(
     .filter(({ group }) => group === 'packages')
     .map(({ name }) => name)
 
-  if (
-    affectedWorkspaces.some(
-      (workspace) =>
-        workspace.group === 'packages' && propagatedNames.has(workspace.name)
-    )
-  ) {
-    frameworkReleaseRequired = true
-  }
-
   const createAppPackages = [...new Set(changedCreateAppDirectories)].sort()
 
   if (createAppPackages.length === 0) {
@@ -1537,7 +1515,6 @@ function classifyChanges(
     fieldscopeProfileGroups,
     fieldscopeProfilesRequired: fieldscopeProfileFiles.length > 0,
     sharedValidationRequired: true,
-    frameworkReleaseRequired,
     createAppPackages: resolvedCreateAppPackages,
     designE2ERequired: e2eSuites.some((id) => id !== 'flow-inspector-board'),
     flowInspectorValidationWorkspaceDirectory:
@@ -1558,7 +1535,6 @@ function classifyChanges(
     ].sort(),
     frameworkPackages,
     createAppPackages: resolvedCreateAppPackages,
-    frameworkReleaseRequired,
     designE2ERequired: relationshipMap.designE2ERequired,
     unknownPaths: relationshipMap.unknownPaths
   }
@@ -1695,10 +1671,6 @@ function main() {
       `framework_declaration_tasks=${classification.relationshipMap.frameworkDeclarationTasks
         .map(({ task }) => task)
         .join(' ')}\n`
-    )
-    fs.appendFileSync(
-      outputPath,
-      `framework_release_required=${classification.frameworkReleaseRequired}\n`
     )
     fs.appendFileSync(
       outputPath,

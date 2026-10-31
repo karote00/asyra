@@ -41,10 +41,12 @@ These rules apply to every task without requiring additional document reads:
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
-- For App/Framework changes, follow
-  `docs/ai/framework/rules/release-update-guidance.md` for pending impact notes,
-  integration guides and consumer preservation. Run its scoped document check;
-  a passing note check does not establish release readiness.
+- Each workflow validates its own outputs: development checks source behavior;
+  closeout records completed plans; publishers validate artifacts and deliveries;
+  project release updates use owner `unreleased.md` streams. Follow
+  `docs/ai/framework/rules/release-update-guidance.md`.
+- Flow Inspector completion requires all required current contract criteria to
+  pass using current results. Apps, contracts and their tests evolve together.
 - Follow the project-wide no-unrequested-compatibility rule: implement the
   current contract and remove superseded behavior; add compatibility handling
   only when the owner is explicitly a compatibility/migration path or the task
@@ -109,7 +111,7 @@ These rules apply to every task without requiring additional document reads:
   before implementation and after the first identifier-bearing slice, before
   names spread to other owners. Never defer this to PR creation or CI. Follow
   `docs/ai/framework/rules/naming-and-persisted-identities.md`.
-- Join project-authored display names and appended metadata only with ` - `
+- Join project-authored display names and appended metadata only with `-`
   (ASCII hyphen), never a middle dot or a slash. This includes objects,
   experiments, methods/versions, runs, reports, and Inspector labels. Preserve
   user-authored names and immutable saved evidence; do not normalize them on load.
@@ -385,9 +387,9 @@ applies before all Inspector rules below, including readiness and step execution
 - **🚨 BUGFIX TEST-FIRST RULE**: Before any bug-fix implementation, verify whether existing formal tests detect the reported failure. If they do not, add or strengthen formal tests/oracles first and prove they fail on the current behavior before changing production code (see `docs/ai/framework/rules/bugfix-test-first.md`). Manual screenshots, one-time diagnostics, and visual inspection are not enough.
 - **🚨 MONOREPO IMPORT RULE**: **ALWAYS** use `@asyra/package-name` for cross-package imports, NEVER use relative paths like `../../../other-package` (see `docs/ai/framework/CODING_STANDARDS.md`)
 - **🚨 MAIN BRANCH PROTECTION**: NEVER work on main branch - use feature branches only (see `docs/ai/project/rules/main-branch-protection.md`)
-- **🚨 INSPECTOR FLOW HIGHEST PRINCIPLE**: Apply the bounded-task applicability check first. This rule governs work that changes or proves an active plan or Inspector step's semantics; a file reference or unrelated internal refactor alone does not activate it and must never be added to an Inspector merely to authorize the edit. For applicable work, re-read the Inspector before the task starts and before each work segment advances. The Inspector flow is an exact architecture contract, not a summary, implementation design, or execution ledger. For each segment, identify the matching Inspector step or route and verify its owner, inputs, outputs, conditions, bypasses, allowed contributors, forbidden contributors, implementation boundary, spec references, failure owner, and any profiling-justified cache dimensions. Compare the planned test, implementation, or document change against that exact contract and the affected product cases and DoD. The segment cannot proceed until this comparison passes. If the Inspector flow is missing, vague, or inconsistent with the active product contract, stop; repair it only when that repair is inside the frozen task contract, otherwise request direction. After each segment, re-check the Inspector flow before moving to the next segment, and re-check it again before claiming completion.
-- **🚨 INSPECTOR CONTRACT READINESS RULE**: For work that changes or proves an active plan or Inspector contract, follow `docs/ai/framework/rules/inspector-contract-readiness.md`. Readiness comes from a thin product contract, an exact architecture flow, executable product cases, and a bounded DoD. Do not create readiness matrices, audit ledgers, closure packets, assertion registries, or other self-referential governance unless the user explicitly requests that additional process for a specific task.
-- **🚨 INSPECTOR STEP EXECUTION RULE**: For implementation that changes or proves an active plan or Inspector step, follow `docs/ai/framework/rules/inspector-step-execution.md`. Work on one inspector owner step at a time, produce a Step Execution Card before edits, test-first any bug/spec mismatch, stay inside the step implementation allowlist, and run the bounded review checklist before advancing.
+- **Inspector contract**: For changes to a flow, use its current owners, inputs, outputs, handoffs and criteria. Update the contract with the app. Completion requires all required current results to pass.
+- **Inspector readiness**: Identify the affected behavior, owner and formal tests before implementation. Follow `docs/ai/framework/rules/inspector-contract-readiness.md`.
+- **Inspector execution**: Implement the selected owner, run focused tests, then verify changed handoffs. Follow `docs/ai/framework/rules/inspector-step-execution.md`.
 - **🚨 TASK ITERATION REPLAN RULE**: If the current plan has multiple failed implementation iterations, or exceeds a user-provided time limit when one exists, stop local patching and perform a task iteration inside the frozen task contract: re-audit the relevant contracts, owner boundary, tests, and implementation state, then write and self-review a bounded revised plan before starting the next implementation iteration (see `docs/ai/framework/rules/task-iteration-replan.md`). This applies whether or not an explicit goal or plan tool is being used.
 - **🚨 NO PATCH FIXES RULE**: NEVER hide a product bug with patch geometry, patch state, patch routing, fallback product output, fixture-specific exceptions, or app-specific visual output. Identify and fix the first incorrect canonical owner step instead (see `docs/ai/framework/rules/no-patch-fixes.md`). This applies to framework code, preset defaults, all apps, visual review, export, hit testing, and inspectors.
 - **🚨 VISUAL REVIEW MICROSCOPE RULE**: For visual/rendering closure, follow `docs/ai/framework/rules/visual-review-microscope.md`. Do not claim correctness from low zoom, one overview screenshot, one endpoint, or pixel-existence checks. User-reported exact geometry must become a formal source-space oracle first whenever possible; E2E screenshots are later-step evidence, not stroke semantics authority.

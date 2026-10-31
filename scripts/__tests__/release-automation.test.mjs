@@ -92,33 +92,6 @@ test('create-app release verifies the Framework registry and publishes only its 
   })
 })
 
-test('release publishers enforce separate Framework allowlist and CLI roots', () => {
-  const frameworkPublisher = readFileSync(
-    path.join(repositoryRoot, 'scripts/publish-framework-release.js'),
-    'utf8'
-  )
-  const createAppPublisher = readFileSync(
-    path.join(repositoryRoot, 'scripts/publish-create-app.js'),
-    'utf8'
-  )
-  const releaseRecords = readFileSync(
-    path.join(repositoryRoot, 'scripts/release-records.js'),
-    'utf8'
-  )
-
-  assert.match(frameworkPublisher, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
-  assert.match(releaseRecords, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
-  assert.match(frameworkPublisher, /pkg\.artifact\.tarballPath/u)
-  assert.match(frameworkPublisher, /'view',\s*spec,\s*'version'/u)
-  assert.doesNotMatch(
-    frameworkPublisher,
-    /release-records\/framework\/current\.json/
-  )
-  assert.doesNotMatch(frameworkPublisher, /create-app/)
-  assert.match(createAppPublisher, /createAppReleasePaths\(root, product\)/)
-  assert.doesNotMatch(createAppPublisher, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
-})
-
 test('release validation covers build, tests, dependencies, collaboration, and generated template', () => {
   const plan = readPlan('scripts/release-validate.js', ['--prod=asyra-design'])
 

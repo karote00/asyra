@@ -309,7 +309,6 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
         'validate',
         'workspaceValidation',
         'flowInspectorValidation',
-        'frameworkRelease',
         'createAppReadiness',
         'e2e',
         'e2eSuiteResults',
@@ -526,7 +525,6 @@ function aggregateScope(evidence, identity, jobs) {
     Array.isArray(matrix) &&
     typeof relationshipMap.sharedValidationRequired === 'boolean' &&
     relationshipMap.sharedValidationRequired &&
-    typeof relationshipMap.frameworkReleaseRequired === 'boolean' &&
     Array.isArray(relationshipMap.frameworkDeclarationTasks) &&
     typeof relationshipMap.designE2ERequired === 'boolean' &&
     typeof relationshipMap.flowInspectorValidationWorkspaceDirectory ===
@@ -665,8 +663,6 @@ function aggregateScope(evidence, identity, jobs) {
     JSON.stringify(evidence.frameworkPackages) ===
       JSON.stringify(expectedFrameworkPackages) &&
     JSON.stringify(jobs.executionPlan) === JSON.stringify(executionPlan) &&
-    evidence.frameworkReleaseRequired ===
-      relationshipMap.frameworkReleaseRequired &&
     JSON.stringify(evidence.createAppPackages) ===
       JSON.stringify(relationshipMap.createAppPackages) &&
     evidence.designE2ERequired === relationshipMap.designE2ERequired &&
@@ -933,21 +929,6 @@ function aggregateScope(evidence, identity, jobs) {
     blockers.push('workspace-validation: unexpected matrix result')
   }
 
-  const frameworkReleaseSelected =
-    admitted && relationshipMap.frameworkReleaseRequired
-
-  if (frameworkReleaseSelected && jobs.frameworkRelease !== 'success') {
-    blockers.push(
-      'framework-release-readiness: selected release gate did not succeed'
-    )
-  }
-
-  if (!frameworkReleaseSelected && jobs.frameworkRelease !== 'skipped') {
-    blockers.push(
-      'framework-release-readiness: unselected release gate did not remain skipped'
-    )
-  }
-
   const createAppSelected =
     admitted && relationshipMap.createAppPackages.length > 0
 
@@ -991,7 +972,6 @@ function aggregateScope(evidence, identity, jobs) {
         record?.e2eStatus === 'failure'
     ) ||
     jobs.productionArtifacts === 'failure' ||
-    (frameworkReleaseSelected && jobs.frameworkRelease === 'failure') ||
     (createAppSelected && jobs.createAppReadiness === 'failure') ||
     jobs.designForwarder === 'failure' ||
     jobs.collaborationForwarder === 'failure'
@@ -1121,7 +1101,6 @@ if (require.main === module) {
       workspaceValidation: process.env.FLOW_WORKSPACE_VALIDATION_RESULT,
       flowInspectorValidation:
         process.env.FLOW_FLOW_INSPECTOR_VALIDATION_RESULT,
-      frameworkRelease: process.env.FLOW_FRAMEWORK_RELEASE_RESULT,
       productionArtifacts: process.env.FLOW_PRODUCTION_ARTIFACT_RESULT,
       securityAudit: process.env.FLOW_SECURITY_AUDIT_RESULT,
       dependencyValidation: process.env.FLOW_DEPENDENCY_VALIDATION_RESULT,

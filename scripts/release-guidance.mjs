@@ -3,10 +3,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import {
-  readNotes,
-  validateUpdateGuidance
-} from './docs/release-update-guidance.mjs'
 
 export const runReleaseCommand = (command, args, options = {}) =>
   execFileSync(command, args, {
@@ -24,11 +20,6 @@ const sha = (value) =>
     value ?? '',
     /^[a-f0-9]{40}$/,
     'Release guidance requires an exact source SHA'
-  )
-
-const notePath = (file) =>
-  /(?:^|\/)(?:CHANGELOG|RELEASE_NOTES)\.md$|^docs\/public\/updates\/pending\.md$/.test(
-    file
   )
 
 const within = (file, root) => file === root || file.startsWith(`${root}/`)
@@ -179,11 +170,7 @@ export function prepareGuidance({
       }
 
       snapshots.set(revision, {
-        files,
         read,
-
-        exists: (file) => present.has(file),
-
         closure
       })
     }
@@ -192,7 +179,6 @@ export function prepareGuidance({
   }
 
   const target = snapshot(sourceSha)
-  const notes = target.files.filter(notePath)
   const ids = new Set()
   const summaries = deliveries.map(({ id, roots, baseline, artifact }) => {
     assert.ok(
@@ -257,36 +243,6 @@ export function prepareGuidance({
       'Release guidance requires committed source inputs'
     )
     const changes = allChanges.filter(relevant)
-    const changedNotes = allChanges.filter(notePath)
-
-    validateUpdateGuidance({
-      changes: [...new Set([...changes, ...changedNotes])],
-      notePaths: notes,
-      read: target.read,
-      readBase: previous.read,
-      exists: target.exists,
-      existsBase: previous.exists
-    })
-    const declarations = notes.flatMap((file) => {
-      const old = readNotes(previous.read(file)).map((note) =>
-        JSON.stringify(note)
-      )
-
-      return readNotes(target.read(file))
-        .filter(
-          (note) =>
-            (!old.includes(JSON.stringify(note)) &&
-              note.sources.some((source) => changes.includes(source))) ||
-            (note.guides.some((guide) => allChanges.includes(guide)) &&
-              note.sources.some((source) =>
-                rootsUnion.some((directory) => within(source, directory))
-              ))
-        )
-        .map((note) => ({ ...note, notePath: file }))
-    })
-    const guidePaths = [
-      ...new Set(declarations.flatMap((note) => note.guides))
-    ].sort()
     const requirements = rootsUnion
       .map((directory) => target.read(`${directory}/package.json`))
       .filter(Boolean)
@@ -307,15 +263,7 @@ export function prepareGuidance({
       baseline,
       artifact,
       changes,
-      requirements,
-      notes: declarations,
-      guides: guidePaths.map((file) => ({
-        path: file,
-        hash: guidanceHash(target.read(file))
-      })),
-      disposition: declarations.length
-        ? 'declared-impact'
-        : 'No non-documentation source delta; artifact identity is recorded separately.'
+      requirements
     }
   })
 
@@ -408,7 +356,7 @@ export function admitGuidance({
   assert.deepEqual(
     evidence,
     rebuilt,
-    'Release guidance source, scope, summary, guide or artifacts changed'
+    'Release guidance source, scope, summary or artifacts changed'
   )
 
   return guidanceHash(evidence)

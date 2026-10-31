@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
 import { validateFrameworkReleaseRecords } from '../release-records.js'
 
 const repositoryRoot = path.resolve(
@@ -16,6 +17,36 @@ const readManifest = (relativePath) =>
 const versionFamilyOf = (version) => version.split('.').slice(0, 2).join('.')
 
 const identityOf = ({ name, version }) => ({ name, version })
+
+test('release inventory does not require documentation or completed plans', (t) => {
+  const parent = path.join(repositoryRoot, 'tmp')
+
+  fs.mkdirSync(parent, { recursive: true })
+  const fixture = fs.mkdtempSync(path.join(parent, 'release-records-'))
+
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }))
+  const files = execFileSync('git', ['ls-files', '-z'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8'
+  })
+    .split('\0')
+    .filter(
+      (file) =>
+        file === 'package.json' ||
+        /^(?:packages|apps|create-app)\/[^/]+\/package\.json$/u.test(file) ||
+        file.startsWith('.changeset/')
+    )
+
+  for (const file of files) {
+    fs.mkdirSync(path.dirname(path.join(fixture, file)), { recursive: true })
+    fs.copyFileSync(path.join(repositoryRoot, file), path.join(fixture, file))
+  }
+
+  assert.equal(
+    validateFrameworkReleaseRecords({ repositoryRoot: fixture }).status,
+    'PASS'
+  )
+})
 
 const compareVersions = (left, right) => {
   const leftParts = left.split('.').map(Number)
@@ -66,28 +97,6 @@ test('release records derive Framework and excluded-owner versions from manifest
     createApp: identityOf(readManifest('create-app/asyra-design/package.json'))
   })
   assert.deepEqual(result.pendingChangesets, pendingChangesets)
-  assert.equal(result.gate5ReadinessStatus, 'READY')
   assert.equal(result.releaseDecision, 'PENDING')
   assert.equal(result.publicationAuthorized, false)
-})
-
-test('public release docs link current support while release records derive manifest-owned candidates', () => {
-  const read = (relativePath) =>
-    fs.readFileSync(path.join(repositoryRoot, relativePath), 'utf8')
-
-  const readme = read('README.md')
-  const releaseNotes = read('RELEASE_NOTES.md')
-  const support = read('docs/ai/framework/RELEASE_SUPPORT.md')
-
-  assert.match(readme, /## Current support/i)
-  assert.match(readme, /docs\/public\/reference\/support-release\.md/i)
-  assert.match(releaseNotes, /Framework pre-publication candidate/i)
-  assert.match(releaseNotes, /release decision remains `PENDING`/)
-  assert.match(support, /current Framework package manifests/i)
-  assert.match(support, /historical\s+release-readiness evidence/i)
-  assert.match(support, /create-asyra-design-app.*excluded/is)
-  assert.doesNotMatch(
-    support.slice(support.indexOf('## Reproducible readiness commands')),
-    /release:template/
-  )
 })

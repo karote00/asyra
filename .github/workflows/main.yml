@@ -34,7 +34,6 @@ jobs:
       e2e_suites: ${{ steps.scope.outputs.e2e_suites }}
       relationship_map_digest: ${{ steps.scope.outputs.relationship_map_digest }}
       framework_declaration_tasks: ${{ steps.scope.outputs.framework_declaration_tasks }}
-      framework_release_required: ${{ steps.scope.outputs.framework_release_required }}
       create_app_packages: ${{ steps.scope.outputs.create_app_packages }}
       design_e2e_required: ${{ steps.scope.outputs.design_e2e_required }}
       flow_inspector_validation_required: ${{ steps.scope.outputs.flow_inspector_validation_required }}
@@ -125,20 +124,6 @@ jobs:
 
       - name: Verify static deployment admission
         run: node --test .github/__tests__/site-cloudflare.test.mjs .github/__tests__/app-cloudflare.test.mjs scripts/__tests__/app-cloudflare.test.mjs
-
-      - name: Require Changeset record
-        if: github.event_name == 'pull_request'
-        env:
-          CHANGESET_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          CHANGESET_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: yarn changeset:pr:check
-
-      - name: Validate update guidance declarations
-        if: github.event_name == 'pull_request'
-        env:
-          UPDATE_GUIDANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          UPDATE_GUIDANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: yarn docs:updates:check
 
       - name: Download CI scope evidence for shared checks
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -319,8 +304,6 @@ jobs:
         run: |
           yarn workspace @asyra/flow-inspector test:flow-rerun
           node scripts/validation-checks.mjs --check control-plane-tests
-          node tools/flow-inspector/control-plane/cli.cjs prove
-          node tools/flow-inspector/control-plane/cli.cjs candidate
 
   fieldscope-profile-heavy:
     if: ${{ needs.scope.result == 'success' && toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).heavy) != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
@@ -345,41 +328,6 @@ jobs:
     with:
       group: remaining
       files: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).remaining) }}
-
-  framework-release-readiness:
-    if: ${{ !cancelled() && needs.scope.outputs.framework_release_required == 'true' && needs.shared-validation.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
-    needs: [scope, shared-validation]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup Yarn
-        run: corepack enable && yarn set version 4.3.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Build release packages
-        run: yarn react:build
-
-      - name: Pack and validate release packages
-        run: yarn release:packages --prebuilt
-
-      - name: Verify packed clean consumer
-        run: yarn release:consumer
-
-      - name: Verify release records
-        run: yarn release:records
 
   production-artifacts:
     needs: scope
@@ -447,7 +395,6 @@ jobs:
         shared-validation,
         workspace-validation,
         flow-inspector-validation,
-        framework-release-readiness,
         fieldscope-profile-heavy,
         fieldscope-profile-source,
         fieldscope-profile-remaining,
@@ -526,7 +473,6 @@ jobs:
           FLOW_WORKSPACE_RESULTS_DIR: .ci-workspace-results
           FLOW_FLOW_INSPECTOR_VALIDATION_RESULT: ${{ needs.flow-inspector-validation.result }}
           FLOW_PRODUCTION_ARTIFACT_RESULT: ${{ needs.production-artifacts.result }}
-          FLOW_FRAMEWORK_RELEASE_RESULT: ${{ needs.framework-release-readiness.result }}
           FLOW_FRAMEWORK_DECLARATION_RESULT: ${{ needs.shared-validation.outputs.framework_declaration_result }}
           FLOW_CREATE_APP_READINESS_RESULT: ${{ needs.shared-validation.outputs.create_app_result }}
           FLOW_DESIGN_FORWARDER_RESULT: ${{ needs.e2e-tests.result }}

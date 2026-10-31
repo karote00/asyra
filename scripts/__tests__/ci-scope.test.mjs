@@ -47,7 +47,6 @@ test('model reference documents and images are recognized without runtime select
   assert.deepEqual(result.unknownPaths, [])
   assert.deepEqual(names(result), [])
   assert.equal(result.designE2ERequired, false)
-  assert.equal(result.frameworkReleaseRequired, false)
 })
 
 test('large CI plans cross jobs without placing execution inputs in scheduling outputs', () => {
@@ -160,7 +159,6 @@ test('model reference measurements and review evidence stay outside runtime sele
   assert.deepEqual(result.unknownPaths, [])
   assert.deepEqual(names(result), [])
   assert.equal(result.designE2ERequired, false)
-  assert.equal(result.frameworkReleaseRequired, false)
   assert.equal(
     result.relationshipMap.executionPlan.checks.repositoryScripts.mode,
     'not-selected'
@@ -180,7 +178,6 @@ test('model reference Python drawing helpers and archived source are scoped to r
   assert.deepEqual(result.unknownPaths, [])
   assert.deepEqual(names(result), [])
   assert.equal(result.designE2ERequired, false)
-  assert.equal(result.frameworkReleaseRequired, false)
 })
 
 test('model reference classification does not admit runtime paths or unrelated assets', () => {
@@ -204,7 +201,7 @@ test('model reference classification does not admit runtime paths or unrelated a
   }
 })
 
-test('standalone release consumer inputs select release readiness without unrelated workspaces', () => {
+test('standalone release consumer inputs select tooling tests without publication readiness', () => {
   for (const input of [
     'fixtures/framework-release-consumer/src/__tests__/release-flow.test.ts',
     'fixtures/framework-release-consumer/src/consumer.ts',
@@ -213,7 +210,6 @@ test('standalone release consumer inputs select release readiness without unrela
     const result = classifyChanges([input], manifests)
 
     assert.deepEqual(result.unknownPaths, [], input)
-    assert.equal(result.frameworkReleaseRequired, true, input)
     assert.deepEqual(names(result), [], input)
     assert.equal(
       result.relationshipMap.fieldscopeProfilesRequired,
@@ -249,7 +245,6 @@ test('App update consumers select retained-artifact validation without unrelated
 
   assert.deepEqual(result.unknownPaths, [])
   assert.deepEqual(names(result), [])
-  assert.equal(result.frameworkReleaseRequired, false)
   assert.equal(result.designE2ERequired, false)
   assert.equal(result.relationshipMap.fieldscopeProfilesRequired, false)
   assert.equal(result.executionPlan.checks.repositoryScripts.mode, 'files')
@@ -1023,7 +1018,6 @@ test('global compiler and package-manager configuration selects every workspace'
         .map((workspace) => workspace.name)
         .sort()
     )
-    assert.equal(result.frameworkReleaseRequired, true)
   }
 })
 
@@ -1129,13 +1123,13 @@ test('create-app remains outside the dynamic workspace matrix and keeps archive 
   assert.deepEqual(result.unknownPaths, [])
 })
 
-test('release input and affected package changes select Framework release readiness', () => {
+test('development selection does not schedule package publication readiness', () => {
   const script = classifyChanges(
     ['scripts/release-package-artifacts.js'],
     manifests
   )
 
-  assert.equal(script.frameworkReleaseRequired, true)
+  assert.equal('frameworkReleaseRequired' in script, false)
   assert.deepEqual(names(script), [])
 
   const packageChange = classifyChanges(
@@ -1143,7 +1137,7 @@ test('release input and affected package changes select Framework release readin
     manifests
   )
 
-  assert.equal(packageChange.frameworkReleaseRequired, true)
+  assert.equal('frameworkReleaseRequired' in packageChange, false)
 })
 
 test('unknown paths select all workspaces and remain an aggregate blocker', () => {
@@ -1286,7 +1280,6 @@ test('documentation and test-only package edits do not select consumer builds or
 
     assert.deepEqual(names(result), [], input)
     assert.deepEqual(result.executionPlan.checks.e2e.selected, [], input)
-    assert.equal(result.frameworkReleaseRequired, false, input)
   }
 
   const testOnly = classifyChanges(
@@ -1296,7 +1289,6 @@ test('documentation and test-only package edits do not select consumer builds or
 
   assert.deepEqual(names(testOnly), ['@asyra/core'])
   assert.deepEqual(testOnly.executionPlan.checks.e2e.selected, [])
-  assert.equal(testOnly.frameworkReleaseRequired, false)
 })
 
 test('test files outside Design never select Design functional E2E', () => {
@@ -1407,7 +1399,6 @@ test('lock resolution edits select only workspaces that consume the changed reso
   assert.deepEqual(names(result), ['@asyra/asyra-framework-site'])
   assert.equal(result.workspaceMatrix[0].e2eSelection.mode, 'full')
   assert.deepEqual(result.executionPlan.checks.e2e.selected, [])
-  assert.equal(result.frameworkReleaseRequired, false)
 })
 
 test('production artifacts follow the selected runtime Apps and explicit verifier inputs', () => {
@@ -1640,7 +1631,7 @@ test('a failed classifier cannot launch the control-plane proof workflow', () =>
   )
   const job = workflow
     .split('  flow-inspector-validation:')[1]
-    .split('  framework-release-readiness:')[0]
+    .split('\n  fieldscope-profile-')[0]
 
   assert.match(job, /if:.*needs\.scope\.result == 'success'/)
 })
@@ -1731,7 +1722,6 @@ test('developer Agent inputs select their packaging contract without product bui
 
     assert.deepEqual(result.unknownPaths, [], file)
     assert.deepEqual(names(result), [], file)
-    assert.equal(result.frameworkReleaseRequired, false, file)
     assert.equal(
       result.executionPlan.checks.repositoryScripts.mode,
       'files',

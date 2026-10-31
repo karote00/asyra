@@ -828,10 +828,7 @@ test('CI, E2E, and release validation own their bounded integration gates', () =
   assert.doesNotMatch(designViteConfig, /outDir:\s*['"]\.\.\/\.\.\/dist['"]/)
   assert.match(ci, /node scripts\/validation-checks\.mjs --check build-graph/)
   assert.match(ci, /node scripts\/validation-checks\.mjs --check dependencies/)
-  assert.match(ci, /if: github\.event_name == 'pull_request'/)
-  assert.match(ci, /CHANGESET_BASE_SHA:.*pull_request\.base\.sha/)
-  assert.match(ci, /CHANGESET_HEAD_SHA:.*pull_request\.head\.sha/)
-  assert.match(ci, /yarn changeset:pr:check/)
+  assert.doesNotMatch(ci, /yarn changeset:pr:check/)
   assert.doesNotMatch(ci, /yarn release:app:check/)
   assert.match(e2e, /test:e2e:collaboration/)
   assert.match(releaseValidation, /yarn release:app:check --prod=\$\{appName\}/)
@@ -937,24 +934,15 @@ test('Tailwind 4 uses the dedicated Vite plugin in canonical and generated apps'
   )
 })
 
-test('CI validates the active Framework package release from packed artifacts on Node 24', () => {
+test('development CI does not execute publication readiness or release notes checks', () => {
   const ci = readText('.github/workflows/main.yml')
-  const releaseJob = ci.slice(ci.indexOf('framework-release-readiness:'))
 
-  assert.match(releaseJob, /node-version: 24/)
-  assert.doesNotMatch(releaseJob, /node-version: 20/)
-  assert.match(releaseJob, /yarn install --immutable/)
-  assert.match(releaseJob, /yarn react:build/)
-  assert.match(releaseJob, /yarn release:packages --prebuilt/)
-  assert.match(releaseJob, /yarn release:consumer/)
-  assert.doesNotMatch(releaseJob, /yarn release:template/)
-  assert.match(releaseJob, /yarn release:records/)
   assert.doesNotMatch(
-    releaseJob,
-    /--allow-unsupported-node|changeset publish|npm publish/
+    ci,
+    /yarn (?:release:packages|release:consumer|release:records|docs:updates:check)/
   )
+  assert.doesNotMatch(ci, /control-plane\/cli\.cjs (?:prove|candidate)/)
 })
-
 test('PR CI serializes revisions and cancels every obsolete job', () => {
   const workflow = yaml.load(readText('.github/workflows/main.yml'))
 
@@ -1478,7 +1466,7 @@ test('Flow Inspector CI proof checkout includes the accepted verifier baseline',
   const workflow = readText('.github/workflows/main.yml')
   const flowJob = workflow
     .split('\n  flow-inspector-validation:\n')[1]
-    .split('\n  framework-release-readiness:\n')[0]
+    .split('\n  fieldscope-profile-')[0]
 
   assert.match(flowJob, /fetch-depth: 0/)
   assert.match(flowJob, /persist-credentials: false/)

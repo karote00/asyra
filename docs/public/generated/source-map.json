@@ -366,7 +366,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+          "sha256": "01f43e2922fa2ed6ccabbfd561d9da6c7d806b4ac7aaad238c84fb2197f20ed8"
         }
       ]
     },
@@ -376,7 +376,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+          "sha256": "01f43e2922fa2ed6ccabbfd561d9da6c7d806b4ac7aaad238c84fb2197f20ed8"
         }
       ]
     },
@@ -386,7 +386,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+          "sha256": "01f43e2922fa2ed6ccabbfd561d9da6c7d806b4ac7aaad238c84fb2197f20ed8"
         }
       ]
     },
@@ -396,7 +396,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+          "sha256": "01f43e2922fa2ed6ccabbfd561d9da6c7d806b4ac7aaad238c84fb2197f20ed8"
         }
       ]
     },
@@ -406,7 +406,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+          "sha256": "01f43e2922fa2ed6ccabbfd561d9da6c7d806b4ac7aaad238c84fb2197f20ed8"
         }
       ]
     },
@@ -416,7 +416,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+          "sha256": "01f43e2922fa2ed6ccabbfd561d9da6c7d806b4ac7aaad238c84fb2197f20ed8"
         }
       ]
     },
@@ -426,7 +426,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+          "sha256": "01f43e2922fa2ed6ccabbfd561d9da6c7d806b4ac7aaad238c84fb2197f20ed8"
         }
       ]
     },
@@ -868,7 +868,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "3aeabf8e0fd8c33c8aa0b67dcc2321f3f056a474ffd57848ce12eccd2aa62d17"
+          "sha256": "006b08ba28ec6e65c0d5715dc265980815cf71bb727ea4515c679799e4639bfe"
         }
       ]
     },

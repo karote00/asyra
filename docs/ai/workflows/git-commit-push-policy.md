@@ -116,12 +116,12 @@ verification, not the first place to discover locally detectable failures.
 3. Run the required local checks after the last relevant edit. Cover focused
    behavior tests, applicable lint/typecheck/build, generated-file checks and
    directly affected repository contracts. For a new workspace, include
-   changeset admission, workspace/Turbo generation, test-file placement and
+   workspace/Turbo generation, test-file placement and
    naming checks. CLI/template work also requires its declared clean-consumer
    gates; visual changes require the declared browser and screenshot review.
 4. Review the final diff and run `git diff --check`. After committing, run
-   commit-dependent checks against the actual head and intended PR base, such
-   as `changeset:pr:check` with its base/head environment variables. Confirm
+   applicable commit-dependent checks against the actual head and intended PR
+   base. Release records are not a development push prerequisite. Confirm
    local uncommitted files did not supply behavior missing from the commit.
 5. Report the source revision, commands and outcomes in the existing handoff or
    PR description. Distinguish passed, failed, not applicable and unavailable

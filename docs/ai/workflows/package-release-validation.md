@@ -1,9 +1,7 @@
 # Package and Release Validation
 
-Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
-for pending impact notes, necessary integration guides and preservation checks.
-Development declarations and artifact-bound publisher admission share that rule.
-See its release admission section for candidate files, coverage gaps and recovery.
+Use this workflow's checks for its own outputs. Project release updates follow
+[Release Update Guidance](../framework/rules/release-update-guidance.md).
 
 This workflow owns the repository automation contract between workspace
 manifests, Turbo, generated app templates, CI, and the explicit release
@@ -20,20 +18,20 @@ that same inventory with `yarn validate:local --full --json`. The command owner 
 Local execution and CI consume the same versioned plan and command definitions,
 including the complete workspace build/test selections in full mode.
 
-| Check family | Canonical execution |
-| --- | --- |
-| Security | `yarn security:audit` |
-| Dependencies | `yarn deps:validate` |
-| Build graph | `yarn gen:turbo:check` |
-| Framework declarations | Declared Turbo tasks with concurrency 2 |
-| Shared contracts | `scripts/run-ci-checks.mjs`: full `yarn lint`, naming and repository tests |
-| Workspaces | `scripts/run-workspace-checks.mjs`: each manifest's build, type/lint and test contracts |
-| FieldScope profiles | The policy's supervised profile command and complete selected file inventory |
-| Inspector contracts | All maintained control-plane contract tests, excluding the separately owned Board browser suite |
-| Browser suites | The policy's four E2E command contracts and their result evidence |
+| Check family           | Canonical execution                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| Security               | `yarn security:audit`                                                                           |
+| Dependencies           | `yarn deps:validate`                                                                            |
+| Build graph            | `yarn gen:turbo:check`                                                                          |
+| Framework declarations | Declared Turbo tasks with concurrency 2                                                         |
+| Shared contracts       | `scripts/run-ci-checks.mjs`: full `yarn lint`, naming and repository tests                      |
+| Workspaces             | `scripts/run-workspace-checks.mjs`: each manifest's build, type/lint and test contracts         |
+| FieldScope profiles    | The policy's supervised profile command and complete selected file inventory                    |
+| Inspector contracts    | All maintained control-plane contract tests, excluding the separately owned Board browser suite |
+| Browser suites         | The policy's four E2E command contracts and their result evidence                               |
 
 CI retains its platform setup, distributed jobs, Inspector integration proofs,
-production artifact verification and release-readiness lanes. These adapters do
+production artifact verification. These adapters do
 not replace the development inventory or make release/template synchronization
 part of local development validation. Existing supervision, concurrency limits,
 deadlines, cleanup, evidence identities and final aggregation remain required.
@@ -60,13 +58,13 @@ skipped or converted into passing development evidence.
 
 ### CI and deployment boundaries
 
-PR validation is independent of hosting. Ready PRs require `validate`,
-`framework-release-readiness`, `e2e-tests`, `collaboration-e2e-tests`, and
-`production-artifact-tests`. `validate` is the total aggregation check;
-`shared-validation` supplies its common prerequisites and runs the conditional
-create-app package archive check. Framework release readiness is selected for
-affected Framework packages and release-validation owner scripts. Draft jobs
-remain deferred until ready for review.
+PR validation is independent of hosting and release preparation. Ready PRs
+require the development aggregate, selected workspace/contracts/browser tests
+and production artifact checks. The create-app archive dry run checks package
+contents without generating templates, querying a registry or publishing.
+Package release readiness runs only in the explicit package release workflow.
+Flow Inspector runs its current contract tests; it does not repeat historical
+baseline acceptance or candidate proof as an additional CI gate.
 The three hosted Apps use [Cloudflare App delivery](app-cloudflare.md).
 The website has its own manual Cloudflare workflow. A push, PR or merge does
 not request a deployment. Package registry publication remains separate.
@@ -297,12 +295,13 @@ yarn release:records
 project-local artifact directory. `release:consumer` and `release:template`
 install only those tarballs in isolated Yarn `node_modules` consumers; neither
 may resolve monorepo workspaces, aliases, private source paths, or hoisted
-dependencies. `release:records` freezes the candidate versions, public support
-documents, package READMEs, Changesets configuration, and the distinction
-between readiness and publication.
+dependencies. `release:records` reports manifest-owned candidate versions and
+Changesets configuration. It does not require documentation phrases, completed
+plans, release notes or historical readiness declarations.
 
-The version PR commits the Framework package manifests and changelogs computed
-from its pending Changesets, including Changesets' dependency propagation. After
+The version PR commits Framework package versions computed from scoped
+Changesets, including dependency propagation. Changelog generation is disabled;
+owner decision streams supply project release updates. After
 that PR merges, the separately authorized Framework stage uses the fixed
 `packages/*` allowlist and each manifest's exact version as its release set. It
 checks all exact versions in the registry before publishing any package, skips
@@ -444,15 +443,9 @@ authorizes the corresponding remote operation.
 
 Changesets version only fixed-allowlist Framework packages under `packages/*`.
 Root `asyra`, private apps, `create-app/*` CLI packages, and generated templates
-must never appear as Changeset release entries. A non-Framework code PR may use
-an empty Changeset as its closeout record. Pure Markdown documentation pull requests do not require a Changeset.
-All changed paths, including deleted files and both sides of a rename, must
-end in `.md` and be outside `.changeset/` to qualify. Executable documentation
-(such as `.mdx`), scripts, configuration, and mixed changes retain the pending
-record requirement before completion. CI accepts a release pull request after
-`changeset version` consumes its pending records only when at least one
-allowlisted Framework package has both its generated manifest version and
-changelog committed; deleting a Changeset alone never satisfies the gate.
+must never appear as Changeset release entries. Development PRs and closeout
+require no Changeset. An early merge can be followed by a separate closeout;
+CI does not enforce the order of those administrative steps.
 
 Root `asyra` is the `a.b.0` main release identity. Framework packages iterate
 within that family as `a.b.n`. Changing `a` or `b` requires explicit user
