@@ -11,7 +11,7 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
   const markers = [
     'Record original test job deadline',
     'Initialize test execution envelope',
-    'run: node scripts/run-workspace-checks.mjs'
+    'run: node scripts/validation-checks.mjs --check "$VALIDATION_WORKSPACE"'
   ]
   function checkOrdering(source) {
     for (const marker of markers) {

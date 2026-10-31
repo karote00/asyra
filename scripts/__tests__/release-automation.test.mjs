@@ -183,7 +183,7 @@ test('public release gates high-severity dependency advisories', () => {
   )
   assert.match(
     workflow,
-    /- name: Audit high-severity dependencies\s+id: security_audit\s+if: \$\{\{ fromJSON\(needs.scope.outputs.execution_plan\).checks.securityAudit.mode == 'full' \}\}\s+run: yarn security:audit/u
+    /- name: Audit high-severity dependencies\s+id: security_audit\s+if: \$\{\{ fromJSON\(needs.scope.outputs.execution_plan\).checks.securityAudit.mode == 'full' \}\}\s+run: node scripts\/validation-checks.mjs --check security-audit/u
   )
 })
 

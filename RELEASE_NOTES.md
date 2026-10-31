@@ -1,5 +1,24 @@
 # Asyra Release Notes
 
+## Pending - Full validation consumer repairs
+
+```update-note
+{
+  "change": "full-validation-consumer-repairs",
+  "owner": "Repository validation and Flow Inspector verification",
+  "summary": "Update security and Sim supervision assertions for the shared validation CLI, regenerate the public source map after the root command change, and isolate cumulative Design localization faults into complete baseline/fault/recovery cases.",
+  "reason": "Full PR CI detected stale workflow-entry assertions and documentation fingerprints. Five full runtime invocations shared a 120-second case envelope despite individual 30-second guards; each isolated recovery case now needs three invocations with the same guards and complete product assertions.",
+  "impact": "no-action",
+  "sources": [
+    "apps/asyra-sim/scripts/__tests__/supervise-tests-ci.test.mjs",
+    "scripts/__tests__/release-automation.test.mjs",
+    "docs/public/generated/source-map.json",
+    "tools/flow-inspector/control-plane/__tests__/localization-runtime.test.cjs"
+  ],
+  "guides": []
+}
+```
+
 ## Pending - Shared full validation inventory
 
 ```update-note

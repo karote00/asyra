@@ -9,6 +9,45 @@ for the current delivery.
 
 ### Shared validation inventory and PR delivery
 
+Follow-up after PR run `41200509598`: the previous gate selection missed two
+direct workflow-string consumers and the generated public source map after the
+root manifest changed. Correct the release-audit and Sim supervision contracts
+for the shared CLI without changing their enforcement, regenerate public docs
+through their canonical generator, and validate the full repository script suite,
+Sim supervisor suite, website build and production artifact verification. Also
+diagnose the 120-second Design localization/recovery timeout using its existing
+real-runtime test and retained logs; preserve all scenarios, source identities,
+recovery assertions and process/time guards. Edits are limited to these failed
+owners, their regression tests and required generated documentation. No product
+feature, template, manual CI dispatch or monitoring is authorized by this repair.
+
+The existing localization test reproduces the same five full Vitest invocations
+locally in 66.8 seconds; CI exhausted the enclosing 120-second limit. Each child
+already has a 30-second limit, so five individually valid children can exceed
+that envelope. Isolate each cumulative fault combination as a complete
+baseline/fault/recovery case (three children per case). Keep all 85 product cases
+in every invocation, every cumulative mutation combination and history/mapping
+assertion, the 30-second child guard and 120-second case guard. Do not change App
+runtime, timers or assertions. This is the `localize-test-results` verification
+boundary: captured source, ordinary reports and retained recovery history remain
+authoritative; no product step semantics or conformance verdict changes.
+
+Repair validation: the three existing workflow/source-map regressions failed
+before correction. After correction, `yarn test:scripts` passes 551 tests plus
+all four real workspace build modes; its existing installer opt-in remains
+unselected. The shared control-plane command passes 629 tests with zero failures
+or cancellations (57 existing conditional cases unselected). All three isolated
+Design recovery cases pass in about 40 seconds in that complete run. Flow rerun
+tests (2), core proof and candidate proof pass. Sim's official `test:ci` passes
+its 13 supervisor contracts and all four supervised phases: ordinary (877),
+heavy (4), representative (1), witnessed-zero (4), with completed and reaped
+processes. Production builds for all three artifact owners, Design typecheck,
+three production browser tests and five resource-evidence contracts pass.
+Full lint has zero errors and 110 existing warnings; naming and focused lint
+pass. Evidence is under `tmp/readability/ci-repair-*`. Conditional/opt-in cases
+are not counted as passed, and no skip or timeout setting was changed. Remote
+CI remains for the user to inspect after the authorized push.
+
 The current delivery slice consolidates existing local and CI development
 commands in `scripts/validation-checks.mjs`. Full PR selection uses `ci:full`
 on the ordinary push-triggered PR workflow. Authorized edits cover the command
