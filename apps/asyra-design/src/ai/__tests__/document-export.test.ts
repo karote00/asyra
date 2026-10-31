@@ -10,6 +10,7 @@ afterEach(() => vi.unstubAllGlobals())
 
 const fixture = (maximumBytes = 10000) => {
   let changed: () => void = () => undefined
+
   let identity: object = {}
   const unsubscribe = vi.fn()
   const source = {
@@ -18,11 +19,16 @@ const fixture = (maximumBytes = 10000) => {
       sceneTree: { title: 'Editable drawing' },
       props: {}
     })),
+
     identity: () => identity,
+
     documentId: () => 'document-1',
+
     workspaceId: () => 'workspace-1',
+
     observe: (listener: () => void) => {
       changed = listener
+
       return unsubscribe
     }
   }
@@ -30,7 +36,9 @@ const fixture = (maximumBytes = 10000) => {
   const output = {
     create: vi.fn((blob: Blob) => {
       const url = `blob:${blobs.size}`
+
       blobs.set(url, blob as unknown as NodeBlob)
+
       return url
     }),
     release: vi.fn((url: string) => {
@@ -42,18 +50,23 @@ const fixture = (maximumBytes = 10000) => {
     )
   }
   const owner = createDocumentExport(source, output, maximumBytes)
+
   const invoke = async (
     name: string,
     input = {},
     signal = new AbortController().signal
   ) => {
     const action = owner.actions.find((entry) => entry.name === name)
+
     if (!action) {
       throw new Error(`Missing export action: ${name}`)
     }
+
     expect(operationInputIssue(input, action.inputSchema)).toBeUndefined()
     const result = await action.execute(input, { signal })
+
     expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
+
     return result as {
       artifact: {
         artifactId: string
@@ -65,6 +78,7 @@ const fixture = (maximumBytes = 10000) => {
       released?: boolean
     }
   }
+
   return {
     owner,
     invoke,
@@ -72,7 +86,9 @@ const fixture = (maximumBytes = 10000) => {
     output,
     blobs,
     unsubscribe,
+
     change: () => changed(),
+
     replace: () => {
       identity = {}
     }
@@ -82,14 +98,17 @@ const fixture = (maximumBytes = 10000) => {
 it('retains exact downloadable bytes across request cancellation and retries without reserializing', async () => {
   const f = fixture()
   const request = new AbortController()
+
   try {
     const result = await f.invoke(
       AiActionNames.EXPORT_DOCUMENT,
       {},
       request.signal
     )
+
     expect(result.artifact.bytes).toBeGreaterThan(0)
     const bytes = await [...f.blobs.values()][0].text()
+
     expect(JSON.parse(bytes)).toEqual(await f.source.save.mock.results[0].value)
     expect(result.artifact.sha256).toBe(
       createHash('sha256').update(bytes).digest('hex')
@@ -105,6 +124,7 @@ it('retains exact downloadable bytes across request cancellation and retries wit
         ).delivery
       ).toBe('download-requested')
     }
+
     expect(f.output.download).toHaveBeenCalledTimes(2)
     expect(f.source.save).toHaveBeenCalledOnce()
     expect(
@@ -129,6 +149,7 @@ it('retains exact downloadable bytes across request cancellation and retries wit
   } finally {
     f.owner.dispose()
   }
+
   expect(f.unsubscribe).toHaveBeenCalledOnce()
   expect(f.output.release).toHaveBeenCalledOnce()
 })
@@ -138,19 +159,24 @@ it.each(['change', 'replace', 'abort', 'dispose'] as const)(
   async (event) => {
     const f = fixture()
     const request = new AbortController()
+
     f.output.digest.mockImplementationOnce(async () => {
       if (event === 'change') {
         f.change()
       }
+
       if (event === 'replace') {
         f.replace()
       }
+
       if (event === 'abort') {
         request.abort()
       }
+
       if (event === 'dispose') {
         f.owner.dispose()
       }
+
       return 'a'.repeat(64)
     })
     try {
@@ -167,8 +193,10 @@ it.each(['change', 'replace', 'abort', 'dispose'] as const)(
 
 it('preserves issued exports on capacity rejection and recovers only after explicit release', async () => {
   const f = fixture(100)
+
   try {
     const first = await f.invoke(AiActionNames.EXPORT_DOCUMENT)
+
     await expect(f.invoke(AiActionNames.EXPORT_DOCUMENT)).rejects.toThrow(
       'capacity'
     )
@@ -184,12 +212,14 @@ it('preserves issued exports on capacity rejection and recovers only after expli
   } finally {
     f.owner.dispose()
   }
+
   expect(f.blobs.size).toBe(0)
 })
 
 it('rejects overlapping snapshot work without queuing or duplicating serialization', async () => {
   const f = fixture()
   let finish!: (value: unknown) => void
+
   f.source.save.mockImplementationOnce(
     () =>
       new Promise((resolve) => {
@@ -198,6 +228,7 @@ it('rejects overlapping snapshot work without queuing or duplicating serializati
   )
   try {
     const first = f.invoke(AiActionNames.EXPORT_DOCUMENT)
+
     await expect(f.invoke(AiActionNames.EXPORT_DOCUMENT)).rejects.toThrow(
       'already'
     )
@@ -212,8 +243,10 @@ it('rejects overlapping snapshot work without queuing or duplicating serializati
 it('keeps the original artifact after a download error and refuses foreign handles', async () => {
   const f = fixture()
   const other = fixture()
+
   try {
     const { artifact } = await f.invoke(AiActionNames.EXPORT_DOCUMENT)
+
     f.output.download.mockImplementationOnce(() => {
       throw new Error('blocked')
     })
@@ -239,6 +272,7 @@ it('keeps the original artifact after a download error and refuses foreign handl
 
 it('attempts every artifact release after a cleanup failure and retries only unreleased resources', async () => {
   const f = fixture()
+
   await f.invoke(AiActionNames.EXPORT_DOCUMENT)
   await f.invoke(AiActionNames.EXPORT_DOCUMENT)
   f.output.release.mockImplementationOnce(() => {

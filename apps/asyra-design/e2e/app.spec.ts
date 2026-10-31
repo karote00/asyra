@@ -32,6 +32,7 @@ test.describe('Asyra Design Tool', () => {
 
     // Check that the root element is present
     const rootElement = page.locator('#root')
+
     await expect(rootElement).toBeAttached()
 
     await page.locator('canvas').waitFor({ state: 'visible' })
@@ -40,6 +41,7 @@ test.describe('Asyra Design Tool', () => {
       release = resolve
     })
     let received = false
+
     await page.route('**/readiness-pending', async (route) => {
       received = true
       await held
@@ -51,18 +53,23 @@ test.describe('Asyra Design Tool', () => {
     await expect.poll(() => received).toBe(true)
     const waits: number[] = []
     const waitForTimeout = page.waitForTimeout.bind(page)
+
     page.waitForTimeout = async (milliseconds) => {
       waits.push(milliseconds)
+
       return waitForTimeout(milliseconds)
     }
+
     let ready = false
     const readiness = waitForAppReady(page).then(() => {
       ready = true
     })
+
     try {
       await expect.poll(() => ready).toBe(true)
       expect(waits).toEqual([])
       const before = await getElementCount(page)
+
       await page.keyboard.press('r')
       await page.mouse.move(400, 200)
       await page.mouse.down()
@@ -81,18 +88,22 @@ test.describe('Asyra Design Tool', () => {
 
     // Check that the canvas container is present (RenderApp component)
     const canvas = page.locator('canvas')
+
     await expect(canvas.first()).toBeVisible()
 
     const surfaces = ['#viewport-anchor', '[data-testid="toolbar"]', 'canvas']
+
     for (const selector of surfaces) {
       await page.locator(selector).evaluate((element) => {
         element.style.visibility = 'hidden'
       })
     }
+
     let ready = false
     const readiness = waitForAppReady(page).then(() => {
       ready = true
     })
+
     try {
       for (const selector of surfaces) {
         await page.evaluate(
@@ -106,6 +117,7 @@ test.describe('Asyra Design Tool', () => {
           element.style.visibility = 'visible'
         })
       }
+
       await readiness
       expect(ready).toBe(true)
     } finally {
@@ -114,6 +126,7 @@ test.describe('Asyra Design Tool', () => {
           element.style.removeProperty('visibility')
         })
       }
+
       await readiness
     }
   })
@@ -123,11 +136,13 @@ test.describe('Asyra Design Tool', () => {
 
     // Toolbar should be visible (header area)
     const toolbar = getToolbar(page)
+
     await expect(toolbar).toBeVisible()
 
     // Tool buttons should be present
     const toolButtons = toolbar.locator('[data-testid^="tool-"]')
     const buttonCount = await toolButtons.count()
+
     expect(buttonCount).toBeGreaterThan(0)
   })
 
@@ -136,6 +151,7 @@ test.describe('Asyra Design Tool', () => {
 
     // Check for viewport anchor element
     const viewportAnchor = page.locator('#viewport-anchor')
+
     await expect(viewportAnchor).toBeAttached()
   })
 
@@ -144,6 +160,7 @@ test.describe('Asyra Design Tool', () => {
 
     // Contents Panel should be visible
     const contentsPanel = getContentsPanel(page)
+
     await expect(contentsPanel).toBeVisible()
   })
 
@@ -152,6 +169,7 @@ test.describe('Asyra Design Tool', () => {
 
     // Properties Panel should be visible
     const propertiesPanel = getPropertiesPanel(page)
+
     await expect(propertiesPanel).toBeVisible()
   })
 
@@ -163,6 +181,7 @@ test.describe('Asyra Design Tool', () => {
     const toolbar = getToolbar(page)
     const resetButton = toolbar.getByTestId('reset-button')
     const selectButton = toolbar.getByTestId('tool-select')
+
     await expect(resetButton).toBeVisible()
     await expect(resetButton).toHaveAttribute('aria-label', 'Reset document')
     await expect(selectButton).toBeVisible()
@@ -173,6 +192,7 @@ test.describe('Asyra Design Tool', () => {
         ).map((element) => element.getAttribute('data-testid'))
         const resetIndex = controlIds.indexOf('reset-button')
         const selectIndex = controlIds.indexOf('tool-select')
+
         return resetIndex >= 0 && selectIndex > resetIndex
       })
     ).toBe(true)
@@ -181,10 +201,12 @@ test.describe('Asyra Design Tool', () => {
     await expect.poll(() => getElementCount(page)).toBe(1)
 
     const fileId = getCurrentDocumentFileId(page)
+
     await expect
       .poll(
         async () => {
           const payload = await getPersistedDocumentCheckpoint(fileId)
+
           return (
             typeof payload.durableSequence === 'number' &&
             payload.durableSequence > 0 &&
@@ -197,6 +219,7 @@ test.describe('Asyra Design Tool', () => {
       .toBe(true)
 
     const browserDocumentBackendRequests: string[] = []
+
     page.on('request', (browserRequest) => {
       if (
         new URL(browserRequest.url()).pathname.startsWith('/api/documents/')
@@ -205,6 +228,7 @@ test.describe('Asyra Design Tool', () => {
       }
     })
     const reload = page.waitForNavigation({ waitUntil: 'domcontentloaded' })
+
     await resetButton.click()
     await reload
     await waitForAppReady(page)
@@ -214,6 +238,7 @@ test.describe('Asyra Design Tool', () => {
     await expect
       .poll(async () => {
         const payload = await getPersistedDocumentCheckpoint(fileId)
+
         return {
           durableSequence: payload.durableSequence,
           elementCount: Object.keys(
@@ -241,6 +266,7 @@ test.describe('Asyra Design Tool', () => {
     await expect.poll(() => getElementCount(page)).toBe(1)
 
     const browserDocumentBackendRequests: string[] = []
+
     page.on('request', (browserRequest) => {
       if (
         new URL(browserRequest.url()).pathname.startsWith('/api/documents/')
@@ -249,6 +275,7 @@ test.describe('Asyra Design Tool', () => {
       }
     })
     const reload = page.waitForNavigation({ waitUntil: 'domcontentloaded' })
+
     await page.getByTestId('reset-button').click()
     await reload
     await waitForAppReady(page)
@@ -267,6 +294,7 @@ test.describe('Asyra Design Tool', () => {
     // Zoom label should be visible
     const toolbar = getToolbar(page)
     const zoomDisplay = toolbar.getByTestId('zoom-level')
+
     await expect(zoomDisplay).toBeVisible()
   })
 })
@@ -278,9 +306,11 @@ test.describe('Asyra Design local-only startup', () => {
     test.skip(!runsLocalOnlyStartup, 'requires the endpoint-free App build')
     const webSockets: string[] = []
     const serverRequests: string[] = []
+
     page.on('websocket', (socket) => webSockets.push(socket.url()))
     page.on('request', (request) => {
       const url = new URL(request.url())
+
       if (
         url.pathname === '/collaboration' ||
         url.pathname.startsWith('/api/') ||

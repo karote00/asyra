@@ -8,18 +8,24 @@ const deferred = () => {
   const promise = new Promise<void>((done) => {
     resolve = done
   })
+
   return { promise, resolve }
 }
+
 const snapshot = () => ({}) as SystemContextSnapshot
+
 const raw = {} as RawInputEvent
+
 class InputHost implements InputSystemLike {
   readonly listeners = new Map<
     string,
     (raw: RawInputEvent) => void | Promise<void>
   >()
+
   on(event: string, callback: (raw: RawInputEvent) => void | Promise<void>) {
     this.listeners.set(event, callback)
   }
+
   off(event: string) {
     return this.listeners.delete(event)
   }
@@ -29,15 +35,19 @@ describe('immediate Feature execution through existing session settlement', () =
   let runtime: typeof import('../src')
   let input: InputHost
   let queueAdmissions: ReturnType<typeof vi.fn>
+
   beforeEach(async () => {
     vi.resetModules()
     const { interactionQueue } = await import('../src/core/interaction-queue')
     const createRunner = interactionQueue.createRunner.bind(interactionQueue)
+
     queueAdmissions = vi.fn()
     vi.spyOn(interactionQueue, 'createRunner').mockImplementation(() => {
       const run = createRunner()
+
       return (operation) => {
         queueAdmissions()
+
         return run(operation)
       }
     })
@@ -51,22 +61,27 @@ describe('immediate Feature execution through existing session settlement', () =
   afterEach(async () => {
     await runtime.disposeFeatureSystem(snapshot)
   })
+
   const emit = (event: string) => input.listeners.get(event)?.(raw)
 
   it('starts idle execution synchronously without entering the queue and ignores overlap', async () => {
     const gate = deferred(),
       calls: string[] = []
+
     runtime.defineFeature('history', 'history', {
       executionMode: 'immediate',
+
       execution: async () => {
         calls.push('history')
         await gate.promise
+
         return {}
       }
     })
     const first = emit('history')
     const atReturn = [...calls]
     const second = emit('history')
+
     gate.resolve()
     await Promise.all([first, second])
     expect(atReturn).toEqual(['history'])
@@ -84,14 +99,17 @@ describe('immediate Feature execution through existing session settlement', () =
         endStarted = deferred(),
         endGate = deferred()
       const order: string[] = []
+
       runtime.defineFeature('drag', 'drag', {
         session: {
           onStart: () => ({}),
+
           onUpdate: async () => {
             updateStarted.resolve()
             await updateGate.promise
             order.push('update')
           },
+
           onEnd: async () => {
             endStarted.resolve()
             await endGate.promise
@@ -104,19 +122,23 @@ describe('immediate Feature execution through existing session settlement', () =
       })
       runtime.defineFeature('history', 'history', {
         executionMode: 'immediate',
+
         execution: () => {
           order.push('history')
+
           return {}
         }
       })
       runtime.defineFeature('other', 'other', {
         execution: () => {
           order.push('other')
+
           return {}
         }
       })
       await emit('drag.start')
       const update = emit('drag.update')
+
       await updateStarted.promise
       const other = emit('other')
       const history = Promise.resolve(emit('history')).then(
@@ -124,9 +146,11 @@ describe('immediate Feature execution through existing session settlement', () =
         (e: Error) => e.message
       )
       const repeated = emit('history')
+
       updateGate.resolve()
       await endStarted.promise
       const beforeEnd = [...order]
+
       endGate.resolve()
       await Promise.all([update, other, repeated])
       expect(beforeEnd).toEqual(['update'])
@@ -146,9 +170,11 @@ describe('immediate Feature execution through existing session settlement', () =
     const started = deferred(),
       gate = deferred(),
       replay = vi.fn(() => ({}))
+
     runtime.defineFeature('drag', 'drag', {
       session: {
         onStart: () => ({}),
+
         onEnd: async () => {
           started.resolve()
           await gate.promise
@@ -161,8 +187,10 @@ describe('immediate Feature execution through existing session settlement', () =
     })
     await emit('drag.start')
     const request = Promise.resolve(emit('history')).catch((e: Error) => e)
+
     await started.promise
     const closing = runtime.disposeFeatureSystem(snapshot)
+
     gate.resolve()
     await closing
     expect(await request).toMatchObject({ code: 'FEATURE_RUNTIME_CLOSED' })
@@ -170,23 +198,29 @@ describe('immediate Feature execution through existing session settlement', () =
   })
   it('uses the existing rollback policy instead of committing an interrupted session', async () => {
     const order: string[] = []
+
     runtime.defineFeature('drag', 'drag', {
       cancelPolicy: SessionCancelPolicies.ROLLBACK,
       session: {
         onStart: () => ({}),
+
         onEnd: () => {
           order.push('end')
         },
+
         onCancel: () => {
           order.push('cancel')
+
           return SessionCancelPolicies.ROLLBACK
         }
       }
     })
     runtime.defineFeature('history', 'history', {
       executionMode: 'immediate',
+
       execution: () => {
         order.push('history')
+
         return {}
       }
     })
@@ -198,6 +232,7 @@ describe('immediate Feature execution through existing session settlement', () =
   it('rejects a conflicting shared execution mode without leaving a partial registration', async () => {
     runtime.defineFeature('history', 'history', {
       executionMode: 'immediate',
+
       execution: () => ({})
     })
     expect(() =>
@@ -209,14 +244,17 @@ describe('immediate Feature execution through existing session settlement', () =
 
   it('rejects retained immediate callers after disposal and permits a fresh runtime', async () => {
     const replay = vi.fn(() => ({}))
+
     runtime.defineFeature('history', 'history', {
       executionMode: 'immediate',
       execution: replay
     })
     const retained = input.listeners.get('history')
+
     if (!retained) {
       throw new Error('Missing history binding')
     }
+
     await runtime.disposeFeatureSystem(snapshot)
     runtime.beginFeatureSystemRuntime()
     runtime.setCorePackages({
@@ -243,11 +281,13 @@ describe('immediate Feature execution through existing session settlement', () =
       await gate.promise
       order.push('running')
     })
+
     await started.promise
     const immediate = queue.createImmediateRunner()(() => {
       order.push('immediate')
     })
     const beforeSettlement = [...order]
+
     gate.resolve()
     await Promise.all([running, immediate])
     expect(beforeSettlement).toEqual([])
@@ -259,9 +299,11 @@ describe('immediate Feature execution through existing session settlement', () =
       gate = deferred()
     const oldReplay = vi.fn(() => ({})),
       replacementReplay = vi.fn(() => ({}))
+
     runtime.defineFeature('drag', 'drag', {
       session: {
         onStart: () => ({}),
+
         onEnd: async () => {
           started.resolve()
           await gate.promise
@@ -274,6 +316,7 @@ describe('immediate Feature execution through existing session settlement', () =
     })
     await emit('drag.start')
     const request = emit('history')
+
     await started.promise
     runtime.unregisterFeature('old')
     runtime.defineFeature('replacement', 'history', {

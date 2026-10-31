@@ -132,6 +132,7 @@ export class AiConversationError extends Error {
 
   constructor(code: AiConversationErrorCode) {
     let message = 'AI conversation already has an active turn.'
+
     if (code === 'AI_CONVERSATION_DISPOSED') {
       message = 'AI conversation controller is disposed.'
     } else if (code === 'AI_CONVERSATION_INVALID_ATTACHMENT') {
@@ -143,6 +144,7 @@ export class AiConversationError extends Error {
     } else if (code === 'AI_CONVERSATION_INVALID_INTENT') {
       message = 'AI conversation intent must be non-empty.'
     }
+
     super(message)
     this.name = 'AiConversationError'
     this.code = code
@@ -184,7 +186,9 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false
   }
+
   const prototype = Object.getPrototypeOf(value)
+
   return prototype === Object.prototype || prototype === null
 }
 
@@ -194,15 +198,19 @@ const normalizeImageAttachments = (
   if (value === undefined) {
     return EMPTY_IMAGE_ATTACHMENTS
   }
+
   if (!Array.isArray(value)) {
     throw new AiConversationError('AI_CONVERSATION_INVALID_ATTACHMENT')
   }
+
   return Object.freeze(
     value.map((attachment) => {
       if (!isPlainObject(attachment)) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_ATTACHMENT')
       }
+
       const { dataUrl, mediaType, name, size } = attachment
+
       if (
         typeof mediaType !== 'string' ||
         !ACCEPTED_IMAGE_MEDIA_TYPES.has(mediaType as AiImageMediaType) ||
@@ -217,6 +225,7 @@ const normalizeImageAttachments = (
       ) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_ATTACHMENT')
       }
+
       return Object.freeze({
         dataUrl,
         mediaType: mediaType as AiImageMediaType,
@@ -239,9 +248,11 @@ const normalizeSubmission = (
       intent: source.trim()
     }
   }
+
   if (!isPlainObject(source) || typeof source.intent !== 'string') {
     throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
   }
+
   return {
     attachments: normalizeImageAttachments(source.attachments),
     intent: source.intent.trim()
@@ -253,9 +264,11 @@ const freezeTargetHints = (
   source: Readonly<Record<string, readonly string[]>>
 ): AiTargetHints => {
   const roles: Record<string, readonly string[]> = {}
+
   Object.entries(source).forEach(([role, elementIds]) => {
     roles[role] = Object.freeze([...elementIds])
   })
+
   return Object.freeze({
     compositionId,
     roleToElementIds: Object.freeze(roles)
@@ -268,6 +281,7 @@ const readActionResultStatus = (
   if (!isPlainObject(value)) {
     return null
   }
+
   return value.status === 'complete' ||
     value.status === 'no-change' ||
     value.status === 'partial' ||
@@ -282,6 +296,7 @@ const readActionResults = (
   if (!isPlainObject(value) || !Array.isArray(value.actionResults)) {
     return []
   }
+
   return value.actionResults.filter(isPlainObject)
 }
 
@@ -291,10 +306,12 @@ const projectConversationHistory = (
   if (!settledTurns.length) {
     return
   }
+
   const encoder = new TextEncoder()
   const turns: AiJsonValue[] = []
   let pairBytes = 0
   let omittedTurns = settledTurns.length
+
   for (let index = settledTurns.length - 1; index >= 0; index -= 1) {
     const turn = settledTurns[index]
     const intent = turn.requestIntent ?? turn.intent
@@ -311,6 +328,7 @@ const projectConversationHistory = (
     const envelopeBytes = encoder.encode(
       JSON.stringify({ turns: [], omittedTurns: index })
     ).length
+
     // Each prior included pair adds one comma. Never skip an oversized gap.
     if (
       envelopeBytes + pairBytes + bytes + turns.length >
@@ -318,10 +336,12 @@ const projectConversationHistory = (
     ) {
       break
     }
+
     turns.push(pair)
     pairBytes += bytes
     omittedTurns = index
   }
+
   return { turns: turns.reverse(), omittedTurns }
 }
 
@@ -332,12 +352,15 @@ const outcomeForResult = (
   if (cancelled) {
     return 'cancelled'
   }
+
   if (!isPlainObject(result)) {
     return 'failed'
   }
+
   if (result.status === 'cancelled') {
     return 'cancelled'
   }
+
   if (
     result.status === 'failed' &&
     isPlainObject(result.transaction) &&
@@ -345,6 +368,7 @@ const outcomeForResult = (
   ) {
     return 'partial'
   }
+
   if (result.status !== 'executed') {
     return 'failed'
   }
@@ -361,21 +385,25 @@ const outcomeForResult = (
       action.result.action === AiActionNames.REPORT_OUTCOME &&
       action.result.outcome === 'unsupported'
   )
+
   if (
     statuses.includes('partial') ||
     (unsupported && statuses.includes('complete'))
   ) {
     return 'partial'
   }
+
   if (statuses.includes('failed')) {
     return statuses.includes('complete') ? 'partial' : 'failed'
   }
+
   if (
     statuses.length > 0 &&
     statuses.every((status) => status === 'no-change')
   ) {
     return 'no-change'
   }
+
   return 'success'
 }
 
@@ -385,19 +413,24 @@ const roleMappingsFromResult = (
   if (!isPlainObject(value) || !isPlainObject(value.roleToElementIds)) {
     return null
   }
+
   const result: Record<string, readonly string[]> = {}
+
   for (const [role, sourceIds] of Object.entries(value.roleToElementIds)) {
     if (!Array.isArray(sourceIds)) {
       continue
     }
+
     const elementIds = sourceIds.filter(
       (elementId): elementId is string =>
         typeof elementId === 'string' && elementId.length > 0
     )
+
     if (elementIds.length > 0) {
       result[role] = Object.freeze([...new Set(elementIds)])
     }
   }
+
   return Object.freeze(result)
 }
 
@@ -407,6 +440,7 @@ export const createAiConversationController = (
   let conversationId = (
     options.createConversationId ?? createDefaultConversationId
   )()
+
   if (!conversationId.trim()) {
     throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
   }
@@ -425,6 +459,7 @@ export const createAiConversationController = (
   const navigationObservers = new Set<() => void>()
   let navigationSnapshot: AiConversationNavigationSnapshot | undefined
   let publishedNavigation: AiConversationNavigationSnapshot | undefined
+
   const getNavigationSnapshot = (): AiConversationNavigationSnapshot => {
     const title = (
       settledTurns[0]?.intent ??
@@ -432,6 +467,7 @@ export const createAiConversationController = (
       'New conversation'
     ).slice(0, 100)
     const busy = activeTurn !== null
+
     if (
       navigationSnapshot?.conversationId === conversationId &&
       navigationSnapshot.busy === busy &&
@@ -439,6 +475,7 @@ export const createAiConversationController = (
     ) {
       return navigationSnapshot
     }
+
     const conversations = [...storedConversations.entries()]
       .filter(([id]) => id !== conversationId)
       .map(([id, state]) =>
@@ -447,6 +484,7 @@ export const createAiConversationController = (
           title: (state.turns[0]?.intent ?? 'New conversation').slice(0, 100)
         })
       )
+
     conversations.unshift(Object.freeze({ id: conversationId, title }))
     navigationSnapshot = Object.freeze({
       conversationId,
@@ -454,50 +492,63 @@ export const createAiConversationController = (
       title,
       conversations: Object.freeze(conversations)
     })
+
     return navigationSnapshot
   }
+
   const checkNavigation = () => {
     if (disposed) {
       throw new AiConversationError('AI_CONVERSATION_DISPOSED')
     }
+
     if (activeTurn) {
       throw new AiConversationError('AI_CONVERSATION_TURN_ACTIVE')
     }
   }
+
   const storeCurrent = () =>
     storedConversations.set(conversationId, {
       turns: settledTurns,
       targets: targetHints,
       turnIndex
     })
+
   const now = options.now ?? (() => globalThis.performance.now())
 
   const revalidateTargetHints = (): AiTargetHints => {
     const observations = new Map<string, boolean>()
+
     const exists = (id: string): boolean => {
       if (observations.has(id)) {
         return observations.get(id) as boolean
       }
+
       const type = options.getElementType(id)
       const valid =
         typeof type === 'string' && type.length > 0 && type !== 'workspace'
+
       observations.set(id, valid)
+
       return valid
     }
+
     const compositionId =
       targetHints.compositionId && exists(targetHints.compositionId)
         ? targetHints.compositionId
         : null
     const roles: Record<string, readonly string[]> = {}
+
     Object.entries(targetHints.roleToElementIds).forEach(
       ([role, elementIds]) => {
         const validIds = elementIds.filter(exists)
+
         if (validIds.length > 0) {
           roles[role] = Object.freeze([...new Set(validIds)])
         }
       }
     )
     targetHints = freezeTargetHints(compositionId, roles)
+
     return targetHints
   }
 
@@ -505,10 +556,12 @@ export const createAiConversationController = (
     string,
     ReturnType<typeof createAiActivityProjection>
   >()
+
   const getSnapshot = (): AiConversationSnapshot => {
     const turn = activeTurn
     const length = turn?.progress.length ?? 0
     let progress: readonly AiRuntimeProgressUpdate[] | undefined
+
     return Object.freeze({
       activeTurn:
         activeTurn === null
@@ -524,11 +577,13 @@ export const createAiConversationController = (
               conversationId: activeTurn.conversationId,
               intent: activeTurn.intent,
               originalIntent: activeTurn.originalIntent,
+
               get progress() {
                 return (progress ??= Object.freeze(
                   turn?.progress.slice(0, length) ?? []
                 ))
               },
+
               turnId: activeTurn.turnId
             }),
       conversationId,
@@ -551,6 +606,7 @@ export const createAiConversationController = (
 
   const notify = () => {
     const navigation = getNavigationSnapshot()
+
     if (navigation !== publishedNavigation) {
       publishedNavigation = navigation
       navigationObservers.forEach((observer) => {
@@ -561,7 +617,9 @@ export const createAiConversationController = (
         }
       })
     }
+
     const snapshot = getSnapshot()
+
     observers.forEach((observer) => {
       observeSafely(observer, snapshot)
     })
@@ -571,12 +629,15 @@ export const createAiConversationController = (
     for (const action of readActionResults(result)) {
       const actionResult = action.result
       const status = readActionResultStatus(actionResult)
+
       if (action.actionName === 'remove_ai_composition') {
         if (status === 'complete' || status === 'partial') {
           targetHints = EMPTY_TARGET_HINTS
         }
+
         continue
       }
+
       if (
         (action.actionName !== AiActionNames.INSERT_VECTOR_COMPOSITION &&
           action.actionName !== AiActionNames.REPLACE_VECTOR_COMPOSITION &&
@@ -586,7 +647,9 @@ export const createAiConversationController = (
       ) {
         continue
       }
+
       const roleToElementIds = roleMappingsFromResult(actionResult)
+
       if (
         typeof actionResult.compositionId === 'string' &&
         actionResult.compositionId.length > 0 &&
@@ -603,30 +666,40 @@ export const createAiConversationController = (
   const controller = {
     getActivity: (turnId: string, snapshot: AiActivityProjectionState = {}) => {
       const projection = activities.get(turnId)
+
       if (!projection) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
+
       return projection.result(snapshot)
     },
+
     getNavigationSnapshot,
+
     subscribeNavigation: (observer: () => void): (() => void) => {
       if (disposed) {
         return () => undefined
       }
+
       navigationObservers.add(observer)
+
       return () => {
         navigationObservers.delete(observer)
       }
     },
+
     newConversation: () => {
       checkNavigation()
       if (!settledTurns.length) {
         return
       }
+
       const id = (options.createConversationId ?? createDefaultConversationId)()
+
       if (!id.trim() || id === conversationId || storedConversations.has(id)) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
       }
+
       storeCurrent()
       conversationId = id
       settledTurns = []
@@ -635,15 +708,19 @@ export const createAiConversationController = (
       navigationSnapshot = undefined
       notify()
     },
+
     selectConversation: (id: string) => {
       checkNavigation()
       if (id === conversationId) {
         return
       }
+
       const stored = storedConversations.get(id)
+
       if (!stored) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
+
       storeCurrent()
       conversationId = id
       settledTurns = stored.turns
@@ -653,18 +730,22 @@ export const createAiConversationController = (
       navigationSnapshot = undefined
       notify()
     },
+
     submit: async (
       source: string | AiConversationSubmission
     ): Promise<AiSettledTurn> => {
       if (disposed) {
         throw new AiConversationError('AI_CONVERSATION_DISPOSED')
       }
+
       const normalized = normalizeSubmission(source)
       const attachments = normalized.attachments
       let intent = normalized.intent
+
       if (!intent) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
       }
+
       if (activeTurn) {
         throw new AiConversationError('AI_CONVERSATION_TURN_ACTIVE')
       }
@@ -674,22 +755,27 @@ export const createAiConversationController = (
       const retryOf = submission?.retryOfTurnId
         ? settledTurns.find((turn) => turn.turnId === submission.retryOfTurnId)
         : undefined
+
       if (
         submission?.retryOfTurnId &&
         (!retryOf || retryOf !== latest || !canRetryAiTurn(retryOf))
       ) {
         throw new AiConversationError('AI_CONVERSATION_UNSAFE_RETRY')
       }
+
       const pendingQuestion =
         latest && projectAiQuestion(latest) ? latest : undefined
       const replyToTurnId = submission?.replyToTurnId ?? pendingQuestion?.turnId
       const replyTo = replyToTurnId ? pendingQuestion : undefined
+
       if (replyToTurnId && (!replyTo || replyTo.turnId !== replyToTurnId)) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
+
       if (submission?.detailOption && !replyTo) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
+
       const referenceTurn = replyTo ?? retryOf
       const requestAttachments =
         attachments.length > 0
@@ -698,16 +784,20 @@ export const createAiConversationController = (
             referenceTurn?.attachments ??
             EMPTY_IMAGE_ATTACHMENTS)
       let requestIntent = intent
+
       if (submission?.detailOption) {
         const maximum = submission.detailOption === 'maximum'
+
         intent = maximum ? 'Maximum detail' : 'Balanced detail'
         requestIntent = maximum
           ? AiDrawingDetailSelectionIntents.MAXIMUM_EN
           : AiDrawingDetailSelectionIntents.BALANCED_EN
       }
+
       if (retryOf) {
         requestIntent = retryOf.requestIntent ?? retryOf.intent
       }
+
       const originalIntent =
         replyTo?.originalIntent ??
         replyTo?.intent ??
@@ -715,6 +805,7 @@ export const createAiConversationController = (
         intent
 
       const startedAtMs = now()
+
       turnIndex += 1
       const currentTurn: MutableActiveTurn = {
         originalIntent,
@@ -732,17 +823,20 @@ export const createAiConversationController = (
       const activityProjection = createAiActivityProjection({
         purpose: originalIntent
       })
+
       activities.set(currentTurn.turnId, activityProjection)
       activeTurn = currentTurn
       options.confirmation?.beginTurn(currentTurn.turnId)
       options.history?.beginTurn(currentTurn.turnId)
       const aiTargets = revalidateTargetHints()
+
       notify()
 
       const progressObserver: AiRuntimeProgressObserver = (update) => {
         if (disposed || activeTurn !== currentTurn || currentTurn.cancelled) {
           return
         }
+
         if (update.phase === 'confirmation') {
           currentTurn.waitingSinceMs ??= now()
         } else if (currentTurn.waitingSinceMs !== undefined) {
@@ -752,13 +846,17 @@ export const createAiConversationController = (
           )
           currentTurn.waitingSinceMs = undefined
         }
+
         currentTurn.progress.push(update)
         const decision = activityProjection.append(update)
+
         notify()
+
         return decision
       }
 
       let result: unknown
+
       try {
         const conversationHistory = projectConversationHistory(settledTurns)
         const metadata: AiJsonValue = {
@@ -800,6 +898,7 @@ export const createAiConversationController = (
           metadata,
           progressObserver
         })
+
         activeSettlement = featureSettlement
         result = await featureSettlement
       } catch (error) {
@@ -840,14 +939,17 @@ export const createAiConversationController = (
         result,
         turnId: currentTurn.turnId
       })
+
       if (!currentTurn.cancelled && !disposed) {
         updateTargetHints(result)
       }
+
       options.confirmation?.endTurn(currentTurn.turnId)
       options.history?.endTurn(currentTurn.turnId)
       if (activeTurn === currentTurn) {
         activeTurn = null
       }
+
       activeSettlement = null
       if (!disposed) {
         settledTurns.push(settled)
@@ -858,52 +960,68 @@ export const createAiConversationController = (
           /* Publication observers cannot change the outcome. */
         }
       }
+
       return settled
     },
+
     retry: async (turnId: string): Promise<AiSettledTurn> => {
       const turn = settledTurns.find((entry) => entry.turnId === turnId)
+
       if (!turn || !canRetryAiTurn(turn)) {
         throw new AiConversationError('AI_CONVERSATION_UNSAFE_RETRY')
       }
+
       return controller.submit({
         intent: turn.intent,
         attachments: turn.attachments,
         retryOfTurnId: turnId
       })
     },
+
     cancel: (reason?: unknown): boolean => {
       if (!activeTurn || disposed || activeTurn.cancelled) {
         return false
       }
+
       activeTurn.cancelled = true
       options.confirmation?.cancel(reason)
       const cancelled = options.feature.cancel(reason)
+
       notify()
+
       return cancelled
     },
+
     getSnapshot,
+
     subscribe: (
       observer: (snapshot: AiConversationSnapshot) => void
     ): (() => void) => {
       if (disposed) {
         return () => undefined
       }
+
       observers.add(observer)
       observeSafely(observer, getSnapshot())
+
       return () => {
         observers.delete(observer)
       }
     },
+
     dispose: async (): Promise<void> => {
       if (disposed) {
         return
       }
+
       if (activeTurn) {
         activeTurn.cancelled = true
         options.confirmation?.cancel('conversation-disposed')
         options.feature.cancel('conversation-disposed')
       }
+
       const pendingSettlement = activeSettlement
+
       disposed = true
       activeTurn = null
       targetHints = EMPTY_TARGET_HINTS
@@ -916,6 +1034,7 @@ export const createAiConversationController = (
       if (pendingSettlement) {
         await pendingSettlement.catch(() => undefined)
       }
+
       activeSettlement = null
     }
   }

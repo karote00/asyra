@@ -9,6 +9,7 @@ import { operationInputIssue } from '../tool-schema'
 it('rejects an empty property edit before dispatch through the common boundary', async () => {
   const edit = vi.fn()
   const action = observeAiAction(createDesignEditAction(edit))
+
   await expect(
     action.execute({ elementId: 'target', properties: {} }, {
       signal: new AbortController().signal
@@ -21,10 +22,13 @@ it('rejects an empty property edit before dispatch through the common boundary',
 })
 it('forwards targeted edits and rejects an already cancelled operation', async () => {
   const mutationCalls = vi.fn()
+
   const runMutation: AiMutationExecutor = async (mutate) => {
     mutationCalls()
+
     return mutate()
   }
+
   const edit = vi.fn(() => ({
     status: 'complete',
     compositionId: 'a',
@@ -32,6 +36,7 @@ it('forwards targeted edits and rejects an already cancelled operation', async (
   }))
   const action = createDesignEditAction(edit)
   const controller = new AbortController()
+
   await action.execute({ elementId: 'a', properties: { text: 'Updated' } }, {
     signal: controller.signal,
     runMutation
@@ -70,20 +75,24 @@ it('delivers every typography value constraint from the property owner, includin
     lineHeight: [Number.MIN_VALUE, 20, 8192, 0, 8193, Infinity, '20'],
     letterSpacing: [-100, -1, 0, 100, -100.01, 100.01, Infinity, '0']
   }
+
   expect(Object.keys(samples).sort()).toEqual(
     Object.keys(DEFAULT_TEXT_DATA).sort()
   )
   const schema = createDesignEditAction().inputSchema
+
   for (const field of TEXT_PROPERTY_SCHEMA.fields) {
     expect(samples[field.key], field.key).toBeDefined()
     if (!field.validate) {
       throw new Error(`Missing ${field.key} validator`)
     }
+
     for (const value of [field.defaultValue, ...samples[field.key]]) {
       const accepted = !operationInputIssue(
         { elementId: 'text', properties: { [field.key]: value } },
         schema
       )
+
       expect(accepted, `${field.key}: ${String(value).slice(0, 40)}`).toBe(
         field.validate(value)
       )
@@ -100,6 +109,7 @@ it('edits canonical native text with truthful no-op, validation, history and rel
   const { editDesignElement } = await vi.importActual<
     typeof import('../../common-apis/design-edit')
   >('../../common-apis/design-edit')
+
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [
@@ -110,6 +120,7 @@ it('edits canonical native text with truthful no-op, validation, history and rel
     ]
   })
   const { initText } = await import('../../init/capabilities/init-text')
+
   initText(core)
   const empty = {
     version: '1.0.0',
@@ -130,6 +141,7 @@ it('edits canonical native text with truthful no-op, validation, history and rel
       }
     }
   }
+
   await core.load(empty)
   const id = core.createElementInParent(
     {
@@ -144,14 +156,17 @@ it('edits canonical native text with truthful no-op, validation, history and rel
     'workspace'
   )
   const before = await core.save()
+
   factory.transact.reset()
   const action = observeAiAction(createDesignEditAction(editDesignElement))
   const signal = new AbortController().signal
   const runner = createAiTransactionRunner()
+
   const call = (input: Parameters<typeof editDesignElement>[0]) =>
     runner.run('Edit text', (runMutation) =>
       action.execute(input, { signal, runMutation })
     )
+
   try {
     const input = {
       elementId: id,
@@ -162,6 +177,7 @@ it('edits canonical native text with truthful no-op, validation, history and rel
         letterSpacing: -1
       }
     }
+
     expect(await call(input)).toMatchObject({
       status: 'complete',
       compositionId: id,
@@ -176,6 +192,7 @@ it('edits canonical native text with truthful no-op, validation, history and rel
       ])
     ).toMatchObject(input.properties)
     const saved = await core.save()
+
     expect(await call(input)).toMatchObject({
       status: 'no-change',
       appliedElementIds: []

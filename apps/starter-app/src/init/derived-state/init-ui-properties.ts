@@ -19,6 +19,7 @@ export const initUIProperties = (
     if (!membershipChanged) {
       return
     }
+
     core.setUIProperty(
       UIProperties.itemIds,
       projection.getSnapshot().map((item) => item.id)
@@ -26,6 +27,7 @@ export const initUIProperties = (
     const selectedId = core.getUIProperty<string | null>(
       UIProperties.selectedId
     )
+
     if (selectedId && !projection.getItem(selectedId)) {
       core.setUIProperty(UIProperties.selectedId, null)
     }
@@ -37,20 +39,26 @@ export const initUIProperties = (
       if (id === previous) {
         return
       }
+
       if (previous) {
         selectedListeners.get(previous)?.forEach((notify) => notify())
       }
+
       if (id) {
         selectedListeners.get(id)?.forEach((notify) => notify())
       }
+
       previous = id
     }
   )
+
   return {
     subscribeSelected(id: string, notify: () => void): () => void {
       const listeners = selectedListeners.get(id) ?? new Set<() => void>()
+
       selectedListeners.set(id, listeners)
       listeners.add(notify)
+
       return () => {
         listeners.delete(notify)
         if (!listeners.size) {
@@ -58,6 +66,7 @@ export const initUIProperties = (
         }
       }
     },
+
     dispose(): void {
       unsubscribe()
       unselect()

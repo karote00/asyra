@@ -16,6 +16,7 @@ const types = new Map([
 
 export function legacyProjectText(snapshot: ProjectSnapshot): string {
   const document: unknown = structuredClone(snapshot.document)
+
   if (
     !isPlainRecord(document) ||
     !isPlainRecord(document.sceneTree) ||
@@ -24,17 +25,21 @@ export function legacyProjectText(snapshot: ProjectSnapshot): string {
   ) {
     throw new Error('Legacy fixture requires a canonical capture')
   }
+
   for (const entries of [document.sceneTree.elements, document.props]) {
     for (const entry of Object.values(entries)) {
       if (!isPlainRecord(entry) || typeof entry.type !== 'string') {
         continue
       }
+
       const legacy = types.get(entry.type)
+
       if (legacy) {
         Reflect.set(entry, 'type', legacy)
       }
     }
   }
+
   return JSON.stringify({
     format: 'asyra-sim-project',
     version: 1,

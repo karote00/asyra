@@ -22,6 +22,7 @@ const verification = {
 export function runVerification(mode, input, execute = spawnSync) {
   assert.ok(['build', 'test'].includes(mode), 'Unknown verification mode')
   const apps = input ? JSON.parse(input) : ARTIFACT_APPS.map((app) => app.id)
+
   assert.ok(Array.isArray(apps) && apps.length > 0, 'Expected selected Apps')
   assert.equal(new Set(apps).size, apps.length, 'Duplicate App selection')
   for (const id of apps) {
@@ -30,6 +31,7 @@ export function runVerification(mode, input, execute = spawnSync) {
       'Unknown App selection'
     )
   }
+
   // Canonical order makes one Turbo graph share dependency work across Apps.
   const selected = ARTIFACT_APPS.filter((app) => apps.includes(app.id))
   const commands =
@@ -60,8 +62,10 @@ export function runVerification(mode, input, execute = spawnSync) {
             ]
           ]
         ]
+
   for (const [command, args] of commands) {
     const result = execute(command, args, { stdio: 'inherit' })
+
     assert.equal(
       result.status,
       0,

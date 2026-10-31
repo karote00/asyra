@@ -3,10 +3,12 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
   const activities = []
   const events = []
   const gaps = []
+
   for (const row of rows) {
     if (!Number.isFinite(row.elapsedMs)) {
       continue
     }
+
     const evidence = row.evidence ?? {}
     const event = {
       sequence: row.sequence,
@@ -18,17 +20,22 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
       callId: row.callId ?? evidence.callId ?? null,
       nativeTurnId: evidence.nativeTurnId ?? null
     }
+
     // Include transport and lifecycle metadata: a tool gap is not an event gap.
     events.push(event)
     if (evidence.phase !== 'public-activity') {
       continue
     }
+
     const ref = row.diagnostic?.output?.payload
+
     if (!ref?.path || ref.status !== 'queued') {
       activities.push({ ...event, status: ref?.status ?? 'unavailable' })
       continue
     }
+
     const value = readPayload(ref)
+
     if (
       value?.stage !== 'native-public-activity' ||
       value.method !== evidence.method ||
@@ -38,15 +45,19 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
     ) {
       throw new Error('Public activity provenance mismatch')
     }
+
     activities.push({ ...value, ...event, payload: ref })
   }
+
   if (nativeDiagnostics) {
     const threads = new Set(
       rows.map((row) => row.evidence?.nativeThreadId).filter(Boolean)
     )
+
     if (!threads.has(nativeDiagnostics.threadId)) {
       throw new Error('Native diagnostic provenance mismatch')
     }
+
     for (const boundary of nativeDiagnostics.boundaries ?? []) {
       if (
         boundary.threadId !== nativeDiagnostics.threadId ||
@@ -59,13 +70,16 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
       ) {
         throw new Error('Native diagnostic provenance mismatch')
       }
+
       events.push({ ...boundary })
     }
   }
+
   events.sort((a, b) => a.elapsedMs - b.elapsedMs)
   for (let index = 1; index < events.length; index++) {
     const startMs = events[index - 1].elapsedMs
     const endMs = events[index].elapsedMs
+
     if (endMs > startMs) {
       gaps.push({
         startMs,
@@ -76,6 +90,7 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
       })
     }
   }
+
   return {
     ...(nativeDiagnostics ? { nativeDiagnostics } : {}),
     activities,

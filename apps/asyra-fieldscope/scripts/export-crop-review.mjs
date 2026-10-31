@@ -13,12 +13,14 @@ const server = await createServer({
   optimizeDeps: { noDiscovery: true, include: [] },
   server: { middlewareMode: true }
 })
+
 try {
   const { createCropModels } = await server.ssrLoadModule(
     '/src/domain/crop-models.ts'
   )
   const models = createCropModels({ netTop: 3, netBottom: 0.45 })
   const directory = new URL('../.artifacts/', import.meta.url)
+
   await mkdir(directory, { recursive: true })
   await writeFile(
     new URL('crop-models.json', directory),
@@ -27,6 +29,7 @@ try {
   const triangles = models.map((model) =>
     model.parts.reduce((sum, part) => sum + part.shape.indices.length / 3, 0)
   )
+
   console.log(
     JSON.stringify({
       models: models.length,

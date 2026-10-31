@@ -23,10 +23,12 @@ const vectorFillTriangles = (graphic: RenderGraphics) =>
       indices: ArrayLike<number>
     }
     const triangles: { x: number; y: number }[][] = []
+
     for (let i = 0; i < geometry.indices.length; i += 3) {
       triangles.push(
         [0, 1, 2].map((j) => {
           const offset = geometry.indices[i + j] * 2
+
           return {
             x: geometry.positions[offset],
             y: geometry.positions[offset + 1]
@@ -34,6 +36,7 @@ const vectorFillTriangles = (graphic: RenderGraphics) =>
         })
       )
     }
+
     return triangles
   })
 
@@ -54,6 +57,7 @@ const gradient = () =>
       ]
     }
   })
+
 const dataFor = (
   vertices = [
     [20, 30],
@@ -64,6 +68,7 @@ const dataFor = (
 ) => {
   const ids = vertices.map((_, index) => `p${index}`)
   const segmentIds = ids.map((id) => `s${id}`)
+
   return {
     id: 'vector',
     type: 'vector',
@@ -111,6 +116,7 @@ describe('unified vector material work', () => {
     const data = dataFor()
     const original = JSON.stringify(data)
     const graphic = new RenderGraphics()
+
     VECTOR_RENDER_STRATEGY(graphic, data)
     expect(graphic.batched).toBe(true)
     expect(raster).not.toHaveBeenCalled()
@@ -128,8 +134,10 @@ describe('unified vector material work', () => {
       ...data,
       fills: [createDefaultFill({ color: '#ff0000' })]
     }
+
     VECTOR_RENDER_STRATEGY(graphic, changed)
     const fresh = new RenderGraphics()
+
     VECTOR_RENDER_STRATEGY(fresh, changed)
     expect(vectorFillMaterial(graphic)).toEqual(vectorFillMaterial(fresh))
   })
@@ -137,6 +145,7 @@ describe('unified vector material work', () => {
     const raster = vi
       .spyOn(core, 'createEvenOddFillStyle')
       .mockReturnValue(null)
+
     for (const axis of ['width', 'height'] as const) {
       const data = dataFor([
         [8000.1, 20000.2],
@@ -144,13 +153,16 @@ describe('unified vector material work', () => {
         [8143.470889656126, 20285.092074066404],
         [8000.1, 20285.092074066404]
       ])
+
       data.width = 8143.470889656126 - 8000.1
       data.height = 20285.092074066404 - 20000.2
       data[axis] *= 1 - 40 * Number.EPSILON
       const before = JSON.stringify(data)
+
       VECTOR_RENDER_STRATEGY(new RenderGraphics(), data)
       expect(JSON.stringify(data)).toBe(before)
     }
+
     expect(raster).not.toHaveBeenCalled()
   })
 
@@ -158,11 +170,14 @@ describe('unified vector material work', () => {
     const raster = vi
       .spyOn(core, 'createEvenOddFillStyle')
       .mockReturnValue(null)
+
     for (const axis of ['width', 'height'] as const) {
       const data = dataFor()
+
       data[axis] *= 1 + 1e-9
       VECTOR_RENDER_STRATEGY(new RenderGraphics(), data)
     }
+
     // An absolute tolerance must not swallow a large relative change in tiny geometry.
     const tiny = dataFor([
       [0, 0],
@@ -170,6 +185,7 @@ describe('unified vector material work', () => {
       [1e-10, 1e-10],
       [0, 1e-10]
     ])
+
     tiny.width = 2e-10
     tiny.height = 1e-10
     VECTOR_RENDER_STRATEGY(new RenderGraphics(), tiny)
@@ -200,6 +216,7 @@ describe('unified vector material work', () => {
       name: 'star',
       points: Array.from({ length: 5 }, (_, i) => {
         const a = (i * 4 * Math.PI) / 5
+
         return [40 + 40 * Math.cos(a), 50 + 50 * Math.sin(a)]
       })
     }
@@ -210,6 +227,7 @@ describe('unified vector material work', () => {
     const graphic = new RenderGraphics()
     const source = dataFor(points)
     const before = JSON.stringify(source)
+
     VECTOR_RENDER_STRATEGY(graphic, source)
     expect(vectorFillTriangles(graphic).length).toBeGreaterThan(0)
     expect(vectorFillMaterial(graphic)?.fills[0].kind).toBe('gradient')
@@ -224,26 +242,34 @@ describe('unified vector material work', () => {
         .mockReturnValue(null)
       const data = dataFor()
       const fill = data.fills[0]
+
       if (!fill.gradient) {
         throw new Error('Gradient fixture missing')
       }
+
       if (kind === 'radial') {
         fill.gradient.gradientType = 'radial'
       }
+
       if (kind === 'steep') {
         fill.gradient.gradientStops[1].position = 0.01
         fill.gradient.gradientStops[1].color = '#ffffff'
       }
+
       if (kind === 'sharp') {
         fill.gradient.gradientStops[1].position = 0
       }
+
       if (kind === 'alpha') {
         fill.gradient.gradientStops[1].opacity = 0.5
       }
+
       if (kind === 'degenerate') {
         fill.gradient.gradientHandles[1] = { x: 0, y: 0 }
       }
+
       const graphic = new RenderGraphics()
+
       VECTOR_RENDER_STRATEGY(graphic, data)
       expect(vectorFillMaterial(graphic)).toMatchObject({
         fills: [

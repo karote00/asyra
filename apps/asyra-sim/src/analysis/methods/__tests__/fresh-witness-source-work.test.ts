@@ -11,6 +11,7 @@ import { supervisedTestProgress } from './heavy-test-progress'
 const progress = supervisedTestProgress()
 // Only an inherited external supervisor can replace this case's harness timer.
 const correctnessTimeout = progress ? 0 : 20000
+
 afterEach(() => {
   progress?.endQuery()
   vi.restoreAllMocks()
@@ -29,9 +30,11 @@ it.each([
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
+
     if (!pair) {
       throw new Error('Missing admitted source pair')
     }
+
     const query: continuous.PairQuery = {
       workcell: snapshot.workcell,
       trajectory: snapshot.trajectory,
@@ -47,6 +50,7 @@ it.each([
       threshold: snapshot.rule.minimumClearance,
       maxIntervals: snapshot.budget.maxIntervals
     }
+
     const run = (enabled: boolean) => {
       const original = continuous.queryContinuousPair
       const route = enabled
@@ -71,22 +75,27 @@ it.each([
         derivationWork = 0
       const distance = context.distance.bind(context),
         lower = context.lowerOver.bind(context)
+
       context.distance = (...args) => {
         const before = context.work
+
         try {
           return distance(...args)
         } finally {
           distanceWork += context.work - before
         }
       }
+
       context.lowerOver = (...args) => {
         const before = context.work
+
         try {
           return lower(...args)
         } finally {
           lowerWork += context.work - before
         }
       }
+
       for (const [key, accumulate] of [
         [
           'chargeSourceWitness',
@@ -108,8 +117,10 @@ it.each([
         ]
       ] as const) {
         const charge = context[key].bind(context)
+
         context[key] = () => {
           const before = context.work
+
           try {
             return charge()
           } finally {
@@ -117,12 +128,14 @@ it.each([
           }
         }
       }
+
       const result = queryOriginalPartPair(
         query,
         settings,
         () => undefined,
         context
       )
+
       progress?.endQuery()
       route?.mockRestore()
       const categories = {
@@ -132,13 +145,17 @@ it.each([
         handoffWork,
         derivationWork
       }
+
       expect(
         Object.values(categories).reduce((sum, value) => sum + value, 0)
       ).toBe(context.work)
+
       return { result, work: context.work, categories }
     }
+
     const control = run(false),
       candidate = run(true)
+
     // eslint-disable-next-line no-console -- bounded paid-work categories and complete-prefix evidence
     console.info(
       JSON.stringify({
@@ -152,6 +169,7 @@ it.each([
         states: candidate.result.leaves.reduce<Record<string, number>>(
           (sum, leaf) => {
             sum[leaf.state] = (sum[leaf.state] ?? 0) + 1
+
             return sum
           },
           {}
@@ -176,6 +194,7 @@ it.each([
       // actual-provenance case proves this precise selected witness; keep every
       // other field and leaf exact, rather than relaxing all numerical bounds.
       const changed = control.result.leaves[6]
+
       expect(changed).toMatchObject({
         start: snapshot.trajectory.keyframes[117].time,
         end: snapshot.trajectory.keyframes[118].time,
@@ -187,10 +206,12 @@ it.each([
           index === 6 ? { ...leaf, upper: 0.012944618198707215 } : leaf
         )
       }
+
       expect(candidate.result).toEqual(expected)
     } else {
       expect(candidate.result).toEqual(control.result)
     }
+
     expect(candidate.result.coverage).toBe('complete')
     expect(control.result.coverage).toBe('complete')
     expect(candidate.categories.sourceWork).toBeGreaterThan(0)
@@ -208,18 +229,22 @@ it(
     const segment = snapshot.trajectory.keyframes.findIndex(
       (frame) => frame.time === 4.703517587939698
     )
+
     expect(segment).toBeGreaterThanOrEqual(0)
     const pair = snapshot.pairs.find(
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
+
     if (!pair) {
       throw new Error('Missing admitted source pair')
     }
+
     const node = [
       snapshot.trajectory.keyframes[segment].time,
       snapshot.trajectory.keyframes[segment + 1].time
     ] as const
+
     expect(node[1]).toBe(4.743718592964824)
     const settings = {
       ...snapshot.method.settings,
@@ -233,6 +258,7 @@ it(
       seed: samplers.SourceUpper
       finalUpper: number
     }[] = []
+
     vi.spyOn(samplers, 'createFreshStaticSampler').mockImplementation(
       (threshold, tick, solve, exhausted) => {
         let previous: { handle: unknown; source: SourceWitness } | undefined
@@ -251,6 +277,7 @@ it(
               if (!previous || !target) {
                 throw new Error('Missing actual source issuance')
               }
+
               expect(target.previous).toBe(previous.handle)
               expect(target.shapes).toEqual([a, b])
               expect(previous.source.time).toBeLessThan(target.origin.time)
@@ -263,6 +290,7 @@ it(
                 a: unknown
                 b: unknown
               }
+
               packet.shapes.forEach((shape, side) => {
                 expect(shape.geometry).toBe(
                   previous?.source.shapes[side].geometry
@@ -288,26 +316,32 @@ it(
                 { node, time: target.origin.time, shapes: [a, b] },
                 () => oracleWork++
               )
+
               expect(oracleWork).toBe(6)
               expect(seed).toEqual(expected)
               const result = solve(a, b, seed)
+
               records.push({
                 sourceTime: previous.source.time,
                 targetTime: target.origin.time,
                 seed,
                 finalUpper: result.upper
               })
+
               return result
             }
+
             return solve(a, b, seed)
           },
           exhausted
         )
+
         return (a, b, origin, source) => {
           expect(origin.segment).toBe(segment)
           expect([origin.start, origin.end]).toEqual(node)
           target = { origin, previous: source, shapes: [a, b] }
           const result = sample(a, b, origin, source)
+
           previous =
             result?.source === undefined
               ? undefined
@@ -320,6 +354,7 @@ it(
                     evidence: result.evidence
                   }
                 }
+
           return result
         }
       }
@@ -339,14 +374,17 @@ it(
       () => undefined,
       context
     )
+
     progress?.endQuery()
     expect(result.coverage).toBe('complete')
     const selected = records.find(
       (record) => record.targetTime === result.leaves[0].witnessTime
     )
+
     if (!selected) {
       throw new Error('Selected target must have an issued source')
     }
+
     expect(selected.seed.upper).toBe(selected.finalUpper)
     expect(selected.finalUpper).toBe(result.leaves[0].upper)
     expect(result.leaves[0]).toMatchObject({

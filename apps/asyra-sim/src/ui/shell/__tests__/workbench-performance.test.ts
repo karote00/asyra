@@ -42,6 +42,7 @@ vi.mock('react/jsx-dev-runtime', async (importOriginal) => {
 
   return {
     ...actual,
+
     jsxDEV: (...args: Parameters<typeof actual.jsxDEV>) => {
       observe(args[1])
 
@@ -119,12 +120,19 @@ const readers = {
 
 const runtime = {
   ...readers,
+
   get views() {
-    return { ...registered, selectCandidate: () => undefined }
+    return {
+      ...registered,
+
+      selectCandidate: () => undefined
+    }
   },
+
   getVisualAssets: vi.fn(() => new Map()),
   setFrame: vi.fn(),
   setCamera: vi.fn(),
+
   pick: () => null
 } as unknown as SimRuntime
 

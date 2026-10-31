@@ -12,6 +12,7 @@ it('checks the exact user-paused frame and resets sampling when Play restarts fr
 
   vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
     frame = callback
+
     return 1
   })
   vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined)
@@ -19,6 +20,7 @@ it('checks the exact user-paused frame and resets sampling when Play restarts fr
   const host = document.createElement('div')
   const root = createRoot(host)
   const onSample = vi.fn()
+
   const click = async (name: string) => {
     const button = host.querySelector<HTMLButtonElement>(
       `[aria-label="${name} trajectory"]`
@@ -37,7 +39,9 @@ it('checks the exact user-paused frame and resets sampling when Play restarts fr
         createElement(PlaybackControls, {
           interval: [0, 8],
           active: true,
+
           onReset: () => undefined,
+
           onSample
         })
       )
@@ -76,7 +80,9 @@ it('keeps Play running and exposes no automatic collision pause control', async 
         createElement(PlaybackControls, {
           interval: [0, 8],
           active: true,
+
           onReset: () => undefined,
+
           onSample: (time, options) => {
             // Probe the retired control contract: evidence must not stop the clock.
             if (

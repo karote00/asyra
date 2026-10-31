@@ -38,6 +38,7 @@ test('content manifest owns the exact stable documentation inventory', async () 
       'utf8'
     )
   )
+
   assert.equal(schema.properties.pages.minItems, 1)
   assert.equal(schema.properties.pages.maxItems, undefined)
   assert.deepEqual(
@@ -73,6 +74,7 @@ test('every page mapping resolves approved sources and packages without example 
 
   for (const packageGuideId of inspector.packageGuideIds) {
     const page = contract.pages.find(({ id }) => id === packageGuideId)
+
     assert.deepEqual(page.packages, [
       `@asyra/${packageGuideId.slice('reference/packages/'.length)}`
     ])
@@ -82,9 +84,12 @@ test('every page mapping resolves approved sources and packages without example 
 test('content validation fails closed on duplicate, private, or unknown inputs', async () => {
   const contract = await readPublicContentContract({ repositoryRoot })
   const inputs = await readApprovedDocumentationInputs({ repositoryRoot })
+
   const validate = (mutate) => {
     const candidate = structuredClone(contract)
+
     mutate(candidate)
+
     return () =>
       validatePublicContentManifest({
         inputs,
@@ -131,6 +136,7 @@ test('new update pages use declared inventory without raising a fixed page count
   const contract = await readPublicContentContract({ repositoryRoot })
   const inputs = await readApprovedDocumentationInputs({ repositoryRoot })
   const manifest = structuredClone(contract)
+
   manifest.pages.push({
     ...manifest.pages.find((page) => page.id === 'updates/index'),
     id: 'updates/releases/test-release',

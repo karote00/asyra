@@ -17,24 +17,31 @@ class TestInputSystem implements InputSystemLike {
 
   on(event: string, callback: InputCallback): this {
     const callbacks = this.listeners.get(event) ?? []
+
     callbacks.push(callback)
     this.listeners.set(event, callbacks)
+
     return this
   }
 
   off(event: string, callback: InputCallback): boolean {
     const callbacks = this.listeners.get(event)
+
     if (!callbacks) {
       return false
     }
+
     const index = callbacks.indexOf(callback)
+
     if (index < 0) {
       return false
     }
+
     callbacks.splice(index, 1)
     if (callbacks.length === 0) {
       this.listeners.delete(event)
     }
+
     return true
   }
 
@@ -47,6 +54,7 @@ class TestInputSystem implements InputSystemLike {
       type: event,
       detail: {}
     } as unknown as RawInputEvent
+
     for (const callback of [...(this.listeners.get(event) ?? [])]) {
       await callback(raw)
     }
@@ -73,6 +81,7 @@ describe.sequential('feature unregister lifecycle', () => {
   it('removes only the requested participant from a shared input trigger', async () => {
     const first = vi.fn(() => ({ owner: 'first' }))
     const second = vi.fn(() => ({ owner: 'second' }))
+
     defineFeature('shared-first', 'input.shared', {
       execution: first,
       exclusive: false
@@ -106,9 +115,11 @@ describe.sequential('feature unregister lifecycle', () => {
     const first = vi.fn(async () => {
       markStarted?.()
       await gate
+
       return { owner: 'first' }
     })
     const second = vi.fn(() => ({ owner: 'second' }))
+
     defineFeature('queued-shared-first', 'input.queued-shared', {
       execution: first,
       exclusive: false
@@ -119,6 +130,7 @@ describe.sequential('feature unregister lifecycle', () => {
     })
 
     const execution = inputSystem.emit('input.queued-shared')
+
     await started
     expect(unregisterFeature('queued-shared-second')).toBe(true)
 
@@ -132,6 +144,7 @@ describe.sequential('feature unregister lifecycle', () => {
   it('removes all session handlers and transport listeners after normal end', async () => {
     const onStart = vi.fn(() => ({ started: true }))
     const onEnd = vi.fn()
+
     defineFeature('session-feature', 'input.drag', {
       session: { onStart, onEnd }
     })
@@ -163,15 +176,18 @@ describe.sequential('feature unregister lifecycle', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
+
     defineFeature('active-execution', 'input.active', {
       execution: async () => {
         markStarted?.()
         await gate
+
         return { complete: true }
       }
     })
 
     const execution = inputSystem.emit('input.active')
+
     await started
 
     expect(() => unregisterFeature('active-execution')).toThrowError(
@@ -190,6 +206,7 @@ describe.sequential('feature unregister lifecycle', () => {
     defineFeature('active-session', 'input.active-session', {
       session: {
         onStart: () => ({ started: true }),
+
         onEnd: vi.fn()
       }
     })
@@ -215,20 +232,25 @@ describe.sequential('feature unregister lifecycle', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
+
     defineFeature('pending-session-start', 'input.pending-session-start', {
       session: {
         onStart: async () => {
           markStarted?.()
           await gate
+
           return { started: true }
         },
+
         onEnd: vi.fn()
       }
     })
 
     const start = inputSystem.emit('input.pending-session-start.start')
+
     await started
     let unregisterError: unknown
+
     try {
       unregisterFeature('pending-session-start')
     } catch (error) {
@@ -264,9 +286,11 @@ describe.sequential('feature unregister lifecycle', () => {
     const firstStart = vi.fn(async () => {
       markStarted?.()
       await gate
+
       return { owner: 'first' }
     })
     const secondStart = vi.fn(() => ({ owner: 'second' }))
+
     defineFeature('queued-session-first', 'input.queued-session', {
       exclusive: false,
       session: { onStart: firstStart, onEnd: vi.fn() }
@@ -277,6 +301,7 @@ describe.sequential('feature unregister lifecycle', () => {
     })
 
     const start = inputSystem.emit('input.queued-session.start')
+
     await started
     expect(unregisterFeature('queued-session-second')).toBe(true)
 
@@ -291,6 +316,7 @@ describe.sequential('feature unregister lifecycle', () => {
   it('unsubscribes renderer transport before registering a replacement', async () => {
     const original = vi.fn(() => ({ owner: 'original' }))
     const replacement = vi.fn(() => ({ owner: 'replacement' }))
+
     defineFeature('renderer-original', 'render.extension.lifecycle', {
       execution: original
     })
@@ -314,6 +340,7 @@ describe.sequential('feature unregister lifecycle', () => {
 
   it('returns false for a missing feature without removing shared transport', () => {
     const listenerCount = inputSystem.listenerCount('input.missing')
+
     expect(unregisterFeature('missing-feature')).toBe(false)
     expect(inputSystem.listenerCount('input.missing')).toBe(listenerCount)
   })

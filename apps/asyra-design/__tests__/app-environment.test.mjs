@@ -88,16 +88,20 @@ test('document backend startup commands load the local environment file', (t) =>
   const directory = mkdtempSync(
     fileURLToPath(new URL('./startup-environment-', import.meta.url))
   )
+
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   writeFileSync(`${directory}/.env`, 'DOCUMENT_BACKEND_PORT=43219\n')
   const manifest = JSON.parse(
     readFileSync(new URL('../package.json', import.meta.url), 'utf8')
   )
+
   for (const name of ['document:backend', 'document:backend:start']) {
     const command = manifest.scripts[name].split(' && ').at(-1).split(' ')
+
     assert.equal(command.shift(), 'node')
     command.pop()
     const environment = { ...process.env }
+
     delete environment.DOCUMENT_BACKEND_PORT
     const output = execFileSync(
       process.execPath,
@@ -108,6 +112,7 @@ test('document backend startup commands load the local environment file', (t) =>
         encoding: 'utf8'
       }
     )
+
     assert.equal(output.trim(), '43219')
   }
 })

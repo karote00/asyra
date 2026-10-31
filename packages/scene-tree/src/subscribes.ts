@@ -60,15 +60,18 @@ export const initSceneTreeSubscribes = () => {
     events: readonly (AddElementEvent | RemoveElementEvent)[]
   ): boolean => {
     const firstEvent = events[0]
+
     if (!firstEvent || getTransactionReplayMode() === null) {
       return false
     }
+
     const entries = events.map(({ payload }) => {
       const { data } = payload
       const { parentId, index } = payload as typeof payload & {
         parentId?: string
         index?: number
       }
+
       if (
         typeof data.id !== 'string' ||
         typeof parentId !== 'string' ||
@@ -79,6 +82,7 @@ export const initSceneTreeSubscribes = () => {
           `Cannot replay element ${data.id ?? ''}: exact parent-index evidence is required`
         )
       }
+
       return {
         data: data as ElementRawData,
         parentId,
@@ -89,6 +93,7 @@ export const initSceneTreeSubscribes = () => {
       firstEvent.type === EventTypes.ADD_ELEMENT
         ? sceneTree.prepareCanonicalElementInsertion({ entries })
         : sceneTree.prepareCanonicalElementRemoval(entries)
+
     return (
       sceneTree.applyPreparedElementMutation(
         preparedMutation,
@@ -113,6 +118,7 @@ export const initSceneTreeSubscribes = () => {
       const recordedParent = parentId
         ? sceneTree.getElementById(parentId)
         : undefined
+
       if (
         parentId &&
         (!recordedParent || !isGroupEntity(recordedParent.get('type')))
@@ -121,8 +127,10 @@ export const initSceneTreeSubscribes = () => {
           `Cannot restore element ${data.id ?? ''}: parent ${parentId} is unavailable`
         )
       }
+
       const resolvedParent =
         parent ?? (recordedParent as GroupInstanceTypes | undefined)
+
       if (getTransactionReplayMode() !== null) {
         if (
           typeof parentId !== 'string' ||
@@ -133,6 +141,7 @@ export const initSceneTreeSubscribes = () => {
             `Cannot restore element ${data.id ?? ''}: exact parent-index evidence is required`
           )
         }
+
         const preparedMutation = sceneTree.prepareCanonicalElementInsertion({
           entries: [
             {
@@ -142,11 +151,13 @@ export const initSceneTreeSubscribes = () => {
             }
           ]
         })
+
         return (
           sceneTree.applyPreparedElementMutation(preparedMutation, options)
             .orderedElementIds.length === 1
         )
       }
+
       return (
         sceneTree.addNewElement(data, resolvedParent, index, options) !== ''
       )
@@ -160,6 +171,7 @@ export const initSceneTreeSubscribes = () => {
         parentId?: string
         index?: number
       }
+
       if (
         getTransactionReplayMode() !== null &&
         typeof data.id === 'string' &&
@@ -174,11 +186,13 @@ export const initSceneTreeSubscribes = () => {
             index: Number(index)
           }
         ])
+
         return (
           sceneTree.applyPreparedElementMutation(preparedMutation, options)
             .orderedElementIds.length === 1
         )
       }
+
       return sceneTree.removeElement(data, parent, options)
     }
   )
@@ -189,9 +203,11 @@ export const initSceneTreeSubscribes = () => {
       if (payload.action !== SCENE_TREE_ACTIONS.ADD_ELEMENTS) {
         return false
       }
+
       const preparedMutation = sceneTree.prepareCanonicalElementInsertion({
         entries: payload.entries
       })
+
       return (
         sceneTree.applyPreparedElementMutation(preparedMutation, options)
           .orderedElementIds.length === payload.entries.length
@@ -205,6 +221,7 @@ export const initSceneTreeSubscribes = () => {
       if (payload.action !== SCENE_TREE_ACTIONS.REMOVE_ELEMENTS) {
         return false
       }
+
       const preparedMutation = sceneTree.prepareCanonicalElementRemoval(
         payload.entries.map(({ data, parentId, index }) => ({
           data,
@@ -212,6 +229,7 @@ export const initSceneTreeSubscribes = () => {
           index
         }))
       )
+
       return (
         sceneTree.applyPreparedElementMutation(preparedMutation, options)
           .orderedElementIds.length === payload.entries.length
@@ -225,6 +243,7 @@ export const initSceneTreeSubscribes = () => {
       if ('moves' in payload) {
         return sceneTree.applyHierarchyMoves(payload.moves, options)
       }
+
       return sceneTree.moveElements(payload.request, options).moves.length > 0
     }
   )
@@ -246,7 +265,9 @@ export const initSceneTreeSubscribes = () => {
           }
         ]
       )
+
       sceneTree.applyPreparedElementMutation(prepared)
+
       return true
     }
   )
@@ -256,6 +277,7 @@ export const initSceneTreeSubscribes = () => {
     ({ payload }) => {
       const { id, changes } = payload
       const element = sceneTree.getElementById(id)
+
       if (!element || changes.length === 0) {
         return false
       }
@@ -271,6 +293,7 @@ export const initSceneTreeSubscribes = () => {
             (orderedHistoryReplay || element.get(key) === before)
           )
         }
+
         return (
           (key === 'visible' || key === 'lock') &&
           typeof before === 'boolean' &&
@@ -278,6 +301,7 @@ export const initSceneTreeSubscribes = () => {
           (orderedHistoryReplay || element.get(key) === before)
         )
       })
+
       if (!valid) {
         return false
       }
@@ -287,6 +311,7 @@ export const initSceneTreeSubscribes = () => {
         visible?: boolean
         lock?: boolean
       } = {}
+
       changes.forEach(({ key, after }) => {
         if (key === 'name') {
           values.name = after as string
@@ -302,7 +327,9 @@ export const initSceneTreeSubscribes = () => {
           values
         }
       ])
+
       sceneTree.applyPreparedElementMutation(preparedMutation)
+
       return true
     }
   )
@@ -310,6 +337,7 @@ export const initSceneTreeSubscribes = () => {
   subscribeToAppliedEventBatches((events) => {
     const sourcePropertyIds: string[] = []
     const seenPropertyIds = new Set<string>()
+
     const appendPropertyId = (propertyId: string): void => {
       if (!seenPropertyIds.has(propertyId)) {
         seenPropertyIds.add(propertyId)
@@ -327,8 +355,10 @@ export const initSceneTreeSubscribes = () => {
         // Ordering metadata may contain element IDs; dependency resolution
         // consumes the actual property owner identity from the canonical payload.
         appendPropertyId(event.payload.id)
+
         return
       }
+
       if (
         event.type === EventTypes.UPDATE_PROPERTY &&
         'payload' in event &&

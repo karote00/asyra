@@ -52,6 +52,7 @@ export function PreflightView({
               <button
                 onClick={(event) => {
                   const panel = event.currentTarget.closest('.experiment-panel')
+
                   if (panel) {
                     reviewExperimentInput(panel, issue.code)
                   }

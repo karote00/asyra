@@ -41,6 +41,7 @@ const parseOptions = (value: unknown): ApplyPresetOptions => {
   if (value === undefined) {
     return {}
   }
+
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return fail(
       PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
@@ -51,6 +52,7 @@ const parseOptions = (value: unknown): ApplyPresetOptions => {
   const unknownKey = Object.keys(value).find(
     (key) => !allowedOptionKeys.has(key as keyof ApplyPresetOptions)
   )
+
   if (unknownKey) {
     return fail(
       PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
@@ -64,18 +66,21 @@ const parseOptions = (value: unknown): ApplyPresetOptions => {
 const resolveProfile = (value: unknown): PresetProfile => {
   const profile = value ?? PresetProfiles['2D']
   const entry = PresetCatalog.profiles.find(({ id }) => id === profile)
+
   if (!entry) {
     return fail(
       PRESET_APPLY_ERROR_CODES.UNKNOWN_PROFILE,
       `Unknown preset profile "${String(profile)}"`
     )
   }
+
   if (!entry.available) {
     return fail(
       PRESET_APPLY_ERROR_CODES.UNAVAILABLE_PROFILE,
       `Preset profile "${entry.id}" is unavailable`
     )
   }
+
   return entry.id
 }
 
@@ -87,6 +92,7 @@ const resolveSelectedDefaults = (
       .filter(({ available }) => available)
       .map(({ id }) => id)
   }
+
   if (!Array.isArray(value)) {
     return fail(
       PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
@@ -96,26 +102,31 @@ const resolveSelectedDefaults = (
 
   const requested = [...value]
   const seen = new Set<PresetDefaultId>()
+
   requested.forEach((candidate) => {
     const entry = PresetCatalog.defaults.find(({ id }) => id === candidate)
+
     if (!entry) {
       return fail(
         PRESET_APPLY_ERROR_CODES.UNKNOWN_DEFAULT,
         `Unknown preset default "${String(candidate)}"`
       )
     }
+
     if (!entry.available) {
       fail(
         PRESET_APPLY_ERROR_CODES.UNAVAILABLE_DEFAULT,
         `Preset default "${entry.id}" is unavailable`
       )
     }
+
     if (seen.has(entry.id)) {
       fail(
         PRESET_APPLY_ERROR_CODES.DUPLICATE_DEFAULT,
         `Preset default "${entry.id}" is duplicated`
       )
     }
+
     seen.add(entry.id)
   })
 
@@ -128,17 +139,22 @@ const expandDefaults = (
   selectedDefaults: readonly PresetDefaultId[]
 ): readonly PresetDefaultId[] => {
   const applied = new Set<PresetDefaultId>()
+
   const addWithDependencies = (id: PresetDefaultId): void => {
     if (applied.has(id)) {
       return
     }
+
     const entry = PresetCatalog.defaults.find(
       (candidate) => candidate.id === id
     )
+
     entry?.requires.forEach(addWithDependencies)
     applied.add(id)
   }
+
   selectedDefaults.forEach(addWithDependencies)
+
   return PresetCatalog.defaults
     .filter(({ id }) => applied.has(id))
     .map(({ id }) => id)
@@ -154,6 +170,7 @@ export const resolvePresetRequest = (
   const selectedDefaults = resolveSelectedDefaults(options.defaults)
   const appliedDefaults = expandDefaults(selectedDefaults)
   let spatial: SpatialPresentationOptions | undefined
+
   if (options.spatial !== undefined) {
     if (profile !== PresetProfiles['3D']) {
       return fail(
@@ -161,6 +178,7 @@ export const resolvePresetRequest = (
         'Spatial presentation settings require profile 3D'
       )
     }
+
     try {
       spatial = readSpatialPresentationOptions(options.spatial)
     } catch (cause) {
@@ -175,7 +193,9 @@ export const resolvePresetRequest = (
   if (profile === PresetProfiles['3D']) {
     const incompatible = (ids: readonly PresetDefaultId[]) =>
       ids.filter((id) => id !== PresetDefaults.INPUT)
+
     const unsupported = incompatible(appliedDefaults)
+
     if (unsupported.length > 0) {
       return fail(
         PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
@@ -190,12 +210,14 @@ export const resolvePresetRequest = (
       'Core composition is permanently closed'
     )
   }
+
   if (state.alreadyApplied) {
     return fail(
       PRESET_APPLY_ERROR_CODES.ALREADY_APPLIED,
       'Preset has already been applied to this Core composition'
     )
   }
+
   if (profile !== PresetProfiles.CUSTOM && core.hasRenderEngineProvider()) {
     return fail(
       PRESET_APPLY_ERROR_CODES.ENGINE_PROVIDER_CONFLICT,

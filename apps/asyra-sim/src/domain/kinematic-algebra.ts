@@ -32,13 +32,21 @@ export interface Algebra<S> {
 }
 export const numberAlgebra: Algebra<number> = {
   scalar: (value) => value,
+
   add: (a, b) => a + b,
+
   sub: (a, b) => a - b,
+
   mul: (a, b) => a * b,
+
   div: (a, b) => a / b,
+
   neg: (a) => -a,
+
   square: (a) => a * a,
+
   sqrtNonnegative: Math.sqrt,
+
   sinCos: (a) => [Math.sin(a), Math.cos(a)]
 }
 export const intervalAlgebra: Algebra<Interval> = {
@@ -49,59 +57,74 @@ export const intervalAlgebra: Algebra<Interval> = {
   div: idiv,
   neg: ineg,
   square: isquare,
+
   sqrtNonnegative: (value) => isqrt(interval(Math.max(0, value[0]), value[1])),
+
   sinCos: isinCos
 }
 
 /** One transform/interpolation definition; numerical backends cannot change axes or order. */
 export function poseOperations<S>(a: Algebra<S>) {
   const scalar = a.scalar
+
   const vector = (v: Vec3): Vector<S> => [
     scalar(v[0]),
     scalar(v[1]),
     scalar(v[2])
   ]
+
   const add = (u: Vector<S>, v: Vector<S>): Vector<S> => [
     a.add(u[0], v[0]),
     a.add(u[1], v[1]),
     a.add(u[2], v[2])
   ]
+
   const sub = (u: Vector<S>, v: Vector<S>): Vector<S> => [
     a.sub(u[0], v[0]),
     a.sub(u[1], v[1]),
     a.sub(u[2], v[2])
   ]
+
   const scale = (u: Vector<S>, s: S): Vector<S> => [
     a.mul(u[0], s),
     a.mul(u[1], s),
     a.mul(u[2], s)
   ]
+
   const dot = (u: Vector<S>, v: Vector<S>): S =>
     a.add(a.add(a.mul(u[0], v[0]), a.mul(u[1], v[1])), a.mul(u[2], v[2]))
+
   const norm = (u: readonly S[]): S =>
     a.sqrtNonnegative(u.reduce((sum, x) => a.add(sum, a.square(x)), scalar(0)))
+
   const cross = (u: Vector<S>, v: Vector<S>): Vector<S> => [
     a.sub(a.mul(u[1], v[2]), a.mul(u[2], v[1])),
     a.sub(a.mul(u[2], v[0]), a.mul(u[0], v[2])),
     a.sub(a.mul(u[0], v[1]), a.mul(u[1], v[0]))
   ]
+
   const normalize = (v: Vector<S>): Vector<S> =>
     scale(v, a.div(scalar(1), norm(v)))
+
   // Scaling by a finite positive component bound preserves the exact direction
   // while preventing overflow of the unnormalized squared norm.
   const direction = (axis: Vec3): Vector<S> => {
     const largest = Math.max(...axis.map(Math.abs))
+
     if (!axis.every(Number.isFinite) || largest === 0) {
       throw new Error('Invalid axis')
     }
+
     return normalize([
       a.div(scalar(axis[0]), scalar(largest)),
       a.div(scalar(axis[1]), scalar(largest)),
       a.div(scalar(axis[2]), scalar(largest))
     ])
   }
+
   const normalizeRotation = (q: Rotation<S>): Rotation<S> => {
     const length = norm(q)
+
     return [
       a.div(q[0], length),
       a.div(q[1], length),
@@ -109,13 +132,17 @@ export function poseOperations<S>(a: Algebra<S>) {
       a.div(q[3], length)
     ]
   }
+
   const rotation = (q: Quaternion): Rotation<S> =>
     normalizeRotation([scalar(q[0]), scalar(q[1]), scalar(q[2]), scalar(q[3])])
+
   const rotate = (q: Rotation<S>, v: Vector<S>): Vector<S> => {
     const u: Vector<S> = [q[0], q[1], q[2]],
       t = scale(cross(u, v), scalar(2))
+
     return add(v, add(scale(t, q[3]), cross(u, t)))
   }
+
   // Both operands denote unit rotations. Renormalizing interval products would
   // discard this dependency and can introduce a spurious zero denominator.
   const multiply = (p: Rotation<S>, q: Rotation<S>): Rotation<S> => [
@@ -136,14 +163,17 @@ export function poseOperations<S>(a: Algebra<S>) {
       a.mul(p[2], q[2])
     )
   ]
+
   const identity = (): AlgebraPose<S> => ({
     position: vector([0, 0, 0]),
     rotation: rotation([0, 0, 0, 1])
   })
+
   const fromPose = (pose: Pose): AlgebraPose<S> => ({
     position: vector(pose.position),
     rotation: rotation(pose.rotation)
   })
+
   const compose = (
     parent: AlgebraPose<S>,
     local: AlgebraPose<S>
@@ -151,11 +181,14 @@ export function poseOperations<S>(a: Algebra<S>) {
     position: add(parent.position, rotate(parent.rotation, local.position)),
     rotation: multiply(parent.rotation, local.rotation)
   })
+
   const axisAngle = (axis: Vec3, angle: S): Rotation<S> => {
     const unit = direction(axis),
       [sin, cos] = a.sinCos(a.div(angle, scalar(2)))
+
     return [a.mul(unit[0], sin), a.mul(unit[1], sin), a.mul(unit[2], sin), cos]
   }
+
   return {
     vector,
     add,
@@ -186,43 +219,55 @@ function createPoseEvaluator<S>(
     bodies = new Map(workcell.bodies.map((body) => [body.id, body])),
     poses = new Map<string, AlgebraPose<S>>()
   const visiting = new Set<string>()
+
   const evaluate = (id: string): AlgebraPose<S> => {
     if (id === frameRootId) {
       return ops.identity()
     }
+
     const completed = poses.get(id)
+
     if (completed) {
       return completed
     }
+
     const body = bodies.get(id)
+
     if (!body || visiting.has(id)) {
       throw new Error('Invalid pose hierarchy')
     }
+
     visiting.add(id)
     const parent =
       body.parentId === null ? ops.identity() : evaluate(body.parentId)
     const value = values[id] ?? a.scalar(body.joint.value)
     let motion = ops.identity()
+
     if (body.joint.kind === 'revolute') {
       motion = {
         position: motion.position,
         rotation: ops.axisAngle(body.joint.axis, value)
       }
     }
+
     if (body.joint.kind === 'prismatic') {
       motion = {
         position: ops.scale(ops.direction(body.joint.axis), value),
         rotation: motion.rotation
       }
     }
+
     const pose = ops.compose(
       ops.compose(parent, ops.fromPose(body.pose)),
       motion
     )
+
     poses.set(id, pose)
     visiting.delete(id)
+
     return pose
   }
+
   return evaluate
 }
 
@@ -232,6 +277,7 @@ export function evaluateKinematics<S>(
   a: Algebra<S>
 ): ReadonlyMap<string, AlgebraPose<S>> {
   const evaluate = createPoseEvaluator(workcell, values, a)
+
   return new Map(workcell.bodies.map((body) => [body.id, evaluate(body.id)]))
 }
 
@@ -244,22 +290,29 @@ export function evaluatePairKinematics<S>(
   a: Algebra<S>
 ): readonly [AlgebraPose<S>, AlgebraPose<S>] {
   const bodies = new Map(workcell.bodies.map((body) => [body.id, body]))
+
   const chain = (id: string): string[] => {
     const ids: string[] = []
     let current: string | null = id
+
     while (current !== null) {
       const body = bodies.get(current)
+
       if (!body || ids.includes(current)) {
         throw new Error('Invalid pair pose hierarchy')
       }
+
       ids.push(current)
       current = body.parentId
     }
+
     return ids
   }
+
   const rightChain = new Set(chain(right)),
     ancestor = chain(left).find((id) => rightChain.has(id)) ?? null
   const evaluate = createPoseEvaluator(workcell, values, a, ancestor)
+
   return [evaluate(left), evaluate(right)]
 }
 
@@ -272,18 +325,22 @@ export function interpolateSegment<S>(
 ): Readonly<Record<string, S>> {
   const left = trajectory.keyframes[index],
     right = trajectory.keyframes[index + 1]
+
   if (!left) {
     throw new Error('Missing trajectory segment')
   }
+
   if (!right) {
     return Object.fromEntries(
       Object.entries(left.joints).map(([id, value]) => [id, a.scalar(value)])
     )
   }
+
   const fraction = a.div(
     a.sub(time, a.scalar(left.time)),
     a.sub(a.scalar(right.time), a.scalar(left.time))
   )
+
   return Object.fromEntries(
     Object.keys(left.joints).map((id) => [
       id,

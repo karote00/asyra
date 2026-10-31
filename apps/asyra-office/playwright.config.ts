@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test'
 import { resolveAppEnvironment } from './app-environment'
 const environment = resolveAppEnvironment()
+
 export default defineConfig({
   testDir: './e2e',
   workers: 1,

@@ -45,6 +45,7 @@ export function wheelCamera(
     0.15,
     radius * Math.exp(Math.max(-100, Math.min(100, dy)) * 0.002)
   )
+
   return dollySpatialCamera(
     { ...camera, far: camera.far + Math.max(0, next - radius) },
     next
@@ -88,10 +89,13 @@ export function fitCameraToMeshes(
       if (!visible || !descriptor.selectable) {
         continue
       }
+
       const shape = descriptor.shape
+
       if (shape.kind === 'triangles') {
         for (const index of shape.indices) {
           const offset = index * 3
+
           yield transformPoint(descriptor, [
             shape.positions[offset],
             shape.positions[offset + 1],
@@ -100,6 +104,7 @@ export function fitCameraToMeshes(
         }
       } else {
         let half: Vec3
+
         if (shape.kind === 'box') {
           half = scale(shape.size, 0.5)
         } else if (shape.kind === 'capsule') {
@@ -107,6 +112,7 @@ export function fitCameraToMeshes(
         } else {
           half = [shape.radius, shape.radius, shape.radius]
         }
+
         for (const x of [-half[0], half[0]]) {
           for (const y of [-half[1], half[1]]) {
             for (const z of [-half[2], half[2]]) {

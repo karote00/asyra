@@ -49,6 +49,7 @@ const Element = ({
   onPointerDown
 }: ElementData) => {
   const elementData = useElementData(elementId)
+
   if (!elementData) {
     return null
   }
@@ -89,23 +90,29 @@ const Element = ({
   )
 
   let background: string | undefined
+
   if (isHovered) {
     background = 'rgba(255,255,255,0.04)'
   }
+
   if (isSelected) {
     background = 'rgba(13,153,255,0.15)'
   }
 
   let boxShadow: string | undefined
+
   if (dropState === 'before') {
     boxShadow = 'inset 0 2px 0 #4db3ff'
   }
+
   if (dropState === 'after') {
     boxShadow = 'inset 0 -2px 0 #4db3ff'
   }
+
   if (dropState === 'inside') {
     boxShadow = 'inset 0 0 0 2px #4db3ff'
   }
+
   if (dropState === 'invalid') {
     boxShadow = 'inset 0 0 0 2px #f28b82'
   }

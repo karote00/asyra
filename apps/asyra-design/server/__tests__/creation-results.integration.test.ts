@@ -70,6 +70,7 @@ const create = async (draft: unknown, response: 'compact' | 'full') => {
     provider: {
       requestActionBatch: async (_input, options) => {
         receipt = await options.executeBatch?.(pending)
+
         return { batchId: 'report', actions: [] }
       }
     },
@@ -92,9 +93,11 @@ const create = async (draft: unknown, response: 'compact' | 'full') => {
       if (!receipt) {
         throw new Error('Missing creation receipt')
       }
+
       return receipt
     }
   )
+
   try {
     const prepared = JSON.parse(
       await tools.call(
@@ -103,8 +106,10 @@ const create = async (draft: unknown, response: 'compact' | 'full') => {
         new AbortController().signal
       )
     )
+
     expect(prepared, JSON.stringify(prepared)).toHaveProperty('artifactId')
     const canonical = preparation.resolve(prepared.artifactId)
+
     await operations.call(
       AiDesignToolIds.EXECUTE_DESIGN_BATCH,
       {
@@ -122,6 +127,7 @@ const create = async (draft: unknown, response: 'compact' | 'full') => {
     expect(receipt?.actionResults[0].result).toMatchObject({
       status: 'complete'
     })
+
     return { canonical, result: receipt?.actionResults[0].result }
   } finally {
     await runtime.dispose()
@@ -135,6 +141,7 @@ const observeResults = () => {
   const originalApp = elementApis.createElementsInParent
   const originalCore = core.createElementsInParent
   const originalMap = Array.prototype.map
+
   interface Normalization {
     source: Parameters<typeof originalCore>[0]
     delivered?: Parameters<typeof originalScene>[0]
@@ -150,6 +157,7 @@ const observeResults = () => {
     thisArg
   ) {
     const observation = normalization
+
     if (
       !observation ||
       (this !== observation.source &&
@@ -157,14 +165,18 @@ const observeResults = () => {
     ) {
       return Reflect.apply(originalMap, this, [callback, thisArg])
     }
+
     let visits = 0
     const result = Reflect.apply(originalMap, this, [
       (value: unknown, index: number, source: unknown[]) => {
         visits++
+
         return Reflect.apply(callback, thisArg, [value, index, source])
       }
     ])
+
     observation.maps.push({ source: this, result, visits })
+
     return result
   })
   const coreCreation = vi
@@ -192,10 +204,13 @@ const observeResults = () => {
       normalizations.push(normalization)
       normalization = undefined
     }
+
     const result = originalScene.apply(scene, args)
+
     if (insideApp) {
       active = result
     }
+
     return result
   })
   const freezing = vi.spyOn(Object, 'freeze').mockImplementation(((
@@ -211,6 +226,7 @@ const observeResults = () => {
       arrays++
       entries += value.length
     }
+
     return freeze(value)
   }) as typeof Object.freeze)
   const app = vi
@@ -220,23 +236,28 @@ const observeResults = () => {
       insideApp = true
       try {
         const result = originalApp.apply(elementApis, args)
+
         if (active) {
           pairs.push({ owner: active, app: result })
         }
+
         return result
       } finally {
         insideApp = false
         active = undefined
       }
     })
+
   return {
     pairs,
     normalizations,
+
     inputCounts: () => {
       let envelopes = 0,
         intermediateArrays = 0,
         secondPassVisits = 0,
         normalizationVisits = 0
+
       for (const { source, delivered, maps } of normalizations) {
         for (const projection of maps) {
           if (projection.source === source) {
@@ -244,12 +265,14 @@ const observeResults = () => {
           } else {
             secondPassVisits += projection.visits
           }
+
           if (projection.result !== delivered) {
             intermediateArrays++
             envelopes += projection.result.length
           }
         }
       }
+
       return {
         envelopes,
         intermediateArrays,
@@ -257,7 +280,9 @@ const observeResults = () => {
         normalizationVisits
       }
     },
+
     counts: () => ({ batches: pairs.length, arrays, entries }),
+
     restore: () => {
       app.mockRestore()
       freezing.mockRestore()
@@ -273,9 +298,11 @@ it.each(saved.cases)(
   async ({ input }) => {
     reset()
     const work = observeResults()
+
     try {
       const { canonical, result } = await create(input.draft, 'compact')
       const ids = canonical.entries.map((entry) => entry.descriptor.id)
+
       expect(result).toMatchObject({
         status: 'complete',
         appliedElementCount: ids.length
@@ -283,6 +310,7 @@ it.each(saved.cases)(
       expect(result).not.toHaveProperty('appliedElementIds')
       expect(work.pairs.flatMap(({ owner }) => [...owner])).toEqual(ids)
       const document = await core.save()
+
       expect(
         Object.keys(document.sceneTree.elements)
           .filter((id) => id !== 'workspace')
@@ -293,7 +321,9 @@ it.each(saved.cases)(
         expect(Object.isFrozen(owner)).toBe(true)
         expect(Object.isFrozen(app)).toBe(true)
       }
+
       const counts = work.counts()
+
       for (const { source, delivered } of work.normalizations) {
         expect(delivered).toEqual(
           source.map((descriptor) => ({
@@ -307,8 +337,10 @@ it.each(saved.cases)(
           expect(descriptor).not.toBe(source[index])
         })
       }
+
       expect(work.normalizations).toHaveLength(counts.batches)
       const inputCounts = work.inputCounts()
+
       expect(inputCounts.normalizationVisits).toBe(ids.length)
       console.info(
         JSON.stringify({
@@ -323,6 +355,7 @@ it.each(saved.cases)(
       for (const { owner, app } of work.pairs) {
         expect(app).toBe(owner)
       }
+
       expect(inputCounts).toEqual({
         normalizationVisits: ids.length,
         envelopes: 0,
@@ -342,6 +375,7 @@ it.each(['compact', 'full'] as const)(
   async (response) => {
     reset()
     const work = observeResults()
+
     try {
       const draft = {
         type: 'group',
@@ -360,19 +394,23 @@ it.each(['compact', 'full'] as const)(
       }
       const { canonical, result } = await create(draft, response)
       const expected = canonical.entries.map((entry) => entry.descriptor.id)
+
       if (response === 'full') {
         expect(result).toMatchObject({ appliedElementIds: expected })
       } else {
         expect(result).toMatchObject({ appliedElementCount: expected.length })
       }
+
       const savedPairs = work.pairs.slice()
       const snapshots = savedPairs.map(({ owner }) => [...owner])
+
       expect(new Set(savedPairs.map(({ owner }) => owner)).size).toBe(
         savedPairs.length
       )
       draft.children.reverse()
       const source = [{ id: 'later', type: 'rect', width: 2, height: 3 }]
       let later: readonly string[] = []
+
       transactionApis.runTransaction(() => {
         later = core.createElementsInParent(source, canonical.rootId)
       })
@@ -381,6 +419,7 @@ it.each(['compact', 'full'] as const)(
       expect(Object.isFrozen(later)).toBe(true)
       expect(() => (later as string[]).push('forbidden')).toThrow()
       const document = await core.save()
+
       await factory.undo()
       expect(core.getElementMetadata('later')).toBeUndefined()
       await factory.redo()
@@ -425,6 +464,7 @@ it('executes the delivered small-part example without criteria or research and p
   const { createDesignReviewAction } =
     await import('../../src/ai/review-action')
   const reviewer = createDesignReviewer()
+
   try {
     const actions = [
       creation,
@@ -444,9 +484,11 @@ it('executes the delivered small-part example without criteria or research and p
             actionName: a.name,
             result: (await (() => {
               const owner = actions.find((d) => d.name === a.name)
+
               if (!owner) {
                 throw new Error('Missing action owner')
               }
+
               return owner.execute(a.arguments, { signal })
             })()) as never
           }))
@@ -462,9 +504,11 @@ it('executes the delivered small-part example without criteria or research and p
     const discovery = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
+
     if (!discovery) {
       throw new Error('Missing discovery')
     }
+
     let page = JSON.parse(
       (
         await invokeLocalTool(
@@ -480,19 +524,24 @@ it('executes the delivered small-part example without criteria or research and p
       ).text
     )
     let text = ''
+
     while (page.contentDelivery) {
       text += page.contentDelivery.text
       const next = page.contentDelivery.next
+
       if (!next) {
         break
       }
+
       page = JSON.parse(
         (await invokeLocalTool(operations, discovery, next.arguments, signal))
           .text
       )
     }
+
     const example = (text ? JSON.parse(text) : page).tools[0].invocationExample
       .invocation
+
     expect(example.arguments.plan).toBeUndefined()
     const created = JSON.parse(
       (
@@ -504,6 +553,7 @@ it('executes the delivered small-part example without criteria or research and p
         )
       ).text
     )
+
     // A headless owner fixture has no pixel projection; follow-up review may be
     // partial, but it cannot gate or undo the acknowledged visible creation.
     expect(created.toolOutcome.settlement, JSON.stringify(created)).toBe(
@@ -513,20 +563,24 @@ it('executes the delivered small-part example without criteria or research and p
     const child = core.getElementChildren(
       created.actionResults[0].result.compositionId
     ).elementIds[0]
+
     expect(core.getElementComputedData(child)?.width).toBeGreaterThan(0)
     const before = await core.save()
     const edit = actions.find(
       (d) => d.name === 'api_element_patchElementProperties'
     )
+
     if (!edit) {
       throw new Error('Missing edit owner')
     }
+
     const changed = (await edit.execute(
       {
         patches: [{ elementId: child, values: { x: 40, y: 50 }, records: [] }]
       },
       { signal }
     )) as { toolOutcome: { status: string } }
+
     expect(changed.toolOutcome.status).toBe('success')
     expect(core.getElementComputedData(child)?.x).toBe(40)
     expect((await core.save()).sceneTree.elements[child].id).toBe(

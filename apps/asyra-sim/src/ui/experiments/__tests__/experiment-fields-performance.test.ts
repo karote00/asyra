@@ -14,6 +14,7 @@ vi.mock('react/jsx-dev-runtime', async (original) => {
 
   return {
     ...actual,
+
     jsxDEV: (...args: Parameters<typeof actual.jsxDEV>) => {
       const label = (args[1] as { 'aria-label'?: string })?.['aria-label']
 

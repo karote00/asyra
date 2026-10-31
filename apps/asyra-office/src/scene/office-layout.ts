@@ -64,5 +64,6 @@ export function referencePoint(
       ((pixel[1] - 422) / focal) * up[i]
   )
   const t = (plane - fit.camera.position[axis]) / ray[axis]
+
   return fit.camera.position.map((v, i) => v + ray[i] * t) as Vec
 }

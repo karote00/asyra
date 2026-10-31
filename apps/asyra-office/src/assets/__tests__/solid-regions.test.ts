@@ -4,8 +4,10 @@ import { subtractSolids } from '../solid-subtraction'
 
 it('retains the source solid identity for every boolean output triangle', () => {
   const cutter = emptyMesh()
+
   append(cutter, box([1, 1, 2]), [0.5, 0, 0.5])
   const result = subtractSolids(box([2, 2, 2]), [cutter])
+
   expect(result.triangleRegions).toHaveLength(result.indices.length / 3)
   expect(new Set(result.triangleRegions)).toEqual(new Set([0, 1]))
   for (const [index, region] of result.triangleRegions.entries()) {
@@ -18,6 +20,7 @@ it('retains the source solid identity for every boolean output triangle', () => 
         points.every((p) => Math.abs(p[axis] - sign * extent) < 1e-8)
       )
     )
+
     if (region === 0) {
       expect(onOriginalFace).toBe(true)
     } else {

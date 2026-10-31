@@ -46,11 +46,13 @@ export const detachAiJsonValue = (
     }
 
     const prototype = Object.getPrototypeOf(value)
+
     if (prototype !== Object.prototype && prototype !== null) {
       throw new TypeError('JSON value must contain only plain JSON objects.')
     }
 
     const result: Record<string, AiJsonValue> = {}
+
     for (const [key, nestedValue] of Object.entries(value)) {
       Object.defineProperty(result, key, {
         configurable: true,

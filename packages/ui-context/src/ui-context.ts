@@ -47,15 +47,18 @@ class UIContext {
 
   recomputeSelectionProperties(context: PropertyComputeContext): void {
     const keys = propertyRegistry.getSelectionTriggeredKeys()
+
     if (keys.length === 0) {
       return
     }
+
     this.recomputeProperties(keys, context)
   }
 
   recomputeProperties(keys: string[], context: PropertyComputeContext): void {
     keys.forEach((key) => {
       const nextValue = this.computePropertyValue(key, context)
+
       if (nextValue !== SKIP_UPDATE) {
         propertyRegistry.set(key, nextValue as PropertyValue)
       }
@@ -67,6 +70,7 @@ class UIContext {
     context: PropertyComputeContext
   ): PropertyValue | typeof SKIP_UPDATE {
     const registration = propertyRegistry.getRegistration(key)
+
     if (!registration) {
       return SKIP_UPDATE
     }
@@ -76,6 +80,7 @@ class UIContext {
     }
 
     const emptyValue = registration.emptyValue ?? registration.defaultValue
+
     if (context.selectedIds.size === 0) {
       return emptyValue
     }
@@ -90,9 +95,11 @@ class UIContext {
       const values = context.elements
         .map((element) => element[aggregateKey])
         .filter((value) => value !== undefined)
+
       if (values.length === 0) {
         return emptyValue
       }
+
       return compareAggregateValues(values)
     }
 
@@ -107,11 +114,13 @@ export { UIContext }
 
 const compareAggregateValues = (values: unknown[]): PropertyValue => {
   const firstValue = values[0]
+
   for (let i = 1; i < values.length; i++) {
     if (!isEqual(values[i], firstValue)) {
       return MIXED_STRING
     }
   }
+
   return firstValue as PropertyValue
 }
 

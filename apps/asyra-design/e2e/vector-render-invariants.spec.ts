@@ -20,6 +20,7 @@ const createStarTopology = () => {
       const angle =
         -Math.PI / 2 + (Math.PI * 2 * index) / orderedPointIds.length
       const radius = index % 2 === 0 ? outerRadius : innerRadius
+
       return [
         id,
         {
@@ -35,6 +36,7 @@ const createStarTopology = () => {
   const segments = Object.fromEntries(
     orderedPointIds.map((pointId, index) => {
       const nextPointId = orderedPointIds[(index + 1) % orderedPointIds.length]
+
       return [
         `s${index}`,
         {
@@ -85,6 +87,7 @@ const setSelectedVectorStrokeData = async (page: Page) => {
       .elementApis
     const selectedId =
       core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
     if (!selectedId || !elementApis) {
       throw new Error('Missing selected vector for stroke styling')
     }
@@ -131,6 +134,7 @@ const vectorInvariantProbe = async (page: Page) => {
     const core = (await import('../src/testing/runtime-access')).core
     const selectedId =
       core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
     if (!selectedId) {
       throw new Error('No selected vector available')
     }
@@ -157,6 +161,7 @@ const vectorInvariantProbe = async (page: Page) => {
         maxY: Number.NEGATIVE_INFINITY
       }
     )
+
     const includeGeometryPoint = (
       bounds: {
         minX: number
@@ -171,6 +176,7 @@ const vectorInvariantProbe = async (page: Page) => {
       bounds.maxX = Math.max(bounds.maxX, point.x)
       bounds.maxY = Math.max(bounds.maxY, point.y)
     }
+
     const cubicAt = (
       p0: number,
       p1: number,
@@ -179,6 +185,7 @@ const vectorInvariantProbe = async (page: Page) => {
       t: number
     ) => {
       const mt = 1 - t
+
       return (
         mt * mt * mt * p0 +
         3 * mt * mt * t * p1 +
@@ -186,27 +193,34 @@ const vectorInvariantProbe = async (page: Page) => {
         t * t * t * p3
       )
     }
+
     const cubicExtrema = (p0: number, p1: number, p2: number, p3: number) => {
       const a = -p0 + 3 * p1 - 3 * p2 + p3
       const b = 2 * (p0 - 2 * p1 + p2)
       const c = -p0 + p1
       const values: number[] = []
+
       if (Math.abs(a) < 1e-9) {
         if (Math.abs(b) > 1e-9) {
           values.push(-c / b)
         }
       } else {
         const discriminant = b * b - 4 * a * c
+
         if (discriminant >= 0) {
           const root = Math.sqrt(discriminant)
+
           values.push((-b + root) / (2 * a), (-b - root) / (2 * a))
         }
       }
+
       return values.filter((t) => t > 0 && t < 1)
     }
+
     const geometryBounds = anchorPoints.reduce(
       (bounds, point) => {
         includeGeometryPoint(bounds, point)
+
         return bounds
       },
       {
@@ -216,11 +230,13 @@ const vectorInvariantProbe = async (page: Page) => {
         maxY: Number.NEGATIVE_INFINITY
       }
     )
+
     Object.values(computed.segments ?? {}).forEach(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (segment: any) => {
         const start = points[segment?.startId]
         const end = points[segment?.endId]
+
         if (
           start?.kind !== 'anchor' ||
           end?.kind !== 'anchor' ||
@@ -237,6 +253,7 @@ const vectorInvariantProbe = async (page: Page) => {
             : { x: start.x, y: start.y }
         const p2 =
           inControl?.kind === 'control' ? inControl : { x: end.x, y: end.y }
+
         cubicExtrema(start.x, p1.x, p2.x, end.x).forEach((t) => {
           includeGeometryPoint(geometryBounds, {
             x: cubicAt(start.x, p1.x, p2.x, end.x, t),
@@ -256,6 +273,7 @@ const vectorInvariantProbe = async (page: Page) => {
       (bounds, point) => {
         const x = usesWorkspacePoints ? point.x : point.x + (computed.x ?? 0)
         const y = usesWorkspacePoints ? point.y : point.y + (computed.y ?? 0)
+
         return {
           minX: Math.min(bounds.minX, x),
           minY: Math.min(bounds.minY, y),
@@ -334,6 +352,7 @@ const expectWorkspaceVectorInvariants = async (
   _label = 'selected vector'
 ) => {
   const summary = await vectorInvariantProbe(page)
+
   expect(summary.computed.pointCoordinateSpace).toBe('workspace')
   expect(summary.computed.x).toBeCloseTo(summary.geometryBounds.x, 4)
   expect(summary.computed.y).toBeCloseTo(summary.geometryBounds.y, 4)
@@ -370,6 +389,7 @@ const getLastUndoPatchSummary = async (page: Page) =>
     const segmentRemoveIds = new Set<string>()
     const networkSetIds = new Set<string>()
     const networkRemoveIds = new Set<string>()
+
     const collectRecord = (
       record: { id?: unknown; type?: unknown },
       mode: 'set' | 'remove'
@@ -377,7 +397,9 @@ const getLastUndoPatchSummary = async (page: Page) =>
       if (typeof record.id !== 'string') {
         return
       }
+
       let target: Set<string> | null = null
+
       if (record.type === 'vectorPoint') {
         target = mode === 'set' ? pointSetIds : pointRemoveIds
       } else if (record.type === 'vectorSegment') {
@@ -385,6 +407,7 @@ const getLastUndoPatchSummary = async (page: Page) =>
       } else if (record.type === 'vectorNetwork') {
         target = mode === 'set' ? networkSetIds : networkRemoveIds
       }
+
       target?.add(record.id)
     }
 
@@ -392,21 +415,28 @@ const getLastUndoPatchSummary = async (page: Page) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (event: any) => {
         const payload = event?.payload ?? {}
+
         if (event?.type === 'addProperty' || event?.type === 'removeProperty') {
           const mode = event.type === 'addProperty' ? 'set' : 'remove'
+
           ;(Array.isArray(payload.data) ? payload.data : []).forEach(
             (record: { id?: unknown; type?: unknown }) =>
               collectRecord(record, mode)
           )
+
           return
         }
+
         if (event?.type !== 'updateProperty') {
           return
         }
+
         if (payload.id === closedPropertyId) {
           valueKeys.add('closed')
         }
+
         const property = core?.deps?.props?.getPropertyById?.(payload.id)
+
         collectRecord(
           {
             id: payload.id,
@@ -462,6 +492,7 @@ test.describe('Vector app-flow invariants', () => {
 
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       if (!core || !elementApis) {
         throw new Error('Missing E2E core or element APIs')
       }
@@ -476,6 +507,7 @@ test.describe('Vector app-flow invariants', () => {
         },
         { undoable: false }
       )
+
       if (!createdId) {
         throw new Error('Failed to create vector star')
       }
@@ -536,6 +568,7 @@ test.describe('Vector app-flow invariants', () => {
     await page.waitForTimeout(250)
 
     const created = await expectWorkspaceVectorInvariants(page, 'star:create')
+
     expect(created.computed.pointCount).toBe(10)
     expect(created.computed.segmentCount).toBe(10)
     expect(created.computed.networkCount).toBe(1)
@@ -550,9 +583,11 @@ test.describe('Vector app-flow invariants', () => {
       const point = core?.deps?.sceneTree
         ?.getElementById?.(selectedId)
         ?.getAllComputedData?.()?.points?.p0
+
       if (!selectedId || !point) {
         throw new Error('Missing selected vector point for update')
       }
+
       elementApis.updateVectorAnchorPointPosition(
         selectedId,
         'p0',
@@ -570,6 +605,7 @@ test.describe('Vector app-flow invariants', () => {
     page
   }) => {
     const publicationCaptureKey = 'pen-star-document-publications'
+
     await startDocumentPublicationCapture(page, publicationCaptureKey)
 
     const starPoints = getStarWorkspacePoints()
@@ -579,11 +615,13 @@ test.describe('Vector app-flow invariants', () => {
 
     for (const point of starPoints) {
       const clientPoint = await workspaceToClient(page, point)
+
       await page.mouse.click(clientPoint.x, clientPoint.y)
       await page.waitForTimeout(80)
     }
 
     const firstPoint = await workspaceToClient(page, starPoints[0])
+
     await page.mouse.click(firstPoint.x, firstPoint.y)
     await setSelectedVectorStrokeData(page)
     await page.waitForTimeout(350)
@@ -592,6 +630,7 @@ test.describe('Vector app-flow invariants', () => {
       page,
       'pen-star:create'
     )
+
     expect(created.computed.pointCount).toBe(10)
     expect(created.computed.segmentCount).toBe(10)
     expect(created.computed.networkCount).toBe(1)
@@ -604,6 +643,7 @@ test.describe('Vector app-flow invariants', () => {
       x: starPoints[0].x + 36,
       y: starPoints[0].y + 24
     })
+
     await page.mouse.move(dragStart.x, dragStart.y)
     await page.mouse.down()
     await page.mouse.move(dragEnd.x, dragEnd.y, { steps: 12 })
@@ -627,6 +667,7 @@ test.describe('Vector app-flow invariants', () => {
 
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       if (!core || !elementApis) {
         throw new Error('Missing E2E core or element APIs')
       }
@@ -685,9 +726,11 @@ test.describe('Vector app-flow invariants', () => {
         },
         { undoable: false }
       )
+
       if (!elementId) {
         throw new Error('Failed to create full topology fixture')
       }
+
       core.selectElements?.([elementId], { undoable: false })
       core.setSystemProperty?.('pathEditingVectorId', elementId)
       core.setSystemProperty?.('pathEditingMode', true)
@@ -703,9 +746,11 @@ test.describe('Vector app-flow invariants', () => {
         .elementApis
       const elementId =
         core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       if (!elementId) {
         throw new Error('Missing selected vector for append')
       }
+
       elementApis.appendVectorAnchorPoint(elementId, {
         id: 'D',
         type: 'sharp',
@@ -719,6 +764,7 @@ test.describe('Vector app-flow invariants', () => {
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:append')
     const appendUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(appendUndo)
     expect(appendUndo.pointSetIds).toEqual(['D'])
     expect(appendUndo.pointRemoveIds).toEqual([])
@@ -736,15 +782,19 @@ test.describe('Vector app-flow invariants', () => {
             ?.getElementById?.(elementId)
             ?.getAllComputedData?.()
         : null
+
       if (!elementId || !computed) {
         throw new Error('Missing selected vector for split')
       }
+
       const segment = computed.segments?.AB
       const start = computed.points?.[segment?.startId]
       const end = computed.points?.[segment?.endId]
+
       if (!segment || !start || !end) {
         throw new Error('Missing AB segment for split')
       }
+
       const result = elementApis.splitVectorSegmentAtWorkspacePos(
         elementId,
         'AB',
@@ -753,6 +803,7 @@ test.describe('Vector app-flow invariants', () => {
           y: (start.y + end.y) / 2
         }
       )
+
       if (
         !result.changed ||
         result.unavailableIds.length ||
@@ -760,11 +811,14 @@ test.describe('Vector app-flow invariants', () => {
       ) {
         throw new Error('Failed to split vector segment')
       }
+
       return result.value.point.id
     })
+
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:split')
     const splitUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(splitUndo)
     expect(splitUndo.pointSetIds).toEqual([splitPointId])
     expect(splitUndo.pointRemoveIds).toEqual([])
@@ -778,9 +832,11 @@ test.describe('Vector app-flow invariants', () => {
         .elementApis
       const elementId =
         core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       if (!elementId) {
         throw new Error('Missing selected vector for remove')
       }
+
       if (!elementApis.removeVectorAnchorPoint(elementId, pointId).changed) {
         throw new Error('Failed to remove split vector point')
       }
@@ -788,6 +844,7 @@ test.describe('Vector app-flow invariants', () => {
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:remove')
     const removeUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(removeUndo)
     expect(removeUndo.pointSetIds).toEqual([])
     expect(removeUndo.pointRemoveIds).toEqual([splitPointId])
@@ -801,14 +858,17 @@ test.describe('Vector app-flow invariants', () => {
         .elementApis
       const elementId =
         core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       if (!elementId) {
         throw new Error('Missing selected vector for close')
       }
+
       const connected = elementApis.connectVectorAnchorEndpoints(
         elementId,
         'D',
         'A'
       )
+
       if (!connected || connected.closed) {
         throw new Error('Failed to merge vector topology before close')
       }
@@ -818,9 +878,11 @@ test.describe('Vector app-flow invariants', () => {
       page,
       'full-topology:merge'
     )
+
     expect(merged.computed.pointCount).toBe(4)
     expect(merged.computed.networkCount).toBe(1)
     const mergeUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(mergeUndo)
     expect(mergeUndo.valueKeys).not.toContain('closed')
     expect(mergeUndo.networkSetIds).toHaveLength(1)
@@ -833,9 +895,11 @@ test.describe('Vector app-flow invariants', () => {
         .elementApis
       const elementId =
         core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       if (!elementId) {
         throw new Error('Missing selected vector for close')
       }
+
       elementApis.setVectorClosed(elementId, true)
     })
     await page.waitForTimeout(250)
@@ -843,10 +907,12 @@ test.describe('Vector app-flow invariants', () => {
       page,
       'full-topology:close'
     )
+
     expect(closed.computed.pointCount).toBe(4)
     expect(closed.computed.segmentCount).toBe(4)
     expect(closed.computed.networkCount).toBe(1)
     const closeUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(closeUndo)
     expect(closeUndo.pointSetIds).toEqual([])
     expect(closeUndo.pointRemoveIds).toEqual([])
@@ -860,14 +926,17 @@ test.describe('Vector app-flow invariants', () => {
         .elementApis
       const elementId =
         core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       if (!elementId) {
         throw new Error('Missing selected vector for set anchor type')
       }
+
       const updated = elementApis.updateVectorAnchorPointType(
         elementId,
         'B',
         'smooth'
       )
+
       if (
         !updated.changed ||
         updated.unavailableIds.length ||
@@ -879,6 +948,7 @@ test.describe('Vector app-flow invariants', () => {
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:set-type')
     const setTypeUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(setTypeUndo)
     expect(setTypeUndo.pointSetIds).toEqual(['B'])
     expect(setTypeUndo.pointRemoveIds).toEqual([])
@@ -898,9 +968,11 @@ test.describe('Vector app-flow invariants', () => {
             ?.getAllComputedData?.()
         : null
       const point = computed?.points?.B
+
       if (!elementId || !point) {
         throw new Error('Missing selected vector for set handles')
       }
+
       interface SegmentLike {
         id: string
         startId: string
@@ -911,6 +983,7 @@ test.describe('Vector app-flow invariants', () => {
       )
         .filter((segment) => segment.startId === 'B' || segment.endId === 'B')
         .map((segment) => segment.id)
+
       elementApis.updateVectorAnchorPointHandles(elementId, [
         {
           pointId: 'B',
@@ -925,11 +998,14 @@ test.describe('Vector app-flow invariants', () => {
           forceSmooth: true
         }
       ])
+
       return adjacentSegmentIds
     })
+
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:set-handles')
     const setHandlesUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(setHandlesUndo)
     expect([...setHandlesUndo.pointSetIds].sort()).toEqual(['B:in', 'B:out'])
     expect(setHandlesUndo.pointRemoveIds).toEqual([])
@@ -945,14 +1021,17 @@ test.describe('Vector app-flow invariants', () => {
         .elementApis
       const elementId =
         core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       if (!elementId) {
         throw new Error('Missing selected vector for set handle mode')
       }
+
       const updated = elementApis.setVectorAnchorPointHandleMode(
         elementId,
         'B',
         'mirror-angle-length'
       )
+
       if (
         !updated.changed ||
         updated.unavailableIds.length ||
@@ -964,6 +1043,7 @@ test.describe('Vector app-flow invariants', () => {
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:set-handle-mode')
     const setHandleModeUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(setHandleModeUndo)
     expect(
       setHandleModeUndo.pointSetIds.every((pointId) =>
@@ -979,14 +1059,17 @@ test.describe('Vector app-flow invariants', () => {
         .elementApis
       const elementId =
         core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       if (!elementId) {
         throw new Error('Missing selected vector for set closed')
       }
+
       elementApis.setVectorClosed(elementId, false)
     })
     await page.waitForTimeout(250)
     await expectWorkspaceVectorInvariants(page, 'full-topology:set-open')
     const setOpenUndo = await getLastUndoPatchSummary(page)
+
     expectOnlyComputedPatchUndo(setOpenUndo)
     expect(setOpenUndo.pointSetIds).toEqual([])
     expect(setOpenUndo.pointRemoveIds).toEqual([])

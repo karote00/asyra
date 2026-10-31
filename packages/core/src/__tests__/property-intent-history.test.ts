@@ -19,6 +19,7 @@ import { Core } from '../core.js'
 const type = 'intent-history-material'
 const ownerType = 'intent-history-element'
 const collectionType = 'intent-history-materials'
+
 beforeAll(() => {
   const config = {
     type,
@@ -26,6 +27,7 @@ beforeAll(() => {
     persistKeys: ['opacity', 'color'],
     valueKeys: ['opacity', 'color']
   }
+
   registerPropertySchema({
     type,
     fields: [
@@ -49,6 +51,7 @@ beforeAll(() => {
       childType: type,
       mode: 'ids' as const,
       collection: 'array-or-record' as const,
+
       toValue: (child: { get: (key: string) => unknown }, childId: string) => ({
         id: childId,
         color: child.get('color'),
@@ -56,6 +59,7 @@ beforeAll(() => {
       })
     }
   }
+
   registerPropertySchema({
     type: collectionType,
     fields: [{ key: 'materials', kind: 'array', defaultValue: [] }]
@@ -70,6 +74,7 @@ beforeAll(() => {
     { name: 'material', type, alias: ['opacity', 'color'] },
     { name: 'materials', type: collectionType }
   ]
+
   properties.forEach((property) =>
     elementPropertyRegistry.register(property, ownerType)
   )
@@ -88,6 +93,7 @@ beforeAll(() => {
     defaults: {}
   })
 })
+
 const setup = () => {
   props.reset()
   scene.reset()
@@ -143,22 +149,27 @@ const setup = () => {
     sceneTree: scene,
     render: {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1
     } as never,
     selection: {} as never,
     systemContext: {} as never
   })
+
   const run = <T>(fn: () => T): T =>
     runWithTransactionOwner(factory.getTransactionOwner(), () =>
       runTransaction(fn)
     )
+
   const target = (elementId = 'a') => ({
     elementId,
     propertyName: 'material',
     path: []
   })
+
   return { props, scene, api, factory, run, target }
 }
+
 describe('Property intentions through real Factory owner replay', () => {
   it('publishes the new child identity immediately on detach and keeps it on replay', () => {
     const { props, scene, api, factory, run } = setup()
@@ -167,8 +178,10 @@ describe('Property intentions through real Factory owner replay', () => {
       propertyName: 'materials',
       path: [{ key: 'materials', childId: 'source' }]
     }
+
     const verify = () => {
       const canonical = api.readElementPropertyTargets([target])[0]
+
       expect(scene.getElementById('a')?.getAllComputedData()).toMatchObject({
         materials: [
           {
@@ -179,6 +192,7 @@ describe('Property intentions through real Factory owner replay', () => {
         ]
       })
     }
+
     try {
       run(() =>
         api.updateElementPropertyTargets([
@@ -193,6 +207,7 @@ describe('Property intentions through real Factory owner replay', () => {
       run(() => api.detachElementPropertyTargets([target]))
       verify()
       const detached = props.save()
+
       factory.undo()
       verify()
       factory.redo()
@@ -205,7 +220,9 @@ describe('Property intentions through real Factory owner replay', () => {
 
   it('replays local override, source edit, reset, detach and sharing as exact single actions', () => {
     const { props, scene, api, factory, run, target } = setup()
+
     const save = () => ({ props: props.save(), scene: scene.save() })
+
     const actions = [
       () =>
         api.updateElementPropertyTargets([
@@ -226,19 +243,24 @@ describe('Property intentions through real Factory owner replay', () => {
           { target: target(), sourceId: 'source' }
         ])
     ]
+
     try {
       for (const action of actions) {
         const before = save(),
           depth = factory.getUndoHistoryDepth()
+
         run(action)
         const after = save()
+
         expect(factory.getUndoHistoryDepth()).toBe(depth + 1)
         factory.undo()
         expect(save()).toEqual(before)
         factory.redo()
         expect(save()).toEqual(after)
       }
+
       const saved = save()
+
       props.reset()
       scene.reset()
       props.load(saved.props)
@@ -259,6 +281,7 @@ describe('Property intentions through real Factory owner replay', () => {
   it('keeps existing element convenience edits local and replays exact owner bindings', () => {
     const { props, scene, api, factory, run, target } = setup()
     const before = { props: props.save(), scene: scene.save() }
+
     try {
       run(() =>
         api.updateElementProperties([
@@ -273,6 +296,7 @@ describe('Property intentions through real Factory owner replay', () => {
       ).toEqual([0.2, 0.6])
       expect(props.save().source).toMatchObject({ opacity: 1 })
       const after = { props: props.save(), scene: scene.save() }
+
       expect(factory.getUndoHistoryDepth()).toBe(1)
       factory.undo()
       expect({ props: props.save(), scene: scene.save() }).toEqual(before)
@@ -294,21 +318,27 @@ describe('Property intentions through real Factory owner replay', () => {
   })
   it('patches shared child records, membership and reload through the existing public API', () => {
     const { props, scene, api, factory, run } = setup()
+
     const target = (elementId = 'a') => ({
       elementId,
       propertyName: 'materials',
       path: []
     })
+
     const childTarget = {
       ...target(),
       path: [{ key: 'materials', childId: 'source' }]
     }
+
     const snapshot = () => ({ props: props.save(), scene: scene.save() })
+
     const replay = (action: () => void) => {
       const before = snapshot(),
         depth = factory.getUndoHistoryDepth()
+
       run(action)
       const after = snapshot()
+
       expect(factory.getUndoHistoryDepth()).toBe(depth + 1)
       try {
         factory.undo()
@@ -323,10 +353,12 @@ describe('Property intentions through real Factory owner replay', () => {
           )
         )
       }
+
       expect(snapshot()).toEqual(before)
       factory.redo()
       expect(snapshot()).toEqual(after)
     }
+
     try {
       replay(() =>
         api.patchElementProperties([
@@ -337,6 +369,7 @@ describe('Property intentions through real Factory owner replay', () => {
         ])
       )
       const local = api.readElementPropertyTargets([childTarget])[0]
+
       expect(local.effective.opacity).toBe(0.3)
       expect(props.save().source).toMatchObject({ opacity: 1 })
       expect(
@@ -368,6 +401,7 @@ describe('Property intentions through real Factory owner replay', () => {
       ).toEqual(['new-material'])
       expect(props.save().source).toBeDefined()
       const saved = snapshot()
+
       props.reset()
       scene.reset()
       props.load(saved.props)
@@ -387,6 +421,7 @@ describe('Property intentions through real Factory owner replay', () => {
         ])
       )
       const beforeInvalid = snapshot()
+
       expect(() =>
         run(() =>
           api.patchElementProperties([
@@ -412,6 +447,7 @@ describe('Property intentions through real Factory owner replay', () => {
   })
   it('applies canonical layer and binding evidence without reallocating local intent', () => {
     const { props, scene, api, factory, run, target } = setup()
+
     try {
       run(() =>
         api.updateElementPropertyTargets([
@@ -419,6 +455,7 @@ describe('Property intentions through real Factory owner replay', () => {
         ])
       )
       const local = api.readElementPropertyTargets([target()])[0]
+
       run(() =>
         api.applyCanonicalChanges([
           {
@@ -452,6 +489,7 @@ describe('Property intentions through real Factory owner replay', () => {
         api.readElementPropertyTargets([target()])[0].effective.opacity
       ).toBe(1)
       const before = { props: props.save(), scene: scene.save() }
+
       run(() =>
         api.applyCanonicalChanges([
           {
@@ -483,6 +521,7 @@ describe('Property intentions through real Factory owner replay', () => {
   it('accepts exact graph retirement through the real remote Undo transaction with child-first inputs', async () => {
     const { api, props, scene, factory } = setup()
     const before = { props: props.save(), scene: scene.save() }
+
     try {
       await api.applyRemoteCanonicalChangeSlices({
         origin: 'undo',
@@ -521,7 +560,9 @@ describe('Property intentions through real Factory owner replay', () => {
 
   it('applies remote element removal and exact local-property retirement with reversible shared ownership', () => {
     const { api, props, scene, factory, run, target } = setup()
+
     const snapshot = () => ({ props: props.save(), scene: scene.save() })
+
     try {
       run(() =>
         api.updateElementPropertyTargets([
@@ -536,6 +577,7 @@ describe('Property intentions through real Factory owner replay', () => {
         parentId: 'workspace',
         index: 0
       }
+
       run(() =>
         api.applyCanonicalChanges([
           { kind: 'element-removal', removals: [removal] },
@@ -543,6 +585,7 @@ describe('Property intentions through real Factory owner replay', () => {
         ])
       )
       const after = snapshot()
+
       expect(after.props[localId]).toBeUndefined()
       expect(after.props.source).toEqual(before.props.source)
       expect(after.scene.elements.b).toEqual(before.scene.elements.b)
@@ -557,6 +600,7 @@ describe('Property intentions through real Factory owner replay', () => {
 
   it('does not infer property retirement from a remote membership unlink', () => {
     const { api, props, factory, run } = setup()
+
     try {
       run(() =>
         api.applyCanonicalChanges([
@@ -600,7 +644,9 @@ describe('Property intentions through real Factory owner replay', () => {
 
   it('replays exact canonical lifecycle without changing identities or retiring live roots', () => {
     const { props, scene, api, factory, run } = setup()
+
     const snapshot = () => ({ props: props.save(), scene: scene.save() })
+
     const before = snapshot()
     const record = {
       id: 'remote-local',
@@ -611,6 +657,7 @@ describe('Property intentions through real Factory owner replay', () => {
         childBindings: {}
       }
     }
+
     const bind = (from: string, to: string) => ({
       kind: 'element-property-bindings' as const,
       changes: [
@@ -622,6 +669,7 @@ describe('Property intentions through real Factory owner replay', () => {
         }
       ]
     })
+
     try {
       run(() =>
         api.applyCanonicalChanges([
@@ -635,6 +683,7 @@ describe('Property intentions through real Factory owner replay', () => {
         ])
       )
       const after = snapshot()
+
       expect(props.save()[record.id]).toEqual(record)
       factory.undo()
       expect(snapshot()).toEqual(before)
@@ -703,8 +752,10 @@ describe('Property intentions through real Factory owner replay', () => {
           if (when === 'after-binding') {
             apply(prepared, options)
           }
+
           throw new Error('binding handoff failure')
         })
+
       try {
         expect(() =>
           run(() =>
@@ -767,6 +818,7 @@ it('reports actual property application and no-op evidence through every Core pr
         { propertyId: 'source', values: { opacity: 0.9 } }
       ])
   ]
+
   try {
     for (const call of calls) {
       const before = JSON.stringify({
@@ -775,9 +827,11 @@ it('reports actual property application and no-op evidence through every Core pr
       })
       const receipt = run(call)
       const after = JSON.stringify({ props: props.save(), scene: scene.save() })
+
       expect(receipt).toMatchObject({ changed: before !== after })
       expect(Object.isFrozen(receipt)).toBe(true)
     }
+
     for (const method of [
       'updateElementProperties',
       'patchElementProperties',
@@ -793,6 +847,7 @@ it('reports actual property application and no-op evidence through every Core pr
         changed: false
       })
     }
+
     expect(
       run(() =>
         api.updateSharedPropertySources([
@@ -809,6 +864,7 @@ it('reports actual property application and no-op evidence through every Core pr
       scene: scene.save(),
       depth: factory.getUndoHistoryDepth()
     }
+
     expect(() =>
       run(() =>
         api.updateElementProperties([

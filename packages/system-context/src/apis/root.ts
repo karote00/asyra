@@ -14,6 +14,7 @@ const cloneManagedValue = <T>(value: T): T => {
         cloneManagedValue(item)
       ])
     )
+
     return cloned as T
   }
 
@@ -25,6 +26,7 @@ export const createRootAPIs = (deps: HandlerDeps): RootAPIs => ({
     return deps.managedPropertyState.getAllKeys().reduce(
       (snapshot, key) => {
         snapshot[key] = cloneManagedValue(deps.managedPropertyState.get(key))
+
         return snapshot
       },
       {} as Record<string, unknown>

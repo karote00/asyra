@@ -7,17 +7,21 @@ const { createHash, randomUUID } = require('node:crypto')
 const { loadContract, admitContract } = require('../contracts.cjs')
 const { createTargetOwner } = require('../flow-target.cjs')
 const root = path.resolve(__dirname, '../../../..')
+
 function setup(
   t,
   appOwner = false,
   appFile = 'apps/asyra-design/server/local-tool-scheduler.ts'
 ) {
   const parent = path.join(root, 'tmp/flow-inspector/target-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'store-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const accepted = loadContract(root)
   const definition = structuredClone(accepted.definition)
+
   // Structurally admitted offline target; no claim of additional Factory evidence.
   definition.flows[0].cases.push({
     ...definition.flows[0].cases[0],
@@ -25,6 +29,7 @@ function setup(
     testName: 'Future obligation fixture'
   })
   const architecture = structuredClone(accepted.architectureDefinition)
+
   if (appOwner) {
     definition.version = 2
     for (const scenario of definition.scenarios) {
@@ -32,6 +37,7 @@ function setup(
         scenario.mutation.file = appFile
       }
     }
+
     definition.workspaceSources = [
       {
         name: '@asyra/asyra-design',
@@ -44,15 +50,20 @@ function setup(
       step.implementationBoundary = [appFile]
     }
   }
+
   const contract = admitContract(definition, architecture)
   const tasks = new Map(),
     reviews = new Map()
   const options = {
     repositoryRoot: root,
     directory,
+
     getContracts: () => [contract],
+
     getBaseline: () => ({ revision: 1, contractDigest: contract.digest }),
+
     getTask: (id) => tasks.get(id),
+
     getReview: (id) => reviews.get(id) ?? null
   }
   const owner = createTargetOwner(options)
@@ -83,8 +94,10 @@ function setup(
     works,
     pending: ['future.obligation']
   }
+
   const task = (work, status = 'passed') => {
     const id = randomUUID()
+
     tasks.set(id, {
       id,
       task: {
@@ -101,10 +114,13 @@ function setup(
       attempts: [{ id: randomUUID(), verificationStatus: status }],
       verificationStatus: status
     })
+
     return id
   }
+
   return { owner, options, request, task, tasks, reviews }
 }
+
 const revise = (request, id, revision) => ({
   action: 'revise',
   targetId: id,
@@ -115,6 +131,7 @@ const revise = (request, id, revision) => ({
   works: request.works,
   pending: request.pending
 })
+
 const link = (id, revision, workId, taskId) => ({
   action: 'link',
   targetId: id,
@@ -124,9 +141,11 @@ const link = (id, revision, workId, taskId) => ({
   workId,
   taskId
 })
+
 test('three work items and pending obligations survive replay and restart with immutable audit', (t) => {
   const { owner, options, request } = setup(t)
   const saved = owner.decide(request, 'local-developer')
+
   assert.equal(saved.revision, 1)
   assert.equal(owner.get(saved.id).works.length, 3)
   assert.deepEqual(owner.get(saved.id).pending, ['future.obligation'])
@@ -222,13 +241,16 @@ for (const [name, edit, error] of [
 ]) {
   test('rejects ' + name + ' without retaining a target', (t) => {
     const { owner, request } = setup(t)
+
     edit(request)
     assert.throws(() => owner.decide(request, 'local-developer'), error)
     assert.deepEqual(owner.list(), [])
   })
 }
+
 test('exact task scope, multiple PR records and unknown handoffs never complete target', (t) => {
   const { owner, request, task, reviews, options } = setup(t)
+
   request.works[1].prerequisites = [
     {
       workId: request.works[0].id,
@@ -238,6 +260,7 @@ test('exact task scope, multiple PR records and unknown handoffs never complete 
   const saved = owner.decide(request, 'local-developer')
   const first = task(request.works[0]),
     second = task(request.works[1])
+
   reviews.set(first, {
     taskId: first,
     observation: { state: 'merged', head: 'a' },
@@ -254,6 +277,7 @@ test('exact task scope, multiple PR records and unknown handoffs never complete 
     'local-developer'
   )
   const value = owner.get(saved.id)
+
   assert.equal(value.tasks.length, 2)
   assert.equal(value.tasks[0].review.observation.state, 'merged')
   assert.equal(value.works[1].status, 'blocked')
@@ -265,6 +289,7 @@ test('exact task scope, multiple PR records and unknown handoffs never complete 
   )
   assert.deepEqual(createTargetOwner(options).get(saved.id), value)
   const wrong = task({ ...request.works[2], scope: 'Different scope' })
+
   assert.throws(
     () =>
       owner.decide(
@@ -278,11 +303,13 @@ test('failed commitment cannot be rewritten; explicit successor preserves failur
   const { owner, request, task } = setup(t)
   const saved = owner.decide(request, 'local-developer'),
     failed = task(request.works[0], 'failed')
+
   owner.decide(
     link(saved.id, 1, request.works[0].id, failed),
     'local-developer'
   )
   const changed = structuredClone(request)
+
   changed.works[0].scope = 'Revised promise'
   assert.throws(
     () => owner.decide(revise(changed, saved.id, 2), 'local-developer'),
@@ -291,6 +318,7 @@ test('failed commitment cannot be rewritten; explicit successor preserves failur
   changed.works[0].id = randomUUID()
   owner.decide(revise(changed, saved.id, 2), 'local-developer')
   const value = owner.get(saved.id)
+
   assert.equal(value.history.length, 3)
   assert.equal(value.history[0].state.works[0].scope, request.works[0].scope)
   assert.equal(value.tasks[0].task.verificationStatus, 'failed')
@@ -299,6 +327,7 @@ test('failed commitment cannot be rewritten; explicit successor preserves failur
 test('ordinary projections read no files and query each distinct linked task once per target read', (t) => {
   const { owner, request, task, options } = setup(t)
   const saved = owner.decide(request, 'local-developer')
+
   owner.decide(
     link(saved.id, 1, request.works[0].id, task(request.works[0])),
     'local-developer'
@@ -309,15 +338,20 @@ test('ordinary projections read no files and query each distinct linked task onc
     getTask = options.getTask
   const restored = createTargetOwner({
     ...options,
+
     getTask: (id) => {
       taskReads++
+
       return getTask(id)
     }
   })
+
   fs.readFileSync = (...args) => {
     reads++
+
     return original(...args)
   }
+
   try {
     for (let i = 0; i < 5; i++) {
       restored.list()
@@ -326,17 +360,20 @@ test('ordinary projections read no files and query each distinct linked task onc
   } finally {
     fs.readFileSync = original
   }
+
   assert.equal(reads, 0)
   assert.equal(taskReads, 5)
 })
 test('nonexistent runtime files and tampered retained decisions reject', (t) => {
   const { owner, request, options } = setup(t)
   const invalid = structuredClone(request)
+
   invalid.works[0].allowedFiles = ['packages/factory/src/absent-target-file.ts']
   assert.throws(() => owner.decide(invalid, 'local-developer'), /file/i)
   owner.decide(request, 'local-developer')
   const file = path.join(options.directory, 'targets.json')
   const saved = JSON.parse(fs.readFileSync(file, 'utf8'))
+
   saved.records[0].history[0].state.objective = 'Silently changed objective'
   fs.writeFileSync(file, JSON.stringify(saved))
   assert.throws(() => createTargetOwner(options), /decision/i)
@@ -346,6 +383,7 @@ test('task links cannot substitute a different admitted architecture for the tar
   const { owner, request, task, tasks } = setup(t)
   const saved = owner.decide(request, 'local-developer')
   const taskId = task(request.works[0])
+
   tasks.get(taskId).task.step.conditions = ['Different architecture promise']
   assert.throws(
     () =>
@@ -363,30 +401,37 @@ test('repeated target reads reuse admitted revision history and allocation proje
   const first = owner.get(saved.id)
   const values = Object.values
   let historyTraversals = 0
+
   Object.values = (value) => {
     if (value === first.history) {
       historyTraversals++
     }
+
     return values(value)
   }
+
   try {
     for (let i = 0; i < 5; i++) {
       const next = owner.get(saved.id)
+
       assert.strictEqual(next.history, first.history)
       assert.strictEqual(next.works, first.works)
     }
   } finally {
     Object.values = values
   }
+
   assert.equal(
     historyTraversals,
     0,
     'admitted history must not be traversed again on reads'
   )
   const changed = structuredClone(request)
+
   changed.objective = 'Revised development objective'
   owner.decide(revise(changed, saved.id, 1), 'local-developer')
   const next = owner.get(saved.id)
+
   assert.notStrictEqual(next.history, first.history)
   assert.equal(next.objective, changed.objective)
   assert.equal(first.history.length, 1)
@@ -413,6 +458,7 @@ function admissionFixture(t) {
       issues: []
     }
   }
+
   f.options.getSource = (id) => (id === source.id ? source : null)
   const owner = createTargetOwner(f.options)
   const target = owner.decide(f.request, 'local-developer')
@@ -444,6 +490,7 @@ function admissionFixture(t) {
       admissionId: admission.requestId
     }
   }
+
   return { ...f, owner, source, admission, task, target }
 }
 
@@ -470,10 +517,12 @@ function dependentAdmissionFixture(t) {
   }
   const assessments = new Map(),
     assessmentSources = new Map()
+
   f.options.getSource = (id) => (id === source.id ? source : null)
   f.options.getAssessment = (id) => assessments.get(id)
   f.options.getAssessmentSource = (id) => assessmentSources.get(id)
   const changed = structuredClone(f.request)
+
   changed.works[0].prerequisites = [
     { workId: changed.works[1].id, handoff: 'Use assessed upstream behavior' }
   ]
@@ -523,6 +572,7 @@ function dependentAdmissionFixture(t) {
     },
     projection: { current: true }
   }
+
   assessments.set(assessmentId, assessment)
   assessmentSources.set(assessmentId, assessment.runtime)
   const taskId = randomUUID()
@@ -552,6 +602,7 @@ function dependentAdmissionFixture(t) {
       admissionId: admission.requestId
     }
   }
+
   return {
     ...f,
     owner,
@@ -570,6 +621,7 @@ test('admission reserves source and task before execution and survives restart w
   const f = admissionFixture(t)
   const before = f.options.getBaseline()
   const result = f.owner.decide(f.admission, 'local-developer')
+
   assert.equal(result.revision, 2)
   assert.deepEqual(f.owner.decide(f.admission, 'local-developer'), result)
   assert.deepEqual(
@@ -577,6 +629,7 @@ test('admission reserves source and task before execution and survives restart w
     result.decision.admission
   )
   const restored = createTargetOwner(f.options)
+
   assert.deepEqual(
     restored.checkTask(f.task, f.source.snapshot),
     result.decision.admission
@@ -585,6 +638,7 @@ test('admission reserves source and task before execution and survives restart w
   assert.equal(restored.get(f.target.id).works[0].assessment.status, 'pending')
   assert.deepEqual(f.options.getBaseline(), before)
   const changed = structuredClone(f.request)
+
   changed.pending.push(...changed.works.shift().obligationIds)
   assert.throws(
     () => restored.decide(revise(changed, f.target.id, 2), 'local-developer'),
@@ -595,9 +649,11 @@ test('admission reserves source and task before execution and survives restart w
 for (const authorityFormat of [1, 2]) {
   test(`assessment-bound admission with authority ${authorityFormat} survives restart without accepting the target`, (t) => {
     const f = dependentAdmissionFixture(t)
+
     f.assessment.runtime.runtimeAuthorityFormat = authorityFormat
     const before = f.options.getBaseline()
     const result = f.owner.decide(f.admission, 'local-developer')
+
     assert.equal(result.decision.admission.assessmentId, f.assessment.id)
     assert.equal(
       result.decision.admission.allocationRevision,
@@ -612,11 +668,13 @@ for (const authorityFormat of [1, 2]) {
       result.decision.admission
     )
     const current = f.owner.get(f.target.id)
+
     assert.equal(current.status, 'pending')
     assert.equal(current.works[0].status, 'pending')
     assert.equal(current.works[0].prerequisites[0].status, 'passed')
     assert.deepEqual(f.options.getBaseline(), before)
     const restored = createTargetOwner(f.options)
+
     assert.deepEqual(
       restored.checkTask(f.task, f.source.snapshot),
       result.decision.admission
@@ -628,6 +686,7 @@ for (const authorityFormat of [1, 2]) {
 test('assessment-bound task start rejects retired source authority after its own admission revision', (t) => {
   const f = dependentAdmissionFixture(t)
   const result = f.owner.decide(f.admission, 'local-developer')
+
   assert.equal(result.revision, f.target.revision + 1)
   f.assessmentSources.delete(f.assessment.id)
   assert.throws(
@@ -638,6 +697,7 @@ test('assessment-bound task start rejects retired source authority after its own
 
 test('assessment source authority requires one complete versioned identity', (t) => {
   const f = dependentAdmissionFixture(t)
+
   delete f.assessment.runtime.contractScopeDigest
   assert.throws(
     () => f.owner.decide(f.admission, 'local-developer'),
@@ -647,6 +707,7 @@ test('assessment source authority requires one complete versioned identity', (t)
 
 test('assessment source authority rejects unknown versions before reservation', (t) => {
   const f = dependentAdmissionFixture(t)
+
   f.assessment.runtime.runtimeAuthorityFormat = 3
   assert.throws(
     () => f.owner.decide(f.admission, 'local-developer'),
@@ -657,10 +718,12 @@ test('assessment source authority rejects unknown versions before reservation', 
 
 test('retained assessment admission rejects a changed source even with a recomputed digest', (t) => {
   const f = dependentAdmissionFixture(t)
+
   f.owner.decide(f.admission, 'local-developer')
   const file = path.join(f.options.directory, 'targets.json')
   const saved = JSON.parse(fs.readFileSync(file, 'utf8'))
   const admission = saved.records[0].history.at(-1).admission
+
   admission.source = {
     digest: 'd'.repeat(64),
     head: 'e'.repeat(40)
@@ -717,16 +780,20 @@ test('assessment-bound admission rejects non-current or unsatisfied owner eviden
       }
     ]
   ]
+
   for (const [name, mutate] of mutations) {
     const value = structuredClone(f.assessment)
+
     if (mutate) {
       mutate(value)
     }
+
     if (name === 'missing') {
       f.assessments.delete(f.assessment.id)
     } else {
       f.assessments.set(f.assessment.id, value)
     }
+
     assert.throws(
       () => f.owner.decide(f.admission, 'local-developer'),
       /assessment|prerequisite|preservation|source|actor|allocation/i,
@@ -734,6 +801,7 @@ test('assessment-bound admission rejects non-current or unsatisfied owner eviden
     )
     assert.equal(f.owner.get(f.target.id).history.length, f.target.revision)
   }
+
   f.assessments.set(f.assessment.id, f.assessment)
   assert.throws(
     () =>
@@ -749,6 +817,7 @@ test('assessment-bound admission rejects non-current or unsatisfied owner eviden
 test('admission denies unresolved prerequisites before reserving work', (t) => {
   const f = admissionFixture(t)
   const changed = structuredClone(f.request)
+
   changed.works[0].id = randomUUID()
   changed.works[0].prerequisites = [
     { workId: changed.works[1].id, handoff: 'Usable behavior' }
@@ -767,6 +836,7 @@ test('admission denies unresolved prerequisites before reserving work', (t) => {
 
 test('admission checks source, task identity, actor and complete promise; omission cannot bypass reservation', (t) => {
   const f = admissionFixture(t)
+
   f.owner.decide(f.admission, 'local-developer')
   for (const task of [
     { ...f.task, workBinding: undefined },
@@ -782,6 +852,7 @@ test('admission checks source, task identity, actor and complete promise; omissi
       /admission|scope|obligation|actor|identity/i
     )
   }
+
   assert.throws(
     () =>
       f.owner.checkTask(f.task, {
@@ -805,6 +876,7 @@ test('admission checks source, task identity, actor and complete promise; omissi
 for (const field of ['scenario', 'phase', 'contractDigest']) {
   test('admission refuses ineligible proof ' + field, (t) => {
     const f = admissionFixture(t)
+
     f.source[field] = 'invalid'
     assert.throws(
       () => f.owner.decide(f.admission, 'local-developer'),
@@ -816,6 +888,7 @@ for (const field of ['scenario', 'phase', 'contractDigest']) {
 
 test('bounded assessment preserves failed attempts and does not combine work passes into target acceptance', (t) => {
   const f = admissionFixture(t)
+
   f.owner.decide(f.admission, 'local-developer')
   const record = {
     id: f.task.requestId,
@@ -838,6 +911,7 @@ test('bounded assessment preserves failed attempts and does not combine work pas
       }
     ]
   }
+
   f.tasks.set(record.id, record)
   assert.equal(f.owner.get(f.target.id).works[0].assessment.status, 'failed')
   record.attempts.push({
@@ -853,6 +927,7 @@ test('bounded assessment preserves failed attempts and does not combine work pas
   })
   record.verificationStatus = 'passed'
   const value = f.owner.get(f.target.id)
+
   assert.equal(value.works[0].assessment.status, 'passed')
   assert.equal(
     value.tasks[0].task.attempts[0].verdict.evidence.status,
@@ -865,6 +940,7 @@ test('bounded assessment preserves failed attempts and does not combine work pas
 
 test('a second admitted task cannot hide another task failure, and stale baseline cannot remain passed', (t) => {
   const f = admissionFixture(t)
+
   f.owner.decide(f.admission, 'local-developer')
   const first = {
     id: f.task.requestId,
@@ -880,8 +956,10 @@ test('a second admitted task cannot hide another task failure, and stale baselin
       }
     ]
   }
+
   f.tasks.set(first.id, first)
   const secondId = randomUUID()
+
   f.owner.decide(
     {
       ...f.admission,
@@ -925,6 +1003,7 @@ test('work binding identity is independent of JSON property order', (t) => {
   const f = admissionFixture(t)
   const result = f.owner.decide(f.admission, 'local-developer')
   const binding = f.task.workBinding
+
   assert.deepEqual(
     f.owner.checkTask(
       {
@@ -949,6 +1028,7 @@ async function pinnedSetup(t) {
   const { createHistory, compareVersion } = require('../evolution.cjs')
   const contract = loadContract(root)
   const baseline = { revision: 1, contractDigest: contract.digest }
+
   value.options.getContracts = () => [contract]
   value.options.getBaseline = () => baseline
   value.request.targetRevision = contract.digest
@@ -984,6 +1064,7 @@ async function pinnedSetup(t) {
     'baseline',
     admission
   )
+
   assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
   evidenceOwner.validateStoredEvidence(
     contract,
@@ -1029,13 +1110,23 @@ async function pinnedSetup(t) {
   })
   const versions = new Map([[review.id, review]])
   let reads = 0
+
   value.options.getVersionReview = (key) => {
     reads++
+
     return versions.get(key) ?? null
   }
+
   value.owner = createTargetOwner(value.options)
   value.request.targetReviewId = review.id
-  return { ...value, review, versions, reads: () => reads }
+
+  return {
+    ...value,
+    review,
+    versions,
+
+    reads: () => reads
+  }
 }
 
 test('a target pins the exact real reviewed verification version through replay and restart without lookup work on projections', async (t) => {
@@ -1045,6 +1136,7 @@ test('a target pins the exact real reviewed verification version through replay 
     reviewId: value.review.id,
     candidateDigest: value.review.candidateDigest
   }
+
   assert.deepEqual(value.owner.get(saved.id).targetVerification, pin)
   assert.equal(value.reads(), 1)
   for (let i = 0; i < 20; i++) {
@@ -1052,6 +1144,7 @@ test('a target pins the exact real reviewed verification version through replay 
     value.owner.list()
     value.owner.decide(value.request, 'local-developer')
   }
+
   assert.equal(value.reads(), 1)
   assert.deepEqual(
     createTargetOwner(value.options).get(saved.id).targetVerification,
@@ -1068,6 +1161,7 @@ test('a target pins the exact real reviewed verification version through replay 
 test('a missing or conflicting selected version rejects before writing a target revision', async (t) => {
   const value = await pinnedSetup(t)
   const file = path.join(value.options.directory, 'targets.json')
+
   for (const replacement of [
     null,
     { ...value.review, id: 'a'.repeat(64) },
@@ -1092,6 +1186,7 @@ test('a missing or conflicting selected version rejects before writing a target 
     assert.equal(fs.existsSync(file), false)
     assert.equal(value.owner.list().length, 0)
   }
+
   value.versions.set(value.review.id, value.review)
   assert.equal(value.owner.decide(value.request, 'local-developer').revision, 1)
 })
@@ -1103,6 +1198,7 @@ test('target pin survives later review rejection and cannot be changed by anothe
     path.join(value.options.directory, 'targets.json'),
     'utf8'
   )
+
   assert.throws(
     () =>
       value.owner.decide(
@@ -1124,6 +1220,7 @@ test('target pin survives later review rejection and cannot be changed by anothe
     revise(value.request, saved.id, 1),
     'local-developer'
   )
+
   assert.equal(revised.revision, 2)
   assert.deepEqual(reloaded.get(saved.id).targetVerification, {
     reviewId: value.review.id,
@@ -1146,12 +1243,14 @@ test('target pin survives later review rejection and cannot be changed by anothe
 
 test('legacy target absence remains unchanged even when an otherwise matching reviewed version exists', async (t) => {
   const value = await pinnedSetup(t)
+
   delete value.request.targetReviewId
   const saved = value.owner.decide(value.request, 'local-developer')
   const before = fs.readFileSync(
     path.join(value.options.directory, 'targets.json'),
     'utf8'
   )
+
   assert.equal(
     Object.hasOwn(value.owner.get(saved.id), 'targetVerification'),
     false
@@ -1174,14 +1273,18 @@ test('target callback distinguishes new creation from retained metadata and neve
   const value = await pinnedSetup(t)
   let available = true
   const phases = []
+
   value.options.getVersionReview = (id, context) => {
     phases.push(context)
+
     return context?.requireAvailable && !available
       ? null
       : value.versions.get(id)
   }
+
   let owner = createTargetOwner(value.options)
   const created = owner.decide(value.request, 'local-developer')
+
   assert.deepEqual(phases, [{ requireAvailable: true }])
   available = false
   owner = createTargetOwner(value.options)
@@ -1190,6 +1293,7 @@ test('target callback distinguishes new creation from retained metadata and neve
     { requireAvailable: false }
   ])
   const before = phases.length
+
   assert.deepEqual(owner.decide(value.request, 'local-developer'), created)
   owner.get(created.id)
   owner.list()
@@ -1224,19 +1328,23 @@ test('accepted version pins distinguish mapping revision and exact same-contract
   let history = createHistory(value.review.candidate)
   let baseline = { revision: 5, contractDigest: value.request.targetRevision }
   const lookups = []
+
   value.options.getBaseline = () => baseline
   value.options.getAcceptedVersion = (revision) => {
     lookups.push(revision)
     const selected = revision ?? history.revision
     const version = history.versions[selected - 1]
+
     return version
       ? { revision: selected, contractDigest: version.contract.digest }
       : null
   }
+
   value.request.acceptedBaseline = baseline
   let owner = createTargetOwner(value.options)
   const created = owner.decide(value.request, 'local-developer')
   const pin = { revision: 1, contractDigest: baseline.contractDigest }
+
   assert.deepEqual(owner.get(created.id).acceptedVersion, pin)
   assert.deepEqual(owner.get(created.id).history[0].acceptedVersion, pin)
   assert.equal(owner.get(created.id).acceptedBaseline.revision, 5)
@@ -1249,6 +1357,7 @@ test('accepted version pins distinguish mapping revision and exact same-contract
     value.options.directory,
     'accepted-version-source'
   )
+
   fs.cpSync(
     path.join(value.options.directory, 'pin-proof/source'),
     repository,
@@ -1256,6 +1365,7 @@ test('accepted version pins distinguish mapping revision and exact same-contract
   )
   const contract = loadContract(repository)
   const config = path.join(repository, contract.configFile)
+
   fs.chmodSync(config, 0o644)
   fs.appendFileSync(config, '\n// distinct accepted verifier configuration\n')
   const id = randomUUID()
@@ -1276,6 +1386,7 @@ test('accepted version pins distinguish mapping revision and exact same-contract
       descriptor: admitted.verificationSource
     }
   }
+
   history = decideVersion(
     history,
     compareVersion(history, candidate),
@@ -1299,10 +1410,12 @@ test('accepted version pins distinguish mapping revision and exact same-contract
     { ...value.request, requestId: randomUUID(), acceptedBaseline: baseline },
     'local-developer'
   )
+
   assert.equal(owner.get(next.id).acceptedVersion.revision, 2)
 
   const file = path.join(value.options.directory, 'targets.json')
   const original = JSON.parse(fs.readFileSync(file))
+
   for (const mutate of [
     (record) => {
       record.acceptedVersion.revision = 2
@@ -1340,6 +1453,7 @@ test('accepted version pins distinguish mapping revision and exact same-contract
     }
   ]) {
     const changed = structuredClone(original)
+
     mutate(changed.records[0])
     fs.writeFileSync(file, JSON.stringify(changed))
     assert.throws(
@@ -1347,8 +1461,10 @@ test('accepted version pins distinguish mapping revision and exact same-contract
       /accepted.*version|version.*pin/i
     )
   }
+
   fs.writeFileSync(file, JSON.stringify(original))
   const exactResolver = value.options.getAcceptedVersion
+
   value.options.getAcceptedVersion = () => ({
     revision: 2,
     contractDigest: baseline.contractDigest
@@ -1359,6 +1475,7 @@ test('accepted version pins distinguish mapping revision and exact same-contract
 
 test('configured accepted-version metadata fails closed and client pins cannot become authority', (t) => {
   const value = setup(t)
+
   try {
     for (const metadata of [
       null,
@@ -1367,15 +1484,19 @@ test('configured accepted-version metadata fails closed and client pins cannot b
     ]) {
       const owner = createTargetOwner({
         ...value.options,
+
         getAcceptedVersion: () => metadata
       })
+
       assert.throws(
         () => owner.decide(value.request, 'local-developer'),
         /accepted.*version/i
       )
       assert.equal(owner.list().length, 0)
     }
+
     const owner = createTargetOwner(value.options)
+
     assert.throws(
       () =>
         owner.decide(
@@ -1398,6 +1519,7 @@ test('configured accepted-version metadata fails closed and client pins cannot b
 test('legacy unpinned targets remain readable but cannot acquire an accepted version in a later audit entry', (t) => {
   const value = setup(t)
   const created = value.owner.decide(value.request, 'local-developer')
+
   value.owner.decide(revise(value.request, created.id, 1), 'local-developer')
   assert.equal(
     Object.hasOwn(
@@ -1408,6 +1530,7 @@ test('legacy unpinned targets remain readable but cannot acquire an accepted ver
   )
   const file = path.join(value.options.directory, 'targets.json')
   const saved = JSON.parse(fs.readFileSync(file))
+
   saved.records[0].history[1].acceptedVersion = {
     revision: 1,
     contractDigest: value.request.targetRevision
@@ -1419,6 +1542,7 @@ test('legacy unpinned targets remain readable but cannot acquire an accepted ver
 test('private App server work uses its admitted owner boundary and survives retained loading', (t) => {
   const { owner, options, request } = setup(t, true)
   const saved = owner.decide(request, 'local-developer')
+
   assert.equal(saved.revision, 1)
   assert.equal(owner.get(saved.id).works.length, 3)
   assert.deepEqual(
@@ -1429,6 +1553,7 @@ test('private App server work uses its admitted owner boundary and survives reta
 
 test('App work rejects files outside its admitted runtime boundary without allocation', (t) => {
   const { owner, request } = setup(t, true)
+
   for (const file of [
     'packages/factory/src/data-transact.ts',
     'apps/asyra-design/server/__tests__/local-tool-scheduler.test.ts',
@@ -1436,6 +1561,7 @@ test('App work rejects files outside its admitted runtime boundary without alloc
     'apps/asyra-design/package.json'
   ]) {
     const invalid = structuredClone(request)
+
     invalid.works[0].allowedFiles = [file]
     assert.throws(
       () => owner.decide(invalid, 'local-developer'),
@@ -1452,12 +1578,14 @@ test('App UI runtime work admits TSX while an unknown scope version grants no au
     'apps/asyra-design/src/contents/GroupDisclosure.tsx'
   )
   const saved = owner.decide(request, 'local-developer')
+
   assert.equal(saved.revision, 1)
   assert.deepEqual(
     createTargetOwner(options).get(saved.id),
     owner.get(saved.id)
   )
   const contracts = options.getContracts()
+
   options.getContracts = () =>
     contracts.map((contract) => ({
       ...contract,

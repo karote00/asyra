@@ -65,24 +65,30 @@ function parseArguments(argv) {
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index]
+
     if (argument === '--help' || argument === '-h') {
       return { help: true }
     }
+
     if (argument === '--package-manager') {
       packageManager = args[index + 1]
       index += 1
       continue
     }
+
     if (argument?.startsWith('--package-manager=')) {
       packageManager = argument.slice('--package-manager='.length)
       continue
     }
+
     if (argument?.startsWith('-')) {
       return { error: `Unknown option: ${argument}` }
     }
+
     if (targetName !== undefined) {
       return { error: 'Expected exactly one project directory name.' }
     }
+
     targetName = argument
   }
 
@@ -105,6 +111,7 @@ function isSafeTargetName(value) {
 
 async function promptForTargetName() {
   const prompt = createInterface({ input, output })
+
   try {
     return await prompt.question('Project name: ')
   } finally {
@@ -116,6 +123,7 @@ function assertPackageManager(packageManager) {
   if (supportedPackageManagers.includes(packageManager)) {
     return
   }
+
   throw new Error(
     `Unsupported package manager "${packageManager}". Choose yarn or npm.`
   )
@@ -124,6 +132,7 @@ function assertPackageManager(packageManager) {
 function writePackageManagerFiles(targetDir, packageManager) {
   const manifestPath = path.join(targetDir, 'package.json')
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+
   manifest.scripts = {
     ...manifest.scripts,
     'react:build': reactBuildScriptByPackageManager[packageManager]
@@ -133,6 +142,7 @@ function writePackageManagerFiles(targetDir, packageManager) {
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
 
   const readmePath = path.join(targetDir, 'README.md')
+
   if (fs.existsSync(readmePath)) {
     const commands = readmeCommandsByPackageManager[packageManager].join('\n')
     const readme = fs
@@ -141,14 +151,17 @@ function writePackageManagerFiles(targetDir, packageManager) {
         /```bash\n(?:yarn|npm)[\s\S]*?(?:yarn|npm run) start\n```/u,
         `\`\`\`bash\n${commands}\n\`\`\``
       )
+
     fs.writeFileSync(readmePath, readme)
   }
 
   const packableGitignorePath = path.join(targetDir, 'gitignore')
   const gitignorePath = path.join(targetDir, '.gitignore')
+
   if (!fs.existsSync(gitignorePath) && fs.existsSync(packableGitignorePath)) {
     fs.copyFileSync(packableGitignorePath, gitignorePath)
   }
+
   if (fs.existsSync(packableGitignorePath)) {
     fs.rmSync(packableGitignorePath)
   }
@@ -192,6 +205,7 @@ function installDependencies(targetDir, packageManager) {
   if (result.error) {
     throw new Error(result.error.message)
   }
+
   if (result.status !== 0) {
     throw new Error(`${installCommandByPackageManager[packageManager]} failed`)
   }
@@ -199,10 +213,13 @@ function installDependencies(targetDir, packageManager) {
 
 async function main() {
   const parsed = parseArguments(process.argv)
+
   if (parsed.help) {
     console.log(usage)
+
     return
   }
+
   if (parsed.error) {
     console.error(`Error: ${parsed.error}`)
     console.error(usage)
@@ -210,6 +227,7 @@ async function main() {
   }
 
   let { packageManager = 'yarn', targetName } = parsed
+
   if (!targetName) {
     targetName = await promptForTargetName()
   }
@@ -234,20 +252,24 @@ async function main() {
     console.error(`Error: template directory not found: ${templateDir}`)
     process.exit(1)
   }
+
   console.log(`Creating Asyra Starter App in ${targetName}`)
   let ownsTarget = false
+
   try {
     fs.mkdirSync(targetDir, { mode: 0o755 })
     ownsTarget = true
     if (process.env.STARTER_APP_TEST_FAIL_AFTER_RESERVE === '1') {
       throw new Error('test copy failure after target reservation')
     }
+
     copyTemplateContents(templateDir, targetDir)
     writePackageManagerFiles(targetDir, packageManager)
   } catch (error) {
     if (ownsTarget) {
       fs.rmSync(targetDir, { recursive: true, force: true })
     }
+
     if (
       error &&
       typeof error === 'object' &&
@@ -257,6 +279,7 @@ async function main() {
       console.error(`Error: directory "${targetName}" already exists.`)
       process.exit(1)
     }
+
     console.error(`Error: failed to create project files: ${error.message}`)
     process.exit(1)
   }

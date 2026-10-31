@@ -6,5 +6,6 @@ export function requiredSpecValue<T>(
   if (value === undefined || value === null) {
     throw new Error(`Missing asset specification: ${field}`)
   }
+
   return value
 }

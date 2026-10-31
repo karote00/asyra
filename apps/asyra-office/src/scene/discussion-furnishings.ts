@@ -27,6 +27,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
   const start = p.creamY + 0.09,
     length = rear - start,
     height = p.rearTop - floor - 0.025
+
   // Original wood boards cover the left interior wall; the clock wall stays cream.
   for (let i = 0; i < 10; i++) {
     block(
@@ -38,6 +39,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
       0.001
     )
   }
+
   addPrint(
     c,
     'discussion-print',
@@ -73,6 +75,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
   const consoleX = -0.69,
     consoleWidth = 1.08,
     noteWidth = 0.38
+
   addPrint(
     c,
     'discussion-note',
@@ -91,6 +94,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
     ]
   }
   const top = tableTop + 0.23
+
   block(
     'discussion-console',
     [consoleWidth, 0.29, 0.035],
@@ -115,6 +119,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
       )
     }
   }
+
   plant('discussion-console-plant', [-1.02, rear - 0.16, top + 0.0175], 0.95, {
     color: 0x956e47,
     form: 'lanceolate'
@@ -135,6 +140,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
     OFFICE_SEATING.find((i) => i.id === 'meeting-table'),
     'meeting table'
   )
+
   add('discussion-americano', 'americano-glass', americanoGlass(), [
     table.position[0] + 0.02,
     table.position[1] - 0.06,

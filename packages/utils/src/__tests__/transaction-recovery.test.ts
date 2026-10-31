@@ -19,6 +19,7 @@ describe('canonical mutation recovery evidence', () => {
 
   it('retains a non-Error thrown cause without fabricating a different failure', () => {
     const error = new MutationRecoveryError('lost membership', [undefined])
+
     expect(error.cause).toBe('lost membership')
     expect(error.recoveryFailures).toEqual([undefined])
   })

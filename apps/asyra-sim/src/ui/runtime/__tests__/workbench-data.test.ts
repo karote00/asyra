@@ -26,23 +26,31 @@ it('consumes registered values without recapturing workcells or runs on unrelate
   const source = new ViewSource(initial)
   const first = {
     views: { ...source, selectCandidate: vi.fn() },
+
     getCandidates: () => initial.candidates,
+
     getLoadIssues: () => [],
+
     getHistoryDepth: () => 1,
+
     getRuns: vi.fn(() => []),
     getWorkcell: vi.fn(() => structuredClone(workcell))
   }
   let snapshot: ReturnType<typeof useWorkbenchData> | undefined
+
   function View({ runtime }: { runtime: SimRuntime | null }) {
     snapshot = useWorkbenchData(runtime, 'a')
+
     return null
   }
+
   const render = (runtime: unknown) =>
     act(() =>
       root.render(
         createElement(View, { runtime: runtime as SimRuntime | null })
       )
     )
+
   try {
     await render(first)
     expect(snapshot?.workcell).toBe(workcell)
@@ -56,6 +64,7 @@ it('consumes registered values without recapturing workcells or runs on unrelate
       workcell: null,
       modelError: 'Invalid candidate'
     }
+
     await act(() => source.publish(empty))
     expect(snapshot?.modelError).toBe('Invalid candidate')
     await render(null)

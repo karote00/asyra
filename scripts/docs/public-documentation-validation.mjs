@@ -56,8 +56,10 @@ const REMOVED_EXAMPLE_PATTERNS = Object.freeze([
 
 const markdownFilesBelow = (directory) => {
   const files = []
+
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const entryPath = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       if (!['generated', 'schema'].includes(entry.name)) {
         files.push(...markdownFilesBelow(entryPath))
@@ -66,6 +68,7 @@ const markdownFilesBelow = (directory) => {
       files.push(path.resolve(entryPath))
     }
   }
+
   return files.sort()
 }
 
@@ -87,16 +90,20 @@ const markdownHeadingSlugs = (source) =>
 
 export const validateMarkdownLinks = ({ filePath, repositoryRoot, source }) => {
   let localLinkCount = 0
+
   for (const match of source.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
     const destination = match[1].trim()
+
     if (/^(?:https?:|mailto:)/i.test(destination)) {
       continue
     }
+
     const [relativeTarget, fragment] = destination.split('#', 2)
     const targetPath = relativeTarget
       ? path.resolve(path.dirname(filePath), decodeURIComponent(relativeTarget))
       : filePath
     const relativeFromRoot = path.relative(repositoryRoot, targetPath)
+
     if (
       relativeFromRoot === '..' ||
       relativeFromRoot.startsWith(`..${path.sep}`)
@@ -105,21 +112,26 @@ export const validateMarkdownLinks = ({ filePath, repositoryRoot, source }) => {
         `${path.relative(repositoryRoot, filePath)} link escapes the repository: ${destination}`
       )
     }
+
     if (!fs.existsSync(targetPath)) {
       throw new Error(
         `${path.relative(repositoryRoot, filePath)} has a broken local link: ${destination}`
       )
     }
+
     if (fragment && targetPath.endsWith('.md')) {
       const targetSource = fs.readFileSync(targetPath, 'utf8')
+
       if (!markdownHeadingSlugs(targetSource).has(fragment.toLowerCase())) {
         throw new Error(
           `${path.relative(repositoryRoot, filePath)} has a broken heading link: ${destination}`
         )
       }
     }
+
     localLinkCount += 1
   }
+
   return localLinkCount
 }
 
@@ -131,11 +143,13 @@ export const validateStarterEntry = ({ source }) => {
       'Public overview must provide the published Starter command'
     )
   }
+
   if (!source.includes('Node.js 24') || !source.includes('npm or Yarn')) {
     throw new Error(
       'Public overview must state the Starter runtime and package managers'
     )
   }
+
   if (
     /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app|pnpm\s+(?:create|dlx)\s+create-asyra-app)\b/iu.test(
       source.replaceAll(
@@ -155,19 +169,24 @@ export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
       packageRecord
     ])
   )
+
   for (const match of source.matchAll(
     /@asyra\/(?:[a-z0-9-]+|\*)(?:\/[a-z0-9._/-]+)?/gi
   )) {
     const mention = match[0]
+
     if (mention === '@asyra/*') {
       continue
     }
+
     const [, packageDirectory, ...subpathParts] = mention.split('/')
     const packageName = `@asyra/${packageDirectory}`
     const packageRecord = packagesByName.get(packageName)
+
     if (!packageRecord) {
       throw new Error(`${pageId} names an unsupported package: ${mention}`)
     }
+
     if (
       subpathParts.some((segment) =>
         ['dist', 'internal', 'src'].includes(segment)
@@ -175,8 +194,10 @@ export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
     ) {
       throw new Error(`${pageId} names a private package path: ${mention}`)
     }
+
     const entryPath =
       subpathParts.length === 0 ? '.' : `./${subpathParts.join('/')}`
+
     if (!packageRecord.publicEntries.includes(entryPath)) {
       throw new Error(
         `${pageId} names an unsupported public subpath: ${mention}`
@@ -187,11 +208,14 @@ export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
 
 const sectionSource = (source, heading) => {
   const start = source.indexOf(`${heading}\n`)
+
   if (start === -1) {
     return ''
   }
+
   const contentStart = start + heading.length + 1
   const nextHeading = source.indexOf('\n## ', contentStart)
+
   return source.slice(
     contentStart,
     nextHeading === -1 ? source.length : nextHeading
@@ -200,22 +224,28 @@ const sectionSource = (source, heading) => {
 
 const apiReferences = (source) => {
   const references = []
+
   for (const match of source.matchAll(/`([^`\n]+)`/g)) {
     const raw = match[1].trim()
+
     if (raw.startsWith('@asyra/') || raw.includes('/')) {
       continue
     }
+
     const callable = raw.match(
       /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\([^)]*\)$/
     )
     const generic = raw.match(/^([A-Za-z_$][\w$]*)<.+>$/)
     const plain = raw.match(/^[A-Za-z_$][\w$]*$/)
     const identifier = callable?.[1] ?? generic?.[1] ?? plain?.[0]
+
     if (!identifier) {
       continue
     }
+
     references.push(identifier.split('.').at(-1))
   }
+
   return [...new Set(references)]
 }
 
@@ -223,9 +253,11 @@ const apiHeadingForPage = (pageId) => {
   if (pageId.startsWith('build/') || pageId.startsWith('updates/')) {
     return '## Public APIs'
   }
+
   if (pageId.startsWith('reference/packages/')) {
     return '## Public entrypoints and prerequisites'
   }
+
   return null
 }
 
@@ -233,17 +265,21 @@ const requiredHeadingsForPage = (pageId) => {
   if (pageId.startsWith('build/')) {
     return BUILD_HEADINGS
   }
+
   if (pageId.startsWith('reference/packages/')) {
     return PACKAGE_GUIDE_HEADINGS
   }
+
   return []
 }
 
 const validateApiReferences = ({ apiIndex, page, repositoryRoot, source }) => {
   const heading = apiHeadingForPage(page.id)
+
   if (!heading) {
     return 0
   }
+
   const references = apiReferences(sectionSource(source, heading))
   const packagesByName = new Map(
     apiIndex.packages.map((packageRecord) => [
@@ -274,45 +310,59 @@ const validateApiReferences = ({ apiIndex, page, repositoryRoot, source }) => {
       !publicTerms.has(reference) &&
       !new RegExp(`\\b${reference}\\b`).test(mappedSource)
   )
+
   if (unresolved.length > 0) {
     throw new Error(
       `${page.id} names unresolved public APIs: ${unresolved.join(', ')}`
     )
   }
+
   return references.length
 }
 
 export const validatePageStructure = ({ page, source }) => {
   const headings = [...source.matchAll(/^(#{1,6})\s+(.+)$/gm)]
+
   if (headings.length < 2) {
     throw new Error(`${page.id} requires a title and section headings`)
   }
+
   const title = headings[0][2].replaceAll('`', '')
+
   if (headings[0][1] !== '#' || title !== page.title) {
     throw new Error(`${page.id} title must match the content manifest`)
   }
+
   let previousDepth = 1
+
   for (const heading of headings.slice(1)) {
     const depth = heading[1].length
+
     if (depth > previousDepth + 1) {
       throw new Error(`${page.id} skips a Markdown heading level`)
     }
+
     previousDepth = depth
   }
+
   if (!source.includes('## Canonical sources')) {
     throw new Error(`${page.id} requires a Canonical sources section`)
   }
+
   const requiredHeadings = requiredHeadingsForPage(page.id)
+
   for (const heading of requiredHeadings) {
     if (!source.includes(heading)) {
       throw new Error(`${page.id} is missing ${heading}`)
     }
   }
+
   const wordCount = source
     .replace(/```[\s\S]*?```/g, ' ')
     .split(/\s+/)
     .filter(Boolean).length
   const minimumWords = page.id.startsWith('updates/releases/') ? 40 : 250
+
   if (wordCount < minimumWords) {
     throw new Error(`${page.id} is too short for its public contract`)
   }
@@ -322,12 +372,15 @@ const validateConceptPage = ({ page, source }) => {
   if (page.section !== 'Concepts') {
     return false
   }
+
   if (source.includes('## Implementation')) {
     throw new Error(`${page.id} mixes implementation into a Concepts page`)
   }
+
   if (/```(?:ts|tsx)\n/.test(source)) {
     throw new Error(`${page.id} mixes TypeScript code into a Concepts page`)
   }
+
   return true
 }
 
@@ -335,6 +388,7 @@ const validateImplementationGuide = ({ page, source }) => {
   if (!IMPLEMENTATION_GUIDE_IDS.includes(page.id)) {
     return false
   }
+
   for (const heading of [
     '## Where this runs',
     '## Implementation',
@@ -345,14 +399,17 @@ const validateImplementationGuide = ({ page, source }) => {
       throw new Error(`${page.id} is missing ${heading}`)
     }
   }
+
   if (!/```(?:ts|tsx)\n[\s\S]+?```/.test(source)) {
     throw new Error(`${page.id} requires copyable TypeScript code`)
   }
+
   return true
 }
 
 const validateTypeScriptSnippets = ({ page, source }) => {
   let count = 0
+
   for (const match of source.matchAll(/```(ts|tsx)\n([\s\S]*?)```/g)) {
     count += 1
     const diagnostics = ts
@@ -368,14 +425,17 @@ const validateTypeScriptSnippets = ({ page, source }) => {
       .diagnostics?.filter(
         ({ category }) => category === ts.DiagnosticCategory.Error
       )
+
     if (diagnostics?.length) {
       const message = ts.flattenDiagnosticMessageText(
         diagnostics[0].messageText,
         ' '
       )
+
       throw new Error(`${page.id} has invalid TypeScript code: ${message}`)
     }
   }
+
   return count
 }
 
@@ -393,6 +453,7 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
   const missingMarkdown = [...expectedMarkdown].filter(
     (filePath) => !actualMarkdown.includes(filePath)
   )
+
   if (unownedMarkdown.length > 0 || missingMarkdown.length > 0) {
     throw new Error(
       `Public Markdown ownership mismatch: missing=[${missingMarkdown
@@ -408,12 +469,15 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
   let conceptPageCount = 0
   let implementationGuideCount = 0
   let typescriptSnippetCount = 0
+
   for (const page of content.pages) {
     const filePath = path.join(root, 'docs/public', page.path)
     const source = fs.readFileSync(filePath, 'utf8')
+
     if (page.id === 'overview') {
       validateStarterEntry({ source })
     }
+
     if (page.id === 'reference/support-release') {
       validateCommunityPolicy({
         discussionsEnabled: false,
@@ -421,21 +485,26 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
         sourcePath: `docs/public/${page.path}`
       })
     }
+
     const removedPattern = REMOVED_EXAMPLE_PATTERNS.find((pattern) =>
       pattern.test(source)
     )
+
     if (removedPattern) {
       throw new Error(
         `${page.id} still exposes the removed executable-example surface`
       )
     }
+
     validatePageStructure({ page, source })
     if (validateConceptPage({ page, source })) {
       conceptPageCount += 1
     }
+
     if (validateImplementationGuide({ page, source })) {
       implementationGuideCount += 1
     }
+
     typescriptSnippetCount += validateTypeScriptSnippets({ page, source })
     validatePublicImportMentions({
       apiIndex: bundle.apiIndex,
@@ -459,6 +528,7 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
     path.join(root, 'docs/public/learn/runtime-boundaries-roadmap.md'),
     'utf8'
   )
+
   for (const heading of [
     '## What is future',
     '## What you can build now',
@@ -493,11 +563,13 @@ if (isDirectInvocation) {
       'Usage: node scripts/docs/public-documentation-validation.mjs'
     )
   }
+
   const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '../..'
   )
   const summary = await validatePublicDocumentation({ repositoryRoot })
+
   process.stdout.write(
     `Public documentation valid: ${summary.pageCount} pages, ${summary.packageGuideCount} package guides, ${summary.localLinkCount} local links, ${summary.apiReferenceCount} API references\n`
   )

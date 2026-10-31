@@ -49,6 +49,7 @@ export function ExperimentPreflight() {
       }}
     />
   )
+
   if (
     preflight &&
     !running &&
@@ -66,6 +67,7 @@ export function ExperimentPreflight() {
       </details>
     )
   }
+
   return content
 }
 
@@ -85,9 +87,11 @@ export function ExperimentError() {
             className="block mt-2"
             onClick={(event) => {
               const panel = event.currentTarget.closest('.experiment-panel')
+
               if (!panel) {
                 return
               }
+
               reviewExperimentInput(panel, error.toLowerCase())
             }}
           >

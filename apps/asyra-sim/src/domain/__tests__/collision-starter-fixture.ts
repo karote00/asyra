@@ -15,19 +15,25 @@ export async function collisionStarterSnapshot() {
   const preset = createSyntheticExperimentPresets(example).find(
     (item) => item.name === 'Tool and table collision'
   )
+
   if (!preset) {
     throw new Error('Missing collision starter experiment')
   }
+
   const sources = new Map<string, VisualAsset>()
+
   for (const part of createMechanicalVisuals()) {
     const asset = await decodeRestrictedGlb(part.bytes)
+
     sources.set(asset.source.sha256, asset)
     const body = example.workcell.bodies.find(
       (item) => item.id === `example:${part.body}`
     )
+
     if (!body) {
       throw new Error('Missing original sample body')
     }
+
     body.visuals = [
       {
         version: 1,
@@ -39,7 +45,9 @@ export async function collisionStarterSnapshot() {
     ]
     body.colliders = []
   }
+
   const draft = preset.draft
+
   return createExperimentSnapshot({
     snapshotId: 'collision-starter',
     candidateId: 'candidate',

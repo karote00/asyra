@@ -25,11 +25,14 @@ try {
       'Usage: agent-evals list | prepare <case> <run> <actor> <agent|replay> | admit <run> | regression <run> | evaluate <run> | review <run> <review.json> | report <run> | summary <run>... | experiment <id> <definition.json> | trial <experiment> <baseline|candidate> <case> <run> <actor> | compare <experiment>'
     )
   }
+
   let result
+
   if (command === 'list') {
     result = cases.map(({ id, title }) => ({ id, title }))
   } else if (command === 'prepare') {
     const prepared = runner.prepare(...args)
+
     result = {
       run: prepared.run,
       workspace: prepared.workspace,
@@ -44,6 +47,7 @@ try {
   } else {
     result = runner[command](...args)
   }
+
   console.log(JSON.stringify(result, null, 2))
   if (
     result.outcome === 'regressed' ||

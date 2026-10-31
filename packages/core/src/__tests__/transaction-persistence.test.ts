@@ -106,6 +106,7 @@ describe('Core transaction and serialization boundary', () => {
     const save = vi.fn<IPersistenceProvider['save']>(async () => undefined)
     const statuses: TransactionStatusPayload[] = []
     const structuredCloneSpy = vi.spyOn(globalThis, 'structuredClone')
+
     core.setPersistence(provider(save))
     const dispose = factory.subscribeToTransactionStatus((status) => {
       statuses.push(status)
@@ -166,6 +167,7 @@ describe('Core transaction and serialization boundary', () => {
       props: {}
     }
     const load = vi.fn(async () => documentData)
+
     core.setLoadSource({ name: 'socket-bootstrap', load })
     core.setRenderer({
       init: vi.fn(async () => ({ canvas: null, instance: null })),
@@ -183,6 +185,7 @@ describe('Core transaction and serialization boundary', () => {
     const { core, provider, sceneTree } = createHarness()
     const runtimeChildren = ['child-before-save']
     const save = vi.fn<IPersistenceProvider['save']>(async () => undefined)
+
     sceneTree.save.mockImplementation(() => ({
       workspace: 'workspace',
       workspaceList: ['workspace'],
@@ -199,12 +202,15 @@ describe('Core transaction and serialization boundary', () => {
     }))
     core.registerSaveHook((data) => {
       const workspace = data.sceneTree.elements.workspace as GroupRawData
+
       workspace.children.push('child-added-by-hook')
+
       return data
     })
     core.setPersistence(provider(save))
 
     const serialized = await core.save()
+
     runtimeChildren.push('child-added-after-save')
 
     expect(

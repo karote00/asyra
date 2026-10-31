@@ -5,8 +5,10 @@ self.addEventListener(
   'message',
   async (event: MessageEvent<Uint8Array>) => {
     const start = performance.now()
+
     try {
       const asset = await decodeRestrictedGlb(event.data)
+
       self.postMessage({ asset, elapsedMs: performance.now() - start })
     } catch (error) {
       self.postMessage({

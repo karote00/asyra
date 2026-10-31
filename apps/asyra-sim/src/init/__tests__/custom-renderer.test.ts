@@ -7,6 +7,7 @@ import type { SpatialFrame } from '../../render-app/spatial-layer'
 
 it('uses normal Core startup, registered projection, demand frames, public picking and teardown', async () => {
   const canvas = document.createElement('canvas')
+
   canvas.getBoundingClientRect = () => ({
     left: 100,
     top: 50,
@@ -16,6 +17,7 @@ it('uses normal Core startup, registered projection, demand frames, public picki
     bottom: 290,
     x: 100,
     y: 50,
+
     toJSON: () => ({})
   })
   const driver: GraphicsDriver = {
@@ -34,16 +36,20 @@ it('uses normal Core startup, registered projection, demand frames, public picki
     () =>
       new ThreeEngine({
         createDriver: () => driver,
+
         requestFrame: (cb) => {
           callback = cb
+
           return 1
         },
+
         cancelFrame: () => {
           callback = undefined
         }
       })
   )
   const { layer, dispose } = installCustomRenderer(core, provider)
+
   expect(provider).not.toHaveBeenCalled()
   const frame: SpatialFrame = {
     camera: {
@@ -71,13 +77,16 @@ it('uses normal Core startup, registered projection, demand frames, public picki
       }
     ]
   }
+
   layer.submit(frame)
   const host = document.createElement('div')
+
   await core.start(host, { width: 640, height: 480, backgroundColor: 0x101b29 })
   expect(provider).toHaveBeenCalledOnce()
   expect(core.getCanvas()).toBe(canvas)
   expect(host.firstElementChild).toBe(canvas)
   const before = core.getUndoHistoryDepth()
+
   expect(core.getElementIdAtClientPos({ x: 320, y: 240 })).toBe('proof-body')
   expect(core.pickSpatialAtClientPoint({ x: 260, y: 170 })).toMatchObject({
     kind: 'spatial',

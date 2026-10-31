@@ -71,6 +71,7 @@ function ExperimentLayout() {
             className="contents"
             onBlur={(event) => {
               const target = event.target
+
               if (
                 (target instanceof HTMLInputElement ||
                   target instanceof HTMLTextAreaElement) &&
@@ -81,6 +82,7 @@ function ExperimentLayout() {
               ) {
                 return
               }
+
               queueMicrotask(() => {
                 if (view.getSnapshot().canonical && view.getSnapshot().dirty) {
                   void view.getSnapshot().save()

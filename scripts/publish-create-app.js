@@ -23,11 +23,13 @@ export function publishCreateApp({
   const manifest = JSON.parse(
     fs.readFileSync(path.join(paths.directory, 'package.json'), 'utf8')
   )
+
   assert.ok(
     manifest.name?.startsWith('create-') && !manifest.private && manifest.bin,
     'Expected a public create-app CLI manifest'
   )
   const recorded = guidance.deliveries?.[0]?.artifact
+
   assert.ok(
     recorded?.tarball && path.basename(recorded.tarball) === recorded.tarball,
     'Missing packed create-app artifact'
@@ -43,6 +45,7 @@ export function publishCreateApp({
     cwd: root
   }).trim()
   const current = registryCurrent(root, artifact, runCommand)
+
   admitGuidance({
     root,
     owner: `create-app/${product}`,
@@ -55,6 +58,7 @@ export function publishCreateApp({
   const resultFile = `${paths.evidence}.result.json`
   // Exact-version checks also cover retries after a dist-tag moves independently.
   let existing
+
   try {
     existing = JSON.parse(
       runCommand(
@@ -78,12 +82,14 @@ export function publishCreateApp({
       throw error
     }
   }
+
   if (existing) {
     assert.equal(
       existing,
       artifact.integrity,
       'Registry artifact differs from validated create-app tarball'
     )
+
     return recordGuidanceResult(
       resultFile,
       guidance,
@@ -92,7 +98,9 @@ export function publishCreateApp({
       { version: manifest.version }
     )
   }
+
   const tag = `${manifest.name}@${manifest.version}`
+
   assert.equal(
     runCommand('git', ['tag', '--list', tag], { cwd: root }).trim(),
     '',
@@ -118,6 +126,7 @@ export function publishCreateApp({
     })
     throw error
   }
+
   const result = recordGuidanceResult(
     resultFile,
     guidance,
@@ -125,7 +134,9 @@ export function publishCreateApp({
     'published',
     { version: manifest.version, integrity: artifact.integrity }
   )
+
   runCommand('git', ['tag', tag, sourceSha], { cwd: root })
+
   return result
 }
 
@@ -137,5 +148,6 @@ if (
     .slice(2)
     .find((arg) => arg.startsWith('--prod='))
     ?.slice(7)
+
   publishCreateApp({ root: path.resolve(import.meta.dirname, '..'), product })
 }

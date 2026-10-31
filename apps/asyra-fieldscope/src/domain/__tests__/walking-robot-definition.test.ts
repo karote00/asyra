@@ -20,6 +20,7 @@ type Mutable<T> = T extends readonly (infer Item)[]
   : T extends object
     ? { -readonly [Key in keyof T]: Mutable<T[Key]> }
     : T
+
 const clone = <T>(value: T): Mutable<T> => structuredClone(value) as Mutable<T>
 
 describe('walking robot definition admission', () => {
@@ -27,6 +28,7 @@ describe('walking robot definition admission', () => {
     const raw = clone(
       createSyntheticWalkingRobotDefinition({ definitionId: 'active-body' })
     )
+
     raw.base.chassis.size[0] = 0.8
     raw.base.chassis.size[1] = 5
     expect(readActiveWalkingRobotDefinition(raw).base.chassis.size[1]).toBe(5)
@@ -47,6 +49,7 @@ describe('walking robot definition admission', () => {
       definitionId: 'invalid-source-profile',
       sourceProfile: 'solid-articulation/2'
     })
+
     expect(() =>
       readWalkingRobotDefinition({
         ...definition,
@@ -63,6 +66,7 @@ describe('walking robot definition admission', () => {
       definitionId: baseline.definitionId,
       sourceProfile: 'solid-articulation/2'
     })
+
     expect(candidate.sourceModel.kind).toBe('solid-articulation/2')
     expect(candidate.format).toBe(baseline.format)
     expect(
@@ -74,6 +78,7 @@ describe('walking robot definition admission', () => {
       expect(leg.lower).toEqual(baseline.legs[index].lower)
       expect(leg.jointRanges).toEqual(baseline.legs[index].jointRanges)
     }
+
     expect(readWalkingRobotDefinition(JSON.parse(bytes))).toEqual(baseline)
     expect(JSON.stringify(baseline)).toBe(bytes)
     expect(baseline.sourceModel.kind).toBe('solid-articulation/1')
@@ -108,6 +113,7 @@ describe('walking robot definition admission', () => {
           ).low
       )
     )
+
     expect(alpha).toBeGreaterThan(0)
     expect(alpha).toBeLessThan(Math.PI / 6)
     raw.definitionId = 'tripod-authored-negative-knee'
@@ -119,7 +125,9 @@ describe('walking robot definition admission', () => {
     for (const leg of raw.legs) {
       leg.jointRanges.knee[0] = -alpha
     }
+
     const candidate = readWalkingRobotDefinition(raw)
+
     expect(classifyWalkingRobotDefinition(candidate)).toBe('walking-v2')
     expect(
       readWalkingRobotDefinition(JSON.parse(JSON.stringify(candidate)))
@@ -129,6 +137,7 @@ describe('walking robot definition admission', () => {
       expect(leg.jointRanges.knee).toEqual([-alpha, (2 * Math.PI) / 3])
       expect(Object.isFrozen(leg.jointRanges.knee)).toBe(true)
     }
+
     expect(candidate.presets).toEqual(baseline.presets)
     expect(JSON.stringify(baseline)).toBe(bytes)
     expect(baseline.legs.every((leg) => leg.jointRanges.knee[0] === 0)).toBe(
@@ -139,6 +148,7 @@ describe('walking robot definition admission', () => {
     const definition = createSyntheticWalkingRobotDefinition({
       definitionId: 'solid-source-version'
     })
+
     expect(definition.format).toBe('walking-robot-definition/2')
     expect(classifyWalkingRobotDefinition(definition)).toBe('walking-v2')
     expect(definition).toHaveProperty(
@@ -149,9 +159,11 @@ describe('walking robot definition admission', () => {
       string,
       unknown
     >
+
     legacy.format = 'walking-robot-definition/1'
     delete legacy.sourceModel
     const bytes = JSON.stringify(legacy)
+
     expect(classifyWalkingRobotDefinition(legacy)).toBe('walking-v1')
     expect(() => readWalkingRobotDefinition(legacy)).toThrow()
     expect(JSON.stringify(legacy)).toBe(bytes)
@@ -164,7 +176,9 @@ describe('walking robot definition admission', () => {
           definitionId: 'solid-source-profile'
         })
       )
+
     const definition = baseline()
+
     expect(definition.sourceModel).toMatchObject({
       kind: 'solid-articulation/1',
       pinRadiusRatio: 1 / 8,
@@ -185,20 +199,26 @@ describe('walking robot definition admission', () => {
       ['linkSetbackRatio', 2]
     ] as const) {
       const invalid = baseline()
+
       invalid.sourceModel[key] = value
       expect(() => readWalkingRobotDefinition(invalid)).toThrow()
     }
+
     const shortRails = baseline()
+
     shortRails.base.mast.size[1] = 0.7
     shortRails.base.mast.centre[1] = 0.62
     expect(() => readWalkingRobotDefinition(shortRails)).toThrow()
     const widerRails = baseline()
+
     widerRails.base.mast.size[2] = 1
     expect(() => readWalkingRobotDefinition(widerRails)).toThrow()
     const displacedRails = baseline()
+
     displacedRails.base.mast.centre[2] = 0.001
     expect(() => readWalkingRobotDefinition(displacedRails)).toThrow()
     const exhaustedCore = baseline()
+
     exhaustedCore.legs[0].coxa.length = 0.052
     expect(() => readWalkingRobotDefinition(exhaustedCore)).toThrow()
   })
@@ -207,6 +227,7 @@ describe('walking robot definition admission', () => {
     const definition = createSyntheticWalkingRobotDefinition({
       definitionId: 'adjustable-walking-candidate'
     })
+
     expect(definition.format).toBe(WALKING_ROBOT_FORMAT)
     expect(definition.topology).toBe(WALKING_ROBOT_TOPOLOGY)
     expect(classifyWalkingRobotDefinition(definition)).toBe('walking-v2')
@@ -238,6 +259,7 @@ describe('walking robot definition admission', () => {
         wristPitch: 0
       })
     }
+
     for (const [side, preset] of [
       ['left', definition.presets.leftWorking],
       ['right', definition.presets.rightWorking]
@@ -250,6 +272,7 @@ describe('walking robot definition admission', () => {
         )
       }
     }
+
     for (const preset of Object.values(definition.presets)) {
       for (const leg of preset.legs) {
         expect(leg).toMatchObject({ abduction: 0, hip: 0, knee: 0 })
@@ -261,10 +284,12 @@ describe('walking robot definition admission', () => {
     const raw = clone(
       createSyntheticWalkingRobotDefinition({ definitionId: 'measured-rig' })
     )
+
     raw.geometryEvidence = { kind: 'measured', id: 'geometry-survey-7' }
     raw.jointEvidence = { kind: 'measured', id: 'joint-test-4' }
     raw.massEvidence = { kind: 'measured', id: 'scale-session-2' }
     const admitted = readWalkingRobotDefinition(raw)
+
     raw.base.chassis.size[0] = 99
     raw.presets.stowed.arms[0].rootYaw = 99
     expect(admitted.geometryEvidence).toEqual({
@@ -282,40 +307,51 @@ describe('walking robot definition admission', () => {
   it('rejects malformed topology, geometry, masses, limits and presets', () => {
     const baseline = () =>
       clone(createSyntheticWalkingRobotDefinition({ definitionId: 'invalid' }))
+
     const invalid: unknown[] = []
     const badFormat = baseline()
+
     ;(badFormat as { format: string }).format = 'walking-robot-definition/9'
     invalid.push(badFormat)
     const extra = baseline() as typeof badFormat & { axes?: string[] }
+
     extra.axes = ['caller-owned']
     invalid.push(extra)
     const duplicateArm = baseline()
+
     duplicateArm.arms[1].side = duplicateArm.arms[0].side
     duplicateArm.arms[1].role = duplicateArm.arms[0].role
     invalid.push(duplicateArm)
     const missingLeg = baseline()
+
     missingLeg.legs.pop()
     invalid.push(missingLeg)
     const negativeMass = baseline()
+
     negativeMass.base.mast.massKg = -1
     invalid.push(negativeMass)
     const badCoM = baseline()
+
     badCoM.legs[0].foot.localCoM[2] = Number.NaN
     invalid.push(badCoM)
     const inverted = baseline()
+
     inverted.arms[0].jointRanges.elbowPitch = [1, -1]
     invalid.push(inverted)
     const badQuaternion = baseline()
+
     badQuaternion.arms[0].mount.rotation = [0, 0, 0, 0]
     invalid.push(badQuaternion)
     const missingJoint = baseline()
     const missingArm: { wristPitch?: number } =
       missingJoint.presets.stowed.arms[0]
+
     delete missingArm.wristPitch
     invalid.push(missingJoint)
     const extraPreset = baseline() as typeof badFormat & {
       presets: { stowed: { surprise?: number } }
     }
+
     extraPreset.presets.stowed.surprise = 1
     invalid.push(extraPreset)
     for (const candidate of invalid) {
@@ -326,6 +362,7 @@ describe('walking robot definition admission', () => {
   it('classifies legacy bytes without mutation or implicit conversion', () => {
     const legacy = clone(DEFAULT_ROBOT)
     const before = JSON.stringify(legacy)
+
     expect(classifyWalkingRobotDefinition(legacy)).toBe('legacy-unversioned')
     for (const malformed of [
       null,
@@ -354,6 +391,7 @@ describe('walking robot definition admission', () => {
         'unsupported-version'
       )
     }
+
     expect(
       classifyWalkingRobotDefinition({ format: 'walking-robot-definition/9' })
     ).toBe('unsupported-version')

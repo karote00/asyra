@@ -21,6 +21,7 @@ const body = (id: string, parentId: string | null): Body => ({
   visible: true,
   color: 0
 })
+
 const workcell: Workcell = {
   version: 1,
   robotRootId: 'base',
@@ -63,6 +64,7 @@ describe('M2 trajectory import preview', () => {
       workcell,
       mapping
     )
+
     expect(preview.diagnostics).toEqual([])
     expect(preview.columns).toEqual(['note', 'clock', 'axis a', 'linear'])
     expect(preview.value?.trajectory.keyframes).toEqual([
@@ -78,6 +80,7 @@ describe('M2 trajectory import preview', () => {
       workcell,
       mapping
     )
+
     expect(preview.value).toBeNull()
     expect(preview.diagnostics.map((item) => item.row)).toEqual([2, 3, 4])
     expect(preview.diagnostics.every((item) => item.severity === 'error')).toBe(
@@ -91,6 +94,7 @@ describe('M2 trajectory import preview', () => {
       'clock,axis a,linear\n1000,0,0\n500,1,1'
     ]) {
       const preview = previewTrajectoryCsv(csv, workcell, mapping)
+
       expect(preview.value).toBeNull()
       expect(preview.diagnostics).toContainEqual(
         expect.objectContaining({ row: 3, code: 'time-order' })
@@ -100,6 +104,7 @@ describe('M2 trajectory import preview', () => {
 
   it('rejects missing mappings, reused columns, and missing explicit units', () => {
     const csv = 'clock,axis a,linear\n0,0,0'
+
     for (const invalid of [
       { ...mapping, joints: { turn: mapping.joints.turn } },
       {
@@ -119,6 +124,7 @@ describe('M2 trajectory import preview', () => {
         workcell,
         invalid as TrajectoryCsvMapping
       )
+
       expect(preview.value).toBeNull()
       expect(preview.diagnostics[0]?.code).toBe('invalid-mapping')
     }
@@ -144,6 +150,7 @@ describe('M2 trajectory import preview', () => {
       workcell,
       mapping
     )
+
     expect(preview.diagnostics).toEqual([])
     expect(preview.value?.trajectory.keyframes).toHaveLength(1)
   })
@@ -154,6 +161,7 @@ describe('M2 trajectory import preview', () => {
       workcell,
       mapping
     )
+
     expect(preview.value).toBeNull()
     expect(preview.diagnostics[0]?.code).toBe('too-many-rows')
   })
@@ -164,6 +172,7 @@ describe('M2 trajectory import preview', () => {
       workcell,
       mapping
     )
+
     expect(preview.value).toBeNull()
     expect(preview.diagnostics[0]?.code).toBe('too-many-columns')
   })
@@ -183,6 +192,7 @@ describe('M2 trajectory import preview', () => {
       workcell,
       mapping
     )
+
     expect(preview.diagnostics).toEqual([])
     expect(preview.value?.trajectory.keyframes).toHaveLength(2000)
     expect(preview.columns).toHaveLength(256)
@@ -199,6 +209,7 @@ describe('M2 trajectory import preview', () => {
         keyframes: [{ time: 0, joints: { turn: 0, slide: 0 } }]
       }
     })
+
     expect(previewTrajectoryJson(valid, workcell).value).not.toBeNull()
     for (const invalid of [
       '{',
@@ -206,6 +217,7 @@ describe('M2 trajectory import preview', () => {
       valid.replace('"source":', '"unexpected":true,"source":')
     ]) {
       const preview = previewTrajectoryJson(invalid, workcell)
+
       expect(preview.value).toBeNull()
       expect(preview.diagnostics).toHaveLength(1)
     }
@@ -218,8 +230,10 @@ describe('M2 conversion review contract', () => {
     const angles = vi.spyOn(units, 'angleInRadians')
     const lengths = vi.spyOn(units, 'lengthInMeters')
     const csv = 'clock,axis a,linear\n0,0,0\n2500,450,1250'
+
     try {
       const preview = previewTrajectoryCsv(csv, workcell, mapping)
+
       expect(preview.value).not.toBeNull()
       expect(normalize).toHaveBeenCalledTimes(2)
       expect(angles).toHaveBeenCalledTimes(2)
@@ -280,6 +294,7 @@ describe('M2 conversion review contract', () => {
         }
       }
     )
+
     expect(json.value?.trajectory).toEqual(csv.value?.trajectory)
     expect(json.value?.sourceUnits).toEqual({
       time: 'ms',
@@ -300,6 +315,7 @@ describe('M2 conversion review contract', () => {
       'clock,axis a,linear\n' +
       Array.from({ length: 2000 }, (_, i) => `${i},0,0`).join('\n')
     const preview = previewTrajectoryCsv(csv, workcell, mapping)
+
     expect(preview.value?.trajectory.keyframes).toHaveLength(2000)
     expect(preview.conversions).toHaveLength(9)
     expect([
@@ -321,6 +337,7 @@ it('reuses the prepared source across mapping changes without altering its bytes
     }
   }
   const next = previewTrajectoryCsv(prepared, workcell, nextMapping)
+
   expect(next).toEqual(previewTrajectoryCsv(csv, workcell, nextMapping))
   expect(next.value?.trajectory).not.toEqual(first.value?.trajectory)
   expect(prepared).toEqual(before)

@@ -35,19 +35,23 @@ const atIdleBoundary = <T>(
 ): Promise<T> =>
   new Promise<T>((resolve, reject) => {
     let settled = false
+
     const cleanup = () => {
       unsubscribe()
       signal?.removeEventListener('abort', check)
     }
+
     const check = () => {
       if (settled) {
         return
       }
+
       try {
         signal?.throwIfAborted()
         if (!apis.isTransactionBoundaryIdle()) {
           return
         }
+
         settled = true
         cleanup()
         resolve(operation())
@@ -57,9 +61,11 @@ const atIdleBoundary = <T>(
         reject(error)
       }
     }
+
     const unsubscribe = apis.subscribeToTransactionStatus(() =>
       queueMicrotask(check)
     )
+
     signal?.addEventListener('abort', check, { once: true })
     check()
     // A caller inside a synchronous notification must wait until it unwinds.
@@ -73,6 +79,7 @@ export const createAiTransactionRunner = (
   options: CreateAiTransactionRunnerOptions = {}
 ): AiTransactionRunner => {
   const { history, apis = transactionApis } = options
+
   return Object.freeze({
     run: async <T>(
       _label: string,
@@ -85,6 +92,7 @@ export const createAiTransactionRunner = (
       let settlementUnknown = false
       let committed = false
       let cause: unknown
+
       const runMutation: AiMutationExecutor = (mutate, settled) =>
         atIdleBoundary(
           apis,
@@ -92,12 +100,14 @@ export const createAiTransactionRunner = (
             if (!accepting) {
               throw new Error('The AI mutation scope has closed.')
             }
+
             if (
               mutationDeadline !== undefined &&
               Date.now() >= mutationDeadline
             ) {
               throw new Error('The evaluation work deadline has expired.')
             }
+
             group ??= apis.startHistoryGroup()
             let memberSettlement: 'committed' | 'rolled-back' | 'unknown' =
               'unknown'
@@ -117,10 +127,13 @@ export const createAiTransactionRunner = (
                 memberSettlement = 'committed'
               }
             })
+
             try {
               const value = apis.updateHistoryGroup(group, mutate)
+
               memberSettlement = 'committed'
               settled?.(value)
+
               return value
             } catch (error) {
               if (memberSettlement === 'unknown') {
@@ -128,6 +141,7 @@ export const createAiTransactionRunner = (
                 settlementUnknown = true
                 accepting = false
               }
+
               throw new AiTransactionSettlementError(error, memberSettlement)
             } finally {
               stop()
@@ -135,8 +149,10 @@ export const createAiTransactionRunner = (
           },
           request?.signal
         )
+
       let value!: T
       let failed = false
+
       try {
         value = await measureBrowserDragAsyncPhase('ai-app:transaction', () =>
           measureBrowserDragAsyncPhase('ai-app:transaction-execute', () =>
@@ -152,17 +168,21 @@ export const createAiTransactionRunner = (
           settlementUnknown ||= error.status === 'unknown'
         }
       }
+
       accepting = false
       try {
         if (group) {
           const handle = group
+
           // Request cancellation stops future writes, not settlement of work
           // already committed. Wait for an unrelated active user transaction.
           await atIdleBoundary(apis, () => {
             const before = history?.getCurrentActionId() ?? null
             const status = apis.endHistoryGroup(handle)
+
             committed ||= status.memberCount > 0
             const after = history?.getCurrentActionId() ?? null
+
             if (committed && after !== null && after !== before) {
               history?.correlateCommittedAction(after)
             }
@@ -171,13 +191,17 @@ export const createAiTransactionRunner = (
       } catch (error) {
         throw new AiTransactionSettlementError(error, 'unknown')
       }
+
       if (settlementUnknown) {
         throw new AiTransactionSettlementError(cause, 'unknown')
       }
+
       if (failed) {
         const status = committed ? 'committed' : 'rolled-back'
+
         throw new AiTransactionSettlementError(cause, status)
       }
+
       return value
     }
   })

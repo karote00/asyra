@@ -15,6 +15,7 @@ const method: MethodDescriptor = {
   supportsMotion: true,
   maxPairs: 1000000
 }
+
 function setup(bodyCount: number, frameCount = 1, colliders = 1) {
   const workcell: Workcell = {
     version: 1,
@@ -68,14 +69,17 @@ function setup(bodyCount: number, frameCount = 1, colliders = 1) {
     rule: { version: 1, revision: 1, minimumClearance: 0.02 },
     budget: { maxIntervals: 2000, maxDurationMs: 15000 }
   }
+
   return { workcell, definition }
 }
+
 const inspect = (input: ReturnType<typeof setup>) =>
   preflightExperiment(input.workcell, input.definition, [method])
 
 describe('published local experiment resource profile', () => {
   it('counts only trajectory segments that overlap the requested analysis interval', () => {
     const input = setup(32, 1010)
+
     for (const [interval, segmentCount] of [
       [[100, 100], 1],
       [[100, 101], 1],
@@ -83,6 +87,7 @@ describe('published local experiment resource profile', () => {
     ] as const) {
       input.definition.interval = interval
       const report = inspect(input)
+
       expect(report.blockers).toEqual([])
       expect(report.estimate.segmentCount).toBe(segmentCount)
       expect(report.estimate.workUnits).toBe(496 * segmentCount)
@@ -90,6 +95,7 @@ describe('published local experiment resource profile', () => {
   })
   it('admits the one-million-node and 120-second boundaries but not larger budgets', () => {
     const input = setup(2)
+
     input.definition.budget = { maxIntervals: 1000000, maxDurationMs: 120000 }
     expect(inspect(input).blockers).toEqual([])
     for (const budget of [
@@ -107,6 +113,7 @@ describe('published local experiment resource profile', () => {
   it('does not allow a method descriptor to bypass the global pair limit', () => {
     const input = setup(32, 1, 8),
       report = inspect(input)
+
     expect(report.estimate.pairCount).toBe(31744)
     expect(report.blockers.map((issue) => issue.code)).toContain('pair-limit')
     expect(report.pairs).toEqual([])
@@ -114,10 +121,12 @@ describe('published local experiment resource profile', () => {
 
   it('admits more than 500000 pair/segment combinations with unchanged counting and acknowledgement', () => {
     const admitted = inspect(setup(32, 1009))
+
     expect(admitted.estimate.workUnits).toBe(499968)
     expect(admitted.blockers).toEqual([])
     const input = setup(32, 1010),
       report = inspect(input)
+
     expect(report.estimate.workUnits).toBe(500464)
     expect(report.blockers).toEqual([])
     expect(report.resourceWarnings.map((issue) => issue.code)).toContain(
@@ -151,9 +160,11 @@ describe('published local experiment resource profile', () => {
           warningWorkUnits
         })
       )
+
       expect(() => validateInstalledDescriptor(descriptor)).not.toThrow()
       expect(descriptor.warningWorkUnits).toBe(warningWorkUnits)
     }
+
     for (const warningWorkUnits of [
       0,
       -1,
@@ -179,6 +190,7 @@ describe('published local experiment resource profile', () => {
     expect(inspect(setup(6, 667)).resourceWarnings).toEqual([])
     const input = setup(6, 668),
       report = inspect(input)
+
     expect(report.estimate.workUnits).toBe(10005)
     expect(report.estimate.reliableTimeEstimate).toBe(false)
     expect(report.resourceWarnings.map((issue) => issue.code)).toContain(

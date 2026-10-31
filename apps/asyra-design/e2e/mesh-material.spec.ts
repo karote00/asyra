@@ -50,6 +50,7 @@ for (const renderer of ['default', 'software'] as const) {
     const page = browser
       ? await browser.newPage({ baseURL: testInfo.project.use.baseURL })
       : defaultPage
+
     try {
       if (renderer === 'software') {
         const driver = await page.evaluate(() => {
@@ -58,12 +59,17 @@ for (const renderer of ['default', 'software'] as const) {
           const name = debug
             ? gl?.getParameter(debug.UNMASKED_RENDERER_WEBGL)
             : ''
+
           gl?.getExtension('WEBGL_lose_context')?.loseContext()
+
           return name
         })
+
         expect(driver).toContain('SwiftShader')
       }
+
       const errors: string[] = []
+
       page.on('console', (message) => {
         if (message.type() === 'error') {
           errors.push(message.text())
@@ -81,6 +87,7 @@ for (const renderer of ['default', 'software'] as const) {
           height: 100,
           resolution: 1
         })
+
         try {
           const mesh = requireEngineObject(
             engine.execute({
@@ -110,6 +117,7 @@ for (const renderer of ['default', 'software'] as const) {
               }
             })
           )
+
           engine.execute({
             type: 'append-child',
             parent: initialized.root,
@@ -122,21 +130,27 @@ for (const renderer of ['default', 'software'] as const) {
             maxDimension: 256,
             nativeResolution: true
           })
+
           if (snapshot.type !== 'snapshot') {
             throw new Error('Missing material snapshot')
           }
+
           const bitmap = await createImageBitmap(
             await (await fetch(snapshot.dataUrl)).blob()
           )
           const canvas = document.createElement('canvas')
+
           canvas.width = bitmap.width
           canvas.height = bitmap.height
           const context = canvas.getContext('2d')
+
           if (!context) {
             throw new Error('Missing pixel observation context')
           }
+
           context.drawImage(bitmap, 0, 0)
           bitmap.close()
+
           return [
             [50, 25],
             [50, 75],
@@ -147,6 +161,7 @@ for (const renderer of ['default', 'software'] as const) {
           engine.destroy()
         }
       })
+
       await testInfo.attach('material-pixels', {
         body: JSON.stringify({ pixels, errors }),
         contentType: 'application/json'
@@ -154,6 +169,7 @@ for (const renderer of ['default', 'software'] as const) {
       expect(errors).toEqual([])
       for (let i = 0; i < pixels.length; i++) {
         const expected = i < 2 ? [191, 0, 64, 255] : [63, 0, 192, 255]
+
         pixels[i].forEach((channel, j) =>
           expect(Math.abs(channel - expected[j])).toBeLessThanOrEqual(2)
         )
@@ -179,6 +195,7 @@ for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
         height: 200,
         resolution: 1
       })
+
       try {
         const mesh = requireEngineObject(
           engine.execute({
@@ -208,6 +225,7 @@ for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
             }
           })
         )
+
         engine.execute({
           type: 'append-child',
           parent: initialized.root,
@@ -219,21 +237,27 @@ for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
           maxDimension: 256,
           nativeResolution: true
         })
+
         if (snapshot.type !== 'snapshot') {
           throw new Error('No snapshot')
         }
+
         const bitmap = await createImageBitmap(
           await (await fetch(snapshot.dataUrl)).blob()
         )
         const canvas = document.createElement('canvas')
+
         canvas.width = 200
         canvas.height = 200
         const ctx = canvas.getContext('2d')
+
         if (!ctx) {
           throw new Error('Missing pixel observation context')
         }
+
         ctx.drawImage(bitmap, 0, 0)
         bitmap.close()
+
         return [
           [150, 100],
           [100, 150],
@@ -244,6 +268,7 @@ for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
         engine.destroy()
       }
     }, mode)
+
     await testInfo.attach('pixels', {
       body: JSON.stringify(result),
       contentType: 'application/json'
@@ -255,9 +280,11 @@ for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
       radial: [0.505, 0.505, 0.495, 0.495]
     }
     const phases = expectedPhases[mode]
+
     phases.forEach((phase, i) => {
       const t = Math.max(0, Math.min(1, phase))
       const expected = [255 * (1 - t), 0, 255 * t, 255]
+
       result[i].forEach((channel, j) =>
         expect(Math.abs(channel - expected[j])).toBeLessThanOrEqual(2)
       )
@@ -287,16 +314,22 @@ test('batches mixed materials and retains the batch across camera changes', asyn
     let draws = 0,
       packs = 0
     let gpuProgram: ShaderProgramSource | undefined
+
     batch.execute = (instruction: BatchProbeInstruction) => {
       draws++
       const result = execute(instruction)
+
       gpuProgram = instruction.batcher.shader.gpuProgram
+
       return result
     }
+
     batch.addToBatch = (...args: unknown[]) => {
       packs++
+
       return add(...args)
     }
+
     try {
       const camera = requireEngineObject(
         engine.execute({
@@ -305,6 +338,7 @@ test('batches mixed materials and retains the batch across camera changes', asyn
           properties: { transformGroup: true }
         })
       )
+
       engine.execute({
         type: 'append-child',
         parent: initialized.root,
@@ -319,6 +353,7 @@ test('batches mixed materials and retains the batch across camera changes', asyn
               properties: { x: i * 2 }
             })
           )
+
           engine.execute({
             type: 'draw',
             object: stroke,
@@ -335,6 +370,7 @@ test('batches mixed materials and retains the batch across camera changes', asyn
           })
           continue
         }
+
         const mesh = requireEngineObject(
           engine.execute({
             type: 'create-object',
@@ -367,10 +403,13 @@ test('batches mixed materials and retains the batch across camera changes', asyn
             }
           })
         )
+
         engine.execute({ type: 'append-child', parent: camera, child: mesh })
       }
+
       engine.execute({ type: 'flush' })
       const initial = { draws, packs }
+
       draws = 0
       packs = 0
       for (let i = 0; i < 10; i++) {
@@ -381,15 +420,19 @@ test('batches mixed materials and retains the batch across camera changes', asyn
         })
         engine.execute({ type: 'flush' })
       }
+
       const cameraWork = { draws, packs }
       const gpu = (navigator as Navigator & { gpu?: ShaderProbeGpu }).gpu
       const adapter = await gpu?.requestAdapter()
       const shaderErrors: string[] = []
+
       if (adapter) {
         if (!gpuProgram) {
           throw new Error('Missing submitted GPU program')
         }
+
         const device = await adapter.requestDevice()
+
         try {
           for (const source of [
             gpuProgram.vertex.source,
@@ -397,6 +440,7 @@ test('batches mixed materials and retains the batch across camera changes', asyn
           ]) {
             const module = device.createShaderModule({ code: source })
             const info = await module.getCompilationInfo()
+
             shaderErrors.push(
               ...info.messages
                 .filter((m) => m.type === 'error')
@@ -407,11 +451,13 @@ test('batches mixed materials and retains the batch across camera changes', asyn
           device.destroy()
         }
       }
+
       return { initial, camera: cameraWork, webGPU: !!adapter, shaderErrors }
     } finally {
       engine.destroy()
     }
   })
+
   await testInfo.attach('batch-work', {
     body: JSON.stringify(work),
     contentType: 'application/json'
@@ -432,6 +478,7 @@ test('preserves hard stops, ordered alpha layers, and empty or degenerate materi
     const { PixiRenderEngine, requireEngineObject } =
       await import('../e2e/fixtures/__tests__/render-engine-access')
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ width: 200, height: 100, resolution: 1 })
     const materials = [
       {
@@ -471,6 +518,7 @@ test('preserves hard stops, ordered alpha layers, and empty or degenerate materi
       { fills: [] }
     ]
     const output = []
+
     try {
       for (const material of materials) {
         const mesh = requireEngineObject(
@@ -493,19 +541,24 @@ test('preserves hard stops, ordered alpha layers, and empty or degenerate materi
           maxDimension: 256,
           nativeResolution: true
         })
+
         if (snapshot.type !== 'snapshot') {
           throw new Error('No snapshot')
         }
+
         const bitmap = await createImageBitmap(
           await (await fetch(snapshot.dataUrl)).blob()
         )
         const canvas = document.createElement('canvas')
+
         canvas.width = 200
         canvas.height = 100
         const ctx = canvas.getContext('2d')
+
         if (!ctx) {
           throw new Error('Missing pixel observation context')
         }
+
         ctx.drawImage(bitmap, 0, 0)
         bitmap.close()
         output.push(
@@ -513,6 +566,7 @@ test('preserves hard stops, ordered alpha layers, and empty or degenerate materi
         )
         engine.execute({ type: 'destroy-object', object: mesh })
       }
+
       return output
     } finally {
       engine.destroy()
@@ -536,6 +590,7 @@ test('preserves hard stops, ordered alpha layers, and empty or degenerate materi
       [255, 255, 255, 255]
     ]
   ]
+
   result.forEach((pair, i) =>
     pair.forEach((pixel, j) =>
       pixel.forEach((channel, k) =>
@@ -563,10 +618,13 @@ test('rebuilds batch boundaries after explicit mesh batching changes', async ({
     const batch = runtime.renderer.renderPipes.batch
     const execute = batch.execute.bind(batch)
     let draws = 0
+
     batch.execute = (instruction: BatchProbeInstruction) => {
       draws++
+
       return execute(instruction)
     }
+
     try {
       const meshes = [0, 1, 2].map((index) => {
         const mesh = requireEngineObject(
@@ -585,14 +643,17 @@ test('rebuilds batch boundaries after explicit mesh batching changes', async ({
             }
           })
         )
+
         engine.execute({
           type: 'append-child',
           parent: ready.root,
           child: mesh
         })
+
         return mesh
       })
       const result = []
+
       for (const enabled of [true, false, true]) {
         engine.execute({
           type: 'update-object',
@@ -603,8 +664,10 @@ test('rebuilds batch boundaries after explicit mesh batching changes', async ({
         engine.execute({ type: 'flush' })
         result.push(draws)
       }
+
       // Invalid replacement leaves the last valid material/resource in place.
       let rejected = false
+
       try {
         engine.execute({
           type: 'update-object',
@@ -616,15 +679,19 @@ test('rebuilds batch boundaries after explicit mesh batching changes', async ({
       } catch {
         rejected = true
       }
+
       if (!rejected) {
         throw new Error('Invalid material accepted')
       }
+
       engine.execute({ type: 'flush' })
+
       return result
     } finally {
       engine.destroy()
     }
   })
+
   expect(counts).toEqual([1, 3, 1])
 })
 
@@ -650,21 +717,26 @@ test('preserves every material across texture overflow and ordinary-program tran
       object,
       { ordinary: Set<object>; material: Set<object> }
     >()
+
     batch.execute = (instruction: BatchProbeInstruction) => {
       const result = execute(instruction)
       const source = instruction.batcher.shader.gpuProgram.fragment.source
       const isMaterial = source.includes('fn materialColor(')
       let owned = programsUsed.get(instruction.batcher)
+
       if (!owned) {
         owned = { ordinary: new Set(), material: new Set() }
         programsUsed.set(instruction.batcher, owned)
       }
+
       owned[isMaterial ? 'material' : 'ordinary'].add(
         instruction.batcher.shader
       )
       programs.push(isMaterial)
+
       return result
     }
+
     const material = (i: number) => ({
       fills: [
         {
@@ -685,10 +757,12 @@ test('preserves every material across texture overflow and ordinary-program tran
         }
       ]
     })
+
     try {
       const root = requireEngineObject(
         engine.execute({ type: 'create-object', objectType: 'container' })
       )
+
       engine.execute({ type: 'append-child', parent: ready.root, child: root })
       const meshes = Array.from({ length: 25 }, (_, i) => {
         const mesh = requireEngineObject(
@@ -707,15 +781,21 @@ test('preserves every material across texture overflow and ordinary-program tran
             }
           })
         )
+
         engine.execute({ type: 'append-child', parent: root, child: mesh })
+
         return mesh
       })
+
       const flushPrograms = () => {
         programs = []
         engine.execute({ type: 'flush' })
+
         return [...programs]
       }
+
       const ordinary = flushPrograms()
+
       meshes.forEach((mesh, i) =>
         engine.execute({
           type: 'update-object',
@@ -730,24 +810,30 @@ test('preserves every material across texture overflow and ordinary-program tran
         nativeResolution: true,
         maxDimension: 128
       })
+
       if (snapshot.type !== 'snapshot') {
         throw new Error('Missing overflow snapshot')
       }
+
       const bitmap = await createImageBitmap(
         await (await fetch(snapshot.dataUrl)).blob()
       )
       const canvas = document.createElement('canvas')
+
       canvas.width = bitmap.width
       canvas.height = bitmap.height
       const context = canvas.getContext('2d')
+
       if (!context) {
         throw new Error('Missing pixel context')
       }
+
       context.drawImage(bitmap, 0, 0)
       bitmap.close()
       const pixels = meshes.map((_, i) => [
         ...context.getImageData(i * 4 + 2, 10, 1, 1).data
       ])
+
       meshes.forEach((mesh) =>
         engine.execute({
           type: 'update-object',
@@ -756,12 +842,14 @@ test('preserves every material across texture overflow and ordinary-program tran
         })
       )
       const restored = flushPrograms()
+
       engine.execute({
         type: 'update-object',
         object: meshes[0],
         properties: { material: material(24), tint: 0xffffff }
       })
       const mixed = flushPrograms()
+
       return {
         ordinary,
         overflow,
@@ -777,6 +865,7 @@ test('preserves every material across texture overflow and ordinary-program tran
       engine.destroy()
     }
   })
+
   expect(observed.ordinary).toEqual([false])
   expect(observed.restored).toEqual([false])
   expect(observed.mixed).toEqual([true])
@@ -792,6 +881,7 @@ test('preserves every material across texture overflow and ordinary-program tran
     expect(owned.ordinary).toBeLessThanOrEqual(1)
     expect(owned.material).toBeLessThanOrEqual(1)
   }
+
   observed.pixels.forEach((pixel, i) => {
     expect(Math.abs(pixel[0] - Math.round((i / 24) * 255))).toBeLessThanOrEqual(
       1

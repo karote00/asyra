@@ -15,9 +15,11 @@ it.each(
     const pair = snapshot.pairs.find(
       (pair) => pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === target
     )
+
     if (!pair) {
       throw new Error('Missing representative pair')
     }
+
     const context = new OriginalMeshQuery()
     const query = {
       workcell: snapshot.workcell,
@@ -37,6 +39,7 @@ it.each(
       () => undefined,
       context
     )
+
     expect(result.coverage).toBe('complete')
     expect(result.leaves.every((leaf) => leaf.state === 'clear')).toBe(true)
     expect(result.leaves[0].start).toBe(start)

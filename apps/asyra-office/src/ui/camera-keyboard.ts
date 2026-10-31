@@ -25,24 +25,29 @@ export function bindCameraKeyboard(
     rightVelocity = 0,
     forwardVelocity = 0,
     fast = false
+
   const isEditing = (element: EventTarget | null) =>
     element instanceof Element &&
     !!element.closest(
       'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="tab"]'
     )
+
   const stop = () => {
     if (frame !== undefined) {
       target.cancelAnimationFrame(frame)
     }
+
     frame = undefined
     held.clear()
     rightVelocity = forwardVelocity = 0
     fast = false
   }
+
   const tick = (now: number) => {
     frame = undefined
     const dt = Math.max(0, (now - previous) / 1000)
     const travelLimit = dt > 0 ? Math.min(1, 0.05 / dt) : 0
+
     previous = now
     // Aliases represent the same direction; opposite directions cancel.
     const right =
@@ -63,6 +68,7 @@ export function bindCameraKeyboard(
     const dz =
       desiredForward * dt +
       (forwardVelocity - desiredForward) * tau * (1 - decay)
+
     rightVelocity = desiredRight + (rightVelocity - desiredRight) * decay
     forwardVelocity =
       desiredForward + (forwardVelocity - desiredForward) * decay
@@ -70,25 +76,30 @@ export function bindCameraKeyboard(
     if (dx || dz) {
       move(dx * 12 * travelLimit, dz * 12 * travelLimit, false)
     }
+
     if (length || Math.hypot(rightVelocity, forwardVelocity) > 0.001) {
       frame = target.requestAnimationFrame(tick)
     } else {
       rightVelocity = forwardVelocity = 0
     }
   }
+
   const start = () => {
     if (frame !== undefined) {
       return
     }
+
     previous = target.performance.now()
     frame = target.requestAnimationFrame(tick)
   }
+
   const unregister = owner.registerInputKeyCombinations({
     [CAMERA_INPUT_EVENT]: [
       {
         type: InputType.KEYBOARD,
         keys: movementKeys,
         keyboardMode: 'held',
+
         callback: (raw) => {
           if (
             raw.keyboard?.phase === 'cancel' ||
@@ -101,14 +112,17 @@ export function bindCameraKeyboard(
             target.document.hidden
           ) {
             stop()
+
             return false
           }
+
           held.clear()
           for (const key of raw.keys) {
             if (movementKeys.includes(key)) {
               held.add(key)
             }
           }
+
           fast = raw.modifiers.shift
           if (held.size || rightVelocity || forwardVelocity) {
             start()
@@ -117,6 +131,7 @@ export function bindCameraKeyboard(
       }
     ]
   })
+
   return () => {
     unregister()
     stop()

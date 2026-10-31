@@ -32,6 +32,7 @@ function invalidReport(message: string): PreflightReport {
   const code = message.toLowerCase().includes('exclusion')
     ? 'invalid-exclusion'
     : 'invalid-definition'
+
   return {
     blockers: [issue(code, message)],
     assumptions: [],
@@ -76,6 +77,7 @@ function inspectExperiment(
     ) {
       throw new Error('Resolve authored experiment inputs before execution')
     }
+
     validateTrajectory(workcell, definition.trajectory)
     if (definition.interval[0] > definition.interval[1]) {
       throw new Error(
@@ -103,6 +105,7 @@ function inspectExperiment(
       )
     }
   }
+
   for (const id of primary) {
     if (influencing.has(id)) {
       blockers.push(
@@ -114,8 +117,10 @@ function inspectExperiment(
       )
     }
   }
+
   for (const id of selected) {
     const body = bodies.get(id)
+
     if (methods !== null && body && !hasResolvedParts(body)) {
       blockers.push(
         issue(
@@ -125,11 +130,14 @@ function inspectExperiment(
         )
       )
     }
+
     for (const collider of body?.colliders ?? []) {
       if (collider.geometry.kind !== 'mesh') {
         continue
       }
+
       const topology = inspectMeshTopology(collider.geometry)
+
       if (topology.issue) {
         blockers.push(
           issue(
@@ -140,6 +148,7 @@ function inspectExperiment(
         )
       }
     }
+
     if (body && body.colliders.length === 0) {
       blockers.push(
         issue(
@@ -156,6 +165,7 @@ function inspectExperiment(
       candidate.id === definition.method.id &&
       candidate.version === definition.method.version
   )
+
   if (!method && methods !== null) {
     blockers.push(
       issue(
@@ -177,7 +187,9 @@ function inspectExperiment(
         )
       )
     }
+
     const moving = definition.trajectory.keyframes.length > 1
+
     if (
       (moving && !method.supportsMotion) ||
       (!moving && !method.supportsStatic)
@@ -189,11 +201,13 @@ function inspectExperiment(
         )
       )
     }
+
     const unsupported = [...selected]
       .flatMap((id) => bodies.get(id)?.colliders ?? [])
       .filter(
         (collider) => !method.geometryKinds.includes(collider.geometry.kind)
       )
+
     if (unsupported.length) {
       blockers.push(
         issue(
@@ -205,6 +219,7 @@ function inspectExperiment(
   }
 
   const actuated = workcell.bodies.filter((body) => body.joint.kind !== 'fixed')
+
   if (
     !hasExactOwnKeys(
       definition.sourceUnits.joints,
@@ -220,6 +235,7 @@ function inspectExperiment(
   } else {
     for (const body of actuated) {
       const unit = definition.sourceUnits.joints[body.id] as TrajectoryJointUnit
+
       if (
         (body.joint.kind === 'revolute' && unit !== 'deg' && unit !== 'rad') ||
         (body.joint.kind === 'prismatic' && unit !== 'mm' && unit !== 'm')
@@ -239,23 +255,27 @@ function inspectExperiment(
     definition.interval,
     definition.trajectory
   )
+
   if (intervalError) {
     blockers.push(issue('interval-uncovered', intervalError))
   }
 
   const candidateBodyPairs = new Map<string, readonly [string, string]>()
   const primaryIds = [...primary]
+
   if (definition.scope.selfCollision) {
     for (let a = 0; a < primaryIds.length; a++) {
       for (let b = a + 1; b < primaryIds.length; b++) {
         const left = primaryIds[a],
           right = primaryIds[b]
+
         if (left && right) {
           candidateBodyPairs.set(pairKey(left, right), [left, right])
         }
       }
     }
   }
+
   if (definition.scope.externalCollision) {
     for (const left of primary) {
       for (const right of influencing) {
@@ -267,8 +287,10 @@ function inspectExperiment(
   }
 
   const exclusions = new Set<string>()
+
   for (const exclusion of definition.scope.excludedPairs) {
     const key = pairKey(exclusion.a, exclusion.b)
+
     if (
       !bodies.has(exclusion.a) ||
       !bodies.has(exclusion.b) ||
@@ -289,20 +311,25 @@ function inspectExperiment(
 
   const pairs: AnalysisPair[] = []
   let pairCount = 0
+
   for (const [key, [leftId, rightId]] of candidateBodyPairs) {
     if (exclusions.has(key)) {
       continue
     }
+
     const left = bodies.get(leftId),
       right = bodies.get(rightId)
+
     if (!left || !right) {
       continue
     }
+
     pairCount += left.colliders.length * right.colliders.length
     if (pairCount > EXPERIMENT_RESOURCE_PROFILE.maxPairs) {
       pairs.length = 0
       continue
     }
+
     for (const a of left.colliders) {
       for (const b of right.colliders) {
         pairs.push({
@@ -313,6 +340,7 @@ function inspectExperiment(
       }
     }
   }
+
   if (!pairCount) {
     blockers.push(
       issue(
@@ -321,6 +349,7 @@ function inspectExperiment(
       )
     )
   }
+
   if (pairCount > EXPERIMENT_RESOURCE_PROFILE.maxPairs) {
     blockers.push(
       issue(
@@ -329,6 +358,7 @@ function inspectExperiment(
       )
     )
   }
+
   if (method && pairCount > method.maxPairs) {
     blockers.push(
       issue(
@@ -350,6 +380,7 @@ function inspectExperiment(
   const staleAcknowledgements = [...acknowledged].filter(
     (id) => !visibleExcluded.includes(id)
   )
+
   if (staleAcknowledgements.length) {
     blockers.push(
       issue(
@@ -359,7 +390,9 @@ function inspectExperiment(
       )
     )
   }
+
   const unacknowledged = visibleExcluded.filter((id) => !acknowledged.has(id))
+
   if (unacknowledged.length) {
     assumptions.push(
       issue(
@@ -383,6 +416,7 @@ function inspectExperiment(
                 Math.min(end, frames[index + 1].time)
             ).length,
     workUnits = pairCount * segmentCount
+
   if (pairCount > EXPERIMENT_RESOURCE_PROFILE.warningPairs) {
     resourceWarnings.push(
       issue(
@@ -391,10 +425,12 @@ function inspectExperiment(
       )
     )
   }
+
   const warningWorkUnits = Math.min(
     method?.warningWorkUnits ?? EXPERIMENT_RESOURCE_PROFILE.warningWorkUnits,
     EXPERIMENT_RESOURCE_PROFILE.warningWorkUnits
   )
+
   if (workUnits > warningWorkUnits) {
     resourceWarnings.push(
       issue(

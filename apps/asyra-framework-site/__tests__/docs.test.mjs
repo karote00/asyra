@@ -5,6 +5,7 @@ import test from 'node:test'
 import { loadVerifiedPublicContent } from '../lib/content.mjs'
 
 const siteRoot = path.resolve(import.meta.dirname, '..')
+
 const readSiteFile = (file) => readFile(path.join(siteRoot, file), 'utf8')
 
 test('all accepted pages map to explicit static documentation route entries', async () => {
@@ -112,6 +113,7 @@ test('public TypeScript examples name complex types before using them', async ()
 
     for (const match of codeBlocks) {
       const code = match.groups?.code ?? ''
+
       assert.doesNotMatch(
         code,
         /new Map<[^\n]*Readonly<\{/,

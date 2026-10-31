@@ -15,6 +15,7 @@ describe('single-storey structural review', () => {
   it('defaults to regular furnishings without resurrecting rejected curved seating', () => {
     const scene = referenceSceneFixture()
     const ids = new Set(scene.assemblies.map((a) => a.id))
+
     expect(ids.has('office-slab')).toBe(true)
     expect(ids.has('desk')).toBe(true)
     for (const id of ['lounge-sofa', 'desk-chair', 'actor-mina']) {
@@ -23,9 +24,11 @@ describe('single-storey structural review', () => {
   })
   it('keeps the fitted overview orbit pivot on the shared office floor', () => {
     const target = OFFICE_FIT.camera.target
+
     expect(target[2]).toBeCloseTo(OFFICE_FLOORS.lounge, 8)
     const xs = OFFICE_FIT.foundation.outline.map((point) => point[0])
     const ys = OFFICE_FIT.foundation.outline.map((point) => point[1])
+
     expect(target[0]).toBeGreaterThan(Math.min(...xs))
     expect(target[0]).toBeLessThan(Math.max(...xs))
     expect(target[1]).toBeGreaterThan(Math.min(...ys))
@@ -34,6 +37,7 @@ describe('single-storey structural review', () => {
   it('renders structure without interior furniture, decoration or occupants', () => {
     const scene = createReferenceScene('structure')
     const ids = new Set(scene.assemblies.map((a) => a.id))
+
     for (const id of [
       'office-slab',
       'floor-0-0',
@@ -51,6 +55,7 @@ describe('single-storey structural review', () => {
     ]) {
       expect(ids.has(id), id).toBe(true)
     }
+
     for (const id of [
       'entrance-frame',
       'desk',
@@ -66,10 +71,12 @@ describe('single-storey structural review', () => {
     ]) {
       expect(ids.has(id), id).toBe(false)
     }
+
     expect(scene.labels.some((l) => l.artwork)).toBe(false)
     const entrance = scene.assemblies.filter((a) =>
       ['front-facade', 'entry-pier', 'entry-header'].includes(a.id)
     )
+
     expect(entrance).toHaveLength(3)
     // The approved complete assembly occupies the measured rough opening.
     expect(scene.assemblies.some((a) => a.asset === 'entry-door-set')).toBe(
@@ -86,8 +93,10 @@ describe('single-storey structural review', () => {
     const scene = createReferenceScene('structure')
     const elevations = new Map<string, [number, number]>()
     let offset = 0
+
     for (const assembly of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + assembly.parts.length)
+
       offset += assembly.parts.length
       if (
         assembly.asset !== 'floor-plank' &&
@@ -96,26 +105,34 @@ describe('single-storey structural review', () => {
       ) {
         continue
       }
+
       const z = parts.flatMap((p) =>
         p.mesh.positions.filter((_, i) => i % 3 === 2)
       )
+
       elevations.set(assembly.id, [Math.min(...z), Math.max(...z)])
     }
+
     const floor = elevations.get('floor-0-0'),
       foundation = elevations.get('office-slab')
+
     if (!floor || !foundation) {
       throw new Error('Missing structural support')
     }
+
     expect(floor[1]).toBeCloseTo(0.38, 6)
     expect(foundation[1]).toBeCloseTo(floor[0], 6)
     for (const assembly of scene.assemblies) {
       const z = elevations.get(assembly.id)
+
       if (!z) {
         continue
       }
+
       if (assembly.asset === 'floor-plank') {
         expect(z, assembly.id).toEqual(floor.map((n) => expect.closeTo(n, 6)))
       }
+
       if (assembly.asset === 'wall-segment' && !assembly.id.endsWith('-cap')) {
         expect(z[0], assembly.id).toBeCloseTo(floor[1], 6)
       }
@@ -125,25 +142,31 @@ describe('single-storey structural review', () => {
     const scene = createReferenceScene('structure')
     const topFaces: { id: string; vertices: number[][] }[] = []
     let offset = 0
+
     for (const assembly of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + assembly.parts.length)
+
       offset += assembly.parts.length
       if (assembly.id !== 'office-slab' && assembly.asset !== 'floor-plank') {
         continue
       }
+
       for (const part of parts) {
         const { positions, indices } = part.mesh
         const top = Math.max(...positions.filter((_, i) => i % 3 === 2))
+
         for (let i = 0; i < indices.length; i += 3) {
           const vertices = indices
             .slice(i, i + 3)
             .map((j) => positions.slice(j * 3, j * 3 + 3))
+
           if (vertices.every((p) => Math.abs(p[2] - top) < 1e-8)) {
             topFaces.push({ id: assembly.id, vertices })
           }
         }
       }
     }
+
     const slab = topFaces.filter((t) => t.id === 'office-slab')
     const vertices = slab.flatMap((t) => t.vertices)
     const minX = Math.min(...vertices.map((p) => p[0])),
@@ -159,6 +182,7 @@ describe('single-storey structural review', () => {
           2,
       0
     )
+
     expect(area).toBeCloseTo((maxX - minX) * (maxY - minY), 6)
     for (const x of [minX, maxX]) {
       for (const y of [minY, maxY]) {
@@ -168,18 +192,22 @@ describe('single-storey structural review', () => {
         ).toBe(true)
       }
     }
+
     const point = [maxX - 0.12, minY + 0.12]
+
     expect(
       topFaces
         .filter((t) => t.id !== 'office-slab')
         .some(({ vertices: v }) => {
           const sides = v.map((a, i) => {
             const b = v[(i + 1) % 3]
+
             return (
               (b[0] - a[0]) * (point[1] - a[1]) -
               (b[1] - a[1]) * (point[0] - a[0])
             )
           })
+
           return sides.every((n) => n >= -1e-8) || sides.every((n) => n <= 1e-8)
         }),
       'finished floor missing beneath occluded corner'
@@ -209,6 +237,7 @@ describe('source-visible room floor coverage', () => {
                 p.rearY - halfWall
               ]
             ]
+
       for (const axis of [0, 1]) {
         expect(
           ground[axis],
@@ -225,15 +254,19 @@ describe('source-visible room floor coverage', () => {
 
 it('keeps all four current room floor centres physically clear at both LoDs', () => {
   const scene = createReferenceScene('structure')
+
   const subtract = (a: readonly number[], b: readonly number[]) =>
     a.map((v, i) => v - b[i])
+
   const dot = (a: readonly number[], b: readonly number[]) =>
     a.reduce((sum, v, i) => sum + v * b[i], 0)
+
   const cross = (a: readonly number[], b: readonly number[]) => [
     a[1] * b[2] - a[2] * b[1],
     a[2] * b[0] - a[0] * b[2],
     a[0] * b[1] - a[1] * b[0]
   ]
+
   const p = OFFICE_FIT.parameters
   const west = (OFFICE_SHELL.westX + p.pantryX) / 2
   const east = (p.loungeX + OFFICE_SHELL.eastX) / 2
@@ -243,6 +276,7 @@ it('keeps all four current room floor centres physically clear at both LoDs', ()
     { id: 'discussion', x: west, y: (p.creamY + p.rearY) / 2 },
     { id: 'pantry', x: east, y: (p.loungeY + p.rearY) / 2 }
   ]
+
   for (const sample of centres) {
     const target = [sample.x, sample.y, OFFICE_FLOORS.work]
     // The owner moved shared partitions: old-camera visibility is no longer a
@@ -254,18 +288,23 @@ it('keeps all four current room floor centres physically clear at both LoDs', ()
     ]
     const direction = subtract(target, origin)
     let offset = 0
+
     for (const assembly of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + assembly.parts.length)
+
       offset += assembly.parts.length
       if (!['wall-segment', 'wall-header'].includes(assembly.asset)) {
         continue
       }
+
       for (const part of parts) {
         for (const detail of ['near', 'distant'] as const) {
           const mesh = detail === 'near' ? part.mesh : part.distant?.mesh
+
           if (!mesh) {
             throw new Error('Missing wall representation')
           }
+
           for (let i = 0; i < mesh.indices.length; i += 3) {
             const [a, b, c] = mesh.indices
               .slice(i, i + 3)
@@ -274,20 +313,27 @@ it('keeps all four current room floor centres physically clear at both LoDs', ()
               ac = subtract(c, a),
               h = cross(direction, ac),
               determinant = dot(ab, h)
+
             if (Math.abs(determinant) < 1e-10) {
               continue
             }
+
             const relative = subtract(origin, a),
               u = dot(relative, h) / determinant
+
             if (u < 0 || u > 1) {
               continue
             }
+
             const q = cross(relative, ab),
               v = dot(direction, q) / determinant
+
             if (v < 0 || u + v > 1) {
               continue
             }
+
             const t = dot(ac, q) / determinant
+
             expect(
               t > 1e-8 && t < 1 - 1e-8,
               `${sample.id} is hidden by ${assembly.id}/${detail}`

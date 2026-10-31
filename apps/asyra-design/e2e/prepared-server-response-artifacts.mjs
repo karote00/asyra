@@ -45,6 +45,7 @@ export const resolvePreparedServerResponseLayoutRoot = ({
     (specifier) =>
       typeof specifier === 'string' && specifier.startsWith('workspace:')
   )
+
   return path.resolve(usesWorkspacePackages ? workspaceRoot : appRoot)
 }
 
@@ -72,6 +73,7 @@ const sha256 = (value) => createHash('sha256').update(value).digest('hex')
 
 const isSameOrInside = (parentPath, candidatePath) => {
   const relative = path.relative(parentPath, candidatePath)
+
   return (
     relative === '' ||
     (relative !== '..' &&
@@ -95,6 +97,7 @@ const requireNonNegativeInteger = (value, label) => {
   if (!Number.isInteger(value) || value < 0) {
     throw new Error(`Prepared server response ${label} must be an integer.`)
   }
+
   return value
 }
 
@@ -117,8 +120,10 @@ const readRecordEvidence = (record, variant) => {
   let pointCount = 0
   let sliceCount = 0
   let totalCount = 0
+
   for (const action of record.batch.actions) {
     const artifact = action?.arguments
+
     if (
       !artifact ||
       typeof artifact !== 'object' ||
@@ -130,10 +135,12 @@ const readRecordEvidence = (record, variant) => {
         `Prepared server response ${variant.itemCount} contains an invalid drawing artifact.`
       )
     }
+
     const actionElementCount = requireNonNegativeInteger(
       artifact.elementCount,
       'elementCount'
     )
+
     elementCount += actionElementCount
     pointCount += requireNonNegativeInteger(artifact.pointCount, 'pointCount')
     sliceCount += artifact.slices.length
@@ -164,6 +171,7 @@ const requireManifestShape = (manifest) => {
 
   PREPARED_SERVER_RESPONSE_VARIANTS.forEach((variant, index) => {
     const entry = manifest.variants[index]
+
     if (
       !entry ||
       entry.fileId !== variant.fileId ||
@@ -187,11 +195,13 @@ const requireManifestShape = (manifest) => {
 
 export const getPreparedServerResponseVariant = (itemCount) => {
   const variant = variantsByItemCount.get(itemCount)
+
   if (!variant) {
     throw new Error(
       `Unsupported prepared server response item count: ${String(itemCount)}`
     )
   }
+
   return variant
 }
 
@@ -209,8 +219,10 @@ export const resolvePreparedServerResponsePreviewPaths = ({
   if (!Number.isInteger(processId) || processId <= 0) {
     throw new Error('Prepared server response processId must be positive.')
   }
+
   const absolutePreviewRoot = path.resolve(previewRoot)
   const absoluteProductionDistPath = path.resolve(productionDistPath)
+
   requireDisjointDirectories(absolutePreviewRoot, absoluteProductionDistPath)
   const currentPath = path.join(absolutePreviewRoot, 'current')
   const stagingPath = path.join(absolutePreviewRoot, `staging-${processId}`)
@@ -246,6 +258,7 @@ export const createPreparedServerResponseArtifacts = async ({
       'Prepared server response generation requires createRecord().'
     )
   }
+
   const productionIndexBytes = Buffer.from(productionIndex)
   const sourceActionBatchBytes = Buffer.from(sourceActionBatch)
   const artifacts = []
@@ -274,12 +287,15 @@ export const createPreparedServerResponseArtifacts = async ({
       manifestEntry,
       variant
     })
+
     if (typeof onArtifact === 'function') {
       await onArtifact(artifact)
     }
+
     if (retainArtifacts) {
       artifacts.push(artifact)
     }
+
     manifestEntries.push(manifestEntry)
   }
 
@@ -316,11 +332,14 @@ export const loadServerResponseRecordFactory = async () => {
     const loaded = await server.ssrLoadModule(
       '/e2e/action-batch-interceptor.ts'
     )
+
     if (typeof loaded.createServerResponseRecord !== 'function') {
       throw new Error('Vite did not load createServerResponseRecord().')
     }
+
     return {
       close: () => server.close(),
+
       createRecord: loaded.createServerResponseRecord
     }
   } catch (error) {
@@ -336,18 +355,22 @@ const publishCurrentOverlay = async ({
   stagingPath
 }) => {
   const nextPointerPath = path.join(previewRoot, `.current-${processId}`)
+
   await rm(nextPointerPath, { force: true })
   await symlink(path.basename(stagingPath), nextPointerPath, 'dir')
 
   let previousTargetPath
   let replaced = false
+
   try {
     const currentStat = await lstat(currentPath)
+
     if (!currentStat.isSymbolicLink()) {
       throw new Error(
         'Prepared server response current overlay must be a symbolic link.'
       )
     }
+
     previousTargetPath = path.resolve(previewRoot, await readlink(currentPath))
   } catch (error) {
     if (error?.code !== 'ENOENT') {
@@ -414,6 +437,7 @@ export const prepareServerResponsePreview = async ({
       realpath(paths.previewRoot),
       realpath(paths.productionDistPath)
     ])
+
     requireDisjointDirectories(realPreviewRoot, realProductionDistPath)
     await cp(paths.productionDistPath, paths.stagingPath, {
       errorOnExist: true,
@@ -426,17 +450,21 @@ export const prepareServerResponsePreview = async ({
       loadedFactory = await loadServerResponseRecordFactory()
       createRecord = loadedFactory.createRecord
     }
+
     const result = await createPreparedServerResponseArtifacts({
       createRecord,
+
       onArtifact: ({ gzip, variant }) =>
         writeFile(
           path.join(paths.responseDirectoryPath, variant.gzipFilename),
           gzip
         ),
+
       productionIndex,
       retainArtifacts: false,
       sourceActionBatch
     })
+
     await loadedFactory?.close()
     loadedFactory = undefined
     await writeFile(
@@ -476,15 +504,18 @@ export const attestPreparedServerResponsePreview = async ({
     sourceActionBatchPath
   })
   const currentStat = await lstat(paths.currentPath)
+
   if (!currentStat.isSymbolicLink()) {
     throw new Error(
       'Prepared server response current overlay is not an atomic pointer.'
     )
   }
+
   const currentTargetPath = path.resolve(
     paths.previewRoot,
     await readlink(paths.currentPath)
   )
+
   if (
     path.dirname(currentTargetPath) !== paths.previewRoot ||
     !path.basename(currentTargetPath).startsWith('staging-')
@@ -502,8 +533,10 @@ export const attestPreparedServerResponsePreview = async ({
       readFile(paths.sourceActionBatchPath)
     ])
   const manifest = JSON.parse(manifestBytes.toString('utf8'))
+
   requireManifestShape(manifest)
   const productionIndexSha256 = sha256(productionIndex)
+
   if (
     manifest.productionIndexSha256 !== productionIndexSha256 ||
     sha256(overlayIndex) !== productionIndexSha256
@@ -512,6 +545,7 @@ export const attestPreparedServerResponsePreview = async ({
       'Prepared server response preview does not match the production index.'
     )
   }
+
   if (manifest.sourceActionBatchSha256 !== sha256(sourceActionBatch)) {
     throw new Error(
       'Prepared server response preview does not match the source action batch.'
@@ -527,6 +561,7 @@ export const attestPreparedServerResponsePreview = async ({
         variant.gzipFilename
       )
     )
+
     if (
       gzip.byteLength !== entry.gzipBytes ||
       sha256(gzip) !== entry.gzipSha256
@@ -535,14 +570,18 @@ export const attestPreparedServerResponsePreview = async ({
         `Prepared server response gzip ${variant.itemCount} failed attestation.`
       )
     }
+
     const raw = gunzipSync(gzip)
+
     if (sha256(raw) !== entry.rawSha256) {
       throw new Error(
         `Prepared server response record ${variant.itemCount} failed attestation.`
       )
     }
+
     const record = JSON.parse(raw.toString('utf8'))
     const evidence = readRecordEvidence(record, variant)
+
     if (
       evidence.actionCount !== entry.actionCount ||
       evidence.elementCount !== entry.elementCount ||

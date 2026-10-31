@@ -22,6 +22,7 @@ const IconButton = (
 }
 
 const ForwardedIconButton = forwardRef(IconButton)
+
 ForwardedIconButton.displayName = 'IconButton'
 
 export { ForwardedIconButton as IconButton }

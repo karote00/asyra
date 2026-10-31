@@ -16,10 +16,12 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
   const pan = vi.spyOn(navigation, 'panCamera')
   const builds = vi.spyOn(farm, 'buildSiteMeshes')
   const assessments = vi.spyOn(robot, 'assessRobotDesign')
+
   vi.stubGlobal(
     'ResizeObserver',
     class {
       observe = vi.fn()
+
       disconnect = vi.fn()
     }
   )
@@ -35,18 +37,23 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     dispose: vi.fn()
   }
   const host = document.createElement('div')
+
   host.getBoundingClientRect = () => new DOMRect(0, 0, 640, 480)
   const runtime = await bootstrap(
     host,
     () =>
       new ThreeEngine({
         createDriver: () => driver,
+
         requestFrame: () => 1,
+
         cancelFrame: vi.fn()
       })
   )
+
   try {
     const notify = vi.fn()
+
     runtime.subscribeRobot(notify)
     runtime.focusRobot()
     runtime.pan(0, 0)
@@ -62,11 +69,14 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
       )
     )
     const walking = runtime.getWalkingOperatingReport()
+
     expect(walking.status).not.toBe('legacy-view')
     if (walking.status === 'legacy-view' || !walking.envelope) {
       throw new Error('Expected complete walking bounds')
     }
+
     const bounds = walking.envelope.bounds
+
     runtime.focusRobot()
     runtime.pan(0, 0)
     expect(pan.mock.calls.at(-1)?.[0].target).toEqual(
@@ -75,6 +85,7 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     await runtime.undo()
     const initial = runtime.getRobot()
     const depth = runtime.getUndoDepth()
+
     await expect(runtime.patchRobot({ width: 0 })).rejects.toThrow()
     await expect(
       runtime.patchRobot({ nextWorkWh: 1e308, returnWh: 1e308 })
@@ -96,6 +107,7 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     expect(runtime.getRobot().settings.patrolMinutes).toBe(90)
     const count = assessments.mock.calls.length
     const notices = notify.mock.calls.length
+
     await runtime.patchRobot({ width: 0.6 })
     runtime.zoom(20)
     runtime.move(1, 0, 0)
@@ -105,6 +117,7 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     expect(notify).toHaveBeenCalledTimes(notices)
     expect(builds).toHaveBeenCalledTimes(1)
     const frames = submissions.mock.calls.length
+
     await runtime.setConfiguration({
       ...runtime.getConfiguration(),
       length: 20
@@ -118,10 +131,12 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     const configuration = runtime.getConfiguration()
     const mission = runtime.getRobot().settings
     const route = runtime.getRobot().lane
+
     // Deletion must preserve the selected strip's identity, not its ordinal:
     // a removed target is invalid; a surviving target follows its new ordinal.
     for (const removed of [2, 0]) {
       const historyDepth = runtime.getUndoDepth()
+
       await runtime.setConfiguration({
         ...configuration,
         strips: configuration.strips.filter((_, index) => index !== removed)
@@ -143,6 +158,7 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
               end: mission.end,
               survey: mission.survey
             })
+
       expect(runtime.getUndoDepth()).toBe(historyDepth + 1)
       expect(runtime.getRobot().settings).toEqual(mission)
       expect
@@ -159,11 +175,13 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
         .toEqual(expected)
       await runtime.undo()
     }
+
     const unchanged = runtime.getConfiguration()
     const unchangedHistory = runtime.getUndoDepth()
     const unchangedReport = runtime.getRobot()
     const unchangedBuilds = builds.mock.calls.length
     const unchangedAssessments = assessments.mock.calls.length
+
     await expect
       .soft(
         runtime.setConfiguration({
@@ -178,6 +196,7 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     expect(builds).toHaveBeenCalledTimes(unchangedBuilds)
     expect(assessments).toHaveBeenCalledTimes(unchangedAssessments)
     const added = createConfigurationStrip('soil', 0.3)
+
     await runtime.setConfiguration({
       ...unchanged,
       strips: [...unchanged.strips, added]

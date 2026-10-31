@@ -20,20 +20,25 @@ const identityBase = {
   position: [0, 0, 0] as [number, number, number],
   rotation: [0, 0, 0, 1] as [number, number, number, number]
 }
+
 type Mutable<T> = T extends readonly (infer Item)[]
   ? Mutable<Item>[]
   : T extends object
     ? { -readonly [Key in keyof T]: Mutable<T[Key]> }
     : T
+
 const mutable = <T>(value: T): Mutable<T> =>
   structuredClone(value) as Mutable<T>
+
 function required<T>(value: T | undefined): T {
   expect(value).toBeDefined()
   if (value === undefined) {
     throw new Error('Missing test fixture value')
   }
+
   return value
 }
+
 const changedBodyIds = (
   before: ReturnType<typeof evaluateWalkingRobotPose>,
   after: ReturnType<typeof evaluateWalkingRobotPose>
@@ -41,6 +46,7 @@ const changedBodyIds = (
   after.bodyTransforms
     .filter(({ id, transform }) => {
       const original = before.bodyTransforms.find((body) => body.id === id)
+
       return JSON.stringify(original?.transform) !== JSON.stringify(transform)
     })
     .map(({ id }) => id)
@@ -49,6 +55,7 @@ interface OracleTransform {
   readonly position: readonly [number, number, number]
   readonly rotation: readonly [number, number, number, number]
 }
+
 const composeOracle = (
   parent: OracleTransform,
   child: OracleTransform
@@ -59,13 +66,16 @@ const composeOracle = (
   const position = new Vector3(...child.position)
     .applyQuaternion(new Quaternion(...parent.rotation))
     .add(new Vector3(...parent.position))
+
   return {
     position: [position.x, position.y, position.z],
     rotation: [rotation.x, rotation.y, rotation.z, rotation.w]
   }
 }
+
 const axisOracle = (axis: 'x' | 'y' | 'z', angle: number): OracleTransform => {
   let direction: Vector3
+
   if (axis === 'x') {
     direction = new Vector3(1, 0, 0)
   } else if (axis === 'y') {
@@ -73,12 +83,15 @@ const axisOracle = (axis: 'x' | 'y' | 'z', angle: number): OracleTransform => {
   } else {
     direction = new Vector3(0, 0, 1)
   }
+
   const rotation = new Quaternion().setFromAxisAngle(direction, angle)
+
   return {
     position: [0, 0, 0],
     rotation: [rotation.x, rotation.y, rotation.z, rotation.w]
   }
 }
+
 const expectTransformClose = (
   actual: OracleTransform,
   expected: OracleTransform
@@ -86,6 +99,7 @@ const expectTransformClose = (
   for (let axis = 0; axis < 3; axis++) {
     expect(actual.position[axis]).toBeCloseTo(expected.position[axis], 12)
   }
+
   expect(
     Math.abs(
       new Quaternion(...actual.rotation).dot(
@@ -123,6 +137,7 @@ describe('walking robot pure forward kinematics', () => {
           ).low
       )
     )
+
     raw.definitionId = 'tripod-fk-authored'
     raw.jointEvidence = {
       kind: 'synthetic',
@@ -132,17 +147,22 @@ describe('walking robot pure forward kinematics', () => {
     for (const leg of raw.legs) {
       leg.jointRanges.knee[0] = -alpha
     }
+
     const candidate = readWalkingRobotDefinition(raw)
     const defaultSource = new WalkingRobotSourceOwner().prepare(baseline)
     const source = new WalkingRobotSourceOwner().prepare(candidate)
+
     expect(source.definition).toBe(candidate)
     for (const phase of [-1, 0, 1]) {
       const joints = mutable(candidate.presets.stowed)
+
       for (const leg of joints.legs) {
         const groupA = (leg.side === 'left') !== (leg.station === 'middle')
+
         leg.knee = phase * (groupA ? -alpha : alpha)
         leg.hip = -leg.knee
       }
+
       if (phase !== 0) {
         expect(() =>
           evaluateWalkingRobotPose(defaultSource, {
@@ -151,6 +171,7 @@ describe('walking robot pure forward kinematics', () => {
           })
         ).toThrow()
       }
+
       const pose = evaluateWalkingRobotPose(source, {
         base: identityBase,
         joints
@@ -161,6 +182,7 @@ describe('walking robot pure forward kinematics', () => {
             pose.bodyTransforms.find((body) => body.id === chain.footBodyId)
           ).transform
       )
+
       for (const foot of feet) {
         // Exact cancellation in the completed quaternion: no tolerance grants level feet.
         expect(foot.rotation.slice(0, 3).every((value) => value === 0)).toBe(
@@ -168,8 +190,10 @@ describe('walking robot pure forward kinematics', () => {
         )
         expect(foot.position[1]).toBe(feet[0].position[1])
       }
+
       expect(pose.source).toBe(source)
     }
+
     source.rig.legChains.forEach((chain, index) => {
       expect(
         required(
@@ -184,11 +208,13 @@ describe('walking robot pure forward kinematics', () => {
     })
     const owner = new WalkingRobotSourceOwner()
     const source = owner.prepare(definition)
+
     for (const joints of Object.values(source.rig.presets)) {
       const result = evaluateWalkingRobotPose(source, {
         base: identityBase,
         joints
       })
+
       expect(result.source).toBe(source)
       expect(result.bodyTransforms).toHaveLength(source.rig.bodies.length)
       expect(new Set(result.bodyTransforms.map(({ id }) => id)).size).toBe(
@@ -203,11 +229,14 @@ describe('walking robot pure forward kinematics', () => {
           required(source.rig.bodies.find(({ id }) => id === body.id)).parts
         )
       }
+
       for (const field of ['sweep', 'gait', 'contactResult', 'moment']) {
         expect(result).not.toHaveProperty(field)
       }
     }
+
     const edge = mutable(source.rig.presets.stowed)
+
     edge.carriage = definition.carriage.liftRange[1]
     for (const arm of edge.arms) {
       const declared = required(
@@ -216,11 +245,13 @@ describe('walking robot pure forward kinematics', () => {
             candidate.side === arm.side && candidate.role === arm.role
         )
       )
+
       arm.rootYaw = declared.jointRanges.rootYaw[1]
       arm.shoulderPitch = declared.jointRanges.shoulderPitch[0]
       arm.elbowPitch = declared.jointRanges.elbowPitch[1]
       arm.wristPitch = declared.jointRanges.wristPitch[0]
     }
+
     for (const leg of edge.legs) {
       const declared = required(
         definition.legs.find(
@@ -228,10 +259,12 @@ describe('walking robot pure forward kinematics', () => {
             candidate.side === leg.side && candidate.station === leg.station
         )
       )
+
       leg.abduction = declared.jointRanges.abduction[1]
       leg.hip = declared.jointRanges.hip[0]
       leg.knee = declared.jointRanges.knee[1]
     }
+
     expect(
       evaluateWalkingRobotPose(source, { base: identityBase, joints: edge })
         .bodyTransforms
@@ -248,6 +281,7 @@ describe('walking robot pure forward kinematics', () => {
       joints: source.rig.presets.stowed
     })
     const armState = mutable(source.rig.presets.stowed)
+
     required(
       armState.arms.find(
         ({ side, role }) => side === 'left' && role === 'support'
@@ -260,6 +294,7 @@ describe('walking robot pure forward kinematics', () => {
         joints: armState
       })
     )
+
     expect(armChanged).toEqual(
       expect.arrayContaining([
         'left-support-upper',
@@ -276,6 +311,7 @@ describe('walking robot pure forward kinematics', () => {
     ).toBe(false)
 
     const legState = mutable(source.rig.presets.stowed)
+
     required(
       legState.legs.find(
         ({ side, station }) => side === 'right' && station === 'rear'
@@ -292,6 +328,7 @@ describe('walking robot pure forward kinematics', () => {
     ).toEqual(['right-rear-upper', 'right-rear-lower', 'right-rear-foot'])
 
     const carriageState = mutable(source.rig.presets.stowed)
+
     carriageState.carriage += 0.1
     const carriageChanged = changedBodyIds(
       rest,
@@ -300,6 +337,7 @@ describe('walking robot pure forward kinematics', () => {
         joints: carriageState
       })
     )
+
     expect(carriageChanged).toContain('carriage')
     expect(
       carriageChanged.filter(
@@ -323,6 +361,7 @@ describe('walking robot pure forward kinematics', () => {
     const expected = new Vector3(...local)
       .applyQuaternion(new Quaternion(...base.rotation))
       .add(new Vector3(...base.position))
+
     expect(moved.frames.inspectionHeads.left.position).toEqual([
       expected.x,
       expected.y,
@@ -337,6 +376,7 @@ describe('walking robot pure forward kinematics', () => {
     const expectedMass = new Vector3(...localMass.position)
       .applyQuaternion(new Quaternion(...base.rotation))
       .add(new Vector3(...base.position))
+
     expect(movedMass.position).toEqual([
       expectedMass.x,
       expectedMass.y,
@@ -375,6 +415,7 @@ describe('walking robot pure forward kinematics', () => {
         descendants: ['tool', 'guard']
       }
     ]
+
     for (const testCase of armCases) {
       const joints = mutable(source.rig.presets.stowed)
       const arm = required(
@@ -382,11 +423,13 @@ describe('walking robot pure forward kinematics', () => {
           ({ side, role }) => side === 'left' && role === 'support'
         )
       )
+
       arm[testCase.field] += 0.1
       const result = evaluateWalkingRobotPose(source, {
         base: identityBase,
         joints
       })
+
       expect(changedBodyIds(rest, result).sort()).toEqual(
         testCase.descendants.map((part) => `left-support-${part}`).sort()
       )
@@ -401,6 +444,7 @@ describe('walking robot pure forward kinematics', () => {
       const child = required(
         result.bodyTransforms.find(({ id }) => id === joint.childBodyId)
       ).transform
+
       expectTransformClose(
         child,
         composeOracle(
@@ -427,6 +471,7 @@ describe('walking robot pure forward kinematics', () => {
         descendants: ['lower', 'foot']
       }
     ]
+
     for (const testCase of legCases) {
       const joints = mutable(source.rig.presets.stowed)
       const leg = required(
@@ -434,11 +479,13 @@ describe('walking robot pure forward kinematics', () => {
           ({ side, station }) => side === 'left' && station === 'front'
         )
       )
+
       leg[testCase.field] += 0.1
       const result = evaluateWalkingRobotPose(source, {
         base: identityBase,
         joints
       })
+
       expect(changedBodyIds(rest, result).sort()).toEqual(
         testCase.descendants.map((part) => `left-front-${part}`).sort()
       )
@@ -453,6 +500,7 @@ describe('walking robot pure forward kinematics', () => {
       const child = required(
         result.bodyTransforms.find(({ id }) => id === joint.childBodyId)
       ).transform
+
       expectTransformClose(
         child,
         composeOracle(
@@ -468,6 +516,7 @@ describe('walking robot pure forward kinematics', () => {
         ({ side, role }) => side === 'left' && role === 'support'
       )
     )
+
     Object.assign(arm, {
       rootYaw: 0.31,
       shoulderPitch: -0.27,
@@ -487,6 +536,7 @@ describe('walking robot pure forward kinematics', () => {
       position: [0, joints.carriage, 0],
       rotation: [0, 0, 0, 1]
     })
+
     expected = composeOracle(expected, specification.mount)
     expected = composeOracle(expected, axisOracle('y', arm.rootYaw))
     expected = composeOracle(expected, {
@@ -520,6 +570,7 @@ describe('walking robot pure forward kinematics', () => {
       base: identityBase,
       joints: source.rig.presets.leftWorking
     })
+
     expect(result.frames.tools).toHaveLength(4)
     expect(result.frames.feet).toHaveLength(6)
     expect(result.frames.contacts.feet).toHaveLength(6)
@@ -537,9 +588,11 @@ describe('walking robot pure forward kinematics', () => {
           ...source.rig.contacts.cuttingEdges
         ].find(({ part }) => part.id.startsWith(contact.chainId))
       )
+
       expect(contact.part).toBe(reference.part)
       expect(contact.patch).toBe(reference.patch)
       const coordinates: number[][] = []
+
       for (const range of reference.patch.ranges) {
         for (
           let indexOffset = range.indexStart;
@@ -547,6 +600,7 @@ describe('walking robot pure forward kinematics', () => {
           indexOffset++
         ) {
           const vertex = reference.part.shape.indices[indexOffset] * 3
+
           coordinates.push([
             reference.part.shape.positions[vertex],
             reference.part.shape.positions[vertex + 1],
@@ -554,6 +608,7 @@ describe('walking robot pure forward kinematics', () => {
           ])
         }
       }
+
       const centre = coordinates
         .reduce(
           (sum, coordinate) =>
@@ -568,16 +623,20 @@ describe('walking robot pure forward kinematics', () => {
         composeOracle(body, reference.part.localFrame),
         { position: centre, rotation: [0, 0, 0, 1] }
       )
+
       for (let axis = 0; axis < 3; axis++) {
         expect(contact.position[axis]).toBeCloseTo(expected.position[axis], 12)
       }
+
       const tool = result.frames.tools.find(
         ({ chainId }) => chainId === contact.chainId
       )
+
       if (tool) {
         expect(contact.position).not.toEqual(tool.position)
       }
     }
+
     expect(result.frames.inspectionHeads.left.position[0]).toBeLessThan(0)
     expect(result.frames.inspectionHeads.right.position[0]).toBeGreaterThan(0)
     expect(
@@ -598,6 +657,7 @@ describe('walking robot pure forward kinematics', () => {
     const rightRotation = required(
       result.frames.armRoots.find(({ chainId }) => chainId === 'right-support')
     ).rotation
+
     expect(leftRotation[1]).toBeCloseTo(-rightRotation[1], 12)
     expect(leftRotation[3]).toBeCloseTo(rightRotation[3], 12)
     for (const segment of result.linkSegments) {
@@ -605,14 +665,17 @@ describe('walking robot pure forward kinematics', () => {
         new Vector3(...segment.to).distanceTo(new Vector3(...segment.from))
       ).toBeCloseTo(segment.length, 12)
     }
+
     for (const chain of source.rig.armChains) {
       const segments = result.linkSegments.filter(({ bodyId }) =>
         chain.bodyIds.includes(bodyId)
       )
+
       for (let index = 0; index < segments.length - 1; index++) {
         expect(segments[index].to).toEqual(segments[index + 1].from)
       }
     }
+
     expect(result.massProperties.source).toBe(source.massProperties)
     expect(result.massProperties.bodies).toHaveLength(
       source.massProperties.bodies.length
@@ -624,15 +687,18 @@ describe('walking robot pure forward kinematics', () => {
       createSyntheticWalkingRobotDefinition({ definitionId: 'fk-validation' })
     )
     const bilateral = mutable(source.rig.presets.leftWorking)
+
     for (const arm of bilateral.arms) {
       const replacement = source.rig.presets.rightWorking.arms.find(
         (candidate) =>
           candidate.side === arm.side && candidate.role === arm.role
       )
+
       if (arm.side === 'right') {
         Object.assign(arm, replacement)
       }
     }
+
     expect(
       evaluateWalkingRobotPose(source, {
         base: identityBase,
@@ -641,15 +707,19 @@ describe('walking robot pure forward kinematics', () => {
     ).toHaveLength(4)
     const invalid: WalkingRobotPose[] = []
     const missing = mutable(bilateral)
+
     missing.legs.pop()
     invalid.push({ base: identityBase, joints: missing })
     const extra = mutable(bilateral) as typeof bilateral & { surprise?: number }
+
     extra.surprise = 1
     invalid.push({ base: identityBase, joints: extra })
     const nan = mutable(bilateral)
+
     nan.arms[0].elbowPitch = Number.NaN
     invalid.push({ base: identityBase, joints: nan })
     const outside = mutable(bilateral)
+
     outside.carriage = 99
     invalid.push({ base: identityBase, joints: outside })
     invalid.push({

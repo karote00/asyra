@@ -21,6 +21,7 @@ import type { SceneDemand } from '../simulation/scene-demand'
 
 export const WALKING_TERRAIN_PLACEMENT_REQUEST_FORMAT =
   'walking-terrain-placement-request/1' as const
+
 export interface WalkingTerrainPlacementSeed {
   readonly chainId: string
   readonly footPart: WalkingRobotPart
@@ -61,27 +62,34 @@ export interface WalkingTerrainPlacementRequest {
 }
 export class TerrainPlacementBudgetError extends Error {}
 const admitted = new WeakSet<object>()
+
 function invalid(): never {
   throw new Error('Invalid terrain placement request')
 }
+
 function record(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v)
 }
+
 function keys(v: Record<string, unknown>, names: string[]) {
   return (
     Object.keys(v).length === names.length &&
     names.every((k) => Object.hasOwn(v, k))
   )
 }
+
 function id(v: unknown): v is string {
   return typeof v === 'string' && !!v.trim()
 }
+
 function finite(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v)
 }
+
 function vector(v: unknown, length: number): v is number[] {
   return Array.isArray(v) && v.length === length && Array.from(v).every(finite)
 }
+
 function evidence(v: unknown): boolean {
   return (
     record(v) &&
@@ -93,6 +101,7 @@ function evidence(v: unknown): boolean {
         id(v.label))
   )
 }
+
 function relation(v: unknown): boolean {
   return (
     record(v) &&
@@ -103,6 +112,7 @@ function relation(v: unknown): boolean {
         evidence(v.evidence))
   )
 }
+
 function observation(v: unknown): boolean {
   return (
     record(v) &&
@@ -113,12 +123,15 @@ function observation(v: unknown): boolean {
         evidence(v.evidence))
   )
 }
+
 function gcd(a: bigint, b: bigint): bigint {
   if (b) {
     return gcd(b, a % b)
   }
+
   return a < 0n ? -a : a
 }
+
 export function readWalkingTerrainPlacementRequest(
   input: unknown,
   current?: Readonly<{ source: WalkingRobotSource; demand: SceneDemand }>
@@ -131,9 +144,11 @@ export function readWalkingTerrainPlacementRequest(
   ) {
     return invalid()
   }
+
   if (admitted.has(input)) {
     return input as unknown as WalkingTerrainPlacementRequest
   }
+
   if (
     !keys(input, [
       'format',
@@ -165,7 +180,9 @@ export function readWalkingTerrainPlacementRequest(
   ) {
     return invalid()
   }
+
   const budget = input.budget
+
   for (const [key, v] of Object.entries(budget)) {
     if (
       !Number.isSafeInteger(v) ||
@@ -175,29 +192,38 @@ export function readWalkingTerrainPlacementRequest(
       return invalid()
     }
   }
+
   let inputValues = 0
+
   const copy = (v: unknown): unknown => {
     if (++inputValues > Number(budget.maxInputValues)) {
       throw new TerrainPlacementBudgetError('terrain-input-budget')
     }
+
     if (
       typeof v === 'bigint' &&
       (v < 0n ? -v : v).toString(2).length > Number(budget.maxBits)
     ) {
       throw new TerrainPlacementBudgetError('terrain-bit-budget')
     }
+
     if (Array.isArray(v)) {
       if (v.length > Number(budget.maxInputValues) - inputValues) {
         throw new TerrainPlacementBudgetError('terrain-input-budget')
       }
+
       return Array.from(v, copy)
     }
+
     if (record(v)) {
       return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, copy(x)]))
     }
+
     return v
   }
+
   const terrain = copy(input.terrain)
+
   if (
     !record(terrain) ||
     !keys(terrain, [
@@ -230,15 +256,19 @@ export function readWalkingTerrainPlacementRequest(
   ) {
     return invalid()
   }
+
   const route = current.demand.route
+
   if (
     route &&
     (terrain.route.bay !== route.bay || terrain.route.stripId !== route.stripId)
   ) {
     return invalid()
   }
+
   const regionIds = new Set<string>(),
     sourceIds = new Set<string>()
+
   for (const region of terrain.regions) {
     if (
       !record(region) ||
@@ -269,6 +299,7 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     region.shape = readSpatialShape(region.shape)
     if (region.classification === 'soil') {
       if (
@@ -281,6 +312,7 @@ export function readWalkingTerrainPlacementRequest(
       }
     } else if (region.classification === 'channel') {
       const binding = region.binding
+
       if (
         !keys(binding, ['kind', 'bay', 'stripId']) ||
         binding.kind !== 'scene-channel' ||
@@ -296,7 +328,9 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     const keepOut = region.keepOut
+
     if (region.keepOut.kind === 'none') {
       if (!keys(region.keepOut, ['kind'])) {
         return invalid()
@@ -312,10 +346,13 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     regionIds.add(region.id)
     sourceIds.add(region.sourceId)
   }
+
   const assessments = new Map<string, WalkingContactAssessment>()
+
   for (const a of terrain.contactAssessments) {
     if (
       !record(a) ||
@@ -351,12 +388,16 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     assessments.set(a.id, a as unknown as WalkingContactAssessment)
   }
+
   const rawPartitions = copy(input.partitions)
+
   if (!Array.isArray(rawPartitions)) {
     return invalid()
   }
+
   const partitionIds = new Set<string>()
   const partitions = rawPartitions.map((entry) => {
     if (
@@ -369,23 +410,30 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     partitionIds.add(entry.sourceId)
     const source = (terrain.regions as WalkingTerrainRegion[]).find(
       (r) => r.sourceId === entry.sourceId
     )
+
     if (!source) {
       return invalid()
     }
+
     let regions: readonly SourceRegion[] | null = null
+
     try {
       regions = readSourceRegions(entry.regions, source.shape.indices.length)
     } catch {
       /* Incomplete source is valid unknown, never an invented partition. */
     }
+
     return { sourceId: entry.sourceId, regions }
   })
+
   const fraction = (v: unknown): ConstrainedFraction => {
     const value = copy(v)
+
     if (
       !record(value) ||
       !keys(value, ['numerator', 'denominator']) ||
@@ -395,12 +443,15 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     const divisor = gcd(value.numerator, value.denominator)
+
     return {
       numerator: value.numerator / divisor,
       denominator: value.denominator / divisor
     }
   }
+
   if (
     !Array.isArray(input.seeds) ||
     input.seeds.length !== 3 ||
@@ -412,6 +463,7 @@ export function readWalkingTerrainPlacementRequest(
   ) {
     return invalid()
   }
+
   const seedIds = new Set<string>()
   const seeds = Array.from(input.seeds, (s) => {
     if (
@@ -439,6 +491,7 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     const chain = current.source.rig.legChains.find((c) => c.id === s.chainId),
       contact = current.source.rig.contacts.feet.find(
         (c) => c.part === s.footPart && c.patch === s.footPatch
@@ -447,6 +500,7 @@ export function readWalkingTerrainPlacementRequest(
         (r) => r.id === s.terrainRegionId
       ),
       a = assessments.get(s.contactAssessmentId)
+
     if (
       !chain ||
       !contact ||
@@ -456,15 +510,18 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     if (
       a &&
       (a.footPatchId !== contact.patch.id || a.terrainRegionId !== region.id)
     ) {
       return invalid()
     }
+
     const partition = partitions.find(
       (p) => p.sourceId === region.sourceId
     )?.regions
+
     if (
       partition &&
       !partition.some(
@@ -476,27 +533,36 @@ export function readWalkingTerrainPlacementRequest(
     ) {
       return invalid()
     }
+
     const bary = Array.from(s.barycentric, fraction)
     let n = 0n,
       d = 1n
+
     for (const v of bary) {
       if (v.numerator < 0n) {
         return invalid()
       }
+
       n = n * v.denominator + v.numerator * d
       d *= v.denominator
     }
+
     if (n !== d) {
       return invalid()
     }
+
     seedIds.add(s.chainId)
+
     return { ...s, barycentric: bary }
   })
   const orientation = Array.from(input.baseOrientation, fraction)
+
   if (!orientation.some((v) => v.numerator !== 0n)) {
     return invalid()
   }
+
   const span = copy(input.interval)
+
   if (
     !record(span) ||
     !keys(span, ['low', 'high']) ||
@@ -506,6 +572,7 @@ export function readWalkingTerrainPlacementRequest(
   ) {
     return invalid()
   }
+
   const result = {
     format: WALKING_TERRAIN_PLACEMENT_REQUEST_FORMAT,
     source: current.source,
@@ -521,13 +588,16 @@ export function readWalkingTerrainPlacementRequest(
     budget: { ...budget },
     inputValues
   } as unknown as WalkingTerrainPlacementRequest
+
   const freeze = (v: unknown): void => {
     if (v && typeof v === 'object' && !Object.isFrozen(v)) {
       Object.values(v).forEach(freeze)
       Object.freeze(v)
     }
   }
+
   freeze(result)
   admitted.add(result)
+
   return result
 }

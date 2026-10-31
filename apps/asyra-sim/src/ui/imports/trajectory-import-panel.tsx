@@ -90,6 +90,7 @@ export function TrajectoryImportPanel({
                 if (result.value) {
                   onAccept(result.value, _input)
                 }
+
                 return true
               })
           )

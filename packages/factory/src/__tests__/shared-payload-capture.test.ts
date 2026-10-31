@@ -6,7 +6,9 @@ const { cloneAndDeepFreezeValueSpy } = vi.hoisted(() => ({
 
 vi.mock('../value-clone', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../value-clone.js')>()
+
   cloneAndDeepFreezeValueSpy.mockImplementation(actual.cloneAndDeepFreezeValue)
+
   return {
     ...actual,
     cloneAndDeepFreezeValue: cloneAndDeepFreezeValueSpy
@@ -27,11 +29,13 @@ describe('Factory shared payload capture budget', () => {
 
   it('deep-captures one Factory-owned payload snapshot per canonical mutation', () => {
     const registry = new SharedDataChannelRegistry()
+
     registry.register('sceneTree', new LocalSharedDataChannel())
     const transact = new DataTransact(registry)
 
     transact.start()
     const sharedGraph = { value: 1 }
+
     transact.updateBatch([
       {
         type: TransactionEventTypes.UPDATE_TRANSACTION,

@@ -9,6 +9,7 @@ export const subscribeToBrowserDragPhases = (
   sink: BrowserDragPhaseSink
 ): (() => void) => {
   browserDragPhaseSinks.add(sink)
+
   return () => browserDragPhaseSinks.delete(sink)
 }
 
@@ -29,7 +30,9 @@ export const beginBrowserDragPhase = (phaseName: string): (() => void) => {
   if (browserDragPhaseSinks.size === 0) {
     return () => undefined
   }
+
   const startedAt = performance.now()
+
   return () => emitBrowserDragPhase(phaseName, performance.now() - startedAt)
 }
 
@@ -42,6 +45,7 @@ export const measureBrowserDragPhase = <T>(
   }
 
   const finish = beginBrowserDragPhase(phaseName)
+
   try {
     return run()
   } finally {
@@ -58,6 +62,7 @@ export const measureBrowserDragAsyncPhase = async <T>(
   }
 
   const finish = beginBrowserDragPhase(phaseName)
+
   try {
     return await run()
   } finally {

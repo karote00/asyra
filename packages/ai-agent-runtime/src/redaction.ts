@@ -25,6 +25,7 @@ const isSecretKey = (
   additionalSecretKeys: ReadonlySet<string>
 ): boolean => {
   const normalized = normalizeKey(key)
+
   return (
     additionalSecretKeys.has(normalized) ||
     DEFAULT_SECRET_KEY_PATTERN.test(normalized)
@@ -60,29 +61,35 @@ const redactValue = (
   try {
     if (Array.isArray(value)) {
       const result: AiJsonValue[] = []
+
       for (let index = 0; index < value.length; index += 1) {
         const descriptor = Object.getOwnPropertyDescriptor(value, String(index))
+
         result.push(
           descriptor?.enumerable && 'value' in descriptor
             ? redactValue(descriptor.value, additionalSecretKeys, ancestors)
             : AI_REDACTED_VALUE
         )
       }
+
       return Object.freeze(result)
     }
 
     const prototype = Object.getPrototypeOf(value)
+
     if (prototype !== Object.prototype && prototype !== null) {
       return AI_REDACTED_VALUE
     }
 
     const result: Record<string, AiJsonValue> = {}
+
     for (const key of Reflect.ownKeys(value)) {
       if (typeof key !== 'string') {
         continue
       }
 
       const descriptor = Object.getOwnPropertyDescriptor(value, key)
+
       if (!descriptor?.enumerable) {
         continue
       }
@@ -91,6 +98,7 @@ const redactValue = (
         isSecretKey(key, additionalSecretKeys) || !('value' in descriptor)
           ? AI_REDACTED_VALUE
           : redactValue(descriptor.value, additionalSecretKeys, ancestors)
+
       Object.defineProperty(result, key, {
         configurable: true,
         enumerable: true,

@@ -22,6 +22,7 @@ export const createSharedPublicationFixture = ({
   transactionId
 }: SharedPublicationFixtureInput): SharedPublication => {
   const artifactId = `${publicationId}:artifact`
+
   if (!delivery) {
     return {
       artifactId,

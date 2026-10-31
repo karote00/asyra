@@ -14,7 +14,9 @@ const specSource = fs.readFileSync(
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -72,6 +74,7 @@ test('Step 7 fails all channels atomically when channel construction fails', () 
   const supportedBehavior = data.acceptanceContracts.find(
     (contractItem) => contractItem.id === 'supported-behavior'
   )
+
   assert.ok(supportedBehavior.stepIds.includes(channels.id))
 })
 

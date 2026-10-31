@@ -82,11 +82,13 @@ export async function bootstrap(
   let movementSpeed = 6
   const speedListeners = new Set<() => void>()
   const listeners = new Set<() => void>()
+
   const assertLive = () => {
     if (closed) {
       throw new Error('Runtime is closed')
     }
   }
+
   applyPreset(core, { profile: PresetProfiles.CUSTOM, defaults: [] })
   core.setRenderEngineProvider(provider)
   core.defineSystemProperty(RuntimeKeys.VIEW, INITIAL_VIEW, {
@@ -99,10 +101,12 @@ export async function bootstrap(
   })
   const geometry = new SiteGeometry()
   let meshes = buildSiteMeshes(config, geometry)
+
   geometry.prepareScene(config, meshes)
   const localBounds = new SpatialBoundsOwner()
   let sceneBounds = measureScene(meshes, localBounds)
   const configurationType = 'farm-configuration'
+
   core.definePropertyComponent({
     type: configurationType,
     defaults: { settings: DEFAULT_CONFIGURATION }
@@ -118,11 +122,13 @@ export async function bootstrap(
         defaultValue: DEFAULT_CONFIGURATION
       }
     ],
+
     renderStrategy: () => undefined
   })
   const layer = new SpatialLayer(() =>
     core.setSystemProperty(RuntimeKeys.FRAME, ++revision)
   )
+
   core.registerRenderLayer(layer.registration)
   const robotProjection = new RobotProjection()
   const walkingRobotProjection = new WalkingRobotProjection()
@@ -130,38 +136,50 @@ export async function bootstrap(
     []
   let sceneCompositionDepth = 0
   let selectedRobotUpdatePending = false
+
   const submitScene = () =>
     layer.submit({
       meshes: [...projectView(meshes, view), ...robotMeshes],
       camera: fitCamera(camera, aspect)
     })
+
   const projectSelectedRobot = () => {
     const report = walkingOperating.get()
+
     robotMeshes =
       report.status === 'legacy-view'
         ? robotProjection.update(robot.get())
         : walkingRobotProjection.update(report)
     submitScene()
   }
+
   const updateSelectedRobot = () => {
     if (sceneCompositionDepth > 0) {
       selectedRobotUpdatePending = true
+
       return
     }
+
     projectSelectedRobot()
   }
+
   const runSceneComposition = <T>(operation: () => T): T => {
     const outermost = sceneCompositionDepth === 0
+
     sceneCompositionDepth++
     let completed = false
+
     try {
       const result = operation()
+
       completed = true
+
       return result
     } finally {
       sceneCompositionDepth--
       if (outermost) {
         const shouldUpdate = completed && selectedRobotUpdatePending
+
         selectedRobotUpdatePending = false
         if (shouldUpdate) {
           projectSelectedRobot()
@@ -169,6 +187,7 @@ export async function bootstrap(
       }
     }
   }
+
   const robot = createRobotWorkspace(
     () => config,
     () => {
@@ -191,16 +210,21 @@ export async function bootstrap(
       if (!sceneDemandWorkspace.isCurrent(demand)) {
         throw new Error('Stale walking observation demand')
       }
+
       return sceneDemandWorkspace.prepareObservationSpace()
     },
+
     isCurrentObservationSpace: sceneDemandWorkspace.isCurrentObservationSpace,
     getSourceWork: sceneDemandWorkspace.getSourceWork,
     getOperating: walkingOperating.get,
     isCurrentOperating: walkingOperating.isCurrent,
     getDemand: sceneDemandWorkspace.get,
     isCurrentDemand: sceneDemandWorkspace.isCurrent,
+
     getScene: () => geometry.getScene(),
+
     isCurrentScene: (scene) => geometry.isCurrentScene(scene),
+
     screen: walkingOperating.getObservationScreen()
   })
   const walkingLocalAction = createWalkingLocalActionWorkspace({
@@ -209,9 +233,12 @@ export async function bootstrap(
     observe: walkingObservation.observeSelectedAction,
     isCurrentObservation: walkingObservation.isCurrent
   })
+
   robotMeshes = robotProjection.update(robot.get())
+
   const readZoom = (next: SpatialCamera) => {
     const reference = referenceCamera
+
     return (
       (100 *
         cameraDistance(reference) *
@@ -219,27 +246,34 @@ export async function bootstrap(
       (cameraDistance(next) * Math.tan((next.fov * Math.PI) / 360))
     )
   }
+
   const publishCamera = (next: SpatialCamera) => {
     camera = next
     const percent = Math.round(readZoom(next))
+
     if (percent !== zoomPercent) {
       zoomPercent = percent
       zoomListeners.forEach((listener) => listener())
     }
+
     layer.submitCamera(fitCamera(next, aspect))
   }
+
   const readConfiguration = () => {
     const propertyId = core.getElementData(configurationId)?.props?.settings
     const property = propertyId
       ? getPropertyComponentAccessor().getPropertyById(propertyId)
       : undefined
+
     if (!property) {
       throw new Error('Missing canonical farm configuration')
     }
+
     return validateConfiguration(
       (property.save() as unknown as { settings: FarmConfiguration }).settings
     )
   }
+
   const publishConfiguration = (
     next: FarmConfiguration,
     prepared = buildSiteMeshes(next, geometry),
@@ -258,9 +292,11 @@ export async function bootstrap(
         sceneDemandWorkspace.refresh(config, geometry.getScene())
         walkingOperating.refreshDemand()
       }
+
       updateSelectedRobot()
       configListeners.forEach((listener) => listener())
     })
+
   const configFeature = core.defineFeature(
     FeatureNames.CONFIGURATION,
     undefined,
@@ -272,6 +308,7 @@ export async function bootstrap(
           assertLive()
           // Detach the request before it enters the session queue.
           const next = validateConfiguration(draft)
+
           return getSessionManager().runAfterCancellingActiveSessions(
             () => core.getSystemContextSnapshot(),
             () => {
@@ -279,7 +316,9 @@ export async function bootstrap(
               if (JSON.stringify(next) === JSON.stringify(config)) {
                 return
               }
+
               const prepared = buildSiteMeshes(next, geometry)
+
               runTransaction(() =>
                 core.updateElementProperties([
                   {
@@ -307,6 +346,7 @@ export async function bootstrap(
     api: {
       replay: (redo: boolean) => {
         assertLive()
+
         return getSessionManager().runAfterCancellingActiveSessions(
           () => core.getSystemContextSnapshot(),
           async () => {
@@ -316,21 +356,27 @@ export async function bootstrap(
             } else {
               await undoWithRenderPolicy({ mode: 'atomic' })
             }
+
             runSceneComposition(() => {
               const next = readConfiguration()
+
               if (JSON.stringify(next) !== JSON.stringify(config)) {
                 publishConfiguration(next, undefined, false)
               }
+
               robot.refresh()
               const previousDemand = sceneDemandWorkspace.get()
+
               sceneDemandWorkspace.refresh(config, geometry.getScene())
               const selectionChanged = walkingOperating.refreshSelection()
+
               if (
                 !selectionChanged &&
                 sceneDemandWorkspace.get() !== previousDemand
               ) {
                 walkingOperating.refreshDemand()
               }
+
               updateSelectedRobot()
             })
           },
@@ -347,18 +393,22 @@ export async function bootstrap(
         patch: Partial<ViewState> | ((current: ViewState) => Partial<ViewState>)
       ) => {
         assertLive()
+
         return getSessionManager().runAfterCancellingActiveSessions(
           () => core.getSystemContextSnapshot(),
           () => {
             assertLive()
             const current = core.getSystemProperty<ViewState>(RuntimeKeys.VIEW)
+
             if (!current) {
               throw new Error('Missing view state')
             }
+
             const next = {
               ...current,
               ...(typeof patch === 'function' ? patch(current) : patch)
             }
+
             if (
               !Number.isFinite(next.filmOpacity) ||
               next.filmOpacity < 0 ||
@@ -366,6 +416,7 @@ export async function bootstrap(
             ) {
               throw new Error('Film opacity must be between 0 and 0.65')
             }
+
             if (
               !['overview', 'top', 'front', 'inside', 'joint'].includes(
                 next.camera
@@ -373,6 +424,7 @@ export async function bootstrap(
             ) {
               throw new Error('Unknown camera preset')
             }
+
             if (
               Object.keys(next.layers).length !==
                 Object.keys(INITIAL_LAYERS).length ||
@@ -382,6 +434,7 @@ export async function bootstrap(
             ) {
               throw new Error('Invalid display layers')
             }
+
             core.setSystemProperty(RuntimeKeys.VIEW, next)
           },
           FeatureNames.VIEW
@@ -397,6 +450,7 @@ export async function bootstrap(
       move: (right: number, up: number, forward: number) => {
         assertLive()
         const movementScale = movementSpeed / 1.5
+
         publishCamera(
           moveCamera(
             camera,
@@ -406,26 +460,32 @@ export async function bootstrap(
           )
         )
       },
+
       setMovementSpeed: (speed: number) => {
         assertLive()
         if (!Number.isFinite(speed) || speed < 0.01 || speed > 60) {
           throw new Error('Movement speed must be between 0.01 and 60 m/s')
         }
+
         if (speed === movementSpeed) {
           return
         }
+
         movementSpeed = speed
         speedListeners.forEach((listener) => listener())
       },
+
       look: (dx: number, dy: number) => {
         assertLive()
         publishCamera(lookCamera(camera, dx, dy))
       },
+
       orbit: (dx: number, dy: number) => {
         assertLive()
         if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
           return
         }
+
         publishCamera(
           orbitSpatialCamera(camera, -dx * 0.006, -dy * 0.006, {
             minPolar: 0.02,
@@ -433,16 +493,19 @@ export async function bootstrap(
           })
         )
       },
+
       dolly: (delta: number) => {
         assertLive()
         if (!Number.isFinite(delta)) {
           return
         }
+
         const current = readZoom(camera)
         const next = Math.max(
           1,
           Math.min(10000, current * Math.exp(-delta * 0.001))
         )
+
         publishCamera(
           setCameraDistance(
             camera,
@@ -453,19 +516,23 @@ export async function bootstrap(
           )
         )
       },
+
       zoom: (delta: number) => {
         assertLive()
         if (!Number.isFinite(delta)) {
           return
         }
+
         const current = readZoom(camera)
         const next = Math.max(
           1,
           Math.min(10000, current * Math.exp(-delta * 0.001))
         )
+
         // Optical magnification keeps the camera outside the inspected surfaces.
         publishCamera(zoomSpatialCamera(camera, next / current, 150))
       },
+
       pan: (dx: number, dy: number) => {
         assertLive()
         publishCamera(
@@ -480,6 +547,7 @@ export async function bootstrap(
           )
         )
       },
+
       fit: () => {
         assertLive()
         const s = robot.get().settings
@@ -496,6 +564,7 @@ export async function bootstrap(
             Math.max(sceneBounds.max[2], equipment.max[2])
           ]
         }
+
         publishCamera(
           fitScene(
             { ...camera, fov: referenceCamera.fov },
@@ -505,6 +574,7 @@ export async function bootstrap(
           )
         )
       },
+
       actualSize: () => {
         assertLive()
         publishCamera(
@@ -514,18 +584,22 @@ export async function bootstrap(
           )
         )
       },
+
       focusRobot: () => {
         assertLive()
         const walking = walkingOperating.get()
+
         if (walking.status !== 'legacy-view') {
           if (!walking.envelope) {
             return
           }
+
           const bounds = walking.envelope.bounds
           const target = bounds.min.map(
             (value, index) => (value + bounds.max[index]) / 2
           ) as [number, number, number]
           const distance = Math.hypot(...bounds.size)
+
           publishCamera(
             fitScene(
               {
@@ -543,10 +617,13 @@ export async function bootstrap(
               height
             )
           )
+
           return
         }
+
         const s = robot.get().settings
         const distance = Math.max(s.width, s.length, s.height) * 2.5
+
         publishCamera({
           ...camera,
           position: [s.dockX + distance, s.height * 1.6, s.dockZ - distance],
@@ -554,6 +631,7 @@ export async function bootstrap(
           fov: 42
         })
       },
+
       reset: () => {
         assertLive()
         publishCamera(referenceCamera)
@@ -566,19 +644,24 @@ export async function bootstrap(
       if (closed) {
         return
       }
+
       const previous = view
+
       view = next
       if (previous.camera !== next.camera) {
         referenceCamera = cameraPreset(next.camera, config)
         camera = referenceCamera
       }
+
       submitScene()
       listeners.forEach((listener) => listener())
     })
+
   const dispose = () => {
     if (disposePromise) {
       return disposePromise
     }
+
     closed = true
     sceneDemandWorkspace.close()
     walkingLocalAction.close()
@@ -608,10 +691,13 @@ export async function bootstrap(
         robot.unregister()
       }
     })
+
     return disposePromise
   }
+
   try {
     const rect = host.getBoundingClientRect()
+
     await core.start(host, {
       width: Math.max(1, rect.width),
       height: Math.max(1, rect.height),
@@ -637,6 +723,7 @@ export async function bootstrap(
     walkingOperating.initialize()
     observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect
+
       if (!closed && box && box.width > 0 && box.height > 0) {
         width = box.width
         height = box.height
@@ -646,51 +733,68 @@ export async function bootstrap(
       }
     })
     observer.observe(host)
+
     return {
       focusRobot: cameraFeature.api.focusRobot,
       getRobot: robot.get,
+
       getDockSource: () => {
         assertLive()
+
         return robotProjection.getDockSource()
       },
+
       isCurrentDockSource: (
         source: import('../render-app/robot-projection').DockSource
       ) => !closed && robotProjection.isCurrentDockSource(source),
+
       getRobotSource: () => {
         assertLive()
+
         return robotProjection.getSource()
       },
+
       isCurrentRobotSource: (
         source: import('../render-app/robot-projection').RobotSource
       ) => !closed && robotProjection.isCurrentSource(source),
+
       evaluateRobotPose: (
         source: import('../render-app/robot-projection').RobotSource,
         joints: import('../domain/robot-kinematics').RobotJoints
       ) => {
         assertLive()
+
         return robotProjection.evaluatePose(source, joints)
       },
+
       subscribeRobot: robot.subscribe,
       patchRobot: robot.patch,
+
       getScene: () => {
         assertLive()
+
         return geometry.getScene()
       },
+
       isCurrentScene: (
         scene: import('../render-app/site-geometry').PreparedScene
       ) => !closed && geometry.isCurrentScene(scene),
+
       getSceneDemandConfiguration: sceneDemandWorkspace.getConfiguration,
+
       setSceneDemandConfiguration: (
         next: Parameters<typeof sceneDemandWorkspace.setConfiguration>[0]
       ) => {
         const previous = sceneDemandWorkspace.get()
         const operation = sceneDemandWorkspace.setConfiguration(next)
+
         return operation.then(() => {
           if (sceneDemandWorkspace.get() !== previous) {
             walkingOperating.refreshDemand()
           }
         })
       },
+
       getSceneDemand: sceneDemandWorkspace.get,
       isCurrentSceneDemand: sceneDemandWorkspace.isCurrent,
       subscribeSceneDemand: sceneDemandWorkspace.subscribe,
@@ -709,52 +813,73 @@ export async function bootstrap(
       isCurrentWalkingActionObservation: walkingObservation.isCurrent,
       isCurrentWalkingOperatingReport: walkingOperating.isCurrent,
       subscribeWalkingOperatingReport: walkingOperating.subscribe,
+
       getConfiguration: () => config,
+
       subscribeConfiguration: (listener: () => void) => {
         configListeners.add(listener)
+
         return () => {
           configListeners.delete(listener)
         }
       },
+
       setConfiguration: configFeature.api.apply,
+
       undo: () => historyFeature.api.replay(false),
+
       redo: () => historyFeature.api.replay(true),
+
       getUndoDepth: () => core.getUndoHistoryDepth(),
+
       getView: () => view,
+
       getZoom: () => zoomPercent,
+
       getMovementSpeed: () => movementSpeed,
+
       subscribeMovementSpeed: (listener: () => void) => {
         assertLive()
         speedListeners.add(listener)
+
         return () => {
           speedListeners.delete(listener)
         }
       },
+
       setMovementSpeed: cameraFeature.api.setMovementSpeed,
+
       subscribeZoom: (listener: () => void) => {
         assertLive()
         zoomListeners.add(listener)
+
         return () => {
           zoomListeners.delete(listener)
         }
       },
+
       subscribe: (listener: () => void) => {
         assertLive()
         listeners.add(listener)
+
         return () => {
           listeners.delete(listener)
         }
       },
+
       setLayer: (key: Exclude<LayerId, 'base'>, visible: boolean) =>
         viewFeature.api.change((current) => ({
           layers: { ...current.layers, [key]: visible }
         })),
+
       setOpacity: (filmOpacity: number) =>
         viewFeature.api.change({ filmOpacity }),
+
       setCamera: async (mode: CameraMode) => {
         await viewFeature.api.change({ camera: mode })
         cameraFeature.api.reset()
       },
+
       move: cameraFeature.api.move,
       look: cameraFeature.api.look,
       pan: cameraFeature.api.pan,
@@ -770,4 +895,5 @@ export async function bootstrap(
     throw error
   }
 }
+
 export type FarmRuntime = Awaited<ReturnType<typeof bootstrap>>

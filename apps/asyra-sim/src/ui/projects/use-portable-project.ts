@@ -82,6 +82,7 @@ export function usePortableProject({
     if (operationPending.current) {
       return
     }
+
     if (
       !preview ||
       !window.confirm(
@@ -111,6 +112,7 @@ export function usePortableProject({
     if (operationPending.current) {
       return
     }
+
     operationPending.current = true
     setOperation('export')
     setError('')

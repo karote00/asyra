@@ -44,17 +44,23 @@ const confirmedActionBatch = (
 describe('AI registered action execution', () => {
   it('uses only its own supplied mutation boundary and prevents pre-aborted writes', async () => {
     const writes: string[] = []
+
     const scope: AiMutationExecutor = async (write) => {
       writes.push('enter')
       const result = write()
+
       writes.push('leave')
+
       return result
     }
+
     const controller = new AbortController()
+
     await executeAiActions(
       confirmedActionBatch([
         async (_args, context) => {
           expect(context.runMutation).toBe(scope)
+
           return runAiMutation(context, () => writes.push('write'))
         }
       ]),
@@ -80,6 +86,7 @@ describe('AI registered action execution', () => {
     const first = vi.fn(async (_args: unknown, context: AiExecutionContext) => {
       expect(Object.isFrozen(context)).toBe(true)
       await firstGate
+
       return {
         ok: true,
         token: 'executor-secret'
@@ -99,6 +106,7 @@ describe('AI registered action execution', () => {
     expect(second).not.toHaveBeenCalled()
     releaseFirst?.()
     const batch = await pending
+
     secondResult.selectedCount = 99
 
     expect(first.mock.calls[0][0]).toEqual({
@@ -132,6 +140,7 @@ describe('AI registered action execution', () => {
 
   it('does not invoke an executor for pre-abort', async () => {
     const controller = new AbortController()
+
     controller.abort()
     const execute = vi.fn(async () => null)
 
@@ -150,6 +159,7 @@ describe('AI registered action execution', () => {
     const controller = new AbortController()
     const first = vi.fn(async () => {
       controller.abort()
+
       return {
         applied: true
       }
@@ -185,6 +195,7 @@ describe('AI registered action execution', () => {
   it('does not invoke accessors while detaching executor summaries', async () => {
     const getter = vi.fn(() => 'executor-secret')
     const result: unknown[] = []
+
     Object.defineProperty(result, '0', {
       enumerable: true,
       get: getter
@@ -204,15 +215,21 @@ describe('AI registered action execution', () => {
 it('forwards synchronous settlement to the mutation owner and observes direct execution before yielding', async () => {
   const signal = new AbortController().signal
   const sequence: string[] = []
+
   const settled = (value: string) => sequence.push(value)
+
   const owner: AiMutationExecutor = async (mutate, observe) => {
     const result = mutate()
+
     sequence.push('publish')
     observe?.(result)
+
     return result
   }
+
   await runAiMutation({ signal, runMutation: owner }, () => 'owned', settled)
   const direct = runAiMutation({ signal }, () => 'direct', settled)
+
   expect(sequence).toEqual(['publish', 'owned', 'direct'])
   await direct
 })
@@ -225,18 +242,23 @@ it('checks cancellation after deferred mutation admission without losing later c
   })
   const writer = vi.fn(() => 'written')
   const settled = vi.fn()
+
   const owner: AiMutationExecutor = async (mutate, observe) => {
     await gate
     const result = mutate()
+
     observe?.(result)
+
     return result
   }
+
   const pending = runAiMutation(
     { signal: controller.signal, runMutation: owner },
     writer,
     settled
   )
   const rejected = expect(pending).rejects.toThrow()
+
   controller.abort()
   release?.()
   await rejected
@@ -244,11 +266,13 @@ it('checks cancellation after deferred mutation admission without losing later c
   expect(settled).not.toHaveBeenCalled()
 
   const afterWrite = new AbortController()
+
   await expect(
     runAiMutation(
       { signal: afterWrite.signal, runMutation: owner },
       () => {
         afterWrite.abort()
+
         return 'committed'
       },
       settled

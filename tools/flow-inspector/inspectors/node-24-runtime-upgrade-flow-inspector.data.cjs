@@ -758,7 +758,9 @@
           route.to === consumerStepId &&
           route.producedArtifacts.includes(id)
       )
+
       if (routeExists) {return}
+
       routes.push({
         id: `${ownerStepId}-to-${consumerStepId}-${id.slice('artifact:'.length)}`,
         from: ownerStepId,
@@ -1011,12 +1013,15 @@
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
       return value
     }
+
     Object.freeze(value)
     Object.values(value).forEach(freeze)
+
     return value
   }
 
   freeze(data)
   if (typeof globalThis !== 'undefined') {globalThis.FLOW_INSPECTOR_DATA = data}
+
   if (typeof module !== 'undefined' && module.exports) {module.exports = data}
 })()

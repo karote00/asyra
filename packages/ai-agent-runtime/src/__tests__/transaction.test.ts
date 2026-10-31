@@ -24,7 +24,9 @@ const transactionRunner = (): RunnerEvidence => {
         runCalls(label)
         try {
           const result = await execute()
+
           evidence.commits += 1
+
           return result
         } catch (error) {
           evidence.rollbacks += 1
@@ -33,6 +35,7 @@ const transactionRunner = (): RunnerEvidence => {
       }
     }
   }
+
   return evidence
 }
 
@@ -40,20 +43,26 @@ describe('AI action-batch transaction boundary', () => {
   it('forwards the invocation signal and host mutation scope without sharing it', async () => {
     const controller = new AbortController()
     const mutationCalls = vi.fn()
+
     const mutations: AiMutationExecutor = async (write) => {
       mutationCalls()
+
       return write()
     }
+
     const execute = vi.fn(async (scope) => {
       expect(scope).toBe(mutations)
+
       return 'complete'
     })
     const runner: AiTransactionRunner = {
       run: async (_label, callback, options) => {
         expect(options?.signal).toBe(controller.signal)
+
         return callback(mutations)
       }
     }
+
     await expect(
       runAiActionBatchTransaction(runner, controller.signal, execute)
     ).resolves.toBe('complete')
@@ -66,6 +75,7 @@ describe('AI action-batch transaction boundary', () => {
     const execute = vi.fn(async () => {
       expect(evidence.runCalls).toHaveBeenCalledOnce()
       expect(evidence.commits).toBe(0)
+
       return {
         actionCount: 2
       }
@@ -91,6 +101,7 @@ describe('AI action-batch transaction boundary', () => {
   it('does not open a transaction for pre-abort', async () => {
     const evidence = transactionRunner()
     const controller = new AbortController()
+
     controller.abort()
     const execute = vi.fn()
 
@@ -110,6 +121,7 @@ describe('AI action-batch transaction boundary', () => {
     const controller = new AbortController()
     const execute = vi.fn(async () => {
       controller.abort()
+
       return 'must not commit'
     })
 

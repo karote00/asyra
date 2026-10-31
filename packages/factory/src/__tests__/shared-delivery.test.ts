@@ -28,14 +28,18 @@ const update = (
 const createHarness = () => {
   const factory = new Factory()
   const channel = new LocalSharedDataChannel()
+
   factory.registerSharedDataChannel(SharedDataChannelNames.SCENE_TREE, channel)
   const projected: unknown[] = []
+
   factory.observeSharedDataChannel(
     SharedDataChannelNames.SCENE_TREE,
     (change) => projected.push(change)
   )
   const deliveryBatches: SharedDeliveryBatch[] = []
+
   factory.subscribeToSharedDeliveryBatch((batch) => deliveryBatches.push(batch))
+
   return { factory, deliveryBatches, projected }
 }
 
@@ -46,6 +50,7 @@ describe('Factory local shared delivery contract', () => {
     const observeBatch = vi.spyOn(channel, 'observeBatch')
     const laterBatches: (readonly unknown[])[] = []
     const singleChanges: unknown[] = []
+
     channel.observeBatch((batch) => {
       ;(
         batch[0] as {
@@ -57,6 +62,7 @@ describe('Factory local shared delivery contract', () => {
     channel.observe((change) => singleChanges.push(change))
 
     const source = { id: 'batch-of-one', nested: { value: 1 } }
+
     channel.append(source)
     source.nested.value = 2
 
@@ -84,7 +90,9 @@ describe('Factory local shared delivery contract', () => {
     const firstBatches: (readonly unknown[])[] = []
     const secondObserver = vi.fn()
     const lateObserver = vi.fn()
+
     let disposeSecond: () => void = () => undefined
+
     channel.observeBatch((batch) => {
       firstBatches.push(batch)
       disposeSecond()
@@ -160,8 +168,10 @@ describe('Factory local shared delivery contract', () => {
     })
     const target = {
       appendBatch,
+
       observeBatch: (handler: (changes: readonly unknown[]) => void) => {
         sourceHandlers.add(handler)
+
         return () => sourceHandlers.delete(handler)
       }
     }
@@ -174,19 +184,23 @@ describe('Factory local shared delivery contract', () => {
         ) {
           throw new Error(`legacy capability probe: ${String(property)}`)
         }
+
         return Reflect.get(batchChannel, property, receiver)
       },
+
       getPrototypeOf: () => {
         throw new Error('prototype inspection is forbidden')
       }
     }) as SharedDataChannel
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
     )
     const firstBatches: (readonly unknown[])[] = []
     const laterBatches: (readonly unknown[])[] = []
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       (batch) => {
@@ -250,18 +264,22 @@ describe('Factory local shared delivery contract', () => {
       appendBatch: (changes: readonly unknown[]) => {
         ;[...sourceHandlers].forEach((handler) => handler(changes))
       },
+
       observeBatch: (handler: (changes: readonly unknown[]) => void) => {
         sourceHandlers.add(handler)
+
         return () => sourceHandlers.delete(handler)
       }
     } as SharedDataChannel
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
     )
     const firstBatches: (readonly unknown[])[] = []
     const laterBatches: (readonly unknown[])[] = []
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       (batch) => {
@@ -407,6 +425,7 @@ describe('Factory local shared delivery contract', () => {
     const failure = new Error('remote action failed after immediate projection')
     const deliveryBatch = vi.fn()
     const publication = vi.fn()
+
     factory.subscribeToSharedDeliveryBatch(deliveryBatch)
     factory.subscribeToSharedPublication(publication)
     factory.registerTransactionReplayHandler(
@@ -468,6 +487,7 @@ describe('Factory local shared delivery contract', () => {
 
   it('publishes committed undo and redo replay as inverse and forward deliveries', () => {
     const { factory, deliveryBatches, projected } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -513,6 +533,7 @@ describe('Factory local shared delivery contract', () => {
 
   it('restores the source immediate mode when a replay handler leaves delivery unset', () => {
     const { factory, deliveryBatches } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -527,6 +548,7 @@ describe('Factory local shared delivery contract', () => {
             sharedDelivery: undefined
           }
         })
+
         return true
       }
     )
@@ -538,6 +560,7 @@ describe('Factory local shared delivery contract', () => {
     factory.undo()
 
     const deliveries = deliveryBatches.flatMap((batch) => batch.deliveries)
+
     expect(deliveries).toHaveLength(1)
     expect(deliveries[0]).toEqual(
       expect.objectContaining({
@@ -555,6 +578,7 @@ describe('Factory local shared delivery contract', () => {
 
   it('omits an unset canonical payload options field from shared delivery', () => {
     const { factory, deliveryBatches } = createHarness()
+
     factory.startTransaction()
     factory.updateTransaction({
       type: TransactionEventTypes.UPDATE_TRANSACTION,
@@ -570,6 +594,7 @@ describe('Factory local shared delivery contract', () => {
     factory.endTransaction()
 
     const deliveries = deliveryBatches.flatMap((batch) => batch.deliveries)
+
     expect(deliveries).toHaveLength(1)
     expect(
       Object.prototype.hasOwnProperty.call(deliveries[0]?.payload, 'options')
@@ -578,6 +603,7 @@ describe('Factory local shared delivery contract', () => {
 
   it('omits unset fields from canonical payload mutation options', () => {
     const { factory, deliveryBatches } = createHarness()
+
     factory.startTransaction()
     factory.updateTransaction({
       type: TransactionEventTypes.UPDATE_TRANSACTION,
@@ -598,6 +624,7 @@ describe('Factory local shared delivery contract', () => {
     factory.endTransaction()
 
     const deliveries = deliveryBatches.flatMap((batch) => batch.deliveries)
+
     expect(deliveries).toHaveLength(1)
     expect(deliveries[0]?.payload).toEqual(
       expect.objectContaining({ options: { undoable: false } })
@@ -612,11 +639,13 @@ describe('Factory local shared delivery contract', () => {
 
   it('isolates delivery batch subscriber failure from other subscribers and commit', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const later = vi.fn()
+
     factory.subscribeToSharedDeliveryBatch(() => {
       throw new Error('observer failed')
     })
@@ -631,15 +660,18 @@ describe('Factory local shared delivery contract', () => {
 
   it('isolates nested delivery batch subscriber mutation from later delivery and compensation', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const laterDeliveryBatches: SharedDeliveryBatch[] = []
+
     factory.subscribeToSharedDeliveryBatch((batch) => {
       const payload = batch.deliveries[0]?.payload as {
         after: { value: number }
       }
+
       payload.after.value = 99
     })
     factory.subscribeToSharedDeliveryBatch((batch) =>
@@ -687,9 +719,11 @@ describe('Factory local shared delivery contract', () => {
       appendBatch: (changes: readonly unknown[]) => {
         retainedBatches.push(changes)
       },
+
       observeBatch: () => () => undefined
     } as SharedDataChannel
     const deliveryBatches: SharedDeliveryBatch[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -752,6 +786,7 @@ describe('Factory local shared delivery contract', () => {
     const retainedSecond = retainedBatches[0]?.[1] as {
       after: { value: number }
     }
+
     expect(Object.isFrozen(retainedBatches[0])).toBe(true)
     expect(Object.isFrozen(retainedFirst.before)).toBe(true)
     expect(() => {
@@ -812,12 +847,14 @@ describe('Factory local shared delivery contract', () => {
     const scalarAppend = vi.fn((_change: unknown) => {
       throw new Error('Factory internals must not call scalar append')
     })
+
     LocalSharedDataChannel.prototype.append = function (change) {
       scalarAppend(change)
     }
 
     try {
       const factory = new Factory()
+
       factory.registerSharedDataChannel(
         SharedDataChannelNames.SCENE_TREE,
         new LocalSharedDataChannel()
@@ -847,9 +884,11 @@ describe('Factory local shared delivery contract', () => {
       'instance append override',
       () => {
         const channel = new LocalSharedDataChannel()
+
         channel.append = () => {
           throw new Error('Factory internals must not call scalar append')
         }
+
         return channel
       }
     ],
@@ -861,6 +900,7 @@ describe('Factory local shared delivery contract', () => {
             throw new Error('Factory internals must not call scalar append')
           }
         }
+
         return new MutatingLocalSharedDataChannel()
       }
     ]
@@ -869,6 +909,7 @@ describe('Factory local shared delivery contract', () => {
     (_name, createChannel) => {
       const factory = new Factory()
       const deliveryBatches: SharedDeliveryBatch[] = []
+
       factory.registerSharedDataChannel(
         SharedDataChannelNames.SCENE_TREE,
         createChannel()
@@ -907,6 +948,7 @@ describe('Factory local shared delivery contract', () => {
     const appendBatch = vi.fn()
     const target = {
       appendBatch,
+
       observeBatch: () => () => undefined
     }
     const channel = new Proxy(target, {
@@ -915,6 +957,7 @@ describe('Factory local shared delivery contract', () => {
       }
     }) as SharedDataChannel
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -955,11 +998,13 @@ describe('Factory local shared delivery contract', () => {
       appendBatch: () => {
         throw failure
       },
+
       observeBatch: () => () => undefined
     } as SharedDataChannel
     const publications: unknown[] = []
     const replayed: unknown[] = []
     const statuses: { origin: string; status: string }[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -969,6 +1014,7 @@ describe('Factory local shared delivery contract', () => {
       (event, mode) => {
         expect(mode).toBe('rollback')
         replayed.push((event as { payload: unknown }).payload)
+
         return true
       }
     )
@@ -1012,9 +1058,11 @@ describe('Factory local shared delivery contract', () => {
     const factory = new Factory()
     const channel = {
       appendBatch: vi.fn(),
+
       observeBatch: () => () => undefined
     } as SharedDataChannel
     const deliveryBatches: SharedDeliveryBatch[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -1072,11 +1120,13 @@ describe('Factory local shared delivery contract', () => {
       appendBatch: () => {
         throw failure
       },
+
       observeBatch: () => () => undefined
     } as SharedDataChannel
     const publications: unknown[] = []
     const replayed: unknown[] = []
     const statuses: { origin: string; status: string }[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -1086,6 +1136,7 @@ describe('Factory local shared delivery contract', () => {
       (event, mode) => {
         expect(mode).toBe('rollback')
         replayed.push((event as { payload: unknown }).payload)
+
         return true
       }
     )
@@ -1129,12 +1180,14 @@ describe('Factory local shared delivery contract', () => {
 
   it('isolates local projection mutation from later observers and collaboration delivery', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const laterProjection = vi.fn()
     const deliveryBatch = vi.fn()
+
     factory.observeSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       (change) => {

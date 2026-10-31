@@ -14,6 +14,7 @@ export function installRunStorageFeature(
     api: {
       retain: async (input: RunRecord): Promise<string> => {
         const record = archive.add(input)
+
         return attachRun(record.result.runId)
       }
     }

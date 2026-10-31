@@ -29,10 +29,12 @@ for (const [view, zoomSteps] of [
         frames: [] as { time: number; draws: number; triangles: number }[],
         active: false
       }
+
       Object.defineProperty(window, 'navigationProbe', { value: state })
       const p = WebGL2RenderingContext.prototype
       const draw = p.drawElements,
         instanced = p.drawElementsInstanced
+
       p.drawElements = function (...args) {
         if (state.active) {
           state.draws++
@@ -40,8 +42,10 @@ for (const [view, zoomSteps] of [
             state.triangles += args[1] / 3
           }
         }
+
         return draw.apply(this, args)
       }
+
       p.drawElementsInstanced = function (...args) {
         if (state.active) {
           state.draws++
@@ -49,10 +53,12 @@ for (const [view, zoomSteps] of [
             state.triangles += (args[1] * args[4]) / 3
           }
         }
+
         return instanced.apply(this, args)
       }
     })
     const errors: string[] = []
+
     page.on('pageerror', (e) => errors.push(e.message))
     await page.goto('/')
     await page
@@ -62,27 +68,35 @@ for (const [view, zoomSteps] of [
     const canvas = page.getByLabel('Office 3D scene').locator('canvas')
     const gpu = await canvas.evaluate((node) => {
       const gl = (node as HTMLCanvasElement).getContext('webgl2')
+
       if (!gl) {
         throw new Error('Missing WebGL')
       }
+
       const ext = gl.getExtension('WEBGL_debug_renderer_info')
+
       if (!ext) {
         throw new Error('Missing renderer information')
       }
+
       return String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL))
     })
+
     expect(gpu).not.toMatch(/swiftshader|llvmpipe|softpipe/i)
     for (let index = 0; index < zoomSteps; index++) {
       await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
     }
+
     await canvas.click({ position: { x: 20, y: 20 } })
     await canvas.screenshot({ path: info.outputPath('navigation-start.png') })
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
           let remaining = 30
+
           const next = () =>
             --remaining === 0 ? resolve() : requestAnimationFrame(next)
+
           requestAnimationFrame(next)
         })
     )
@@ -90,11 +104,14 @@ for (const [view, zoomSteps] of [
       process.env.OFFICE_NAVIGATION_PROFILE === '1'
         ? await page.context().newCDPSession(page)
         : undefined
+
     if (profiler) {
       await profiler.send('Profiler.enable')
       await profiler.send('Profiler.start')
     }
+
     const frames: { time: number; draws: number; triangles: number }[] = []
+
     for (const key of ['d', 'a', 'w', 's']) {
       await page.keyboard.down(key)
       try {
@@ -116,12 +133,14 @@ for (const [view, zoomSteps] of [
                     }
                   }
                 ).navigationProbe
+
                 probe.frames = []
                 probe.active = true
                 probe.draws = 0
                 probe.triangles = 0
                 let previous = performance.now()
                 const started = previous
+
                 const next = (now: number) => {
                   probe.frames.push({
                     time: now - previous,
@@ -138,26 +157,33 @@ for (const [view, zoomSteps] of [
                     requestAnimationFrame(next)
                   }
                 }
+
                 requestAnimationFrame(next)
               }
             )
         )
+
         frames.push(...segment.slice(1))
       } finally {
         await page.keyboard.up(key)
       }
     }
+
     if (profiler) {
       const { profile } = await profiler.send('Profiler.stop')
+
       await writeFile(
         info.outputPath('navigation-cpu.json'),
         JSON.stringify(profile)
       )
       await profiler.detach()
     }
+
     const active = frames
+
     const percentile = (values: number[], fraction: number) =>
       values.sort((a, b) => a - b)[Math.floor((values.length - 1) * fraction)]
+
     const summary = {
       gpu,
       url: page.url(),
@@ -187,6 +213,7 @@ for (const [view, zoomSteps] of [
         0.5
       )
     }
+
     await writeFile(
       info.outputPath('navigation-metrics.json'),
       JSON.stringify({ summary, frames }, null, 2)

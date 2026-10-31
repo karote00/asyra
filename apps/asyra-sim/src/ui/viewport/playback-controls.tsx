@@ -39,7 +39,9 @@ export function PlaybackControls({
   useEffect(() => {
     clock.current = new PlaybackClock({
       request: (callback) => requestAnimationFrame(callback),
+
       cancel: (handle) => cancelAnimationFrame(handle),
+
       now: () => performance.now()
     })
 

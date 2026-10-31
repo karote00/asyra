@@ -87,9 +87,12 @@ export interface PropertyRegistration<
 
 export class PropertyRegistry {
   private properties = new Map<string, BehaviorSubject<PropertyValue>>()
+
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous property types */
   private registrations = new Map<string, PropertyRegistration<any, any>>()
+
   private subscriptions = new Map<string, import('rxjs').Subscription>()
+
   private yjsFilters = new Map<
     string,
     (change: SceneTreeYjsChange['payload']) => boolean
@@ -103,10 +106,12 @@ export class PropertyRegistry {
       console.warn(
         `[PropertyRegistry] Property "${key}" already registered, skipping`
       )
+
       return
     }
 
     const subject = new BehaviorSubject<PropertyValue>(config.defaultValue)
+
     this.properties.set(key, subject)
     this.registrations.set(key, config)
 
@@ -120,6 +125,7 @@ export class PropertyRegistry {
       const subscription = config.source$.subscribe((value) => {
         subject.next(value)
       })
+
       this.subscriptions.set(key, subscription)
     }
   }
@@ -129,20 +135,24 @@ export class PropertyRegistry {
       if (trigger.action && change.action !== trigger.action) {
         return false
       }
+
       if (trigger.key && 'key' in change && change.key !== trigger.key) {
         return false
       }
+
       return true
     })
   }
 
   getMatchingProperties(change: SceneTreeYjsChange['payload']): string[] {
     const matching: string[] = []
+
     this.yjsFilters.forEach((filter, key) => {
       if (filter(change)) {
         matching.push(key)
       }
     })
+
     return matching
   }
 
@@ -166,12 +176,15 @@ export class PropertyRegistry {
 
   set<T extends PropertyValue>(key: string, value: T): void {
     const subject = this.properties.get(key)
+
     if (!subject) {
       console.warn(`[PropertyRegistry] Property "${key}" not found`)
+
       return
     }
 
     const currentValue = subject.getValue()
+
     if (!isEqual(currentValue, value)) {
       subject.next(value)
     }
@@ -182,10 +195,12 @@ export class PropertyRegistry {
     callback: (value: T) => void
   ): () => void {
     const subject = this.properties.get(key)
+
     if (!subject) {
       console.warn(
         `[PropertyRegistry] Cannot subscribe to "${key}", property not found`
       )
+
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       return () => {}
     }
@@ -193,6 +208,7 @@ export class PropertyRegistry {
     const subscription = subject.subscribe((value) => {
       callback(value as T)
     })
+
     return () => subscription.unsubscribe()
   }
 
@@ -220,6 +236,7 @@ export class PropertyRegistry {
 
   unregister(key: string): void {
     const subscription = this.subscriptions.get(key)
+
     subscription?.unsubscribe()
     this.subscriptions.delete(key)
     this.properties.delete(key)
@@ -238,11 +255,13 @@ export class PropertyRegistry {
   resetRuntime(): void {
     const subscriptions = [...this.subscriptions.values()]
     const subjects = [...this.properties.values()]
+
     this.subscriptions.clear()
     this.properties.clear()
     this.registrations.clear()
     this.yjsFilters.clear()
     const failures: unknown[] = []
+
     const attempt = (cleanup: () => void): void => {
       try {
         cleanup()
@@ -250,6 +269,7 @@ export class PropertyRegistry {
         failures.push(error)
       }
     }
+
     subscriptions.forEach((subscription) =>
       attempt(() => subscription.unsubscribe())
     )

@@ -70,6 +70,7 @@ export const OVAL_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
       data.height / 2
     )
   }
+
   replayPath()
   applyRenderableFill(graphic, data.fills, { replayPath })
 

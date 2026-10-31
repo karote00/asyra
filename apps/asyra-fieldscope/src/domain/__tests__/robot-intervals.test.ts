@@ -21,6 +21,7 @@ const centre: RobotJoints = {
   elbow: 0.5,
   wrist: -0.2
 }
+
 const box = (joints: RobotJoints, radius = 0): JointDomains =>
   Object.fromEntries(
     Object.entries(joints).map(([key, value]) => [
@@ -28,18 +29,22 @@ const box = (joints: RobotJoints, radius = 0): JointDomains =>
       [value - radius, value + radius]
     ])
   ) as unknown as JointDomains
+
 const singleton = (joints: RobotJoints): JointDomains =>
   Object.fromEntries(
     Object.entries(joints).map(([key, value]) => [key, [value, value]])
   ) as unknown as JointDomains
+
 const makeRig = () =>
   prepareRobotRig(DEFAULT_ROBOT, models.createRobotModel(DEFAULT_ROBOT))
+
 function contains(bounds: readonly Interval[], values: readonly number[]) {
   values.forEach((value, index) => {
     expect(bounds[index].low).toBeLessThanOrEqual(value)
     expect(bounds[index].high).toBeGreaterThanOrEqual(value)
   })
 }
+
 function enclose(
   result: ReturnType<typeof evaluateRobotIntervalPose>,
   point: ReturnType<typeof evaluateRobotAffinePose>
@@ -57,13 +62,16 @@ function enclose(
   for (const key of ['shoulder', 'elbow', 'wrist'] as const) {
     contains(result.pose.frames[key], point.pose.frames[key])
   }
+
   for (const key of ['position', 'closing', 'approach', 'up'] as const) {
     contains(result.pose.tool[key], point.pose.tool[key])
   }
 }
+
 function widths(result: ReturnType<typeof evaluateRobotIntervalPose>) {
   const width = (values: readonly Interval[]) =>
     Math.max(...values.map((v) => v.high - v.low))
+
   const positions = [
     ...result.parts.map((p) => p.transform.position),
     ...Object.values(result.pose.frames),
@@ -75,6 +83,7 @@ function widths(result: ReturnType<typeof evaluateRobotIntervalPose>) {
     result.pose.tool.approach,
     result.pose.tool.up
   ]
+
   return {
     position: Math.max(...positions.map(width)),
     coefficient: Math.max(...coefficients.map(width))
@@ -97,6 +106,7 @@ it('encloses singleton point and final affine results including limits signed ze
       values.map((value) => ({ ...REST_JOINTS, [key]: value }))
     )
   ]
+
   for (const definition of [
     DEFAULT_ROBOT,
     {
@@ -108,8 +118,10 @@ it('encloses singleton point and final affine results including limits signed ze
     }
   ]) {
     const rig = prepareRobotRig(definition, models.createRobotModel(definition))
+
     for (const joints of cases) {
       const result = evaluateRobotIntervalPose(rig, singleton(joints))
+
       expect(result.rig).toBe(rig)
       enclose(result, evaluateRobotAffinePose(rig, joints))
     }
@@ -118,12 +130,14 @@ it('encloses singleton point and final affine results including limits signed ze
 
 it('encloses full and zero-crossing joint boxes through the one canonical chain', () => {
   const rig = makeRig()
+
   for (const domains of [
     rig.limits,
     box(REST_JOINTS, 0.001),
     box(centre, 0.01)
   ]) {
     const result = evaluateRobotIntervalPose(rig, domains)
+
     // Samples check integration; shared exact arithmetic/trig oracles prove
     // enclosure soundness. They do not turn this box into a time trajectory.
     for (const fraction of [0, 0.17, 0.5, 0.83, 1]) {
@@ -133,8 +147,10 @@ it('encloses full and zero-crossing joint boxes through the one canonical chain'
           low + (high - low) * fraction
         ])
       ) as unknown as RobotJoints
+
       enclose(result, evaluateRobotAffinePose(rig, joints))
     }
+
     expect(Number.isFinite(widths(result).position)).toBe(true)
     expect(Number.isFinite(widths(result).coefficient)).toBe(true)
     expect(result).not.toHaveProperty('clear')
@@ -144,13 +160,17 @@ it('encloses full and zero-crossing joint boxes through the one canonical chain'
 
 it('keeps the predeclared rest singleton and narrow-box tightness thresholds', () => {
   const rig = makeRig()
+
   for (const joints of [REST_JOINTS, centre]) {
     const actual = widths(evaluateRobotIntervalPose(rig, singleton(joints)))
+
     expect(actual.position).toBeLessThanOrEqual(1e-10)
     expect(actual.coefficient).toBeLessThanOrEqual(1e-10)
   }
+
   const wide = widths(evaluateRobotIntervalPose(rig, box(centre, 1e-6)))
   const narrow = widths(evaluateRobotIntervalPose(rig, box(centre, 1e-7)))
+
   for (const key of ['position', 'coefficient'] as const) {
     expect(wide[key]).toBeLessThanOrEqual(1e-3)
     expect(narrow[key]).toBeLessThanOrEqual(2e-4)
@@ -162,12 +182,15 @@ it('rejects malformed and accessor snapshots before any scalar or trig work', ()
   const rig = makeRig(),
     sum = vi.spyOn(scalar, 'add'),
     bound = vi.spyOn(trig, 'boundPolynomialTrig')
+
   try {
     let reads = 0
     const accessor = {
       ...singleton(centre),
+
       get yaw() {
         reads++
+
         return [NaN, 0]
       }
     }
@@ -179,11 +202,13 @@ it('rejects malformed and accessor snapshots before any scalar or trig work', ()
       { ...singleton(centre), extra: [0, 0] },
       accessor
     ]
+
     for (const domains of cases) {
       expect(() =>
         evaluateRobotIntervalPose(rig, domains as JointDomains)
       ).toThrow()
     }
+
     expect(reads).toBe(1)
     expect(sum).not.toHaveBeenCalled()
     expect(bound).not.toHaveBeenCalled()
@@ -205,8 +230,10 @@ it('shares actual affine work only within one call and freezes owned evidence wi
     vi.spyOn(scalar, 'multiply'),
     vi.spyOn(scalar, 'divide')
   ]
+
   try {
     const first = evaluateRobotIntervalPose(rig, input)
+
     expect(first.work.fk).toBe(1)
     expect(first.work.trigCalls).toBe(8)
     expect(bound).toHaveBeenCalledTimes(8)
@@ -246,12 +273,14 @@ it('shares actual affine work only within one call and freezes owned evidence wi
     expect(Object.isFrozen(first.work)).toBe(true)
     expect(Object.isFrozen(input)).toBe(false)
     const second = evaluateRobotIntervalPose(rig, input)
+
     expect(second).not.toBe(first)
     expect(second.parts[0].affine).not.toBe(first.parts[0].affine)
     expect(second.parts[0].source).toBe(first.parts[0].source)
     expect(bound).toHaveBeenCalledTimes(16)
     expect(generation).not.toHaveBeenCalled()
     const captured = first.pose.domains.yaw[0]
+
     ;(input.yaw as unknown as number[])[0] = 0
     expect(first.pose.domains.yaw[0]).toBe(captured)
     bound.mockImplementation(() => {

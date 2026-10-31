@@ -30,8 +30,10 @@ export interface CropPosition {
 /** Local deterministic generator: no shared mutable seed or wall-clock input. */
 export function cropRandom(seed: number) {
   let state = seed >>> 0
+
   return () => {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0
+
     return state / 4294967296
   }
 }
@@ -48,6 +50,7 @@ export function createCropPositions(config: FarmConfiguration): CropPosition[] {
       1701 + row.row * 137 + (row.side === 'left' ? 17 : 29)
     )
     const direction = row.side === 'left' ? -1 : 1
+
     return Array.from({ length: count }, (_, index) => ({
       ...row,
       id: `plant-${row.bay}-${row.row}-${row.side}-${index}`,
@@ -74,11 +77,14 @@ export function createCropPositions(config: FarmConfiguration): CropPosition[] {
     Math.floor(cucumbers.length / CROP_LAYOUT.plantsPerOvergrownFruit)
   )
   const random = cropRandom(4931)
+
   for (let i = 0; i < overgrownCount; i++) {
     const selected = i + Math.floor(random() * (cucumbers.length - i))
+
     ;[cucumbers[i], cucumbers[selected]] = [cucumbers[selected], cucumbers[i]]
     cucumbers[i].variant =
       CROP_LAYOUT.overgrownVariants[i % CROP_LAYOUT.overgrownVariants.length]
   }
+
   return plants
 }

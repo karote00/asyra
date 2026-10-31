@@ -52,9 +52,11 @@ const getFeatureDefinition = (featureName: string) => {
   const definition = mocks.defineFeature.mock.calls.find(
     ([registeredName]) => registeredName === featureName
   )?.[2]
+
   if (!definition) {
     throw new Error(`Missing feature definition for "${featureName}"`)
   }
+
   return definition
 }
 
@@ -80,6 +82,7 @@ describe('canvas hierarchy hover feature', () => {
       keyMeta: true,
       keyCtrl: false
     }
+
     mocks.getRenderElementIdAtClientPos.mockReturnValue('nested-leaf')
     mocks.resolveCurrent.mockReturnValue('nested-leaf')
 
@@ -102,6 +105,7 @@ describe('canvas hierarchy hover feature', () => {
       keyMeta: false,
       keyCtrl: false
     }
+
     mocks.getRenderElementIdAtClientPos.mockReturnValue('rectangle-1')
     mocks.getPathEditingVectorId.mockReturnValue('vector-1')
 
@@ -124,6 +128,7 @@ describe('canvas hierarchy hover feature', () => {
         elementId: 'nested-leaf'
       }
     }
+
     mocks.resolveCurrent.mockReturnValue('group-1')
 
     expect(

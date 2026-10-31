@@ -7,7 +7,9 @@ const { loadContract } = require('./contracts.cjs')
 const { safePath } = require('./snapshot.cjs')
 const { writeAtomic, validId } = require('./store.cjs')
 const lifecycle = require('./observation-lifecycle.cjs')
+
 const digest = (value) => createHash('sha256').update(value).digest('hex')
+
 const FAILURE_DETAIL_FIELDS = [
   'name',
   'message',
@@ -16,6 +18,7 @@ const FAILURE_DETAIL_FIELDS = [
   'actual',
   'diff'
 ]
+
 const validFailureDetails = (value, execution = false) =>
   Array.isArray(value) &&
   value.every(
@@ -31,6 +34,7 @@ const validFailureDetails = (value, execution = false) =>
           typeof text === 'string'
       )
   )
+
 const validRetainedArtifacts = (value) =>
   Array.isArray(value) &&
   value.every(
@@ -43,6 +47,7 @@ const validRetainedArtifacts = (value) =>
       Number.isSafeInteger(item.size) &&
       item.size >= 0
   )
+
 const DEFAULT_MANIFESTS = [
   'packages/preset/coverage-flow-contracts.json',
   'packages/preset/navigation-flow-contracts.json',
@@ -54,26 +59,34 @@ const DEFAULT_MANIFESTS = [
   'packages/factory/flow-contracts.json',
   'apps/asyra-design/undo-redo-flow-contracts.json'
 ]
+
 const observationDirectory = (root) =>
   safePath(root, 'tmp/flow-inspector/test-results')
+
 const relative = (root, file) =>
   path.relative(root, path.resolve(root, file)).split(path.sep).join('/')
+
 const identity = (item) =>
   JSON.stringify([item.file, item.projectName, item.testName])
 
 function fingerprintPaths(root, declaredInputs) {
   const inputs = new Set()
+
   const add = (input) => {
     if (inputs.has(input)) {
       return
     }
+
     const file = safePath(root, input)
+
     if (!fs.existsSync(file)) {
       throw new Error('Missing mapped observation input: ' + input)
     }
+
     if (fs.lstatSync(file).isSymbolicLink()) {
       throw new Error('Symlinked observation input: ' + input)
     }
+
     if (fs.statSync(file).isDirectory()) {
       for (const name of fs.readdirSync(file).sort()) {
         add(input + '/' + name)
@@ -82,18 +95,23 @@ function fingerprintPaths(root, declaredInputs) {
       inputs.add(input)
     }
   }
+
   declaredInputs.forEach(add)
   const files = [...inputs].sort().map((file) => {
     const absolute = safePath(root, file)
+
     return {
       path: file,
       digest: fs.existsSync(absolute) ? digest(fs.readFileSync(absolute)) : null
     }
   })
+
   return { digest: digest(JSON.stringify(files)), files }
 }
+
 function sourceFingerprint(root, contracts) {
   const inputs = ['package.json', 'yarn.lock']
+
   for (const contract of contracts) {
     for (const key of [
       'manifestPath',
@@ -104,24 +122,28 @@ function sourceFingerprint(root, contracts) {
     ]) {
       inputs.push(contract[key])
     }
+
     inputs.push(...(contract.observationInputs ?? []))
     for (const item of contract.cases) {
       if (item.testFile) {
         inputs.push(item.testFile)
       }
     }
+
     for (const step of contract.runtimeScope.steps) {
       for (const boundary of step.implementationBoundary) {
         inputs.push(boundary.replace(/\/\*\*$/, ''))
       }
     }
   }
+
   return fingerprintPaths(root, inputs)
 }
 
 function beginObservation(root, options = {}) {
   const contracts = [],
     issues = []
+
   for (const manifest of options.manifestPaths ?? DEFAULT_MANIFESTS) {
     try {
       contracts.push(loadContract(root, undefined, manifest))
@@ -129,8 +151,10 @@ function beginObservation(root, options = {}) {
       issues.push(manifest + ': ' + error.message)
     }
   }
+
   let head = null,
     source = null
+
   try {
     head = execFileSync('git', ['rev-parse', 'HEAD'], {
       cwd: root,
@@ -140,11 +164,13 @@ function beginObservation(root, options = {}) {
   } catch {
     issues.push('Git revision unavailable')
   }
+
   try {
     source = sourceFingerprint(root, contracts)
   } catch (error) {
     issues.push('Source fingerprint unavailable: ' + error.message)
   }
+
   const request =
     options.request ??
     (process.env.FLOW_RESULT_REQUEST
@@ -157,13 +183,16 @@ function beginObservation(root, options = {}) {
       : undefined)
   const intent = request ? lifecycle.resolveIntent(contracts, request) : null
   let correction
+
   if (request?.predecessorId) {
     const previous = createObservationReader(observationDirectory(root)).get(
       request.predecessorId
     )
+
     if (previous.phase !== 'completed') {
       throw new Error('Correction predecessor is incomplete')
     }
+
     correction = {
       version: 1,
       predecessorId: previous.id,
@@ -174,6 +203,7 @@ function beginObservation(root, options = {}) {
       throw new Error('Invalid correction reason')
     }
   }
+
   const context = {
     ...(intent ? { intent } : {}),
     ...(correction ? { correction } : {}),
@@ -189,12 +219,15 @@ function beginObservation(root, options = {}) {
       : {}),
     command: options.command ?? null
   }
+
   if (process.env.FLOW_FILE_DIRECTORY) {
     context.flowWrite = require('../flow-files/producers.cjs').capture(
       process.env.FLOW_FILE_DIRECTORY
     )
+
     return context
   }
+
   saveObservation(observationDirectory(root), {
     ...context,
     authority: 'observation-only',
@@ -202,22 +235,29 @@ function beginObservation(root, options = {}) {
     cases: [],
     report: null
   })
+
   return context
 }
+
 function localizeReport(root, context, report, options = {}) {
   const issues = [...context.issues, ...(options.errors ?? []).map(String)]
+
   if (!report || !Array.isArray(report.testResults)) {
     issues.push('Missing or malformed test report')
   }
+
   const executionFailureDetails = options.executionFailureDetails
+
   if (
     executionFailureDetails !== undefined &&
     !validFailureDetails(executionFailureDetails, true)
   ) {
     issues.push('Malformed execution failure details')
   }
+
   const observations = []
   const suites = Array.isArray(report?.testResults) ? report.testResults : []
+
   for (const [index, suite] of suites.entries()) {
     if (
       !suite ||
@@ -227,10 +267,13 @@ function localizeReport(root, context, report, options = {}) {
       issues.push('Malformed test suite')
       continue
     }
+
     if (suite.message) {
       issues.push(suite.name + ': ' + suite.message)
     }
+
     const projectName = options.projects?.[index] ?? ''
+
     for (const [
       assertionIndex,
       assertion
@@ -239,6 +282,7 @@ function localizeReport(root, context, report, options = {}) {
         issues.push('Malformed test observation')
         continue
       }
+
       const status = [
         'passed',
         'failed',
@@ -249,12 +293,14 @@ function localizeReport(root, context, report, options = {}) {
         ? assertion.status
         : 'unknown'
       const failureDetails = options.failureDetails?.[index]?.[assertionIndex]
+
       if (
         failureDetails !== undefined &&
         !validFailureDetails(failureDetails)
       ) {
         issues.push('Malformed assertion details: ' + assertion.fullName)
       }
+
       observations.push({
         ...(validFailureDetails(failureDetails)
           ? { failureDetails: structuredClone(failureDetails) }
@@ -272,6 +318,7 @@ function localizeReport(root, context, report, options = {}) {
         assertionLocation: assertion.location ?? null
       })
     }
+
     if (
       suite.status === 'failed' &&
       !suite.assertionResults.some((item) => item?.status === 'failed') &&
@@ -280,10 +327,13 @@ function localizeReport(root, context, report, options = {}) {
       issues.push(suite.name + ': Suite failed without an assertion result')
     }
   }
+
   const counts = new Map()
+
   for (const item of observations) {
     counts.set(identity(item), (counts.get(identity(item)) ?? 0) + 1)
   }
+
   const cases = observations.map((item, index) => {
     const matches = context.contracts.flatMap((contract) =>
       contract.cases
@@ -296,15 +346,19 @@ function localizeReport(root, context, report, options = {}) {
         .map((candidate) => ({ contract, candidate }))
     )
     let resolution = 'unmapped'
+
     if (matches.length === 1) {
       resolution = 'mapped'
     }
+
     if (matches.length > 1 || counts.get(identity(item)) > 1) {
       resolution = 'ambiguous'
     }
+
     if (options.stale) {
       resolution = 'stale'
     }
+
     const locations =
       resolution !== 'mapped'
         ? []
@@ -312,6 +366,7 @@ function localizeReport(root, context, report, options = {}) {
             const step = contract.architectureDefinition.steps.find(
               (step) => step.id === candidate.stepId
             )
+
             return {
               targetId: contract.targetId,
               flowId: candidate.flowId,
@@ -328,6 +383,7 @@ function localizeReport(root, context, report, options = {}) {
               architectureVersion: contract.architectureVersion
             }
           })
+
     return {
       ...item,
       id: context.id + ':' + index,
@@ -340,9 +396,11 @@ function localizeReport(root, context, report, options = {}) {
           : 'Location unavailable: ' + resolution
     }
   })
+
   if (options.stale) {
     issues.push('Mapped inputs changed during execution; locations are stale')
   }
+
   if (
     report?.success === false &&
     !cases.some((item) => item?.status === 'failed') &&
@@ -350,6 +408,7 @@ function localizeReport(root, context, report, options = {}) {
   ) {
     issues.push('Runner did not complete successfully')
   }
+
   return {
     ...context,
     authority: 'observation-only',
@@ -368,8 +427,10 @@ function localizeReport(root, context, report, options = {}) {
       : report
   }
 }
+
 function completeObservation(root, context, report, options = {}) {
   let stale = true
+
   try {
     stale =
       options.stale === true ||
@@ -379,11 +440,13 @@ function completeObservation(root, context, report, options = {}) {
   } catch (error) {
     options = { ...options, errors: [...(options.errors ?? []), error.message] }
   }
+
   let result = localizeReport(root, context, report, { ...options, stale })
   // Preserve the reader's existing bound, including its envelope and digest.
   const envelopeBytes = Buffer.byteLength(
     JSON.stringify({ digest: '0'.repeat(64), record: result }, null, 2) + '\n'
   )
+
   if (envelopeBytes > 32 * 1024 * 1024) {
     result = localizeReport(
       root,
@@ -397,6 +460,7 @@ function completeObservation(root, context, report, options = {}) {
       }
     )
   }
+
   if (context.flowWrite) {
     require('../flow-files/producers.cjs').publish(
       result,
@@ -406,25 +470,34 @@ function completeObservation(root, context, report, options = {}) {
   } else {
     saveObservation(observationDirectory(root), result)
   }
+
   return result
 }
+
 function saveObservation(directory, record) {
   if (!validId(record.id)) {
     throw new Error('Invalid observation id')
   }
+
   fs.mkdirSync(directory, { recursive: true })
   const file = path.join(directory, record.id + '.json')
+
   if (fs.existsSync(file)) {
     const previous = JSON.parse(fs.readFileSync(file, 'utf8'))
+
     if (previous.record.phase === 'completed') {
       throw new Error('Completed observations are immutable')
     }
   }
+
   const bytes = JSON.stringify(record)
+
   writeAtomic(file, { digest: digest(bytes), record })
 }
+
 const strings = (value) =>
   Array.isArray(value) && value.every((item) => typeof item === 'string')
+
 function validCase(item, runId) {
   return (
     item &&
@@ -468,6 +541,7 @@ function validCase(item, runId) {
     )
   )
 }
+
 // A recorded invocation is evidence scope, never permission to execute its argv.
 function invocationScope(record) {
   if (
@@ -481,6 +555,7 @@ function invocationScope(record) {
   ) {
     return null
   }
+
   return JSON.stringify({
     cwd: record.command.cwd,
     argv: record.command.argv,
@@ -492,15 +567,18 @@ function invocationScope(record) {
       .sort(([a], [b]) => a.localeCompare(b))
   })
 }
+
 function classifyWarnings(records, associations = []) {
   const cleanScopes = new Map()
   const groups = { current: [], history: [] }
+
   for (const record of [...records].reverse()) {
     const scope = invocationScope(record)
     const successors = cleanScopes.get(scope) ?? []
     const successor = successors.find((value) =>
       record.cases.every((item) => value.identities.has(identity(item)))
     )
+
     if (record.issues.length || record.executionFailureDetails?.length) {
       const explicit =
         records.find((next) => lifecycle.canSupersede(record, next)) ??
@@ -511,6 +589,7 @@ function classifyWarnings(records, associations = []) {
                 value.id === relation.successorId &&
                 lifecycle.recordDigest(value) === relation.successorDigest
             )
+
             return lifecycle.canSupersede(
               record,
               next,
@@ -539,11 +618,13 @@ function classifyWarnings(records, associations = []) {
             successor.identities.has(identity(item))
           ))
       let replacementReason = null
+
       if (explicit) {
         replacementReason = 'Corrected invocation executed the intended cases'
       } else if (retired) {
         replacementReason = 'Later complete invocation covered the same scope'
       }
+
       const group = {
         runId: record.id,
         startedAt: record.startedAt,
@@ -552,8 +633,10 @@ function classifyWarnings(records, associations = []) {
         supersededBy: retired ? (explicit?.id ?? successor.record.id) : null,
         replacementReason
       }
+
       groups[retired ? 'history' : 'current'].push(group)
     }
+
     if (
       scope !== null &&
       record.phase === 'completed' &&
@@ -568,6 +651,7 @@ function classifyWarnings(records, associations = []) {
       new Set(record.cases.map(identity)).size === record.cases.length
     ) {
       const identities = new Set(record.cases.map(identity))
+
       // Keep only coverage not already proven by a later clean invocation.
       if (
         !successors.some((value) =>
@@ -578,13 +662,16 @@ function classifyWarnings(records, associations = []) {
       }
     }
   }
+
   return groups
 }
+
 function createObservationReader(directory, options = {}) {
   const entries = new Map()
   const relations = new Map()
   const artifacts = new Map()
   const readArtifact = options.readArtifact ?? ((file) => fs.readFileSync(file))
+
   const projectRecord = (entry) =>
     entry.artifactErrors?.length
       ? {
@@ -597,27 +684,33 @@ function createObservationReader(directory, options = {}) {
           }))
         }
       : entry.record
+
   const refreshArtifacts = () => {
     const live = new Set()
+
     for (const entry of entries.values()) {
       entry.artifactErrors = []
       if (!entry.record) {
         continue
       }
+
       for (const artifact of entry.record.retainedArtifacts ?? []) {
         const key = artifact.retainedPath
+
         live.add(key)
         try {
           const prefix =
             'tmp/flow-inspector/test-results/' +
             entry.record.id +
             '/attachments/'
+
           if (
             !key.startsWith(prefix) ||
             !/^[0-9]+$/.test(key.slice(prefix.length))
           ) {
             throw new Error('Invalid retained artifact path')
           }
+
           const file = safePath(
             directory,
             entry.record.id + '/attachments/' + key.slice(prefix.length)
@@ -634,8 +727,10 @@ function createObservationReader(directory, options = {}) {
             ':' +
             artifact.size
           let checked = artifacts.get(key)
+
           if (checked?.signature !== signature) {
             let error = null
+
             if (
               !stat.isFile() ||
               stat.size !== artifact.size ||
@@ -645,9 +740,11 @@ function createObservationReader(directory, options = {}) {
             } else if (digest(readArtifact(file)) !== artifact.digest) {
               error = 'Retained artifact digest mismatch'
             }
+
             checked = { signature, error }
             artifacts.set(key, checked)
           }
+
           if (checked.error) {
             throw new Error(checked.error)
           }
@@ -658,13 +755,16 @@ function createObservationReader(directory, options = {}) {
         }
       }
     }
+
     for (const key of artifacts.keys()) {
       if (!live.has(key)) {
         artifacts.delete(key)
       }
     }
   }
+
   const readFile = options.readFile ?? ((file) => fs.readFileSync(file, 'utf8'))
+
   const refresh = () => {
     const relationDirectory = path.join(directory, 'corrections')
     const relationNames = fs.existsSync(relationDirectory)
@@ -672,34 +772,42 @@ function createObservationReader(directory, options = {}) {
           .readdirSync(relationDirectory)
           .filter((name) => !name.includes('.publish-'))
       : []
+
     for (const name of relations.keys()) {
       if (!relationNames.includes(name)) {
         relations.delete(name)
       }
     }
+
     for (const name of relationNames) {
       const file = path.join(relationDirectory, name)
       const stat = fs.lstatSync(file)
       const signature = stat.mtimeMs + ':' + stat.ctimeMs + ':' + stat.size
+
       if (relations.get(name)?.signature === signature) {
         continue
       }
+
       try {
         if (!stat.isFile() || stat.size > 1024 * 1024) {
           throw new Error('Invalid correction file')
         }
+
         const relation = JSON.parse(readFile(file))
+
         if (
           !lifecycle.validAssociation(relation) ||
           name !== relation.correction.predecessorId + '.json'
         ) {
           throw new Error('Invalid correction relation')
         }
+
         relations.set(name, { signature, relation })
       } catch (error) {
         relations.set(name, { signature, error: name + ': ' + error.message })
       }
     }
+
     const names = fs.existsSync(directory)
       ? fs
           .readdirSync(directory)
@@ -708,24 +816,30 @@ function createObservationReader(directory, options = {}) {
           )
       : []
     const live = new Set(names)
+
     for (const name of entries.keys()) {
       if (!live.has(name)) {
         entries.delete(name)
       }
     }
+
     for (const name of names) {
       const file = path.join(directory, name),
         stat = fs.lstatSync(file)
       const signature = stat.mtimeMs + ':' + stat.ctimeMs + ':' + stat.size
+
       if (entries.get(name)?.signature === signature) {
         continue
       }
+
       try {
         if (!stat.isFile() || stat.size > 32 * 1024 * 1024) {
           throw new Error('Invalid observation file')
         }
+
         const envelope = JSON.parse(readFile(file)),
           record = envelope.record
+
         if (
           !record ||
           record.id + '.json' !== name ||
@@ -759,22 +873,27 @@ function createObservationReader(directory, options = {}) {
         ) {
           throw new Error('Invalid observation record')
         }
+
         entries.set(name, { signature, record })
       } catch (error) {
         entries.set(name, { signature, error: name + ': ' + error.message })
       }
     }
+
     refreshArtifacts()
   }
+
   return {
     associations() {
       refresh()
+
       return structuredClone(
         [...relations.values()]
           .filter((entry) => entry.relation)
           .map((entry) => entry.relation)
       )
     },
+
     warningContext(id) {
       refresh()
       const records = [...entries.values()]
@@ -796,11 +915,13 @@ function createObservationReader(directory, options = {}) {
       const selected = new Set(
         (records.find((record) => record.id === id)?.cases ?? []).map(identity)
       )
+
       const followsRecovery = (group) =>
         (
           records.find((record) => record.id === group.supersededBy)?.cases ??
           []
         ).some((item) => selected.has(identity(item)))
+
       const related = Object.entries(groups).flatMap(([status, values]) =>
         values
           .filter(
@@ -817,22 +938,29 @@ function createObservationReader(directory, options = {}) {
             evidenceUrl: '/api/test-results/' + item.runId
           }))
       )
+
       return { total: related.length, items: related.slice(0, 3) }
     },
+
     caseContext(id, caseId) {
       if (!validId(id)) {
         throw new Error('Invalid observation id')
       }
+
       refresh()
       const entry = entries.get(id + '.json')
+
       if (!entry?.record) {
         throw new Error(entry?.error ?? 'Observation not found')
       }
+
       const record = projectRecord(entry)
       const item = record.cases.find((value) => value.id === caseId)
+
       if (!item) {
         throw new Error('Observed case unavailable')
       }
+
       // Project before cloning: source inventories and raw reports are not summary inputs.
       return structuredClone({
         record: {
@@ -865,17 +993,22 @@ function createObservationReader(directory, options = {}) {
         )
       })
     },
+
     get(id) {
       if (!validId(id)) {
         throw new Error('Invalid observation id')
       }
+
       refresh()
       const entry = entries.get(id + '.json')
+
       if (!entry?.record) {
         throw new Error(entry?.error ?? 'Observation not found')
       }
+
       return structuredClone(entry.record)
     },
+
     list({ caseIdentityOnly = false } = {}) {
       refresh()
       const records = [...entries.values()]
@@ -894,6 +1027,7 @@ function createObservationReader(directory, options = {}) {
           const next = records.find(
             (record) => record.id === relation.successorId
           )
+
           return next &&
             lifecycle.recordDigest(next) === relation.successorDigest &&
             lifecycle.canSupersede(
@@ -913,19 +1047,25 @@ function createObservationReader(directory, options = {}) {
       const startedAt = new Map(
         records.map((record) => [record.id, record.startedAt])
       )
+
       for (const record of records.filter((value) =>
         lifecycle.matchesExecution(value, options.executionIdentity)
       )) {
         const perRun = new Map()
+
         for (const item of record.cases) {
           const key = identity(item)
+
           if (!perRun.has(key)) {
             perRun.set(key, [])
           }
+
           perRun.get(key).push(item)
         }
+
         for (const [key, items] of perRun) {
           const previous = current.get(key)
+
           if (
             previous?.some(
               (item) => startedAt.get(item.runId) === record.startedAt
@@ -934,11 +1074,13 @@ function createObservationReader(directory, options = {}) {
             current.set(key, [...previous, ...items])
             continue
           }
+
           const incomplete = items.some(
             (item) =>
               item.resolution === 'stale' ||
               !['passed', 'failed'].includes(item.status)
           )
+
           // A filtered invocation supplies skipped siblings, not recovery evidence.
           // An ambiguous group must settle completely before retiring its failures.
           if (
@@ -951,9 +1093,11 @@ function createObservationReader(directory, options = {}) {
             ])
             continue
           }
+
           current.set(key, items)
         }
       }
+
       if (caseIdentityOnly) {
         return structuredClone({
           currentCases: [...current.values()].flat().map((item) => ({
@@ -973,6 +1117,7 @@ function createObservationReader(directory, options = {}) {
           }))
         })
       }
+
       return structuredClone({
         runs: records
           .map(
@@ -1025,6 +1170,7 @@ function createObservationReader(directory, options = {}) {
     }
   }
 }
+
 module.exports = {
   fingerprintPaths,
   FAILURE_DETAIL_FIELDS,

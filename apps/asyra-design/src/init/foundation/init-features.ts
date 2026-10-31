@@ -24,6 +24,7 @@ export const initFeatures = (
   options: InitFeaturesOptions
 ): InitializedFeatures => {
   const ai = registerAiAgentFeature(options.aiRuntime)
+
   return Object.freeze({
     ai
   })

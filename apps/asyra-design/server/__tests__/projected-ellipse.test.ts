@@ -21,6 +21,7 @@ const ellipse = {
   u: { x: 6, y: 2, z: 1 },
   v: { x: 1, y: -2, z: 5 }
 }
+
 const face = (e = ellipse) => ({
   type: 'projected-face',
   key: 'disk',
@@ -28,15 +29,18 @@ const face = (e = ellipse) => ({
   ellipse: e,
   fill: '#123456'
 })
+
 const root = (children: unknown[]) => ({
   type: 'group',
   name: 'Projected ovals',
   projection: camera,
   children
 })
+
 const project = (p: { x: number; y: number; z: number }) => {
   const a = (camera.azimuth * Math.PI) / 180,
     e = (camera.elevation * Math.PI) / 180
+
   return {
     x: camera.originX + camera.scale * (Math.cos(a) * p.x - Math.sin(a) * p.y),
     y:
@@ -59,6 +63,7 @@ it.each([
     const admitted = admitPreparedDesignDelivery(deliverPreparedDesign(design))
     const r = admitted.entries[0].descriptor,
       d = admitted.entries[1].descriptor
+
     expect(d.type).toBe('oval')
     expect(d).not.toHaveProperty('points')
     const angle = Number(d.rotation),
@@ -69,6 +74,7 @@ it.each([
     const w = Number(d.width),
       h = Number(d.height)
     const center = project(e.center)
+
     expect(x + (c * w) / 2 - (s * h) / 2).toBeCloseTo(center.x, 9)
     expect(y + (s * w) / 2 + (c * h) / 2).toBeCloseTo(center.y, 9)
     for (let i = 0; i < 97; i++) {
@@ -80,6 +86,7 @@ it.each([
       })
       const dx = p.x - center.x,
         dy = p.y - center.y
+
       expect(
         ((c * dx + s * dy) / (w / 2)) ** 2 + ((-s * dx + c * dy) / (h / 2)) ** 2
       ).toBeCloseTo(1, 10)
@@ -98,14 +105,17 @@ it('retains translated pattern order and native object budgets without sampled c
       members: [face()]
     }
   ])
+
   expect(measureDesignBudget(input).observed).toMatchObject({
     expandedNodes: 101,
     expandedPathCommands: 0,
     sourcePathCommands: 0
   })
   const constructed = constructDesign(input)
+
   expect(constructed.sourceWork.projectionCalls).toBeLessThanOrEqual(105)
   const design = prepareDesign(input, 'repeat')
+
   expect(
     design.entries.slice(1).every((e) => e.descriptor.type === 'oval')
   ).toBe(true)
@@ -142,11 +152,13 @@ it('uses oval-local world material coordinates after projection', () => {
       fill: { gradientHandles: { x: number; y: number }[] }
     }[]
   )[0]
+
   expect(node.type).toBe('oval')
   const [start, end] = node.fill.gradientHandles
   const gx = end.x - start.x,
     gy = end.y - start.y,
     length = gx * gx + gy * gy
+
   for (const t of [0, 0.4, 1.7, 3.2, 4.8]) {
     const p = {
       x:
@@ -167,6 +179,7 @@ it('uses oval-local world material coordinates after projection', () => {
       s = Math.sin(node.rotation)
     const u = (c * dx + s * dy) / node.width,
       v = (-s * dx + c * dy) / node.height
+
     expect(((u - start.x) * gx + (v - start.y) * gy) / length).toBeCloseTo(
       p.z / 100,
       10
@@ -194,6 +207,7 @@ it('prepares the saved-input-derived curve design without changing polygon order
   )
   const design = prepareDesign(compact.draft, 'saved')
   const original = prepareDesign(recordedEllipse.original.draft, 'saved')
+
   expect(
     design.entries.map((e) => [e.key, e.descriptor.name, e.parentId])
   ).toEqual(original.entries.map((e) => [e.key, e.descriptor.name, e.parentId]))
@@ -204,11 +218,13 @@ it('prepares the saved-input-derived curve design without changing polygon order
     if (design.entries[i].descriptor.type !== 'oval') {
       const current = design.entries[i].descriptor,
         prior = original.entries[i].descriptor
+
       for (const key of Object.keys(prior)) {
         if (!['x', 'y'].includes(key)) {
           expect(current[key]).toEqual(prior[key])
         }
       }
+
       for (const key of ['x', 'y']) {
         expect(
           Number(current[key]) + Number(design.entries[0].descriptor[key])
@@ -219,11 +235,14 @@ it('prepares the saved-input-derived curve design without changing polygon order
       }
     }
   }
+
   for (let i = 1; i < design.entries.length; i++) {
     const d = design.entries[i].descriptor
+
     if (d.type !== 'oval') {
       continue
     }
+
     const c = Math.cos(Number(d.rotation)),
       s = Math.sin(Number(d.rotation)),
       w = Number(d.width),
@@ -242,14 +261,17 @@ it('prepares the saved-input-derived curve design without changing polygon order
       string,
       { x: number; y: number }
     >
+
     for (const p of Object.values(points)) {
       const dx = p.x - cx,
         dy = p.y - cy
+
       expect(
         ((c * dx + s * dy) / (w / 2)) ** 2 + ((-s * dx + c * dy) / (h / 2)) ** 2
       ).toBeCloseTo(1, 8)
     }
   }
+
   expect(JSON.stringify(compact).length).toBeLessThan(
     JSON.stringify(recordedEllipse.original).length / 4
   )
@@ -267,6 +289,7 @@ it('rejects edge-on projections, mixed geometry, nonfinite and out-of-range elli
     ]),
     projection: { azimuth: 0, elevation: 0, scale: 1, originX: 0, originY: 0 }
   }
+
   expect(() => prepareDesign(edge)).toThrow(/projected face/)
   expect(() =>
     prepareDesign(
@@ -303,6 +326,7 @@ it('preserves faces-only patterns and nearly circular projected geometry', () =>
     projection: { azimuth: 0, elevation: 0, scale: 1, originX: 0, originY: 0 }
   }
   const result = prepareDesign(draft)
+
   expect(result.entries.slice(1).map((e) => e.descriptor.type)).toEqual([
     'oval',
     'oval'
@@ -353,12 +377,15 @@ it('preserves world material phase across translated ovals and retained material
     new AbortController().signal
   )
   const after = session.resolve(revision.materialRevisionId)
+
   after.entries.forEach((entry, i) => {
     const { fills: _after, ...geometry } = entry.descriptor
     const { fills: _before, ...original } = before.entries[i].descriptor
+
     expect(geometry).toEqual(original)
   })
   const updates = session.materialRevision(revision.materialRevisionId).updates
+
   expect(updates.map((u) => u.elementId)).toEqual(
     before.entries.slice(1).map((e) => e.descriptor.id)
   )
@@ -366,6 +393,7 @@ it('preserves world material phase across translated ovals and retained material
     const [a, b] = u.gradient.gradientHandles
     const dx = b.x - a.x,
       dy = b.y - a.y
+
     expect(
       ((0.5 - a.x) * dx + (0.5 - a.y) * dy) / (dx * dx + dy * dy)
     ).toBeCloseTo((ellipse.center.z + i * 10) / 100, 10)
@@ -377,8 +405,10 @@ it('preserves world material phase across translated ovals and retained material
 it('checks the analytic oval footprint against Frame limits without rewriting geometry', () => {
   const frame = { ...root([face()]), type: 'frame', width: 200, height: 200 }
   const inside = prepareDesign(frame, 'frame')
+
   expect(inside.findings).toEqual([])
   const outside = prepareDesign({ ...frame, width: 1 }, 'frame')
+
   expect(outside.findings).toContainEqual(
     expect.objectContaining({
       kind: 'overflow',

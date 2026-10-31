@@ -10,6 +10,7 @@ function sameDeclaration(a: unknown, b: unknown): boolean {
   if (a === b) {
     return true
   }
+
   if (
     !a ||
     !b ||
@@ -19,7 +20,9 @@ function sameDeclaration(a: unknown, b: unknown): boolean {
   ) {
     return false
   }
+
   const keys = Object.keys(a)
+
   return (
     keys.length === Object.keys(b).length &&
     keys.every(
@@ -37,6 +40,7 @@ export function admitSnapshotExecution(
 ): ExperimentSnapshot {
   const snapshot = validateHistoricalSnapshot(input),
     installed = catalog.resolve(snapshot.method.id, snapshot.method.version)
+
   if (
     snapshot.methodDescriptor &&
     !sameDeclaration(snapshot.methodDescriptor, installed.descriptor)
@@ -45,6 +49,7 @@ export function admitSnapshotExecution(
       'Installed method declaration differs from the frozen snapshot; create a new experiment snapshot'
     )
   }
+
   return createExperimentSnapshot({
     snapshotId: snapshot.snapshotId,
     candidateId: snapshot.source.candidateId,

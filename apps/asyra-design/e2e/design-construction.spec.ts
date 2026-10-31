@@ -24,13 +24,17 @@ const faceBoundaryFixture = JSON.parse(
   )
 )
 const referencedFaceInput = structuredClone(faceBoundaryFixture.inputs[0])
+
 for (const [path, face] of faceBoundaryFixture.pairs[0]) {
   let owner = referencedFaceInput.draft
+
   for (const key of path.slice(0, -1)) {
     owner = owner[key]
   }
+
   owner[path[path.length - 1]] = { face }
 }
+
 referencedFaceInput.inspection = 'defer'
 const sharedMotifsFixture = JSON.parse(
   readFileSync(
@@ -50,6 +54,7 @@ const layeredFixture = JSON.parse(
     'utf8'
   )
 )
+
 import {
   captureBrowserErrors,
   getCapturedBrowserErrors,
@@ -75,22 +80,28 @@ import {
 const attachConstructionEvidence = async (name: string, value: unknown) => {
   const info = test.info()
   const path = info.outputPath(name + '.json')
+
   writeFileSync(path, JSON.stringify(value))
   await info.attach(name, { contentType: 'application/json', path })
 }
+
 // Keep complete diagnostics outside the bounded machine-readable report.
 test.afterEach(() => {
   const testInfo = test.info()
+
   for (const attachment of testInfo.attachments) {
     if (!attachment.name.startsWith('construction-')) {
       continue
     }
+
     expect(attachment.contentType).toBe('application/json')
     expect(Boolean(attachment.body), attachment.name).toBe(false)
     const file = attachment.path
+
     if (!file) {
       throw new Error('Missing evidence file: ' + attachment.name)
     }
+
     expect(() => JSON.parse(readFileSync(file, 'utf8'))).not.toThrow()
   }
 })
@@ -105,20 +116,24 @@ const captureConstructionCollaboration = (
     const operations = resetOutcomes
       ? ['collaboration:reset-outcomes']
       : ['collaboration:get-status', 'collaboration:read-outcomes']
+
     return operations.map((operation) => {
       const detail: { operation: string; response?: unknown; error?: string } =
         {
           operation
         }
+
       document.dispatchEvent(
         new CustomEvent(RuntimeDiagnosticEvents.REQUEST, { detail })
       )
       if (detail.error) {
         throw new Error(detail.error)
       }
+
       if (!Object.hasOwn(detail, 'response')) {
         throw new Error(`Missing diagnostic response: ${operation}`)
       }
+
       return { operation, at: Date.now(), response: detail.response }
     })
   }, reset)
@@ -273,12 +288,15 @@ const editorial = {
     }
   ]
 }
+
 const point = (x: number, y: number, z: number) => ({ x, y, z })
+
 const face = (
   key: string,
   fill: string,
   vertices: ReturnType<typeof point>[]
 ) => ({ key, name: key, type: 'projected-face', fill, vertices })
+
 const pavilion = {
   key: 'pavilion',
   type: 'frame',
@@ -428,6 +446,7 @@ const ovals = {
     }
   ]
 }
+
 for (const [name, draft] of Object.entries({
   editorial,
   pavilion,
@@ -452,6 +471,7 @@ for (const [name, draft] of Object.entries({
         new AbortController().signal
       )
     )
+
     expect(receipt.applicable, JSON.stringify(receipt)).toBe(true)
     const batch = tools.resolveBatch({
       batchId: name,
@@ -466,6 +486,7 @@ for (const [name, draft] of Object.entries({
     })
     const design = (batch.actions[0].arguments as { design: PreparedDesign })
       .design
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -473,10 +494,12 @@ for (const [name, draft] of Object.entries({
       route.fulfill({ json: batch })
     )
     const identity = createTestDocumentIdentity()
+
     await page.goto(identity.url)
     await waitForAppReady(page)
     const before = await getCoreDocumentDigest(page),
       depth = await getUndoHistoryDepth(page)
+
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await page.getByLabel('Message Agent').fill(`Draw the ${name} design`)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
@@ -490,6 +513,7 @@ for (const [name, draft] of Object.entries({
         const { core } = await import('../src/testing/runtime-access')
         const { reviewDesign } =
           await import('../src/common-apis/design-review')
+
         return {
           nodes: ids.map((id) => ({
             type: core.getElementData(id)?.type,
@@ -510,6 +534,7 @@ for (const [name, draft] of Object.entries({
       },
       design.entries.map((e) => e.descriptor.id)
     )
+
     for (const [i, entry] of design.entries.entries()) {
       expect(actual.nodes[i].type).toBe(entry.descriptor.type)
       if (entry.descriptor.type === 'oval') {
@@ -519,6 +544,7 @@ for (const [name, draft] of Object.entries({
           10
         )
       }
+
       for (const property of ['width', 'height'] as const) {
         expect(Number(actual.nodes[i].values?.[property])).toBeCloseTo(
           Number(entry.descriptor[property]),
@@ -526,8 +552,10 @@ for (const [name, draft] of Object.entries({
         )
       }
     }
+
     if (name === 'ovals') {
       const root = design.entries[0].descriptor
+
       expect(actual.sceneBounds?.minX).toBeCloseTo(Number(root.x), 8)
       expect(actual.sceneBounds?.minY).toBeCloseTo(Number(root.y), 8)
       expect(actual.sceneBounds?.maxX).toBeCloseTo(
@@ -539,9 +567,11 @@ for (const [name, draft] of Object.entries({
         8
       )
     }
+
     expect(actual.review.complete).toBe(true)
     expect(actual.review.findings).toEqual([])
     const after = await getCoreDocumentDigest(page)
+
     await page.getByRole('button', { name: 'Close Agent panel' }).click()
     await undo(page)
     expect(await getCoreDocumentDigest(page)).toEqual(before)
@@ -557,16 +587,20 @@ for (const [name, draft] of Object.entries({
       const insetIds = design.entries
         .filter((e) => e.key.endsWith('-inset'))
         .map((e) => e.descriptor.id)
+
       await expect
         .poll(() =>
           page.evaluate(async (ids) => {
             const { elementApis } =
               await import('../src/testing/runtime-access')
+
             return ids.map((id) => {
               const bounds = elementApis.getElementClientBounds(id)
+
               if (!bounds) {
                 throw new Error('Missing oval client bounds')
               }
+
               return elementApis.getRenderElementIdAtClientPos({
                 x: bounds.x + bounds.width / 2,
                 y: bounds.y + bounds.height / 2
@@ -576,6 +610,7 @@ for (const [name, draft] of Object.entries({
         )
         .toEqual(insetIds)
     }
+
     await page.screenshot({ path: testInfo.outputPath(`${name}.png`) })
     if (name === 'ovals') {
       await expect
@@ -591,6 +626,7 @@ for (const [name, draft] of Object.entries({
       })
       await page.screenshot({ path: testInfo.outputPath('ovals-reloaded.png') })
     }
+
     await attachConstructionEvidence('construction-evidence', {
       receipt,
       actual,
@@ -606,6 +642,7 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
 }, testInfo) => {
   const { createLocalOperationTools } =
     await import('../server/local-operation-tools')
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
@@ -618,6 +655,7 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
         await import('../src/ai/design-edit-action')
       const { createPreparedDesignAction } =
         await import('../src/ai/design-actions')
+
       return [
         ...createAiActions(),
         createDesignEditAction(),
@@ -678,9 +716,11 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
     tools,
     async (value) => {
       batch = value
+
       return { context: {}, actionResults: [] }
     }
   )
+
   await operations.call(
     'execute_design_batch',
     {
@@ -716,11 +756,13 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
     artifactId: prepared.artifactId,
     keys: ['a', 'b']
   })
+
   await page.route('**/api/ai/action-batch', (route) =>
     route.fulfill({ json: batch })
   )
   const before = await getCoreDocumentDigest(page),
     depth = await getUndoHistoryDepth(page)
+
   await page.getByRole('button', { name: 'Open Agent' }).click()
   await page.getByLabel('Message Agent').fill('Create and edit the batch proof')
   await page.getByRole('button', { name: 'Send', exact: true }).click()
@@ -731,16 +773,19 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
   const data = await page.evaluate(async (ids) => {
     const { core } = await import('../src/testing/runtime-access')
+
     return {
       a: core.getElementData(ids[0]),
       bounds: core.getElementComputedData(ids[0], ['x']),
       b: core.getElementData(ids[1])
     }
   }, ids)
+
   expect(data.a?.name).toBe('Renamed')
   expect(data.bounds?.x).toBe(15)
   expect(data.b?.visible).toBe(false)
   const after = await getCoreDocumentDigest(page)
+
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
   await undo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(before)
@@ -804,21 +849,29 @@ for (const scenario of [
       )
       if (request.method === 'OPTIONS') {
         response.end()
+
         return
       }
+
       try {
         const chunks: Buffer[] = []
+
         for await (const chunk of request) {
           chunks.push(Buffer.from(chunk))
         }
+
         const input = JSON.parse(Buffer.concat(chunks).toString())
         const token = request.headers['x-ai-batch-receipt']
+
         if (typeof token === 'string') {
           const accepted = exchange.accept(token, input)
+
           response.setHeader('Content-Type', 'application/json')
           response.end(JSON.stringify({ accepted }))
+
           return
         }
+
         response.setHeader('Content-Type', 'application/x-ndjson')
         const tools = createLocalDesignTools(
           input.actions,
@@ -829,6 +882,7 @@ for (const scenario of [
                   if (++attempts === 2) {
                     throw new Error('Injected preparation interruption')
                   }
+
                   return prepareDesignAsync(...args)
                 },
                 undefined,
@@ -847,6 +901,7 @@ for (const scenario of [
                 )
               }
             }
+
             return exchange.execute(batch, controller.signal, (frame) =>
               response.write(JSON.stringify(frame) + '\n')
             )
@@ -859,10 +914,12 @@ for (const scenario of [
           scenario.input,
           controller.signal
         )
+
         workflowResult = JSON.parse(result.text)
         if (referenced) {
           expect(workflowResult.toolOutcome.status).toBe('partial')
           const recovery = workflowResult.recoveryInvocation
+
           expect(recovery.arguments.parts).toHaveLength(1)
           expect(JSON.stringify(recovery.arguments)).not.toContain('vertices')
           workflowResult = JSON.parse(
@@ -877,6 +934,7 @@ for (const scenario of [
           )
           expect(attempts).toBe(3)
         }
+
         response.end(
           JSON.stringify({
             type: 'result',
@@ -901,11 +959,14 @@ for (const scenario of [
         response.destroy(error instanceof Error ? error : undefined)
       }
     })
+
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const address = server.address()
+
     if (!address || typeof address === 'string') {
       throw new Error('Missing test endpoint')
     }
+
     try {
       await page.route('**/api/ai/status', (route) =>
         route.fulfill({ json: { state: 'ready' } })
@@ -916,12 +977,15 @@ for (const scenario of [
       const document = createTestDocumentIdentity(
         referenced ? 'aiPerformance=profile' : ''
       )
+
       await page.goto(document.url)
       await waitForAppReady(page)
       const fileId = new URL(page.url()).searchParams.get('fileId')
+
       if (!fileId) {
         throw new Error('Missing document identity')
       }
+
       if (referenced) {
         peerContext = await browser.newContext()
         peer = await peerContext.newPage()
@@ -938,11 +1002,13 @@ for (const scenario of [
             )
             .toBe('connected')
         }
+
         for (const actor of [page, peer]) {
           captureBrowserErrors(actor)
           await captureConstructionCollaboration(actor, true)
         }
       }
+
       const before = await getCoreDocumentDigest(page)
       const beforeCount = await page.evaluate(async () =>
         (
@@ -950,6 +1016,7 @@ for (const scenario of [
         ).core.getCanonicalElementCount()
       )
       const depth = await getUndoHistoryDepth(page)
+
       await page.getByRole('button', { name: 'Open Agent' }).click()
       await page
         .getByLabel('Message Agent')
@@ -972,6 +1039,7 @@ for (const scenario of [
       } else {
         expect(workflowResult.parts).toBeUndefined()
       }
+
       expect(designs).toHaveLength(scenario.artifacts)
       expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
       const root = designs[0].entries[0].descriptor
@@ -979,6 +1047,7 @@ for (const scenario of [
       const actual = await page.evaluate(
         async (ids) => {
           const { core } = await import('../src/testing/runtime-access')
+
           return ids.map((id) => ({
             parentId: core.getElementMetadata(id)?.parentId,
             world: core.elementLocalToWorkspace(id, { x: 0, y: 0 }),
@@ -987,13 +1056,16 @@ for (const scenario of [
         },
         members.map((entry) => entry.descriptor.id)
       )
+
       expect(actual).toHaveLength(scenario.members)
       // One assertion retains the complete oracle without recording 65,000 test steps.
       const differences: string[] = []
+
       for (const [i, entry] of members.entries()) {
         if (actual[i].parentId !== root.id) {
           differences.push(`parent:${i}`)
         }
+
         for (const [field, observed, expected] of [
           ['x', actual[i].world.x, Number(root.x) + Number(entry.descriptor.x)],
           ['y', actual[i].world.y, Number(root.y) + Number(entry.descriptor.y)],
@@ -1001,16 +1073,20 @@ for (const scenario of [
           ['height', actual[i].values?.height, entry.descriptor.height]
         ]) {
           const delta = Math.abs(Number(observed) - Number(expected))
+
           if (!Number.isFinite(delta) || delta >= 0.000005) {
             differences.push(`${i}:${field}:${delta}`)
           }
         }
       }
+
       expect(differences).toEqual([])
       const order = await page.evaluate(async (id) => {
         const { core } = await import('../src/testing/runtime-access')
+
         return core.getElementData(id)?.children
       }, root.id)
+
       expect(order).toEqual(members.map((entry) => entry.descriptor.id))
       let digestTransport: unknown
       const digestPage = new Proxy(page, {
@@ -1018,23 +1094,29 @@ for (const scenario of [
           if (property !== 'evaluate') {
             return Reflect.get(target, property, receiver)
           }
+
           return async (...args: Parameters<typeof page.evaluate>) => {
             const result = await page.evaluate(...args)
+
             digestTransport = result
+
             return result
           }
         }
       })
       const after = await getCoreDocumentDigest(digestPage)
+
       expect(Object.keys(digestTransport as object)).toEqual(Object.keys(after))
       expect(digestTransport).toEqual(after)
       await page.evaluate(async () => {
         const { core, testRuntimeState } =
           await import('../src/testing/runtime-access')
         let saveCount = 0
+
         testRuntimeState.set('construction-digest-save-count', saveCount)
         core.registerSaveHook((data) => {
           testRuntimeState.set('construction-digest-save-count', ++saveCount)
+
           return data
         })
       })
@@ -1051,6 +1133,7 @@ for (const scenario of [
           await import('../src/testing/runtime-access')
         ).core.getCanonicalElementCount()
       )
+
       expect(await getCoreDocumentDigest(page, afterCount)).toEqual(after)
       expect(
         await page.evaluate(async () =>
@@ -1069,16 +1152,20 @@ for (const scenario of [
           )
           .toEqual(after)
       }
+
       await page.getByRole('button', { name: 'Close Agent panel' }).click()
       if (peer) {
         await peer.evaluate(async () => {
           const { getActiveAiDrawingPerformanceProfile } =
             await import('../src/testing/runtime-access')
+
           getActiveAiDrawingPerformanceProfile()?.reset()
         })
       }
+
       await page.evaluate(async () => {
         const { historyApis } = await import('../src/common-apis/history')
+
         await historyApis.undo()
       })
       expect(await getCoreDocumentDigest(page)).toEqual(before)
@@ -1102,6 +1189,7 @@ for (const scenario of [
               captureConstructionCollaboration(peer),
               getPersistedDocumentCheckpoint(fileId)
             ])
+
             await attachConstructionEvidence(
               'construction-peer-undo-diagnostics',
               {
@@ -1121,6 +1209,7 @@ for (const scenario of [
               description: String(diagnosticError)
             })
           }
+
           throw error
         } finally {
           try {
@@ -1128,15 +1217,18 @@ for (const scenario of [
               const { getActiveAiDrawingPerformanceProfile } =
                 await import('../src/testing/runtime-access')
               const profile = getActiveAiDrawingPerformanceProfile()
+
               if (!profile) {
                 throw new Error('Missing peer Undo profile')
               }
+
               return {
                 visibility: document.visibilityState,
                 sample: profile.snapshot(),
                 runtime: profile.getRuntimeEvidence()
               }
             })
+
             await attachConstructionEvidence(
               'construction-peer-undo-profile',
               evidence
@@ -1149,8 +1241,10 @@ for (const scenario of [
           }
         }
       }
+
       await page.evaluate(async () => {
         const { historyApis } = await import('../src/common-apis/history')
+
         await historyApis.redo()
       })
       expect(await getCoreDocumentDigest(page)).toEqual(after)
@@ -1164,6 +1258,7 @@ for (const scenario of [
           )
           .toEqual(after)
       }
+
       await expect
         .poll(() => getPersistedDocumentDigest(fileId), { timeout: 30000 })
         .toEqual(after)
@@ -1177,6 +1272,7 @@ for (const scenario of [
           const reloaded = await page.evaluate(async () =>
             (await import('../src/testing/runtime-access')).core.save()
           )
+
           await attachConstructionEvidence('construction-reload-documents', {
             expected: after,
             checkpoint,
@@ -1188,6 +1284,7 @@ for (const scenario of [
             description: String(diagnosticError)
           })
         }
+
         throw error
       }
     } finally {

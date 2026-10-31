@@ -6,6 +6,7 @@ export const subscribeToDiagnosticCounters = (
   sink: DiagnosticCounterSink
 ): (() => void) => {
   diagnosticCounterSinks.add(sink)
+
   return () => diagnosticCounterSinks.delete(sink)
 }
 

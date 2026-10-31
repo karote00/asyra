@@ -22,10 +22,12 @@ const object = (properties: Record<string, unknown>) => ({
   type: 'object',
   properties
 })
+
 const receiptSchema = object({
   snapshotId: toolRequestReference,
   leaseId: toolRequestReference
 })
+
 // These recipe fixtures include the current mandatory mechanical follow-up.
 // Geometry correctness belongs to the review owner tests; this fixture supplies
 // an explicit measurement and stamp, never infers completion from a write.
@@ -40,6 +42,7 @@ const measuredReview = () => {
     findings: [],
     evidence
   }))
+
   return {
     review,
     action: createDesignReviewAction(review, (stamp) => stamp === evidence)
@@ -51,20 +54,25 @@ const fixture = () => {
   const queries = createRetainedDesignContext(
     {
       getCurrentWorkspaceId: () => 'workspace',
+
       getSelectedElementIds: () => ['part'],
+
       getElementChildren: () => ({
         available: true,
         elementIds: ['part'],
         total: 1,
         nextOffset: null
       }),
+
       getElementMetadata: () => ({
         name: 'Part',
         type: 'rect',
         parentId: 'workspace',
         lock: false
       }),
+
       getElementComputedData: () => ({ x: 10 }),
+
       getElementIdsInBounds: () => ['part']
     },
     () => () => undefined
@@ -74,10 +82,15 @@ const fixture = () => {
   const ownership: LocalToolOwnership = {
     publish: (handle, release, validate) =>
       leases.publish({ handle, release, validate, callId }),
+
     publishAliases: leases.publishAliases,
+
     assertOwned: (handle) => leases.assertOwned(handle, callId),
+
     borrow: (handle) => leases.borrow(handle, callId),
+
     assertRelease: (handle) => leases.assertRelease(handle, callId),
+
     retire: (handle) => leases.retire(handle, callId)
   }
   const release = vi.fn(async (snapshotId: string) => {
@@ -101,11 +114,13 @@ const fixture = () => {
         : {})
     })) as never
   })
+
   const read = () =>
     queries.read(
       { scope: 'selection', fields: ['x'], delivery: 'reference' },
       signal
     )
+
   const publish = async (result: ReturnType<typeof read>) =>
     bridge.accept(
       {
@@ -130,6 +145,7 @@ const fixture = () => {
         ]
       }
     )
+
   return {
     signal,
     queries,
@@ -139,6 +155,7 @@ const fixture = () => {
     release,
     read,
     publish,
+
     setCall: (id: string) => {
       callId = id
     }
@@ -147,6 +164,7 @@ const fixture = () => {
 
 it('publishes real browser query handles and releases their data after caller ownership ends', async () => {
   const app = fixture()
+
   await app.leases.open({
     requestId: 'request',
     callId: 'producer',
@@ -154,6 +172,7 @@ it('publishes real browser query handles and releases their data after caller ow
     inputSchema: { type: 'null' }
   })
   const receipt = app.read()
+
   await app.publish(receipt)
   await app.leases.retain({
     requestId: 'request',
@@ -181,6 +200,7 @@ it('publishes real browser query handles and releases their data after caller ow
 
 it('blocks explicit release while another call borrows the same browser query and accepts a repeated read', async () => {
   const app = fixture()
+
   await app.leases.open({
     requestId: 'request',
     callId: 'producer',
@@ -188,6 +208,7 @@ it('blocks explicit release while another call borrows the same browser query an
     inputSchema: { type: 'null' }
   })
   const receipt = app.read()
+
   await app.publish(receipt)
   await app.publish(app.read())
   await app.leases.retain({
@@ -205,6 +226,7 @@ it('blocks explicit release while another call borrows the same browser query an
       inputSchema: receiptSchema
     })
   }
+
   app.setCall('releaser')
   const batch = {
     batchId: 'release',
@@ -219,6 +241,7 @@ it('blocks explicit release while another call borrows the same browser query an
       }
     ]
   }
+
   expect(() => app.bridge.admit(batch)).toThrow(/borrow/)
   expect(app.queries.get(receipt.snapshotId).orderedIds).toHaveLength(1)
   await app.leases.release({ requestId: 'request', callId: 'borrower' })
@@ -227,6 +250,7 @@ it('blocks explicit release while another call borrows the same browser query an
     { scope: 'snapshot', snapshotId: receipt.snapshotId, release: true },
     app.signal
   )
+
   await app.bridge.accept(batch, {
     context: null,
     actionResults: [
@@ -246,6 +270,7 @@ it('blocks explicit release while another call borrows the same browser query an
 
 it('recovers a lost browser release acknowledgement without reviving the handle or releasing a sibling', async () => {
   const app = fixture()
+
   try {
     for (const callId of ['producer', 'sibling']) {
       await app.leases.open({
@@ -255,7 +280,9 @@ it('recovers a lost browser release acknowledgement without reviving the handle 
         inputSchema: { type: 'null' }
       })
     }
+
     const receipt = app.read()
+
     await app.publish(receipt)
     app.setCall('sibling')
     const sibling = app.queries.read(
@@ -267,6 +294,7 @@ it('recovers a lost browser release acknowledgement without reviving the handle 
       },
       app.signal
     )
+
     await app.publish(sibling)
     app.release.mockImplementationOnce(async (snapshotId) => {
       app.queries.read(
@@ -318,10 +346,13 @@ it('recovers a lost browser release acknowledgement without reviving the handle 
 
 it('cleans unpublished browser data when host ownership capacity refuses it', async () => {
   const app = fixture()
+
   app.ownership.publish = () => {
     throw new Error('Host capacity reached')
   }
+
   const receipt = app.read()
+
   await expect(app.publish(receipt)).rejects.toThrow(/capacity/)
   expect(app.release).toHaveBeenCalledExactlyOnceWith(receipt.snapshotId)
   expect(() => app.queries.get(receipt.snapshotId)).toThrow(/missing/)
@@ -361,7 +392,9 @@ it.each([
     const observed: ReturnType<typeof app.read>[] = []
     const read = createDocumentContextAction((query, signal) => {
       const result = app.queries.read(query, signal)
+
       observed.push(result)
+
       return result
     })
     const actions = [
@@ -371,7 +404,9 @@ it.each([
       createRetainedFillAction(app.queries, {
         targets: (ids) =>
           ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` })),
+
         metadata: () => ({ lock: false }),
+
         update
       })
     ]
@@ -392,20 +427,26 @@ it.each([
       },
       store: {
         read: async (key) => stored.get(key),
+
         list: async () => [...stored.values()],
+
         write: async (input) => {
           if (stored.get(input.key)?.version !== input.expectedVersion) {
             throw new Error('Store conflict')
           }
+
           const entry = {
             key: input.key,
             record: input.record,
             version: String(++storeVersion)
           }
+
           stored.set(input.key, entry)
+
           return entry
         }
       },
+
       createGroups: (ownership) => [
         {
           name: 'design_operations',
@@ -414,6 +455,7 @@ it.each([
             actions.map(createAiToolContract),
             {
               modelActions: (actions) => actions,
+
               resolveBatch: (batch) => batch
             },
             async (batch) => ({
@@ -421,9 +463,11 @@ it.each([
               actionResults: await Promise.all(
                 batch.actions.map(async (call) => {
                   const action = actions.find((item) => item.name === call.name)
+
                   if (!action) {
                     throw new Error('Unknown action')
                   }
+
                   return {
                     actionId: call.id,
                     actionName: call.name,
@@ -431,9 +475,12 @@ it.each([
                       JSON.stringify(
                         await action.execute(call.arguments as never, {
                           signal: app.signal,
+
                           runMutation: async (write, settled) => {
                             const value = write()
+
                             settled?.(value)
+
                             return value
                           }
                         })
@@ -448,21 +495,27 @@ it.each([
         }
       ]
     })
+
     const dependencyRevision = (name: string) => {
       const definition = host
         .definitions()
         .find((entry) => entry.registeredName === name)
+
       if (!definition) {
         throw new Error(`Missing exposed dependency: ${name}`)
       }
+
       return definition.revision
     }
+
     const literal = (value: unknown) => ({ kind: 'literal', value })
+
     const binding = (field: string) => ({
       kind: 'step',
       step: 'query',
       path: '/actionResults/0/result/' + field
     })
+
     const proposal = {
       format: 1,
       name: 'shade-current-selection',
@@ -525,6 +578,7 @@ it.each([
         path: '/actionResults/0/result/appliedCount'
       }
     }
+
     try {
       const oldProposal = {
         ...proposal,
@@ -538,6 +592,7 @@ it.each([
           })
         ).text
       )
+
       expect(rejected).toMatchObject({ ok: false, code: 'admission' })
       expect(rejected.issues).toEqual(
         expect.arrayContaining([
@@ -555,6 +610,7 @@ it.each([
           })
         ).text
       )
+
       expect(submitted, JSON.stringify(submitted)).toMatchObject({ ok: true })
       const result = JSON.parse(
         (
@@ -564,6 +620,7 @@ it.each([
           })
         ).text
       )
+
       expect(result, JSON.stringify(result)).toMatchObject({
         execution: { status: 'success', value: 1 },
         storage: { status: 'saved' }
@@ -623,10 +680,12 @@ it.each([
           })
         ).text
       )
+
       expect(mapped.toolOutcome, JSON.stringify(mapped)).toMatchObject({
         status: 'success'
       })
       const retained = mapped.actionResults[0].result.retained
+
       expect(retained).toBeDefined()
       const recovered = JSON.parse(
         (
@@ -642,6 +701,7 @@ it.each([
           })
         ).text
       )
+
       expect(
         recovered.actionResults?.[0]?.result?.receipt,
         JSON.stringify(recovered)
@@ -665,11 +725,13 @@ it.each(['page', 'columns', 'reference'] as const)(
       await import('../../src/ai/context-action')
     const { operationInputIssue } = await import('../operation-input-schema')
     const action = createDocumentContextAction(app.queries.read)
+
     try {
       const result = await action.execute(
         { scope: 'selection', fields: ['x'], delivery },
         { signal: app.signal }
       )
+
       expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
     } finally {
       app.queries.dispose()
@@ -711,7 +773,11 @@ it.each(['recipe', 'native', 'partial'] as const)(
           selection: { selectElements: select },
           viewport: {}
         }),
-        { observe: () => () => undefined, resolve: () => 'live' },
+        {
+          observe: () => () => undefined,
+
+          resolve: () => 'live'
+        },
         app.queries
       ).filter((a) =>
         [
@@ -740,20 +806,26 @@ it.each(['recipe', 'native', 'partial'] as const)(
       },
       store: {
         read: async (key) => stored.get(key),
+
         list: async () => [...stored.values()],
+
         write: async (input) => {
           if (stored.get(input.key)?.version !== input.expectedVersion) {
             throw new Error('Store conflict')
           }
+
           const entry = {
             key: input.key,
             record: input.record,
             version: String(++storeVersion)
           }
+
           stored.set(input.key, entry)
+
           return entry
         }
       },
+
       createGroups: (ownership) => [
         {
           name: 'design_operations',
@@ -762,6 +834,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
             actions.map(createAiToolContract),
             {
               modelActions: (actions) => actions,
+
               resolveBatch: (batch) => batch
             },
             async (batch) => {
@@ -770,26 +843,34 @@ it.each(['recipe', 'native', 'partial'] as const)(
                   context: null,
                   actionResults: []
                 }
+
               for (const call of batch.actions) {
                 const action = actions.find((item) => item.name === call.name)
+
                 if (!action) {
                   throw new Error('Unknown action')
                 }
+
                 try {
                   const actual = (await action.execute(
                     call.arguments as never,
                     {
                       signal: app.signal,
+
                       runMutation: async (write, settled) => {
                         const value = write()
+
                         settled?.(value)
+
                         return value
                       }
                     }
                   )) as { retained?: { snapshotId: string } }
+
                   if (actual.retained) {
                     deliveredId = actual.retained.snapshotId
                   }
+
                   receipt.actionResults.push({
                     actionId: call.id,
                     actionName: call.name,
@@ -817,6 +898,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
                   )
                 }
               }
+
               return receipt
             },
             { ownership, requestSignal: app.signal }
@@ -824,7 +906,9 @@ it.each(['recipe', 'native', 'partial'] as const)(
         }
       ]
     })
+
     const literal = (value: unknown) => ({ kind: 'literal', value })
+
     const proposal = {
       format: 1,
       name: 'group-and-hide',
@@ -905,6 +989,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
         }
       }
     }
+
     try {
       if (mode !== 'recipe') {
         const invoke = async (name: string, args: unknown) =>
@@ -934,9 +1019,11 @@ it.each(['recipe', 'native', 'partial'] as const)(
               })
             ).text
           )
+
         const produced = await invoke('api_hierarchy_groupElements', {
           elementIds: ['part']
         })
+
         expect(produced.toolOutcome, JSON.stringify(produced)).toMatchObject({
           status: mode === 'partial' ? 'partial' : 'success'
         })
@@ -945,6 +1032,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
           expect(update).not.toHaveBeenCalled()
           expect(produced.executionResult.actionResults).toHaveLength(1)
         }
+
         const delivered =
           mode === 'partial' ? produced.executionResult : produced
         const reference = delivered.actionResults[0].result.retained
@@ -962,6 +1050,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
             })
           ).text
         )
+
         expect(read.toolOutcome, JSON.stringify(read)).toMatchObject({
           status: 'success'
         })
@@ -972,6 +1061,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
           elementIds: reference,
           visible: false
         })
+
         expect(edited.toolOutcome, JSON.stringify(edited)).toMatchObject({
           status: 'success'
         })
@@ -980,8 +1070,10 @@ it.each(['recipe', 'native', 'partial'] as const)(
         expect(app.queries.get(deliveredId).orderedIds).toEqual(['part'])
         await host.dispose()
         expect(() => app.queries.get(deliveredId)).toThrow(/missing/)
+
         return
       }
+
       const submitted = JSON.parse(
         (
           await host.invoke({
@@ -990,6 +1082,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
           })
         ).text
       )
+
       expect(submitted, JSON.stringify(submitted)).toMatchObject({ ok: true })
       const result = JSON.parse(
         (
@@ -999,6 +1092,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
           })
         ).text
       )
+
       expect(result, JSON.stringify(result)).toMatchObject({
         execution: {
           status: 'success',
@@ -1022,6 +1116,7 @@ it.each(['publish', 'publishAliases'] as const)(
   async (method) => {
     const { localToolOutcome } = await import('../local-tool-invocation')
     const app = fixture()
+
     await app.leases.open({
       requestId: 'request',
       callId: 'producer',
@@ -1033,6 +1128,7 @@ it.each(['publish', 'publishAliases'] as const)(
       { value: { elementIds: ['part'] } },
       app.signal
     )
+
     app.ownership[method] = vi.fn(() => {
       throw new Error('Injected publication failure')
     })
@@ -1065,6 +1161,7 @@ it.each(['publish', 'publishAliases'] as const)(
           ]
         }
       )
+
       expect(receipt.actionResults[0].result).toMatchObject({
         status: 'complete',
         value: { groupId: 'container' },

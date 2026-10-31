@@ -6,6 +6,7 @@ for (const width of [320, 390, 820]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     const requested: string[] = []
+
     page.on('request', (request) => {
       if (request.url().includes('/illustrations/')) {
         requested.push(request.url())
@@ -15,6 +16,7 @@ for (const width of [320, 390, 820]) {
     for (const chapter of await page.locator('[data-story-chapter]').all()) {
       await chapter.scrollIntoViewIfNeeded()
     }
+
     for (const image of await page.locator('[data-story-chapter] img').all()) {
       await image.evaluate((element: HTMLImageElement) => element.decode())
       expect(
@@ -23,6 +25,7 @@ for (const width of [320, 390, 820]) {
         )
       ).toBeGreaterThan(0)
     }
+
     expect(new Set(requested).size).toBe(requested.length)
     expect(requested.every((url) => url.includes('/spatial-story/'))).toBe(true)
     expect(

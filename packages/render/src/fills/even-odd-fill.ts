@@ -73,20 +73,25 @@ const getCanvasContext = (
   if (typeof OffscreenCanvas !== 'undefined') {
     const canvas = new OffscreenCanvas(width, height)
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
+
     if (!ctx) {
       return null
     }
+
     return { canvas, ctx }
   }
 
   if (typeof document !== 'undefined') {
     const canvas = document.createElement('canvas')
+
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
+
     if (!ctx) {
       return null
     }
+
     return { canvas, ctx }
   }
 
@@ -98,6 +103,7 @@ const normalizeFillEntries = (fills: FillAttrs[]): FillAttrs[] =>
 
 const toRGBA = (value: string, opacity: number): RGBA | null => {
   const parsed = parseColor(value)
+
   if (!parsed) {
     return null
   }
@@ -114,6 +120,7 @@ const createSolidSampler = (
   fill: FillAttrs
 ): ((x: number, y: number) => RGBA) | null => {
   const color = toRGBA(fill.color, fill.opacity)
+
   if (!color) {
     return null
   }
@@ -131,6 +138,7 @@ const createGradientSampler = (
   const stops = [...fill.gradient.gradientStops]
     .map((stop) => {
       const rgba = toRGBA(stop.color, stop.opacity * fill.opacity)
+
       if (!rgba) {
         return null
       }
@@ -172,32 +180,42 @@ const createGradientSampler = (
         const radiusY = side
           ? Math.max(Math.hypot(sideX, sideY), EPSILON)
           : radiusX
+
         if (radial) {
           return (x: number, y: number) => {
             const nx = (x - startX) / radiusX
             const ny = (y - startY) / radiusY
+
             return Math.sqrt(nx * nx + ny * ny)
           }
         }
+
         return (x: number, y: number) => {
           const nx = Math.abs(x - startX) / radiusX
           const ny = Math.abs(y - startY) / radiusY
+
           return (nx + ny) / 2
         }
       }
+
       case FillGradientTypes.ANGULAR: {
         const baseAngle = Math.atan2(dy, dx)
+
         return (x: number, y: number) => {
           const delta = Math.atan2(y - startY, x - startX) - baseAngle
+
           return ((delta % (Math.PI * 2)) + Math.PI * 2) / (Math.PI * 2)
         }
       }
+
       case FillGradientTypes.LINEAR:
       default: {
         const denom = dx * dx + dy * dy
+
         if (denom <= EPSILON) {
           return () => 0
         }
+
         return (x: number, y: number) =>
           ((x - startX) * dx + (y - startY) * dy) / denom
       }
@@ -220,6 +238,7 @@ const createGradientSampler = (
     for (let i = 0; i < stops.length - 1; i += 1) {
       const current = stops[i]
       const next = stops[i + 1]
+
       if (t >= current.position && t <= next.position) {
         lower = current
         upper = next
@@ -234,10 +253,12 @@ const createGradientSampler = (
     const ratio = clampUnit(
       (t - lower.position) / (upper.position - lower.position)
     )
+
     sampled.r = lower.color.r + (upper.color.r - lower.color.r) * ratio
     sampled.g = lower.color.g + (upper.color.g - lower.color.g) * ratio
     sampled.b = lower.color.b + (upper.color.b - lower.color.b) * ratio
     sampled.a = lower.color.a + (upper.color.a - lower.color.a) * ratio
+
     return sampled
   }
 }
@@ -264,21 +285,25 @@ export const prepareEvenOddShape = (
   shape.paths.forEach((path) => {
     path.segments.forEach((segment) => {
       const points = segment.points
+
       if (segment.type === 'line' && points.length === 4) {
         const minY = Math.min(points[1], points[3])
         const maxY = Math.max(points[1], points[3])
+
         segments.push({
           type: segment.type,
           points,
           minY,
           maxY
         })
+
         return
       }
 
       if (segment.type === 'cubicBezier' && points.length === 8) {
         const minY = Math.min(points[1], points[3], points[5], points[7])
         const maxY = Math.max(points[1], points[3], points[5], points[7])
+
         segments.push({
           type: segment.type,
           points,
@@ -304,12 +329,14 @@ const collectLineIntersection = (
 
   const minY = Math.min(p1.y, p2.y)
   const maxY = Math.max(p1.y, p2.y)
+
   if (y < minY || y >= maxY) {
     return
   }
 
   const t = (y - p1.y) / (p2.y - p1.y)
   const x = p1.x + (p2.x - p1.x) * t
+
   intersections.push(x)
 }
 
@@ -317,6 +344,7 @@ const distanceToLine = (point: Vec2, a: Vec2, b: Vec2): number => {
   const dx = b.x - a.x
   const dy = b.y - a.y
   const denom = Math.hypot(dx, dy)
+
   if (denom <= EPSILON) {
     return Math.hypot(point.x - a.x, point.y - a.y)
   }
@@ -335,18 +363,22 @@ const collectCubicIntersections = (
 ) => {
   const minY = Math.min(p0.y, p1.y, p2.y, p3.y)
   const maxY = Math.max(p0.y, p1.y, p2.y, p3.y)
+
   if (y < minY || y >= maxY) {
     return
   }
 
   const flatness =
     Math.max(distanceToLine(p1, p0, p3), distanceToLine(p2, p0, p3)) || 0
+
   if (depth >= MAX_SUBDIVISION_DEPTH || flatness <= FLATNESS_EPSILON) {
     collectLineIntersection(y, p0, p3, intersections)
+
     return
   }
 
   const { left, right } = subdivideCubicBezierAtHalf(p0, p1, p2, p3)
+
   collectCubicIntersections(
     y,
     left[0],
@@ -380,16 +412,19 @@ const collectHorizontalIntersections = (
 
     if (segment.type === 'line') {
       const [x1, y1, x2, y2] = segment.points
+
       collectLineIntersection(
         y,
         { x: x1, y: y1 },
         { x: x2, y: y2 },
         intersections
       )
+
       return
     }
 
     const [x1, y1, cx1, cy1, cx2, cy2, x2, y2] = segment.points
+
     collectCubicIntersections(
       y,
       { x: x1, y: y1 },
@@ -401,6 +436,7 @@ const collectHorizontalIntersections = (
   })
 
   intersections.sort((a, b) => a - b)
+
   return intersections
 }
 
@@ -413,6 +449,7 @@ export const isPointInsidePreparedEvenOddShape = (
   for (let index = 0; index + 1 < intersections.length; index += 2) {
     const startX = intersections[index]
     const endX = intersections[index + 1]
+
     if (point.x >= startX - EPSILON && point.x <= endX + EPSILON) {
       return true
     }
@@ -454,9 +491,11 @@ export const createEvenOddFillStyle = (
   const maxPixels = options.maxRasterPixels ?? DEFAULT_MAX_RASTER_PIXELS
 
   let scale = Math.min(1, Math.sqrt(maxPixels / basePixels))
+
   scale = Math.max(scale, 0.25)
   let supersample = basePixels <= 200_000 ? 2 : 1
   let rasterScale = scale * supersample
+
   if (basePixels * rasterScale * rasterScale > maxPixels) {
     supersample = 1
     rasterScale = scale
@@ -466,6 +505,7 @@ export const createEvenOddFillStyle = (
   const height = Math.max(1, Math.ceil(baseHeight * rasterScale))
 
   const preparedFills = normalizeFillEntries(options.fills)
+
   if (preparedFills.length === 0) {
     return null
   }
@@ -479,11 +519,13 @@ export const createEvenOddFillStyle = (
   }
 
   const preparedShape = prepareEvenOddShape(options.shape)
+
   if (preparedShape.segments.length === 0) {
     return null
   }
 
   const canvasContext = getCanvasContext(width, height)
+
   if (!canvasContext) {
     return null
   }
@@ -506,12 +548,14 @@ export const createEvenOddFillStyle = (
     for (let i = 0; i + 1 < intersections.length; i += 2) {
       const startX = intersections[i]
       const endX = intersections[i + 1]
+
       if (endX <= startX) {
         continue
       }
 
       const clippedStart = Math.max(startX, offsetX)
       const clippedEnd = Math.min(endX, offsetX + baseWidth)
+
       if (clippedEnd <= clippedStart) {
         continue
       }
@@ -541,12 +585,14 @@ export const createEvenOddFillStyle = (
 
         for (const sample of samplers) {
           const color = sample(nx, ny)
+
           if (color.a <= 0) {
             continue
           }
 
           const srcA = clampUnit(color.a)
           const outA = srcA + dstA * (1 - srcA)
+
           if (outA <= EPSILON) {
             dstR = 0
             dstG = 0

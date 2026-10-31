@@ -28,6 +28,7 @@ export function SearchDialog({
     if (!normalizedQuery) {
       return records.slice(0, 8)
     }
+
     return records
       .filter(({ description, section, title }) =>
         `${title} ${description} ${section}`

@@ -16,6 +16,7 @@ const centre: RobotJoints = {
   elbow: 0.5,
   wrist: -0.2
 }
+
 const box = (joints: RobotJoints, radius = 0): JointDomains =>
   Object.fromEntries(
     Object.entries(joints).map(([key, value]) => [
@@ -23,11 +24,14 @@ const box = (joints: RobotJoints, radius = 0): JointDomains =>
       [value - radius, value + radius]
     ])
   ) as unknown as JointDomains
+
 const makeRig = () =>
   prepareRobotRig(DEFAULT_ROBOT, models.createRobotModel(DEFAULT_ROBOT))
+
 function widths(result: ReturnType<typeof evaluateRobotIntervalPose>) {
   const width = (values: readonly Interval[]) =>
     Math.max(...values.map((value) => value.high - value.low))
+
   const positions = [
     ...result.parts.map((part) => part.transform.position),
     ...Object.values(result.pose.frames),
@@ -42,6 +46,7 @@ function widths(result: ReturnType<typeof evaluateRobotIntervalPose>) {
     result.pose.tool.approach,
     result.pose.tool.up
   ]
+
   return {
     position: Math.max(...positions.map(width)),
     coefficient: Math.max(...coefficients.map(width))
@@ -52,6 +57,7 @@ it('profiles four fixed complete interval-entry batches without caches or expand
   const rig = makeRig(),
     started = performance.now(),
     report = []
+
   for (const kind of ['normal', 'subnormal'] as const) {
     for (const pass of ['first', 'repeated'] as const) {
       const start = performance.now()
@@ -61,6 +67,7 @@ it('profiles four fixed complete interval-entry batches without caches or expand
         maxBigIntBits = 0,
         matrices = 0,
         scalarOperations = 0
+
       for (let index = 0; index < 25; index++) {
         if (
           performance.now() - start > 1000 ||
@@ -68,6 +75,7 @@ it('profiles four fixed complete interval-entry batches without caches or expand
         ) {
           throw new Error('Interval profile budget exceeded')
         }
+
         const domains =
           kind === 'normal'
             ? box({ ...centre, yaw: centre.yaw + index / 1000 }, 1e-6)
@@ -80,6 +88,7 @@ it('profiles four fixed complete interval-entry batches without caches or expand
               } as JointDomains)
         const result = evaluateRobotIntervalPose(rig, domains),
           work = result.work
+
         trigCalls += work.trigCalls
         evaluations += work.polynomialEvaluations
         terms += work.terms
@@ -88,7 +97,9 @@ it('profiles four fixed complete interval-entry batches without caches or expand
         maxBigIntBits = Math.max(maxBigIntBits, work.maxBigIntBits)
         expect(Number.isFinite(widths(result).coefficient)).toBe(true)
       }
+
       const milliseconds = performance.now() - start
+
       expect(milliseconds).toBeLessThanOrEqual(1000)
       expect(performance.now() - started).toBeLessThanOrEqual(10000)
       expect(trigCalls).toBe(200)
@@ -107,5 +118,6 @@ it('profiles four fixed complete interval-entry batches without caches or expand
       })
     }
   }
+
   console.info('complete interval profile', JSON.stringify(report))
 })

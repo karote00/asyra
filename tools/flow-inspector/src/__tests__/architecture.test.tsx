@@ -14,6 +14,7 @@ describe('React architecture presentation', () => {
         entries: { id: string; kind: string; data: ArchitectureData }[]
       }
     } = {}
+
     runInNewContext(
       readFileSync('workspace/workspace-bundle.data.js', 'utf8'),
       context
@@ -31,6 +32,7 @@ describe('React architecture presentation', () => {
     const data = structuredClone(flow.definition.architecture)
     const artifact = data.artifacts[0]
     const owner = data.steps.find((step) => step.id !== artifact.ownerStepId)
+
     expect(owner).toBeDefined()
     artifact.ownerStepId = owner?.id ?? ''
 
@@ -73,6 +75,7 @@ describe('React architecture presentation', () => {
 
   it('filters steps and routes together and moves selection into the visible lane', () => {
     const data = structuredClone(flow.definition.architecture)
+
     data.lanes.push({ id: 'delivery', title: 'Delivery', order: 2 })
     data.steps[3].laneId = 'delivery'
     const onSelect = vi.fn()
@@ -99,6 +102,7 @@ describe('React architecture presentation', () => {
   it('fits all lanes and supports scoped reset shortcuts', () => {
     render(<ArchitectureView data={flow.definition.architecture} />)
     const viewport = screen.getByRole('region', { name: 'Inspector flow' })
+
     Object.defineProperties(viewport, {
       clientWidth: { value: 800, configurable: true },
       clientHeight: { value: 600, configurable: true }
@@ -120,10 +124,12 @@ describe('React architecture presentation', () => {
     const { rerender } = render(
       <ArchitectureView data={flow.definition.architecture} />
     )
+
     fireEvent.click(
       screen.getByRole('button', { name: /React workspace composition/ })
     )
     const refreshed = structuredClone(flow.definition.architecture)
+
     refreshed.steps[1].purpose = 'The refreshed current contract.'
     rerender(<ArchitectureView data={refreshed} />)
     const detail = screen.getByRole('complementary', { name: 'Step contract' })
@@ -166,6 +172,7 @@ describe('React architecture presentation', () => {
 
   it('keeps authored content inert and opens reference links safely', () => {
     const data: ArchitectureData = structuredClone(flow.definition.architecture)
+
     data.target.title = '<img src=x onerror=alert(1)>'
     data.links.push({
       id: 'reference',
@@ -201,9 +208,11 @@ describe('React architecture presentation', () => {
   it('zooms around the pointer without rebuilding the architecture and removes its listener on unmount', () => {
     const data = { ...flow.definition.architecture }
     const steps = vi.fn(() => flow.definition.architecture.steps)
+
     Object.defineProperty(data, 'steps', { get: steps })
     const { unmount } = render(<ArchitectureView data={data} />)
     const viewport = screen.getByRole('region', { name: 'Inspector flow' })
+
     viewport.scrollLeft = 100
     viewport.scrollTop = 200
     const reads = steps.mock.calls.length
@@ -215,6 +224,7 @@ describe('React architecture presentation', () => {
       cancelable: true,
       bubbles: true
     })
+
     fireEvent(viewport, wheel)
     const scale = Number(viewport.getAttribute('data-zoom-scale'))
 
@@ -228,6 +238,7 @@ describe('React architecture presentation', () => {
       deltaY: -100,
       cancelable: true
     })
+
     viewport.dispatchEvent(afterUnmount)
 
     expect(afterUnmount.defaultPrevented).toBe(false)

@@ -28,12 +28,14 @@ export async function serveArtifact(directory, headers = {}) {
         root,
         `.${pathname === '/' ? '/index.html' : pathname}`
       )
+
       if (
         !file.startsWith(`${root}${path.sep}`) ||
         !(await stat(file)).isFile()
       ) {
         throw new Error('Not found')
       }
+
       response.writeHead(200, {
         ...headers,
         'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',
@@ -45,9 +47,12 @@ export async function serveArtifact(directory, headers = {}) {
       response.end('Not found')
     }
   })
+
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+
   return {
     url: `http://127.0.0.1:${server.address().port}`,
+
     close: () =>
       new Promise((resolve) => {
         server.closeAllConnections()

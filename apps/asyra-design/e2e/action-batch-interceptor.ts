@@ -99,7 +99,9 @@ class StableCanonicalIdWriter {
 
   next(prefix: string): string {
     const sequence = (this.counters.get(prefix) ?? 0) + 1
+
     this.counters.set(prefix, sequence)
+
     return `${prefix}-${this.namespace}-${sequence}`
   }
 }
@@ -129,6 +131,7 @@ const prepareBounds = (
   ) {
     return invalidResponseComposition(`item ${itemIndex} has invalid bounds`)
   }
+
   return {
     height: value.height,
     width: value.width,
@@ -142,6 +145,7 @@ const prepareStyle = (
   itemIndex: number
 ): ServerCompositionStyle => {
   const keys = Object.keys(value)
+
   if (
     keys.length === 0 ||
     keys.some(
@@ -160,6 +164,7 @@ const prepareStyle = (
   ) {
     return invalidResponseComposition(`item ${itemIndex} has invalid style`)
   }
+
   return {
     ...(value.fillColor === undefined ? {} : { fillColor: value.fillColor }),
     ...(value.strokeColor === undefined
@@ -184,6 +189,7 @@ const validatePath = (
   ) {
     return invalidResponseComposition(`item ${itemIndex} has an invalid path`)
   }
+
   for (const point of path.points) {
     if (
       !finiteNumber(point.x) ||
@@ -198,6 +204,7 @@ const validatePath = (
       )
     }
   }
+
   return path.points.length
 }
 
@@ -212,8 +219,10 @@ const prepareSourceItem = (
   ) {
     return invalidResponseComposition(`item ${itemIndex} has invalid identity`)
   }
+
   const bounds = prepareBounds(item.bounds, itemIndex)
   const style = prepareStyle(item.style, itemIndex)
+
   if (item.primitive === 'oval') {
     if (
       item.paths !== undefined ||
@@ -224,6 +233,7 @@ const prepareSourceItem = (
         `oval item ${itemIndex} contains vector geometry`
       )
     }
+
     return {
       bounds,
       paths: [],
@@ -236,6 +246,7 @@ const prepareSourceItem = (
 
   let paths: readonly DetailedTabbyPath[]
   let pointCount = 0
+
   if (item.paths !== undefined) {
     if (
       item.points !== undefined ||
@@ -247,6 +258,7 @@ const prepareSourceItem = (
         `vector item ${itemIndex} has ambiguous geometry`
       )
     }
+
     paths = item.paths
   } else {
     if (item.points === undefined || typeof item.closed !== 'boolean') {
@@ -254,11 +266,14 @@ const prepareSourceItem = (
         `vector item ${itemIndex} is missing geometry`
       )
     }
+
     paths = [{ closed: item.closed, points: item.points }]
   }
+
   for (const path of paths) {
     pointCount += validatePath(path, bounds, itemIndex)
   }
+
   return {
     bounds,
     paths,
@@ -372,6 +387,7 @@ const createVectorDescriptor = (
   for (const path of item.paths) {
     const pointIds = path.points.map(({ x, y }) => {
       const pointId = idWriter.next('tp')
+
       points[pointId] = {
         anchorType: 'sharp',
         handleMode: 'none',
@@ -380,12 +396,15 @@ const createVectorDescriptor = (
         x,
         y
       }
+
       return pointId
     })
     const segmentIds: string[] = []
     const segmentCount = path.closed ? pointIds.length : pointIds.length - 1
+
     for (let index = 0; index < segmentCount; index += 1) {
       const segmentId = idWriter.next('ts')
+
       segments[segmentId] = {
         endId: pointIds[(index + 1) % pointIds.length],
         id: segmentId,
@@ -395,7 +414,9 @@ const createVectorDescriptor = (
       }
       segmentIds.push(segmentId)
     }
+
     const networkId = idWriter.next('tn')
+
     networks[networkId] = {
       closed: path.closed,
       id: networkId,
@@ -405,6 +426,7 @@ const createVectorDescriptor = (
   }
 
   const elementId = idWriter.next('vector')
+
   return {
     closed: item.paths.some(({ closed }) => closed),
     fillRule: 'nonzero',
@@ -468,10 +490,12 @@ const createPreparedDrawingSlices = (
   let currentDescriptors: PreparedElementDescriptor[] = []
   let currentPointCount = 0
   let currentRoles: string[] = []
+
   const flush = () => {
     if (currentDescriptors.length === 0) {
       return
     }
+
     slices.push({
       descriptors: currentDescriptors,
       pointCount: currentPointCount,
@@ -491,11 +515,13 @@ const createPreparedDrawingSlices = (
     ) {
       flush()
     }
+
     currentDescriptors.push(descriptors[index])
     currentPointCount += item.pointCount
     currentRoles.push(item.role)
   })
   flush()
+
   return slices
 }
 
@@ -528,8 +554,10 @@ export const createPreparedDrawingArtifact = (
   sourceItems.forEach((item) => {
     if (roles.has(item.role)) {
       skipped.push({ reason: 'duplicate-role', role: item.role })
+
       return
     }
+
     roles.add(item.role)
     acceptedItems.push(item)
     pointCount += item.pointCount
@@ -544,6 +572,7 @@ export const createPreparedDrawingArtifact = (
       'the composition contains no accepted item'
     )
   }
+
   const groupBounds = {
     height: maxY - minY,
     width: maxX - minX,
@@ -566,12 +595,15 @@ export const createPreparedDrawingArtifact = (
   const roleToElementIds: Record<string, readonly string[]> = {}
   const pupilIds: string[] = []
   const whiskerIds: string[] = []
+
   acceptedItems.forEach((item, index) => {
     const elementId = descriptors[index].id
+
     roleToElementIds[item.role] = [elementId]
     if (item.role.includes('pupil')) {
       pupilIds.push(elementId)
     }
+
     if (item.role.includes('whisker')) {
       whiskerIds.push(elementId)
     }
@@ -579,6 +611,7 @@ export const createPreparedDrawingArtifact = (
   if (pupilIds.length > 0) {
     roleToElementIds.pupils = pupilIds
   }
+
   if (whiskerIds.length > 0) {
     roleToElementIds.whiskers = whiskerIds
   }
@@ -671,6 +704,7 @@ const readMaximumTabbyPathPrefix = async (
       if (!line.trimStart().startsWith('<path ')) {
         continue
       }
+
       pathLines.push(line)
       if (pathLines.length === itemCount) {
         break
@@ -686,6 +720,7 @@ const readMaximumTabbyPathPrefix = async (
       `Detailed-tabby source contains ${pathLines.length} paths; expected ${itemCount}.`
     )
   }
+
   return pathLines.join('\n')
 }
 
@@ -694,6 +729,7 @@ const readDetailedTabbyActionBatch = (): Promise<AiActionBatch> => {
     DETAILED_TABBY_ACTION_BATCH_URL,
     'utf8'
   ).then((source) => JSON.parse(source) as AiActionBatch)
+
   return detailedTabbyActionBatchPromise
 }
 
@@ -719,15 +755,18 @@ const reslicePreparedDrawingArtifact = (
   let descriptors: PreparedElementDescriptor[] = []
   let pointCount = 0
   let roles: string[] = []
+
   const flush = () => {
     if (descriptors.length === 0) {
       return
     }
+
     slices.push({ descriptors, pointCount, roles })
     descriptors = []
     pointCount = 0
     roles = []
   }
+
   source.forEach((item) => {
     if (
       descriptors.length > 0 &&
@@ -736,11 +775,13 @@ const reslicePreparedDrawingArtifact = (
     ) {
       flush()
     }
+
     descriptors.push(item.descriptor)
     pointCount += item.pointCount
     roles.push(item.role)
   })
   flush()
+
   return { ...artifact, slices }
 }
 
@@ -751,11 +792,14 @@ const withProfiledSliceBudget = (
   if (elementBudget === PREPARED_DRAWING_SLICE_ELEMENT_BUDGET) {
     return batch
   }
+
   const action = batch.actions[0]
   const artifact = action?.arguments as PreparedDrawingArtifact | undefined
+
   if (!action || !artifact || batch.actions.length !== 1) {
     throw new Error('Detailed-tabby action batch is invalid.')
   }
+
   return {
     ...batch,
     actions: [
@@ -774,6 +818,7 @@ const createDetailedTabbyPrefixBatch = async (
   }: CreateServerResponseRecordOptions = {}
 ): Promise<AiActionBatch> => {
   const storedBatch = await readDetailedTabbyActionBatch()
+
   if (itemCount === 7_075) {
     return withProfiledSliceBudget(storedBatch, sliceElementBudget)
   }
@@ -781,6 +826,7 @@ const createDetailedTabbyPrefixBatch = async (
   const storedAction = storedBatch.actions[0]
   const storedArtifact = storedAction?.arguments as
     PreparedDrawingArtifact | undefined
+
   if (
     storedBatch.actions.length !== 1 ||
     !storedAction ||
@@ -794,10 +840,12 @@ const createDetailedTabbyPrefixBatch = async (
   let pointCount = 0
   const selectedSlices: PreparedDrawingSlice[] = []
   const roleToElementIds: Record<string, readonly string[]> = {}
+
   for (const slice of storedArtifact.slices) {
     if (remaining === 0) {
       break
     }
+
     const descriptors = slice.descriptors.slice(0, remaining)
     const roles = slice.roles.slice(0, descriptors.length)
     const slicePointCount = descriptors.reduce(
@@ -809,8 +857,10 @@ const createDetailedTabbyPrefixBatch = async (
         ).length,
       0
     )
+
     descriptors.forEach((descriptor, index) => {
       const role = roles[index]
+
       if (role) {
         roleToElementIds[role] = [descriptor.id]
       }
@@ -823,6 +873,7 @@ const createDetailedTabbyPrefixBatch = async (
     pointCount += slicePointCount
     remaining -= descriptors.length
   }
+
   if (remaining !== 0) {
     throw new Error(
       `Detailed-tabby action batch is missing ${remaining} requested items.`
@@ -838,6 +889,7 @@ const createDetailedTabbyPrefixBatch = async (
     roleToElementIds,
     slices: selectedSlices
   }
+
   return withProfiledSliceBudget(
     {
       actions: [
@@ -883,11 +935,13 @@ export const createServerResponseRecord = async (
     itemLimit: itemCount,
     width: 1672
   })
+
   if (items.length !== itemCount) {
     throw new Error(
       `Detailed-tabby builder produced ${items.length} items; expected ${itemCount}.`
     )
   }
+
   const metadata = metadataForItemCount(itemCount)
   const artifact = createPreparedDrawingArtifact(items, {
     batchId: metadata.batchId,
@@ -931,6 +985,7 @@ export const installGeneratedActionBatchInterceptor = async (
   })
   const action = record.batch.actions[0]
   const artifact = action?.arguments as PreparedDrawingArtifact | undefined
+
   if (
     record.batch.actions.length !== 1 ||
     !artifact ||
@@ -942,6 +997,7 @@ export const installGeneratedActionBatchInterceptor = async (
       'Generated action-batch interceptor requires one prepared drawing artifact action.'
     )
   }
+
   await context.route(`**${AI_STATUS_ENDPOINT}`, async (route) => {
     await route.fulfill({
       body: JSON.stringify({ state: 'ready' }),
@@ -956,8 +1012,10 @@ export const installGeneratedActionBatchInterceptor = async (
         contentType: 'application/json; charset=utf-8',
         status: 405
       })
+
       return
     }
+
     await route.fulfill({
       body: JSON.stringify(record.batch),
       contentType: 'application/json; charset=utf-8',
@@ -974,6 +1032,7 @@ export const installPreparedActionBatchInterceptor = async (
 ): Promise<PreparedActionBatchInterceptorMetrics> => {
   const appOrigin = new URL(appUrl)
   const preparedResponseUrl = new URL(publicPath, appOrigin)
+
   if (
     !['http:', 'https:'].includes(appOrigin.protocol) ||
     preparedResponseUrl.origin !== appOrigin.origin ||
@@ -989,11 +1048,13 @@ export const installPreparedActionBatchInterceptor = async (
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value)
+
   const hasExactKeys = (
     value: Record<string, unknown>,
     expectedKeys: readonly string[]
   ): boolean => {
     const actualKeys = Object.keys(value)
+
     return (
       actualKeys.length === expectedKeys.length &&
       expectedKeys.every((key) =>
@@ -1001,8 +1062,10 @@ export const installPreparedActionBatchInterceptor = async (
       )
     )
   }
+
   const boundedString = (value: unknown): value is string =>
     typeof value === 'string' && value.length > 0 && value.length <= 1_024
+
   const roundDuration = (value: number): number =>
     Math.round(value * 1_000) / 1_000
 
@@ -1011,6 +1074,7 @@ export const installPreparedActionBatchInterceptor = async (
   const fetchResponse = await context.request.get(preparedResponseUrl.href)
   const compressedResponse = await fetchResponse.body()
   const fetchMs = performance.now() - fetchStartedAt
+
   if (!fetchResponse.ok() || compressedResponse.byteLength === 0) {
     throw new Error(
       `Prepared action batch fetch failed (${fetchResponse.status()}).`
@@ -1021,6 +1085,7 @@ export const installPreparedActionBatchInterceptor = async (
   const response: unknown = JSON.parse(
     gunzipSync(compressedResponse).toString('utf8')
   )
+
   if (
     !isRecord(response) ||
     !hasExactKeys(response, ['batch', 'fileId', 'schemaVersion']) ||
@@ -1037,7 +1102,9 @@ export const installPreparedActionBatchInterceptor = async (
       'Prepared action batch envelope does not match the interceptor contract.'
     )
   }
+
   const [action] = response.batch.actions
+
   if (
     !isRecord(action) ||
     !hasExactKeys(action, ['arguments', 'id', 'name', 'summary']) ||
@@ -1048,10 +1115,12 @@ export const installPreparedActionBatchInterceptor = async (
   ) {
     throw new Error('Prepared action batch action envelope is invalid.')
   }
+
   const decodeMs = performance.now() - decodeStartedAt
   const encodedBatch = JSON.stringify(response.batch)
 
   const interceptorInstallStartedAt = performance.now()
+
   await context.route(`**${AI_STATUS_ENDPOINT}`, async (route) => {
     await route.fulfill({
       body: JSON.stringify({ state: 'ready' }),
@@ -1066,8 +1135,10 @@ export const installPreparedActionBatchInterceptor = async (
         contentType: 'application/json; charset=utf-8',
         status: 405
       })
+
       return
     }
+
     await route.fulfill({
       body: encodedBatch,
       contentType: 'application/json; charset=utf-8',
@@ -1082,6 +1153,7 @@ export const installPreparedActionBatchInterceptor = async (
     interceptorInstallMs: roundDuration(interceptorInstallMs),
     totalMs: roundDuration(performance.now() - totalStartedAt)
   }
+
   if (
     !Number.isInteger(metrics.compressedBytes) ||
     metrics.compressedBytes <= 0 ||
@@ -1097,5 +1169,6 @@ export const installPreparedActionBatchInterceptor = async (
       'Prepared action batch interceptor returned invalid metrics.'
     )
   }
+
   return metrics
 }

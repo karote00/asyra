@@ -31,6 +31,7 @@ export async function decodeRestrictedGlb(
   if (input.byteLength > GLB_LIMITS.bytes) {
     throw new Error('GLB byte limit exceeded')
   }
+
   const bytes = new Uint8Array(input),
     { json, binary } = readContainer(bytes),
     access = new BinaryAccess(json, binary)
@@ -44,12 +45,15 @@ export async function decodeRestrictedGlb(
     max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
   let totalVertices = 0,
     totalIndices = 0
+
   for (const { node, matrix, index: nodeIndex } of sceneNodes(json)) {
     if (node.mesh === undefined) {
       continue
     }
+
     const meshIndex = integer(node.mesh, 'mesh index', meshes.length - 1),
       mesh = record(meshes[meshIndex], 'mesh')
+
     usedMeshes.add(meshIndex)
     for (const raw of list(
       mesh.primitives,
@@ -60,16 +64,20 @@ export async function decodeRestrictedGlb(
       if (output.length >= GLB_LIMITS.primitives) {
         throw new Error('Expanded primitive limit exceeded')
       }
+
       const primitive = record(raw, 'primitive'),
         attributes = record(primitive.attributes, 'attributes')
+
       if (primitive.mode !== undefined && primitive.mode !== 4) {
         throw new Error('Only triangle primitives are supported')
       }
+
       const position = access.describe(attributes.POSITION, 3)
       const indexAccessor =
         primitive.indices === undefined
           ? undefined
           : access.describe(primitive.indices, 1, true)
+
       totalVertices += position.count
       totalIndices += indexAccessor?.count ?? position.count
       if (
@@ -78,26 +86,34 @@ export async function decodeRestrictedGlb(
       ) {
         throw new Error('Expanded geometry limit exceeded')
       }
+
       for (const [key, index] of Object.entries(attributes)) {
         if (key === 'POSITION') {
           continue
         }
+
         const components = (
           { NORMAL: 3, TANGENT: 4, TEXCOORD_0: 2 } as Record<string, number>
         )[key]
+
         if (!components) {
           throw new Error(`Unsupported vertex attribute: ${key}`)
         }
+
         const attribute = access.describe(index, components)
+
         if (attribute.count !== position.count) {
           throw new Error('Inconsistent vertex attribute count')
         }
+
         access.values(attribute)
       }
+
       const positions = access.values(position),
         indices = indexAccessor
           ? access.values(indexAccessor)
           : Array.from({ length: position.count }, (_, i) => i)
+
       if (
         indices.length < 3 ||
         indices.length % 3 !== 0 ||
@@ -105,6 +121,7 @@ export async function decodeRestrictedGlb(
       ) {
         throw new Error('Invalid triangle indices')
       }
+
       for (let index = 0; index < positions.length; index += 3) {
         const point = new Vector3(
           positions[index],
@@ -112,19 +129,23 @@ export async function decodeRestrictedGlb(
           positions[index + 2]
         ).applyMatrix4(matrix)
         const values = point.toArray()
+
         for (let axis = 0; axis < 3; axis++) {
           const value = values[axis]
+
           if (
             !Number.isFinite(value) ||
             Math.abs(value) > GLB_LIMITS.coordinate
           ) {
             throw new Error('Baked geometry exceeds the coordinate profile')
           }
+
           positions[index + axis] = value
           min[axis] = Math.min(min[axis], value)
           max[axis] = Math.max(max[axis], value)
         }
       }
+
       const style =
         primitive.material === undefined
           ? appearance(undefined)
@@ -135,6 +156,7 @@ export async function decodeRestrictedGlb(
                 materials.length - 1
               )
             ]
+
       output.push(
         Object.freeze({
           name: name(node.name ?? mesh.name, `Mesh ${meshIndex + 1}`),
@@ -146,10 +168,13 @@ export async function decodeRestrictedGlb(
       )
     }
   }
+
   if (!output.length || usedMeshes.size !== meshes.length) {
     throw new Error('Empty or unused mesh content is unsupported')
   }
+
   const digest = await crypto.subtle.digest('SHA-256', bytes)
+
   return Object.freeze({
     format: 'restricted-glb-v0',
     source: Object.freeze({

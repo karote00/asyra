@@ -224,6 +224,7 @@ test('aggregates rotating CPU profile call frames with fixed capacity and error 
 
 test('retains the bounded CPU profile aggregate when a guarded child stops abruptly', () => {
   let state = createResourceGuardState({ nowMs: 0 })
+
   state = recordProfileOutput(
     state,
     [
@@ -237,6 +238,7 @@ test('retains the bounded CPU profile aggregate when a guarded child stops abrup
     owner: OWNER,
     targetPgid: TARGET_PGID
   })
+
   assert.deepEqual(report.cpuProfileDiagnostic, {
     capturedTopSelfSamples: 13,
     profileSamples: 50,
@@ -451,6 +453,7 @@ const arm = (state, nowMs = 0) => {
     }),
     { targetPgid: TARGET_PGID }
   )
+
   return evaluateResourceSample(
     first.state,
     trackedCpuSample({
@@ -483,6 +486,7 @@ const trackedCpuSample = ({
         return 'unknown'
     }
   }
+
   const roleCpuTimeMs = {
     appServer: 0,
     actorABrowser: 0,
@@ -507,9 +511,11 @@ const trackedCpuSample = ({
     utility: 0
   }
   let rawCpuPercent = 0
+
   for (const process of processes) {
     const roleKey = roleCpuKey(process.role)
     const processCpuPercent = process.cpuPercent ?? 0
+
     roleCpuTimeMs[roleKey] += process.cpuTimeMs
     roleCpuPercent[roleKey] += processCpuPercent
     rawCpuPercent += processCpuPercent
@@ -535,6 +541,7 @@ const trackedCpuSample = ({
       }
     }
   }
+
   return {
     browserProcessTypeCpuPercent,
     cpuPercent: cpuPercent ?? rawCpuPercent,
@@ -553,13 +560,16 @@ const trackedCpuSample = ({
 
 const advanceWithIdleSamples = (state, targetMs) => {
   let nextState = state
+
   while (nextState.previousProcessSnapshot) {
     const nextNowMs =
       nextState.previousProcessSnapshot.monotonicMs +
       DEFAULT_RESOURCE_GUARD_CONFIG.sampleIntervalMs
+
     if (nextNowMs > targetMs) {
       break
     }
+
     const result = evaluateResourceSample(
       nextState,
       trackedCpuSample({
@@ -571,9 +581,11 @@ const advanceWithIdleSamples = (state, targetMs) => {
       }),
       { targetPgid: TARGET_PGID }
     )
+
     assert.equal(result.decision.stop, false)
     nextState = result.state
   }
+
   return nextState
 }
 
@@ -717,6 +729,7 @@ test('enforces the raw 250% frontend peak separately from the raw 400% aggregate
       targetPgid: TARGET_PGID
     }
   )
+
   assert.equal(
     allowedReport.maximumFrontendCpuSafetySample.frontendRawCpuPercent,
     250
@@ -812,6 +825,7 @@ test('accepts serialized raw samples within the fixed observation window and rej
     { targetPgid: TARGET_PGID }
   )
   const ready = record(baseline.state, 'ready', 1_000)
+
   assert.equal(ready.accepted, true)
 
   const serialized = evaluateResourceSample(
@@ -876,22 +890,26 @@ test('serializes OS sampling and its state consumer in request order', async () 
   const events = []
   const runSerialized = createSerializedResourceSampler(async () => {
     const id = (sequence += 1)
+
     activeSamples += 1
     maximumActiveSamples = Math.max(maximumActiveSamples, activeSamples)
     events.push(`sample-${id}-start`)
     await Promise.resolve()
     events.push(`sample-${id}-end`)
     activeSamples -= 1
+
     return id
   })
 
   const results = await Promise.all([
     runSerialized(async (sample) => {
       events.push(`consume-${sample}`)
+
       return sample
     }),
     runSerialized(async (sample) => {
       events.push(`consume-${sample}`)
+
       return sample
     })
   ])
@@ -949,6 +967,7 @@ test('accepts a complete raw snapshot after process identity churn before readin
 
 test('rebaselines instead of stopping when process identity changes before readiness', () => {
   const provisional = arm(createResourceGuardState({ nowMs: 0 }), 1_000)
+
   assert.equal(provisional.acceptedRawSamples, 2)
 
   const churn = evaluateResourceSample(
@@ -987,6 +1006,7 @@ test('fails closed when process identity changes after guard readiness', () => {
     { targetPgid: TARGET_PGID }
   )
   const ready = record(stable.state, 'ready', 1_250)
+
   assert.equal(ready.accepted, true)
 
   const churn = evaluateResourceSample(
@@ -1034,6 +1054,7 @@ test('attributes one phase from atomic cumulative CPU-time boundaries instead of
     9_750,
     heartbeat({ phase: 'earlier-heartbeat-label' })
   )
+
   assert.equal(ready.accepted, true)
   const start = recordResourcePhaseBoundary(
     ready.state,
@@ -1061,6 +1082,7 @@ test('attributes one phase from atomic cumulative CPU-time boundaries instead of
     },
     { expectedOwner: OWNER, expectedToken: TOKEN }
   )
+
   assert.equal(start.accepted, true)
 
   const unrelatedHeartbeat = record(
@@ -1069,6 +1091,7 @@ test('attributes one phase from atomic cumulative CPU-time boundaries instead of
     10_100,
     heartbeat({ phase: 'later-heartbeat-label' })
   )
+
   assert.equal(unrelatedHeartbeat.accepted, true)
 
   const end = recordResourcePhaseBoundary(
@@ -1226,6 +1249,7 @@ test('uses raw phase-boundary CPU without converting CPU-time deltas', () => {
       targetPgid: TARGET_PGID
     }
   )
+
   assert.equal(start.accepted, true)
   assert.equal(start.decision.stop, false)
 
@@ -1267,6 +1291,7 @@ test('uses raw phase-boundary CPU without converting CPU-time deltas', () => {
 test('treats sub-cadence phase boundaries as independent raw snapshots', () => {
   const armed = arm(createResourceGuardState({ nowMs: 0 }))
   const ready = record(armed, 'ready', 250)
+
   assert.equal(ready.accepted, true)
 
   const start = recordGuardedResourcePhaseBoundary(
@@ -1342,6 +1367,7 @@ test('treats sub-cadence phase boundaries as independent raw snapshots', () => {
     }),
     { targetPgid: TARGET_PGID }
   )
+
   assert.equal(overLimit.decision.stop, true)
   assert.equal(overLimit.decision.reason, 'cpu-limit-exceeded')
   assert.equal(overLimit.state.cpuSafetySamples.at(-1).rawCpuPercent, 400.01)
@@ -1624,6 +1650,7 @@ test('applies the frontend CPU limit to Actor A and Actor B independently', () =
     },
     { targetPgid: TARGET_PGID }
   )
+
   assert.equal(second.decision.stop, false)
   assert.equal(
     second.state.maximumActorAFrontendCpuSafetySample.actorFrontendRawCpuPercent
@@ -1640,6 +1667,7 @@ test('applies the frontend CPU limit to Actor A and Actor B independently', () =
     owner: OWNER,
     targetPgid: TARGET_PGID
   })
+
   assert.equal(report.maximumAggregateCpuSafetySample.rawCpuPercent, 290)
 })
 
@@ -1668,6 +1696,7 @@ test('reports bootstrap settled only from fresh required Actor samples below the
       }),
       { targetPgid: TARGET_PGID }
     ).state
+
   const requiredBrowserRoles = ['client-a-browser', 'client-b-browser']
 
   assert.equal(
@@ -1759,9 +1788,11 @@ test('allows every tracked process-group sample at or below 400% aggregate CPU',
       }),
       { targetPgid: TARGET_PGID }
     )
+
     assert.equal(result.decision.stop, false)
     state = result.state
   }
+
   assert.equal(state.cpuSafetySamples.at(-1).rawCpuPercent, 400)
 })
 
@@ -1810,6 +1841,7 @@ test('keeps the 200% hard ceiling for an explicit root-cause diagnostic state', 
 test('stops when heartbeat is stale for more than ten seconds while CPU is above the ordinary 80% baseline', () => {
   const initial = createResourceGuardState({ nowMs: 0 })
   const ready = record(arm(initial), 'ready', 0)
+
   assert.equal(ready.accepted, true)
   const beforeBusy = advanceWithIdleSamples(ready.state, 9_751)
 
@@ -1956,6 +1988,7 @@ test('accepts bounded bootstrap progress before freezing the ready request ident
   const initial = createResourceGuardState({ nowMs: 0 })
 
   const prematureProgress = record(initial, 'progress', 1)
+
   assert.equal(prematureProgress.accepted, true)
   assert.equal(prematureProgress.state.ready, false)
   assert.equal(prematureProgress.state.lastHeartbeat.phase, 'creating')
@@ -1973,6 +2006,7 @@ test('accepts bounded bootstrap progress before freezing the ready request ident
       nowMs: 2
     }
   )
+
   assert.equal(badToken.accepted, false)
   assert.equal(badToken.reason, 'invalid-token')
 
@@ -1982,14 +2016,17 @@ test('accepts bounded bootstrap progress before freezing the ready request ident
     3,
     heartbeat({ owner: 'another-owner' })
   )
+
   assert.equal(wrongOwner.accepted, false)
   assert.equal(wrongOwner.reason, 'invalid-owner')
 
   const unarmedReady = record(initial, 'ready', 4)
+
   assert.equal(unarmedReady.accepted, false)
   assert.equal(unarmedReady.reason, 'guard-not-armed')
 
   const ready = record(arm(initial, 4), 'ready', 4)
+
   assert.equal(ready.accepted, true)
   assert.equal(ready.state.ready, true)
 
@@ -2003,6 +2040,7 @@ test('accepts bounded bootstrap progress before freezing the ready request ident
       extra: { undoDepth: 1, completeAtMs: null }
     })
   )
+
   assert.equal(progress.accepted, true)
   assert.equal(progress.state.lastHeartbeat.actorA.elements, 2048)
 
@@ -2019,12 +2057,14 @@ test('accepts bounded bootstrap progress before freezing the ready request ident
       nowMs: 6
     }
   )
+
   assert.equal(invalidKind.accepted, false)
   assert.equal(invalidKind.reason, 'invalid-kind')
 })
 
 test('new pre-ready process registration clears a provisional CPU baseline', () => {
   let state = arm(createResourceGuardState({ nowMs: 0 }), 1_000)
+
   assert.equal(state.acceptedRawSamples, 2)
   assert.notEqual(state.previousProcessSnapshot, null)
 
@@ -2069,6 +2109,7 @@ test('accepts and reports an over-projected render count without hiding the exce
     owner: OWNER,
     targetPgid: TARGET_PGID
   })
+
   assert.equal(report.actorA.elements, 7077)
   assert.equal(report.actorA.total, 7076)
 })
@@ -2372,6 +2413,7 @@ test('pins the proof kind for the complete guarded invocation', () => {
 
 test('takes the first tracked CPU sample before waiting for the sampling interval', async () => {
   const child = new EventEmitter()
+
   child.pid = TARGET_PGID
   child.stdout = new EventEmitter()
   child.stderr = new EventEmitter()
@@ -2388,28 +2430,37 @@ test('takes the first tracked CPU sample before waiting for the sampling interva
       baseEnv: {},
       requiresReady: false,
       runtimeProcess,
+
       sampleCpu: async (pgid) => {
         samples += 1
         cadenceEvents.push('sample')
         void Promise.resolve().then(() => child.emit('close', 0, null))
+
         return {
           cpuPercent: 1,
           nowMs: 1,
           pgid
         }
       },
+
       clearIntervalImpl: (handle) => {
         assert.equal(handle, intervalHandle)
       },
+
       setIntervalImpl: (_callback, milliseconds) => {
         cadenceEvents.push(`interval:${milliseconds}`)
+
         return intervalHandle
       },
+
       spawnImpl: () => child,
+
       terminate: async ({ pgid }) => {
         cleanedProcessGroups.push(pgid)
+
         return { forceKilled: false, pgid, termSent: false }
       },
+
       stdout: { write: () => true }
     }
   )
@@ -2424,6 +2475,7 @@ test('takes the first tracked CPU sample before waiting for the sampling interva
 
 test('fails closed and force-kills exact groups when child-close cleanup is unconfirmed', async () => {
   const child = new EventEmitter()
+
   child.pid = TARGET_PGID
   child.stdout = new EventEmitter()
   child.stderr = new EventEmitter()
@@ -2435,26 +2487,36 @@ test('fails closed and force-kills exact groups when child-close cleanup is unco
     ['--owner', OWNER, '--', 'mock-command'],
     {
       baseEnv: {},
+
       clearIntervalImpl: () => undefined,
+
       emergencyKill: (pid, signal) => {
         emergencyKills.push([pid, signal])
       },
+
       fallbackTerminate: async () => {
         throw new Error('fallback cleanup failed')
       },
+
       requiresReady: false,
       runtimeProcess: new EventEmitter(),
+
       sampleCpu: async (pgid) => {
         void Promise.resolve().then(() => child.emit('close', 0, null))
+
         return {
           cpuPercent: 1,
           nowMs: 1,
           pgid
         }
       },
+
       setIntervalImpl: () => intervalHandle,
+
       spawnImpl: () => child,
+
       stdout: { write: () => true },
+
       terminate: async () => {
         throw new Error('primary cleanup failed')
       }
@@ -2469,6 +2531,7 @@ test('fails closed and force-kills exact groups when child-close cleanup is unco
 
 test('treats cleanup work after a normal child close as a leaked process', async () => {
   const child = new EventEmitter()
+
   child.pid = TARGET_PGID
   child.stdout = new EventEmitter()
   child.stderr = new EventEmitter()
@@ -2479,20 +2542,28 @@ test('treats cleanup work after a normal child close as a leaked process', async
     ['--owner', OWNER, '--', 'mock-command'],
     {
       baseEnv: {},
+
       clearIntervalImpl: () => undefined,
+
       requiresReady: false,
       runtimeProcess: new EventEmitter(),
+
       sampleCpu: async (pgid) => {
         void Promise.resolve().then(() => child.emit('close', 0, null))
+
         return {
           cpuPercent: 1,
           nowMs: 1,
           pgid
         }
       },
+
       setIntervalImpl: () => intervalHandle,
+
       spawnImpl: () => child,
+
       stdout: { write: () => true },
+
       terminate: async ({ pgid }) => ({
         forceKilled: false,
         pgid,
@@ -2510,6 +2581,7 @@ test('treats cleanup work after a normal child close as a leaked process', async
 
 test('force-kills exact groups when a guarded child does not close', async () => {
   const child = new EventEmitter()
+
   child.pid = TARGET_PGID
   child.stdout = Object.assign(new EventEmitter(), {
     destroy: () => undefined
@@ -2525,21 +2597,30 @@ test('force-kills exact groups when a guarded child does not close', async () =>
     ['--owner', OWNER, '--', 'mock-command'],
     {
       baseEnv: {},
+
       clearIntervalImpl: () => undefined,
+
       config: { terminationGraceMs: 0 },
+
       emergencyKill: (pid, signal) => {
         emergencyKills.push([pid, signal])
       },
+
       requiresReady: false,
       runtimeProcess: new EventEmitter(),
+
       sampleCpu: async (pgid) => ({
         cpuPercent: 201,
         nowMs: 1,
         pgid
       }),
+
       setIntervalImpl: () => intervalHandle,
+
       spawnImpl: () => child,
+
       stdout: { write: () => true },
+
       terminate: async ({ pgid }) => ({
         forceKilled: true,
         pgid,
@@ -2556,6 +2637,7 @@ test('force-kills exact groups when a guarded child does not close', async () =>
 
 test('forbids diagnostic CPU mode for an authenticated endpoint proof', async () => {
   const child = new EventEmitter()
+
   child.pid = TARGET_PGID
   child.stdout = new EventEmitter()
   child.stderr = new EventEmitter()
@@ -2569,15 +2651,19 @@ test('forbids diagnostic CPU mode for an authenticated endpoint proof', async ()
       },
       requiresReady: true,
       runtimeProcess: new EventEmitter(),
+
       sampleCpu: async (pgid) => ({
         cpuPercent: 0,
         nowMs: 1,
         pgid
       }),
+
       spawnImpl: () => {
         globalThis.queueMicrotask(() => child.emit('close', 0, null))
+
         return child
       },
+
       stdout: { write: () => true }
     }),
     /Diagnostic CPU mode cannot run an authenticated endpoint proof/u
@@ -2608,6 +2694,7 @@ test('keeps only bounded heartbeat and CPU evidence in its emergency report', ()
     historyLimit: 3
   }
   let state = createResourceGuardState({ nowMs: 0, config })
+
   state = record(arm(state), 'ready', 0).state
 
   for (let index = 1; index <= 6; index += 1) {
@@ -2732,6 +2819,7 @@ test('keeps only bounded heartbeat and CPU evidence in its emergency report', ()
 
 test('never attributes raw CPU safety samples to diagnostic phases', () => {
   let state = createResourceGuardState({ nowMs: 0 })
+
   state = record(arm(state), 'ready', 0).state
 
   for (let index = 1; index <= 30; index += 1) {
@@ -2819,8 +2907,10 @@ test('uses the second raw Darwin top sample instead of ps decaying CPU averages'
             '7777 999.0'
           ].join('\n')
         )
+
         return
       }
+
       callback(
         null,
         [
@@ -2837,6 +2927,7 @@ test('uses the second raw Darwin top sample instead of ps decaying CPU averages'
         ].join('\n')
       )
     },
+
     monotonicMs: 900,
     nowMs: 1_000,
     platform: 'darwin',
@@ -3071,8 +3162,10 @@ test('attributes two Chromium process groups to Actor A and Actor B from one OS 
             '5004 0.5'
           ].join('\n')
         )
+
         return
       }
+
       callback(
         null,
         [
@@ -3084,6 +3177,7 @@ test('attributes two Chromium process groups to Actor A and Actor B from one OS 
         ].join('\n')
       )
     },
+
     monotonicMs: 900,
     nowMs: 1_000,
     platform: 'darwin',
@@ -3113,6 +3207,7 @@ test('fails closed when Darwin top omits the second current CPU table', async ()
             : `${TARGET_PGID} 1 ${TARGET_PGID} 0:00.10 yarn playwright`
         )
       },
+
       nowMs: 1_000,
       platform: 'darwin',
       processGroups: [{ pgid: TARGET_PGID, role: 'test-harness' }]
@@ -3130,6 +3225,7 @@ test('fails closed when the bounded OS snapshot command fails', async () => {
           ''
         )
       },
+
       nowMs: 1_000,
       platform: 'darwin',
       processGroups: [{ pgid: TARGET_PGID, role: 'test-harness' }]
@@ -3244,9 +3340,11 @@ test('terminates the tracked group when the guard receives a signal or exits une
   const dispose = installTrackedProcessLifecycleGuard({
     pgid: TARGET_PGID,
     runtimeProcess,
+
     startTermination: async (reason) => {
       terminations.push(reason)
     },
+
     emergencyKill: (pid, signal) => {
       emergencyKills.push([pid, signal])
     }
@@ -3271,14 +3369,18 @@ test('terminates only the tracked process group, waits at most three seconds, an
   const result = await terminateTrackedProcessGroup({
     pgid: TARGET_PGID,
     graceMs: 30_000,
+
     kill: async (pid, signal) => {
       calls.push(['kill', pid, signal])
     },
+
     wait: async (milliseconds) => {
       calls.push(['wait', milliseconds])
     },
+
     probe: async (pgid) => {
       calls.push(['probe', pgid])
+
       return true
     }
   })
@@ -3298,12 +3400,16 @@ test('terminates only the tracked process group, waits at most three seconds, an
   const survivorGoneCalls = []
   const survivorGone = await terminateTrackedProcessGroup({
     pgid: TARGET_PGID,
+
     kill: async (pid, signal) => {
       survivorGoneCalls.push(['kill', pid, signal])
     },
+
     wait: async () => undefined,
+
     probe: async () => false
   })
+
   assert.equal(survivorGone.forceKilled, false)
   assert.deepEqual(survivorGoneCalls, [['kill', -TARGET_PGID, 'SIGTERM']])
 })
@@ -3313,12 +3419,15 @@ test('bounds termination failures and falls back to the project-owned process-gr
   const recovered = await attemptGuardedTermination({
     pgid: TARGET_PGID,
     graceMs: 3_000,
+
     terminate: async () => {
       calls.push('primary')
       throw new Error('primary termination failed')
     },
+
     fallbackTerminate: async ({ pgid, graceMs }) => {
       calls.push(['fallback', pgid, graceMs])
+
       return { pgid, termSent: true, forceKilled: true }
     }
   })
@@ -3330,13 +3439,16 @@ test('bounds termination failures and falls back to the project-owned process-gr
   const unconfirmed = await attemptGuardedTermination({
     pgid: TARGET_PGID,
     graceMs: 3_000,
+
     terminate: async () => {
       throw new Error('primary termination failed')
     },
+
     fallbackTerminate: async () => {
       throw new Error('fallback termination failed')
     }
   })
+
   assert.equal(unconfirmed.confirmed, false)
   assert.equal(unconfirmed.failures.length, 2)
 })
@@ -3558,13 +3670,17 @@ test('attests that the emitted production artifact owns exactly the endpoint use
   const options = {
     assetsDirectory: '/project/dist/assets',
     expectedEndpoint,
+
     readdirImpl: async () => [...assets.keys(), 'index.css'],
+
     readFileImpl: async (file) => {
       activeReads += 1
       maximumActiveReads = Math.max(maximumActiveReads, activeReads)
       await new Promise((resolveRead) => globalThis.queueMicrotask(resolveRead))
       const source = assets.get(file.split('/').at(-1))
+
       activeReads -= 1
+
       return source
     }
   }
@@ -3596,6 +3712,7 @@ test('requires one authenticated descendant process group for every proof role b
     nowMs: 0,
     config: { requiredProcessRoles }
   })
+
   const register = (
     role,
     pgid,
@@ -3611,7 +3728,9 @@ test('requires one authenticated descendant process group for every proof role b
         rootPgid: TARGET_PGID
       }
     )
+
     state = result.state
+
     return result
   }
 
@@ -3631,12 +3750,14 @@ test('requires one authenticated descendant process group for every proof role b
   )
 
   const beforeAllRoles = record(state, 'ready', 1)
+
   assert.equal(beforeAllRoles.accepted, false)
   assert.equal(beforeAllRoles.reason, 'guard-not-armed')
 
   assert.equal(register('app-server', 5002).accepted, true)
   assert.equal(register('websocket-server', 5003).accepted, true)
   const idempotentBrowser = register('client-a-browser', 5001)
+
   assert.equal(idempotentBrowser.accepted, true)
   assert.equal(idempotentBrowser.state.processGroups.length, 4)
   assert.equal(register('client-a-browser', 5999).reason, 'role-conflict')
@@ -3666,6 +3787,7 @@ test('requires one authenticated descendant process group for every proof role b
     { cpuTimeMs: 100, pid: 5002, role: 'app-server' },
     { cpuTimeMs: 100, pid: 5003, role: 'websocket-server' }
   ]
+
   state = evaluateResourceSample(
     state,
     trackedCpuSample({
@@ -3676,6 +3798,7 @@ test('requires one authenticated descendant process group for every proof role b
     { targetPgid: TARGET_PGID }
   ).state
   const ready = record(state, 'ready', 3)
+
   assert.equal(ready.accepted, true)
 
   const stopping = evaluateResourceSample(
@@ -3693,6 +3816,7 @@ test('requires one authenticated descendant process group for every proof role b
     }),
     { targetPgid: TARGET_PGID }
   ).state
+
   assert.equal(
     recordTrackedProcessGroupRegistration(
       stopping,
@@ -3737,8 +3861,10 @@ test('stops when a registered process role disappears before proof completion', 
             '5002 4.0'
           ].join('\n')
         )
+
         return
       }
+
       callback(
         null,
         [
@@ -3748,6 +3874,7 @@ test('stops when a registered process role disappears before proof completion', 
         ].join('\n')
       )
     },
+
     nowMs: 1_000,
     platform: 'darwin',
     processGroups
@@ -3769,6 +3896,7 @@ test('stops when a registered process role disappears before proof completion', 
     sampled,
     { targetPgid: TARGET_PGID }
   )
+
   assert.equal(evaluated.decision.stop, true)
   assert.equal(evaluated.decision.reason, 'tracked-process-group-missing')
 
@@ -3777,6 +3905,7 @@ test('stops when a registered process role disappears before proof completion', 
     sampled,
     { targetPgid: TARGET_PGID }
   )
+
   assert.equal(diagnostic.decision.stop, false)
 })
 
@@ -3786,6 +3915,7 @@ test('verifies one fixed process group through its bounded parent chain', async 
     [4900, { parentPid: TARGET_PGID, pgid: TARGET_PGID, pid: 4900 }],
     [TARGET_PGID, { parentPid: 1, pgid: TARGET_PGID, pid: TARGET_PGID }]
   ])
+
   const readIdentity = async (pid) => identities.get(pid) ?? null
 
   assert.equal(
@@ -3831,21 +3961,28 @@ test('registers a tracked launcher before spawn and removes guard secrets from i
           '/project/apps/asyra-design/tmp/endpoint-preview/current/__endpoint-test__/server-responses/manifest.json',
         KEEP_ME: 'yes'
       },
+
       fetchImpl: async (url, options) => {
         requests.push({
           body: JSON.parse(options.body),
           url
         })
+
         return {
           ok: true,
+
           json: async () => ({ accepted: true }),
+
           status: 200
         }
       },
+
       runtimeProcess: { pid: 5002 },
+
       spawnImpl: (command, args, options) => {
         spawnCall = { args, command, options }
         globalThis.queueMicrotask(() => child.emit('close', 0, null))
+
         return child
       }
     }
@@ -3891,8 +4028,10 @@ test('starts product-group termination before root within one bounded window', a
   const result = await terminateTrackedProcessGroups({
     graceMs: 3_000,
     processGroups,
+
     terminate: async ({ pgid }) => {
       started.push(pgid)
+
       return { forceKilled: false, pgid, termSent: true }
     }
   })
@@ -3917,13 +4056,17 @@ test('attests separate production setup before starting guarded runtime', async 
     assertPortAvailable: async (port) => {
       events.push(`port:${port}`)
     },
+
     attestBuild: async ({ expectedEndpoint: actualEndpoint }) => {
       assert.equal(actualEndpoint, expectedEndpoint)
       events.push('attest-build')
+
       return { assetsInspected: 2, endpoint: actualEndpoint }
     },
+
     attestResponsePreview: async () => {
       events.push('attest-response-preview')
+
       return {
         currentPath: expectedPreviewOutDir,
         manifest: {
@@ -3938,9 +4081,12 @@ test('attests separate production setup before starting guarded runtime', async 
         productionIndexSha256: expectedProductionIndexSha256
       }
     },
+
     baseEnv: { PATH: '/test/bin' },
+
     runPhase: async (argv, options) => {
       const phaseOwner = argv[1]
+
       assert.equal(phaseOwner, OWNER)
       events.push(`runtime:${phaseOwner}`)
       assert.equal(options.baseEnv.ENDPOINT_ARTIFACT_ATTESTED, expectedEndpoint)
@@ -3960,6 +4106,7 @@ test('attests separate production setup before starting guarded runtime', async 
         options.baseEnv.ENDPOINT_RESPONSE_ARTIFACT_PAYLOAD,
         undefined
       )
+
       return {
         exitCode: 0,
         report: { owner: phaseOwner }
@@ -3980,16 +4127,21 @@ test('attests separate production setup before starting guarded runtime', async 
 
 test('does not start the guarded runtime when production artifact attestation fails', async () => {
   const events = []
+
   await assert.rejects(
     runEndpointPerformancePipeline(['--owner', OWNER], {
       assertPortAvailable: async () => undefined,
+
       attestBuild: async () => {
         events.push('attest-build')
         throw new Error('production setup is stale')
       },
+
       baseEnv: { PATH: '/test/bin' },
+
       runPhase: async () => {
         events.push('runtime')
+
         return { exitCode: 0, report: null }
       }
     }),
@@ -4001,22 +4153,29 @@ test('does not start the guarded runtime when production artifact attestation fa
 
 test('does not spawn the guarded runtime when response overlay manifest or gzip attestation fails', async () => {
   const events = []
+
   await assert.rejects(
     runEndpointPerformancePipeline(['--owner', OWNER], {
       assertPortAvailable: async (port) => {
         events.push(`port:${port}`)
       },
+
       attestBuild: async ({ expectedEndpoint }) => {
         events.push('attest-build')
+
         return { assetsInspected: 1, endpoint: expectedEndpoint }
       },
+
       attestResponsePreview: async () => {
         events.push('attest-response-preview')
         throw new Error('prepared response manifest gzip sha256 mismatch')
       },
+
       baseEnv: { PATH: '/test/bin' },
+
       runPhase: async () => {
         events.push('runtime-spawn')
+
         return { exitCode: 0, report: null }
       }
     }),
@@ -4077,6 +4236,7 @@ test('fails a successful child exit when a guarded Playwright spec never became 
     { code: 0, signal: null, error: null },
     { requiresReady: false, nowMs: 1_000 }
   )
+
   assert.equal(buildResult.ok, true)
 })
 
@@ -4099,6 +4259,7 @@ test('aggregates bounded collaboration profile metrics into the final report', (
     historyLimit: 2
   }
   let state = createResourceGuardState({ nowMs: 0, config })
+
   state = recordProfileOutput(
     state,
     [

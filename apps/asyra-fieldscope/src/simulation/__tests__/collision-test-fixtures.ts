@@ -24,6 +24,7 @@ export const farm = {
   strips: [{ id: 'soil', kind: 'soil' as const, width: 6.3 }]
 }
 export const robot = new RobotProjection()
+
 robot.update(assessRobotDesign(validateRobot(DEFAULT_ROBOT), farm))
 
 export function setup(
@@ -40,10 +41,12 @@ export function setup(
   })
   const owner = new QueryGeometry({
     isCurrentReceipt: (value) => value === receipt,
+
     isCurrentScene: site.isCurrentScene.bind(site),
     isCurrentRobot: robot.isCurrentSource.bind(robot),
     isCurrentDock: robot.isCurrentDockSource.bind(robot)
   })
+
   return {
     site,
     owner,
@@ -51,6 +54,7 @@ export function setup(
     query: new SurfaceQueries(owner)
   }
 }
+
 export function batch(): SurfaceBatch {
   return {
     source: 'synthetic',
@@ -74,6 +78,7 @@ export function batch(): SurfaceBatch {
 
 export function sweep(): SurfaceSweepBatch {
   const initial = batch()
+
   return {
     source: initial.source,
     from: 1,
@@ -93,6 +98,7 @@ export function sweep(): SurfaceSweepBatch {
 
 export function coverage(): SurfaceCoverageBatch {
   const input = sweep()
+
   return {
     source: input.source,
     from: input.from,
@@ -111,29 +117,37 @@ export function coverage(): SurfaceCoverageBatch {
 export function expectedInventory(source: ReturnType<typeof setup>['source']) {
   const robots = source.meshes.filter((mesh) => mesh.kind === 'robot'),
     environment = source.meshes.filter((mesh) => mesh.kind !== 'robot')
+
   const triangles = (mesh: (typeof robots)[number]) => {
     if (mesh.shape.kind !== 'triangles') {
       throw new Error('Invalid fixture source')
     }
+
     return mesh.shape.indices.length / 3
   }
+
   let meshPairs = 0,
     trianglePairs = 0,
     environmentInstances = 0
+
   for (const mesh of environment) {
     environmentInstances += mesh.descriptor?.instances?.length ?? 1
   }
+
   for (let i = 0; i < robots.length; i++) {
     for (const mesh of environment) {
       const instances = mesh.descriptor?.instances?.length ?? 1
+
       meshPairs += instances
       trianglePairs += triangles(robots[i]) * triangles(mesh) * instances
     }
+
     for (let j = i + 1; j < robots.length; j++) {
       meshPairs++
       trianglePairs += triangles(robots[i]) * triangles(robots[j])
     }
   }
+
   return {
     robotParts: robots.length,
     environmentInstances,

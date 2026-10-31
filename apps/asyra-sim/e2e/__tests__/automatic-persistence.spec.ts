@@ -9,6 +9,7 @@ test('automatically persists committed edits and Undo across reload with one pro
     'Saved locally'
   )
   const projectURL = page.url()
+
   expect(new URL(projectURL).searchParams.get('projectId')).toBeTruthy()
   await expect(
     page.getByRole('button', { name: 'Save', exact: true })

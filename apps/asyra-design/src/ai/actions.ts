@@ -224,12 +224,16 @@ const createCompositionElements = (
 const defaultApis: AiActionApis = {
   changeElementGeometry: (elementId, geometry, options) =>
     elementApis.changeElementGeometry(elementId, geometry, options),
+
   createCompositionElements,
+
   createCompositionGroup: (descriptor, options) => {
     const workspaceId = hierarchyApis.getWorkspaceId()
+
     if (!workspaceId) {
       return null
     }
+
     return (
       elementApis.createElementsInParent(
         Object.freeze([descriptor]),
@@ -238,27 +242,40 @@ const defaultApis: AiActionApis = {
       )?.[0] ?? null
     )
   },
+
   getElementBounds: (elementId) => elementApis.getElementBounds(elementId),
+
   getElementFillColor: (elementId) => fillApis.getPrimaryFillColor(elementId),
+
   getElementStrokeColor: (elementId) =>
     strokeApis.getPrimaryStrokeColor(elementId),
+
   getElementType: (elementId) => elementApis.getElementType(elementId),
+
   removeSubtree: (elementId, options) =>
     hierarchyApis.removeSubtree(elementId, options),
+
   scaleVectorElementGeometry: (elementId, geometry, options) =>
     elementApis.scaleVectorElementAroundCenter(elementId, geometry, options),
+
   setElementsVisible: (elementIds, visible, options) =>
     elementApis.setElementsVisible(elementIds, visible, options),
+
   selectElements: (elementIds, options) =>
     selectionApis.selectElements(elementIds, options),
+
   setDrawingProgress: (progress) =>
     systemContextApis.setAiDrawingProgress(progress),
+
   updateElementFillColor: (elementId, color, options) =>
     fillApis.updatePrimaryFillColor(elementId, color, options),
+
   updateElementFillColors: (updates, options) =>
     fillApis.updatePrimaryFillColors(updates, options),
+
   updateElementStrokeColor: (elementId, color, options) =>
     strokeApis.updatePrimaryStrokeColor(elementId, color, options),
+
   updateElementStrokeColors: (updates, options) =>
     strokeApis.updatePrimaryStrokeColors(updates, options)
 }
@@ -276,6 +293,7 @@ const statusForMutation = (
   if (appliedCount === 0) {
     return 'no-change'
   }
+
   return skippedCount > 0 ? 'partial' : 'complete'
 }
 
@@ -300,6 +318,7 @@ const createCompositionActions = (
   const insert: AiActionDefinition<PreparedDrawingArtifact> = Object.freeze({
     description:
       'Insert one prepared editable composition through ordered canonical descriptor slices.',
+
     execute: async (
       artifact: PreparedDrawingArtifact,
       context: AiExecutionContext
@@ -316,6 +335,7 @@ const createCompositionActions = (
       const appliedElementIds: string[] = []
       let paintYieldCount = 0
       let progressActive = false
+
       try {
         apis.setDrawingProgress(
           createDrawingProgressState(groupBounds, elementCount)
@@ -330,11 +350,13 @@ const createCompositionActions = (
             apis.createCompositionGroup(groupDescriptor, mutationOptions)
           )
         )
+
         if (!groupId || groupId !== groupDescriptor.id) {
           throw new AiCompositionError(
             'AI composition grouping did not preserve its canonical id.'
           )
         }
+
         await paintYield()
         assertNotAborted(context)
         const parent = Object.freeze({ id: groupId })
@@ -350,6 +372,7 @@ const createCompositionActions = (
               )
             )
           )
+
           if (
             !createdElementIds ||
             createdElementIds.length !== slice.descriptors.length ||
@@ -361,6 +384,7 @@ const createCompositionActions = (
               'AI composition batch did not preserve its ordered canonical ids.'
             )
           }
+
           appliedElementIds.push(...createdElementIds)
           apis.setDrawingProgress(
             createDrawingProgressState(
@@ -377,6 +401,7 @@ const createCompositionActions = (
           )
           assertNotAborted(context)
         }
+
         emitDiagnosticCounter(
           'ai-drawing:cooperative-yield-count',
           paintYieldCount
@@ -396,6 +421,7 @@ const createCompositionActions = (
         }
       }
     },
+
     ...actionToolSemantics(
       AiActionNames.INSERT_VECTOR_COMPOSITION,
       toolResultObject({
@@ -417,6 +443,7 @@ const createCompositionActions = (
     Object.freeze({
       description:
         'Apply bounded geometry, fill-color, or stroke-color updates to existing context-exposed composition elements.',
+
       execute: async (
         args: UpdateCompositionElementsArgs,
         context: AiExecutionContext
@@ -431,6 +458,7 @@ const createCompositionActions = (
         }[] = []
         const skipped: { elementId: string; reason: string }[] = []
         const seen = new Set<string>()
+
         measureBrowserDragPhase('ai-app:prepare-update-operations', () => {
           for (const updateItem of args.updates) {
             if (seen.has(updateItem.elementId)) {
@@ -442,8 +470,10 @@ const createCompositionActions = (
               )
               continue
             }
+
             seen.add(updateItem.elementId)
             const targetType = apis.getElementType(updateItem.elementId)
+
             if (!targetType) {
               skipped.push(
                 Object.freeze({
@@ -453,6 +483,7 @@ const createCompositionActions = (
               )
               continue
             }
+
             if ('geometry' in updateItem) {
               if (targetType === 'vector') {
                 prepared.push({
@@ -462,7 +493,9 @@ const createCompositionActions = (
                 })
                 continue
               }
+
               const bounds = apis.getElementBounds(updateItem.elementId)
+
               if (targetType !== 'oval' || !bounds) {
                 skipped.push(
                   Object.freeze({
@@ -472,8 +505,10 @@ const createCompositionActions = (
                 )
                 continue
               }
+
               const width = bounds.width * updateItem.geometry.scaleX
               const height = bounds.height * updateItem.geometry.scaleY
+
               prepared.push({
                 elementId: updateItem.elementId,
                 geometry: Object.freeze({
@@ -486,10 +521,12 @@ const createCompositionActions = (
               })
               continue
             }
+
             const updatesFill = 'fillColor' in updateItem.style
             const currentColor = updatesFill
               ? apis.getElementFillColor(updateItem.elementId)
               : apis.getElementStrokeColor(updateItem.elementId)
+
             if (currentColor === null) {
               skipped.push(
                 Object.freeze({
@@ -499,9 +536,11 @@ const createCompositionActions = (
               )
               continue
             }
+
             const nextColor = updatesFill
               ? updateItem.style.fillColor
               : updateItem.style.strokeColor
+
             if (currentColor === nextColor) {
               skipped.push(
                 Object.freeze({
@@ -511,6 +550,7 @@ const createCompositionActions = (
               )
               continue
             }
+
             prepared.push({
               elementId: updateItem.elementId,
               ...(updatesFill
@@ -523,10 +563,12 @@ const createCompositionActions = (
 
         const appliedElementIds: string[] = []
         let operationIndex = 0
+
         while (operationIndex < prepared.length) {
           assertNotAborted(context)
           const operation = prepared[operationIndex]
           const geometry = operation.geometry
+
           if (geometry) {
             operationIndex += 1
             if (
@@ -540,6 +582,7 @@ const createCompositionActions = (
               )
               continue
             }
+
             const receipt = await runAiMutation(context, () =>
               measureBrowserDragPhase('ai-app:apply-update-batch', () =>
                 apis.changeElementGeometry(
@@ -552,6 +595,7 @@ const createCompositionActions = (
             const outcome = requireMutationReceipt(receipt, [
               operation.elementId
             ])
+
             if (!outcome.changed || outcome.unavailableIds.length) {
               skipped.push({
                 elementId: operation.elementId,
@@ -561,6 +605,7 @@ const createCompositionActions = (
               })
               continue
             }
+
             appliedElementIds.push(operation.elementId)
             await measureBrowserDragAsyncPhase(
               'ai-app:progressive-host-yield',
@@ -568,7 +613,9 @@ const createCompositionActions = (
             )
             continue
           }
+
           const vectorScale = operation.vectorScale
+
           if (vectorScale) {
             operationIndex += 1
             if (
@@ -582,6 +629,7 @@ const createCompositionActions = (
               )
               continue
             }
+
             const receipt = await runAiMutation(context, () =>
               measureBrowserDragPhase('ai-app:apply-update-batch', () =>
                 apis.scaleVectorElementGeometry(
@@ -594,6 +642,7 @@ const createCompositionActions = (
             const outcome = requireMutationReceipt(receipt, [
               operation.elementId
             ])
+
             if (outcome.changed && !outcome.unavailableIds.length) {
               appliedElementIds.push(operation.elementId)
               await measureBrowserDragAsyncPhase(
@@ -610,19 +659,23 @@ const createCompositionActions = (
                 })
               )
             }
+
             continue
           }
 
           const isFillBatch = operation.fillColor !== undefined
+
           if (!isFillBatch && operation.strokeColor === undefined) {
             throw new AiCompositionError(
               'AI composition update preparation produced an invalid operation.'
             )
           }
+
           const { batchOperations, nextOperationIndex } =
             measureBrowserDragPhase('ai-app:prepare-update-batch', () => {
               const batchOperations: (typeof prepared)[number][] = []
               let nextOperationIndex = operationIndex
+
               while (
                 nextOperationIndex < prepared.length &&
                 batchOperations.length < AI_TRANSIENT_CREATE_CHUNK_SIZE
@@ -631,6 +684,7 @@ const createCompositionActions = (
                 const candidate = prepared[nextOperationIndex]
                 const candidateIsFill = candidate.fillColor !== undefined
                 const candidateIsStroke = candidate.strokeColor !== undefined
+
                 if (
                   candidate.geometry ||
                   candidate.vectorScale ||
@@ -639,6 +693,7 @@ const createCompositionActions = (
                 ) {
                   break
                 }
+
                 nextOperationIndex += 1
                 if (
                   apis.getElementType(candidate.elementId) !==
@@ -652,26 +707,32 @@ const createCompositionActions = (
                   )
                   continue
                 }
+
                 batchOperations.push(candidate)
               }
+
               return {
                 batchOperations,
                 nextOperationIndex
               }
             })
+
           operationIndex = nextOperationIndex
           if (batchOperations.length === 0) {
             continue
           }
+
           const colorUpdates = batchOperations.map((candidate) => {
             const color = isFillBatch
               ? candidate.fillColor
               : candidate.strokeColor
+
             if (color === undefined) {
               throw new AiCompositionError(
                 'AI composition update preparation produced an invalid style operation.'
               )
             }
+
             return {
               color,
               elementId: candidate.elementId
@@ -684,19 +745,25 @@ const createCompositionActions = (
                 : apis.updateElementStrokeColors(colorUpdates, mutationOptions)
             )
           )
+
           if (batchResults.length !== batchOperations.length) {
             throw new AiCompositionError(
               'AI composition style batch did not preserve the requested item count.'
             )
           }
+
           let appliedBatchCount = 0
+
           batchResults.forEach((applied, index) => {
             const batchOperation = batchOperations[index]
+
             if (applied === 'changed') {
               appliedElementIds.push(batchOperation.elementId)
               appliedBatchCount += 1
+
               return
             }
+
             skipped.push(
               Object.freeze({
                 elementId: batchOperation.elementId,
@@ -712,9 +779,11 @@ const createCompositionActions = (
             )
           }
         }
+
         assertNotAborted(context)
         let status: 'complete' | 'no-change' | 'partial' | 'failed' =
           statusForMutation(appliedElementIds.length, 0)
+
         if (skipped.some((item) => item.reason !== 'no-change')) {
           status =
             appliedElementIds.length ||
@@ -722,6 +791,7 @@ const createCompositionActions = (
               ? 'partial'
               : 'failed'
         }
+
         return Object.freeze({
           action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
           appliedElementIds: Object.freeze(appliedElementIds),
@@ -729,6 +799,7 @@ const createCompositionActions = (
           status
         })
       },
+
       ...actionToolSemantics(
         AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
         toolResultObject({
@@ -789,12 +860,14 @@ const createCompositionActions = (
   const remove: AiActionDefinition<RemoveAiCompositionArgs> = Object.freeze({
     description:
       'Remove the referenced AI composition Group or Frame through the ordinary subtree boundary.',
+
     execute: async (
       args: RemoveAiCompositionArgs,
       context: AiExecutionContext
     ) => {
       assertNotAborted(context)
       const targetType = apis.getElementType(args.compositionId)
+
       if (!isCompositionType(targetType)) {
         return Object.freeze({
           action: AiActionNames.REMOVE_AI_COMPOSITION,
@@ -808,6 +881,7 @@ const createCompositionActions = (
           status: 'no-change'
         })
       }
+
       assertNotAborted(context)
       if (apis.getElementType(args.compositionId) !== targetType) {
         return Object.freeze({
@@ -822,12 +896,14 @@ const createCompositionActions = (
           status: 'no-change'
         })
       }
+
       const result = await runAiMutation(context, () =>
         apis.removeSubtree(args.compositionId, mutationOptions)
       )
       const appliedElementIds = result.removed.map((entry) =>
         typeof entry === 'string' ? entry : entry.elementId
       )
+
       return Object.freeze({
         action: AiActionNames.REMOVE_AI_COMPOSITION,
         appliedElementIds: Object.freeze(appliedElementIds),
@@ -835,6 +911,7 @@ const createCompositionActions = (
         status: statusForMutation(appliedElementIds.length, 0)
       })
     },
+
     ...actionToolSemantics(
       AiActionNames.REMOVE_AI_COMPOSITION,
       toolResultObject({
@@ -882,6 +959,7 @@ const createCompositionActions = (
         drawing: PREPARED_DRAWING_INPUT_SCHEMA
       }
     },
+
     execute: async (
       args: {
         readonly compositionId: string
@@ -891,6 +969,7 @@ const createCompositionActions = (
     ) => {
       assertNotAborted(context)
       const targetType = apis.getElementType(args.compositionId)
+
       if (
         !isCompositionType(targetType) ||
         args.compositionId === args.drawing.groupDescriptor.id
@@ -899,36 +978,43 @@ const createCompositionActions = (
           'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
         )
       }
+
       const result = (await insert.execute(args.drawing, context)) as {
         status: string
         compositionId: string
       }
+
       if (result.status !== 'complete') {
         throw new AiCompositionError(
           'The new drawing was only partly created. The original drawing is still on the canvas; review both before continuing.'
         )
       }
+
       assertNotAborted(context)
       if (apis.getElementType(args.compositionId) !== targetType) {
         throw new AiCompositionError(
           'The original drawing changed during this revision. Review the canvas and select the drawing again.'
         )
       }
+
       const removal = (await remove.execute(
         { compositionId: args.compositionId },
         context
       )) as { status: string }
+
       if (removal.status !== 'complete') {
         throw new AiCompositionError(
           'The new drawing was created, but the original could not be removed. Review the two drawings before continuing.'
         )
       }
+
       return Object.freeze({
         ...result,
         action: AiActionNames.REPLACE_VECTOR_COMPOSITION
       })
     }
   })
+
   return Object.freeze([insert, update, remove, replace])
 }
 
@@ -960,11 +1046,13 @@ export const createAiActions = (
         properties: Object.freeze({}),
         type: 'object'
       }),
+
       execute: async (
         _args: RequestDrawingDetailChoiceArgs,
         context: AiExecutionContext
       ) => {
         assertNotAborted(context)
+
         return Object.freeze({
           action: AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
           clarification: Object.freeze({
@@ -1007,6 +1095,7 @@ export const createAiActions = (
           })
         })
       }),
+
       execute: async (
         args: SetElementVisibilityArgs,
         context: AiExecutionContext
@@ -1019,6 +1108,7 @@ export const createAiActions = (
             mutationOptions
           )
         )
+
         if (
           results.length !== 1 ||
           !['changed', 'unchanged', 'unavailable'].includes(results[0])
@@ -1027,14 +1117,18 @@ export const createAiActions = (
             'The visibility owner returned an invalid target receipt.'
           )
         }
+
         const result = results[0]
         let status = 'no-change'
+
         if (result === 'changed') {
           status = 'complete'
         }
+
         if (result === 'unavailable') {
           status = 'failed'
         }
+
         return Object.freeze({
           action: AiActionNames.SET_ELEMENT_VISIBILITY,
           changed: result === 'changed',
@@ -1076,6 +1170,7 @@ export const createAiActions = (
         })
       })
     }),
+
     execute: async (args: SelectElementsArgs, context: AiExecutionContext) => {
       assertNotAborted(context)
       await runAiMutation(context, () => {
@@ -1086,9 +1181,11 @@ export const createAiActions = (
           if (error instanceof SelectionTargetUnavailableError) {
             throw new AiActionExecutionError(error.message)
           }
+
           throw error
         }
       })
+
       return Object.freeze({
         action: AiActionNames.SELECT_ELEMENTS,
         selectedCount: args.elementIds.length
@@ -1124,6 +1221,7 @@ export const createAiActions = (
           }
         }
       },
+
       execute: async (
         args: { readonly question: string },
         context: AiExecutionContext
@@ -1136,6 +1234,7 @@ export const createAiActions = (
         ) {
           throw new AiActionError()
         }
+
         return Object.freeze({
           action: AiActionNames.REQUEST_CLARIFICATION,
           status: 'no-change',
@@ -1191,6 +1290,7 @@ export const createAiActions = (
         }
       }
     },
+
     execute: async (args, context) => {
       assertNotAborted(context)
       if (
@@ -1202,6 +1302,7 @@ export const createAiActions = (
       ) {
         throw new AiActionError()
       }
+
       let persistence:
         | Awaited<
             ReturnType<
@@ -1211,6 +1312,7 @@ export const createAiActions = (
         | { status: 'unavailable'; message: string }
         | undefined =
         args.outcome === 'completed' ? { status: 'local-only' } : undefined
+
       if (args.outcome === 'completed' && options.confirmPersistence) {
         try {
           context.reportProgress?.({
@@ -1218,7 +1320,9 @@ export const createAiActions = (
             summary: 'Saving the drawing'
           })
           const confirmPersistence = options.confirmPersistence
+
           const confirm = () => confirmPersistence(context.signal)
+
           persistence = context.observe
             ? await context.observe(
                 'durability',
@@ -1237,7 +1341,9 @@ export const createAiActions = (
           }
         }
       }
+
       assertNotAborted(context)
+
       return Object.freeze({
         ...(persistence ? { persistence } : {}),
         action: AiActionNames.REPORT_OUTCOME,
@@ -1247,6 +1353,7 @@ export const createAiActions = (
       })
     }
   }
+
   return Object.freeze([
     Object.freeze(reportOutcome),
     clarification,

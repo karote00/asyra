@@ -70,17 +70,22 @@ export const observeAiAction = (
   const contract = createAiToolContract(definition)
   const middleware = createAiToolMiddleware({
     resolve: (name) => (name === contract.name ? contract : undefined),
+
     validate: operationContractIssue,
     classify: designActionOutcome
   })
+
   return {
     ...contract,
+
     execute: async (input, context) => {
       const started = now()
       let result
+
       try {
         result = await createAiInvoker({
           execute: () => definition.execute(input, context),
+
           middleware: [middleware]
         }).invoke({ name: contract.name, input, signal: context.signal })
       } catch (error) {
@@ -91,9 +96,11 @@ export const observeAiAction = (
         )
         throw error
       }
+
       if (!result || typeof result !== 'object' || Array.isArray(result)) {
         return result
       }
+
       return {
         ...result,
         toolOutcome: designActionOutcome(result),
@@ -122,9 +129,11 @@ export const createAiRuntimeInput = (
     ...createAiActions(undefined, {
       confirmPersistence: async (signal) => {
         const session = getActiveCollaborationHandle()
+
         if (!session) {
           return { status: 'local-only' }
         }
+
         return {
           status: 'durable',
           ...(await session.confirmPersistence(signal))
@@ -158,6 +167,7 @@ export const createAiRuntimeInput = (
       createAiToolContract(definition)
     ])
   )
+
   return {
     createRecordingSink: options.createRecordingSink,
     actionDefinitions,
@@ -179,19 +189,23 @@ export const createAiRuntimeInput = (
       async requestActionBatch(input, requestOptions) {
         const actions = input.actions.map((description) => {
           const contract = contracts.get(description.name)
+
           if (!contract) {
             throw new AiProviderError({
               code: 'AI_PROVIDER_INVALID_INPUT',
               message: 'An admitted action has no canonical App contract.'
             })
           }
+
           return contract
         })
+
         return options.provider.requestActionBatch(
           { ...input, actions },
           requestOptions
         )
       },
+
       dispose: () => options.provider.dispose?.()
     },
     transactionRunner: {

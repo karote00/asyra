@@ -9,25 +9,32 @@ const measureStarterCanvas = async (
   canvas: Locator
 ): Promise<StarterCanvasMetrics> => {
   const box = await canvas.boundingBox()
+
   expect(box).not.toBeNull()
   const screenshot = await page.screenshot()
+
   return page.evaluate(
     async ({ imageDataUrl, box }) => {
       const image = new Image()
+
       image.src = imageDataUrl
       await image.decode()
       const surface = document.createElement('canvas')
+
       surface.width = image.naturalWidth
       surface.height = image.naturalHeight
       const context = surface.getContext('2d')
+
       if (!context || !box) {
         return { totalInk: 0 }
       }
+
       context.drawImage(image, 0, 0)
       const pixels = context.getImageData(0, 0, surface.width, surface.height)
       const scaleX = surface.width / window.innerWidth
       const scaleY = surface.height / window.innerHeight
       let totalInk = 0
+
       const isBackground = (red: number, green: number, blue: number) =>
         (Math.abs(red - 251) <= 3 &&
           Math.abs(green - 252) <= 3 &&
@@ -35,6 +42,7 @@ const measureStarterCanvas = async (
         (Math.abs(red - 238) <= 3 &&
           Math.abs(green - 242) <= 3 &&
           Math.abs(blue - 237) <= 3)
+
       for (
         let y = Math.floor(box.y * scaleY);
         y < Math.ceil((box.y + box.height) * scaleY);
@@ -50,16 +58,21 @@ const measureStarterCanvas = async (
           const green = pixels.data[offset + 1] ?? 0
           const blue = pixels.data[offset + 2] ?? 0
           const alpha = pixels.data[offset + 3] ?? 0
+
           if (alpha === 0 || isBackground(red, green, blue)) {
             continue
           }
+
           const xCss = x / scaleX - box.x
+
           if (xCss < 20 || xCss > 190) {
             continue
           }
+
           totalInk += 1
         }
       }
+
       return { totalInk }
     },
     {
@@ -77,11 +90,13 @@ test('supports canonical item editing and responsive layout', async ({
   await expect(page.getByRole('heading', { name: 'Items' })).toBeVisible()
   await expect(page.getByText('Ready')).toBeVisible()
   const canvas = page.locator('#starter-render-host canvas')
+
   await expect(canvas).toBeVisible()
 
   await page.getByRole('button', { name: 'Add item' }).click()
   const titleField = page.getByRole('textbox', { name: 'Title' })
   const firstStatus = page.getByRole('group', { name: 'Status' })
+
   await expect(titleField).toHaveValue('Item 1')
   await page.getByRole('button', { name: 'Add item' }).click()
   await page.getByRole('button', { name: 'Add item' }).click()
@@ -179,12 +194,14 @@ test('drags an Item as one action and restores its position', async ({
   await page.getByRole('button', { name: 'Add item' }).click()
   const item = page.getByRole('button', { name: 'Item 1', exact: true })
   const original = await item.boundingBox()
+
   expect(original).not.toBeNull()
   await item.dragTo(page.locator('.render-stage'), {
     targetPosition: { x: 140, y: 280 }
   })
   await expect(page.getByText(/^Position accepted/)).toBeVisible()
   const moved = await item.boundingBox()
+
   expect(moved).not.toBeNull()
   expect(Math.abs((moved?.x ?? 0) - (original?.x ?? 0))).toBeGreaterThan(10)
   expect(Math.abs((moved?.y ?? 0) - (original?.y ?? 0))).toBeGreaterThan(10)
@@ -221,6 +238,7 @@ test('commits a title draft before canvas selection and preserves edit then drag
   await page.getByRole('button', { name: 'Add item' }).click()
   const title = page.getByRole('textbox', { name: 'Title' })
   const first = page.getByRole('button', { name: 'Item 1', exact: true })
+
   await expect(title).toHaveValue('Item 2')
 
   await title.fill('Draft before selection')
@@ -235,6 +253,7 @@ test('commits a title draft before canvas selection and preserves edit then drag
 
   await title.fill('Draft before drag')
   const beforeDrag = await first.boundingBox()
+
   await first.dragTo(page.locator('.render-stage'), {
     targetPosition: { x: 140, y: 280 }
   })
@@ -242,6 +261,7 @@ test('commits a title draft before canvas selection and preserves edit then drag
     page.getByRole('button', { name: 'Select Draft before drag' })
   ).toBeVisible()
   const afterDrag = await first.boundingBox()
+
   expect(Math.abs((afterDrag?.x ?? 0) - (beforeDrag?.x ?? 0))).toBeGreaterThan(
     10
   )
@@ -268,6 +288,7 @@ test('preserves rejected input across Save and canvas actions until correction o
   await page.getByRole('button', { name: 'Add item' }).click()
   const title = page.getByRole('textbox', { name: 'Title' })
   const first = page.getByRole('button', { name: 'Item 1', exact: true })
+
   await expect(title).toHaveValue('Item 2')
   await title.fill('   ')
   await page.getByRole('button', { name: 'Save', exact: true }).click()
@@ -283,6 +304,7 @@ test('preserves rejected input across Save and canvas actions until correction o
     page.getByRole('button', { name: 'Item 2', exact: true })
   ).toHaveAttribute('aria-pressed', 'true')
   const before = await first.boundingBox()
+
   await first.dragTo(page.locator('.render-stage'), {
     targetPosition: { x: 140, y: 280 }
   })
@@ -327,11 +349,15 @@ test('touch drag commits once and pointer cancellation restores the last positio
   await page.getByRole('button', { name: 'Add item' }).click()
   const item = page.getByRole('button', { name: 'Item 1', exact: true })
   const start = await item.boundingBox()
+
   expect(start).not.toBeNull()
   const session = await page.context().newCDPSession(page)
+
   const point = (x: number, y: number) => ({ x, y, id: 1 })
+
   const x = (start?.x ?? 0) + 40
   const y = (start?.y ?? 0) + 40
+
   await session.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
     touchPoints: [point(x, y)]
@@ -346,10 +372,12 @@ test('touch drag commits once and pointer cancellation restores the last positio
   })
   await expect(page.getByText(/^Position accepted/)).toBeVisible()
   const moved = await item.boundingBox()
+
   expect(Math.abs((moved?.x ?? 0) - (start?.x ?? 0))).toBeGreaterThan(10)
 
   const movedX = (moved?.x ?? 0) + 40
   const movedY = (moved?.y ?? 0) + 40
+
   await session.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
     touchPoints: [point(movedX, movedY)]

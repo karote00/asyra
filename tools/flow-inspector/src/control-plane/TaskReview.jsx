@@ -126,12 +126,16 @@ export function TaskReview({
   const [fields, setFields] = useState(defaults)
   const [selectedTasks, setSelectedTasks] = useState({})
   const selectedTask = selectedTasks[selectedStep] ?? ''
+
   const setSelectedTask = (id) =>
     setSelectedTasks((current) => ({ ...current, [selectedStep]: id }))
+
   const [approved, setApproved] = useState(false)
   const [reviewOverride, setReviewOverride] = useState(null)
+
   const setField = (id, value) =>
     setFields((current) => ({ ...current, [id]: value }))
+
   const tasks = state.tasks.records.filter(
     (item) => item.stepId === selectedStep
   )

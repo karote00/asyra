@@ -15,15 +15,19 @@ test('public tool archive retains usable viewer assets without repository runtim
   const manifest = JSON.parse(
     fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')
   )
+
   assert.notEqual(manifest.private, true)
   assert.equal(manifest.license, 'MIT')
   assert.equal(manifest.publishConfig.access, 'public')
   assert.equal(manifest.repository.directory, 'tools/flow-inspector')
   const scratchRoot = path.join(repositoryRoot, 'tmp/flow-inspector')
+
   fs.mkdirSync(scratchRoot, { recursive: true })
   const scratch = fs.mkdtempSync(path.join(scratchRoot, 'package-'))
+
   try {
     const archive = path.join(scratch, 'candidate.tgz')
+
     execFileSync('yarn', ['pack', '--out', archive], {
       cwd: packageRoot,
       stdio: 'pipe'
@@ -31,6 +35,7 @@ test('public tool archive retains usable viewer assets without repository runtim
     const entries = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' })
       .trim()
       .split('\n')
+
     for (const entry of entries) {
       assert.doesNotMatch(entry, /(?:^|\/)(?:node_modules|tmp|\.env)(?:\/|$)/)
       assert.doesNotMatch(entry, /\.(?:log|tgz)$/)
@@ -40,7 +45,9 @@ test('public tool archive retains usable viewer assets without repository runtim
       )
       assert.doesNotMatch(entry, /\/inspectors\/[^/]+\.html$/)
     }
+
     const installed = path.join(scratch, 'node_modules/@asyra/flow-inspector')
+
     fs.mkdirSync(installed, { recursive: true })
     execFileSync('tar', [
       '-xzf',
@@ -50,6 +57,7 @@ test('public tool archive retains usable viewer assets without repository runtim
       installed
     ])
     const consumer = createRequire(path.join(scratch, 'consumer.cjs'))
+
     assert.equal(
       consumer.resolve(
         '@asyra/flow-inspector/workspace/generated/flow-inspector-workspace.js'
@@ -74,12 +82,14 @@ test('public tool archive retains usable viewer assets without repository runtim
     ]) {
       assert.ok(fs.statSync(path.join(installed, file)).size > 0, file)
     }
+
     assert.equal(
       fs.readFileSync(path.join(installed, 'LICENSE'), 'utf8'),
       fs.readFileSync(path.join(repositoryRoot, 'LICENSE'), 'utf8')
     )
     const errors = []
     const virtualConsole = new VirtualConsole()
+
     virtualConsole.on('jsdomError', (error) => errors.push(error))
     virtualConsole.on('error', (error) => errors.push(error))
     const dom = await JSDOM.fromFile(
@@ -94,6 +104,7 @@ test('public tool archive retains usable viewer assets without repository runtim
         virtualConsole
       }
     )
+
     try {
       await new Promise((resolve) =>
         dom.window.addEventListener('load', resolve, { once: true })
@@ -105,6 +116,7 @@ test('public tool archive retains usable viewer assets without repository runtim
       ) {
         await new Promise((resolve) => setTimeout(resolve, 10))
       }
+
       assert.deepEqual(errors, [])
       assert.equal(dom.window.document.querySelectorAll('.step-card').length, 7)
       assert.match(

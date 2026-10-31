@@ -12,6 +12,7 @@ import {
 import { part, placeParts, type AssetPart } from './catalog'
 import { requiredSpecValue } from './specification'
 const modules = specification.modules
+
 export function mug(color = 0xeee8d9, filled = false): AssetPart[] {
   const source = requiredSpecValue(
     modules.find((m) => m.moduleId === 'ceramic-mug'),
@@ -33,8 +34,10 @@ export function mug(color = 0xeee8d9, filled = false): AssetPart[] {
       }
     }[]
   }
+
   const makeCup = (quality: number) => {
     const profile: number[][] = []
+
     for (const segment of vessel.profile) {
       const arc = segment.arc
       const steps = arc ? Math.max(2, Math.round(arc.segments * quality)) : 0
@@ -45,12 +48,14 @@ export function mug(color = 0xeee8d9, filled = false): AssetPart[] {
                 ((arc.endDegrees - arc.startDegrees) * i) / steps) *
                 Math.PI) /
               180
+
             return [
               arc.centre[0] + arc.radius * Math.cos(angle),
               arc.centre[1] + arc.radius * Math.sin(angle)
             ]
           })
         : (segment.line ?? [])
+
       for (const point of points) {
         if (
           !profile.length ||
@@ -63,13 +68,17 @@ export function mug(color = 0xeee8d9, filled = false): AssetPart[] {
         }
       }
     }
+
     return lathe(profile, Math.round(vessel.radialSegments * quality))
   }
+
   const cup = part('cup', makeCup(1), color, 'ceramic')
+
   cup.distant = { mesh: makeCup(0.25), maxError: 0.0005 }
   const handle = tube(
     Array.from({ length: 49 }, (_, i) => {
       const t = ((90 - (i * 180) / 48) * Math.PI) / 180
+
       return [
         0.038 + 0.034 * Math.cos(t) - 0.005 * Math.min(0, Math.sin(t)) ** 2,
         0,
@@ -79,6 +88,7 @@ export function mug(color = 0xeee8d9, filled = false): AssetPart[] {
     0.005,
     16
   )
+
   return [
     cup,
     part('handle', handle, color, 'ceramic'),
@@ -90,8 +100,10 @@ export function mug(color = 0xeee8d9, filled = false): AssetPart[] {
       : [])
   ]
 }
+
 export function laptop(): AssetPart[] {
   const lid = emptyMesh()
+
   append(lid, box([0.3, 0.006, 0.19], 0.002), [0, 0.1225, 0.1073], [-20, 0, 0])
   const p = [
     ...placeParts(
@@ -100,6 +112,7 @@ export function laptop(): AssetPart[] {
     ),
     part('lid', lid, 0xbfc1c4, 'metal')
   ]
+
   for (let j = 0; j < 5; j++) {
     for (let i = 0; i < 14; i++) {
       p.push(
@@ -110,6 +123,7 @@ export function laptop(): AssetPart[] {
       )
     }
   }
+
   const source = requiredSpecValue(
     modules.find((m) => m.moduleId === 'laptop'),
     'laptop'
@@ -125,6 +139,7 @@ export function laptop(): AssetPart[] {
     spacebarSize: number[]
     centreZ: number
   }
+
   for (const [i, x] of bottom.smallKeyCentresX.entries()) {
     p.push(
       ...placeParts(
@@ -139,6 +154,7 @@ export function laptop(): AssetPart[] {
       )
     )
   }
+
   p.push(
     ...placeParts(
       [part('spacebar', box(vec(bottom.spacebarSize), 0.0002), 0x303236)],
@@ -146,6 +162,7 @@ export function laptop(): AssetPart[] {
     )
   )
   const hinge = emptyMesh()
+
   append(hinge, cylinder(0.003, 0.25, 0.003, 48), [0, 0.09, 0.015], [0, 90, 0])
   p.push(part('hinge', hinge, 0x303236))
   for (const c of source.components.filter((c) =>
@@ -156,6 +173,7 @@ export function laptop(): AssetPart[] {
       size: number[]
       centre: number[]
     }
+
     p.push(
       ...placeParts(
         [part(pad.partId, box(vec(pad.size), 0.0004), 0x303236)],
@@ -163,6 +181,7 @@ export function laptop(): AssetPart[] {
       )
     )
   }
+
   p.push(
     ...placeParts(
       [part('trackpad', box([0.126, 0.039, 0.0008]), 0xb1b3b7, 'metal')],
@@ -170,10 +189,13 @@ export function laptop(): AssetPart[] {
     )
   )
   const screen = emptyMesh()
+
   append(screen, box([0.276, 0.001, 0.157]), [0, 0.119, 0.106], [-20, 0, 0])
   p.push(part('screen', screen, 0x263747))
   const badge = emptyMesh()
+
   append(badge, ellipsoid([0.009, 0.001, 0.011], 12, 8), [0, 0.128, 0.114])
   p.push(part('emblem', badge, 0xf6f4ee))
+
   return p
 }

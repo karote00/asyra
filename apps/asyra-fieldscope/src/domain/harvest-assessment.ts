@@ -48,6 +48,7 @@ export type LaneReason =
 /** Necessary straight-line checks only; no physical motion permission. */
 export function assessHarvestLane(request: LaneRequest) {
   const { farm, lane, vehicle, survey, start, end, canopyReserve } = request
+
   validateConfiguration(farm)
   for (const [field, value] of Object.entries(vehicle)) {
     if (
@@ -58,11 +59,13 @@ export function assessHarvestLane(request: LaneRequest) {
       throw new Error(`Invalid vehicle ${field}`)
     }
   }
+
   for (const key of ['width', 'length', 'height', 'clearance'] as const) {
     if (!Number.isFinite(vehicle[key])) {
       throw new Error(`Missing vehicle ${key}`)
     }
   }
+
   if (
     !Number.isFinite(canopyReserve) ||
     canopyReserve < 0 ||
@@ -74,9 +77,11 @@ export function assessHarvestLane(request: LaneRequest) {
   ) {
     throw new Error('Invalid lane interval or canopy reserve')
   }
+
   if (!['prepared', 'unknown', 'soft'].includes(survey.ground)) {
     throw new Error('Invalid ground observation')
   }
+
   for (const key of [
     'entranceWidth',
     'entranceHeight',
@@ -84,10 +89,12 @@ export function assessHarvestLane(request: LaneRequest) {
     'rearHeadland'
   ] as const) {
     const value = survey[key]
+
     if (value !== null && (!Number.isFinite(value) || value < 0)) {
       throw new Error(`Invalid survey ${key}`)
     }
   }
+
   const site = configurationSite(farm)
   const layout = createLayout(site, farm.strips)
   const rows = createPlantingRows(farm)
@@ -95,6 +102,7 @@ export function assessHarvestLane(request: LaneRequest) {
   const unverified: LaneReason[] = []
   let left: number
   let right: number
+
   if (lane.kind === 'strip') {
     if (
       !Number.isInteger(lane.bay) ||
@@ -106,7 +114,9 @@ export function assessHarvestLane(request: LaneRequest) {
     ) {
       throw new Error('Invalid strip lane')
     }
+
     const strip = layout.strips[lane.bay * farm.strips.length + lane.strip]
+
     left = strip.x
     right = strip.x + strip.width
     if (strip.kind === 'drain') {
@@ -120,6 +130,7 @@ export function assessHarvestLane(request: LaneRequest) {
         ) {
           continue
         }
+
         if (row.side === 'right') {
           left = Math.max(left, row.x + CROP_LAYOUT.rootOffset + canopyReserve)
         } else {
@@ -139,7 +150,9 @@ export function assessHarvestLane(request: LaneRequest) {
     ) {
       throw new Error('Invalid shared lane')
     }
+
     const center = lane.boundary * site.width
+
     left = center - site.margin
     right = center - site.postDiameter / 2
     if (lane.side === 'right') {
@@ -149,54 +162,69 @@ export function assessHarvestLane(request: LaneRequest) {
   } else {
     throw new Error('Unknown lane kind')
   }
+
   const usableWidth = Math.max(0, right - left)
   const requiredWidth = vehicle.width + 2 * vehicle.clearance
+
   if (usableWidth + 1e-9 < requiredWidth) {
     blocked.push('insufficient-width')
   }
+
   if (vehicle.height > site.eave) {
     blocked.push('insufficient-height')
   }
+
   if (survey.entranceWidth === null || survey.entranceHeight === null) {
     unverified.push('unknown-entrance')
   }
+
   if (survey.entranceWidth !== null && survey.entranceWidth < requiredWidth) {
     blocked.push('entrance-width')
   }
+
   if (
     survey.entranceHeight !== null &&
     survey.entranceHeight < vehicle.height
   ) {
     blocked.push('entrance-height')
   }
+
   if (survey.frontHeadland === null || survey.rearHeadland === null) {
     unverified.push('unknown-headland')
   }
+
   if (
     survey.frontHeadland !== null &&
     start - vehicle.length / 2 < -survey.frontHeadland
   ) {
     blocked.push('front-headland')
   }
+
   if (
     survey.rearHeadland !== null &&
     end + vehicle.length / 2 > site.length + survey.rearHeadland
   ) {
     blocked.push('rear-headland')
   }
+
   if (survey.ground === 'soft') {
     blocked.push('soft-ground')
   }
+
   if (survey.ground === 'unknown') {
     unverified.push('unknown-ground')
   }
+
   let status: 'blocked' | 'unverified' | 'screened' = 'screened'
+
   if (unverified.length) {
     status = 'unverified'
   }
+
   if (blocked.length) {
     status = 'blocked'
   }
+
   return {
     status,
     usableWidth,

@@ -22,9 +22,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [...new Set(routes)].map((route) => {
     let priority = 0.7
+
     if (route === '/') {
       priority = 1
     }
+
     if (route === '/docs') {
       priority = 0.9
     }

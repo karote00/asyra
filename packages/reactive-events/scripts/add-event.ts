@@ -16,19 +16,23 @@ program
   .option('--options <options>', 'JSON Schema or Interface string')
   .action(async (opts) => {
     const questions = []
+
     if (!opts.name) {
       questions.push({
         type: 'input',
         name: 'name',
         message: 'Event Name (CamelCase, e.g. UpdateNode):',
+
         validate: (input: string) => !!input || 'Name is required'
       })
     }
+
     if (!opts.scope) {
       questions.push({
         type: 'input',
         name: 'scope',
         message: 'Scope (kebab-case, e.g. scene-tree):',
+
         validate: (input: string) => !!input || 'Scope is required'
       })
     }
@@ -93,6 +97,7 @@ program
     if (config.pattern === 'async') {
       const finishConstant = `FINISH_${eventNameConstant}`
       const finishValue = `finish${eventNamePascal}`
+
       if (enumDecl.getMember(finishConstant)) {
         console.warn(
           chalk.yellow(
@@ -134,11 +139,14 @@ program
       if (!typeStr) {
         return '{\n  requestId: string\n}'
       }
+
       const trimmed = typeStr.trim()
+
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         // Insert requestId at start
         return `{\n  requestId: string\n  ${trimmed.slice(1, -1)}\n}`
       }
+
       return `{ requestId: string } & ${typeStr}`
     }
 
@@ -167,6 +175,7 @@ program
         type: config.options
       })
     }
+
     console.log(chalk.green(`Added interface ${eventInterfaceName}`))
 
     // Finish Event Interface (if async)
@@ -194,6 +203,7 @@ program
 
     if (unionTypeAlias) {
       const typeNode = unionTypeAlias.getTypeNode()
+
       if (typeNode) {
         const currentType = typeNode.getText()
         let newType = currentType
@@ -202,6 +212,7 @@ program
         if (!currentType.includes(eventInterfaceName)) {
           newType += `\n  | ${eventInterfaceName}`
         }
+
         // Add Finish
         if (
           config.pattern === 'async' &&
@@ -212,6 +223,7 @@ program
 
         unionTypeAlias.setType(newType)
       }
+
       console.log(chalk.green(`Updated union type ${unionName}`))
     } else {
       console.warn(
@@ -242,6 +254,7 @@ program
     const subEventsImport = subscribesSourceFile.getImportDeclaration(
       (d) => d.getModuleSpecifierValue() === './events'
     )
+
     if (subEventsImport) {
       subEventsImport.addNamedImport(eventInterfaceName)
       if (config.pattern === 'async') {
@@ -249,9 +262,11 @@ program
       }
     } else {
       const imports = [eventInterfaceName]
+
       if (config.pattern === 'async') {
         imports.push(finishEventInterfaceName)
       }
+
       subscribesSourceFile.addImportDeclaration({
         moduleSpecifier: './events',
         namedImports: imports
@@ -273,6 +288,7 @@ program
 
     if (config.pattern === 'async') {
       const finishConst = `FINISH_${eventNameConstant}`
+
       subscribesSourceFile.addVariableStatement({
         declarationKind: VariableDeclarationKind.Const,
         isExported: true,
@@ -304,6 +320,7 @@ program
     const pubEventsImport = publishSourceFile.getImportDeclaration(
       (d) => d.getModuleSpecifierValue() === './events'
     )
+
     if (pubEventsImport) {
       pubEventsImport.addNamedImport(eventInterfaceName)
       if (config.pattern === 'async') {
@@ -311,9 +328,11 @@ program
       }
     } else {
       const imports = [eventInterfaceName]
+
       if (config.pattern === 'async') {
         imports.push(finishEventInterfaceName)
       }
+
       publishSourceFile.addImportDeclaration({
         moduleSpecifier: './events',
         namedImports: imports
@@ -325,6 +344,7 @@ program
       const utilsImport = publishSourceFile.getImportDeclaration(
         (d) => d.getModuleSpecifierValue() === '@asyra/utils'
       )
+
       if (utilsImport) {
         if (
           !utilsImport
@@ -346,6 +366,7 @@ program
       const rxjsImport = publishSourceFile.getImportDeclaration(
         (d) => d.getModuleSpecifierValue() === 'rxjs'
       )
+
       if (!rxjsImport) {
         publishSourceFile.addImportDeclaration({
           moduleSpecifier: 'rxjs',
@@ -365,6 +386,7 @@ program
       const pubSubsImport = publishSourceFile.getImportDeclaration(
         (d) => d.getModuleSpecifierValue() === './subscribes'
       )
+
       if (pubSubsImport) {
         pubSubsImport.addNamedImport(finishSubscriberName)
       } else {

@@ -18,8 +18,10 @@ for (const name of names) {
     await page.goto('/')
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     const history = await page.getByTestId('history-depth').textContent()
+
     await page.getByRole('button', { name: 'Experiments', exact: true }).click()
     const picker = page.getByLabel('Experiment', { exact: true })
+
     await expect(picker.locator('option')).toHaveText([
       'New draft',
       ...names.map((value) => `${value} - r1`)
@@ -55,6 +57,7 @@ for (const name of names) {
 
     await viewResults(page)
     const result = page.getByTestId('analysis-result')
+
     await expect(result).toBeVisible({ timeout: 35_000 })
     await expect(
       result
@@ -116,13 +119,16 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
     name: 'Issue found',
     exact: true
   })
+
   await expect(heading).toBeVisible({ timeout: 35_000 })
   await expect(result.getByLabel('User verdict')).toHaveText('does not meet')
+
   const field = (label: string) =>
     result
       .locator('.result-grid > div')
       .filter({ has: page.getByText(label, { exact: true }) })
       .locator('dd')
+
   await expect(field('Execution')).toHaveText('completed')
   await expect(field('Coverage')).toHaveText('complete')
   await expect(field('Finding / unresolved pairs')).toHaveText('2 / 0')
@@ -137,9 +143,11 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
     name: 'Show all pairs',
     exact: true
   })
+
   if (await allPairs.count()) {
     await allPairs.click()
   }
+
   for (let pageIndex = 0; pageIndex < 3; pageIndex += 1) {
     summaries.push(
       ...(await result.locator('.evidence-pair > summary').allTextContents())
@@ -168,6 +176,7 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   const pair = result.locator('.evidence-pair').filter({
     has: page.locator('summary').filter({ hasText: /^gripper - fixture table/ })
   })
+
   await pair.locator('summary').click()
   await expect(pair.locator('.interval-evidence').first()).toContainText(
     'Collision - established penetration'
@@ -182,6 +191,7 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   await page.screenshot({ path: info.outputPath('collision-replay.png') })
   const recorded = await result.innerText()
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
+
   await canvas.hover()
   await page.mouse.wheel(0, -700)
   await expect(page.locator('.viewport-summary')).toContainText(

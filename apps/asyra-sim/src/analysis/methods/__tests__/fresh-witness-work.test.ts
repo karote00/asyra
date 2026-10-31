@@ -28,15 +28,18 @@ const cube: MeshGeometry = Object.freeze({
     4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5
   ])
 })
+
 const shape = (x: number, geometry = cube): ConvexShape => ({
   geometry,
   pose: ops.fromPose({ ...IDENTITY_POSE, position: [x, 0, 0] })
 })
+
 const settings = {
   threshold: 1 / 16,
   distanceTolerance: 1e-6,
   maxIterations: 64
 }
+
 interface Origin {
   node: object
   segment: number
@@ -56,9 +59,11 @@ type Sampler = (
   origin: Origin,
   source?: unknown
 ) => Sample | null
+
 function sampler(context: OriginalMeshQuery): Sampler {
   return context.createStaticSampler(settings)
 }
+
 const origin = (node: object, time: number, capture = false): Origin => ({
   node,
   segment: 0,
@@ -86,6 +91,7 @@ describe('fresh node-owned source witness', () => {
           )
         )
       })
+
     const a = shape(0, boxes([0, 2])),
       geometry = boxes([9 / 32, 33 / 16])
     const oldB: ConvexShape = {
@@ -100,14 +106,17 @@ describe('fresh node-owned source witness', () => {
       sample = context.createStaticSampler({ ...settings, threshold: 3 / 4 }),
       node = {}
     const first = required(sample(a, oldB, origin(node, 0, true)))
+
     expect(first.source).toBeDefined()
     const target = required(sample(a, nextB, origin(node, 1), first.source))
+
     expect(target.evidence).toMatchObject({
       penetration: true,
       lower: 0,
       upper: 0
     })
     const raw = context.distance(a, nextB, 3 / 4, 1e-6, 64)
+
     expect(raw).toMatchObject({ penetration: true, lower: 0, upper: 0 })
   })
   it('charges exactly one immutable capture and six transport operations around complete solving', () => {
@@ -125,11 +134,13 @@ describe('fresh node-owned source witness', () => {
     const context = new OriginalMeshQuery(),
       sample = sampler(context)
     const first = required(sample(a, b, origin(node, 0, true)))
+
     expect(first.evidence).toEqual(expected)
     expect(first.source).toBeDefined()
     expect(context.work).toBe(control.work + 1)
     const before = context.work
     const second = required(sample(a, b, origin(node, 1), first.source))
+
     expect(second.source).toBeUndefined()
     expect(second.evidence.penetration).toBe(false)
     expect(second.evidence.lower).toBeLessThanOrEqual(1 / 32)
@@ -140,10 +151,12 @@ describe('fresh node-owned source witness', () => {
     const context = new OriginalMeshQuery(),
       sample = sampler(context),
       node = {}
+
     expect(
       required(sample(shape(0), shape(9 / 32), origin(node, 0))).source
     ).toBeUndefined()
     const mutable = { ...cube, positions: [...cube.positions] }
+
     expect(
       required(sample(shape(0, mutable), shape(9 / 32), origin(node, 0, true)))
         .source
@@ -162,6 +175,7 @@ describe('fresh node-owned source witness', () => {
     )
     const context = new OriginalMeshQuery(() => undefined, control.work)
     const result = required(sampler(context)(a, b, origin({}, 0, true)))
+
     expect(result.evidence).toEqual(expected)
     expect(result.exhausted).toBe(true)
     expect(result.source).toBeUndefined()
@@ -173,6 +187,7 @@ describe('fresh node-owned source witness', () => {
       context = new OriginalMeshQuery(),
       sample = sampler(context)
     const first = required(sample(a, b, origin({}, 0, true)))
+
     for (const source of [{}, first.source]) {
       const before = context.work
       const result = required(sample(a, b, origin({}, 1), source))
@@ -184,6 +199,7 @@ describe('fresh node-owned source witness', () => {
         settings.distanceTolerance,
         settings.maxIterations
       )
+
       expect(result.evidence).toEqual(direct)
       expect(directBefore - before).toBe(context.work - directBefore + 1)
     }
@@ -209,6 +225,7 @@ describe('fresh source provenance and exact charged operations', () => {
       [0, 0]
     ]
   })
+
   function owner() {
     let work = 0,
       stop = Infinity,
@@ -227,33 +244,41 @@ describe('fresh source provenance and exact charged operations', () => {
       (_a, _b, seed) => {
         calls++
         seeds.push(seed)
+
         return result
       },
       (error) => error === failure
     )
+
     return {
       sample,
       seeds,
+
       get work() {
         return work
       },
+
       get calls() {
         return calls
       },
+
       stopAt(value: number) {
         stop = value
       },
+
       result(value: DistanceEvidence) {
         result = value
       }
     }
   }
+
   it('pays capture one then each of the six actual consumption operations exactly once', () => {
     const o = owner(),
       node = {},
       a = shape(0),
       b = shape(9 / 32)
     const source = required(o.sample(a, b, origin(node, 0, true))).source
+
     expect(o.work).toBe(1)
     o.sample(a, b, origin(node, 1), source)
     expect(o.work).toBe(7)
@@ -268,6 +293,7 @@ describe('fresh source provenance and exact charged operations', () => {
         a = shape(0),
         b = shape(9 / 32)
       const source = required(o.sample(a, b, origin(node, 0, true))).source
+
       o.stopAt(1 + step)
       expect(o.sample(a, b, origin(node, 1), source)).toBeNull()
       expect(o.calls).toBe(1)
@@ -280,8 +306,10 @@ describe('fresh source provenance and exact charged operations', () => {
       a = shape(0),
       b = shape(9 / 32),
       output = evidence()
+
     o.result(output)
     const source = required(o.sample(a, b, origin(node, 0, true))).source
+
     ;(a.pose.position[0] as unknown as number[])[0] = 100
     ;(output.witnessA[0] as unknown as number[])[0] = -100
     o.sample(shape(0), shape(9 / 32), origin(node, 1), source)
@@ -299,24 +327,31 @@ describe('fresh source provenance and exact charged operations', () => {
       let source = required(o.sample(a, b, origin(node, 0, true))).source
       let target = origin(node, 1),
         targetA = a
+
       if (mismatch === 'scope') {
         source = required(owner().sample(a, b, origin(node, 0, true))).source
       }
+
       if (mismatch === 'segment') {
         target = { ...target, segment: 1 }
       }
+
       if (mismatch === 'node') {
         target = origin({}, 1)
       }
+
       if (mismatch === 'time') {
         target = { ...target, time: -1 }
       }
+
       if (mismatch === 'geometry') {
         targetA = shape(0, Object.freeze({ ...cube }))
       }
+
       if (mismatch === 'forgery') {
         source = Object.create(Object.getPrototypeOf(source))
       }
+
       o.sample(targetA, b, target, source)
       expect(o.work).toBe(2)
       expect(o.seeds[1]).toBeUndefined()
@@ -333,23 +368,30 @@ describe('fresh source provenance and exact charged operations', () => {
     const o = owner(),
       node = {},
       e = evidence()
+
     if (reason === 'penetration') {
       e.penetration = true
     }
+
     if (reason === 'nonpositive') {
       e.lower = 0
     }
+
     if (reason === 'threshold') {
       e.upper = settings.threshold
     }
+
     if (reason === 'nonfinite') {
       e.upper = Infinity
     }
+
     o.result(e)
     let at = origin(node, 0, reason !== 'final')
+
     if (reason === 'point') {
       at = { ...at, end: 0 }
     }
+
     expect(
       required(o.sample(shape(0), shape(9 / 32), at)).source
     ).toBeUndefined()
@@ -361,5 +403,6 @@ function required<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) {
     throw new Error('Expected completed owned sample')
   }
+
   return value
 }

@@ -18,8 +18,10 @@ export default defineConfig(({ command, mode }) => ({
       ),
       formats: ['iife'],
       name: mode === 'live' ? 'FlowDashboard' : 'FlowInspectorWorkspace',
+
       fileName: () =>
         mode === 'live' ? 'flow-dashboard.js' : 'flow-inspector-workspace.js',
+
       cssFileName:
         mode === 'live' ? 'flow-dashboard' : 'flow-inspector-workspace'
     },

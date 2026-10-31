@@ -28,6 +28,7 @@ function observeProcessGroup(pid, timeoutMs) {
       .trim()
       .split('\n')
       .map((line) => line.trim().split(/\s+/))
+
     if (
       !rows.every(
         (row) =>
@@ -43,7 +44,9 @@ function observeProcessGroup(pid, timeoutMs) {
         detail: 'Process table is malformed'
       }
     }
+
     const members = rows.filter((row) => Number(row[1]) === pid)
+
     return {
       absent: members.length === 0,
       observable: true,
@@ -64,6 +67,7 @@ function observeProcessGroup(pid, timeoutMs) {
 async function confirmProcessGroupExit(pid) {
   const deadline = performance.now() + processCleanupGraceMs
   let observation
+
   do {
     observation = observeProcessGroup(
       pid,
@@ -72,12 +76,16 @@ async function confirmProcessGroupExit(pid) {
     if (observation.absent || !observation.observable) {
       return observation
     }
+
     const remaining = deadline - performance.now()
+
     if (remaining <= 0) {
       break
     }
+
     await new Promise((resolve) => setTimeout(resolve, Math.min(20, remaining)))
   } while (performance.now() < deadline)
+
   return observation
 }
 
@@ -100,11 +108,13 @@ function runProcess({
       pid: null
     })
   }
+
   if (process.platform === 'win32') {
     throw new Error(
       'The core proof runner requires macOS or Linux process groups'
     )
   }
+
   return new Promise((resolve) => {
     let reason = null
     let output = ''
@@ -119,30 +129,38 @@ function runProcess({
       detached: !inheritProcessGroup,
       stdio: ['ignore', 'pipe', 'pipe']
     })
+
     const kill = (signalName) => {
       if (!child.pid) {
         return
       }
+
       try {
         process.kill(inheritProcessGroup ? child.pid : -child.pid, signalName)
       } catch (error) {
         if (error.code === 'ESRCH') {
           return
         }
+
         cleanupCode = error.code
         cleanupError = error.message
       }
     }
+
     const stop = (why) => {
       if (reason) {
         return
       }
+
       reason = why
       kill('SIGTERM')
       forceTimer = setTimeout(() => kill('SIGKILL'), processCleanupGraceMs)
     }
+
     const cancel = () => stop('cancelled')
+
     const timer = setTimeout(() => stop('timeout'), timeoutMs)
+
     signal?.addEventListener('abort', cancel, { once: true })
     child.once('spawn', () => {
       onSpawn?.(child.pid)
@@ -153,14 +171,17 @@ function runProcess({
     child.once('error', (error) => {
       spawnError = error.message
     })
+
     const collect = (bytes) => {
       const remaining = Math.max(0, maxOutputBytes - outputBytes)
+
       output += bytes.subarray(0, remaining).toString()
       outputBytes += bytes.length
       if (outputBytes > maxOutputBytes) {
         stop('output-limit')
       }
     }
+
     child.stdout.on('data', collect)
     child.stderr.on('data', collect)
     child.once('close', async (code, exitSignal) => {
@@ -171,21 +192,26 @@ function runProcess({
       kill('SIGKILL')
       if (cleanupCode === 'EPERM') {
         const observation = await confirmProcessGroupExit(child.pid)
+
         if (observation.absent) {
           cleanupError = undefined
         } else {
           cleanupError += ' - ' + observation.detail
         }
       }
+
       if (!reason && spawnError) {
         reason = 'spawn-error'
       }
+
       if (!reason && cleanupError) {
         reason = 'cleanup-error'
       }
+
       if (!reason && exitSignal) {
         reason = 'signal'
       }
+
       resolve({
         code,
         reason,
@@ -211,21 +237,26 @@ function runnerEnvironment(sourceRoot, scenario, temporaryDirectory) {
 
 const containmentAvailable = (platform = process.platform) =>
   platform === 'darwin' && fs.existsSync('/usr/bin/sandbox-exec')
+
 const literal = (value) => JSON.stringify(fs.realpathSync(value))
+
 function containedProcess(options, { repositoryRoot, readRoots, writeRoot }) {
   if (!containmentAvailable()) {
     throw new Error('OS containment unavailable; candidate execution denied')
   }
+
   const dependencies = path.join(repositoryRoot, 'node_modules')
   const node = fs.realpathSync(process.execPath)
   const reads = [...readRoots, dependencies, __dirname]
   const probes = []
+
   for (let parent = repositoryRoot; ; parent = path.dirname(parent)) {
     probes.push(path.join(parent, 'package.json'))
     if (path.dirname(parent) === parent) {
       break
     }
   }
+
   const profile = `(version 1)
 (deny default)
 (allow file-read-metadata)
@@ -239,12 +270,14 @@ function containedProcess(options, { repositoryRoot, readRoots, writeRoot }) {
 ${readRoots.map((file) => '(deny file-write* (subpath ' + literal(file) + '))').join('\n')}
 (allow file-read-data ${probes.map((file) => '(literal ' + JSON.stringify(file) + ')').join(' ')})
 (allow file-write* (literal "/dev/null"))`
+
   return runProcess({
     ...options,
     executable: '/usr/bin/sandbox-exec',
     args: ['-p', profile, options.executable, ...options.args]
   })
 }
+
 async function runContainedVerification(options) {
   const keys = [
     'repositoryRoot',
@@ -257,6 +290,7 @@ async function runContainedVerification(options) {
     'timeoutMs',
     'onSpawn'
   ]
+
   if (
     !options ||
     typeof options !== 'object' ||
@@ -265,12 +299,15 @@ async function runContainedVerification(options) {
   ) {
     throw new Error('Invalid contained execution option override')
   }
+
   const { repositoryRoot, runDirectory, snapshot, contract } = options
+
   const canonical = (value) =>
     typeof value === 'string' &&
     path.isAbsolute(value) &&
     value === path.resolve(value) &&
     value === fs.realpathSync(value)
+
   try {
     if (
       !canonical(repositoryRoot) ||
@@ -288,10 +325,12 @@ async function runContainedVerification(options) {
   } catch {
     throw new Error('Invalid contained execution location')
   }
+
   const execution = snapshot.executionSource
   const runtimeAuthority = snapshot.runtimeAuthority
   const expectedRoles = executionRolesForAuthority(runtimeAuthority)
   const scoped = Object.hasOwn(snapshot, 'runtimeAuthority')
+
   if (
     !Object.hasOwn(snapshot, 'executionSource') ||
     !execution ||
@@ -317,12 +356,15 @@ async function runContainedVerification(options) {
   ) {
     throw new Error('Invalid contained execution closure')
   }
+
   if (!containmentAvailable()) {
     throw new Error('OS containment unavailable; derived execution denied')
   }
+
   return runVerification({
     ...options,
     contract: { ...contract, configFile: execution.roles.configuration },
+
     processRunner: (processOptions) =>
       containedProcess(
         {
@@ -360,9 +402,11 @@ async function runVerification({
   if (contract.runner === 'playwright') {
     throw new Error('Playwright contracts are observation-only')
   }
+
   if (!contract.scenarios.some((item) => item.id === scenario)) {
     throw new Error('Unknown proof scenario')
   }
+
   const requireFromRepository = createRequire(
     path.join(repositoryRoot, 'package.json')
   )
@@ -370,6 +414,7 @@ async function runVerification({
   const version = JSON.parse(fs.readFileSync(runnerPackage, 'utf8')).version
   const reportPath = path.join(runDirectory, 'vitest.json')
   const temporaryDirectory = path.join(runDirectory, 'tmp')
+
   fs.mkdirSync(temporaryDirectory, { recursive: true })
   const names = contract.cases
     .filter((item) => flowIds.includes(item.flowId))
@@ -397,16 +442,20 @@ async function runVerification({
   let report = null
   let reportError = null
   let reportDigest = null
+
   try {
     if (fs.statSync(reportPath).size > 2097152) {
       throw new Error('Runner report exceeds size limit')
     }
+
     const bytes = fs.readFileSync(reportPath)
+
     reportDigest = createHash('sha256').update(bytes).digest('hex')
     report = JSON.parse(bytes.toString())
   } catch (error) {
     reportError = error.message
   }
+
   return {
     ...result,
     version,
@@ -456,15 +505,18 @@ module.exports = {
 // leave a detached test tree running after the owner's deadline disappears.
 if (require.main === module) {
   const [, , mode, owner, ...args] = process.argv
+
   if (mode !== 'child' || !/^\d+$/.test(owner ?? '') || !args.length) {
     process.exit(2)
   }
+
   const guard = setInterval(() => {
     if (process.ppid !== Number(owner)) {
       process.kill(-process.pid, 'SIGKILL')
     }
   }, 100)
   const child = spawn(process.execPath, args, { stdio: 'inherit' })
+
   child.once('error', () => {
     clearInterval(guard)
     process.exit(2)

@@ -11,7 +11,9 @@ const localArtworkTest = env.LOCAL_ARTWORK_TESTS === '1' ? test : test.skip
 
 const readStat = (stdout, key) => {
   const match = stdout.match(new RegExp(`^${key}=(\\d+)$`, 'm'))
+
   assert.ok(match, `Missing artwork stat: ${key}`)
+
   return Number(match[1])
 }
 
@@ -80,6 +82,7 @@ localArtworkTest(
       assert.equal(readStat(stdout, `${side}_upper_broad_dark_rows`), 0)
       assert.equal(readStat(stdout, `${side}_lower_broad_dark_rows`), 0)
     }
+
     assert.ok(readStat(stdout, 'left_upper_support_pixels') >= 500)
     assert.ok(readStat(stdout, 'right_upper_support_pixels') >= 350)
     assert.ok(readStat(stdout, 'left_outer_foot_pixels') >= 1150)

@@ -35,9 +35,11 @@ const atlasGuideTitles: Readonly<Record<string, string>> = Object.freeze({
 
 const getAtlasGuideTitle = (guideId: string) => {
   const title = atlasGuideTitles[guideId]
+
   if (!title) {
     throw new Error(`Runtime Atlas guide title is missing for "${guideId}".`)
   }
+
   return title
 }
 
@@ -45,6 +47,7 @@ const progressStage = (snapshot: AtlasRunSnapshot | undefined) => {
   if (!snapshot || snapshot.actionCount === 0) {
     return 0
   }
+
   return Math.min(
     routeStages.length - 1,
     Math.floor(
@@ -72,6 +75,7 @@ export function RuntimeAtlas() {
     if (timerRef.current !== undefined) {
       window.clearTimeout(timerRef.current)
     }
+
     timerRef.current = undefined
   }
 
@@ -93,6 +97,7 @@ export function RuntimeAtlas() {
         setRuntimeError(
           'This browser cannot create the isolated worker required for Runtime Atlas.'
         )
+
         return
       }
 
@@ -100,6 +105,7 @@ export function RuntimeAtlas() {
         new URL('../workers/runtime-atlas.worker.ts', import.meta.url),
         { type: 'module' }
       )
+
       workerRef.current = worker
 
       const requestNext = (nextSnapshot: AtlasRunSnapshot) => {
@@ -110,6 +116,7 @@ export function RuntimeAtlas() {
         ) {
           return
         }
+
         timerRef.current = window.setTimeout(
           () => worker.postMessage({ type: 'step' }),
           reducedMotionRef.current ? 0 : 520
@@ -120,16 +127,20 @@ export function RuntimeAtlas() {
         if (workerRef.current !== worker) {
           return
         }
+
         if (event.data.type === 'failure') {
           autoRunRef.current = false
           setRuntimeError(event.data.error)
+
           return
         }
+
         if (event.data.type !== 'snapshot') {
           return
         }
 
         const nextSnapshot = event.data.snapshot
+
         setSnapshot(nextSnapshot)
         if (terminalStatuses.has(nextSnapshot.status)) {
           autoRunRef.current = false
@@ -139,14 +150,17 @@ export function RuntimeAtlas() {
               : [...current, nextSnapshot].slice(-2)
           )
         }
+
         requestNext(nextSnapshot)
       }
+
       worker.onerror = (event) => {
         autoRunRef.current = false
         setRuntimeError(
           event.message || 'The isolated runtime stopped unexpectedly.'
         )
       }
+
       worker.postMessage({ type: 'initialize', caseId })
     },
     [terminateWorker]
@@ -157,12 +171,14 @@ export function RuntimeAtlas() {
       '(prefers-reduced-motion: reduce)'
     ).matches
     startWorker(selectedId)
+
     return terminateWorker
   }, [selectedId, startWorker, terminateWorker])
 
   useEffect(() => {
     const frame = studioFrameRef.current
     const studio = studioRef.current
+
     if (!frame || !studio || typeof ResizeObserver === 'undefined') {
       return
     }
@@ -178,17 +194,21 @@ export function RuntimeAtlas() {
       }
 
       const nextHeight = studio.getBoundingClientRect().height
+
       if (motionPreference.matches) {
         frame.style.height = 'auto'
+
         return
       }
 
       if (!frame.style.height) {
         frame.style.height = `${nextHeight}px`
+
         return
       }
 
       const currentHeight = frame.getBoundingClientRect().height
+
       if (Math.abs(currentHeight - nextHeight) < 0.5) {
         return
       }
@@ -200,6 +220,7 @@ export function RuntimeAtlas() {
     }
 
     const observer = new ResizeObserver(updateFrameHeight)
+
     observer.observe(studio)
     motionPreference.addEventListener('change', updateFrameHeight)
     updateFrameHeight()
@@ -208,6 +229,7 @@ export function RuntimeAtlas() {
       if (animationFrame !== undefined) {
         window.cancelAnimationFrame(animationFrame)
       }
+
       motionPreference.removeEventListener('change', updateFrameHeight)
       observer.disconnect()
     }

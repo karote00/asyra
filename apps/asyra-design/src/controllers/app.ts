@@ -5,6 +5,7 @@ import core from '../contexts'
 
 export const destroyRenderApp = () => {
   const renderApp = app.value
+
   if (!renderApp) {
     return
   }
@@ -30,6 +31,7 @@ export const switchPrimaryTool = (primaryTool: PrimaryToolType) => {
 
     if (featureAPI?.switch) {
       const switchFn = featureAPI.switch as (tool: string) => void
+
       switchFn(primaryTool)
     }
   } catch (error) {

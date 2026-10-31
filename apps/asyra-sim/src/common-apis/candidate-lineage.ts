@@ -26,11 +26,15 @@ export function validCandidateLineage(
   ) {
     return false
   }
+
   const entries = Object.entries(input.bodyOrigins)
+
   if (entries.length > GEOMETRY_PROFILE.maxBodies) {
     return false
   }
+
   const origins = new Set<string>()
+
   return entries.every(([id, origin]) => {
     if (
       !validIdentifier(id) ||
@@ -40,11 +44,15 @@ export function validCandidateLineage(
     ) {
       return false
     }
+
     const key = JSON.stringify([origin.candidateId, origin.bodyId])
+
     if (origins.has(key)) {
       return false
     }
+
     origins.add(key)
+
     return true
   })
 }

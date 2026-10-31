@@ -26,6 +26,7 @@ it('admits exact source patch subsets with detached regions and frozen ranges', 
   }
   const input = [patch, { id: 'shared-face', region, ranges: [range] }]
   const admitted = readSourcePatches(input, regions, 12)
+
   expect(admitted).not.toBe(input)
   expect(admitted[0]).not.toBe(patch)
   expect(admitted[0].region).not.toBe(region)
@@ -43,6 +44,7 @@ it('admits exact source patch subsets with detached regions and frozen ranges', 
     expect(Object.isFrozen(value.ranges)).toBe(true)
     expect(value.ranges.every(Object.isFrozen)).toBe(true)
   }
+
   region.id = 'mutated'
   range.indexStart = 0
   patch.id = 'mutated'
@@ -56,6 +58,7 @@ it('admits exact source patch subsets with detached regions and frozen ranges', 
     { indexStart: 9, indexCount: 3 }
   ])
   const canonicalRegions = Object.freeze([admitted[0].region])
+
   expect(readSourcePatches(admitted, canonicalRegions, 12)).toBe(admitted)
   expect(readSourcePatches([], [], 0)).toEqual([])
 })
@@ -73,6 +76,7 @@ it('rejects invalid source patch declarations before exposing any subset', () =>
     region: regions[1],
     ranges: [{ indexStart: 6, indexCount: 3 }]
   }
+
   expect(readSourcePatches([patch], regions, 12)[0].region).toBe(regions[1])
   for (const count of [
     -3,
@@ -85,6 +89,7 @@ it('rejects invalid source patch declarations before exposing any subset', () =>
   ]) {
     expect(() => readSourcePatches([patch], regions, count)).toThrow()
   }
+
   for (const invalidRegions of [
     [],
     [regions[1]],
@@ -93,6 +98,7 @@ it('rejects invalid source patch declarations before exposing any subset', () =>
   ]) {
     expect(() => readSourcePatches([], invalidRegions, 12)).toThrow()
   }
+
   const invalidPatches = [
     new Array<SourcePatch>(1),
     [{ ...patch, id: '' }],
@@ -122,9 +128,11 @@ it('rejects invalid source patch declarations before exposing any subset', () =>
       ]
     ].map((ranges) => [{ ...patch, ranges }])
   ]
+
   for (const invalid of invalidPatches) {
     expect(() => readSourcePatches(invalid, regions, 12)).toThrow()
   }
+
   expect(() =>
     readSourcePatches(
       [
@@ -153,6 +161,7 @@ it('admits immutable complete regions and rejects gaps, overlap and forged decla
     { id: 'surface', kind: 'sheet', indexStart: 0, indexCount: 3 }
   ]
   const admitted = readSourceRegions(raw, 3)
+
   raw.push({ ...raw[0], id: 'later', indexStart: 3 })
   expect(admitted).toHaveLength(1)
   expect(readSourceRegions(admitted, 3) === admitted).toBe(true)
@@ -170,30 +179,36 @@ it('admits immutable complete regions and rejects gaps, overlap and forged decla
 
 it('proves exact closed box edge pairing without treating cylinder seams as welded', () => {
   const parts = [...createRobotModel(DEFAULT_ROBOT), ...createDockModel()]
+
   for (const { shape, regions } of parts) {
     for (const region of regions.filter(
       (region) => region.kind === 'closed-solid'
     )) {
       const edges = new Map<string, { count: number; winding: number }>()
+
       const vertex = (index: number) =>
         shape.positions.slice(index * 3, index * 3 + 3).join(',')
+
       for (
         let i = region.indexStart;
         i < region.indexStart + region.indexCount;
         i += 3
       ) {
         const triangle = shape.indices.slice(i, i + 3).map(vertex)
+
         expect(new Set(triangle).size).toBe(3)
         for (let edge = 0; edge < 3; edge++) {
           const a = triangle[edge],
             b = triangle[(edge + 1) % 3]
           const key = [a, b].sort().join('|')
           const entry = edges.get(key) ?? { count: 0, winding: 0 }
+
           entry.count++
           entry.winding += a < b ? 1 : -1
           edges.set(key, entry)
         }
       }
+
       expect(
         [...edges.values()].every(
           ({ count, winding }) => count === 2 && winding === 0
@@ -201,14 +216,18 @@ it('proves exact closed box edge pairing without treating cylinder seams as weld
       ).toBe(true)
     }
   }
+
   const tire = parts.find((part) => part.id === 'tire--1--1')
+
   if (!tire) {
     throw new Error('Missing source tire')
   }
+
   // Each original sector writes a side quad followed by two cap triangles
   // (ten vertices). Compare the 0 and 2π side endpoints without welding.
   const firstSeam = tire.shape.positions.slice(0, 3)
   const finalSeam = tire.shape.positions.slice(31 * 30 + 3, 31 * 30 + 6)
+
   expect(firstSeam.some((value, axis) => value !== finalSeam[axis])).toBe(true)
   expect(tire.regions).toEqual([
     {
@@ -222,6 +241,7 @@ it('proves exact closed box edge pairing without treating cylinder seams as weld
 
 it('preserves distinct closed boxes, sheet faces and uncapped tube source ranges', () => {
   const builder = new TriangleBuilder()
+
   builder.box([0, 0, 0], [2, 2, 2])
   builder.quad([3, 0, 0], [4, 0, 0], [4, 1, 0], [3, 1, 0])
   builder.tube({
@@ -243,12 +263,14 @@ it('preserves distinct closed boxes, sheet faces and uncapped tube source ranges
 
 it('covers every original robot, dock and cultivar triangle without declaring botanical solids', () => {
   const products = [...createRobotModel(DEFAULT_ROBOT), ...createDockModel()]
+
   for (const part of products) {
     expect(part.regions).toBeDefined()
     expect(
       part.regions.reduce((sum, region) => sum + region.indexCount, 0)
     ).toBe(part.shape.indices.length)
   }
+
   for (const model of createCropModels({ netTop: 3, netBottom: 0.45 })) {
     for (const part of model.parts) {
       for (const [shape, regions] of [
@@ -260,12 +282,15 @@ it('covers every original robot, dock and cultivar triangle without declaring bo
         if (!shape || !regions) {
           throw new Error('Missing source regions')
         }
+
         let end = 0
+
         for (const region of regions) {
           expect(region.indexStart).toBe(end)
           expect(region.kind).not.toBe('closed-solid')
           end += region.indexCount
         }
+
         expect(end).toBe(shape.indices.length)
       }
     }

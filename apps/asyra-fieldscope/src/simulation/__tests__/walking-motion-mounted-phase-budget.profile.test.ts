@@ -49,6 +49,7 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
     maxCycleOperations: 20000000,
     maxBits: 24000
   }
+
   if (
     ![M, W, R, G, ...Object.values(budget)].every(
       (v) => Number.isSafeInteger(v) && v > 0
@@ -58,12 +59,17 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
       'Synthetic passage profile exceeds finite safe integer domain'
     )
   }
+
   const owner = new WalkingMotionOwner({
     getCurrentSceneDemand: () => f.demand,
+
     getCurrentWalkingRobotSource: () => f.source,
+
     getCurrentWalkingCycle: () => f.current,
+
     getCurrentMountedCrate: () => f.mounted
   })
+
   process.stdout.write(
     JSON.stringify({
       stage: 'synthetic-mounted-preflight',
@@ -81,13 +87,17 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
     budget,
     load: { ...f.raw.load, crate: { kind: 'mounted', artifact: f.crate } }
   })
+
   if (!('format' in result)) {
     throw new Error('Missing nonlinear passage admission')
   }
+
   const relations = result.sourceRelations
   const first = new Map<string, unknown>()
+
   const partIdentity = (index: number) => {
     const entry = relations.inventory[index]
+
     return {
       index,
       part: entry.part?.id ?? entry.mountedPart?.id,
@@ -99,19 +109,24 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
       semantic: entry.semantic?.kind
     }
   }
+
   for (const phase of relations.phases) {
     for (const pair of phase.pairs) {
       if (pair.kind !== 'blocked' && pair.kind !== 'unknown') {
         continue
       }
+
       for (const proof of pair.proofs) {
         if (proof.kind !== 'blocked' && proof.kind !== 'unknown') {
           continue
         }
+
         const reason = proof.reason ?? proof.kind
+
         if (first.has(reason) || first.size >= 8) {
           continue
         }
+
         first.set(reason, {
           phase: phase.phase,
           kind: pair.kind,
@@ -128,6 +143,7 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
       }
     }
   }
+
   const summary = {
     stage: 'synthetic-mounted-result',
     status: result.status,
@@ -146,8 +162,10 @@ it('fails closed when a synthetic mounted offline proof has one phase-cover node
     relationWork: relations.work,
     firstVisited: [...first.values()]
   }
+
   process.stdout.write(JSON.stringify(summary) + '\n')
   const evidenceText = JSON.stringify(summary)
+
   expect(relations.coverage.required, evidenceText).toBe(
     relations.coverage.strictBounds +
       relations.coverage.exactSeparated +

@@ -4,8 +4,10 @@ import { resolve } from 'node:path'
 import { createNativeProviderConfig } from '../native-provider-config'
 
 const { execute } = vi.hoisted(() => ({ execute: vi.fn() }))
+
 vi.mock('node:child_process', () => ({ execFile: execute }))
 const root = resolve('tmp/native-provider-config-tests')
+
 afterEach(async () => {
   vi.clearAllMocks()
   await rm(root, { recursive: true, force: true })
@@ -21,6 +23,7 @@ const model = {
   base_instructions: 'Vendor instructions',
   input_modalities: ['text', 'image']
 }
+
 const supply = (value: unknown) =>
   execute.mockImplementation((_file, _args, _options, callback) => {
     callback(null, JSON.stringify(value), '')
@@ -33,6 +36,7 @@ it('derives direct configuration from the selected executable without changing m
     model: model.slug,
     directory: root
   })
+
   expect(execute).toHaveBeenCalledTimes(1)
   expect(execute.mock.calls[0].slice(0, 2)).toEqual([
     '/native/provider',
@@ -40,6 +44,7 @@ it('derives direct configuration from the selected executable without changing m
   ])
   const path = config.path
   const value = JSON.parse(await readFile(path, 'utf8'))
+
   expect(value.models).toEqual([
     {
       ...model,
@@ -74,6 +79,7 @@ it.each([{}, { models: [] }, { models: [model, model] }])(
 it('does not execute after cancellation or replace existing files', async () => {
   await mkdir(root, { recursive: true })
   const signal = AbortSignal.abort()
+
   await expect(
     createNativeProviderConfig({
       executable: 'native',

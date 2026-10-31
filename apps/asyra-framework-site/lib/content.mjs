@@ -11,9 +11,11 @@ const resolveRepositoryRoot = () => {
   const repositoryRoot = candidates.find((candidate) =>
     existsSync(path.join(candidate, 'docs/public/content-manifest.json'))
   )
+
   if (!repositoryRoot) {
     throw new Error('Unable to locate the Asyra public content bundle')
   }
+
   return repositoryRoot
 }
 
@@ -32,9 +34,11 @@ const assertUnique = (values, label) => {
 const verifyDigest = async (relativePath, expectedSha256, label) => {
   const bytes = await readFile(path.join(repositoryRoot, relativePath))
   const actualSha256 = sha256(bytes)
+
   if (actualSha256 !== expectedSha256) {
     throw new Error(`${label} digest drift: ${relativePath}`)
   }
+
   return actualSha256
 }
 
@@ -42,10 +46,13 @@ export const resolvePublicContentPath = (relativePath) => {
   if (path.isAbsolute(relativePath)) {
     throw new Error('Public content requires a relative path')
   }
+
   const resolved = path.resolve(publicContentRoot, relativePath)
+
   if (!resolved.startsWith(`${publicContentRoot}${path.sep}`)) {
     throw new Error('Public content path resolves outside docs/public')
   }
+
   return resolved
 }
 
@@ -62,6 +69,7 @@ export async function loadVerifiedPublicContent() {
     ])
 
   const expectedIds = manifest.pages.map((page) => page.id).sort()
+
   for (const inventory of [contentIndex.pages, sourceMap.pages]) {
     if (
       JSON.stringify(inventory.map((page) => page.id).sort()) !==
@@ -72,6 +80,7 @@ export async function loadVerifiedPublicContent() {
       )
     }
   }
+
   if (packageReference.packages.length !== 19) {
     throw new Error('The package reference must contain exactly 19 packages')
   }
@@ -98,9 +107,11 @@ export async function loadVerifiedPublicContent() {
     manifest.pages.map(async (page) => {
       const indexed = indexedPages.get(page.id)
       const mapped = mappedPages.get(page.id)
+
       if (!indexed || !mapped) {
         throw new Error(`Missing generated public content record: ${page.id}`)
       }
+
       if (
         indexed.path !== page.path ||
         indexed.title !== page.title ||
@@ -114,6 +125,7 @@ export async function loadVerifiedPublicContent() {
         'utf8'
       )
       const verifiedSha256 = sha256(markdown)
+
       if (
         indexed.contentSha256 !== verifiedSha256 ||
         mapped.pageSha256 !== verifiedSha256
@@ -168,9 +180,11 @@ export async function loadVerifiedPublicContent() {
           'utf8'
         )
       )
+
       if (packageManifest.version !== packageRecord.version) {
         throw new Error(`Package version drift: ${packageRecord.name}`)
       }
+
       return Object.freeze({
         ...packageRecord,
         verifiedDigests: Object.freeze({
@@ -184,28 +198,36 @@ export async function loadVerifiedPublicContent() {
 
   const pagesById = new Map(pages.map((page) => [page.id, page]))
   const sections = new Map()
+
   for (const section of contentIndex.sections) {
     const sectionPages = section.pageIds.map((pageId) => {
       const page = pagesById.get(pageId)
+
       if (!page) {
         throw new Error(`Missing public page in section index: ${pageId}`)
       }
+
       return page
     })
+
     if (sectionPages.length === 0) {
       continue
     }
 
     const sectionTitle = sectionPages[0].section
+
     if (sectionPages.some((page) => page.section !== sectionTitle)) {
       throw new Error(`Mixed public page sections in index: ${section.id}`)
     }
+
     sections.set(sectionTitle, sectionPages)
   }
+
   const indexedPageCount = [...sections.values()].reduce(
     (count, sectionPages) => count + sectionPages.length,
     0
   )
+
   if (indexedPageCount !== pages.length) {
     throw new Error('The public section index does not include every page')
   }

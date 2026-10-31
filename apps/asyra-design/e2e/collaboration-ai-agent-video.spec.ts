@@ -260,6 +260,7 @@ const startWebSocketPayloadProfile = async (
   page: Page
 ): Promise<() => Promise<WebSocketPayloadProfile>> => {
   const session = await context.newCDPSession(page)
+
   await session.send('Network.enable')
   const publicationIds = new Set<string>()
   const deliveryIds = new Set<string>()
@@ -284,30 +285,37 @@ const startWebSocketPayloadProfile = async (
   let totalDeliveryBytes = 0
   let totalFrameWireBytes = 0
   let totalPublicationBytes = 0
+
   const onFrame = ({
     response
   }: {
     response: { opcode: number; payloadData: string }
   }) => {
     let frame: ReturnType<typeof decodeProfiledWebSocketFrame>
+
     try {
       frame = decodeProfiledWebSocketFrame(response)
     } catch {
       return
     }
+
     if (!frame) {
       return
     }
+
     const value = frame.value
+
     if (!value || typeof value !== 'object') {
       return
     }
+
     const message = value as {
       type?: unknown
       publication?: unknown
       publications?: unknown
     }
     let publications: readonly unknown[] | undefined
+
     if (message.type === 'send-publication') {
       publications = [message.publication]
     } else if (
@@ -316,71 +324,88 @@ const startWebSocketPayloadProfile = async (
     ) {
       publications = message.publications
     }
+
     if (!publications) {
       return
     }
+
     publicationFrameCount += 1
     totalFrameWireBytes += frame.wireByteLength
     publications.forEach((publicationValue) => {
       if (!publicationValue || typeof publicationValue !== 'object') {
         return
       }
+
       const publication = publicationValue as {
         publicationId?: unknown
         slices?: unknown
       }
+
       publicationCount += 1
       totalPublicationBytes += Buffer.byteLength(JSON.stringify(publication))
       if (typeof publication.publicationId === 'string') {
         if (publicationIds.has(publication.publicationId)) {
           duplicatePublicationIdCount += 1
         }
+
         publicationIds.add(publication.publicationId)
       }
+
       if (!Array.isArray(publication.slices)) {
         return
       }
+
       const routedDeliveries = publication.slices.flatMap((sliceValue) => {
         if (!sliceValue || typeof sliceValue !== 'object') {
           return []
         }
+
         const slice = sliceValue as { batches?: unknown }
+
         if (!Array.isArray(slice.batches)) {
           return []
         }
+
         return slice.batches.flatMap((batchValue) => {
           if (!batchValue || typeof batchValue !== 'object') {
             return []
           }
+
           const batch = batchValue as {
             channel?: unknown
             deliveries?: unknown
           }
+
           if (!Array.isArray(batch.deliveries)) {
             return []
           }
+
           return batch.deliveries.map((deliveryValue) => ({
             channel: batch.channel,
             deliveryValue
           }))
         })
       })
+
       routedDeliveries.forEach(({ channel, deliveryValue }) => {
         if (!deliveryValue || typeof deliveryValue !== 'object') {
           return
         }
+
         const delivery = deliveryValue as {
           deliveryId?: unknown
           eventName?: unknown
           payload?: unknown
         }
         const bytes = Buffer.byteLength(JSON.stringify(delivery))
+
         totalDeliveryBytes += bytes
         const route = `${String(channel)}/${String(delivery.eventName)}`
         const routeEntry = deliveryBytesByRoute.get(route) ?? {
           bytes: 0,
           count: 0
         }
+
         routeEntry.bytes += bytes
         routeEntry.count += 1
         deliveryBytesByRoute.set(route, routeEntry)
@@ -390,6 +415,7 @@ const startWebSocketPayloadProfile = async (
           typeof delivery.payload === 'object'
         ) {
           const data = (delivery.payload as { data?: unknown }).data
+
           if (Array.isArray(data)) {
             maxPropertySnapshotsPerDelivery = Math.max(
               maxPropertySnapshotsPerDelivery,
@@ -399,6 +425,7 @@ const startWebSocketPayloadProfile = async (
               if (!snapshotValue || typeof snapshotValue !== 'object') {
                 return
               }
+
               const snapshot = snapshotValue as {
                 id?: unknown
                 type?: unknown
@@ -411,6 +438,7 @@ const startWebSocketPayloadProfile = async (
                 bytes: 0,
                 count: 0
               }
+
               typeEntry.bytes += snapshotBytes
               typeEntry.count += 1
               propertySnapshotBytesByType.set(type, typeEntry)
@@ -424,25 +452,30 @@ const startWebSocketPayloadProfile = async (
                 if (propertySnapshotIds.has(snapshot.id)) {
                   duplicatePropertySnapshotIdCount += 1
                 }
+
                 propertySnapshotIds.add(snapshot.id)
               }
             })
           }
         }
+
         if (typeof delivery.deliveryId === 'string') {
           if (deliveryIds.has(delivery.deliveryId)) {
             duplicateDeliveryIdCount += 1
           }
+
           deliveryIds.add(delivery.deliveryId)
         }
       })
     })
   }
+
   session.on('Network.webSocketFrameSent', onFrame)
 
   return async () => {
     session.off('Network.webSocketFrameSent', onFrame)
     await session.send('Network.disable')
+
     return {
       deliveryBytesByRoute: [...deliveryBytesByRoute.entries()]
         .map(([route, evidence]) => ({ route, ...evidence }))
@@ -471,9 +504,11 @@ const startWebSocketPayloadProfile = async (
 
 const prepareCompleteCatViewport = async (page: Page) => {
   const viewport = await page.locator('#viewport-anchor').boundingBox()
+
   if (!viewport) {
     throw new Error('The Asyra Design viewport bounds are unavailable')
   }
+
   const output = {
     height: 941,
     width: 1672,
@@ -490,9 +525,11 @@ const prepareCompleteCatViewport = async (page: Page) => {
     x: viewport.x + (viewport.width - output.width * scale) / 2,
     y: viewport.y + (viewport.height - output.height * scale) / 2
   }
+
   await page.evaluate(
     async ({ nextPosition, nextScale }) => {
       const { core } = await import('../src/testing/runtime-access')
+
       core.setSystemProperty('zoom', nextScale)
       core.setSystemProperty('viewportPosition', nextPosition)
     },
@@ -502,6 +539,7 @@ const prepareCompleteCatViewport = async (page: Page) => {
     }
   )
   await page.waitForTimeout(250)
+
   return { output, position, scale, viewport }
 }
 
@@ -527,6 +565,7 @@ const captureCollaborationOutcomes = async (page: Page) => {
       []
     )
     const collaboration = getActiveCollaborationHandle()
+
     collaboration?.observePublicationOutcomes((outcome) => {
       outcomes.push({
         capturedAtMs: performance.timeOrigin + performance.now(),
@@ -550,6 +589,7 @@ const captureProgressiveRuntimeEvidence = async (page: Page) => {
   await page.evaluate(async () => {
     const { core, getActiveAiDrawingPerformanceProfile, testRuntimeState } =
       await import('../src/testing/runtime-access')
+
     testRuntimeState.set<string[]>('ai-create-delivery-modes', [])
     const factoryCommits = testRuntimeState.set<FactoryCommitEvidence[]>(
       'ai-factory-commits',
@@ -561,22 +601,27 @@ const captureProgressiveRuntimeEvidence = async (page: Page) => {
     const factoryStatuses = testRuntimeState.set<
       FactoryTransactionStatusEvidence[]
     >('ai-factory-statuses', [])
+
     if (getActiveAiDrawingPerformanceProfile()) {
       return
     }
+
     const factory = core.deps.factory
+
     const serializeError = (
       value: unknown
     ): DiagnosticErrorEvidence | string | undefined => {
       if (value === undefined) {
         return undefined
       }
+
       if (value instanceof Error) {
         return {
           message: value.message,
           name: value.name
         }
       }
+
       if (
         typeof value === 'string' ||
         typeof value === 'number' ||
@@ -585,7 +630,9 @@ const captureProgressiveRuntimeEvidence = async (page: Page) => {
       ) {
         return String(value)
       }
+
       const candidate = value as { message?: unknown; name?: unknown }
+
       if (
         typeof candidate.message === 'string' ||
         typeof candidate.name === 'string'
@@ -598,8 +645,10 @@ const captureProgressiveRuntimeEvidence = async (page: Page) => {
           name: typeof candidate.name === 'string' ? candidate.name : 'Error'
         }
       }
+
       return String(value)
     }
+
     factory.subscribeToTransactionStatus(
       (status: {
         changeCount: number
@@ -678,6 +727,7 @@ const captureProgressiveRuntimeEvidence = async (page: Page) => {
         if (status.status !== 'committed') {
           return
         }
+
         factoryCommits.push({
           capturedAtMs: status.timestamp,
           origin: status.origin,
@@ -698,6 +748,7 @@ const getCollaborationDiagnostics = (page: Page) =>
     } = await import('../src/testing/runtime-access')
     const profileEvidence =
       getActiveAiDrawingPerformanceProfile()?.getRuntimeEvidence()
+
     return {
       createDeliveryModes:
         testRuntimeState.get<string[]>('ai-create-delivery-modes') ?? [],
@@ -758,16 +809,20 @@ const getCanonicalAiDrawingSnapshot = (
 
     for (const element of canonicalElements) {
       const { id, type } = element
+
       if (type === 'workspace') {
         continue
       }
+
       ids.push(id)
       if (type === 'group') {
         groupCount += 1
       }
+
       if (type !== 'vector') {
         continue
       }
+
       vectorCount += 1
       const computed = element.computed as {
         fills?: readonly { color?: string }[]
@@ -776,11 +831,14 @@ const getCanonicalAiDrawingSnapshot = (
         strokes?: readonly { fill?: { color?: string } }[]
         width?: number
       }
+
       pointCount += Object.keys(computed?.points ?? {}).length
       const primaryFill = computed?.fills?.[0]
+
       if (primaryFill?.color === '#DC2626') {
         redFillIds.push(id)
       }
+
       if (
         primaryFill?.color === '#FFFFFF' &&
         computed?.width === 1672 &&
@@ -792,6 +850,7 @@ const getCanonicalAiDrawingSnapshot = (
           width: computed.width
         })
       }
+
       if (computed?.strokes?.[0]?.fill?.color === '#2563EB') {
         blueStrokeIds.push(id)
       }
@@ -814,6 +873,7 @@ const getCanonicalAiDrawingSnapshot = (
 const getCanonicalAiElementCount = (page: Page): Promise<number> =>
   page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
+
     return (
       core.deps.sceneTree.getAllElements().size -
       core.deps.sceneTree.workspaceList.length
@@ -825,6 +885,7 @@ const getCanonicalAndRenderedAiElementCounts = (
 ): Promise<Readonly<{ canonical: number; rendered: number }>> =>
   page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
+
     return {
       canonical:
         core.deps.sceneTree.getAllElements().size -
@@ -842,6 +903,7 @@ const installHistoryReplayPaintCapture = (page: Page): Promise<void> =>
         active: 'redo' | 'undo' | null
       }
     >('ai-history-replay-paints', { active: null, redo: [], undo: [] })
+
     const captureNextPaint = (direction: 'redo' | 'undo') => {
       globalThis.requestAnimationFrame(() => {
         evidence[direction].push({
@@ -853,11 +915,13 @@ const installHistoryReplayPaintCapture = (page: Page): Promise<void> =>
         })
       })
     }
+
     core.deps.factory.subscribeToSharedPublication(
       (publication: { origin: string }) => {
         if (publication.origin !== 'undo' && publication.origin !== 'redo') {
           return
         }
+
         captureNextPaint(publication.origin)
       }
     )
@@ -882,6 +946,7 @@ const setHistoryReplayPaintDirection = (
       redo: HistoryReplayPaintEvidence[]
       undo: HistoryReplayPaintEvidence[]
     }>('ai-history-replay-paints')
+
     if (capture) {
       capture.active = nextDirection
       if (nextDirection) {
@@ -901,6 +966,7 @@ const getHistoryReplayPaintCapture = (
 ): Promise<HistoryReplayPaintSequence> =>
   page.evaluate(async () => {
     const { testRuntimeState } = await import('../src/testing/runtime-access')
+
     return (
       testRuntimeState.get<HistoryReplayPaintSequence>(
         'ai-history-replay-paints'
@@ -931,15 +997,18 @@ const installHistoryReplayPhaseCapture = (page: Page): Promise<void> =>
       redo: new Map(),
       undo: new Map()
     })
+
     subscribeToBrowserDragPhases((name, durationMs) => {
       if (!capture.active) {
         return
       }
+
       const totals = capture[capture.active]
       const current = totals.get(name) ?? {
         count: 0,
         totalDurationMs: 0
       }
+
       totals.set(name, {
         count: current.count + 1,
         totalDurationMs: current.totalDurationMs + durationMs
@@ -953,6 +1022,7 @@ const installHistoryReplayPhaseCapture = (page: Page): Promise<void> =>
         ) {
           return
         }
+
         const journal = (
           core.deps.factory.transact as unknown as {
             journal?: readonly {
@@ -961,8 +1031,10 @@ const installHistoryReplayPhaseCapture = (page: Page): Promise<void> =>
           }
         ).journal
         const eventTypeCounts: Record<string, number> = {}
+
         journal?.forEach((entry) => {
           const eventType = entry.event?.type ?? 'unknown'
+
           eventTypeCounts[eventType] = (eventTypeCounts[eventType] ?? 0) + 1
         })
         capture.journals[origin] = {
@@ -982,6 +1054,7 @@ const setHistoryReplayPhaseDirection = (
     const capture = testRuntimeState.get<{
       active: 'redo' | 'undo' | null
     }>('ai-history-replay-phases')
+
     if (capture) {
       capture.active = nextDirection
     }
@@ -997,6 +1070,7 @@ const getHistoryReplayPhaseCapture = (
       redo: Map<string, { count: number; totalDurationMs: number }>
       undo: Map<string, { count: number; totalDurationMs: number }>
     }>('ai-history-replay-phases')
+
     const summarize = (
       totals:
         Map<string, { count: number; totalDurationMs: number }> | undefined
@@ -1004,6 +1078,7 @@ const getHistoryReplayPhaseCapture = (
       [...(totals ?? new Map())]
         .map(([name, summary]) => ({ name, ...summary }))
         .sort((left, right) => right.totalDurationMs - left.totalDurationMs)
+
     return {
       journals: capture?.journals ?? {},
       redo: summarize(capture?.redo),
@@ -1042,17 +1117,22 @@ const getHistoryReplaySourceSummary = (
     const batchDeliveryCounts = new Map<string, number>()
     let deliveredRecordCount = 0
     let immediateEntryCount = 0
+
     entries.forEach((entry) => {
       const eventType = entry.event?.type ?? 'unknown'
+
       eventTypeCounts[eventType] = (eventTypeCounts[eventType] ?? 0) + 1
       if (entry.options?.sharedDelivery === 'immediate') {
         immediateEntryCount += 1
       }
+
       entry.shared?.records?.forEach((record) => {
         if (record.delivered) {
           deliveredRecordCount += 1
         }
+
         const batchId = record.batch?.batchId
+
         if (batchId && !batchDeliveryCounts.has(batchId)) {
           batchDeliveryCounts.set(
             batchId,
@@ -1063,11 +1143,14 @@ const getHistoryReplaySourceSummary = (
     })
     const sourceBatchDeliveryCounts = [...batchDeliveryCounts.values()]
     const sourceBatchDeliveryCountDistribution: Record<string, number> = {}
+
     sourceBatchDeliveryCounts.forEach((count) => {
       const key = String(count)
+
       sourceBatchDeliveryCountDistribution[key] =
         (sourceBatchDeliveryCountDistribution[key] ?? 0) + 1
     })
+
     return {
       deliveredRecordCount,
       entryCount: entries.length,
@@ -1104,19 +1187,23 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
         rendered: Boolean(runtimeAccess.core.deps.render.getElementById(id)),
         type: String(element.get('type'))
       }))
+
     const normalize = (value: unknown): unknown => {
       if (Array.isArray(value)) {
         return value.map(normalize)
       }
+
       if (!value || typeof value !== 'object') {
         return value
       }
+
       return Object.fromEntries(
         Object.entries(value)
           .sort(([left], [right]) => left.localeCompare(right))
           .map(([key, child]) => [key, normalize(child)])
       )
     }
+
     const blueStrokeIds: string[] = []
     const ids: string[] = []
     const redFillIds: string[] = []
@@ -1131,16 +1218,20 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
 
     for (const element of canonicalElements) {
       const { id, type } = element
+
       if (type === 'workspace') {
         continue
       }
+
       ids.push(id)
       if (type === 'group') {
         groupCount += 1
       }
+
       if (type !== 'vector') {
         continue
       }
+
       vectorCount += 1
       const computed = element.computed as {
         fills?: readonly { color?: string }[]
@@ -1149,11 +1240,14 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
         strokes?: readonly { fill?: { color?: string } }[]
         width?: number
       }
+
       pointCount += Object.keys(computed.points ?? {}).length
       const primaryFill = computed.fills?.[0]
+
       if (primaryFill?.color === '#DC2626') {
         redFillIds.push(id)
       }
+
       if (
         primaryFill?.color === '#FFFFFF' &&
         computed.width === 1672 &&
@@ -1165,6 +1259,7 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
           width: computed.width
         })
       }
+
       if (computed.strokes?.[0]?.fill?.color === '#2563EB') {
         blueStrokeIds.push(id)
       }
@@ -1182,6 +1277,7 @@ const getLiveAiDrawingEvidence = (page: Page): Promise<LiveAiDrawingEvidence> =>
       }))
     const bytes = new TextEncoder().encode(JSON.stringify(canonical))
     const digest = await crypto.subtle.digest('SHA-256', bytes)
+
     return {
       blueStrokeIds: blueStrokeIds.sort(),
       byteLength: bytes.byteLength,
@@ -1218,25 +1314,31 @@ const getCanonicalElementFingerprints = (
         rendered: Boolean(runtimeAccess.core.deps.render.getElementById(id)),
         type: String(element.get('type'))
       }))
+
     const normalize = (value: unknown): unknown => {
       if (Array.isArray(value)) {
         return value.map(normalize)
       }
+
       if (!value || typeof value !== 'object') {
         return value
       }
+
       return Object.fromEntries(
         Object.entries(value)
           .sort(([left], [right]) => left.localeCompare(right))
           .map(([key, child]) => [key, normalize(child)])
       )
     }
+
     const fingerprint = (value: unknown) => {
       const serialized = JSON.stringify(normalize(value))
       let hash = 0x811c9dc5
+
       for (let index = 0; index < serialized.length; index += 1) {
         hash = Math.imul(hash ^ serialized.charCodeAt(index), 0x01000193)
       }
+
       return {
         byteLength: new TextEncoder().encode(serialized).byteLength,
         hash: (hash >>> 0).toString(16).padStart(8, '0')
@@ -1248,6 +1350,7 @@ const getCanonicalElementFingerprints = (
       .map(({ computed, id, raw, rendered, type }) => {
         const computedFingerprint = fingerprint(computed)
         const rawFingerprint = fingerprint(raw)
+
         return {
           computedByteLength: computedFingerprint.byteLength,
           computedHash: computedFingerprint.hash,
@@ -1281,22 +1384,27 @@ const getCanonicalElementDetail = (
         type: String(element.get('type'))
       }))
     const element = canonicalElements.find(({ id }) => id === targetId)
+
     if (!element) {
       return null
     }
+
     const normalize = (value: unknown): unknown => {
       if (Array.isArray(value)) {
         return value.map(normalize)
       }
+
       if (!value || typeof value !== 'object') {
         return value
       }
+
       return Object.fromEntries(
         Object.entries(value)
           .sort(([left], [right]) => left.localeCompare(right))
           .map(([key, child]) => [key, normalize(child)])
       )
     }
+
     return {
       computed: normalize(element.computed),
       raw: normalize(element.raw),
@@ -1309,11 +1417,13 @@ const summarizeDifferenceValue = (value: unknown): unknown => {
   if (value === undefined) {
     return '<undefined>'
   }
+
   if (value === null || typeof value !== 'object') {
     return typeof value === 'string' && value.length > 160
       ? `${value.slice(0, 160)}…`
       : value
   }
+
   if (Array.isArray(value)) {
     return {
       kind: 'array',
@@ -1321,7 +1431,9 @@ const summarizeDifferenceValue = (value: unknown): unknown => {
       sample: value.slice(0, 5)
     }
   }
+
   const keys = Object.keys(value)
+
   return {
     kind: 'object',
     keyCount: keys.length,
@@ -1343,6 +1455,7 @@ const findFirstValueDifference = (
   if (Object.is(actorA, actorB)) {
     return
   }
+
   if (
     actorA === null ||
     actorB === null ||
@@ -1355,6 +1468,7 @@ const findFirstValueDifference = (
       path
     }
   }
+
   if (Array.isArray(actorA) || Array.isArray(actorB)) {
     if (!Array.isArray(actorA) || !Array.isArray(actorB)) {
       return {
@@ -1363,6 +1477,7 @@ const findFirstValueDifference = (
         path
       }
     }
+
     if (actorA.length !== actorB.length) {
       return {
         actorA: { length: actorA.length },
@@ -1370,22 +1485,27 @@ const findFirstValueDifference = (
         path: `${path}.length`
       }
     }
+
     for (let index = 0; index < actorA.length; index += 1) {
       const difference = findFirstValueDifference(
         actorA[index],
         actorB[index],
         `${path}[${index}]`
       )
+
       if (difference) {
         return difference
       }
     }
+
     return
   }
+
   const actorARecord = actorA as Record<string, unknown>
   const actorBRecord = actorB as Record<string, unknown>
   const actorAKeys = Object.keys(actorARecord).sort()
   const actorBKeys = Object.keys(actorBRecord).sort()
+
   if (
     actorAKeys.length !== actorBKeys.length ||
     actorAKeys.some((key, index) => key !== actorBKeys[index])
@@ -1396,12 +1516,14 @@ const findFirstValueDifference = (
       path: `${path}.__keys__`
     }
   }
+
   for (const key of actorAKeys) {
     const difference = findFirstValueDifference(
       actorARecord[key],
       actorBRecord[key],
       `${path}.${key}`
     )
+
     if (difference) {
       return difference
     }
@@ -1413,6 +1535,7 @@ const getFirstCanonicalDifference = async (actorA: Page, actorB: Page) => {
     getCanonicalElementFingerprints(actorA),
     getCanonicalElementFingerprints(actorB)
   ])
+
   if (actorAFingerprints.length !== actorBFingerprints.length) {
     return {
       actorACount: actorAFingerprints.length,
@@ -1420,12 +1543,15 @@ const getFirstCanonicalDifference = async (actorA: Page, actorB: Page) => {
       kind: 'element-count'
     }
   }
+
   for (let index = 0; index < actorAFingerprints.length; index += 1) {
     const actorAFingerprint = actorAFingerprints[index]
     const actorBFingerprint = actorBFingerprints[index]
+
     if (!actorAFingerprint || !actorBFingerprint) {
       continue
     }
+
     if (actorAFingerprint.id !== actorBFingerprint.id) {
       return {
         actorAId: actorAFingerprint.id,
@@ -1434,6 +1560,7 @@ const getFirstCanonicalDifference = async (actorA: Page, actorB: Page) => {
         kind: 'element-id'
       }
     }
+
     if (
       actorAFingerprint.type === actorBFingerprint.type &&
       actorAFingerprint.rendered === actorBFingerprint.rendered &&
@@ -1445,10 +1572,12 @@ const getFirstCanonicalDifference = async (actorA: Page, actorB: Page) => {
     ) {
       continue
     }
+
     const [actorADetail, actorBDetail] = await Promise.all([
       getCanonicalElementDetail(actorA, actorAFingerprint.id),
       getCanonicalElementDetail(actorB, actorBFingerprint.id)
     ])
+
     return {
       difference: findFirstValueDifference(
         actorADetail,
@@ -1463,6 +1592,7 @@ const getFirstCanonicalDifference = async (actorA: Page, actorB: Page) => {
       kind: 'element-state'
     }
   }
+
   return {
     kind: 'aggregate-only',
     note: 'No per-element fingerprint difference was found.'
@@ -1523,6 +1653,7 @@ const getLiveHierarchyEvidence = (
       .map(([id, element]) => {
         const type = String(element.get('type'))
         const children = type === 'group' ? element.get('children') : undefined
+
         return {
           id,
           type,
@@ -1546,9 +1677,11 @@ const getLiveCanonicalElementCount = (page: Page): Promise<number> =>
     const profile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
+
     if (!profile) {
       throw new Error('AI drawing performance profile is unavailable')
     }
+
     return profile.readCanonicalElementCount()
   })
 
@@ -1559,11 +1692,13 @@ const waitForAppliedRenderProjection = async (
   sourcePage?: Page
 ): Promise<number> => {
   let observed = 0
+
   try {
     await expect
       .poll(
         async () => {
           observed = await getAppliedRenderProjectionCount(page)
+
           return predicate(observed)
         },
         { timeout }
@@ -1602,6 +1737,7 @@ const waitForAppliedRenderProjection = async (
     ])
     const phaseTotals = new Map<string, number>()
     const counterTotals = new Map<string, number>()
+
     snapshot?.phases.forEach(({ durationMs, name }) => {
       phaseTotals.set(name, (phaseTotals.get(name) ?? 0) + durationMs)
     })
@@ -1610,6 +1746,7 @@ const waitForAppliedRenderProjection = async (
     })
     const sourcePhaseTotals = new Map<string, number>()
     const sourceCounterTotals = new Map<string, number>()
+
     sourceSnapshot?.phases.forEach(({ durationMs, name }) => {
       sourcePhaseTotals.set(
         name,
@@ -1622,11 +1759,13 @@ const waitForAppliedRenderProjection = async (
         (sourceCounterTotals.get(name) ?? 0) + value
       )
     })
+
     const summarizeTimes = (times: readonly number[]) => {
       const ordered = [...times].sort((left, right) => left - right)
       const gaps = ordered
         .slice(1)
         .map((capturedAtMs, index) => capturedAtMs - (ordered[index] ?? 0))
+
       return {
         count: ordered.length,
         firstAtMs: ordered[0] ?? null,
@@ -1634,6 +1773,7 @@ const waitForAppliedRenderProjection = async (
         maxGapMs: gaps.length > 0 ? Math.max(...gaps) : 0
       }
     }
+
     const summarizePhaseTimes = (
       profile: PerformanceProfileSnapshot | null,
       name: string
@@ -1643,6 +1783,7 @@ const waitForAppliedRenderProjection = async (
           .filter((phase) => phase.name === name)
           .map(({ atMs }) => atMs) ?? []
       )
+
     const summarizeCounterTimes = (
       profile: PerformanceProfileSnapshot | null,
       name: string
@@ -1652,6 +1793,7 @@ const waitForAppliedRenderProjection = async (
           .filter((counter) => counter.name === name)
           .map(({ atMs }) => atMs) ?? []
       )
+
     const sourceSent = sourceDiagnostics?.outcomes.filter(
       ({ direction, status }) => direction === 'local' && status === 'sent'
     )
@@ -1662,6 +1804,7 @@ const waitForAppliedRenderProjection = async (
     const remoteProcessedIds = new Set(
       remoteProcessed.map(({ publicationId }) => publicationId)
     )
+
     throw new Error(
       `Actor B render convergence timed out: ${JSON.stringify({
         source: sourceDiagnostics
@@ -1762,6 +1905,7 @@ const waitForAppliedRenderProjection = async (
       })}; cause: ${error instanceof Error ? error.message : String(error)}`
     )
   }
+
   return observed
 }
 
@@ -1786,6 +1930,7 @@ const getPersistedAiDrawingEvidence = async (
       }
     | null
     | undefined
+
   if (!saved) {
     return null
   }
@@ -1798,6 +1943,7 @@ const getPersistedAiDrawingEvidence = async (
   const pendingPropertyIds = elements.flatMap(([, element]) =>
     Object.values(element.props ?? {})
   )
+
   const discoverPropertyIds = (value: unknown): void => {
     if (typeof value === 'string') {
       if (
@@ -1806,25 +1952,34 @@ const getPersistedAiDrawingEvidence = async (
       ) {
         pendingPropertyIds.push(value)
       }
+
       return
     }
+
     if (Array.isArray(value)) {
       value.forEach(discoverPropertyIds)
+
       return
     }
+
     if (value && typeof value === 'object') {
       Object.values(value).forEach(discoverPropertyIds)
     }
   }
+
   while (pendingPropertyIds.length > 0) {
     const propertyId = pendingPropertyIds.shift()
+
     if (!propertyId || reachablePropertyIds.has(propertyId)) {
       continue
     }
+
     const property = properties[propertyId]
+
     if (!property) {
       continue
     }
+
     reachablePropertyIds.add(propertyId)
     discoverPropertyIds(property)
   }
@@ -1833,15 +1988,18 @@ const getPersistedAiDrawingEvidence = async (
     if (Array.isArray(value)) {
       return value.map(normalize)
     }
+
     if (!value || typeof value !== 'object') {
       return value
     }
+
     return Object.fromEntries(
       Object.entries(value)
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([childKey, child]) => [childKey, normalize(child)])
     )
   }
+
   const canonical = normalize({
     elements: elements.map(([id, element]) => ({ id, ...element })),
     props: [...reachablePropertyIds]
@@ -1861,29 +2019,36 @@ const getPersistedAiDrawingEvidence = async (
   let groupCount = 0
   let pointCount = 0
   let vectorCount = 0
+
   for (const [id, element] of elements) {
     ids.push(id)
     if (element.type === 'group') {
       groupCount += 1
       continue
     }
+
     if (element.type !== 'vector') {
       continue
     }
+
     vectorCount += 1
     const elementProperties = element.props ?? {}
     const points = properties[elementProperties.points] as
       { points?: readonly string[] } | undefined
+
     pointCount += points?.points?.length ?? 0
     const fills = properties[elementProperties.fills] as
       { fills?: readonly string[] } | undefined
     const primaryFill = properties[fills?.fills?.[0] ?? ''] as
       { color?: unknown } | undefined
+
     if (primaryFill?.color === '#DC2626') {
       redFillIds.push(id)
     }
+
     const dimension = properties[elementProperties.dimension] as
       { height?: unknown; width?: unknown } | undefined
+
     if (
       primaryFill?.color === '#FFFFFF' &&
       dimension?.width === 1672 &&
@@ -1895,10 +2060,12 @@ const getPersistedAiDrawingEvidence = async (
         width: dimension.width
       })
     }
+
     const strokes = properties[elementProperties.strokes] as
       { strokes?: readonly string[] } | undefined
     const primaryStroke = properties[strokes?.strokes?.[0] ?? ''] as
       { fill?: { color?: unknown } } | undefined
+
     if (primaryStroke?.fill?.color === '#2563EB') {
       blueStrokeIds.push(id)
     }
@@ -1928,9 +2095,11 @@ const waitForPersistedAiDrawingEvidence = async (
 ): Promise<PersistedAiDrawingEvidence> => {
   const deadline = Date.now() + timeout
   let attempt = 0
+
   while (Date.now() < deadline) {
     const attemptStartedAtMs = Date.now()
     const evidence = await getPersistedAiDrawingEvidence(fileId)
+
     attempt += 1
     // eslint-disable-next-line no-console
     console.log(
@@ -1944,8 +2113,10 @@ const waitForPersistedAiDrawingEvidence = async (
     if (evidence && predicate(evidence)) {
       return evidence
     }
+
     await page.waitForTimeout(1_000)
   }
+
   throw new Error(`Persisted AI drawing evidence timed out for ${fileId}`)
 }
 
@@ -1956,13 +2127,16 @@ const waitForLiveAiDrawingEvidence = async (
 ): Promise<LiveAiDrawingEvidence> => {
   const deadline = Date.now() + timeout
   let latest: LiveAiDrawingEvidence | undefined
+
   while (Date.now() < deadline) {
     latest = await getLiveAiDrawingEvidence(page)
     if (predicate(latest)) {
       return latest
     }
+
     await page.waitForTimeout(500)
   }
+
   throw new Error(
     `Local live AI drawing evidence timed out: ${JSON.stringify(
       summarizeLiveEvidence(latest)
@@ -1990,8 +2164,10 @@ const expectLivePeerEvidence = async (
   const deadline = Date.now() + timeout
   let attempt = 0
   let latestPeer: LiveAiDrawingEvidence | undefined
+
   while (Date.now() < deadline) {
     const attemptStartedAtMs = Date.now()
+
     latestPeer = await getLiveAiDrawingEvidence(actorB)
     const {
       byteLength: latestPeerByteLength,
@@ -2004,6 +2180,7 @@ const expectLivePeerEvidence = async (
       canonicalMatches &&
       latestPeerByteLength === expectedByteLength &&
       latestPeerSha256 === expectedSha256
+
     attempt += 1
     // eslint-disable-next-line no-console
     console.log(
@@ -2019,6 +2196,7 @@ const expectLivePeerEvidence = async (
     if (canonicalMatches && digestMatches) {
       return expected
     }
+
     const [actorADiagnostics, actorBDiagnostics] = await Promise.all([
       getCollaborationDiagnostics(actorA),
       getCollaborationDiagnostics(actorB)
@@ -2029,6 +2207,7 @@ const expectLivePeerEvidence = async (
     ].find(
       ({ status }) => status === 'send-failed' || status === 'process-failed'
     )
+
     if (
       failedOutcome ||
       actorADiagnostics.status !== 'connected' ||
@@ -2047,8 +2226,10 @@ const expectLivePeerEvidence = async (
         })}`
       )
     }
+
     await actorA.waitForTimeout(500)
   }
+
   const [actorADiagnostics, actorBDiagnostics, actorALive, actorBLive] =
     await Promise.all([
       getCollaborationDiagnostics(actorA),
@@ -2056,6 +2237,7 @@ const expectLivePeerEvidence = async (
       getLiveAiDrawingEvidence(actorA),
       getLiveAiDrawingEvidence(actorB)
     ])
+
   throw new Error(
     `Live CRDT convergence timed out: ${JSON.stringify({
       actorA: {
@@ -2083,6 +2265,7 @@ const resetPerformanceProfile = async (page: Page) => {
     ) {
       throw new Error('AI drawing performance profile is unavailable')
     }
+
     ;(await import('../src/testing/runtime-access'))
       .getActiveAiDrawingPerformanceProfile()
       .reset()
@@ -2098,9 +2281,11 @@ const getPerformanceProfileSnapshot = async (
         .getActiveAiDrawingPerformanceProfile()
         ?.snapshot() ?? null
   )
+
   if (!snapshot) {
     throw new Error('AI drawing performance profile is unavailable')
   }
+
   return snapshot
 }
 
@@ -2114,11 +2299,13 @@ const getPerformanceProfile = async (
   const productSamples = snapshot.phases.filter(
     ({ name }) => name === 'ai-turn:accepted-to-settled'
   )
+
   if (productSamples.length !== 1) {
     throw new Error(
       `Expected one accepted-to-settled product sample, received ${productSamples.length}`
     )
   }
+
   return {
     productDurationMs: productSamples[0]?.durationMs ?? Number.NaN,
     snapshot
@@ -2131,6 +2318,7 @@ const expectProfileOwnerPhases = (
   requiredNames: readonly string[]
 ) => {
   const observedNames = new Set(snapshot.phases.map(({ name }) => name))
+
   expect(
     requiredNames.filter((name) => !observedNames.has(name)),
     `${owner} profile is missing required owner phases`
@@ -2148,9 +2336,11 @@ const getPerformanceProfileCounterTotal = async (
         ?.readCounterTotal(counterName) ?? null,
     name
   )
+
   if (total === null) {
     throw new Error('AI drawing performance profile is unavailable')
   }
+
   return total
 }
 
@@ -2189,6 +2379,7 @@ const observeProgressiveCreation = async (
       getLiveCanonicalElementCount(actorB),
       getAppliedRenderProjectionCount(actorB)
     ])
+
     if (
       actorBCanonicalElementCount > 0 &&
       actorBCanonicalElementCount < 7076 &&
@@ -2198,12 +2389,14 @@ const observeProgressiveCreation = async (
       firstVisibleAtMs ??= Date.now()
       observedElementCounts.push(actorBCanonicalElementCount)
     }
+
     const firstPublicationAtMs =
       actorADiagnostics.factoryPublications[0]?.capturedAtMs
     const processedPublicationCount = actorBDiagnostics.outcomes.filter(
       ({ direction, status }) =>
         direction === 'remote' && status === 'processed'
     ).length
+
     if (
       !isTurnSettled() &&
       firstPublicationAtMs !== undefined &&
@@ -2219,12 +2412,14 @@ const observeProgressiveCreation = async (
         processedPublicationCount
       })
     }
+
     const failedOutcome = [
       ...actorADiagnostics.outcomes,
       ...actorBDiagnostics.outcomes
     ].find(
       ({ status }) => status === 'send-failed' || status === 'process-failed'
     )
+
     if (
       failedOutcome ||
       actorADiagnostics.status !== 'connected' ||
@@ -2244,6 +2439,7 @@ const observeProgressiveCreation = async (
         )}`
       )
     }
+
     await actorA.waitForTimeout(100)
   }
 
@@ -2269,11 +2465,13 @@ const dropReferenceImage = async (page: Page) => {
         character.charCodeAt(0)
       )
       const transfer = new DataTransfer()
+
       transfer.items.add(
         new File([bytes], fileName, {
           type: 'image/png'
         })
       )
+
       return transfer
     },
     {
@@ -2281,14 +2479,17 @@ const dropReferenceImage = async (page: Page) => {
       fileName: referenceImageName
     }
   )
+
   try {
     const dropTarget = page.getByTestId('agent-image-drop-target')
+
     await dropTarget.dispatchEvent('dragenter', { dataTransfer })
     await dropTarget.dispatchEvent('dragover', { dataTransfer })
     await dropTarget.dispatchEvent('drop', { dataTransfer })
   } finally {
     await dataTransfer.dispose()
   }
+
   await expect(
     page.getByRole('img', {
       name: referenceImageName
@@ -2304,6 +2505,7 @@ const submitTurn = async (
   settledTimeoutMs = 300_000
 ) => {
   const input = page.getByLabel('Message Agent')
+
   await expect(input).toBeEnabled()
   await input.fill(intent)
   onBeforeSubmit?.()
@@ -2316,15 +2518,18 @@ const submitTurn = async (
   const settledTurns = page
     .getByTestId('ai-agent-panel')
     .locator('article[data-turn-id]')
+
   await expect(settledTurns).toHaveCount(expectedSettledCount, {
     timeout: settledTimeoutMs
   })
   const turn = settledTurns.last()
+
   await expect(turn).toHaveAttribute('data-outcome', 'success', {
     timeout: settledTimeoutMs
   })
   await expect(turn.getByText(/Updated \d+ editable elements?\./)).toBeVisible()
   await expect(turn.getByText(/^Elapsed \d/)).toBeVisible()
+
   return turn
 }
 
@@ -2336,21 +2541,25 @@ const expectPeerSnapshot = async (
   const expected = await getCanonicalAiDrawingSnapshot(actorA)
   const expectedSerialized = JSON.stringify(expected)
   const deadline = Date.now() + timeout
+
   while (Date.now() < deadline) {
     const [peer, actorADiagnostics, actorBDiagnostics] = await Promise.all([
       getCanonicalAiDrawingSnapshot(actorB),
       getCollaborationDiagnostics(actorA),
       getCollaborationDiagnostics(actorB)
     ])
+
     if (JSON.stringify(peer) === expectedSerialized) {
       return expected
     }
+
     const failedOutcome = [
       ...actorADiagnostics.outcomes,
       ...actorBDiagnostics.outcomes
     ].find(
       ({ status }) => status === 'send-failed' || status === 'process-failed'
     )
+
     if (
       failedOutcome ||
       actorADiagnostics.status !== 'connected' ||
@@ -2363,8 +2572,10 @@ const expectPeerSnapshot = async (
         })}`
       )
     }
+
     await actorA.waitForTimeout(500)
   }
+
   throw new Error(
     `CRDT convergence timed out: ${JSON.stringify({
       actorA: await getCollaborationDiagnostics(actorA),
@@ -2381,6 +2592,7 @@ const captureCheckpoint = async (
 ) => {
   const actorAPath = testInfo.outputPath(`${name}-actor-a.png`)
   const actorBPath = testInfo.outputPath(`${name}-actor-b.png`)
+
   await Promise.all([
     actorA.screenshot({ path: actorAPath }),
     actorB.screenshot({ path: actorBPath })
@@ -2395,6 +2607,7 @@ const captureCheckpoint = async (
       path: actorBPath
     })
   ])
+
   return Object.freeze({ actorAPath, actorBPath })
 }
 
@@ -2426,8 +2639,10 @@ const launchIndependentActor = async (
   })
   const page = context.pages()[0] ?? (await context.newPage())
   const session = await context.newCDPSession(page)
+
   try {
     const { windowId } = await session.send('Browser.getWindowForTarget')
+
     await session.send('Browser.setWindowBounds', {
       bounds: {
         height,
@@ -2441,6 +2656,7 @@ const launchIndependentActor = async (
   } finally {
     await session.detach()
   }
+
   return { context, page }
 }
 
@@ -2464,6 +2680,7 @@ const resolveStackedCaptureBounds = async (
   const verticalDifference = Math.abs(
     actorBWindow.top - (actorAWindow.top + actorAWindow.height)
   )
+
   if (
     horizontalDifference > 4 ||
     verticalDifference > 4 ||
@@ -2476,6 +2693,7 @@ const resolveStackedCaptureBounds = async (
       })}`
     )
   }
+
   const left = Math.min(actorAWindow.left, actorBWindow.left)
   const top = Math.min(actorAWindow.top, actorBWindow.top)
   const right = Math.max(
@@ -2486,6 +2704,7 @@ const resolveStackedCaptureBounds = async (
     actorAWindow.top + actorAWindow.height,
     actorBWindow.top + actorBWindow.height
   )
+
   return {
     height: bottom - top,
     left,
@@ -2500,6 +2719,7 @@ const waitForNativeCommand = (
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     let stderr = ''
+
     child.stderr.setEncoding('utf8')
     child.stderr.on('data', (chunk: string) => {
       stderr += chunk
@@ -2508,8 +2728,10 @@ const waitForNativeCommand = (
     child.once('exit', (code, signal) => {
       if (code === 0) {
         resolve()
+
         return
       }
+
       reject(
         new Error(
           `${label} failed (${code ?? signal ?? 'unknown'}): ${stderr.trim()}`
@@ -2533,16 +2755,19 @@ const startNativeScreenRecording = async (
     captureProcess,
     'macOS screen recording'
   )
+
   await new Promise((resolve) => setTimeout(resolve, 300))
   if (captureProcess.exitCode !== null) {
     await completion
     throw new Error('macOS screen recording stopped before Agent interaction')
   }
+
   return {
     stop: async () => {
       if (!captureProcess.kill('SIGINT')) {
         throw new Error('macOS screen recording could not be stopped')
       }
+
       await completion
     }
   }
@@ -2561,6 +2786,7 @@ const convertNativeRecording = async (
     destinationPath,
     '--replace'
   ])
+
   await waitForNativeCommand(conversion, 'MP4 conversion')
 }
 
@@ -2599,22 +2825,27 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
   let stopWebSocketPayloadProfile:
     (() => Promise<WebSocketPayloadProfile>) | undefined
   const timings: Record<string, number> = {}
+
   const measureHarnessPhase = async <T>(
     name: string,
     run: () => Promise<T>
   ): Promise<T> => {
     const startedAtMs = Date.now()
+
     try {
       const result = await run()
       const durationMs = Date.now() - startedAtMs
+
       timings[`harness:${name}`] = durationMs
       // eslint-disable-next-line no-console
       console.log(
         `AI_CRDT_SETUP ${JSON.stringify({ durationMs, name, status: 'settled' })}`
       )
+
       return result
     } catch (error) {
       const durationMs = Date.now() - startedAtMs
+
       timings[`harness:${name}`] = durationMs
       // eslint-disable-next-line no-console
       console.log(
@@ -2628,6 +2859,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
       throw error
     }
   }
+
   const productProfiles: Record<
     string,
     {
@@ -2640,6 +2872,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
 
   try {
     const fileId = CRDT_7076_SAMPLE_FILE_ID
+
     await measureHarnessPhase('action-batch-interceptor-installed', () =>
       installGeneratedActionBatchInterceptor(actorAContext, {
         appUrl: profiledCollaborationUrl(fileId),
@@ -2670,6 +2903,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
         () => startWebSocketPayloadProfile(actorAContext, actorA)
       )
     }
+
     await measureHarnessPhase('agent-ready', () => openAgent(actorA))
     await measureHarnessPhase('reference-attached', () =>
       dropReferenceImage(actorA)
@@ -2684,15 +2918,18 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
 
     if (process.env.CAPTURE_RENDERER_CPU_PROFILE === '1') {
       const actorASession = await actorAContext.newCDPSession(actorA)
+
       await actorASession.send('Profiler.enable')
       await actorASession.send('Profiler.setSamplingInterval', {
         interval: 1_000
       })
       await actorASession.send('Profiler.start')
       let stopPromise: Promise<void> | undefined
+
       actorACpuProfileStop = () => {
         stopPromise ??= (async () => {
           const { profile } = await actorASession.send('Profiler.stop')
+
           actorACpuProfile = profile
           actorACpuProfilePath = testInfo.outputPath(
             'actor-a-renderer.cpuprofile'
@@ -2703,19 +2940,23 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
           )
           await actorASession.send('Profiler.disable')
         })()
+
         return stopPromise
       }
 
       const actorBSession = await actorBContext.newCDPSession(actorB)
+
       await actorBSession.send('Profiler.enable')
       await actorBSession.send('Profiler.setSamplingInterval', {
         interval: 1_000
       })
       await actorBSession.send('Profiler.start')
       let stopActorBPromise: Promise<void> | undefined
+
       actorBCpuProfileStop = () => {
         stopActorBPromise ??= (async () => {
           const { profile } = await actorBSession.send('Profiler.stop')
+
           actorBCpuProfile = profile
           actorBCpuProfilePath = testInfo.outputPath(
             'actor-b-renderer.cpuprofile'
@@ -2726,8 +2967,10 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
           )
           await actorBSession.send('Profiler.disable')
         })()
+
         return stopActorBPromise
       }
+
       actorACpuProfileTimer = setTimeout(() => {
         void actorACpuProfileStop?.()
         void actorBCpuProfileStop?.()
@@ -2739,10 +2982,12 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
       resetPerformanceProfile(actorB)
     ])
     const creationStartedAtMs = Date.now()
+
     // eslint-disable-next-line no-console
     console.log('AI_CRDT_PHASE creation-submitted')
     const createdTurnPromise = submitTurn(actorA, exactCatOnlyPrompt, 1)
     let createdTurnSettled = false
+
     void createdTurnPromise.then(
       () => {
         createdTurnSettled = true
@@ -2753,6 +2998,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
     )
     void createdTurnPromise.catch(() => undefined)
     let progressiveCreation: ProgressiveCreationEvidence
+
     try {
       progressiveCreation = await observeProgressiveCreation(
         actorA,
@@ -2761,6 +3007,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
       )
     } catch (error) {
       let turnFailure: unknown
+
       try {
         await createdTurnPromise
       } catch (createdTurnError) {
@@ -2773,6 +3020,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
               }
             : createdTurnError
       }
+
       const [
         actorADiagnostics,
         actorACanonicalElementCount,
@@ -2788,6 +3036,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
               ?.settledTurns.at(-1)?.result ?? null
         )
       ])
+
       throw new Error(
         `High-detail creation failed before progressive publication: ${JSON.stringify(
           {
@@ -2805,12 +3054,14 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
         { cause: error }
       )
     }
+
     // eslint-disable-next-line no-console
     console.log(
       `AI_CRDT_PHASE progressive-visible ${JSON.stringify(progressiveCreation)}`
     )
     await createdTurnPromise
     const actorASettledAtMs = Date.now()
+
     productProfiles.creation = await getPerformanceProfile(actorA)
     // eslint-disable-next-line no-console
     console.log(
@@ -2821,13 +3072,17 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
     const creationCommit = (
       await getCollaborationDiagnostics(actorA)
     ).factoryCommits.find(({ origin }) => origin === 'action')
+
     if (!creationCommit) {
       throw new Error('Actor A canonical creation commit evidence is missing')
     }
+
     expect(creationCommit.undoableChangeCount).toBeGreaterThan(0)
     const creationConvergenceDeadlineMs = creationCommit.capturedAtMs + 120_000
+
     const remainingCreationConvergenceMs = () =>
       Math.max(1, creationConvergenceDeadlineMs - Date.now())
+
     await waitForAppliedRenderProjection(
       actorB,
       (count) => count >= 7076,
@@ -2841,12 +3096,14 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
       remainingCreationConvergenceMs()
     )
     const createdConvergedAtMs = Date.now()
+
     peerProfiles.creation = await getPerformanceProfileSnapshot(actorB)
     const actorACreated = await waitForPersistedAiDrawingEvidence(
       actorA,
       fileId,
       ({ totalCount }) => totalCount === 7076
     )
+
     expect(canonicalSummary(actorACreated)).toEqual(canonicalSummary(created))
     // eslint-disable-next-line no-console
     console.log(`AI_CRDT_PHASE actor-a-persisted ${actorACreated.totalCount}`)
@@ -2913,6 +3170,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
         )
       ).toBe(0)
     }
+
     for (const phase of ['core:persistence-capture', 'core:persistence-save']) {
       for (const profile of [sourceProfiles.creation, peerProfiles.creation]) {
         expect(
@@ -2920,11 +3178,13 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
         ).toHaveLength(0)
       }
     }
+
     const actorBCreationDiagnostics = await getCollaborationDiagnostics(actorB)
     const actorBRemoteCreationCommits =
       actorBCreationDiagnostics.factoryCommits.filter(
         ({ origin }) => origin === 'remote'
       )
+
     expect(actorBRemoteCreationCommits.length).toBeGreaterThan(0)
     expect(
       actorBRemoteCreationCommits.every(
@@ -3028,6 +3288,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
       ...actorAFinalDiagnostics.outcomes,
       ...actorBFinalDiagnostics.outcomes
     ]
+
     expect(
       outcomes.some(
         ({ status }) => status === 'send-failed' || status === 'process-failed'
@@ -3079,6 +3340,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
         getLiveHierarchyEvidence(actorA),
         getLiveHierarchyEvidence(actorB)
       ])
+
       expect(actorBEvidenceBeforeCapture).toEqual(actorAEvidenceBeforeCapture)
       expect(actorBHierarchyBeforeCapture).toEqual(actorAHierarchyBeforeCapture)
       const screenshotName = 'high-detail-live-visual-review'
@@ -3099,6 +3361,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
         getLiveHierarchyEvidence(actorA),
         getLiveHierarchyEvidence(actorB)
       ])
+
       expect(actorAEvidenceAfterCapture).toEqual(actorAEvidenceBeforeCapture)
       expect(actorBEvidenceAfterCapture).toEqual(actorAEvidenceBeforeCapture)
       expect(actorAHierarchyAfterCapture).toEqual(actorAHierarchyBeforeCapture)
@@ -3126,6 +3389,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
       const metadataPath = testInfo.outputPath(
         `${screenshotName}-metadata.json`
       )
+
       await writeFile(
         metadataPath,
         `${JSON.stringify(visualReviewMetadata, null, 2)}\n`,
@@ -3139,6 +3403,7 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
   } finally {
     try {
       const peerProfile = await getPerformanceProfileSnapshot(actorB)
+
       await testInfo.attach('actor-b-performance-profile.json', {
         body: JSON.stringify(peerProfile, null, 2),
         contentType: 'application/json'
@@ -3146,8 +3411,10 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
     } catch {
       // Teardown must still close both browser contexts after an early failure.
     }
+
     if (stopWebSocketPayloadProfile) {
       const payloadProfile = await stopWebSocketPayloadProfile()
+
       // eslint-disable-next-line no-console
       console.log(
         `AI_CRDT_WEBSOCKET_PAYLOAD_PROFILE ${JSON.stringify(payloadProfile)}`
@@ -3157,27 +3424,33 @@ test('proves the high-detail progressive CRDT correctness flow without generatin
         contentType: 'application/json'
       })
     }
+
     if (actorACpuProfileTimer) {
       clearTimeout(actorACpuProfileTimer)
     }
+
     if (actorACpuProfileStop) {
       await actorACpuProfileStop()
     }
+
     if (actorBCpuProfileStop) {
       await actorBCpuProfileStop()
     }
+
     if (actorACpuProfilePath) {
       await testInfo.attach('actor-a-renderer.cpuprofile', {
         contentType: 'application/json',
         path: actorACpuProfilePath
       })
     }
+
     if (actorBCpuProfilePath) {
       await testInfo.attach('actor-b-renderer.cpuprofile', {
         contentType: 'application/json',
         path: actorBCpuProfilePath
       })
     }
+
     await Promise.all([actorAContext.close(), actorBContext.close()])
   }
 })
@@ -3208,6 +3481,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
     actorA: false,
     actorB: false
   }
+
   actorA.on('crash', () => {
     pageCrashed.actorA = true
   })
@@ -3261,6 +3535,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
 
   try {
     const fileId = `ai-high-detail-undo-${Date.now()}`
+
     await installGeneratedActionBatchInterceptor(actorAContext, {
       appUrl: collaborationUrl(fileId),
       fileId,
@@ -3293,21 +3568,26 @@ test('keeps two connected Actors converged through one complete high-detail cat 
         const handle = (
           await import('../src/testing/runtime-access')
         ).getActiveCollaborationHandle()
+
         return handle?.getSessionState() ?? null
       })
+
     const [actorASessionBaseline, actorBSessionBaseline] = await Promise.all([
       readSessionState(actorA),
       readSessionState(actorB)
     ])
+
     if (!actorASessionBaseline || !actorBSessionBaseline) {
       throw new Error('Both high-detail Actors require one document session')
     }
+
     const waitForConnectedCounts = async (
       actorACount: number,
       actorBCount: number,
       timeoutMs: number
     ): Promise<void> => {
       const deadline = Date.now() + timeoutMs
+
       while (Date.now() < deadline) {
         const [
           currentActorACounts,
@@ -3320,6 +3600,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
           readSessionState(actorA),
           readSessionState(actorB)
         ])
+
         if (
           !actorAState ||
           !actorBState ||
@@ -3334,6 +3615,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
             getCollaborationDiagnostics(actorA),
             getCollaborationDiagnostics(actorB)
           ])
+
           throw new Error(
             `High-detail history replay disconnected a document session: ${JSON.stringify(
               {
@@ -3353,6 +3635,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
             )}`
           )
         }
+
         if (
           currentActorACounts.canonical === actorACount &&
           currentActorACounts.rendered === actorACount &&
@@ -3361,8 +3644,10 @@ test('keeps two connected Actors converged through one complete high-detail cat 
         ) {
           return
         }
+
         await actorA.waitForTimeout(100)
       }
+
       throw new Error(
         `High-detail history replay did not converge while connected: ${JSON.stringify(
           {
@@ -3378,11 +3663,13 @@ test('keeps two connected Actors converged through one complete high-detail cat 
       getUndoHistoryDepth(actorA),
       getUndoHistoryDepth(actorB)
     ])
+
     const readPublicationCounts = async () => {
       const [actorADiagnostics, actorBDiagnostics] = await Promise.all([
         getCollaborationDiagnostics(actorA),
         getCollaborationDiagnostics(actorB)
       ])
+
       return {
         processed: actorBDiagnostics.outcomes.filter(
           ({ direction, status }) =>
@@ -3393,12 +3680,14 @@ test('keeps two connected Actors converged through one complete high-detail cat 
         ).length
       }
     }
+
     const waitForPublicationProcessing = async (
       baseline: Awaited<ReturnType<typeof readPublicationCounts>>,
       timeout: number
     ) => {
       const afterSourceSettlement = await readPublicationCounts()
       const publicationWindows = afterSourceSettlement.sent - baseline.sent
+
       await expect
         .poll(
           async () =>
@@ -3406,17 +3695,22 @@ test('keeps two connected Actors converged through one complete high-detail cat 
           { timeout }
         )
         .toBe(publicationWindows)
+
       return {
         counts: await readPublicationCounts(),
         publicationWindows
       }
     }
+
     const publicationBaseline = await readPublicationCounts()
     const maxHighDetailPublicationWindows = 16
+
     await openAgent(actorA)
     const creationTotalStartedAt = Date.now()
+
     await dropReferenceImage(actorA)
     let creationStartedAt = 0
+
     await submitTurn(
       actorA,
       exactCatOnlyPrompt,
@@ -3429,6 +3723,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
     if (creationStartedAt === 0) {
       throw new Error('High-detail Actor A request timing is unavailable')
     }
+
     await expect
       .poll(() => getCanonicalAiElementCount(actorA), {
         timeout: Math.max(
@@ -3458,6 +3753,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
         creationStartedAt + HIGH_DETAIL_ACTOR_B_CREATION_TIMEOUT_MS - Date.now()
       )
     )
+
     evidence.creationConvergenceMs = Date.now() - creationStartedAt
     expect(evidence.creationConvergenceMs).toBeLessThanOrEqual(
       HIGH_DETAIL_ACTOR_B_CREATION_TIMEOUT_MS
@@ -3469,6 +3765,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
     const afterCreationPublicationCounts = creationPublicationSettlement.counts
     const creationPublicationWindows =
       creationPublicationSettlement.publicationWindows
+
     expect(creationPublicationWindows).toBeGreaterThan(1)
     expect(creationPublicationWindows).toBeLessThanOrEqual(
       maxHighDetailPublicationWindows
@@ -3491,6 +3788,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
         evidence.historyReplaySource
       )}`
     )
+
     const isIntermediatePaint = ({
       canonicalCount,
       renderedCount
@@ -3499,11 +3797,13 @@ test('keeps two connected Actors converged through one complete high-detail cat 
       canonicalCount < 7076 &&
       renderedCount >= 0 &&
       renderedCount < 7076
+
     const expectResponsivePaintProgress = (
       observations: readonly HistoryReplayPaintEvidence[]
     ) => {
       const distinct = observations.filter((observation, index) => {
         const previous = observations[index - 1]
+
         return (
           !previous ||
           previous.canonicalCount !== observation.canonicalCount ||
@@ -3516,6 +3816,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
           (observation, index) =>
             observation.atMs - (distinct[index]?.atMs ?? observation.atMs)
         )
+
       expect(distinct.length).toBeGreaterThan(2)
       expect(Math.max(...gaps)).toBeLessThanOrEqual(20_000)
     }
@@ -3527,6 +3828,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
       setHistoryReplayPhaseDirection(actorB, 'undo')
     ])
     const undoStartedAt = Date.now()
+
     await undo(actorA)
     await expect
       .poll(() => getCanonicalAiElementCount(actorA), {
@@ -3549,12 +3851,14 @@ test('keeps two connected Actors converged through one complete high-detail cat 
       afterCreationPublicationCounts,
       Math.max(1, undoStartedAt + HIGH_DETAIL_HISTORY_TIMEOUT_MS - Date.now())
     )
+
     evidence.undoConvergenceMs = Date.now() - undoStartedAt
     expect(evidence.undoConvergenceMs).toBeLessThanOrEqual(
       HIGH_DETAIL_HISTORY_TIMEOUT_MS
     )
     const afterUndoPublicationCounts = undoPublicationSettlement.counts
     const undoPublicationWindows = undoPublicationSettlement.publicationWindows
+
     expect(undoPublicationWindows).toBeGreaterThan(1)
     expect(undoPublicationWindows).toBeLessThanOrEqual(
       maxHighDetailPublicationWindows
@@ -3602,6 +3906,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
       setHistoryReplayPhaseDirection(actorB, 'redo')
     ])
     const redoStartedAt = Date.now()
+
     await redo(actorA)
     await expect
       .poll(() => getCanonicalAiElementCount(actorA), {
@@ -3624,12 +3929,14 @@ test('keeps two connected Actors converged through one complete high-detail cat 
       afterUndoPublicationCounts,
       Math.max(1, redoStartedAt + HIGH_DETAIL_HISTORY_TIMEOUT_MS - Date.now())
     )
+
     evidence.redoConvergenceMs = Date.now() - redoStartedAt
     expect(evidence.redoConvergenceMs).toBeLessThanOrEqual(
       HIGH_DETAIL_HISTORY_TIMEOUT_MS
     )
     const afterRedoPublicationCounts = redoPublicationSettlement.counts
     const redoPublicationWindows = redoPublicationSettlement.publicationWindows
+
     expect(redoPublicationWindows).toBeGreaterThan(1)
     expect(redoPublicationWindows).toBeLessThanOrEqual(
       maxHighDetailPublicationWindows
@@ -3683,41 +3990,49 @@ test('keeps two connected Actors converged through one complete high-detail cat 
         actorA
       ).catch(() => undefined)
     }
+
     if (!evidence.historyReplayPhases && !actorA.isClosed()) {
       evidence.historyReplayPhases = await getHistoryReplayPhaseCapture(
         actorA
       ).catch(() => undefined)
     }
+
     if (!evidence.peerHistoryReplayPhases && !actorB.isClosed()) {
       evidence.peerHistoryReplayPhases = await getHistoryReplayPhaseCapture(
         actorB
       ).catch(() => undefined)
     }
+
     if (!evidence.peerHistoryReplayPaints && !actorB.isClosed()) {
       evidence.peerHistoryReplayPaints = await getHistoryReplayPaintCapture(
         actorB
       ).catch(() => undefined)
     }
+
     if (!actorA.isClosed()) {
       const diagnostics = await getCollaborationDiagnostics(actorA).catch(
         () => undefined
       )
+
       const summarizePaintObservations = (
         observations: readonly HistoryReplayPaintEvidence[]
       ) =>
         observations.reduce<HistoryReplayPaintEvidence[]>(
           (distinct, observation) => {
             const previous = distinct.at(-1)
+
             if (
               previous?.canonicalCount !== observation.canonicalCount ||
               previous.renderedCount !== observation.renderedCount
             ) {
               distinct.push(observation)
             }
+
             return distinct
           },
           []
         )
+
       // eslint-disable-next-line no-console
       console.log(
         `AI_HIGH_DETAIL_HISTORY_RESULT ${JSON.stringify({
@@ -3780,6 +4095,7 @@ test('keeps two connected Actors converged through one complete high-detail cat 
         })}`
       )
     }
+
     await testInfo.attach('high-detail-undo-evidence.json', {
       body: JSON.stringify(evidence, null, 2),
       contentType: 'application/json'
@@ -3804,9 +4120,11 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
   test.setTimeout(900_000)
 
   const baseURL = testInfo.project.use.baseURL
+
   if (typeof baseURL !== 'string') {
     throw new Error('The AI CRDT recording requires an App base URL')
   }
+
   let actorAContext: BrowserContext | null = null
   let actorBContext: BrowserContext | null = null
   let actorA: Page | null = null
@@ -3827,6 +4145,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
         readonly actorBRenderedMs: number
       }
     | undefined
+
   try {
     const actorAResult = await launchIndependentActor(
       baseURL,
@@ -3838,6 +4157,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
         width: recordingWindowWidth
       }
     )
+
     actorAContext = actorAResult.context
     actorA = actorAResult.page
     const actorBResult = await launchIndependentActor(
@@ -3850,10 +4170,12 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
         width: recordingWindowWidth
       }
     )
+
     actorBContext = actorBResult.context
     actorB = actorBResult.page
 
     const fileId = CRDT_7076_SAMPLE_FILE_ID
+
     await installGeneratedActionBatchInterceptor(actorAContext, {
       appUrl: collaborationUrl(fileId),
       fileId,
@@ -3878,6 +4200,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
       prepareCompleteCatViewport(actorA),
       prepareCompleteCatViewport(actorB)
     ])
+
     expect(actorAFrame.scale).toBeGreaterThan(0)
     expect(actorAFrame.scale).toBeLessThan(1)
     expect(actorBFrame.scale).toBeGreaterThan(0)
@@ -3887,6 +4210,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
     await actorB.bringToFront()
     await actorB.waitForTimeout(250)
     const captureBounds = await resolveStackedCaptureBounds(actorA, actorB)
+
     nativeRecording = await startNativeScreenRecording(
       captureBounds,
       sourceVideoPath
@@ -3898,6 +4222,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
     const actorABefore = await getUndoHistoryDepth(actorA)
     const actorBBefore = await getUndoHistoryDepth(actorB)
     const operationStartedAt = Date.now()
+
     reportRecordingStage('send')
     const createdTurnPromise = submitTurn(actorA, exactCatOnlyPrompt, 1).then(
       (turn) => ({
@@ -3906,6 +4231,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
       })
     )
     const { actorACompletedAt, turn: createdTurn } = await createdTurnPromise
+
     reportRecordingStage('actor-a-complete')
     const remainingConvergenceMs = Math.max(
       1,
@@ -3916,6 +4242,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
       actorB,
       remainingConvergenceMs
     )
+
     await actorB.evaluate(
       async () =>
         new Promise<void>((resolve) => {
@@ -3923,6 +4250,7 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
         })
     )
     const actorBRenderedAt = Date.now()
+
     reportRecordingStage('actor-b-rendered')
     timingEvidence = {
       actorACompletedMs: actorACompletedAt - operationStartedAt,
@@ -3957,12 +4285,14 @@ test('records two live CRDT clients while Agent creates the same cat', async ({}
     if (nativeRecording) {
       await nativeRecording.stop()
     }
+
     await Promise.all([actorAContext?.close(), actorBContext?.close()])
   }
 
   if (!recordingCompleted || !timingEvidence) {
     throw new Error('The dual-client live-window recording did not complete')
   }
+
   await convertNativeRecording(sourceVideoPath, videoPath)
   // eslint-disable-next-line no-console
   console.log(`AI_CRDT_RECORDING_TIMING ${JSON.stringify(timingEvidence)}`)

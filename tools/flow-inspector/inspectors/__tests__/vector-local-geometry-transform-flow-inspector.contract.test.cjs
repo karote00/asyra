@@ -8,7 +8,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -121,8 +123,10 @@ test('every route and artifact has one resolvable owner-consumer handoff', () =>
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
     if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner`)
       if (route.to) {
@@ -254,8 +258,10 @@ test('dense transform acceptance binds unchanged data and no strategy rebuild', 
   const contract = data.acceptanceContracts.find(
     (item) => item.id === 'dense-vector-transform-cost'
   )
+
   assert.ok(contract)
   const text = contract.assertions.join(' ')
+
   assert.match(text, /7,001-point Vector/i)
   assert.match(text, /complete checked-in crdt-7076 fixture/i)
   assert.match(text, /densest Vector/i)

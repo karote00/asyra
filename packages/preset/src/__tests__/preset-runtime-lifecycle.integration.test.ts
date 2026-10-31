@@ -11,9 +11,11 @@ const spatial = vi.hoisted(() => ({
   options: [] as unknown[],
   fail: false
 }))
+
 vi.mock('../spatial/three-engine.js', async () => {
   const { RecordingRenderEngine } = await import('@asyra/render-engine/testing')
   const { RenderEngineCapabilities } = await import('@asyra/render-engine')
+
   return {
     ThreeEngine: class extends RecordingRenderEngine {
       constructor(_platform?: unknown, options?: unknown) {
@@ -24,16 +26,20 @@ vi.mock('../spatial/three-engine.js', async () => {
         spatial.created.push(this)
         spatial.options.push(options)
         const initialize = this.initialize.bind(this)
+
         this.initialize = (input) => {
           if (spatial.fail) {
             throw new Error('WebGL initialization rejected')
           }
+
           return {
             ...initialize(input),
             surface: document.createElement('canvas')
           }
         }
+
         const destroy = this.destroy.bind(this)
+
         this.destroy = vi.fn(destroy)
       }
     }
@@ -45,18 +51,26 @@ const empty = {
   props: {},
   sceneTree: { workspace: '', workspaceList: [], elements: {} }
 }
+
 const start = async (host: HTMLElement) => {
   core.setRenderer({
     name: 'preset-lifecycle-surface',
+
     init: async () => ({
       canvas: document.createElement('canvas'),
       instance: null
     }),
+
     destroy: vi.fn(),
+
     getCanvas: () => null,
+
     getInstance: () => null,
+
     getViewportPosition: () => ({ x: 0, y: 0 }),
+
     getViewportScale: () => 1,
+
     setViewportPosition: vi.fn(),
     setViewportScale: vi.fn(),
     resize: vi.fn()
@@ -75,14 +89,17 @@ describe('Preset complete Core handoff', () => {
   it('reapplies all defaults to a fresh Core without retaining prior load subscriptions or managed state', async () => {
     const first = core,
       host = document.createElement('div')
+
     applyPreset(first, { profile: PresetProfiles.CUSTOM })
     const oldZoom = first.getSystemPropertyObservable<number>(
       PresetSystemPropertyKeys.ZOOM
     )
     const completed = vi.fn()
+
     oldZoom?.subscribe({ complete: completed })
     await start(host)
     const next = await first.resetRuntime()
+
     expect(core).toBe(next)
     expect(completed).toHaveBeenCalledOnce()
     expect(host.querySelectorAll('canvas')).toHaveLength(0)
@@ -91,6 +108,7 @@ describe('Preset complete Core handoff', () => {
 
     applyPreset(next, { profile: PresetProfiles.CUSTOM })
     const reload = vi.spyOn(renderSceneTreeStore, 'reload')
+
     next.load(empty)
     expect(reload).toHaveBeenCalledOnce()
     expect(next.getUndoHistoryDepth()).toBe(0)
@@ -106,6 +124,7 @@ it('starts the official 3D provider once, retires INPUT and surface ownership, a
   const host = document.createElement('div')
   const initialCount = spatial.created.length
   const first = core
+
   applyPreset(first, {
     profile: PresetProfiles['3D'],
     defaults: [PresetDefaults.INPUT]
@@ -116,10 +135,13 @@ it('starts the official 3D provider once, retires INPUT and surface ownership, a
   expect(spatial.created).toHaveLength(initialCount + 1)
   expect(host.querySelectorAll('canvas')).toHaveLength(1)
   const engine = spatial.created.at(-1)
+
   if (!engine) {
     throw new Error('Missing initialized delegate')
   }
+
   const next = await first.resetRuntime()
+
   expect(engine.destroy).toHaveBeenCalledOnce()
   expect(host.querySelectorAll('canvas')).toHaveLength(0)
   expect(next.getRegistrations()).toEqual([])
@@ -140,6 +162,7 @@ it('starts the official 3D provider once, retires INPUT and surface ownership, a
 it('preserves official initialization failure without a fallback canvas and cleans the failed generation', async () => {
   const host = document.createElement('div')
   const first = core
+
   applyPreset(first, { profile: PresetProfiles['3D'], defaults: [] })
   spatial.fail = true
   try {
@@ -148,11 +171,14 @@ it('preserves official initialization failure without a fallback canvas and clea
     ).rejects.toThrow('WebGL initialization rejected')
     expect(host.querySelectorAll('canvas')).toHaveLength(0)
     const engine = spatial.created.at(-1)
+
     if (!engine) {
       throw new Error('Missing initialized delegate')
     }
+
     expect(engine.destroy).toHaveBeenCalledOnce()
     const next = await first.resetRuntime()
+
     expect(engine.destroy).toHaveBeenCalledOnce()
     expect(next.hasRenderEngineProvider()).toBe(false)
     expect(next.getRegistrations()).toEqual([])
@@ -164,6 +190,7 @@ it('preserves official initialization failure without a fallback canvas and clea
 it('keeps simultaneous official provider lifetimes isolated through Render', async () => {
   const first = new Render(),
     second = new Render()
+
   for (const render of [first, second]) {
     bindPresetProfileProvider(
       {
@@ -173,14 +200,18 @@ it('keeps simultaneous official provider lifetimes isolated through Render', asy
       PresetProfiles['3D']
     )
   }
+
   try {
     await first.init(100, 100, 0)
     const firstEngine = spatial.created.at(-1)
+
     await second.init(200, 200, 0)
     const secondEngine = spatial.created.at(-1)
+
     if (!firstEngine || !secondEngine) {
       throw new Error('Missing delegates')
     }
+
     expect(firstEngine).not.toBe(secondEngine)
     first.resetRuntime()
     expect(firstEngine.destroy).toHaveBeenCalledOnce()
@@ -207,6 +238,7 @@ it('delivers detached App presentation settings to the deferred concrete owner',
     castShadows: false
   }
   const first = core
+
   applyPreset(first, {
     profile: PresetProfiles['3D'],
     defaults: [],

@@ -15,6 +15,7 @@ const assertImplementationBoundary = (owner, implementationFile, label) => {
   const concretePath = implementationFile.endsWith('/**')
     ? implementationFile.slice(0, -3)
     : implementationFile
+
   assert.ok(
     fs.existsSync(path.resolve(repoRoot, concretePath)),
     `${label} boundary does not resolve: ${implementationFile}`
@@ -23,13 +24,17 @@ const assertImplementationBoundary = (owner, implementationFile, label) => {
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
 const route = (id) => {
   const value = data.routes.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector route: ${id}`)
+
   return value
 }
 
@@ -448,6 +453,7 @@ test('every step has exact execution fields and all routes/artifacts resolve', (
     if (item.to) {
       assert.ok(stepIds.has(item.to), `Unknown route destination: ${item.to}`)
     }
+
     item.producedArtifacts.forEach((artifactId) => {
       assert.ok(
         artifactIds.has(artifactId),

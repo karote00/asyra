@@ -42,6 +42,7 @@ const collectMisplacedTestFiles = async (directory, relativeDirectory = '') => {
 
     const relativePath = path.posix.join(relativeDirectory, entry.name)
     const absolutePath = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       violations.push(
         ...(await collectMisplacedTestFiles(absolutePath, relativePath))
@@ -57,6 +58,7 @@ const collectMisplacedTestFiles = async (directory, relativeDirectory = '') => {
     const isDedicatedE2ESpec = dedicatedE2ERoots.some((root) =>
       relativePath.startsWith(root)
     )
+
     if (!isInTestDirectory && !isDedicatedE2ESpec) {
       violations.push(relativePath)
     }
@@ -67,8 +69,10 @@ const collectMisplacedTestFiles = async (directory, relativeDirectory = '') => {
 
 test('placement checks exclude linked checkouts while retaining maintained source violations', async (context) => {
   const temporaryRoot = path.join(repositoryRoot, 'tmp')
+
   await mkdir(temporaryRoot, { recursive: true })
   const fixtureRoot = await mkdtemp(path.join(temporaryRoot, 'test-placement-'))
+
   context.after(() => rm(fixtureRoot, { recursive: true, force: true }))
   for (const file of [
     '.worktrees/feature/apps/example/src/foreign.test.ts',
@@ -78,9 +82,11 @@ test('placement checks exclude linked checkouts while retaining maintained sourc
     'create-app/asyra-design/template/src/misplaced.test.ts'
   ]) {
     const destination = path.join(fixtureRoot, file)
+
     await mkdir(path.dirname(destination), { recursive: true })
     await writeFile(destination, '')
   }
+
   assert.deepEqual((await collectMisplacedTestFiles(fixtureRoot)).sort(), [
     'create-app/asyra-design/template/src/misplaced.test.ts',
     'packages/example/src/misplaced.test.ts'

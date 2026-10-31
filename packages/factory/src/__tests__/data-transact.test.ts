@@ -62,9 +62,13 @@ const runWithOwnedTransact = <T>(
   runWithTransactionOwner(
     {
       startTransaction: () => transact.start(),
+
       updateTransactionBatch: (events) => transact.updateBatch(events),
+
       endTransaction: (options) => transact.end(options),
+
       undo: () => transact.undo(),
+
       redo: () => transact.redo()
     },
     callback
@@ -83,6 +87,7 @@ const createMutatingSharedPush =
   (_name, changes) => {
     received.push(changes)
     Reflect.set((changes[0] as { after: { value: number } }).after, 'value', 99)
+
     return true
   }
 
@@ -97,11 +102,14 @@ const mutatingSharedSinkFixtures: readonly [
       const sink = new SharedDataChannelRegistry()
       const originalPush =
         SharedDataChannelRegistry.prototype.pushBatchToSharedChannel
+
       SharedDataChannelRegistry.prototype.pushBatchToSharedChannel =
         createMutatingSharedPush(received)
+
       return {
         sink,
         received,
+
         restore: () => {
           SharedDataChannelRegistry.prototype.pushBatchToSharedChannel =
             originalPush
@@ -114,7 +122,9 @@ const mutatingSharedSinkFixtures: readonly [
     () => {
       const received: (readonly unknown[])[] = []
       const sink = new SharedDataChannelRegistry()
+
       sink.pushBatchToSharedChannel = createMutatingSharedPush(received)
+
       return { sink, received }
     }
   ],
@@ -123,6 +133,7 @@ const mutatingSharedSinkFixtures: readonly [
     () => {
       const received: (readonly unknown[])[] = []
       const push = createMutatingSharedPush(received)
+
       class MutatingSharedDataChannelRegistry extends SharedDataChannelRegistry {
         override pushBatchToSharedChannel(
           name: string,
@@ -131,6 +142,7 @@ const mutatingSharedSinkFixtures: readonly [
           return Reflect.apply(push, this, [name, changes])
         }
       }
+
       return {
         sink: new MutatingSharedDataChannelRegistry(),
         received
@@ -143,12 +155,14 @@ const mutatingSharedSinkFixtures: readonly [
       const received: (readonly unknown[])[] = []
       const push = createMutatingSharedPush(received)
       const target = new SharedDataChannelRegistry()
+
       return {
         sink: new Proxy(target, {
           get: (registry, property, receiver) =>
             property === 'pushBatchToSharedChannel'
               ? push
               : Reflect.get(registry, property, receiver),
+
           getPrototypeOf: () => {
             throw new Error('prototype inspection blocked')
           }
@@ -165,6 +179,7 @@ describe('DataTransact hierarchy replay', () => {
     const transact = new DataTransact(undefined, {
       onReplayEvent: (event) => {
         replayed.push(event)
+
         return true
       }
     })
@@ -396,9 +411,11 @@ describe('DataTransact user action completion', () => {
     let after = 1
     const payload = {
       id: 'test.accessor-shared-snapshot',
+
       get before() {
         return { value: before }
       },
+
       get after() {
         return { value: after }
       }
@@ -434,6 +451,7 @@ describe('DataTransact user action completion', () => {
       before: 0,
       after: 1
     })
+
     observed.length = 0
 
     transact.start()
@@ -510,7 +528,9 @@ describe('DataTransact user action completion', () => {
         const payload = changes[0] as {
           after: { value: number }
         }
+
         Reflect.set(payload.after, 'value', 99)
+
         return true
       }
     )
@@ -543,6 +563,7 @@ describe('DataTransact user action completion', () => {
 
     const deliveredBatch = pushBatchToSharedChannel.mock.calls[0]?.[1] as
       readonly unknown[] | undefined
+
     expect(deliveredBatch).toHaveLength(1)
     expect(Object.isFrozen(deliveredBatch)).toBe(true)
     expect(
@@ -667,6 +688,7 @@ describe('DataTransact user action completion', () => {
       },
       {
         onStatus: (status) => statuses.push(status),
+
         onReplayEvent: () => true
       }
     )
@@ -696,8 +718,10 @@ describe('DataTransact user action completion', () => {
     const replayed: AllEvent[] = []
     const transact = new DataTransact(undefined, {
       onStatus: (status) => statuses.push(status),
+
       onReplayEvent: (event) => {
         replayed.push(event)
+
         return true
       }
     })
@@ -712,6 +736,7 @@ describe('DataTransact user action completion', () => {
       } as unknown as UpdateTransactionEvent['payload']
     })
     let batchFailure: unknown
+
     try {
       transact.updateBatch([
         {
@@ -795,6 +820,7 @@ describe('DataTransact user action completion', () => {
 
       transact.start()
       let batchFailure: unknown
+
       try {
         transact.updateBatch([
           {
@@ -846,10 +872,12 @@ describe('DataTransact user action completion', () => {
       {
         onReplayEvent: (event) => {
           replayed.push(event)
+
           return true
         }
       }
     )
+
     const createImmediateEvent = (
       id: string,
       before: number,
@@ -868,6 +896,7 @@ describe('DataTransact user action completion', () => {
 
     transact.start()
     let batchFailure: unknown
+
     try {
       transact.updateBatch([
         createImmediateEvent('batch.first', 0, 1),
@@ -922,6 +951,7 @@ describe('DataTransact user action completion', () => {
             }
           ).undoStack.length
         )
+
         return true
       })
       .mockImplementationOnce(() => {
@@ -934,9 +964,11 @@ describe('DataTransact user action completion', () => {
       { pushBatchToSharedChannel },
       {
         onStatus: (status) => statuses.push(status),
+
         onUserActionCompleted: completion
       }
     )
+
     harness.transact = transact
     const observed: unknown[] = []
     const subscription = subscribeToSynchronousEvent<TestCanonicalUpdateEvent>(
@@ -1023,6 +1055,7 @@ describe('DataTransact user action completion', () => {
       {
         onReplayEvent: (event) => {
           replayed.push(event)
+
           return true
         }
       }
@@ -1172,6 +1205,7 @@ describe('DataTransact user action completion', () => {
     })
     transact.registerValidator('selection', () => {
       order.push('selection')
+
       return { valid: true }
     })
 
@@ -1198,6 +1232,7 @@ describe('DataTransact user action completion', () => {
     const completionSubscriber = vi.fn()
     const completionSubscription =
       subscribeToUserActionCompleted(completionSubscriber)
+
     observed.length = 0
     completionSubscriber.mockClear()
     transact.registerValidator('cross-store', () => ({
@@ -1229,6 +1264,7 @@ describe('DataTransact user action completion', () => {
         observed.push(event as unknown as ObservedPayloadEvent)
       }
     })
+
     observed.length = 0
     transact.registerValidator('async-validator', (() =>
       Promise.resolve({ valid: true })) as never)
@@ -1246,9 +1282,11 @@ describe('DataTransact user action completion', () => {
     const transact = new DataTransact()
     const validatorFailure = new Error('async validation failed')
     const unhandledRejections: unknown[] = []
+
     const onUnhandledRejection = (reason: unknown) => {
       unhandledRejections.push(reason)
     }
+
     process.on('unhandledRejection', onUnhandledRejection)
     transact.registerValidator('rejected-async-validator', (() =>
       Promise.reject(validatorFailure)) as never)
@@ -1268,6 +1306,7 @@ describe('DataTransact user action completion', () => {
   it('bypasses validators for an explicitly rolled-back transaction', () => {
     const transact = new DataTransact()
     const validator = vi.fn()
+
     transact.registerValidator('unused', validator)
 
     transact.start()
@@ -1288,6 +1327,7 @@ describe('DataTransact user action completion', () => {
     const completionSubscriber = vi.fn()
     const completionSubscription =
       subscribeToUserActionCompleted(completionSubscriber)
+
     observed.length = 0
     completionSubscriber.mockClear()
 
@@ -1326,6 +1366,7 @@ describe('DataTransact user action completion', () => {
         observed.push((event as AllEvent & { payload: unknown }).payload)
       }
     })
+
     observed.length = 0
 
     transact.start()
@@ -1373,6 +1414,7 @@ describe('DataTransact user action completion', () => {
         observed.push((event as AllEvent & { payload: unknown }).payload)
       }
     })
+
     observed.length = 0
 
     transact.start()
@@ -1446,6 +1488,7 @@ describe('DataTransact user action completion', () => {
         id: 'element',
         changes: [{ key: 'material', before: 'source', after: 'local' }]
       }
+
       try {
         transact.start()
         transact.update({
@@ -1461,10 +1504,12 @@ describe('DataTransact user action completion', () => {
           runWithOwnedTransact(transact, () => transact.undo())
           runWithOwnedTransact(transact, () => transact.redo())
         }
+
         const inverse = {
           ...payload,
           changes: [{ key: 'material', before: 'local', after: 'source' }]
         }
+
         expect(observed).toEqual(
           mode === 'rollback' ? [inverse] : [inverse, payload]
         )
@@ -1482,6 +1527,7 @@ describe('DataTransact user action completion', () => {
         observed.push((event as AllEvent & { payload: unknown }).payload)
       }
     })
+
     observed.length = 0
 
     transact.start()
@@ -1537,8 +1583,10 @@ describe('DataTransact user action completion', () => {
     }>(EventTypes.UPDATE_ELEMENT_DATA, (event) => {
       observed.push(event.payload)
       acknowledgeTransactionReplayApplied()
+
       return true
     })
+
     observed.length = 0
 
     transact.start()
@@ -1618,6 +1666,7 @@ describe('DataTransact user action completion', () => {
     }>(EventTypes.ADD_ELEMENTS, (event) => {
       observed.push({ type: event.type, payload: event.payload })
       acknowledgeTransactionReplayApplied()
+
       return true
     })
     const removeSubscription = subscribeToSynchronousEvent<{
@@ -1626,6 +1675,7 @@ describe('DataTransact user action completion', () => {
     }>(EventTypes.REMOVE_ELEMENTS, (event) => {
       observed.push({ type: event.type, payload: event.payload })
       acknowledgeTransactionReplayApplied()
+
       return true
     })
     const entries = [
@@ -1716,6 +1766,7 @@ describe('DataTransact user action completion', () => {
       ) {
         return
       }
+
       transact.update({
         type: TransactionEventTypes.UPDATE_TRANSACTION,
         eventName: EventTypes.UPDATE_PROPERTY,
@@ -1841,10 +1892,13 @@ describe('DataTransact user action completion', () => {
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         const nextValue = event.payload.after as number
+
         if (Object.is(value, nextValue)) {
           return false
         }
+
         value = nextValue
+
         return true
       }
     )
@@ -1874,6 +1928,7 @@ describe('DataTransact user action completion', () => {
       committed: 1,
       later: 0
     }
+
     const createNamedUpdate = (
       id: string,
       before: number,
@@ -1882,6 +1937,7 @@ describe('DataTransact user action completion', () => {
       ...createUpdateEvent(),
       payload: { id, before, after }
     })
+
     const subscription = subscribeToSynchronousEvent<TestCanonicalUpdateEvent>(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -1928,10 +1984,12 @@ describe('DataTransact user action completion', () => {
       journaled: 1,
       direct: 1
     }
+
     const createNamedUpdate = (id: string): UpdateTransactionEvent => ({
       ...createUpdateEvent(),
       payload: { id, before: 0, after: 1 }
     })
+
     const subscription = subscribeToSynchronousEvent<TestCanonicalUpdateEvent>(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -1975,10 +2033,12 @@ describe('DataTransact user action completion', () => {
       journaled: 1
     }
     let failReplay = true
+
     const createNamedUpdate = (id: string): UpdateTransactionEvent => ({
       ...createUpdateEvent(),
       payload: { id, before: 0, after: 1 }
     })
+
     const subscription = subscribeToSynchronousEvent<TestCanonicalUpdateEvent>(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -2035,10 +2095,12 @@ describe('DataTransact user action completion', () => {
       failing: 1
     }
     let failReplay = false
+
     const createNamedUpdate = (id: string): UpdateTransactionEvent => ({
       ...createUpdateEvent(),
       payload: { id, before: 0, after: 1 }
     })
+
     const subscription = subscribeToSynchronousEvent<TestCanonicalUpdateEvent>(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -2098,12 +2160,16 @@ describe('DataTransact user action completion', () => {
       onReplayEvent: (event) => {
         if (event.type === EventTypes.ADD_ELEMENT) {
           elementExists = true
+
           return true
         }
+
         if (event.type === EventTypes.REMOVE_ELEMENT) {
           elementExists = false
+
           return true
         }
+
         return false
       }
     })
@@ -2137,13 +2203,16 @@ describe('DataTransact user action completion', () => {
         if (String(event.type) === 'custom.multi') {
           values.first = 1
           values.second = 1
+
           return true
         }
+
         if (event.type !== EventTypes.UPDATE_PROPERTY) {
           return false
         }
 
         const payload = (event as TestCanonicalUpdateEvent).payload
+
         values[payload.id] = payload.after as number
         acknowledgeTransactionReplayApplied()
         if (
@@ -2154,9 +2223,11 @@ describe('DataTransact user action completion', () => {
           throwAfterMutation = false
           throw new Error('owner failed after mutation')
         }
+
         return true
       }
     })
+
     transact.registerInverter('custom.multi', () => [
       {
         type: EventTypes.UPDATE_PROPERTY,
@@ -2195,11 +2266,14 @@ describe('DataTransact user action completion', () => {
       onReplayEvent: (event) => {
         if (String(event.type) === 'custom.output') {
           outputApplied = true
+
           return true
         }
+
         return false
       }
     })
+
     transact.registerInverter('custom.source', () => ({
       type: 'custom.output' as AllEvent['type'],
       payload: { id: 'custom-output' }
@@ -2223,14 +2297,17 @@ describe('DataTransact user action completion', () => {
     const statuses: TransactionStatusPayload[] = []
     const transact = new DataTransact(undefined, {
       onStatus: (status) => statuses.push(status),
+
       onReplayEvent: (_event, mode) => {
         if (mode === 'undo') {
           acknowledgeTransactionReplayApplied()
           throw new Error('undo apply failed')
         }
+
         if (mode === 'rollback') {
           throw new Error('restoration apply failed')
         }
+
         return false
       }
     })
@@ -2256,16 +2333,21 @@ describe('DataTransact user action completion', () => {
         if (String(event.type) !== 'custom.delta') {
           return false
         }
+
         const delta = (event as AllEvent & { payload: { delta: number } })
           .payload.delta
+
         if (delta < 0 && failBeforeApply) {
           failBeforeApply = false
           throw new Error('delta failed before apply')
         }
+
         value += delta
+
         return true
       }
     })
+
     transact.registerInverter('custom.delta', (event) => ({
       ...event,
       payload: {
@@ -2298,16 +2380,20 @@ describe('DataTransact user action completion', () => {
         if (String(event.type) !== 'custom.delta') {
           return false
         }
+
         const delta = (event as AllEvent & { payload: { delta: number } })
           .payload.delta
+
         value += delta
         if (mode === 'undo') {
           acknowledgeTransactionReplayApplied()
           throw primitiveFailure
         }
+
         return true
       }
     })
+
     transact.registerInverter('custom.delta', (event) => ({
       ...event,
       payload: {
@@ -2414,10 +2500,13 @@ describe('DataTransact user action completion', () => {
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         const nextValue = event.payload.after as number
+
         if (Object.is(value, nextValue)) {
           return false
         }
+
         value = nextValue
+
         return true
       }
     )
@@ -2453,6 +2542,7 @@ describe('DataTransact user action completion', () => {
         observed.push(event)
       }
     })
+
     observed.length = 0
 
     transact.start()
@@ -2488,6 +2578,7 @@ describe('DataTransact user action completion', () => {
         observed.push(event as unknown as ObservedPayloadEvent)
       }
     })
+
     observed.length = 0
     transact.registerInverter('broken.change', () => {
       throw new Error('broken inverter')
@@ -2529,6 +2620,7 @@ describe('DataTransact user action completion', () => {
         observed.push(event as unknown as ObservedPayloadEvent)
       }
     })
+
     observed.length = 0
     transact.registerInverter(
       'custom.invalid-output',
@@ -2598,6 +2690,7 @@ describe('DataTransact user action completion', () => {
         observed.push(event as unknown as ObservedPayloadEvent)
       }
     })
+
     observed.length = 0
     transact.registerInverter('custom.change', (event) => ({
       ...event,
@@ -2632,6 +2725,7 @@ describe('DataTransact user action completion', () => {
         outputObserver(event)
       }
     })
+
     transact.registerInverter('custom.source', (event) => ({
       ...event,
       type: 'custom.irreversible-output' as AllEvent['type']
@@ -2661,14 +2755,18 @@ describe('DataTransact user action completion', () => {
     const outputApplied = vi.fn()
     const transact = new DataTransact(undefined, {
       onStatus: (status) => statuses.push(status),
+
       onReplayEvent: (event) => {
         if (String(event.type) === 'custom.output') {
           outputApplied(event)
+
           return true
         }
+
         return false
       }
     })
+
     transact.registerInverter('custom.source', (event) => ({
       ...event,
       type: 'custom.output' as AllEvent['type']
@@ -2702,20 +2800,24 @@ describe('DataTransact user action completion', () => {
         if (String(event.type) !== 'custom.clone') {
           return false
         }
+
         value = (
           event as AllEvent & {
             payload: { after: typeof value }
           }
         ).payload.after
+
         return true
       }
     })
+
     transact.registerInverter('custom.clone', (event) => {
       const payload = (
         event as AllEvent & {
           payload: { before: typeof value; after: typeof value }
         }
       ).payload
+
       return {
         ...event,
         payload: { before: payload.after, after: payload.before }
@@ -2740,6 +2842,7 @@ describe('DataTransact user action completion', () => {
     const transact = new DataTransact(undefined, {
       onStatus: (status) => statuses.push(status)
     })
+
     transact.registerInverter('custom.empty', () => [])
 
     transact.start()
@@ -2910,6 +3013,7 @@ describe('DataTransact user action completion', () => {
     const transact = new DataTransact()
     const subscriber = vi.fn()
     const subscription = subscribeToUserActionCompleted(subscriber)
+
     subscriber.mockClear()
 
     transact.start()
@@ -2930,6 +3034,7 @@ describe('DataTransact user action completion', () => {
     const transact = new DataTransact()
     const subscriber = vi.fn()
     const subscription = subscribeToUserActionCompleted(subscriber)
+
     subscriber.mockClear()
 
     transact.start()
@@ -2972,6 +3077,7 @@ describe('DataTransact user action completion', () => {
     const transact = new DataTransact({ pushBatchToSharedChannel })
     const subscriber = vi.fn()
     const subscription = subscribeToUserActionCompleted(subscriber)
+
     subscriber.mockClear()
 
     transact.start()
@@ -3019,6 +3125,7 @@ describe('DataTransact user action completion', () => {
       })
     )
     const [deliveredChange] = pushBatchToSharedChannel.mock.calls[0][1]
+
     expect(
       (deliveredChange as { options: Record<string, unknown> }).options
     ).not.toHaveProperty('shared')
@@ -3043,11 +3150,13 @@ describe('DataTransact user action completion', () => {
           undoStack: readonly unknown[]
         }
       ).undoStack.slice(-1)[0]
+
       return false
     })
     const transact = new DataTransact({ pushBatchToSharedChannel })
     const subscriber = vi.fn()
     const subscription = subscribeToUserActionCompleted(subscriber)
+
     subscriber.mockClear()
 
     transact.start()

@@ -17,13 +17,16 @@ describe('StarterApp storage failures', () => {
       window,
       'localStorage'
     )
+
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
+
       get() {
         throw new DOMException('Storage denied', 'SecurityError')
       }
     })
     const host = document.createElement('div')
+
     document.body.appendChild(host)
     const root = createRoot(host)
 
@@ -46,17 +49,21 @@ describe('StarterApp storage failures', () => {
   })
   it('keeps single-step history available without a UI history counter', async () => {
     const host = document.createElement('div')
+
     document.body.appendChild(host)
     const root = createRoot(host)
+
     try {
       await act(async () => {
         root.render(<StarterApp />)
       })
       const buttons = [...host.querySelectorAll('button')]
       const redo = buttons.find((button) => button.textContent === 'Redo')
+
       if (!redo) {
         throw new Error('Redo control missing')
       }
+
       expect(host.textContent).toContain('Ready')
       expect(redo.disabled).toBe(false)
       await act(async () => {
@@ -76,15 +83,19 @@ describe('StarterApp storage failures', () => {
 
   it('reports a storage error by state even when its text contains unsaved changes', async () => {
     const descriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
+
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
+
       get() {
         throw new Error('unsaved changes - 儲存空間無法使用')
       }
     })
     const host = document.createElement('div')
+
     document.body.appendChild(host)
     const root = createRoot(host)
+
     try {
       await act(async () => {
         root.render(<StarterApp />)
@@ -104,8 +115,10 @@ describe('StarterApp storage failures', () => {
   })
   it('supports React strict effects without duplicate App registrations', async () => {
     const host = document.createElement('div')
+
     document.body.appendChild(host)
     const root = createRoot(host)
+
     try {
       await act(async () => {
         root.render(

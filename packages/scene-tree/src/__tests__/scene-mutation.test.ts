@@ -36,8 +36,10 @@ const RESTORE_CONTRACT_ELEMENT_TYPE = 'scene-restore-contract-mutation-element'
 const RELATION_PROPERTY_NAME = 'linked'
 const RELATION_PROPERTY_TYPE = 'scene-relation-mutation-property'
 const SECOND_RELATION_PROPERTY_TYPE = 'scene-second-relation-mutation-property'
+
 const emptyProps = (): ElementRawData['props'] =>
   ({}) as ElementRawData['props']
+
 const relationProps = (componentId: string): ElementRawData['props'] =>
   ({
     [RELATION_PROPERTY_NAME]: componentId
@@ -178,7 +180,9 @@ class MutableRelationMutationElement extends Element {
 
 class CleanupRelationMutationElement extends RelationMutationElement {
   static materialized: CleanupRelationMutationElement[] = []
+
   static disposeAttempts: string[] = []
+
   static disposeFailureElementId = ''
 
   constructor(data?: Partial<ElementRawData>) {
@@ -196,6 +200,7 @@ class CleanupRelationMutationElement extends RelationMutationElement {
     this.computed = {
       dispose: () => {
         const elementId = this.get('id')
+
         CleanupRelationMutationElement.disposeAttempts.push(elementId)
         if (
           elementId === CleanupRelationMutationElement.disposeFailureElementId
@@ -243,13 +248,17 @@ const appendElementToLoadSnapshot = (
 ): void => {
   snapshot.elements[data.id] = data
   const parentId = data.parentId
+
   if (typeof parentId !== 'string') {
     throw new Error(`Expected load parent for "${data.id}"`)
   }
+
   const parent = snapshot.elements[parentId] as GroupRawData | undefined
+
   if (!parent || !Array.isArray(parent.children)) {
     throw new Error(`Expected load parent "${parentId}"`)
   }
+
   parent.children = [...parent.children, data.id]
 }
 
@@ -258,6 +267,7 @@ const createDetachedRestoreSnapshot = (
   data: ElementRawData
 ) => {
   const parent = sceneTree.currentWorkspace as GroupInstanceTypes
+
   return {
     elementId: data.id,
     removed: [
@@ -408,6 +418,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
 
   it('prepares and applies an exact removal without serializing unrelated active elements', () => {
     const unrelatedSave = second.save.bind(second)
+
     second.save = vi.fn(unrelatedSave)
     const preparedMutation = sceneTree.prepareElementRemoval([first.get('id')])
 
@@ -456,6 +467,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
 
     const events = transactionOwner.updateTransactionBatch.mock
       .calls[0]?.[0] as readonly UpdateTransactionEvent[]
+
     expect(events).toHaveLength(2)
     expect(
       events.map(({ eventName, payload }) => ({
@@ -601,6 +613,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       }
     ])
     const otherSceneTree = new SceneTree(propsManagerOwner)
+
     expect(() =>
       runWithTransactionOwner(createTransactionOwner(), () =>
         otherSceneTree.applyPreparedElementMutation(crossOwnerPreparation)
@@ -613,8 +626,10 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         values: { visible: false }
       }
     ])
+
     first.assignCanonicalElementData({ visible: false })
     const staleOwner = createTransactionOwner()
+
     expect(() =>
       runWithTransactionOwner(staleOwner, () =>
         sceneTree.applyPreparedElementMutation(stalePreparation)
@@ -773,6 +788,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       elements: [data],
       ownerRelations
     })
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -837,6 +853,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       elements.map(({ id }) => sceneTree.getElementById(id)?.save())
     ).toEqual(elements)
     const relations = sceneTree.getElementPropertyRelations(propertyId)
+
     expect(relations).toEqual(ownerRelations)
     expect(Object.isFrozen(relations)).toBe(true)
     expect(relations.every(Object.isFrozen)).toBe(true)
@@ -898,20 +915,25 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it.each([
     {
       name: 'missing later owner relation',
+
       mutate: (
         relations: ElementPropertyRelation[]
       ): ElementPropertyRelation[] => relations.slice(0, 1),
+
       error: /owner relation|coverage/i
     },
     {
       name: 'duplicate later owner relation',
+
       mutate: (
         relations: ElementPropertyRelation[]
       ): ElementPropertyRelation[] => [...relations, { ...relations[1] }],
+
       error: /duplicate owner relation/i
     },
     {
       name: 'unknown later owner element',
+
       mutate: (
         relations: ElementPropertyRelation[]
       ): ElementPropertyRelation[] => [
@@ -921,10 +943,12 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           ownerElementId: 'not-in-this-insertion'
         }
       ],
+
       error: /owner element|owner relation|insertion/i
     },
     {
       name: 'wrong later owner element type',
+
       mutate: (
         relations: ElementPropertyRelation[]
       ): ElementPropertyRelation[] => [
@@ -934,10 +958,12 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           ownerElementType: RAW_ELEMENT_TYPE
         }
       ],
+
       error: /owner element type|relation/i
     },
     {
       name: 'unknown later owner property',
+
       mutate: (
         relations: ElementPropertyRelation[]
       ): ElementPropertyRelation[] => [
@@ -947,10 +973,12 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           ownerPropertyName: 'not-registered'
         }
       ],
+
       error: /owner property|relation/i
     },
     {
       name: 'mismatched later component id',
+
       mutate: (
         relations: ElementPropertyRelation[]
       ): ElementPropertyRelation[] => [
@@ -960,6 +988,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           componentId: 'not-the-snapshot-owner'
         }
       ],
+
       error: /component|relation|props/i
     }
   ])('rejects $name without a Scene or Props prefix', ({ mutate, error }) => {
@@ -1131,6 +1160,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       elements,
       ownerRelations
     })
+
     activeProperties.set(ownerRelations[0].componentId, {
       get: (key) =>
         key === 'id' ? ownerRelations[0].componentId : RELATION_PROPERTY_TYPE
@@ -1178,6 +1208,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       elements: [data],
       ownerRelations
     })
+
     data.name = 'Caller-only name'
     ;(data.props as Record<string, string>)[RELATION_PROPERTY_NAME] =
       'caller-only-property'
@@ -1236,6 +1267,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       elements,
       ownerRelations
     })
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -1248,6 +1280,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     )
 
     let thrown: unknown
+
     try {
       runWithTransactionOwner(transactionOwner, () =>
         sceneTree.applyPreparedElementMutation(preparedMutation)
@@ -1300,12 +1333,15 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         }
       ]
     })
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
     const registration = componentRegistry.get(RELATION_ELEMENT_TYPE)
+
     expect(registration).toBeDefined()
     const originalType = registration?.properties[0]?.type
+
     ;(
       registration?.properties[0] as {
         type: string
@@ -1355,12 +1391,14 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         }
       ]
     })
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
     const definition =
       MutableRelationMutationElement.ordinaryPropertyDefinitions[0]
     const originalType = definition.type
+
     definition.type = SECOND_RELATION_PROPERTY_TYPE
     const createElement = vi.spyOn(sceneTree, 'createElement')
 
@@ -1416,8 +1454,10 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
               componentId: propertyId
             }))
           })
+
           return
         }
+
         sceneTree.prepareCanonicalElementInsertion({
           entries: elements.map((data, offset) => ({
             data,
@@ -1532,6 +1572,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
 
       const events = transactionOwner.updateTransactionBatch.mock
         .calls[0]?.[0] as readonly UpdateTransactionEvent[]
+
       expect(events).toHaveLength(1)
       expect(events[0]?.options).toEqual(expectedOptions)
       expect(events[0]?.canonicalEvidence).toMatchObject({
@@ -1568,6 +1609,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       elements: source,
       ownerRelations: []
     })
+
     source[0].name = 'Caller mutation'
     const transactionOwner = createTransactionOwner()
 
@@ -1593,8 +1635,10 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     expect(transactionOwner.updateTransactionBatch).toHaveBeenCalledOnce()
     const events = transactionOwner.updateTransactionBatch.mock
       .calls[0]?.[0] as readonly UpdateTransactionEvent[]
+
     expect(events).toHaveLength(1)
     const payload = events[0]?.payload as AddRemoveElementsChange
+
     expect(payload.action).toBe(SCENE_TREE_ACTIONS.ADD_ELEMENTS)
     expect(payload.entries.map(({ data }) => data.id)).toEqual([
       'prepared-insertion-first',
@@ -1678,8 +1722,10 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     expect(transactionOwner.updateTransactionBatch).toHaveBeenCalledOnce()
     const events = transactionOwner.updateTransactionBatch.mock
       .calls[0]?.[0] as readonly UpdateTransactionEvent[]
+
     expect(events).toHaveLength(1)
     const payload = events[0]?.payload as AddRemoveElementsChange
+
     expect(payload.action).toBe(SCENE_TREE_ACTIONS.REMOVE_ELEMENTS)
     expect(payload.entries.map(({ data }) => data.id)).toEqual([
       'raw-mutation-second'
@@ -1706,6 +1752,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const applyPreparedElementMutation = vi.fn(
       sceneTree.applyPreparedElementMutation.bind(sceneTree)
     )
+
     sceneTree.prepareCanonicalElementRemoval = prepareCanonicalElementRemoval
     sceneTree.applyPreparedElementMutation = applyPreparedElementMutation
     const transactionOwner = createTransactionOwner()
@@ -1734,6 +1781,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           lock: false
         })
     )
+
     groups.forEach((group, index) =>
       workspace.addNewElements([group], index ? groups[index - 1] : workspace)
     )
@@ -1745,6 +1793,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         count + spy.mock.calls.filter(([key]) => key === 'parentId').length,
       0
     )
+
     expect(parentReads).toBeLessThan(groups.length * 6)
     expect(prepared.orderedElementIds).toEqual([target.get('id')])
     reads.forEach((spy) => spy.mockRestore())
@@ -1769,15 +1818,18 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           lock: false
         })
     )
+
     workspace.addNewElements(roots)
     const unrelatedRead = vi.spyOn(first, 'get')
     const ids = roots.map((element) => element.get('id'))
     const prepared = sceneTree.prepareSubtreesRemoval(ids)
     const reads = unrelatedRead.mock.calls.length
+
     expect(reads).toBeLessThan(12)
     expect(prepared.orderedElementIds).toEqual(ids)
     expect(prepared.evidence).toHaveLength(1)
     const owner = createTransactionOwner()
+
     runWithTransactionOwner(owner, () =>
       sceneTree.applyPreparedElementMutation(prepared)
     )
@@ -1789,6 +1841,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     expect(sceneTree.getElementById(first.get('id'))).toBe(first)
     expect(sceneTree.getElementById(second.get('id'))).toBe(second)
     const evidence = prepared.evidence[0] as AddRemoveElementsChange
+
     expect(evidence.entries.map(({ data }) => data.id)).toEqual(ids)
     expect(evidence.entries.map(({ index }) => index)).toEqual(
       ids.map((_, index) => index + 2)
@@ -1807,6 +1860,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([root])
     workspace.addNewElements([leaf], root)
     const before = sceneTree.save()
@@ -1814,6 +1868,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       leaf.get('id'),
       root.get('id')
     ])
+
     expect(prepared.orderedElementIds).toEqual([leaf.get('id'), root.get('id')])
     expect(prepared.evidence).toHaveLength(1)
     for (const ids of [
@@ -1846,6 +1901,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([root])
     workspace.addNewElements([nested], root)
     workspace.addNewElements([leaf], nested)
@@ -1889,6 +1945,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     expect(owner.updateTransactionBatch).toHaveBeenCalledOnce()
     const events = owner.updateTransactionBatch.mock
       .calls[0]?.[0] as readonly UpdateTransactionEvent[]
+
     expect(events).toHaveLength(1)
     expect(events[0]?.canonicalEvidence).toEqual({
       orderedIds: preparedMutation.orderedElementIds
@@ -1910,6 +1967,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([root])
     workspace.addNewElements([leaf], root)
     sceneTree.cleanChanges()
@@ -1953,6 +2011,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([root])
     workspace.addNewElements([child], root)
     sceneTree.cleanChanges()
@@ -1967,6 +2026,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const result = runWithTransactionOwner(owner, () =>
       sceneTree.removeSubtree(root.get('id'))
     )
+
     expect(result.elementId).toBe(root.get('id'))
     expect(result.removed.map(({ elementId }) => elementId)).toEqual([
       child.get('id'),
@@ -1979,6 +2039,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('retains a shared root and restores the complete subtree when owner handoff rejects', () => {
     const workspace = sceneTree.currentWorkspace as Workspace
     const propertyId = 'typed-subtree-shared-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2002,6 +2063,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       lock: false,
       props: relationProps(propertyId)
     })
+
     workspace.addNewElements([root, retained])
     workspace.addNewElements([child], root)
     sceneTree.cleanChanges()
@@ -2013,6 +2075,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: propertyId
     } satisfies ElementPropertyRelation
+
     expect(preparedMutation.orphanRootPropertyIds).toEqual([])
     expect(preparedMutation.retainedRootPropertyIds).toContain(propertyId)
     expect(preparedMutation.relationReleases).toEqual([
@@ -2059,6 +2122,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([root])
     workspace.addNewElements([firstChild], root)
     sceneTree.cleanChanges()
@@ -2069,6 +2133,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([laterChild], root)
     sceneTree.cleanChanges()
     const sceneBefore = sceneTree.save()
@@ -2087,6 +2152,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('records retained and final-orphan relation releases without cleaning Props', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const propertyId = 'shared-removal-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2116,6 +2182,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       elements,
       ownerRelations
     })
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(insertion)
     )
@@ -2126,6 +2193,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     ])
 
     const firstRemoval = sceneTree.prepareElementRemoval([elements[0].id])
+
     expect(firstRemoval.relationReleases).toEqual([
       {
         componentId: propertyId,
@@ -2153,6 +2221,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         index: workspace.get('children').indexOf(elements[1].id)
       }
     ])
+
     expect(finalRemoval.relationReleases).toEqual([
       {
         componentId: propertyId,
@@ -2175,6 +2244,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('deduplicates one orphan root when a batch releases every shared relation', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const propertyId = 'batch-orphan-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2196,6 +2266,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: propertyId
     }))
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -2223,6 +2294,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const orphanRootId = 'nested-retained-root-r'
     const retainedChildRootId = 'nested-retained-root-c'
+
     ;[orphanRootId, retainedChildRootId].forEach((propertyId) => {
       activeProperties.set(propertyId, {
         get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
@@ -2256,6 +2328,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         RELATION_PROPERTY_NAME
       ]
     }))
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -2279,6 +2352,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('prepares a large shared relation release with linear indexed reads', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const propertyId = 'linear-shared-relation-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2301,6 +2375,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: propertyId
     }))
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -2331,6 +2406,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('keeps the active Scene and relation index unchanged when a later load relation is missing', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const baselinePropertyId = 'load-baseline-relation'
+
     activeProperties.set(baselinePropertyId, {
       get: (key) => (key === 'id' ? baselinePropertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2349,6 +2425,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: baselinePropertyId
     } satisfies ElementPropertyRelation
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -2362,6 +2439,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const replacement = structuredClone(sceneBefore)
     const validPropertyId = 'load-valid-relation'
     const missingPropertyId = 'load-missing-relation'
+
     activeProperties.set(validPropertyId, {
       get: (key) => (key === 'id' ? validPropertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2401,6 +2479,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const replacement = structuredClone(sceneTree.save())
     const propertyId = 'detached-load-relation'
+
     appendElementToLoadSnapshot(replacement, {
       id: 'detached-load-element',
       type: RELATION_ELEMENT_TYPE,
@@ -2464,6 +2543,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
       const propertyId = 'detached-load-invalid-property'
       const replacement = structuredClone(sceneTree.save())
+
       appendElementToLoadSnapshot(replacement, {
         id: 'detached-load-invalid-element',
         type: RELATION_ELEMENT_TYPE,
@@ -2493,6 +2573,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const propertyId = 'detached-load-stale-registration-property'
     const replacement = structuredClone(sceneTree.save())
+
     appendElementToLoadSnapshot(replacement, {
       id: 'detached-load-stale-registration-element',
       type: MUTABLE_RELATION_ELEMENT_TYPE,
@@ -2520,6 +2601,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const definition =
       MutableRelationMutationElement.ordinaryPropertyDefinitions[0]
     const originalType = definition.type
+
     definition.type = SECOND_RELATION_PROPERTY_TYPE
     try {
       expect(() =>
@@ -2528,6 +2610,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     } finally {
       definition.type = originalType
     }
+
     expect(vi.mocked(propsManagerOwner.getPropertyById).mock.calls.length).toBe(
       activeReadCountBefore
     )
@@ -2549,11 +2632,13 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     ({ propertyName, propertyType }) => {
       const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
       const propertyId = `invalid-load-relation-${propertyName}`
+
       activeProperties.set(propertyId, {
         get: (key) => (key === 'id' ? propertyId : propertyType)
       })
       const sceneBefore = sceneTree.save()
       const replacement = structuredClone(sceneBefore)
+
       appendElementToLoadSnapshot(replacement, {
         id: `invalid-load-element-${propertyName}`,
         type: RELATION_ELEMENT_TYPE,
@@ -2606,6 +2691,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           get: (key) => (key === 'id' ? propertyId : activeType)
         })
       }
+
       const data = {
         id: `restore-contract-${propertyId}`,
         type: RESTORE_CONTRACT_ELEMENT_TYPE,
@@ -2633,6 +2719,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
 
   it('rejects a stale subtree restore registration before materialization', () => {
     const propertyId = 'restore-stale-registration-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2674,6 +2761,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('attempts every subtree restore rollback stage while preserving the primary failure', () => {
     const workspace = sceneTree.currentWorkspace as Workspace
     const propertyId = 'restore-all-attempt-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2684,6 +2772,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       lock: false,
       props: relationProps(propertyId)
     })
+
     workspace.addNewElements([element])
     vi.spyOn(element, 'getAllComputedData').mockReturnValue({})
     sceneTree.cleanChanges()
@@ -2691,6 +2780,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       sceneTree.removeSubtree(element.get('id'))
     )
     const preparedMutation = sceneTree.preflightRestoreSubtree(removed)
+
     CleanupRelationMutationElement.disposeAttempts = []
     CleanupRelationMutationElement.disposeFailureElementId = element.get('id')
 
@@ -2699,18 +2789,22 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const replaceBatchParentChildren =
       workspace.replaceBatchParentChildren.bind(workspace)
     let replacementAttempt = 0
+
     workspace.replaceBatchParentChildren = vi.fn((parent, children) => {
       replacementAttempt += 1
       if (replacementAttempt === 1) {
         throw primaryFailure
       }
+
       if (replacementAttempt === 2) {
         throw cleanupFailure
       }
+
       replaceBatchParentChildren(parent, children)
     })
 
     let capturedFailure: unknown
+
     try {
       sceneTree.applyRestoreSubtree(preparedMutation)
     } catch (error) {
@@ -2750,9 +2844,11 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           lock: false
         })
     )
+
     workspace.addNewElements([group])
     workspace.addNewElements(children, group)
     const removedElements = [group, ...children]
+
     removedElements.forEach((element) => {
       vi.spyOn(element, 'getAllComputedData').mockReturnValue({})
     })
@@ -2765,17 +2861,20 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const replaceBatchParentChildren =
       workspace.replaceBatchParentChildren.bind(workspace)
     let replacementAttempt = 0
+
     workspace.replaceBatchParentChildren = vi.fn((parent, nextChildren) => {
       replacementAttempt += 1
       if (replacementAttempt === 1) {
         throw primaryFailure
       }
+
       replaceBatchParentChildren(parent, nextChildren)
     })
     const find = vi.spyOn(Array.prototype, 'find')
     const findCallsBefore = find.mock.calls.length
 
     let capturedFailure: unknown
+
     try {
       sceneTree.applyRestoreSubtree(preparedMutation)
     } catch (error) {
@@ -2783,7 +2882,9 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     } finally {
       workspace.replaceBatchParentChildren = replaceBatchParentChildren
     }
+
     const restoreFindCalls = find.mock.calls.length - findCallsBefore
+
     find.mockRestore()
 
     expect(capturedFailure).toBe(primaryFailure)
@@ -2799,6 +2900,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
 
   it('keeps the relation index equivalent through subtree removal and typed restore', () => {
     const propertyId = 'subtree-restore-relation'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2808,6 +2910,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     ;(sceneTree.currentWorkspace as Workspace).addNewElements([group])
     const data = {
       id: 'subtree-relation-child',
@@ -2824,6 +2927,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: propertyId
     } satisfies ElementPropertyRelation
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -2834,9 +2938,11 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       )
     )
     const child = sceneTree.getElementById(data.id)
+
     if (!child) {
       throw new Error('Expected subtree relation child')
     }
+
     ;[group, child].forEach((element) => {
       ;(
         element as unknown as {
@@ -2850,9 +2956,11 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const removed = runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.removeSubtree(group.get('id'))
     )
+
     expect(sceneTree.getElementPropertyRelations(propertyId)).toEqual([])
 
     const preparedRestore = sceneTree.preflightRestoreSubtree(removed)
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyRestoreSubtree(preparedRestore)
     )
@@ -2867,6 +2975,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('rejects a stale relation-set removal before any Scene write', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const propertyId = 'stale-relation-set-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -2885,6 +2994,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: propertyId
     } satisfies ElementPropertyRelation
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -2904,6 +3014,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ...firstRelation,
       ownerElementId: laterData.id
     }
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -2945,10 +3056,12 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([removalParent, unrelatedParent])
 
     const removedRootId = 'exact-stale-removed-root'
     const retainedRootId = 'exact-stale-retained-root'
+
     ;[removedRootId, retainedRootId].forEach((propertyId) => {
       activeProperties.set(propertyId, {
         get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
@@ -2967,6 +3080,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           RELATION_PROPERTY_NAME
         ]
       } satisfies ElementPropertyRelation
+
       runWithTransactionOwner(createTransactionOwner(), () =>
         sceneTree.applyPreparedElementMutation(
           sceneTree.prepareElementInsertion({
@@ -2996,6 +3110,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       lock: false,
       props: relationProps(retainedRootId)
     } satisfies ElementRawData
+
     insertRelation(removalParent, removableData)
     insertRelation(unrelatedParent, retainedData)
 
@@ -3005,6 +3120,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       id: 'exact-stale-later',
       name: 'Exact Stale Later'
     }
+
     insertRelation(unrelatedParent, laterData)
     const removalParentChildrenBefore = [...removalParent.get('children')]
     const owner = createTransactionOwner()
@@ -3023,6 +3139,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('restores the relation index when removal handoff rejects before acceptance', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const propertyId = 'rejected-removal-relation-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -3041,6 +3158,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: propertyId
     } satisfies ElementPropertyRelation
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -3073,6 +3191,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
   it('keeps relation tuples exact across canonical remove, Undo insertion, and Redo removal', () => {
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
     const propertyId = 'relation-undo-redo-property'
+
     activeProperties.set(propertyId, {
       get: (key) => (key === 'id' ? propertyId : RELATION_PROPERTY_TYPE)
     })
@@ -3091,6 +3210,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       ownerPropertyName: RELATION_PROPERTY_NAME,
       componentId: propertyId
     } satisfies ElementPropertyRelation
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementInsertion({
@@ -3105,6 +3225,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       parentId: workspace.get('id'),
       index: workspace.get('children').indexOf(data.id)
     }
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareCanonicalElementRemoval([removalEntry])
@@ -3145,6 +3266,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([firstParent, secondParent])
 
     const firstChild = new RawMutationElement({
@@ -3159,6 +3281,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       visible: true,
       lock: false
     })
+
     workspace.addNewElements([firstChild], firstParent)
     workspace.addNewElements([secondChild], secondParent)
     sceneTree.cleanChanges()
@@ -3171,6 +3294,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
       workspace,
       'replaceBatchParentChildren'
     )
+
     replaceParentChildren.mockImplementationOnce((parent, children) => {
       ;(parent as Group).replaceChildrenFromCanonicalBatch(children)
     })
@@ -3202,6 +3326,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
           lock: false
         })
     )
+
     workspace.addNewElements(siblings)
     sceneTree.cleanChanges()
     const getContainerChildren = vi.spyOn(
@@ -3217,6 +3342,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const preparedMutation = sceneTree.prepareElementRemoval(
       siblings.map((element) => element.get('id'))
     )
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(preparedMutation)
     )
@@ -3234,6 +3360,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         index: 1
       }
     ])
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(removal)
     )
@@ -3257,6 +3384,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
         }
       ]
     })
+
     runWithTransactionOwner(createTransactionOwner(), () =>
       sceneTree.applyPreparedElementMutation(restoration)
     )
@@ -3279,6 +3407,7 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     const disposeComputed = vi.fn(() => {
       throw new Error('reject computed disposal after accepted handoff')
     })
+
     ;(
       second as unknown as {
         computed: {
@@ -3307,5 +3436,6 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) {
     throw new Error('Required test fixture is unavailable')
   }
+
   return value
 }

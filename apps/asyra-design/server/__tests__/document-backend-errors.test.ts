@@ -19,15 +19,18 @@ const required = <T>(value: T | undefined): T => {
   if (value === undefined) {
     throw new Error('Missing fixture entry')
   }
+
   return value
 }
 
 const store = vi.hoisted(() => ({ transact: vi.fn() }))
+
 vi.mock('../document-backend-store', () => ({
   createFileDocumentMaterializationStore: () => store
 }))
 let record: MaterializedDocumentRecord<AppDocumentData>
 const committed = vi.fn()
+
 beforeEach(() => {
   committed.mockClear()
   record = {
@@ -55,6 +58,7 @@ beforeEach(() => {
       })
   )
 })
+
 const batch = () => {
   const publication = prepareDocumentPublication({
     publicationId: 'publication-a',
@@ -89,6 +93,7 @@ const batch = () => {
       }
     ]
   })
+
   return {
     protocolVersion: 1,
     documentId: 'document-a',
@@ -110,12 +115,14 @@ const batch = () => {
     ]
   }
 }
+
 const request = async (body: unknown) => {
   const server = createDocumentBackendServer({
     dataDirectory: 'server/__tests__/.unused-memory-store',
     port: 0
   })
   const { host, port } = await server.listen()
+
   try {
     const response = await fetch(
       `http://${host}:${port}/api/documents/document-a/persistence-batches`,
@@ -125,11 +132,13 @@ const request = async (body: unknown) => {
         body: JSON.stringify(body)
       }
     )
+
     return { status: response.status, body: await response.json() }
   } finally {
     await server.close()
   }
 }
+
 it('reports an invalid persistence request as 400 without opening storage', async () => {
   store.transact.mockClear()
   expect((await request({ documentId: 'document-a' })).status).toBe(400)
@@ -153,6 +162,7 @@ it('reports storage failure as 500 rather than a document conflict', async () =>
 })
 it('acknowledges an exact HTTP retry without committing the operation twice', async () => {
   const input = batch()
+
   expect((await request(input)).status).toBe(200)
   expect((await request(input)).status).toBe(200)
   expect(committed).toHaveBeenCalledOnce()
@@ -161,6 +171,7 @@ it('acknowledges an exact HTTP retry without committing the operation twice', as
 
 it('rejects changed operation content reusing a durable publication identity', async () => {
   const first = batch()
+
   expect((await request(first)).status).toBe(200)
   const decoded = decodePublicationFramePublication(
     required(first.entries[0]).encodedPublicationFrames.map(
@@ -173,12 +184,14 @@ it('rejects changed operation content reusing a durable publication identity', a
   ).payload as {
     changes: { updates: { values: { x: number } }[] }[]
   }
+
   required(required(payload.changes[0]).updates[0]).values.x = 99
   const encodedPublicationFrames = encodePublicationMessageFrames({
     type: CollaborationMessageTypes.SEND_PUBLICATION,
     requestId: 'different-request',
     publication: changed
   }).map((frame) => Buffer.from(frame).toString('base64'))
+
   expect(
     (
       await request({
@@ -204,6 +217,7 @@ const rewritePublication = (
     )
   )
   const publication = transform(decoded.publication)
+
   return {
     ...input,
     entries: [
@@ -225,6 +239,7 @@ it('acknowledges identical operations regrouped into different transport batches
     const slice = required(publication.slices[0])
     const source = required(slice.batches[0])
     const delivery = required(source.deliveries[0])
+
     return {
       ...publication,
       slices: [
@@ -261,11 +276,13 @@ it('acknowledges identical operations regrouped into different transport batches
       ]
     }
   })
+
   expect((await request(initial)).status).toBe(200)
   const regrouped = rewritePublication(initial, (publication) => {
     const slice = required(publication.slices[0])
     const delivery = required(required(slice.batches[0]).deliveries[0])
     const payload = delivery.payload as { changes: unknown[] }
+
     return {
       ...publication,
       slices: [
@@ -274,6 +291,7 @@ it('acknowledges identical operations regrouped into different transport batches
           orderedIds: ['first', 'second'],
           batches: payload.changes.map((change, index) => {
             const id = index === 0 ? 'first' : 'second'
+
             return {
               batchId: id,
               channel: 'document',
@@ -291,6 +309,7 @@ it('acknowledges identical operations regrouped into different transport batches
       ]
     }
   })
+
   expect(
     (await request({ ...regrouped, batchId: 'regrouped-batch' })).status
   ).toBe(200)
@@ -300,8 +319,10 @@ it('acknowledges identical operations regrouped into different transport batches
 
 it('does not acknowledge a retry when its saved content identity is missing', async () => {
   const input = batch()
+
   expect((await request(input)).status).toBe(200)
   const { publicationDigests: _discarded, ...checkpoint } = record
+
   record = checkpoint
   expect((await request(input)).status).toBe(409)
   expect(committed).toHaveBeenCalledOnce()
@@ -339,6 +360,7 @@ it('commits neither publication when a later operation in the persistence reques
       { ...required(second.entries[0]), sequence: 2 }
     ]
   })
+
   expect(response.status).toBe(422)
   expect(record.durableSequence).toBe(0)
   expect(record.document.props['position-a']).toMatchObject({ x: 0 })
@@ -380,6 +402,7 @@ it('persists an explicit compensation and acknowledges its retry without reapply
     lastSequence: 2,
     entries: [{ ...required(compensation.entries[0]), sequence: 2 }]
   }
+
   expect((await request(input)).status).toBe(200)
   expect((await request(input)).status).toBe(200)
   expect(record.document.props['position-a']).toMatchObject({ x: 0 })
@@ -388,6 +411,7 @@ it('persists an explicit compensation and acknowledges its retry without reapply
 
 it('retries an unchanged request after storage failure and then records exact retry identity', async () => {
   const input = batch()
+
   store.transact.mockRejectedValueOnce(new Error('disk unavailable'))
   expect((await request(input)).status).toBe(500)
   expect(record.durableSequence).toBe(0)
@@ -398,11 +422,13 @@ it('retries an unchanged request after storage failure and then records exact re
 
 it('acknowledges the retried batch boundary even after later publications become durable', async () => {
   const first = batch()
+
   expect((await request(first)).status).toBe(200)
   const later = rewritePublication(batch(), (publication) => ({
     ...publication,
     publicationId: 'later-publication'
   }))
+
   expect(
     (
       await request({
@@ -416,20 +442,25 @@ it('acknowledges the retried batch boundary even after later publications become
     ).status
   ).toBe(200)
   const retried = await request(first)
+
   expect(retried.status).toBe(200)
   expect(retried.body.durableSequence).toBe(1)
   expect(record.durableSequence).toBe(2)
   const queue = createDocumentPersistenceQueue({
     documentId: 'document-a',
     initialDurableSequence: 0,
+
     sendBatch: async (input) => {
       const response = await request(input)
+
       if (response.status !== 200) {
         throw new Error(JSON.stringify(response.body))
       }
+
       return response.body
     }
   })
+
   try {
     queue.enqueue({
       ...required(first.entries[0]),
@@ -461,5 +492,6 @@ it('acknowledges the retried batch boundary even after later publications become
   } finally {
     queue.dispose()
   }
+
   expect(committed).toHaveBeenCalledTimes(2)
 })

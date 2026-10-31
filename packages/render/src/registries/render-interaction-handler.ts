@@ -36,12 +36,14 @@ class RenderInteractionHandlerRegistry {
 
       if (filtered.length === 0) {
         const { [targetId]: removed, ...rest } = this.handlers
+
         this.handlers = rest
       } else {
         this.handlers[targetId] = filtered
       }
     } else {
       const { [targetId]: removed, ...rest } = this.handlers
+
       this.handlers = rest
     }
   }
@@ -51,8 +53,10 @@ class RenderInteractionHandlerRegistry {
     eventType: RenderInteractionEventType
   ): RenderInteractionHandlerRegistration[] {
     const directMatch = this.handlers[targetId]
+
     if (directMatch) {
       const filtered = directMatch.filter((h) => h.eventType === eventType)
+
       return filtered.sort((a, b) => (b.priority || 0) - (a.priority || 0))
     }
 
@@ -67,6 +71,7 @@ class RenderInteractionHandlerRegistry {
 
         if (regex.test(targetId)) {
           const matched = handlers.filter((h) => h.eventType === eventType)
+
           results.push(...matched)
         }
       } catch (e) {
@@ -107,4 +112,5 @@ class RenderInteractionHandlerRegistry {
 
 export const renderInteractionHandlerRegistry =
   new RenderInteractionHandlerRegistry()
+
 export default renderInteractionHandlerRegistry

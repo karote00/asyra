@@ -28,10 +28,12 @@ function deepFreeze<T>(input: T, seen = new WeakSet<object>()): T {
   if (!input || typeof input !== 'object' || seen.has(input)) {
     return input
   }
+
   seen.add(input)
   for (const value of Object.values(input)) {
     deepFreeze(value, seen)
   }
+
   return Object.freeze(input)
 }
 
@@ -45,24 +47,30 @@ export function createExperimentSnapshot(
   ) {
     throw new Error('Invalid snapshot source identity')
   }
+
   const workcell = structuredClone(input.workcell),
     definition = structuredClone(input.definition),
     report = preflightExperiment(workcell, definition, input.methods)
+
   if (report.blockers.length) {
     throw new Error(
       `Experiment preflight blocked: ${report.blockers[0]?.message}`
     )
   }
+
   const required = [
     ...report.assumptions.map((warning) => warning.code),
     ...report.resourceWarnings.map((warning) => warning.code)
   ]
+
   if (required.some((code) => !input.acknowledgedWarningCodes.includes(code))) {
     throw new Error('Every preflight warning requires explicit acknowledgement')
   }
+
   const unexpected = input.acknowledgedWarningCodes.filter(
     (code) => !required.includes(code)
   )
+
   if (unexpected.length) {
     throw new Error('Unknown preflight warning acknowledgement')
   }
@@ -73,6 +81,7 @@ export function createExperimentSnapshot(
       method.version === definition.method.version
   )
   let methodDescriptor: ExperimentSnapshot['methodDescriptor']
+
   if (selected?.manifest) {
     validateInstalledDescriptor(selected)
     methodDescriptor = structuredClone(selected)
@@ -147,7 +156,9 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
   ) {
     throw new Error('Invalid historical snapshot envelope')
   }
+
   const snapshot = structuredClone(input) as unknown as ExperimentSnapshot
+
   if (
     snapshot.version === 1 &&
     snapshot.workcell?.bodies?.some((body) =>
@@ -156,6 +167,7 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
   ) {
     throw new Error('Snapshot version 1 cannot carry original mesh evidence')
   }
+
   if (Object.hasOwn(snapshot, 'methodDescriptor')) {
     validateInstalledDescriptor(snapshot.methodDescriptor)
     if (
@@ -164,6 +176,7 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
     ) {
       throw new Error('Historical method descriptor identity mismatch')
     }
+
     if (
       !validParameterValues(
         snapshot.methodDescriptor.parameterSchema,
@@ -175,6 +188,7 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
       )
     }
   }
+
   const report = inspectHistoricalExperiment(snapshot.workcell, {
     version: 1,
     revision: snapshot.source.experimentRevision,
@@ -186,16 +200,19 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
     rule: snapshot.rule,
     budget: snapshot.budget
   })
+
   if (report.blockers.length) {
     throw new Error(
       `Invalid historical snapshot: ${report.blockers[0]?.message}`
     )
   }
+
   if (snapshot.version === 2) {
     const selected = new Set([
       ...snapshot.scope.primaryBodyIds,
       ...snapshot.scope.influencingBodyIds
     ])
+
     if (
       snapshot.workcell.bodies.some(
         (body) => selected.has(body.id) && !hasResolvedParts(body)
@@ -206,6 +223,7 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
       )
     }
   }
+
   if (
     report.assumptions.some(
       (issue) => !snapshot.acknowledgedWarnings.includes(issue.code)
@@ -213,10 +231,12 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
   ) {
     throw new Error('Historical snapshot has unacknowledged assumptions')
   }
+
   if (
     snapshot.pairs.length !== report.pairs.length ||
     snapshot.pairs.some((pair, index) => {
       const expected = report.pairs[index]
+
       return (
         !hasExactOwnKeys(pair, ['id', 'a', 'b']) ||
         !hasExactOwnKeys(pair.a, ['bodyId', 'colliderId']) ||
@@ -231,5 +251,6 @@ export function validateHistoricalSnapshot(input: unknown): ExperimentSnapshot {
   ) {
     throw new Error('Historical snapshot pairs do not match its declared scope')
   }
+
   return deepFreeze(snapshot)
 }

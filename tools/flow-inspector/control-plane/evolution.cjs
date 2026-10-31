@@ -2,22 +2,28 @@
 const { createHash } = require('node:crypto')
 const path = require('node:path')
 const { validId } = require('./store.cjs')
+
 const hash = (value) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex')
+
 const fingerprint = (value) =>
   typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+
 const freeze = (value) => {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.values(value).forEach(freeze)
     Object.freeze(value)
   }
+
   return value
 }
+
 const requireValue = (condition, message) => {
   if (!condition) {
     throw new Error('Contract evolution: ' + message)
   }
 }
+
 const authorized = (actor, capability) =>
   requireValue(
     typeof actor?.id === 'string' &&
@@ -25,6 +31,7 @@ const authorized = (actor, capability) =>
       actor.capabilities?.includes(capability),
     'action is not authorized'
   )
+
 const targetAcceptanceRequestIdentity = (actorId, request) =>
   hash({
     actor: actorId,
@@ -34,10 +41,12 @@ const targetAcceptanceRequestIdentity = (actorId, request) =>
     reason: request.reason,
     retirement: request.retirement
   })
+
 function validateVerificationReference(version) {
   if (!Object.hasOwn(version, 'verificationSource')) {
     return
   }
+
   const reference = version.verificationSource
   const descriptor = reference?.descriptor
   const contract = version.contract
@@ -48,12 +57,14 @@ function validateVerificationReference(version) {
     test: contract.testFile,
     configuration: contract.configFile
   }
+
   const shape = (value, keys) =>
     value &&
     typeof value === 'object' &&
     !Array.isArray(value) &&
     Object.keys(value).length === keys.length &&
     keys.every((key) => Object.hasOwn(value, key))
+
   requireValue(
     shape(reference, [
       'attemptId',
@@ -104,6 +115,7 @@ function validateVerificationReference(version) {
     'verification descriptor disagrees with admitted contract'
   )
   const paths = Object.values(roles).sort()
+
   requireValue(
     descriptor.files.every(
       (file, index) =>
@@ -118,6 +130,7 @@ function validateVerificationReference(version) {
   const testDigest = descriptor.files.find(
     (file) => file.path === roles.test
   ).digest
+
   requireValue(
     version.selectors.every(
       (selector) =>
@@ -126,6 +139,7 @@ function validateVerificationReference(version) {
     'verification selector does not bind captured test bytes'
   )
 }
+
 function validateVersion(version) {
   requireValue(
     fingerprint(version?.contract?.digest) &&
@@ -135,6 +149,7 @@ function validateVersion(version) {
     'invalid version'
   )
   const identities = new Set()
+
   for (const item of version.selectors) {
     requireValue(
       typeof item?.caseId === 'string' &&
@@ -151,10 +166,13 @@ function validateVersion(version) {
     )
     identities.add(item.caseId)
   }
+
   validateVerificationReference(version)
 }
+
 function createHistory(version) {
   validateVersion(version)
+
   return freeze({
     format: 1,
     revision: 1,
@@ -162,6 +180,7 @@ function createHistory(version) {
     decisions: []
   })
 }
+
 function compareVersion(history, candidate, { relations = [] } = {}) {
   validateVersion(candidate)
   const base = history.versions.at(-1)
@@ -171,9 +190,11 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
   const observed = new Map(candidate.selectors.map((s) => [s.caseId, s]))
   const changes = [],
     blockers = []
+
   if (base.verificationSource && !candidate.verificationSource) {
     blockers.push({ kind: 'missing-verification-source' })
   }
+
   const verificationIdentity = (version) =>
     version.verificationSource
       ? {
@@ -181,8 +202,10 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
           configurationDigest: version.verificationSource.configurationDigest
         }
       : null
+
   const beforeVerification = verificationIdentity(base),
     afterVerification = verificationIdentity(candidate)
+
   if (
     JSON.stringify(beforeVerification) !== JSON.stringify(afterVerification)
   ) {
@@ -200,13 +223,17 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
       ]
     })
   }
+
   for (const item of candidate.contract.cases) {
     const observation = observed.get(item.id)
+
     if (!observation || observation.testName !== item.testName) {
       blockers.push({ kind: 'missing-selector', caseId: item.id })
     }
+
     const old = before.get(item.id),
       selector = previous.get(item.id)
+
     if (!old) {
       changes.push({
         kind: 'addition',
@@ -223,6 +250,7 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
           after: item.testName
         })
       }
+
       if (selector && observation && selector.file !== observation.file) {
         changes.push({
           kind: 'move',
@@ -231,6 +259,7 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
           after: observation.file
         })
       }
+
       if (
         selector &&
         observation &&
@@ -243,6 +272,7 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
           after: observation.contentDigest
         })
       }
+
       if (old.stepId !== item.stepId || old.flowId !== item.flowId) {
         changes.push({
           kind: 'content-change',
@@ -253,6 +283,7 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
       }
     }
   }
+
   for (const item of base.contract.cases) {
     if (!after.has(item.id)) {
       changes.push({
@@ -263,15 +294,19 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
       })
     }
   }
+
   for (const observation of candidate.selectors) {
     if (!after.has(observation.caseId)) {
       blockers.push({ kind: 'unknown-evidence', caseId: observation.caseId })
     }
   }
+
   requireValue(Array.isArray(relations), 'invalid successor relations')
   const related = new Set()
+
   for (const relation of relations) {
     const { kind, before: predecessors, after: successors } = relation
+
     requireValue(
       ['split', 'merge'].includes(kind) &&
         Array.isArray(predecessors) &&
@@ -292,8 +327,10 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
       requireValue(!related.has(id), 'conflicting successor relation')
       related.add(id)
     }
+
     changes.push(structuredClone(relation))
   }
+
   if (base.contract.digest !== candidate.contract.digest) {
     changes.push({
       kind: 'content-change',
@@ -306,6 +343,7 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
       ]
     })
   }
+
   const result = {
     baseRevision: history.revision,
     baseDigest: hash(base),
@@ -315,8 +353,10 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
     relations: structuredClone(relations),
     invalidatesEvidence: changes.length > 0
   }
+
   return freeze({ ...result, id: hash(result) })
 }
+
 function decideVersion(
   history,
   review,
@@ -334,6 +374,7 @@ function decideVersion(
     'decision and reason are required'
   )
   const retirement = request.retirement ?? []
+
   requireValue(
     Array.isArray(retirement) &&
       new Set(retirement).size === retirement.length &&
@@ -342,10 +383,13 @@ function decideVersion(
   )
   const identity = hash({ reviewId: review.id, actor: actor.id, ...request })
   const decided = history.decisions.find((d) => d.reviewId === review.id)
+
   if (decided) {
     requireValue(decided.identity === identity, 'review already decided')
+
     return history
   }
+
   requireValue(
     history.revision === review.baseRevision &&
       hash(history.versions.at(-1)) === review.baseDigest,
@@ -358,11 +402,13 @@ function decideVersion(
   const verified = compareVersion(history, candidate, {
     relations: review.relations
   })
+
   requireValue(
     verified.id === review.id,
     'review content differs from owner comparison'
   )
   const accept = request.decision === 'accept'
+
   requireValue(
     !(accept && options.targetPinned && !options.targetAcceptance),
     'target-pinned review requires an exact target assessment'
@@ -372,6 +418,7 @@ function decideVersion(
     const removed = review.changes
       .filter((c) => c.kind === 'deletion')
       .map((c) => c.caseId)
+
     requireValue(
       removed.length === retirement.length &&
         removed.every((id) => retirement.includes(id)),
@@ -383,6 +430,7 @@ function decideVersion(
   } else {
     requireValue(!retirement.length, 'rejection cannot retire obligations')
   }
+
   const decision = {
     reviewId: review.id,
     identity,
@@ -401,6 +449,7 @@ function decideVersion(
         }
       : {})
   }
+
   return freeze({
     format: 1,
     revision: history.revision + Number(accept),
@@ -424,6 +473,7 @@ function acceptTargetBaseline(
 ) {
   authorized(actor, 'decide-contract')
   const keys = ['requestId', 'targetId', 'assessmentId', 'reason', 'retirement']
+
   requireValue(
     request &&
       typeof request === 'object' &&
@@ -444,26 +494,32 @@ function acceptTargetBaseline(
   if (request.retirement.length) {
     authorized(actor, 'retire-contract')
   }
+
   const requestIdentity = targetAcceptanceRequestIdentity(actor.id, request)
   const replay = history.decisions.find(
     (item) => item.targetAcceptance?.requestId === request.requestId
   )
+
   if (replay) {
     requireValue(
       replay.requestIdentity === requestIdentity,
       'target acceptance request identity conflicts'
     )
+
     return history
   }
+
   const projection = assessment?.projection
   const pin = assessment?.pins
   const source = projection?.source
+
   const sameIdentity = (value) =>
     value?.targetId === request.targetId &&
     value.allocationRevision === projection.allocationRevision &&
     JSON.stringify(value.acceptedBaseline) ===
       JSON.stringify(projection.acceptedBaseline) &&
     JSON.stringify(value.source) === JSON.stringify(source)
+
   const completeResult = (value) =>
     sameIdentity(value) &&
     value.contractDigest === candidate.contract.digest &&
@@ -481,6 +537,7 @@ function acceptTargetBaseline(
     ) &&
     Array.isArray(value.blockers) &&
     value.blockers.length === 0
+
   requireValue(
     assessment?.id === request.assessmentId &&
       assessment.actor === actor.id &&
@@ -535,6 +592,7 @@ function acceptTargetBaseline(
     resultingMappingRevision: projection.acceptedBaseline.revision + 1,
     resultingVersionRevision: history.revision + 1
   }
+
   return decideVersion(
     history,
     review,
@@ -572,12 +630,14 @@ function validateTargetAcceptanceDecision(
     'resultingMappingRevision',
     'resultingVersionRevision'
   ]
+
   const sameIdentity = (value) =>
     value?.targetId === reference.targetId &&
     value.allocationRevision === reference.allocationRevision &&
     JSON.stringify(value.acceptedBaseline) ===
       JSON.stringify(result.acceptedBaseline) &&
     JSON.stringify(value.source) === JSON.stringify(reference.source)
+
   requireValue(
     decision?.decision === 'accept' &&
       reference &&
@@ -675,6 +735,7 @@ function validateTargetAcceptanceDecision(
       result.integration.pending.length === 0,
     'invalid retained target acceptance authority'
   )
+
   return true
 }
 

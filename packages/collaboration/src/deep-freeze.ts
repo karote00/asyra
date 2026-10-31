@@ -4,6 +4,7 @@ export const deepFreeze = <T>(value: T, seen = new WeakSet<object>()): T => {
   }
 
   const object = value as object
+
   if (seen.has(object)) {
     return value
   }
@@ -12,5 +13,6 @@ export const deepFreeze = <T>(value: T, seen = new WeakSet<object>()): T => {
   Reflect.ownKeys(object).forEach((key) =>
     deepFreeze(Reflect.get(object, key), seen)
   )
+
   return Object.freeze(value)
 }

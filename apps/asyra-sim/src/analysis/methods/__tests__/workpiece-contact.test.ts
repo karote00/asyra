@@ -24,6 +24,7 @@ it.each([
     const table = snapshot.workcell.bodies.find(
       (body) => body.id === 'example:fixture-table'
     )
+
     if (!movingBody || !table) {
       throw new Error('Missing original sample bodies')
     }
@@ -54,6 +55,7 @@ it.each([
     if (part.geometry.kind !== 'mesh') {
       throw new Error('Missing original part')
     }
+
     const geometry = part.geometry
 
     // Independent source-space oracle: this strictly interior prism lies within
@@ -67,9 +69,11 @@ it.each([
     const interiorVertices = tableLocalVertices.filter((point) =>
       point.every((axis, index) => {
         const halfExtent = [0.3, 0.059, 0.2][index]
+
         return axis[0] > -halfExtent && axis[1] < halfExtent
       })
     )
+
     expect(interiorVertices.length).toBeGreaterThan(0)
 
     for (const [threshold, hierarchy, reverse] of [
@@ -99,6 +103,7 @@ it.each([
         undefined,
         new OriginalMeshQuery(undefined, 500000, hierarchy)
       )
+
       // The explicit diagnostic budget bounds this exhaustive reference.
       // Exhausting gripper/table pairs without the hierarchy remains unknown,
       // never a fabricated clear result; the smaller workpiece oracle completes.

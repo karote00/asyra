@@ -33,15 +33,18 @@ interface MutationScopeSource {
 }
 const mutationScopeSource: MutationScopeSource = {
   observe: observeInspectionChanges,
+
   resolve: (id) => {
     if (id === core.getCurrentWorkspaceId()) {
       return 'workspace'
     }
+
     return core.getElementMetadata(id) ? 'live' : 'removed'
   }
 }
 
 type ApiOwners = Record<BasicApiOwner, object>
+
 const owners = (): ApiOwners => ({
   core,
   element: elementApis,
@@ -56,9 +59,11 @@ const basicApiToolEffect = (effect: BasicApiContract['effect']) => {
   if (effect === 'read') {
     return 'read'
   }
+
   if (effect === 'prepare') {
     return 'prepare'
   }
+
   return 'mutation'
 }
 
@@ -66,9 +71,11 @@ const basicApiResources = (effect: BasicApiContract['effect']) => {
   if (effect === 'prepare') {
     return ['request']
   }
+
   if (effect === 'viewport' || effect === 'selection') {
     return [effect]
   }
+
   return ['document']
 }
 
@@ -76,6 +83,7 @@ const basicApiRevision = (contract: BasicApiContract): number => {
   if (contract.result.kind === 'mutation-receipt') {
     return 9
   }
+
   if (
     [
       'property-mutation',
@@ -87,12 +95,14 @@ const basicApiRevision = (contract: BasicApiContract): number => {
   ) {
     return 8
   }
+
   if (
     ['created-items', 'status-items'].includes(contract.result.kind) &&
     ['write', 'delete'].includes(contract.effect)
   ) {
     return 7
   }
+
   if (
     contract.effect === 'write' &&
     (['fill', 'stroke'].includes(contract.owner) ||
@@ -103,14 +113,17 @@ const basicApiRevision = (contract: BasicApiContract): number => {
   ) {
     return 7
   }
+
   if (
     ['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
   ) {
     return 5
   }
+
   if (hasElementTargetSchema(contract.inputSchema)) {
     return 4
   }
+
   return ['write', 'delete'].includes(contract.effect) ? 3 : 2
 }
 
@@ -144,34 +157,43 @@ export const createBasicApiActions = (
     name: contract.name,
     description: contract.description,
     inputSchema: contract.inputSchema,
+
     execute: async (input, context) => {
       context.signal.throwIfAborted()
       const args = input as Record<string, unknown>
       const owner = getOwners()[contract.owner]
       const method = (owner as Record<string, unknown>)[contract.method]
+
       if (typeof method !== 'function') {
         throw new Error(
           `Public API unavailable: ${contract.owner}.${contract.method}`
         )
       }
+
       let resolvedArgs = args
+
       const resolve = (value: unknown, schema: unknown): unknown => {
         if (!schema || typeof schema !== 'object') {
           return value
         }
+
         const shape = schema as Record<string, unknown>
+
         if (
           isElementTargetSchema(schema) &&
           value !== undefined &&
           !Array.isArray(value)
         ) {
           const issue = operationInputIssue(value, retainedElementSetSchema)
+
           if (issue) {
             throw new Error(issue)
           }
+
           if (!queries) {
             throw new Error('Retained targets unavailable.')
           }
+
           const reference = value as {
             snapshotId: string
             leaseId: string
@@ -182,6 +204,7 @@ export const createBasicApiActions = (
             reference.leaseId,
             context.signal
           )
+
           if (
             snapshot.result.missingIds.length ||
             reference.total !== snapshot.orderedIds.length
@@ -190,8 +213,10 @@ export const createBasicApiActions = (
               'Retained targets are incomplete or have a different count.'
             )
           }
+
           return [...snapshot.orderedIds]
         }
+
         if (
           value &&
           typeof value === 'object' &&
@@ -202,30 +227,36 @@ export const createBasicApiActions = (
           const entries = Object.entries(value).map(
             ([key, child]) => [key, resolve(child, properties[key])] as const
           )
+
           return entries.every(
             ([key, child]) => child === (value as Record<string, unknown>)[key]
           )
             ? value
             : Object.fromEntries(entries)
         }
+
         return value
       }
+
       const call = () => {
         // Resolve in the admitted callback, never before the idle-boundary wait.
         resolvedArgs = resolve(args, contract.inputSchema) as Record<
           string,
           unknown
         >
+
         return Reflect.apply(
           method,
           owner,
           contract.parameters.map((name) => resolvedArgs[name])
         )
       }
+
       const documentMutation = ['write', 'delete'].includes(contract.effect)
       const touched = new Set<string>()
       let complete = true
       let stop: (() => void) | undefined
+
       const mutate = () => {
         if (documentMutation) {
           // Start only after idle-boundary admission. Keep the listener through
@@ -233,8 +264,10 @@ export const createBasicApiActions = (
           stop = scopeSource.observe((change) => {
             if (!change) {
               complete = false
+
               return
             }
+
             for (const id of [
               ...change.elementIds,
               ...(change.parentIds ?? [])
@@ -245,22 +278,28 @@ export const createBasicApiActions = (
             }
           })
         }
+
         return call()
       }
+
       const finish = (value: unknown, atSettlement: boolean) => {
         const result = describeBasicApiResult(
           contract,
           value,
           resolvedArgs[contract.parameters[0]]
         )
+
         if (!documentMutation) {
           return result
         }
+
         const elementIds: string[] = [],
           removedElementIds: string[] = []
+
         for (const id of touched) {
           try {
             const state = scopeSource.resolve(id)
+
             if (state === 'live') {
               elementIds.push(id)
             } else if (state === 'removed') {
@@ -270,6 +309,7 @@ export const createBasicApiActions = (
             complete = false
           }
         }
+
         const receipt = {
           ...result,
           ...(atSettlement &&
@@ -280,14 +320,17 @@ export const createBasicApiActions = (
           mutationScope: { complete, elementIds, removedElementIds }
         }
         const kind = contract.result.kind
+
         if (
           !['grouped', 'ungrouped', 'moves', 'removed'].includes(kind) ||
           !['complete', 'no-change'].includes(result.status)
         ) {
           return receipt
         }
+
         const structural = value as Record<string, unknown>
         let count = 0
+
         if (kind === 'removed' && Array.isArray(structural.removed)) {
           count = structural.removed.length
         } else if (Array.isArray(structural.elementIds)) {
@@ -295,6 +338,7 @@ export const createBasicApiActions = (
         } else if (Array.isArray(structural.moves)) {
           count = structural.moves.length
         }
+
         const summary = {
           status: receipt.status,
           value: {
@@ -312,35 +356,45 @@ export const createBasicApiActions = (
             removedElementCount: removedElementIds.length
           }
         }
+
         try {
           if (!atSettlement) {
             throw new Error(
               'The mutation executor did not report synchronous settlement.'
             )
           }
+
           if (!queries) {
             throw new Error('Retained structural delivery is unavailable.')
           }
+
           let ids: string[] = []
+
           if (kind === 'grouped' || kind === 'ungrouped') {
             ids = structural.elementIds as string[]
           }
+
           if (kind === 'moves') {
             ids = (structural.moves as { elementId: string }[]).map(
               (item) => item.elementId
             )
           }
+
           const retained = queries.retainReceipt(ids, receipt, context.signal)
+
           return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {
           const delivery = {
             status: 'unavailable',
             message: `${error instanceof Error ? error.message : 'Structural delivery failed.'} The mutation already settled; do not replay it.`
           }
+
           return { ...receipt, delivery, modelResult: { ...summary, delivery } }
         }
       }
+
       let settledResult: ReturnType<typeof finish> | undefined
+
       try {
         const value = await (contract.effect === 'read' ||
         contract.effect === 'prepare' ||
@@ -351,6 +405,7 @@ export const createBasicApiActions = (
               stop = undefined
               settledResult = finish(value, true)
             }))
+
         return settledResult ?? finish(value, false)
       } finally {
         stop?.()

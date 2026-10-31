@@ -20,6 +20,7 @@ const require = createRequire(
 const { chromium, expect } = require('@playwright/test')
 const root = path.resolve(import.meta.dirname, '../..')
 const temporary = path.join(root, 'tmp/production-artifacts')
+
 await mkdir(temporary, { recursive: true })
 process.env.TMPDIR = temporary
 process.env.TMP = temporary
@@ -35,22 +36,27 @@ const analysisProfile = Object.freeze({
 
 async function appServer(id, headers = {}) {
   const app = DEPLOYMENT_APPS.find((entry) => entry.id === id)
+
   assert.ok(app)
   if (process.env.APP_PUBLIC_TEST === '1') {
     return {
       url: `https://${app.project}.pages.dev`,
+
       close: () => Promise.resolve()
     }
   }
+
   const directory = process.env.APP_ARTIFACT_ROOT
     ? path.join(root, process.env.APP_ARTIFACT_ROOT, id)
     : path.join(root, app.output)
+
   return serveArtifact(directory, headers)
 }
 
 async function browserPage(t, url, closeServer) {
   let browser
   let page
+
   t.after(async () => {
     try {
       if (page && !page.isClosed()) {
@@ -78,6 +84,7 @@ async function browserPage(t, url, closeServer) {
   const errors = []
   const sourceRequests = []
   const sockets = []
+
   page.on('websocket', (socket) => sockets.push(socket.url()))
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => {
@@ -95,6 +102,7 @@ async function browserPage(t, url, closeServer) {
     )
   })
   await page.goto(url)
+
   return page
 }
 
@@ -107,6 +115,7 @@ test(
     )
     const server = await appServer('asyra-sim', headers)
     const page = await browserPage(t, server.url, server.close)
+
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     await expect(
       page.getByTestId('workcell-canvas').locator('canvas')
@@ -136,6 +145,7 @@ test(
       })
       .click()
     const duration = page.getByLabel('Wall-time budget (ms)', { exact: true })
+
     await expect(duration).toHaveValue(String(analysisProfile.defaultBudgetMs))
     await expect(duration).toHaveAttribute(
       'max',
@@ -146,9 +156,12 @@ test(
     await expect(duration).toHaveValue(String(analysisProfile.analysisBudgetMs))
     await runWithArtifactResourceEvidence({
       capture: () => collectArtifactResourceSnapshot({ repositoryRoot: root }),
+
       report: (value) => t.diagnostic(value),
+
       operation: async ({ mark, observeTerminalInactive }) => {
         const startedAt = Date.now()
+
         mark('run-click-requested-ui')
         await page
           .getByRole('button', { name: 'Run analysis', exact: true })
@@ -164,6 +177,7 @@ test(
         observeTerminalInactive('result-button-observed-actionable-ui')
         mark('result-assertion-started')
         const result = page.getByTestId('analysis-result')
+
         const field = (name) =>
           result
             .locator('dl > div')
@@ -171,6 +185,7 @@ test(
               has: page.getByText(name, { exact: true })
             })
             .locator('dd')
+
         t.diagnostic(
           JSON.stringify({
             profile: 'production-artifact-functional',
@@ -216,12 +231,15 @@ test(
       `${server.url}/?fileId=production-artifact`,
       server.close
     )
+
     await expect(page.getByTestId('toolbar')).toBeVisible()
     const canvas = page.locator('canvas').first()
+
     await expect(canvas).toBeVisible()
     const items = page
       .getByTestId('contents-panel')
       .locator('[data-testid^="element-item-"]')
+
     await expect(items).toHaveCount(0)
     await page.getByTestId('tool-rectangle').click()
     await expect(page.getByTestId('tool-rectangle')).toHaveAttribute(
@@ -229,11 +247,13 @@ test(
       'true'
     )
     const box = await canvas.boundingBox()
+
     await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.3)
     await expect(items).toHaveCount(1)
     const modifier = await page.evaluate(() =>
       /mac/i.test(navigator.platform) ? 'Meta' : 'Control'
     )
+
     await page.keyboard.press(`${modifier}+z`)
     await expect(items).toHaveCount(0)
     await page.keyboard.press(`${modifier}+Shift+z`)
@@ -248,6 +268,7 @@ test(
   async (t) => {
     const server = await appServer('asyra-fieldscope')
     const page = await browserPage(t, server.url, server.close)
+
     await expect(page.getByText('空間模型已就緒')).toBeVisible({
       timeout: 30_000
     })
@@ -256,6 +277,7 @@ test(
       .getByRole('combobox', { name: '語言', exact: true })
       .selectOption('en')
     const width = page.getByLabel('Strip 1 width', { exact: true })
+
     await width.fill('1.1')
     await width.press('Enter')
     await expect(width).toHaveValue('1.1')
@@ -298,17 +320,22 @@ test(
       }
     )
     let output = ''
+
     for (const stream of [child.stdout, child.stderr]) {
       stream.on('data', (chunk) => {
         output = (output + chunk).slice(-4000)
       })
     }
+
     t.diagnostic(`Owned Next production server PID ${child.pid}`)
+
     const closeServer = async () => {
       if (child.exitCode !== null) {
         return
       }
+
       const stopped = new Promise((resolve) => child.once('exit', resolve))
+
       process.kill(-child.pid, 'SIGTERM')
       const timer = setTimeout(() => {
         try {
@@ -317,16 +344,20 @@ test(
           /* already stopped */
         }
       }, 5000)
+
       await stopped
       clearTimeout(timer)
     }
+
     let browserOwnsCleanup = false
+
     t.after(async () => {
       if (!browserOwnsCleanup) {
         await closeServer()
       }
     })
     const url = 'http://127.0.0.1:3038'
+
     for (let attempt = 0; attempt < 60; attempt++) {
       assert.equal(child.exitCode, null, output)
       try {
@@ -336,10 +367,13 @@ test(
       } catch {
         /* wait for owned server */
       }
+
       await new Promise((resolve) => setTimeout(resolve, 500))
     }
+
     browserOwnsCleanup = true
     const page = await browserPage(t, `${url}/docs`, closeServer)
+
     await expect(
       page.getByRole('heading', { level: 1, name: 'Asyra Framework' })
     ).toBeVisible()
@@ -347,6 +381,7 @@ test(
     await page.getByRole('searchbox', { name: 'Search' }).fill('transaction')
     await expect(page.locator('.search-results a')).not.toHaveCount(0)
     const response = await page.goto(`${url}/atlas`)
+
     assert.equal(response.status(), 200)
     assert.ok(response.headers()['content-security-policy'])
     await expect(page.locator('h1')).toBeVisible()

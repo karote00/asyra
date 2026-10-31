@@ -7,6 +7,7 @@ import type { Vec3 } from '../../../domain/math'
 import type { Bounds } from '../mesh-index'
 import type { ConvexShape } from '../convex-query'
 const ops = poseOperations(intervalAlgebra)
+
 // Test-owned feasibility probe only. Project the complete source bounding box,
 // not source vertices selected to favor a result. This cannot provide a contact
 // witness or prove penetration; nonpositive gaps have no geometric conclusion.
@@ -18,6 +19,7 @@ export function projection(
   const q = pose.rotation
   const d = ops.vector(direction)
   const local = ops.rotate([ineg(q[0]), ineg(q[1]), ineg(q[2]), q[3]], d)
+
   return intervalAlgebra.add(ops.dot(pose.position, d), ops.dot(bounds, local))
 }
 
@@ -30,12 +32,14 @@ export function vertexProjection(
   if (shape.geometry.kind !== 'mesh') {
     throw new Error('Expected complete original mesh')
   }
+
   const q = shape.pose.rotation,
     d = ops.vector(direction)
   const local = ops.rotate([ineg(q[0]), ineg(q[1]), ineg(q[2]), q[3]], d)
   const translation = ops.dot(shape.pose.position, d)
   let lo = Infinity,
     hi = -Infinity
+
   for (let offset = 0; offset < shape.geometry.positions.length; offset += 3) {
     checkpoint()
     const p = shape.geometry.positions
@@ -43,8 +47,10 @@ export function vertexProjection(
       translation,
       ops.dot(ops.vector([p[offset], p[offset + 1], p[offset + 2]]), local)
     )
+
     lo = Math.min(lo, value[0])
     hi = Math.max(hi, value[1])
   }
+
   return [lo, hi]
 }

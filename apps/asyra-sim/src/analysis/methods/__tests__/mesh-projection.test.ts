@@ -25,6 +25,7 @@ const right = ops.fromPose({ rotation, position: [-0.2112, 0.0616, 0] })
 
 it('charges every projected direction including unsuccessful attempts and charges no repeated world direction', () => {
   const check = vi.fn()
+
   expect(projectedBoundsGap(a, left, b, right, 0.02, check)).toBeGreaterThan(
     0.02
   )
@@ -34,6 +35,7 @@ it('charges every projected direction including unsuccessful attempts and charge
   expect(check).toHaveBeenCalledTimes(4)
   check.mockClear()
   const identity = ops.fromPose(IDENTITY_POSE)
+
   expect(projectedBoundsGap(a, identity, b, identity, 0.02, check)).toBe(0)
   expect(check).not.toHaveBeenCalled()
 })
@@ -42,11 +44,13 @@ it('honors cancellation and exact projected-work exhaustion before producing a c
   const cancelled = vi.fn(() => {
     throw new Error('cancelled')
   })
+
   expect(() => projectedBoundsGap(a, left, b, right, 0.02, cancelled)).toThrow(
     'cancelled'
   )
   expect(cancelled).toHaveBeenCalledTimes(1)
   let work = 0
+
   expect(() =>
     projectedBoundsGap(a, left, b, right, 0.02, () => {
       if (++work > 1) {
@@ -60,7 +64,9 @@ it('honors cancellation and exact projected-work exhaustion before producing a c
 it('retains no source, pose or threshold result between current queries', () => {
   const query = (source: Bounds, pose: typeof right, threshold: number) =>
     projectedBoundsGap(a, left, source, pose, threshold, () => undefined)
+
   const first = query(b, right, 0.02)
+
   expect(first).toBeGreaterThan(0.02)
   expect(query(b, right, 0.04)).toBe(0)
   expect(query(b, left, 0.02)).toBe(0)
@@ -69,6 +75,7 @@ it('retains no source, pose or threshold result between current queries', () => 
     [-1, 1],
     [-1, 1]
   ]
+
   expect(query(enlarged, right, 0.02)).toBe(0)
   expect(query(b, right, 0.02)).toBe(first)
   expect(

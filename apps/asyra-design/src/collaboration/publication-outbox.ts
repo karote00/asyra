@@ -53,7 +53,9 @@ const freezeValue = <T>(value: T): T => {
   if (value === null || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
   }
+
   Object.values(value).forEach((nested) => freezeValue(nested))
+
   return Object.freeze(value)
 }
 
@@ -153,17 +155,21 @@ export class PublicationOutboxStorageError extends Error {
 
 export class IndexedDbPublicationOutboxStorage implements PublicationOutboxStorage {
   private readonly factory: IDBFactory
+
   private readonly databaseName: string
+
   private databasePromise: Promise<IDBDatabase> | undefined
 
   constructor(options: IndexedDbPublicationOutboxStorageOptions = {}) {
     const factory = options.factory ?? globalThis.indexedDB
+
     if (!factory) {
       throw new PublicationOutboxStorageError(
         '[collaboration] IndexedDB is unavailable',
         new Error('[collaboration] IndexedDB is unavailable')
       )
     }
+
     this.factory = factory
     this.databaseName = options.databaseName ?? DEFAULT_DATABASE_NAME
   }
@@ -176,7 +182,9 @@ export class IndexedDbPublicationOutboxStorage implements PublicationOutboxStora
     const records = await requestResult(
       index.getAll(fileId) as IDBRequest<PendingDocumentPublication[]>
     )
+
     await transactionCompletion(transaction)
+
     return records
       .map(snapshotRecord)
       .sort((first, second) => first.appendOrder - second.appendOrder)
@@ -188,6 +196,7 @@ export class IndexedDbPublicationOutboxStorage implements PublicationOutboxStora
       PUBLICATION_STORE_NAME,
       'readwrite'
     )
+
     transaction.objectStore(PUBLICATION_STORE_NAME).put(record)
     await transactionCompletion(transaction)
   }
@@ -198,6 +207,7 @@ export class IndexedDbPublicationOutboxStorage implements PublicationOutboxStora
       PUBLICATION_STORE_NAME,
       'readwrite'
     )
+
     transaction
       .objectStore(PUBLICATION_STORE_NAME)
       .delete([fileId, publicationId])
@@ -208,16 +218,21 @@ export class IndexedDbPublicationOutboxStorage implements PublicationOutboxStora
     if (this.databasePromise) {
       return this.databasePromise
     }
+
     const opening = new Promise<IDBDatabase>((resolve, reject) => {
       const request = this.factory.open(this.databaseName, DATABASE_VERSION)
+
       request.addEventListener('upgradeneeded', () => {
         const database = request.result
+
         if (database.objectStoreNames.contains(PUBLICATION_STORE_NAME)) {
           return
         }
+
         const store = database.createObjectStore(PUBLICATION_STORE_NAME, {
           keyPath: ['fileId', 'publicationId']
         })
+
         store.createIndex(FILE_ID_INDEX_NAME, 'fileId', { unique: false })
       })
       request.addEventListener('success', () => resolve(request.result), {
@@ -244,9 +259,12 @@ export class IndexedDbPublicationOutboxStorage implements PublicationOutboxStora
       if (this.databasePromise === opening) {
         this.databasePromise = undefined
       }
+
       throw error
     })
+
     this.databasePromise = opening
+
     return opening
   }
 }
@@ -255,22 +273,32 @@ export class DocumentPublicationOutbox {
   readonly fileId: string
 
   private readonly storage: PublicationOutboxStorage
+
   private readonly records = new Map<string, PendingDocumentPublication>()
+
   private readonly stateSubscribers = new Set<
     (state: PublicationOutboxState) => void
   >()
+
   private operationQueue: Promise<void> = Promise.resolve()
+
   private initialized = false
+
   private storageFailed = false
+
   private storageLoaded = false
+
   private readonly unwritten = new Set<string>()
+
   private nextAppendOrder = 1
+
   private documentGeneration: number | null = null
 
   constructor(options: DocumentPublicationOutboxOptions) {
     if (!options.fileId.trim()) {
       throw new Error('[collaboration] publication outbox fileId is required')
     }
+
     this.fileId = options.fileId
     this.storage = options.storage ?? new IndexedDbPublicationOutboxStorage()
   }
@@ -280,8 +308,10 @@ export class DocumentPublicationOutbox {
       if (this.initialized) {
         return
       }
+
       try {
         const records = await this.storage.load(this.fileId)
+
         records.forEach((record) => {
           if (
             record.fileId !== this.fileId ||
@@ -289,7 +319,9 @@ export class DocumentPublicationOutbox {
           ) {
             return
           }
+
           const snapshot = snapshotRecord(record)
+
           this.records.set(snapshot.publicationId, snapshot)
           this.nextAppendOrder = Math.max(
             this.nextAppendOrder,
@@ -320,12 +352,14 @@ export class DocumentPublicationOutbox {
         new Error('[collaboration] document generation must be non-negative')
       )
     }
+
     return this.schedule(async () => {
       this.requireInitialized()
       this.documentGeneration = documentGeneration
       if (!this.storageLoaded) {
         return
       }
+
       try {
         await this.bindRetainedGeneration()
         await this.flushUnwritten()
@@ -341,13 +375,16 @@ export class DocumentPublicationOutbox {
 
   private async bindRetainedGeneration(): Promise<void> {
     const documentGeneration = this.documentGeneration
+
     if (documentGeneration === null) {
       return
     }
+
     for (const record of this.sortedRecords()) {
       if (record.documentGeneration === documentGeneration) {
         continue
       }
+
       if (record.documentGeneration === null) {
         this.records.set(
           record.publicationId,
@@ -395,13 +432,16 @@ export class DocumentPublicationOutbox {
           '[collaboration] Factory publication evidence must be immutable'
         )
       }
+
       const existing = this.records.get(publication.publicationId)
+
       if (existing) {
         if (!samePublication(existing.publication, publication)) {
           throw new Error(
             '[collaboration] publication identity was reused with different content'
           )
         }
+
         return existing
       }
 
@@ -419,11 +459,13 @@ export class DocumentPublicationOutbox {
           ? {}
           : { recoveryDocument: structuredClone(recoveryDocument) })
       })
+
       this.records.set(record.publicationId, record)
       this.unwritten.add(record.publicationId)
       this.emitState()
       try {
         await this.flushUnwritten()
+
         return record
       } catch (error) {
         this.markStorageFailed()
@@ -439,9 +481,11 @@ export class DocumentPublicationOutbox {
     return this.schedule(async () => {
       this.requireInitialized()
       const record = this.records.get(acceptance.publicationId)
+
       if (!record || record.status !== 'pending') {
         return false
       }
+
       try {
         await this.storage.delete(this.fileId, record.publicationId)
       } catch (error) {
@@ -451,9 +495,11 @@ export class DocumentPublicationOutbox {
           error
         )
       }
+
       this.records.delete(record.publicationId)
       this.unwritten.delete(record.publicationId)
       this.emitState()
+
       return true
     })
   }
@@ -466,6 +512,7 @@ export class DocumentPublicationOutbox {
           await this.storage.delete(this.fileId, record.publicationId)
           this.records.delete(record.publicationId)
         }
+
         this.nextAppendOrder = 1
         this.unwritten.clear()
         this.storageFailed = false
@@ -488,9 +535,11 @@ export class DocumentPublicationOutbox {
     return this.schedule(async () => {
       this.requireInitialized()
       const existing = this.records.get(publicationId)
+
       if (!existing) {
         return false
       }
+
       const conflicted = freezeValue({
         ...existing,
         status: 'conflicted' as const,
@@ -499,6 +548,7 @@ export class DocumentPublicationOutbox {
           ? {}
           : { recoveryDocument: structuredClone(recoveryDocument) })
       })
+
       this.records.set(publicationId, conflicted)
       this.unwritten.add(publicationId)
       this.emitState()
@@ -511,6 +561,7 @@ export class DocumentPublicationOutbox {
           error
         )
       }
+
       return true
     })
   }
@@ -520,16 +571,19 @@ export class DocumentPublicationOutbox {
     if (!this.storageLoaded) {
       throw new Error('Publication storage has not been loaded')
     }
+
     for (const record of this.sortedRecords()) {
       if (!this.unwritten.has(record.publicationId)) {
         continue
       }
+
       await measureBrowserDragAsyncPhase(
         'collaboration:outbox-storage-put',
         () => this.storage.put(record)
       )
       this.unwritten.delete(record.publicationId)
     }
+
     this.emitState()
   }
 
@@ -540,6 +594,7 @@ export class DocumentPublicationOutbox {
         if (!this.storageLoaded) {
           const saved = await this.storage.load(this.fileId)
           const buffered = this.sortedRecords()
+
           for (const record of saved) {
             if (
               record.fileId !== this.fileId ||
@@ -547,7 +602,9 @@ export class DocumentPublicationOutbox {
             ) {
               throw new Error('Invalid retained publication identity')
             }
+
             const current = this.records.get(record.publicationId)
+
             if (
               current &&
               !samePublication(current.publication, record.publication)
@@ -555,41 +612,50 @@ export class DocumentPublicationOutbox {
               throw new Error('Retained publication identity conflict')
             }
           }
+
           const obsolete = saved.filter(
             (record) =>
               this.documentGeneration !== null &&
               record.documentGeneration !== null &&
               record.documentGeneration !== this.documentGeneration
           )
+
           for (const record of obsolete) {
             await this.storage.delete(this.fileId, record.publicationId)
           }
+
           const obsoleteIds = new Set(
             obsolete.map(({ publicationId }) => publicationId)
           )
+
           this.records.clear()
           this.nextAppendOrder = 1
           for (const record of saved) {
             if (obsoleteIds.has(record.publicationId)) {
               continue
             }
+
             this.records.set(record.publicationId, snapshotRecord(record))
             this.nextAppendOrder = Math.max(
               this.nextAppendOrder,
               record.appendOrder + 1
             )
           }
+
           for (const record of buffered) {
             if (this.records.has(record.publicationId)) {
               continue
             }
+
             this.records.set(
               record.publicationId,
               freezeValue({ ...record, appendOrder: this.nextAppendOrder++ })
             )
           }
+
           this.storageLoaded = true
         }
+
         await this.bindRetainedGeneration()
         await this.flushUnwritten()
         this.storageFailed = false
@@ -613,27 +679,32 @@ export class DocumentPublicationOutbox {
         const publication = record.preparationFailed
           ? prepare(record.publication)
           : record.publication
+
         if (
           !publication ||
           publication.publicationId !== record.publicationId
         ) {
           throw new Error('Recovery must preserve publication identity')
         }
+
         const {
           failureReason: _reason,
           preparationFailed: _failed,
           ...retained
         } = record
+
         return freezeValue({
           ...retained,
           publication,
           status: 'pending' as const
         })
       })
+
       for (const record of replacements) {
         this.records.set(record.publicationId, record)
         this.unwritten.add(record.publicationId)
       }
+
       try {
         await this.flushUnwritten()
       } catch (error) {
@@ -649,9 +720,11 @@ export class DocumentPublicationOutbox {
   retainRecoveryDocument(document: unknown): Promise<void> {
     return this.schedule(async () => {
       const record = this.sortedRecords().at(-1)
+
       if (!record) {
         return
       }
+
       this.records.set(
         record.publicationId,
         freezeValue({ ...record, recoveryDocument: structuredClone(document) })
@@ -684,6 +757,7 @@ export class DocumentPublicationOutbox {
   getRecoverablePublications(): readonly PendingDocumentPublication[] {
     const records = this.sortedRecords()
     const blockedAt = records.findIndex(({ status }) => status !== 'pending')
+
     return blockedAt < 0 ? records : records.slice(0, blockedAt)
   }
 
@@ -698,15 +772,19 @@ export class DocumentPublicationOutbox {
   getState(): PublicationOutboxState {
     const records = this.sortedRecords()
     let status: PublicationOutboxState['status'] = 'synced'
+
     if (records.some((record) => record.status === 'pending')) {
       status = 'pending'
     }
+
     if (records.some((record) => record.status === 'conflicted')) {
       status = 'conflicted'
     }
+
     if (this.storageFailed) {
       status = 'storage-failed'
     }
+
     return Object.freeze({
       pendingCount: records.length,
       status
@@ -717,6 +795,7 @@ export class DocumentPublicationOutbox {
     subscriber: (state: PublicationOutboxState) => void
   ): () => void {
     this.stateSubscribers.add(subscriber)
+
     return () => this.stateSubscribers.delete(subscriber)
   }
 
@@ -726,10 +805,12 @@ export class DocumentPublicationOutbox {
 
   private schedule<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.operationQueue.then(operation)
+
     this.operationQueue = result.then(
       () => undefined,
       () => undefined
     )
+
     return result
   }
 
@@ -749,12 +830,14 @@ export class DocumentPublicationOutbox {
     if (this.storageFailed) {
       return
     }
+
     this.storageFailed = true
     this.emitState()
   }
 
   private emitState(): void {
     const state = this.getState()
+
     ;[...this.stateSubscribers].forEach((subscriber) => {
       try {
         subscriber(state)

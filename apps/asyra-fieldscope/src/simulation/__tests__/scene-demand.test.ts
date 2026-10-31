@@ -69,9 +69,11 @@ describe('scene demand preparation', () => {
       synthetic({ route: { kind: 'unknown' } }),
       owner
     )
+
     expect(demand.status).toBe('unknown')
     expect(Object.values(owner.work).every((v) => v === 0)).toBe(true)
     const observation = prepareSceneObservationSpace(demand, owner)
+
     expect(observation.status).toBe('unknown')
     expect(Object.values(owner.work).every((v) => v === 0)).toBe(true)
     owner.close()
@@ -83,6 +85,7 @@ describe('scene demand preparation', () => {
       ...values,
       { min: [-4, -5, -6], max: [7, 8, 9] }
     ])
+
     expect(result).toEqual({ min: [-4, -5, -6], max: [7, 8, 9] })
     expect(Object.isFrozen(result)).toBe(true)
   })
@@ -100,6 +103,7 @@ describe('scene demand preparation', () => {
       [{ id: 'sensor-source', kind: 'sheet', indexStart: 0, indexCount: 3 }],
       3
     )
+
     const make = (
       id: string,
       position: readonly [number, number, number]
@@ -119,6 +123,7 @@ describe('scene demand preparation', () => {
         selectable: false
       }) as SiteMesh['descriptor']
     })
+
     const near = make('near', [2, 0.5, 0.5]),
       far = make('far', [40, 12, 10])
     const scene = Object.freeze({
@@ -132,6 +137,7 @@ describe('scene demand preparation', () => {
     )
     const before = owner.work
     const observation = prepareSceneObservationSpace(demand, owner)
+
     expect(observation.demand).toBe(demand)
     expect(observation.sources[0]).toBe(routeSource)
     expect(observation.work.localBounds).toBe(0)
@@ -142,6 +148,7 @@ describe('scene demand preparation', () => {
     expect(observation.work.canonicalSources).toBe(1)
     expect(owner.work.inventoryBuilds - before.inventoryBuilds).toBe(1)
     const repeated = prepareSceneObservationSpace(demand, owner)
+
     expect(repeated.inventory).toBe(observation.inventory)
     expect(repeated.work).toEqual({
       ...observation.work,
@@ -162,11 +169,13 @@ describe('scene demand preparation', () => {
       owner
     )
     const changedObservation = prepareSceneObservationSpace(changed, owner)
+
     expect(changedObservation.demand).toBe(changed)
     expect(changedObservation.inventory).toBe(observation.inventory)
     expect(changedObservation.sources).toBe(observation.sources)
     const freshOwner = new SceneDemandSourceBoundsOwner()
     const fresh = prepareSceneObservationSpace(demand, freshOwner)
+
     expect(fresh.domain).toEqual(observation.domain)
     expect(fresh.sources).toEqual(observation.sources)
     expect(observation.status).toBe('complete')
@@ -193,6 +202,7 @@ describe('scene demand preparation', () => {
       synthetic({ route: { kind: 'unknown' } })
     )
     const unknownObservation = prepareSceneObservationSpace(unknownRoute, owner)
+
     expect(unknownObservation.status).toBe('unknown')
     expect(unknownObservation.sources.length).toBe(0)
     const unsupported = prepareSceneDemand(
@@ -210,6 +220,7 @@ describe('scene demand preparation', () => {
       unsupported,
       owner
     )
+
     expect(unsupportedObservation.status).toBe('unknown')
     expect(unsupportedObservation.domain).toBeNull()
     const missing = prepareSceneDemand(
@@ -218,6 +229,7 @@ describe('scene demand preparation', () => {
       synthetic()
     )
     const missingObservation = prepareSceneObservationSpace(missing, owner)
+
     expect(missingObservation.status).toBe('unknown')
     expect(missingObservation.domain).toBeNull()
     owner.close()
@@ -238,9 +250,11 @@ describe('scene demand preparation', () => {
       ],
       indices: [0, 1, 2]
     })
+
     if (shape.kind !== 'triangles') {
       throw new Error('Missing triangle fixture')
     }
+
     const regions = readSourceRegions(
       [{ id: 'source-face', kind: 'sheet', indexStart: 0, indexCount: 3 }],
       3
@@ -257,9 +271,11 @@ describe('scene demand preparation', () => {
       wireframe: false,
       selectable: false
     })
+
     if (descriptor.kind !== 'mesh') {
       throw new Error('Missing mesh fixture')
     }
+
     const mesh: SiteMesh = {
       id: 'rotated-source',
       layer: 'supports',
@@ -291,13 +307,17 @@ describe('scene demand preparation', () => {
     const source = demand.freePassage.exclusions.find(
       (exclusion) => exclusion.relation === 'conservative-source-envelope'
     )
+
     if (!source || source.relation !== 'conservative-source-envelope') {
       throw new Error('Missing conservative source envelope')
     }
+
     const placement = descriptor.instances?.[0]
+
     if (!placement) {
       throw new Error('Missing installed source fixture')
     }
+
     const c = Math.cos(placement.yaw),
       s = Math.sin(placement.yaw)
     const points = Array.from(
@@ -314,15 +334,18 @@ describe('scene demand preparation', () => {
           placement.position[1] + local[1],
           placement.position[2] - s * local[0] + c * local[2]
         ] as const
+
         return transformRobotPoint(descriptor, installed)
       }
     )
+
     for (const point of points) {
       point.forEach((value, axis) => {
         expect(source.bounds.min[axis]).toBeLessThanOrEqual(value)
         expect(source.bounds.max[axis]).toBeGreaterThanOrEqual(value)
       })
     }
+
     expect(
       source.bounds.min.some(
         (value, axis) => value < Math.min(...points.map((point) => point[axis]))
@@ -346,9 +369,11 @@ describe('scene demand preparation', () => {
       positions: [-1, 1, 0.1, 1, 1.2, 0.1, -1, 1.1, 0.2],
       indices: [0, 1, 2]
     })
+
     if (shape.kind !== 'triangles') {
       throw new Error('Missing target fixture')
     }
+
     const region = readSourceRegions(
       [
         { id: 'wide-fruit-source', kind: 'sheet', indexStart: 0, indexCount: 3 }
@@ -415,9 +440,11 @@ describe('scene demand preparation', () => {
       wireframe: false,
       selectable: false
     })
+
     if (descriptor.kind !== 'mesh') {
       throw new Error('Missing target mesh')
     }
+
     const mesh: SiteMesh = {
       id: 'wide-target-mesh',
       layer: 'cucumbers',
@@ -459,6 +486,7 @@ describe('scene demand preparation', () => {
         })
       )
     )
+
     expect(instanceFrames).toHaveBeenCalledTimes(1)
     instanceFrames.mockRestore()
     expect(demand.targets.left.map(({ id }) => id)).toEqual([fruit.id])
@@ -504,6 +532,7 @@ describe('scene demand preparation', () => {
         }
       })
     )
+
     expect(growth.status).toBe('blocked')
     expect(growth.reasons).toContain('growth-covers-route')
     expect(growth.freePassage.exclusions[0].relation).toBe('hard-exclusion')
@@ -516,6 +545,7 @@ describe('scene demand preparation', () => {
         growth: { kind: 'bounded', coverage: 'discrete', volumes: [] }
       })
     )
+
     expect(discrete.status).toBe('unknown')
     expect(discrete.reasons).toContain('growth-coverage-discrete')
 
@@ -524,6 +554,7 @@ describe('scene demand preparation', () => {
       emptyScene(),
       validateSceneDemandConfiguration({ ...base, growth: { kind: 'unknown' } })
     )
+
     expect(unknownGrowth.status).toBe('unknown')
     expect(unknownGrowth.reasons).toContain('growth-unknown')
 
@@ -546,6 +577,7 @@ describe('scene demand preparation', () => {
         }
       })
     )
+
     expect(missingAnchor.status).toBe('unknown')
     expect(missingAnchor.reasons).toContain('growth-anchor-missing')
 
@@ -564,6 +596,7 @@ describe('scene demand preparation', () => {
         })
       )
     )
+
     expect(drain.status).toBe('blocked')
     expect(drain.reasons).toContain('route-is-channel')
     expect(drain.route).toBeNull()

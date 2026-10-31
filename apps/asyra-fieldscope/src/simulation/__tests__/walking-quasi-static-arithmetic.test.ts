@@ -15,16 +15,19 @@ const square = [
   [1, 1],
   [-1, 1]
 ] as const
+
 const contains = (i: { low: number; high: number }, expected: number) => {
   expect(i.low).toBeLessThanOrEqual(expected)
   expect(i.high).toBeGreaterThanOrEqual(expected)
 }
+
 describe('walking quasi-static directed mechanics', () => {
   it('conserves masses and weighted centres once, with SI torque', () => {
     const result = mechanicsCentreOfMass([
       { massKg: 2, position: mechanicsVector([0, 0, 0]) },
       { massKg: 2, position: mechanicsVector([2, 0, 0]) }
     ])
+
     expect(result.totalMass).toEqual(interval(4))
     expect(result.worldCoM).toEqual(mechanicsVector([1, 0, 0]))
     const torque = mechanicsTorque(
@@ -32,11 +35,13 @@ describe('walking quasi-static directed mechanics', () => {
       mechanicsVector([2, 0, 0]),
       interval(3)
     )
+
     contains(torque.vector[2], -3 * 9.80665 * 2)
     contains(torque.magnitude, 3 * 9.80665 * 2)
   })
   it('builds a deterministic exact hull with unordered, duplicate and interior contacts', () => {
     const vertices = [...square, [0, 0] as const, square[0]].reverse()
+
     expect(mechanicsHull(vertices)).toEqual([
       [-1, -1],
       [1, -1],
@@ -63,6 +68,7 @@ describe('walking quasi-static directed mechanics', () => {
         points,
         0
       )
+
     expect(solve(0).status).toBe('screened')
     expect(solve(1).status).toBe('blocked')
     expect(solve(2).status).toBe('blocked')
@@ -108,6 +114,7 @@ describe('walking quasi-static directed mechanics', () => {
       interval(9.80665),
       multiply(interval(9.80665), interval(reserve))
     )
+
     expect(result.minimumMomentNm.low).toBeLessThanOrEqual(expected.low)
     expect(result.minimumMomentNm.high).toBeGreaterThanOrEqual(expected.high)
   })
@@ -124,6 +131,7 @@ describe('walking quasi-static directed mechanics', () => {
       square,
       0
     )
+
     expect(result.status).toBe('screened')
     contains(result.projection[0], 0)
     contains(result.projection[1], 0)
@@ -132,6 +140,7 @@ describe('walking quasi-static directed mechanics', () => {
       position: [0, 0, 0] as const,
       rotation: [Math.SQRT1_2, 0, 0, Math.SQRT1_2] as const
     }
+
     expect(
       mechanicsSupport(
         mechanicsVector([0, 2, 0]),

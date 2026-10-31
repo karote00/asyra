@@ -10,7 +10,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -139,8 +141,10 @@ test('routes and artifacts resolve to one owner and declared consumers', () => {
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
     if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from)
       if (route.to) {assert.ok(artifact.consumerStepIds.includes(route.to))}
@@ -164,6 +168,7 @@ test('all Inspector specification anchors resolve', () => {
     'utf8'
   )
   const anchors = anchorsIn(markdown)
+
   ;[
     ...data.steps.flatMap((item) => item.specRefs),
     ...data.invariants.flatMap((item) => item.specRefs),
@@ -204,6 +209,7 @@ test('CLI version materialization is user-selected, manual, and precedes packing
 test('Asyra Design App, generated template, and CLI versions stay synchronized', () => {
   const readManifest = (relativePath) =>
     JSON.parse(fs.readFileSync(path.resolve(repoRoot, relativePath), 'utf8'))
+
   const app = readManifest('apps/asyra-design/package.json')
   const template = readManifest('create-app/asyra-design/template/package.json')
   const cli = readManifest('create-app/asyra-design/package.json')

@@ -14,15 +14,20 @@ interface Caster {
 export function createShadowFrame(renderer: Renderer) {
   let previous:
     { scene: THREE.Scene; camera: THREE.Camera; casters: Caster[] } | undefined
+
   return (scene: THREE.Scene, camera: THREE.Camera): void => {
     const shadow = renderer.shadowMap
+
     if (!shadow?.enabled || shadow.autoUpdate !== true) {
       renderer.render(scene, camera)
+
       return
     }
+
     // Capture passes change visibility and material sides, including enclosing
     // parents. These are the only mutable caster inputs within this flush.
     const casters: Caster[] = []
+
     scene.traverseVisible((object) => {
       if (
         !object.castShadow ||
@@ -34,9 +39,11 @@ export function createShadowFrame(renderer: Renderer) {
       ) {
         return
       }
+
       const materials = Array.isArray(object.material)
         ? object.material
         : [object.material]
+
       casters.push({
         object,
         sides: materials.flatMap((material) => [
@@ -53,6 +60,7 @@ export function createShadowFrame(renderer: Renderer) {
       completed.casters.length === casters.length &&
       casters.every((caster, index) => {
         const old = completed.casters[index]
+
         return (
           old.object === caster.object &&
           old.sides.length === caster.sides.length &&
@@ -60,9 +68,11 @@ export function createShadowFrame(renderer: Renderer) {
         )
       })
     const automatic = shadow.autoUpdate
+
     if (reusable && !shadow.needsUpdate) {
       shadow.autoUpdate = false
     }
+
     try {
       renderer.render(scene, camera)
       previous = { scene, camera, casters }

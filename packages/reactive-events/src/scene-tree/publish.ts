@@ -31,6 +31,7 @@ export const publishLocalSceneTreeChanges = (
   if (changes.length === 0) {
     return
   }
+
   publishLocalProjectionEvents(
     [
       Object.freeze({

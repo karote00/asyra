@@ -28,7 +28,9 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false
   }
+
   const prototype = Object.getPrototypeOf(value)
+
   return prototype === Object.prototype || prototype === null
 }
 
@@ -65,7 +67,9 @@ export const projectAiDrawingDetailChoice = (
   ) {
     return null
   }
+
   const actionResult = turn.result.actionResults[0]
+
   if (
     !isPlainObject(actionResult) ||
     actionResult.actionName !== AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE ||
@@ -73,7 +77,9 @@ export const projectAiDrawingDetailChoice = (
   ) {
     return null
   }
+
   const result = actionResult.result
+
   if (
     result.action !== AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE ||
     result.status !== 'no-change' ||
@@ -86,6 +92,7 @@ export const projectAiDrawingDetailChoice = (
   ) {
     return null
   }
+
   return DRAWING_DETAIL_CHOICE_PROJECTION
 }
 
@@ -101,11 +108,13 @@ const partialCounts = (
       skipped: 0
     }
   }
+
   return result.actionResults.reduce(
     (counts, action) => {
       if (!isPlainObject(action) || !isPlainObject(action.result)) {
         return counts
       }
+
       return {
         applied:
           counts.applied +
@@ -128,25 +137,30 @@ const partialCounts = (
 
 export const formatElapsedTime = (durationMs: number): string => {
   const seconds = Math.max(0, durationMs) / 1_000
+
   if (seconds < 0.05) {
     return '0s'
   }
+
   if (seconds < 10) {
     return `${seconds.toFixed(1)}s`
   }
 
   const roundedSeconds = Math.round(seconds)
+
   if (roundedSeconds < 60) {
     return `${roundedSeconds}s`
   }
 
   const minutes = Math.floor(roundedSeconds / 60)
   const remainingSeconds = roundedSeconds % 60
+
   if (minutes < 60) {
     return `${minutes}m ${remainingSeconds}s`
   }
 
   const hours = Math.floor(minutes / 60)
+
   return `${hours}h ${minutes % 60}m ${remainingSeconds}s`
 }
 
@@ -161,29 +175,35 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       ? ` ${turn.result.message}`
       : ''
   let message = 'The request failed. Review the canvas before trying again.'
+
   if (isPlainObject(turn.result) && turn.result.stage === 'provider') {
     message = 'Could not complete the AI request. Your drawing is unchanged.'
     if (turn.result.code === 'AI_PROVIDER_INVALID_CONFIGURATION') {
       message =
         'The AI provider is unavailable or not configured. Your drawing is unchanged.'
     }
+
     if (
       turn.result.message ===
       'Image conversion failed. Your drawing is unchanged.'
     ) {
       message = turn.result.message
     }
+
     if (turn.result.code === 'AI_PROVIDER_TIMEOUT') {
       message = 'The request timed out before any changes were applied.'
     }
+
     if (turn.result.code === 'AI_PROVIDER_TRANSPORT_FAILED') {
       message = 'The AI connection was interrupted. Your drawing is unchanged.'
     }
+
     if (turn.result.code === 'AI_PROVIDER_MALFORMED_RESPONSE') {
       message =
         'The AI returned an invalid drawing response. Your drawing is unchanged.'
     }
   }
+
   if (
     isPlainObject(turn.result) &&
     isPlainObject(turn.result.transaction) &&
@@ -196,6 +216,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       outcome: turn.outcome
     })
   }
+
   if (
     isPlainObject(turn.result) &&
     isPlainObject(turn.result.transaction) &&
@@ -210,6 +231,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       outcome: turn.outcome
     })
   }
+
   if (
     isPlainObject(turn.result) &&
     turn.result.status === 'failed' &&
@@ -221,12 +243,14 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       Object.hasOwn(activityToolLabels, turn.result.failedAction)
         ? activityToolLabels[turn.result.failedAction]
         : 'The remaining work'
+
     return Object.freeze({
       durationLabel: formatElapsedTime(turn.durationMs),
       outcome: turn.outcome,
       message: `${label} could not be completed.${executionReason} Changes already applied have been kept.`
     })
   }
+
   if (
     isPlainObject(turn.result) &&
     turn.result.status === 'cancelled' &&
@@ -240,6 +264,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
         'The request was stopped. Changes already applied have been kept.'
     })
   }
+
   const reported =
     isPlainObject(turn.result) &&
     turn.result.status === 'executed' &&
@@ -250,6 +275,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
             entry.actionName === AiActionNames.REPORT_OUTCOME
         )
       : undefined
+
   if (
     isPlainObject(reported) &&
     isPlainObject(reported.result) &&
@@ -261,6 +287,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       isPlainObject(reported.result.persistence)
     ) {
       const status = reported.result.persistence.status
+
       if (status === 'unavailable' || status === 'local-only') {
         return Object.freeze({
           durationLabel: formatElapsedTime(turn.durationMs),
@@ -272,22 +299,28 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
         })
       }
     }
+
     let disposition = ''
+
     if (reported.result.outcome === 'unsupported') {
       disposition =
         turn.outcome === 'partial' ? '' : '\n\nNo canvas changes were made.'
     }
+
     return Object.freeze({
       durationLabel: formatElapsedTime(turn.durationMs),
       message: reported.result.message + disposition,
       outcome: turn.outcome
     })
   }
+
   const question = projectAiQuestion(turn)
+
   if (question) {
     message = question.message
   } else if (turn.outcome === 'success') {
     const counts = partialCounts(turn.result)
+
     message =
       counts.applied > 0
         ? `Updated ${counts.applied} editable element${counts.applied === 1 ? '' : 's'}.`
@@ -302,12 +335,14 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     }
   } else if (turn.outcome === 'partial') {
     const counts = partialCounts(turn.result)
+
     message = `Partially updated the drawing: ${counts.applied} applied, ${counts.skipped} skipped.`
   } else if (turn.outcome === 'no-change') {
     message = 'No canvas changes were needed.'
   } else if (turn.outcome === 'cancelled') {
     message = 'The request was cancelled.'
   }
+
   return Object.freeze({
     durationLabel: formatElapsedTime(turn.durationMs),
     message,
@@ -320,15 +355,18 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
   if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') {
     return false
   }
+
   if (!isPlainObject(turn.result)) {
     return false
   }
+
   if (
     isPlainObject(turn.result.transaction) &&
     turn.result.transaction.status === 'unknown'
   ) {
     return false
   }
+
   return [
     'context',
     'provider',
@@ -345,12 +383,14 @@ export const projectAiQuestion = (
   readonly choices: readonly AiDrawingDetailChoice[]
 } | null => {
   const detail = projectAiDrawingDetailChoice(turn)
+
   if (detail) {
     return {
       message: 'Choose a drawing detail level.',
       choices: detail.choices
     }
   }
+
   if (
     turn.outcome !== 'no-change' ||
     !isPlainObject(turn.result) ||
@@ -359,7 +399,9 @@ export const projectAiQuestion = (
   ) {
     return null
   }
+
   const action = turn.result.actionResults[0]
+
   if (
     !isPlainObject(action) ||
     action.actionName !== AiActionNames.REQUEST_CLARIFICATION ||
@@ -368,7 +410,9 @@ export const projectAiQuestion = (
   ) {
     return null
   }
+
   const { question, kind } = action.result.clarification
+
   if (
     kind !== 'question' ||
     typeof question !== 'string' ||
@@ -377,5 +421,6 @@ export const projectAiQuestion = (
   ) {
     return null
   }
+
   return { message: question, choices: [] }
 }

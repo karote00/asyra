@@ -4,16 +4,21 @@ import { createHash } from 'node:crypto'
 import { URL, fileURLToPath } from 'node:url'
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex')
+
 const repository = fs.realpathSync(
   fileURLToPath(new URL('../../../../', import.meta.url))
 )
+
 const inside = (root, file) => file.startsWith(root + path.sep)
+
 const text = (value) => typeof value === 'string' && value.trim().length > 0
+
 function requireValue(condition, message) {
   if (!condition) {
     throw new Error('Invalid assessment: ' + message)
   }
 }
+
 function object(value, required, optional = []) {
   requireValue(
     value && typeof value === 'object' && !Array.isArray(value),
@@ -27,12 +32,14 @@ function object(value, required, optional = []) {
     'unsupported or missing fields'
   )
 }
+
 function strings(value) {
   requireValue(
     Array.isArray(value) && value.length <= 100 && value.every(text),
     'expected bounded text list'
   )
 }
+
 function reference(directory, ref) {
   object(ref, ['root', 'path', 'sha256'], ['pointer', 'lines'])
   requireValue(
@@ -43,11 +50,13 @@ function reference(directory, ref) {
     'relative evidence paths required'
   )
   const root = fs.realpathSync(path.resolve(directory, ref.root))
+
   requireValue(
     root === repository || inside(repository, root),
     'evidence root escapes repository'
   )
   const filename = fs.realpathSync(path.resolve(root, ref.path))
+
   requireValue(inside(root, filename), 'evidence escapes declared root')
   requireValue(
     fs.statSync(filename).isFile() &&
@@ -55,12 +64,14 @@ function reference(directory, ref) {
     'evidence must be a bounded file'
   )
   const bytes = fs.readFileSync(filename)
+
   requireValue(digest(bytes) === ref.sha256, 'evidence digest mismatch')
   requireValue(
     Object.hasOwn(ref, 'pointer') !== Object.hasOwn(ref, 'lines'),
     'one exact locator required'
   )
   let value
+
   if (Object.hasOwn(ref, 'pointer')) {
     requireValue(
       typeof ref.pointer === 'string' &&
@@ -73,6 +84,7 @@ function reference(directory, ref) {
       ? []
       : ref.pointer.slice(1).split('/')) {
       const key = token.replaceAll('~1', '/').replaceAll('~0', '~')
+
       requireValue(
         value !== null &&
           typeof value === 'object' &&
@@ -83,6 +95,7 @@ function reference(directory, ref) {
     }
   } else {
     const lines = bytes.toString('utf8').replace(/\n$/, '').split('\n')
+
     requireValue(
       Array.isArray(ref.lines) &&
         ref.lines.length === 2 &&
@@ -90,12 +103,14 @@ function reference(directory, ref) {
       'invalid line range'
     )
     const [first, last] = ref.lines
+
     requireValue(
       first >= 1 && last >= first && last <= lines.length,
       'line range does not resolve'
     )
     value = lines.slice(first - 1, last).join('\n')
   }
+
   return { ...ref, value }
 }
 
@@ -110,12 +125,14 @@ export function assessRecordedChanges(directory, filename) {
       changes: []
     }
   }
+
   requireValue(
     path.resolve(filename) !== path.resolve(directory, 'analysis.json'),
     'assessment cannot be the output file'
   )
   const bytes = fs.readFileSync(filename)
   const input = JSON.parse(bytes)
+
   object(input, ['version', 'runSha256', 'reviewer', 'changes'])
   requireValue(input.version === 1, 'unsupported version')
   requireValue(
@@ -188,25 +205,32 @@ export function assessRecordedChanges(directory, filename) {
       'deterministic evidence cannot establish model or Knowledge effect'
     )
     strings(change.limitations)
+
     const resolve = (refs) => {
       requireValue(
         Array.isArray(refs) && refs.length <= 100,
         'bounded evidence list required'
       )
+
       return refs.map((ref) => reference(directory, ref))
     }
+
     const support = resolve(change.support)
     const counterevidence = resolve(change.counterevidence)
     const reasons = []
+
     if (!support.length) {
       reasons.push('No supporting evidence.')
     }
+
     if (!change.limitations.length) {
       reasons.push('No stated limits.')
     }
+
     if (change.proposedEffect === 'not-exercised') {
       reasons.push('Behavior was not exercised.')
     }
+
     if (change.lesson) {
       object(change.lesson, ['cue', 'observation', 'reviewed'])
       requireValue(
@@ -221,6 +245,7 @@ export function assessRecordedChanges(directory, filename) {
     } else {
       reasons.push('No lesson proposed.')
     }
+
     const effect =
       !support.length ||
       !change.limitations.length ||
@@ -228,6 +253,7 @@ export function assessRecordedChanges(directory, filename) {
         ['helped', 'hurt'].includes(change.proposedEffect))
         ? 'confounded'
         : change.proposedEffect
+
     return {
       ...change,
       support,
@@ -248,6 +274,7 @@ export function assessRecordedChanges(directory, filename) {
           }
     }
   })
+
   return {
     status: 'assessed',
     runSha256: input.runSha256,

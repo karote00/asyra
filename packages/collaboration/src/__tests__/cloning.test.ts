@@ -12,6 +12,7 @@ afterEach(() => {
 describe('collaboration clone profiling', () => {
   it('reports detached clone timing without changing publication data', () => {
     const sink = vi.fn()
+
     disposers.push(subscribeToBrowserDragPhases(sink))
     const publication = createSharedPublicationFixture({
       mode: 'progressive',

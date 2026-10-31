@@ -7,6 +7,7 @@ test('the production preview worker decodes GLB without Core, GPU initialization
   page
 }, testInfo) => {
   const requests: string[] = []
+
   page.on('request', (request) => requests.push(request.url()))
   await page.goto('/')
   const { json, binary } = triangleFixture(),
@@ -18,11 +19,13 @@ test('the production preview worker decodes GLB without Core, GPU initialization
         start = performance.now(),
         timeoutController = new AbortController(),
         timeout = setTimeout(() => timeoutController.abort(), 5000)
+
       try {
         const asset: VisualAsset = await worker.decode(
           new Uint8Array(data),
           timeoutController.signal
         )
+
         return { asset, elapsedMs: performance.now() - start }
       } finally {
         clearTimeout(timeout)
@@ -34,6 +37,7 @@ test('the production preview worker decodes GLB without Core, GPU initialization
       moduleUrl: '/src/engine/glb/preview-worker.ts'
     }
   )
+
   expect(output.asset.meshes[0].positions).toEqual([0, 0, 0, 1, 0, 0, 0, 1, 0])
   expect(output.asset.source.sha256).toBe(
     createHash('sha256').update(bytes).digest('hex')

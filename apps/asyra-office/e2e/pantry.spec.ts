@@ -14,12 +14,14 @@ test('pantry source review captures appliances, shelf and sink at readable scale
     'Requires a hardware WebGL host.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('console', (message) => {
     // Browser-generated favicon requests are outside the scene-rendering contract.
     if (message.location().url.endsWith('/favicon.ico')) {
       return
     }
+
     if (message.type() === 'error') {
       errors.push(message.location().url + ': ' + message.text())
     }
@@ -38,18 +40,24 @@ test('pantry source review captures appliances, shelf and sink at readable scale
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const graphics = await canvas.evaluate((node) => {
     const gl = (node as HTMLCanvasElement).getContext('webgl2')
+
     if (!gl || gl.isContextLost()) {
       throw new Error('Missing WebGL2 context')
     }
+
     const extension = gl.getExtension('WEBGL_debug_renderer_info')
+
     if (!extension) {
       throw new Error('Cannot verify graphics backend')
     }
+
     return String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL))
   })
+
   expect(graphics).not.toMatch(
     /swiftshader|llvmpipe|softpipe|software rasterizer/i
   )
+
   const settle = () =>
     page.evaluate(
       () =>
@@ -57,12 +65,15 @@ test('pantry source review captures appliances, shelf and sink at readable scale
           requestAnimationFrame(() => requestAnimationFrame(() => done()))
         )
     )
+
   await settle()
   await canvas.screenshot({ path: info.outputPath('pantry-source-angle.png') })
   const bounds = await canvas.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing scene bounds')
   }
+
   // Native-resolution source-angle crop keeps the refrigerator light readable.
   await page.screenshot({
     clip: {
@@ -96,8 +107,10 @@ test('pantry source review captures appliances, shelf and sink at readable scale
       path: info.outputPath(name + '.png')
     })
   }
+
   const x = bounds.x + bounds.width / 2,
     y = bounds.y + bounds.height / 2
+
   await page.mouse.move(x, y)
   await page.mouse.down()
   await page.mouse.move(x - 80, y + 60, { steps: 8 })

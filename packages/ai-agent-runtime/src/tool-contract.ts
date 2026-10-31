@@ -90,6 +90,7 @@ export const createAiToolContract = (
   if (registeredContracts.has(input)) {
     return input as AiToolContract
   }
+
   if (
     !nonempty(input.name) ||
     !nonempty(input.description) ||
@@ -100,9 +101,11 @@ export const createAiToolContract = (
       'Tool identity, description and positive contract revision are required'
     )
   }
+
   if (!['read', 'prepare', 'mutation', 'external'].includes(input.effect)) {
     throw new TypeError('Unknown tool effect')
   }
+
   if (
     input.delivery !== undefined &&
     (!input.delivery ||
@@ -116,6 +119,7 @@ export const createAiToolContract = (
       'Delivery requires an exact JSON Pointer and output schema'
     )
   }
+
   if (
     !Array.isArray(input.resources) ||
     !input.resources.every(nonempty) ||
@@ -123,12 +127,14 @@ export const createAiToolContract = (
   ) {
     throw new TypeError('Tool resources must be unique non-empty names')
   }
+
   if (
     input.composition !== undefined &&
     !['allowed', 'control-plane'].includes(input.composition)
   ) {
     throw new TypeError('Invalid composition eligibility')
   }
+
   if (
     input.verification !== undefined &&
     (!input.verification ||
@@ -136,6 +142,7 @@ export const createAiToolContract = (
       Object.keys(input.verification).length !== 2 ||
       !['statusPath', 'progressPath'].every((key) => {
         const path = input.verification?.[key as 'statusPath' | 'progressPath']
+
         return typeof path === 'string' && /^(?:\/(?:[^~]|~[01])*)+$/.test(path)
       }) ||
       input.verification.statusPath === input.verification.progressPath)
@@ -144,6 +151,7 @@ export const createAiToolContract = (
       'Verification requires distinct JSON Pointer paths on a read or prepare tool'
     )
   }
+
   if (
     input.delivery?.receipt !== undefined &&
     (!input.delivery.receipt ||
@@ -156,7 +164,9 @@ export const createAiToolContract = (
       'Delivery receipt requires an exact path and owning adapter'
     )
   }
+
   const lifecycle = input.lifecycle
+
   if (
     !lifecycle ||
     !['cooperative', 'before-dispatch'].includes(lifecycle.cancellation) ||
@@ -167,9 +177,11 @@ export const createAiToolContract = (
   ) {
     throw new TypeError('Invalid tool lifecycle')
   }
+
   if (lifecycle.retry === 'read-only' && input.effect !== 'read') {
     throw new TypeError('Only read tools can declare read-only retry')
   }
+
   const contract = Object.freeze({
     name: input.name,
     description: input.description,
@@ -205,7 +217,9 @@ export const createAiToolContract = (
       ? {}
       : { composition: input.composition })
   })
+
   registeredContracts.add(contract)
+
   return contract
 }
 
@@ -228,9 +242,11 @@ export const selectAiToolResultSchema = (
   if (status === 'success') {
     return contract.outputSchema
   }
+
   if (status === 'partial') {
     return contract.partialOutputSchema ?? contract.outputSchema
   }
+
   return contract.recoveryOutputSchema
 }
 
@@ -242,19 +258,23 @@ export const embedAiToolSchema = (
   if (!pointer.startsWith('#/')) {
     throw new TypeError('Schema embedding requires a local destination pointer')
   }
+
   const visit = (value: AiJsonValue): AiJsonValue => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       return value
     }
+
     const result: Record<string, AiJsonValue> = {
       ...(value as Readonly<Record<string, AiJsonValue>>)
     }
+
     if (
       typeof result.$ref === 'string' &&
       (result.$ref === '#' || result.$ref.startsWith('#/'))
     ) {
       result.$ref = pointer + result.$ref.slice(1)
     }
+
     for (const key of [
       '$defs',
       'definitions',
@@ -264,12 +284,14 @@ export const embedAiToolSchema = (
       'dependencies'
     ]) {
       const map = result[key]
+
       if (map && typeof map === 'object' && !Array.isArray(map)) {
         result[key] = Object.fromEntries(
           Object.entries(map).map(([name, child]) => [name, visit(child)])
         )
       }
     }
+
     for (const key of [
       'allOf',
       'anyOf',
@@ -288,12 +310,15 @@ export const embedAiToolSchema = (
       'else'
     ]) {
       const child = result[key]
+
       if (child !== undefined) {
         result[key] = Array.isArray(child) ? child.map(visit) : visit(child)
       }
     }
+
     return result
   }
+
   return visit(schema)
 }
 
@@ -315,6 +340,7 @@ export const inspectAiToolResult = (
     ['not-started', 'completed', 'partial', 'unknown'].includes(
       outcome.settlement
     )
+
   if (!validStatus || !validSettlement) {
     return {
       status: 'invalid',
@@ -324,11 +350,15 @@ export const inspectAiToolResult = (
       value
     }
   }
+
   const schema = selectAiToolResultSchema(contract, outcome.status)
+
   if (schema === undefined) {
     return { ...outcome, value }
   }
+
   let issue: string | undefined
+
   try {
     issue = options.validate(value, schema, { stage: 'output' })
   } catch (error) {
@@ -337,6 +367,7 @@ export const inspectAiToolResult = (
       issue = 'Tool result validation failed'
     }
   }
+
   return issue
     ? {
         status: 'invalid',
@@ -369,13 +400,16 @@ export const createAiToolMiddleware =
   }): AiInvocationMiddleware<T> =>
   async (call, next) => {
     const contract = options.resolve(call.name)
+
     if (!contract) {
       throw new AiToolContractError(
         'registration',
         `Tool contract unavailable: ${call.name}`
       )
     }
+
     let issue: string | undefined
+
     try {
       issue = options.validate(call.input, contract.inputSchema, {
         stage: 'input'
@@ -386,12 +420,15 @@ export const createAiToolMiddleware =
         issue = 'Tool input validation failed'
       }
     }
+
     if (issue) {
       throw new AiToolContractError('input', issue)
     }
+
     const value = await next()
     let outcome: AiToolOutcome
     let selectedValue: unknown
+
     try {
       outcome = options.classify(value, call)
       selectedValue = options.selectValue ? options.selectValue(value) : value
@@ -399,6 +436,7 @@ export const createAiToolMiddleware =
       if (error instanceof AiToolContractError && error.stage === 'output') {
         throw error
       }
+
       throw new AiToolContractError(
         'output',
         error instanceof Error
@@ -407,12 +445,15 @@ export const createAiToolMiddleware =
         { status: 'unknown', settlement: 'unknown', value }
       )
     }
+
     const inspection = inspectAiToolResult(contract, selectedValue, {
       outcome,
       validate: options.validate
     })
+
     if (inspection.status === 'invalid') {
       throw new AiToolContractError('output', inspection.issue, inspection)
     }
+
     return value
   }

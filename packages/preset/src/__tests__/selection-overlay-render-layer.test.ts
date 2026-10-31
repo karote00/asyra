@@ -53,9 +53,11 @@ const createOverlayProbe = ({
   if (!registration) {
     throw new Error('Selection overlay registration was not created')
   }
+
   const layer = registration.layer as
     { children?: OverlayGraphicsProbe[] } | undefined
   const graphics = layer?.children?.[0]
+
   if (!graphics) {
     throw new Error('Selection overlay graphics was not created')
   }
@@ -80,6 +82,7 @@ describe('selection overlay render layer', () => {
         ty: 20
       }
     }
+
     setElementGeometryLocalBounds(renderElement, {
       x: 0,
       y: 0,
@@ -123,10 +126,12 @@ describe('selection overlay render layer', () => {
     const layer = registration?.layer as
       { children?: OverlayGraphicsProbe[] } | undefined
     const graphics = layer?.children?.[0]
+
     expect(graphics).toBeDefined()
     if (!graphics) {
       return
     }
+
     const moveToSpy = vi.spyOn(graphics, 'moveTo')
     const lineToSpy = vi.spyOn(graphics, 'lineTo')
 
@@ -312,6 +317,7 @@ it('does not draw stale selection or hover outlines for a suspended presentation
     hoveredElementId: 'text'
   })
   const move = vi.spyOn(graphics, 'moveTo')
+
   registration.update?.()
   expect(move).not.toHaveBeenCalled()
 })

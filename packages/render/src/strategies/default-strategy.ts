@@ -4,6 +4,7 @@ import type { RenderGraphics } from '../types/render-object.js'
 
 const randomHexColorCode = () => {
   const n = (Math.random() * 0xfffff * 1000000).toString(16)
+
   return '#' + n.slice(0, 6)
 }
 
@@ -16,6 +17,7 @@ export const defaultRectangleStrategy: EngineNeutralRenderStrategy = (
 ) => {
   const width = Math.max(0, toFiniteNumber(data.width))
   const height = Math.max(0, toFiniteNumber(data.height))
+
   graphic.rect(0, 0, width, height).fill(randomHexColorCode())
   graphic.x = toFiniteNumber(data.x)
   graphic.y = toFiniteNumber(data.y)

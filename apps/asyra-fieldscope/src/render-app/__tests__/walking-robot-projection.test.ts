@@ -29,15 +29,18 @@ it('projects the actual selected W2 source once and ignores W1-only refreshes', 
   )
   const projection = new WalkingRobotProjection()
   const first = projection.update(report)
+
   expect(first.length).toBeGreaterThan(20)
   if (report.status === 'legacy-view') {
     throw new Error('Missing active report')
   }
+
   expect(first[0].descriptor.shape).toEqual(report.source.parts[0].shape)
   expect(first.every((mesh) => mesh.id.startsWith('walking-robot.'))).toBe(true)
   expect(projection.update(report)).toBe(first)
   sourceDemand = demand()
   const refreshed = operating.refreshDemand()
+
   expect(projection.update(refreshed)).toBe(first)
   expect(projection.work.poseProjections).toBe(1)
   expect(projection.work.shapeAdmissions).toBe(report.source.parts.length)

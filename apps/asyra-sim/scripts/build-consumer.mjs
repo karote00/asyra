@@ -29,9 +29,12 @@ import {
 
 const repository = fileURLToPath(new URL('../../../', import.meta.url))
 const appDirectory = path.join(repository, 'apps/asyra-sim')
+
 const json = (filename) => JSON.parse(readFileSync(filename, 'utf8'))
+
 const digest = (filename) =>
   createHash('sha256').update(readFileSync(filename)).digest('hex')
+
 const git = (args) =>
   execFileSync('git', args, { cwd: repository, encoding: 'utf8' }).trim()
 
@@ -46,6 +49,7 @@ export function commandExecutionContract(label) {
       }
     }
   }
+
   return { timeoutMs: 5 * 60 * 1000, environment: {} }
 }
 
@@ -53,13 +57,16 @@ export async function buildConsumer() {
   if (process.versions.node.split('.')[0] !== '24') {
     throw new Error('Node.js 24.x is required.')
   }
+
   if (git(['status', '--porcelain'])) {
     throw new Error(
       'Commit or preserve pending work before building an exact-source candidate.'
     )
   }
+
   const sourceCommit = git(['rev-parse', 'HEAD'])
   const artifactParent = path.join(appDirectory, '.artifacts/consumers')
+
   mkdirSync(artifactParent, { recursive: true })
   const output = mkdtempSync(
     path.join(artifactParent, `${sourceCommit.slice(0, 12)}-`)
@@ -68,6 +75,7 @@ export async function buildConsumer() {
     consumer = path.join(output, 'app')
   const logs = path.join(output, 'logs'),
     temporary = path.join(output, 'tmp')
+
   for (const directory of [
     snapshot,
     consumer,
@@ -77,6 +85,7 @@ export async function buildConsumer() {
   ]) {
     mkdirSync(directory, { recursive: true })
   }
+
   const environment = Object.fromEntries(
     Object.entries(process.env).filter(
       ([key]) =>
@@ -84,6 +93,7 @@ export async function buildConsumer() {
         !['APP_URL', 'NODE_PATH', 'NODE_OPTIONS'].includes(key)
     )
   )
+
   Object.assign(environment, {
     APP_URL: 'http://127.0.0.1:3020',
     CI: '1',
@@ -102,6 +112,7 @@ export async function buildConsumer() {
   })
   let active,
     aborted = false
+
   const stop = () => {
     aborted = true
     if (active) {
@@ -112,16 +123,20 @@ export async function buildConsumer() {
       }
     }
   }
+
   process.once('SIGINT', stop)
   process.once('SIGTERM', stop)
   let number = 0
+
   async function run(label, command, args, cwd, isolate = false) {
     if (aborted) {
       throw new Error('Build cancelled.')
     }
+
     if (isolate) {
       ;({ command, args } = isolatedConsumerCommand(cwd, command, args))
     }
+
     const execution = commandExecutionContract(label)
     const filename = path.join(
       logs,
@@ -130,6 +145,7 @@ export async function buildConsumer() {
     const stream = createWriteStream(filename, { flags: 'wx' })
     let bytes = 0,
       failure
+
     await new Promise((resolve, reject) => {
       const child = spawn(command, args, {
         cwd,
@@ -137,10 +153,12 @@ export async function buildConsumer() {
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe']
       })
+
       active = child
       process.stdout.write(
         `${label}: PID ${child.pid}; log ${path.relative(repository, filename)}\n`
       )
+
       const expire = (message) => {
         failure = new Error(message)
         try {
@@ -149,10 +167,13 @@ export async function buildConsumer() {
           /* Already exited. */
         }
       }
+
       const timer = setTimeout(() => {
         const minutes = execution.timeoutMs / 60_000
+
         expire(`${label} exceeded its ${minutes}-minute limit.`)
       }, execution.timeoutMs)
+
       const receive = (chunk) => {
         bytes += chunk.length
         if (bytes > 8 * 1024 * 1024) {
@@ -161,6 +182,7 @@ export async function buildConsumer() {
           stream.write(chunk)
         }
       }
+
       child.stdout.on('data', receive)
       child.stderr.on('data', receive)
       child.once('error', (error) => {
@@ -179,14 +201,18 @@ export async function buildConsumer() {
         )
       })
     })
+
     return filename
   }
+
   try {
     const versionLog = await run('toolchain', 'yarn', ['--version'], repository)
     const yarnVersion = readFileSync(versionLog, 'utf8').trim()
+
     if (yarnVersion !== '4.3.1') {
       throw new Error(`Yarn 4.3.1 is required; found ${yarnVersion}.`)
     }
+
     await run(
       'archive',
       'git',
@@ -213,6 +239,7 @@ export async function buildConsumer() {
       (item) =>
         `${item.packageName}#build:${item.packageName.slice('@asyra/'.length)}`
     )
+
     await run(
       'framework-build',
       'yarn',
@@ -231,11 +258,14 @@ export async function buildConsumer() {
         'framework',
         path.basename(item.tarballPath)
       )
+
       cpSync(item.tarballPath, tarballPath)
+
       return { ...item, tarballPath }
     })
     const sourceApp = path.join(snapshot, 'apps/asyra-sim')
     const app = json(path.join(sourceApp, 'package.json'))
+
     for (const entry of [
       'src',
       'samples',
@@ -253,17 +283,21 @@ export async function buildConsumer() {
         recursive: true
       })
     }
+
     for (const file of consumerPortableFiles) {
       const destination = path.join(consumer, file)
+
       mkdirSync(path.dirname(destination), { recursive: true })
       cpSync(path.join(sourceApp, file), destination)
     }
+
     cpSync(path.join(sourceApp, '.env.example'), path.join(consumer, '.env'))
     const manifest = consumerManifest(
       app,
       json(path.join(snapshot, 'package.json')),
       packages
     )
+
     writeFileSync(
       path.join(consumer, 'package.json'),
       JSON.stringify(manifest, null, 2) + '\n'
@@ -288,6 +322,7 @@ export async function buildConsumer() {
       readFileSync(path.join(snapshot, 'yarn.lock'), 'utf8'),
       readFileSync(path.join(consumer, 'yarn.lock'), 'utf8')
     )
+
     assertInstalledPackages(consumer, packages)
     // Explicitly require every direct dependency; ancestor hoisting cannot satisfy it.
     assertOwnedPaths(
@@ -312,6 +347,7 @@ export async function buildConsumer() {
       consumer,
       true
     )
+
     assertOwnedPaths(
       consumer,
       readFileSync(typeFiles, 'utf8').trim().split('\n')
@@ -321,11 +357,13 @@ export async function buildConsumer() {
     const moduleEvidence = readdirSync(
       path.join(consumer, '.build-evidence')
     ).sort()
+
     if (moduleEvidence.length < 3) {
       throw new Error(
         'Main and both module Worker build evidence are required.'
       )
     }
+
     if (
       git(['rev-parse', 'HEAD']) !== sourceCommit ||
       git(['status', '--porcelain'])
@@ -334,6 +372,7 @@ export async function buildConsumer() {
         'Source changed during consumer verification; no passing record was written.'
       )
     }
+
     const report = {
       format: 'sim-clean-consumer',
       version: 1,
@@ -365,6 +404,7 @@ export async function buildConsumer() {
     const staged = assembleDistribution({ snapshot, consumer, output, report })
     const candidateName = path.basename(staged)
     const stagedArchive = `${staged}.tar.gz`
+
     await run(
       'distribution-archive',
       'tar',
@@ -379,10 +419,13 @@ export async function buildConsumer() {
         'Source changed during distribution assembly; no candidate was finalized.'
       )
     }
+
     const archive = `${candidateName}.tar.gz`
+
     renameSync(staged, path.join(output, candidateName))
     renameSync(stagedArchive, path.join(output, archive))
     const archiveSha256 = digest(path.join(output, archive))
+
     writeFileSync(
       path.join(output, `${archive}.sha256`),
       `${archiveSha256}  ${archive}\n`
@@ -402,6 +445,7 @@ export async function buildConsumer() {
     process.stdout.write(
       `Independent consumer passed: ${path.relative(repository, output)}\nNot an R0 release decision.\n`
     )
+
     return output
   } catch (error) {
     writeFileSync(
@@ -428,5 +472,6 @@ if (
       'This command accepts no options; it always verifies the exact clean source.'
     )
   }
+
   await buildConsumer()
 }

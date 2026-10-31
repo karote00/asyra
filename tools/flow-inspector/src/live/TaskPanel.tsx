@@ -111,6 +111,7 @@ export function TaskPanel({
 
   async function reviseNote(note: Note, kind: string) {
     const key = `${draftKey}/note/${note.id}`
+
     await update({
       kind,
       id: note.id,
@@ -158,6 +159,7 @@ export function TaskPanel({
                     nodeId,
                     actionId
                   })
+
                   setPreview({ value, revision: context.revision })
                 })
               }
@@ -202,6 +204,7 @@ export function TaskPanel({
                     '/api/rerun',
                     { ...preview.value, confirm: true }
                   )
+
                   setNotice(
                     result.coverageComplete
                       ? 'Results updated'

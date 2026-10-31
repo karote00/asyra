@@ -10,18 +10,21 @@ export function pantryShelfPlant() {
   const foliage = planter(1, 0xc19d5a, recipe.seed, 'shrub').filter(
     (p) => p.id !== 'pot' && p.id !== 'soil'
   )
+
   for (const p of foliage) {
     for (let i = 0; i < p.mesh.positions.length; i += 3) {
       const height = p.mesh.positions[i + 2] - recipe.sourceBase
       const t = Math.max(0, Math.min(1, height / recipe.taperHeight))
       const spread =
         recipe.bottomSpread + (recipe.topSpread - recipe.bottomSpread) * t
+
       p.mesh.positions[i] *= spread
       p.mesh.positions[i + 1] *= spread
       p.mesh.positions[i + 2] =
         recipe.foliageBase + height * recipe.verticalScale
     }
   }
+
   return [
     part(
       'pot',
@@ -58,20 +61,26 @@ function roundedPetal(radii: readonly number[]) {
     ]),
     20
   )
+
   for (let i = 0; i < mesh.positions.length; i++) {
     mesh.positions[i] *= radii[i % 3]
   }
+
   return mesh
 }
 
 function shelfFlowers() {
   const plant = specification.sourceVariants.shelfPlant
   const recipe = plant.flowers
+
   const color = (value: string) => Number.parseInt(value.slice(1), 16)
+
   return recipe.instances.flatMap((flower, index) => {
     const petals = emptyMesh()
+
     for (let i = 0; i < recipe.petalCount; i++) {
       const a = (i * Math.PI * 2) / recipe.petalCount
+
       append(
         petals,
         roundedPetal(recipe.petalRadii),
@@ -83,6 +92,7 @@ function shelfFlowers() {
         [8, 0, (-a * 180) / Math.PI]
       )
     }
+
     const head = placeParts(
       [
         part(
@@ -104,17 +114,21 @@ function shelfFlowers() {
       0,
       [flower.scale, flower.scale, flower.scale]
     )
+
     for (const p of head) {
       const mesh = emptyMesh()
+
       append(mesh, p.mesh, vec(flower.position), vec(flower.rotation))
       p.mesh = mesh
     }
+
     const [x, y, z] = flower.position
     const path: Vec[] = [
       [x * 0.15, y * 0.15, plant.soilTop],
       [x * 0.6, y * 0.6, z * 0.7],
       vec(flower.position)
     ]
+
     return [
       part(
         `flower-stem-${index}`,
@@ -134,6 +148,7 @@ export function pantrySmallShelfPlant() {
   const foliage = planter(1, 0x8d7657, recipe.seed, 'stemmed').filter(
     (p) => p.id !== 'pot' && p.id !== 'soil'
   )
+
   for (const p of foliage) {
     for (let i = 0; i < p.mesh.positions.length; i += 3) {
       p.mesh.positions[i] *= recipe.foliageScale[0]
@@ -143,6 +158,7 @@ export function pantrySmallShelfPlant() {
         (p.mesh.positions[i + 2] - recipe.sourceBase) * recipe.foliageScale[2]
     }
   }
+
   return [
     ...pantryVessel('shelf-spice-jar'),
     part(
@@ -167,14 +183,18 @@ export function pantrySmallShelfPlant() {
 /** Owner-identified fifth shelf object: blue/brown pot, succulent and dark bud. */
 export function pantryShelfSucculent() {
   const recipe = specification.sourceVariants.shelfSucculent
+
   const color = (value: string) => Number.parseInt(value.slice(1), 16)
+
   const bud = emptyMesh()
+
   append(
     bud,
     roundedPetal(recipe.bud.radii),
     vec(recipe.bud.position),
     vec(recipe.bud.rotation)
   )
+
   return [
     part(
       'pot',
@@ -207,12 +227,14 @@ export function pantryShelfSucculent() {
     ),
     ...recipe.leaves.map((leaf, i) => {
       const mesh = emptyMesh()
+
       append(
         mesh,
         roundedPetal(leaf.radii),
         vec(leaf.position),
         vec(leaf.rotation)
       )
+
       return part('succulent-leaf-' + i, mesh, color(leaf.color), 'leaf', 0.72)
     }),
     part(

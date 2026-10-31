@@ -27,6 +27,7 @@ test.describe('Delete Selected Element', () => {
 
   test('Delete key removes the single selected element', async ({ page }) => {
     const initialCount = await getElementCount(page)
+
     await createRectangle(page, 0.3, 0.3)
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
     expect(await hasSelectedElement(page)).toBe(true)
@@ -39,6 +40,7 @@ test.describe('Delete Selected Element', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const ids = core?.deps?.selection?.getElementSelectionIds?.() ?? []
+
           return ids.length
         })
       })
@@ -49,17 +51,21 @@ test.describe('Delete Selected Element', () => {
     page
   }) => {
     const pageErrors: string[] = []
+
     page.on('pageerror', (error) => pageErrors.push(String(error)))
 
     await createRectangle(page, 0.42, 0.42)
     const subtree = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const childId = core.deps.selection.getElementSelectionIds()[0]
+
       return { childId }
     })
+
     await pressGroupCommandShortcut(page, 'group')
     const groupId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core.deps.selection.getElementSelectionIds()[0] as string
     })
 
@@ -69,6 +75,7 @@ test.describe('Delete Selected Element', () => {
         page.evaluate(
           async ({ childId, deletedGroupId }) => {
             const core = (await import('../src/testing/runtime-access')).core
+
             return {
               childExists: Boolean(core.deps.sceneTree.getElementById(childId)),
               flattenedIds:
@@ -96,6 +103,7 @@ test.describe('Delete Selected Element', () => {
         page.evaluate(
           async ({ childId, deletedGroupId }) => {
             const core = (await import('../src/testing/runtime-access')).core
+
             return {
               childExists: Boolean(core.deps.sceneTree.getElementById(childId)),
               groupExists: Boolean(
@@ -120,6 +128,7 @@ test.describe('Delete Selected Element', () => {
         page.evaluate(
           async ({ childId, deletedGroupId }) => {
             const core = (await import('../src/testing/runtime-access')).core
+
             return {
               childExists: Boolean(core.deps.sceneTree.getElementById(childId)),
               groupExists: Boolean(
@@ -141,19 +150,24 @@ test.describe('Delete Selected Element', () => {
     await createRectangle(page, 0.72, 0.48)
     const survivingId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core.deps.selection.getElementSelectionIds()[0] as string
     })
     const survivingCenter = await getSelectedElementClientCenter(page)
+
     expect(survivingCenter).not.toBeNull()
     if (!survivingCenter) {
       return
     }
+
     const emptyCanvasPoint = await getCanvasPosition(page, 0.08, 0.08)
+
     await expect
       .poll(() =>
         page.evaluate(
           async ({ center, emptyPoint, expectedSurvivorId }) => {
             const core = (await import('../src/testing/runtime-access')).core
+
             return {
               elementDataMapIds: Object.keys(
                 core.getUIProperty('elementDataMap') ?? {}
@@ -188,6 +202,7 @@ test.describe('Delete Selected Element', () => {
       .poll(() =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core.deps.selection.getElementSelectionIds() as string[]
         })
       )
@@ -197,12 +212,14 @@ test.describe('Delete Selected Element', () => {
       .poll(() =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core.deps.selection.getElementSelectionIds() as string[]
         })
       )
       .toEqual([survivingId])
 
     const finalDocumentDigest = await getCoreDocumentDigest(page)
+
     await expect
       .poll(() => getPersistedDocumentDigest(getCurrentDocumentFileId(page)))
       .toEqual(finalDocumentDigest)
@@ -212,6 +229,7 @@ test.describe('Delete Selected Element', () => {
     const afterReload = await page.evaluate(
       async ({ childId, deletedGroupId, expectedSurvivorId }) => {
         const core = (await import('../src/testing/runtime-access')).core
+
         return {
           childExists: Boolean(core.deps.sceneTree.getElementById(childId)),
           groupExists: Boolean(
@@ -228,6 +246,7 @@ test.describe('Delete Selected Element', () => {
         expectedSurvivorId: survivingId
       }
     )
+
     expect(afterReload).toEqual({
       childExists: false,
       groupExists: false,
@@ -240,6 +259,7 @@ test.describe('Delete Selected Element', () => {
     page
   }) => {
     const initialCount = await getElementCount(page)
+
     await createRectangle(page, 0.4, 0.4)
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
@@ -261,6 +281,7 @@ test.describe('Delete Selected Element', () => {
 
   test('delete action supports undo and redo', async ({ page }) => {
     const pageErrors: string[] = []
+
     page.on('pageerror', (error) => pageErrors.push(error.message))
     page.on('console', (message) => {
       if (message.type() === 'error') {
@@ -268,6 +289,7 @@ test.describe('Delete Selected Element', () => {
       }
     })
     const initialCount = await getElementCount(page)
+
     await createRectangle(page, 0.5, 0.45)
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
@@ -301,6 +323,7 @@ test.describe('Delete Selected Element', () => {
         core.deps.props.getPropertyById(id)
       )
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+
       testRuntimeState.set('delete-rollback-identity', {
         element,
         elementId,
@@ -312,6 +335,7 @@ test.describe('Delete Selected Element', () => {
         'delete-rollback-statuses',
         []
       )
+
       core.deps.factory.subscribeToTransactionStatus((status) =>
         statuses.push(status.status)
       )
@@ -323,6 +347,7 @@ test.describe('Delete Selected Element', () => {
           message: 'Force delete rollback'
         })
       )
+
       return {
         data: await core.save(),
         elementId,
@@ -337,6 +362,7 @@ test.describe('Delete Selected Element', () => {
         page.evaluate(async () => {
           const { testRuntimeState } =
             await import('../src/testing/runtime-access')
+
           return (
             testRuntimeState.get<string[]>('delete-rollback-statuses') ?? []
           )
@@ -353,12 +379,15 @@ test.describe('Delete Selected Element', () => {
         propComponents: readonly unknown[]
         propIds: readonly string[]
       }>('delete-rollback-identity')
+
       if (!identity) {
         throw new Error('Delete rollback identity is unavailable')
       }
+
       const restoredElement = core.deps.sceneTree.getElementById(
         identity.elementId
       )
+
       return {
         data: await core.save(),
         sameElement: restoredElement === identity.element,
@@ -370,6 +399,7 @@ test.describe('Delete Selected Element', () => {
         selectionIds: core.deps.selection.getElementSelectionIds()
       }
     })
+
     expect(after.data).toEqual(before.data)
     expect(after.sameElement).toBe(true)
     expect(after.samePropComponents).toBe(true)
@@ -380,6 +410,7 @@ test.describe('Delete Selected Element', () => {
     page
   }) => {
     const pageErrors: string[] = []
+
     page.on('pageerror', (error) => {
       pageErrors.push(String(error))
     })
@@ -390,9 +421,11 @@ test.describe('Delete Selected Element', () => {
     await clickCanvas(page, 0.3, 0.3)
     const firstElement = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core.deps.selection.getElementSelectionIds()[0] as string
     })
     const firstElementCenter = await getSelectedElementClientCenter(page)
+
     expect(firstElementCenter).not.toBeNull()
     if (!firstElementCenter) {
       return
@@ -402,9 +435,11 @@ test.describe('Delete Selected Element', () => {
     await clickCanvas(page, 0.55, 0.5)
     const secondElement = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core.deps.selection.getElementSelectionIds()[0] as string
     })
     const secondElementCenter = await getSelectedElementClientCenter(page)
+
     expect(secondElementCenter).not.toBeNull()
     if (!secondElementCenter) {
       return
@@ -419,6 +454,7 @@ test.describe('Delete Selected Element', () => {
       .poll(() =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core.deps.selection.getElementSelectionIds() as string[]
         })
       )
@@ -431,6 +467,7 @@ test.describe('Delete Selected Element', () => {
       .poll(() =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core.deps.selection.getElementSelectionIds() as string[]
         })
       )
@@ -483,6 +520,7 @@ test.describe('Delete Selected Element', () => {
     await page.evaluate(
       async ({ deletedId, x, y }) => {
         const core = (await import('../src/testing/runtime-access')).core
+
         core.setSystemProperty('mousePosition', { x, y })
         core.setSystemProperty('mouseDelta', { x: 0, y: 0 })
         core.setSystemProperty('mouseButton', 'none')
@@ -506,6 +544,7 @@ test.describe('Delete Selected Element', () => {
           const core = (await import('../src/testing/runtime-access')).core
           const hoveredId =
             core?.getSystemProperty?.('hoveredElementId') ?? null
+
           return hoveredId !== deletedId
         }, runtime.selectedId)
       })
@@ -529,12 +568,14 @@ test.describe('Delete Selected Element', () => {
     for (const position of anchorPositions) {
       await clickCanvas(page, position.x, position.y)
     }
+
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
     const beforeDelete = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const pathEditingVectorId =
         core?.getSystemProperty?.('pathEditingVectorId') ?? null
+
       if (!pathEditingVectorId) {
         return null
       }
@@ -565,6 +606,7 @@ test.describe('Delete Selected Element', () => {
       anchorPositions[2].x,
       anchorPositions[2].y
     )
+
     await page.mouse.move(middlePointPos.x, middlePointPos.y)
     await page.mouse.click(middlePointPos.x, middlePointPos.y)
 
@@ -573,6 +615,7 @@ test.describe('Delete Selected Element', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
           return {
             pointId: selected?.pointId ?? null,
             target: selected?.target ?? null
@@ -636,6 +679,7 @@ test.describe('Delete Selected Element', () => {
 
   test('Delete is blocked in path-editing mode', async ({ page }) => {
     const initialCount = await getElementCount(page)
+
     await createVectorPath(page, 0.3, 0.3, 0.2, 0.15)
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
@@ -646,6 +690,7 @@ test.describe('Delete Selected Element', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('pathEditingVectorId') ?? null
         })
       })
@@ -653,6 +698,7 @@ test.describe('Delete Selected Element', () => {
 
     const pathEditingVectorId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.getSystemProperty?.('pathEditingVectorId') ?? null
     })
 
@@ -663,6 +709,7 @@ test.describe('Delete Selected Element', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('pathEditingVectorId') ?? null
         })
       })
@@ -673,11 +720,13 @@ test.describe('Delete Selected Element', () => {
     page
   }) => {
     const initialCount = await getElementCount(page)
+
     await createRectangle(page, 0.5, 0.5)
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
     await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       core.setSystemProperty('pathEditingVectorId', null)
       core.setSystemProperty('pathEditingMode', true)
     })
@@ -691,14 +740,17 @@ test.describe('Delete Selected Element', () => {
     page
   }) => {
     const initialCount = await getElementCount(page)
+
     await createRectangle(page, 0.55, 0.55)
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
     const selectedId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const id = core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
+
       core.setSystemProperty('pathEditingVectorId', id)
       core.setSystemProperty('pathEditingMode', false)
+
       return id
     })
 

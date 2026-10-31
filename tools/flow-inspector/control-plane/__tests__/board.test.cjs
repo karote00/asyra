@@ -19,11 +19,14 @@ test(
     const { LOCAL_ACTOR } = require('../service.cjs')
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'target-assessment-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const initial = captureSource(
       root,
@@ -39,25 +42,30 @@ test(
           repository: 'offline/scoped-presentation',
           base: 'main'
         },
+
         runner: async (options) => {
           if (hold && !options.signal.aborted) {
             await new Promise((resolve) =>
               options.signal.addEventListener('abort', resolve, { once: true })
             )
           }
+
           return require('../runner.cjs').runVerification(options)
         }
       }
     })
+
     try {
       const acceptedSource = await server.service.wait(
         server.service.start({ mode: 'candidate' }, LOCAL_ACTOR)
       )
+
       assert.equal(acceptedSource.evidence.status, 'passed')
       const acceptedReview = server.service.prepareEvolution(
         { attemptId: acceptedSource.id },
         LOCAL_ACTOR
       )
+
       server.service.decideEvolution(
         {
           id: acceptedReview.id,
@@ -70,16 +78,19 @@ test(
         initial.sourceRoot,
         loadContract(root).testFile
       )
+
       fs.chmodSync(candidateTestFile, 0o600)
       fs.appendFileSync(candidateTestFile, '\n')
       const source = await server.service.wait(
         server.service.start({ mode: 'candidate' }, LOCAL_ACTOR)
       )
+
       assert.equal(source.evidence.status, 'passed')
       const review = server.service.prepareEvolution(
         { attemptId: source.id },
         LOCAL_ACTOR
       )
+
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
         downloadsPath: temporary
@@ -89,12 +100,14 @@ test(
       })
       const errors = [],
         requests = []
+
       page.on('pageerror', (error) => errors.push(error.message))
       page.on('request', (request) =>
         requests.push(new URL(request.url()).pathname)
       )
       await page.goto(server.origin + '/transaction-atomicity')
       const frame = page
+
       await frame
         .locator('[data-step-id="finalize-transaction-state"]')
         .click({ timeout: 5000 })
@@ -166,6 +179,7 @@ test(
       const target = server.service.getTarget(
         server.service.targets().records[0].id
       )
+
       assert.equal(target.targetVerification.reviewId, review.id)
       await expect(frame.locator('#target-pins')).toContainText(review.id)
       await expect(frame.locator('#target-review')).toBeDisabled()
@@ -183,15 +197,20 @@ test(
       })
       let oldListReady = false,
         freshLists = 0
+
       await page.route('**/api/target-assessments', async (route) => {
         if (route.request().method() !== 'GET') {
           return route.continue()
         }
+
         if (oldListReady) {
           freshLists++
+
           return route.continue()
         }
+
         const response = await route.fetch()
+
         oldListReady = true
         await oldListGate
         await route.fulfill({ response })
@@ -206,6 +225,7 @@ test(
       } finally {
         releaseList()
       }
+
       await expect(frame.locator('#assessment-summary')).toContainText(
         'completed',
         { timeout: 30000 }
@@ -230,6 +250,7 @@ test(
         'passed'
       )
       const assessment = server.service.targetAssessments()[0]
+
       assert.equal(assessment.projection.targetContract.status, 'passed')
       assert.equal(assessment.projection.integration.status, 'passed')
       await expect(frame.locator('#assessment-summary')).toContainText(
@@ -254,13 +275,17 @@ test(
       const dependentPrepare = dependentWork.getByRole('button', {
         name: 'Prepare task from assessed prerequisites'
       })
+
       await expect(dependentPrepare).toBeEnabled()
       let admissionRequest
+
       await page.route('**/api/targets/decide', async (route) => {
         const body = route.request().postDataJSON()
+
         if (body.action !== 'admit') {
           return route.continue()
         }
+
         admissionRequest = body
         await route.fulfill({
           status: 200,
@@ -284,10 +309,12 @@ test(
         artifacts,
         'dependent-admission-controls.png'
       )
+
       await page.screenshot({ path: admissionScreenshot })
       const workNode = await frame
         .locator('#target-items > :first-child')
         .elementHandle()
+
       await frame.locator('#target-work-title').fill('Keep my unsaved draft')
       await frame.locator('#target-work-title').focus()
       const before = requests.length
@@ -298,18 +325,25 @@ test(
       const owner = require('../target-evidence.cjs')
       const assess = owner.assessTargetSource,
         project = owner.projectTargetAssessmentCurrentness
+
       fs.readFileSync = (...args) => {
         reads++
+
         return sourceRead(...args)
       }
+
       owner.assessTargetSource = (...args) => {
         assessments++
+
         return assess(...args)
       }
+
       owner.projectTargetAssessmentCurrentness = (...args) => {
         projections++
+
         return project(...args)
       }
+
       try {
         await frame.locator('#refresh').evaluate((element) => element.click())
         await expect
@@ -341,6 +375,7 @@ test(
         owner.assessTargetSource = assess
         owner.projectTargetAssessmentCurrentness = project
       }
+
       assert.equal(
         requests
           .slice(before)
@@ -354,6 +389,7 @@ test(
           evidence: 'deterministic offline dependent admission controls'
         }
       ]
+
       for (const [name, width, height] of [
         ['desktop', 1600, 1100],
         ['tablet', 900, 1000],
@@ -365,15 +401,19 @@ test(
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
         }
+
         await frame.locator('#assessment-summary').scrollIntoViewIfNeeded()
         const file = path.join(artifacts, name + '.png')
+
         await page.screenshot({ path: file })
         screenshots.push({ path: file, viewport: { width, height } })
         await frame.locator('#assessment-integration').scrollIntoViewIfNeeded()
         const integrationFile = path.join(artifacts, name + '-integration.png')
+
         await page.screenshot({ path: integrationFile })
         screenshots.push({ path: integrationFile, viewport: { width, height } })
         const detail = frame.locator('#detail')
+
         assert.equal(
           await detail.evaluate(
             (element) => element.scrollWidth <= element.clientWidth + 1
@@ -381,10 +421,12 @@ test(
           true
         )
       }
+
       hold = true
       await frame.locator('#assessment-start').click()
       await expect(frame.locator('#assessment-cancel')).toBeEnabled()
       const cancelledPath = '**/api/target-assessments/*/cancel'
+
       await page.route(cancelledPath, (route) =>
         route.fulfill({
           status: 409,
@@ -408,6 +450,7 @@ test(
       )
       await expect(frame.locator('#assessment-source')).toHaveValue(source.id)
       let acceptanceRequest
+
       await page.route('**/api/targets/accept', async (route) => {
         acceptanceRequest = route.request().postDataJSON()
         await route.continue()
@@ -434,6 +477,7 @@ test(
       assert.equal(server.service.state().evolution.revision, 3)
       await page.unroute('**/api/targets/accept')
       const acceptedScreenshot = path.join(artifacts, 'target-accepted.png')
+
       await frame.locator('#assessment-acceptance').scrollIntoViewIfNeeded()
       await page.screenshot({ path: acceptedScreenshot })
       screenshots.push({
@@ -458,6 +502,7 @@ test(
         loadContract(root).testFile
       )
       const bytes = fs.readFileSync(assertions, 'utf8')
+
       fs.chmodSync(assertions, 0o600)
       fs.writeFileSync(
         assertions,
@@ -469,11 +514,13 @@ test(
       const failedSource = await server.service.wait(
         server.service.start({ mode: 'candidate' }, LOCAL_ACTOR)
       )
+
       assert.equal(failedSource.evidence.status, 'failed')
       const failedReview = server.service.prepareEvolution(
         { attemptId: failedSource.id },
         LOCAL_ACTOR
       )
+
       await frame.locator('#refresh').click()
       await frame.locator('#target-select').selectOption('')
       await expect(frame.locator('#target-review')).toHaveValue('')
@@ -496,6 +543,7 @@ test(
       )
       await frame.locator('#assessment-integration').scrollIntoViewIfNeeded()
       const failedScreenshot = path.join(artifacts, 'failed-target.png')
+
       await page.screenshot({ path: failedScreenshot })
       screenshots.push({
         path: failedScreenshot,
@@ -506,8 +554,10 @@ test(
       })
       if (process.platform === 'darwin') {
         const dependencies = path.join(initial.sourceRoot, 'node_modules')
+
         fs.rmSync(dependencies, { recursive: true, force: true })
         fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
+
         const makeTask = () =>
           server.service.startTask(
             {
@@ -523,7 +573,9 @@ test(
             },
             LOCAL_ACTOR
           )
+
         let candidate = await server.service.waitTask(makeTask())
+
         assert.equal(candidate.verificationStatus, 'failed')
         const taskPath = '/api/tasks/' + candidate.id
         let releaseTask
@@ -531,6 +583,7 @@ test(
           releaseTask = resolve
         })
         let taskReads = 0
+
         await page.route('**' + taskPath, async (route) => {
           taskReads++
           await taskGate
@@ -545,6 +598,7 @@ test(
         assert.equal(taskReads, 1)
         releaseTask()
         const originalAttempt = candidate.attempts.at(-1).id
+
         await expect(
           frame.locator(
             '#assessment-attempt option[value="' + originalAttempt + '"]'
@@ -580,6 +634,7 @@ test(
         )
         candidate = await server.service.waitTask(candidate.id)
         let retries = 0
+
         await page.route('**' + taskPath, (route) => {
           retries++
           if (retries === 1) {
@@ -591,6 +646,7 @@ test(
               })
             })
           }
+
           return route.continue()
         })
         await frame.locator('#refresh').click()
@@ -599,6 +655,7 @@ test(
         )
         await frame.locator('#refresh').click()
         const nextAttempt = candidate.attempts.at(-1).id
+
         await expect(
           frame.locator(
             '#assessment-attempt option[value="' + nextAttempt + '"]'
@@ -626,6 +683,7 @@ test(
         await page.route('**/api/state', async (route) => {
           const response = await route.fetch()
           const state = await response.json()
+
           state.tasks.records = state.tasks.records.map((item) =>
             item.id === candidate.id
               ? { ...item, reviewRevision: item.reviewRevision + 1 }
@@ -653,6 +711,7 @@ test(
               item.request.sourceTaskId === candidate.id &&
               item.request.sourceAttemptId === nextAttempt
           )
+
         await server.service.waitTargetAssessment(registeredTaskAssessment.id)
         await expect(frame.locator('#assessment-history')).toHaveValue(
           registeredTaskAssessment.id
@@ -671,6 +730,7 @@ test(
         const taskAssessment = server.service.getTargetAssessment(
           await frame.locator('#assessment-history').inputValue()
         )
+
         assert.equal(taskAssessment.request.sourceTaskId, candidate.id)
         assert.equal(taskAssessment.request.sourceAttemptId, nextAttempt)
         await expect(frame.locator('#assessment-notice')).toContainText(
@@ -709,12 +769,15 @@ test(
             staleReasons: []
           }
         }
+
         await page.route('**/api/target-assessments', async (route) => {
           if (route.request().method() !== 'GET') {
             return route.continue()
           }
+
           const response = await route.fetch()
           const records = await response.json()
+
           await route.fulfill({
             response,
             json: [...records, scopedAssessment]
@@ -732,6 +795,7 @@ test(
         await expect(frame.locator('#pr-prepare-scoped')).toBeEnabled()
         let scopedRequest
         const scopedRoute = '**/api/tasks/' + candidate.id + '/review/scoped'
+
         await page.route(scopedRoute, async (route) => {
           scopedRequest = route.request().postDataJSON()
           await route.fulfill({
@@ -819,6 +883,7 @@ test(
             artifacts,
             name + '-controls.png'
           )
+
           await page.screenshot({ path: controlsScreenshot })
           screenshots.push({
             path: controlsScreenshot,
@@ -827,6 +892,7 @@ test(
           })
           await frame.locator('#pr-result').scrollIntoViewIfNeeded()
           const screenshot = path.join(artifacts, name + '.png')
+
           await page.screenshot({ path: screenshot })
           screenshots.push({
             path: screenshot,
@@ -842,6 +908,7 @@ test(
             true
           )
         }
+
         await page.unroute(scopedRoute)
         await page.unroute('**/api/target-assessments')
         for (const [name, viewport] of [
@@ -854,6 +921,7 @@ test(
             .locator('#assessment-source-kind')
             .scrollIntoViewIfNeeded()
           const screenshot = path.join(artifacts, name + '.png')
+
           await page.screenshot({ path: screenshot })
           screenshots.push({
             path: screenshot,
@@ -861,9 +929,11 @@ test(
             assessment: taskAssessment
           })
         }
+
         await page.route('**/api/state', async (route) => {
           const response = await route.fetch()
           const state = await response.json()
+
           state.tasks.records = state.tasks.records.filter(
             (item) => item.id !== candidate.id
           )
@@ -884,6 +954,7 @@ test(
         )
         await page.setViewportSize({ width: 1440, height: 1000 })
         const other = await server.service.waitTask(makeTask())
+
         await frame.locator('#refresh').click()
         await expect(
           frame.locator('#assessment-task option[value="' + other.id + '"]')
@@ -896,8 +967,10 @@ test(
         const oldTaskGate = new Promise((resolve) => {
           releaseOld = resolve
         })
+
         await page.route('**' + taskPath, async (route) => {
           const response = await route.fetch()
+
           oldReady = true
           await oldTaskGate
           await route.fulfill({ response })
@@ -933,6 +1006,7 @@ test(
         const failureDelivery = new Promise((resolve) => {
           deliveredFailure = resolve
         })
+
         await page.route('**' + taskPath, async (route) => {
           failureReady = true
           await failureGate
@@ -960,6 +1034,7 @@ test(
         )
         await expect(frame.locator('#assessment-source')).toHaveValue(source.id)
       }
+
       await page.route('**/api/target-assessments', (route) =>
         route.fulfill({
           status: 503,
@@ -992,6 +1067,7 @@ test(
       await page.goto(server.origin + '/core-proof')
       await expect(frame.locator('#target-assessment')).toHaveCount(0)
       const retiredRequests = requests.length
+
       await page.waitForTimeout(1100)
       assert.equal(
         requests
@@ -1040,11 +1116,14 @@ test(
     const { randomUUID } = require('node:crypto')
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'provider-offline-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const authorization = {
       id: randomUUID(),
@@ -1062,12 +1141,15 @@ test(
         directory: path.join(artifacts, 'runs'),
         agentOptions: {
           available: () => true,
+
           providerAuthorization: authorization,
+
           providerComplete: async () => {
             calls++
             if (calls === 2) {
               return new Promise(() => undefined)
             }
+
             return {
               text: '{"tool":"shell"}',
               terminal: true,
@@ -1077,6 +1159,7 @@ test(
         }
       }
     })
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -1085,8 +1168,10 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+
       await page.goto(server.origin + '/transaction-atomicity')
       const canvas = page
+
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
         .click()
@@ -1186,17 +1271,21 @@ test(
   async () => {
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'review-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previousTemporary = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
     let browser
     const screenshots = []
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -1206,20 +1295,24 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       const errors = []
+
       page.on('pageerror', (error) => errors.push(error.message))
       await page.addInitScript(() => {
         window.cardReads = 0
         const original = Element.prototype.querySelectorAll
+
         Element.prototype.querySelectorAll = function (selector) {
           if (this.id === 'flow' && selector === '.step-card') {
             window.cardReads++
           }
+
           return original.call(this, selector)
         }
       })
       await page.goto(server.origin + '/transaction-atomicity')
       await expect(page.locator('iframe')).toHaveCount(0)
       const canvas = page
+
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
       await expect(canvas.locator('#proof-controls')).toBeVisible()
@@ -1242,6 +1335,7 @@ test(
       ).toHaveCount(0)
       await canvas.locator('body').evaluate((body) => {
         const style = document.createElement('style')
+
         style.textContent = '::-webkit-scrollbar { width: 15px; height: 15px; }'
         body.append(style)
       })
@@ -1250,6 +1344,7 @@ test(
       const entriesBefore = await frameworkGroup
         .getByTestId('inspector-entry')
         .count()
+
       await frameworkGroup.getByText('Framework', { exact: true }).click()
       await expect(frameworkGroup.getByTestId('inspector-entry')).toHaveCount(
         entriesBefore
@@ -1275,6 +1370,7 @@ test(
           )
           .toBeLessThan(1)
       }
+
       await page
         .getByRole('button', { name: 'Collapse Framework', exact: true })
         .press('Shift+0')
@@ -1317,6 +1413,7 @@ test(
             .closest('.flow-viewport')
             .getBoundingClientRect()
           const bounds = cards.map((card) => card.getBoundingClientRect())
+
           return [
             Math.min(...bounds.map((r) => r.left)) - view.left,
             view.right - Math.max(...bounds.map((r) => r.right)),
@@ -1324,6 +1421,7 @@ test(
             view.bottom - Math.max(...bounds.map((r) => r.bottom))
           ]
         })
+
         assert.ok(
           gaps.every((gap) => gap >= 23.5),
           `all cards need 24 screen px of padding: ${gaps}`
@@ -1333,6 +1431,7 @@ test(
           `fit must use the available bounds: ${gaps}`
         )
       }
+
       await canvas
         .getByRole('button', { name: 'Boundary', exact: true })
         .click()
@@ -1342,6 +1441,7 @@ test(
       const owner = canvas.locator(
         '[data-step-id="finalize-transaction-state"]'
       )
+
       await owner.click()
       await expect(canvas.locator('.detail-heading h2')).toHaveText(
         'Finalize transaction state'
@@ -1357,6 +1457,7 @@ test(
         }))
       )
       const viewport = canvas.locator('.flow-viewport')
+
       await viewport.evaluate((node) => {
         node.dispatchEvent(
           new WheelEvent('wheel', {
@@ -1384,13 +1485,16 @@ test(
         top: node.scrollTop
       }))
       const reads = await viewport.evaluate(() => window.cardReads)
+
       const capture = async (name, locator) => {
         const file = path.join(artifacts, name + '.png')
+
         if (locator) {
           await locator.screenshot({ path: file })
         } else {
           await page.screenshot({ path: file, fullPage: true })
         }
+
         screenshots.push({
           file,
           url: page.url(),
@@ -1399,12 +1503,14 @@ test(
           digest: await canvas.locator('#source-digest').textContent()
         })
       }
+
       const run = async (
         scenario,
         status,
         button = canvas.locator('#run-all')
       ) => {
         const previous = await canvas.locator('#attempt-id').textContent()
+
         await canvas.locator('#scenario').selectOption(scenario)
         await button.click()
         await expect(canvas.locator('#attempt-id')).not.toHaveText(previous)
@@ -1416,10 +1522,13 @@ test(
           'data-status',
           status
         )
+
         return canvas.locator('#attempt-id').textContent()
       }
+
       const baseline = await run('baseline', 'passed')
       const baselineCheckCount = server.service.contract().cases.length
+
       assert.ok(baselineCheckCount > 0)
       await expect(canvas.locator('#mapping-version')).toHaveText(
         server.service.contract().mappingVersion
@@ -1451,6 +1560,7 @@ test(
       const baselineDigest = await canvas
         .locator('#source-digest')
         .textContent()
+
       assert.match(baselineDigest, /^[a-f0-9]{64}$/)
       assert.deepEqual(
         await viewport.evaluate((node) => ({
@@ -1465,6 +1575,7 @@ test(
       const negativeFailures = server.service
         .get(negative)
         .evidence.cases.filter((item) => item.status === 'failed')
+
       assert.deepEqual(
         negativeFailures.map(({ id }) => id).sort(),
         server.service
@@ -1490,6 +1601,7 @@ test(
           cards.every((card) => {
             const bounds = card.getBoundingClientRect()
             const view = card.closest('.flow-viewport').getBoundingClientRect()
+
             return (
               bounds.left >= view.left &&
               bounds.right <= view.right &&
@@ -1517,6 +1629,7 @@ test(
         node.scrollLeft,
         node.scrollTop
       ])
+
       await canvas.locator('#refresh').click()
       await expect(canvas.locator('#refresh')).toBeEnabled()
       assert.deepEqual(
@@ -1569,6 +1682,7 @@ test(
         true
       )
       const recovery = await run('baseline', 'passed')
+
       await expect(canvas.locator('#proof-run-failure')).toBeHidden()
       await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(0)
       await expect(canvas.locator('#source-digest')).toHaveText(baselineDigest)
@@ -1605,6 +1719,7 @@ test(
         await owner.evaluate((card) => {
           const rect = card.getBoundingClientRect()
           const view = card.closest('.flow-viewport').getBoundingClientRect()
+
           return (
             rect.left >= view.left &&
             rect.right <= view.right &&
@@ -1636,6 +1751,7 @@ test(
       // Native card context menu launches a linked flow without a nested button.
       await owner.click({ button: 'right' })
       const menu = canvas.locator('#proof-menu')
+
       await expect(menu).toBeVisible()
       await run(
         'baseline',
@@ -1653,6 +1769,7 @@ test(
       await owner.press('Escape')
       await expect(menu).toBeHidden()
       const countBeforeRead = server.service.state().runs.length
+
       await canvas.locator('#refresh').click()
       await expect(canvas.locator('#run-state')).toHaveText('Ready to verify')
       assert.equal(server.service.state().runs.length, countBeforeRead)
@@ -1670,6 +1787,7 @@ test(
       await capture('canvas-recovery')
       // React projects filtered evidence without rescanning or rebinding DOM cards.
       const previousReads = await viewport.evaluate(() => window.cardReads)
+
       await canvas
         .getByRole('button', { name: 'Boundary', exact: true })
         .click()
@@ -1685,6 +1803,7 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       const attempts = server.service.state().runs.length
+
       await page.reload()
       await expect(canvas.locator('#checks')).toHaveText(
         `${baselineCheckCount} / ${baselineCheckCount}`
@@ -1695,6 +1814,7 @@ test(
       await page.route('**/api/state', async (route) => {
         const response = await route.fetch()
         const state = await response.json()
+
         state.contract.digest = 'changed-architecture'
         state.contract.flows[0].steps[0].title = 'Changed owner contract'
         await route.fulfill({ response, json: state })
@@ -1747,6 +1867,7 @@ test(
           fullPage: true
         })
       }
+
       await page.setViewportSize({ width: 1600, height: 1100 })
       await expect(canvas.locator('.proof-badge')).toHaveCount(0)
       await expect(canvas.locator('#run-all')).toHaveCount(0)
@@ -1758,6 +1879,7 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       let idleReads = 0
+
       page.on('request', (request) => {
         if (request.url().endsWith('/api/state')) {
           idleReads++
@@ -1820,11 +1942,14 @@ test(
   async () => {
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'links-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previousTemporary = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: {
@@ -1833,6 +1958,7 @@ test(
       }
     })
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -1843,6 +1969,7 @@ test(
       })
       const page = await context.newPage()
       const errors = []
+
       context.on('page', (tab) =>
         tab.on('pageerror', (error) => errors.push(error.message))
       )
@@ -1864,6 +1991,7 @@ test(
               : []
         }))
       )
+
       await page.goto(server.origin + '/ai-drawing-performance')
       await expect(page).toHaveURL(server.origin + '/ai-drawing-performance')
       await expect(page.locator('.architecture-view')).toBeVisible()
@@ -1881,6 +2009,7 @@ test(
       await expect(page).toHaveURL(server.origin + '/transaction-atomicity')
       await expect(page.locator('.step-card')).toHaveCount(7)
       const historyLength = await page.evaluate(() => window.history.length)
+
       await page
         .getByTestId('inspector-entry')
         .filter({ hasText: 'Transaction Atomicity Inspector Flow' })
@@ -1905,17 +2034,21 @@ test(
       let selectedSteps = 0
       let fragmentClicked = false
       const screenshots = []
+
       for (const entry of entries) {
         const response = await page.goto(server.origin + '/' + entry.slug)
+
         assert.equal(response.status(), 200)
         await expect(page).toHaveURL(server.origin + '/' + entry.slug)
         const canvas = page
+
         await expect(
           canvas.locator('.architecture-view, .contract-document')
         ).toBeVisible()
         await expect(canvas.locator('.step-card'), entry.id).toHaveCount(
           entry.steps.length
         )
+
         const collectAndClick = async () => {
           const anchors = canvas.locator('a[href]')
           const records = await anchors.evaluateAll((nodes) =>
@@ -1926,18 +2059,23 @@ test(
               index
             }))
           )
+
           for (const record of records) {
             links.add(record.href)
             assert.equal(record.target, '_blank', entry.id + ': ' + record.href)
             assert.ok(record.rel.split(/\s+/).includes('noopener'))
             assert.ok(record.rel.split(/\s+/).includes('noreferrer'))
             const url = new URL(record.href)
+
             assert.equal(url.origin, server.origin)
             const resource = url.origin + url.pathname + url.search
+
             if (destinations.has(resource) && (!url.hash || fragmentClicked)) {
               continue
             }
+
             const anchor = anchors.nth(record.index)
+
             for (const disclosure of await anchor
               .locator('xpath=ancestor::details')
               .all()) {
@@ -1945,6 +2083,7 @@ test(
                 await disclosure.locator(':scope > summary').click()
               }
             }
+
             const graph = await canvas.locator('#flow').elementHandle()
             const viewport = canvas.locator('.flow-viewport')
             const before = await viewport.evaluate((node) => ({
@@ -1955,8 +2094,10 @@ test(
               .locator('.detail-heading h2')
               .textContent()
             const popupPromise = context.waitForEvent('page')
+
             await anchor.click()
             const popup = await popupPromise
+
             try {
               await popup.waitForLoadState('domcontentloaded')
               await expect(popup).not.toHaveURL('about:blank')
@@ -1969,6 +2110,7 @@ test(
               } else {
                 assert.equal(popup.url(), record.href)
               }
+
               assert.equal(
                 await graph.evaluate((node) => node.isConnected),
                 true
@@ -1988,6 +2130,7 @@ test(
               if (url.hash) {
                 fragmentClicked = true
               }
+
               if (
                 screenshots.length === 0 ||
                 (url.pathname.endsWith('.html') && screenshots.length === 1)
@@ -1996,6 +2139,7 @@ test(
                   artifacts,
                   'destination-' + screenshots.length + '.png'
                 )
+
                 await popup.screenshot({ path: screenshot })
                 screenshots.push(screenshot)
               }
@@ -2004,6 +2148,7 @@ test(
             }
           }
         }
+
         await collectAndClick()
         for (const step of entry.steps) {
           await canvas
@@ -2018,6 +2163,7 @@ test(
           await collectAndClick()
         }
       }
+
       assert.equal(
         selectedSteps,
         entries.reduce((count, entry) => count + entry.steps.length, 0)
@@ -2032,15 +2178,18 @@ test(
         const response = await page.goto(
           server.origin + pathname + '#inspector=transaction-atomicity'
         )
+
         assert.equal(response.status(), 404)
         await expect(page.locator('iframe')).toHaveCount(0)
         await expect(
           page.getByRole('heading', { name: /is not available/ })
         ).toBeVisible()
       }
+
       await page.goto(server.origin + '/transaction-atomicity')
       await expect(page.locator('.step-card')).toHaveCount(7)
       const retainedCanvas = path.join(artifacts, 'retained-canvas.png')
+
       await page.screenshot({ path: retainedCanvas })
       screenshots.push(retainedCanvas)
       const report = {
@@ -2051,6 +2200,7 @@ test(
         destinations: Object.fromEntries(destinations),
         screenshots
       }
+
       fs.writeFileSync(
         path.join(artifacts, 'review.json'),
         JSON.stringify(report, null, 2) + '\n'
@@ -2076,20 +2226,25 @@ test(
   async () => {
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'mapping-'))
     const snapshot = captureSource(root, artifacts, loadContract(root))
     const repository = snapshot.sourceRoot
     const mappingPath = path.join(repository, MANIFEST_PATH)
+
     fs.chmodSync(mappingPath, 0o644)
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previousTemporary = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(repository, {
       serviceOptions: { directory: path.join(repository, 'runs') }
     })
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -2099,9 +2254,11 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       const errors = []
+
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto(server.origin + '/transaction-atomicity')
       const canvas = page
+
       await canvas.locator('#proof-controls > summary').click()
       await canvas.locator('#run-all').click()
       await expect(canvas.locator('#overall')).toHaveAttribute(
@@ -2119,6 +2276,7 @@ test(
         }))
       )
       const manifest = JSON.parse(fs.readFileSync(mappingPath, 'utf8'))
+
       manifest.flows[0].cases[0].testName =
         'Factory flow proof deferred captured snapshot'
       fs.writeFileSync(mappingPath, JSON.stringify(manifest))
@@ -2134,6 +2292,7 @@ test(
           'Rename the existing snapshot assertion; preserve its obligation.'
         )
       const pending = path.join(artifacts, 'mapping-pending.png')
+
       await canvas.locator('#proof-controls').screenshot({ path: pending })
       await canvas.locator('#mapping-accept').click()
       await expect(canvas.locator('#mapping-baseline')).toContainText(
@@ -2156,6 +2315,7 @@ test(
         geometry
       )
       const file = path.join(repository, manifest.testFile)
+
       fs.chmodSync(file, 0o644)
       fs.writeFileSync(
         file,
@@ -2179,10 +2339,12 @@ test(
         page.waitForEvent('popup'),
         canvas.locator('#report-link').click()
       ])
+
       await report.waitForLoadState()
       assert.match(report.url(), /\/artifacts\/report$/)
       await report.close()
       const accepted = path.join(artifacts, 'mapping-accepted.png')
+
       await canvas.locator('#proof-controls').screenshot({ path: accepted })
       manifest.flows[0].cases[0].testName += ' another change'
       fs.writeFileSync(mappingPath, JSON.stringify(manifest))
@@ -2236,16 +2398,20 @@ test(
   async () => {
     const root = path.resolve(__dirname, '../../../..'),
       parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'phase4-')),
       temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const prior = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -2254,8 +2420,10 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+
       await page.goto(server.origin + '/transaction-atomicity')
       const canvas = page
+
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await canvas.locator('#proof-controls > summary').click()
       await canvas
@@ -2276,6 +2444,7 @@ test(
             n.offsetHeight
           ])
         )
+
       await canvas.locator('#run-candidate').click()
       await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
         timeout: 15000
@@ -2307,6 +2476,7 @@ test(
         '_blank'
       )
       const id = server.service.state().runs[0].id
+
       await canvas.locator('#retry-run').click()
       await expect.poll(() => server.service.state().runs[0].id).not.toBe(id)
       await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
@@ -2406,16 +2576,20 @@ test(
   async () => {
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'agent-review-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -2424,8 +2598,10 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+
       await page.goto(server.origin + '/transaction-atomicity')
       const canvas = page
+
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
@@ -2448,6 +2624,7 @@ test(
           top: card.style.top
         }))
       )
+
       await canvas.locator('#agent-start').click()
       await expect(canvas.locator('#agent-result')).toContainText(
         'needs-review',
@@ -2595,16 +2772,22 @@ test(
     const origin = parseLocalUrl(process.env.FLOW_PROOF_URL).origin
     const taskId = process.env.FLOW_LIVE_PROVIDER_TASK_ID
     const cancelId = process.env.FLOW_LIVE_PROVIDER_CANCEL_ID
+
     assert.ok(validId(taskId) && validId(cancelId))
+
     const read = async (route) => {
       const response = await fetch(origin + route)
+
       assert.equal(response.status, 200)
+
       return response.json()
     }
+
     const task = await read('/api/tasks/' + taskId)
     const cancelled = await read('/api/tasks/' + cancelId)
     const changes = await read('/api/tasks/' + taskId + '/changes')
     const state = await read('/api/state')
+
     assert.equal(task.task.adapter, 'provider')
     assert.equal(task.task.provider.model, 'gpt-5.6-sol')
     assert.equal(task.task.provider.billing, 'chatgpt-subscription')
@@ -2656,13 +2839,17 @@ test(
     )
     assert.match(changes[0].after, /inversePayload.after = previousValue/)
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'provider-live-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -2671,8 +2858,10 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+
       await page.goto(origin + '/transaction-atomicity')
       const canvas = page
+
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
         .click()
@@ -2690,6 +2879,7 @@ test(
           ],
           { cwd: root, encoding: 'utf8', timeout: 5000, maxBuffer: 8000000 }
         )
+
         assert.equal(cli.status, 0)
         assert.deepEqual(JSON.parse(cli.stdout), record)
         await canvas.locator('#agent-history').selectOption(record.id)
@@ -2722,6 +2912,7 @@ test(
             path: path.join(artifacts, 'live-cancellation-guidance.png')
           })
         }
+
         await canvas.locator('#agent-result').screenshot({
           path: path.join(
             artifacts,
@@ -2729,10 +2920,12 @@ test(
           )
         })
       }
+
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
       const after = await read('/api/tasks/' + taskId)
       const cancelAfter = await read('/api/tasks/' + cancelId)
+
       assert.deepEqual(after.providerRequests, task.providerRequests)
       assert.deepEqual(cancelAfter.providerRequests, cancelled.providerRequests)
       fs.writeFileSync(
@@ -2770,24 +2963,29 @@ test(
       root,
       'tmp/flow-inspector/visual-review/readability'
     )
+
     fs.mkdirSync(artifacts, { recursive: true })
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || artifacts
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
         downloadsPath: artifacts
       })
       const page = await browser.newPage()
+
       page.setDefaultTimeout(5000)
       for (const width of [1600, 960, 576]) {
         await page.setViewportSize({ width, height: 1000 })
         await page.goto(server.origin + '/transaction-atomicity')
         const frame = page
+
         await frame
           .locator('[data-step-id="finalize-transaction-state"]')
           .click()
@@ -2804,6 +3002,7 @@ test(
           const background = await summary.evaluate(
             (node) => getComputedStyle(node).backgroundColor
           )
+
           await summary.hover()
           assert.equal(
             await summary.evaluate(
@@ -2813,7 +3012,9 @@ test(
             'pointer hover must not paint a disclosure highlight'
           )
         }
+
         const title = frame.locator('#proof-controls > summary')
+
         await title.focus()
         await page.keyboard.press('Tab')
         await page.keyboard.press('Shift+Tab')
@@ -2827,6 +3028,7 @@ test(
         )
         if (width === 1600) {
           const group = page.locator('.group-toggle').first()
+
           await group.hover()
           assert.equal(
             await group.evaluate((node) => getComputedStyle(node).outlineStyle),
@@ -2845,10 +3047,12 @@ test(
             '2px'
           )
         }
+
         const metrics = await frame
           .locator('#proof-controls')
           .evaluate((panel) => {
             const style = getComputedStyle(panel)
+
             return {
               font: parseFloat(style.fontSize),
               line: parseFloat(style.lineHeight),
@@ -2863,6 +3067,7 @@ test(
               }))
             }
           })
+
         assert.ok(metrics.font >= 13, 'verification text must remain readable')
         assert.ok(metrics.line >= 20, 'verification lines need breathing room')
         assert.ok(metrics.overflow <= 1, 'controls must fit the detail panel')
@@ -2877,6 +3082,7 @@ test(
             'disclosure titles need an independent reading and click area'
           )
         }
+
         await page.screenshot({
           path: path.join(artifacts, `verification-${width}.png`)
         })
@@ -2890,7 +3096,9 @@ test(
           })
         }
       }
+
       const snapshot = {}
+
       require('node:vm').runInNewContext(
         fs.readFileSync(
           path.join(
@@ -2902,10 +3110,12 @@ test(
         snapshot
       )
       const inspected = []
+
       await page.setViewportSize({ width: 1280, height: 900 })
       for (const entry of snapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries) {
         await page.goto(server.origin + '/' + entry.slug)
         const frame = page
+
         await expect(frame.locator('.workspace-main h1:visible')).toBeVisible()
         if (entry.kind === 'flow-v2') {
           await frame.locator('.step-card').first().click()
@@ -2916,13 +3126,16 @@ test(
           const overflow = await frame
             .locator('#detail')
             .evaluate((node) => node.scrollWidth - node.clientWidth)
+
           assert.ok(
             overflow <= 1,
             entry.slug + ' detail must wrap long content'
           )
         }
+
         inspected.push({ slug: entry.slug, kind: entry.kind })
       }
+
       fs.writeFileSync(
         path.join(artifacts, 'catalog-review.json'),
         JSON.stringify(inspected, null, 2)
@@ -2948,13 +3161,16 @@ test(
       root,
       'tmp/flow-inspector/visual-review/narrow-navigation'
     )
+
     fs.mkdirSync(artifacts, { recursive: true })
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || artifacts
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -2963,17 +3179,21 @@ test(
       const page = await browser.newPage({
         viewport: { width: 576, height: 720 }
       })
+
       await page.goto(server.origin + '/transaction-atomicity')
       const frame = page
+
       await expect(page.locator('.sidebar')).toBeHidden()
       await expect(frame.locator('#detail')).toBeHidden()
       const viewport = frame.locator('.flow-viewport')
+
       await frame.locator('[data-step-id="finalize-transaction-state"]').click()
       const retainedView = await viewport.evaluate((node) => [
         node.scrollLeft,
         node.scrollTop,
         node.dataset.zoomScale
       ])
+
       await expect(frame.locator('#detail')).toBeVisible()
       await expect(viewport).toBeHidden()
       await frame.locator('#proof-controls > summary').click()
@@ -3052,11 +3272,14 @@ test(
     const { LOCAL_ACTOR } = require('../service.cjs')
     const root = path.resolve(__dirname, '../../../..'),
       parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'pr-review-')),
       temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let effects = 0,
       browser
@@ -3067,13 +3290,16 @@ test(
         deliveryAdapter: {
           repository: 'owner/repo',
           base: 'main',
+
           inspect: async () => ({
             baseSha: 'a'.repeat(40),
             baseTree: 'b'.repeat(40)
           }),
+
           deliver: async (p, checkpoint) => {
             effects++
             await checkpoint('create-pr', { expectedHead: head })
+
             return {
               number: 1,
               url: 'https://github.com/owner/repo/pull/1',
@@ -3082,6 +3308,7 @@ test(
               draft: true
             }
           },
+
           observe: async () => ({
             number: 1,
             url: 'https://github.com/owner/repo/pull/1',
@@ -3094,6 +3321,7 @@ test(
         }
       }
     })
+
     try {
       const service = server.service,
         id = service.startTask(
@@ -3111,6 +3339,7 @@ test(
           },
           LOCAL_ACTOR
         )
+
       assert.equal((await service.waitTask(id)).verificationStatus, 'passed')
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -3119,8 +3348,10 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+
       await page.goto(server.origin + '/transaction-atomicity')
       const canvas = page
+
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
         .click()
@@ -3162,6 +3393,7 @@ test(
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
         }
+
         await canvas.locator('#pr-controls').scrollIntoViewIfNeeded()
         await expect(canvas.locator('#pr-prepare')).toBeVisible()
         assert.equal(
@@ -3200,6 +3432,7 @@ test(
           )
         }
       }
+
       await canvas.locator('#pr-approve').check()
       await expect(canvas.locator('#pr-confirm')).toBeEnabled()
       await canvas.locator('#pr-confirm').click()
@@ -3229,6 +3462,7 @@ test(
       const api = await fetch(
         server.origin + '/api/tasks/' + id + '/review'
       ).then((r) => r.json())
+
       assert.equal(api.preview.taskId, id)
       assert.equal(api.preview.metadata.validation.status, 'passed')
       assert.equal(api.preview.deliveryFiles.length, 2)
@@ -3268,15 +3502,20 @@ test(
     const root = path.resolve(__dirname, '../../../..'),
       origin = parseLocalUrl(process.env.FLOW_PROOF_URL).origin,
       id = process.env.FLOW_LIVE_REVIEW_TASK_ID
+
     assert.match(id, /^[a-f0-9-]{36}$/)
+
     const read = (route) =>
       fetch(origin + route).then(async (r) => {
         assert.equal(r.status, 200)
+
         return r.json()
       })
+
     const before = await read('/api/state'),
       task = await read('/api/tasks/' + id),
       review = await read('/api/tasks/' + id + '/review')
+
     assert.equal(review.state, 'submitted-for-review')
     assert.equal(review.preview.taskId, id)
     assert.equal(review.preview.attemptId, task.attempts.at(-1).id)
@@ -3306,11 +3545,14 @@ test(
           .verdict.evidence.cases.every((item) => item.status === 'passed')
       )
     }
+
     assert.match(review.observation.url, /^https:\/\/github.com\//)
     const lines = []
+
     assert.equal(
       await main(['--url', origin, 'pr-show', id], {
         repositoryRoot: root,
+
         write: (x) => lines.push(x)
       }),
       0
@@ -3320,10 +3562,13 @@ test(
       root,
       'tmp/flow-inspector/visual-review/github-live-' + id
     )
+
     fs.mkdirSync(artifacts, { recursive: true })
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || artifacts
     let browser
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -3332,8 +3577,10 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+
       await page.goto(origin + '/transaction-atomicity')
       const canvas = page
+
       await canvas.locator('[data-step-id="' + task.task.stepId + '"]').click()
       await canvas.locator('#proof-controls > summary').click()
       await canvas.locator('#agent-controls > summary').click()
@@ -3364,6 +3611,7 @@ test(
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
         }
+
         await canvas.locator('#pr-result').scrollIntoViewIfNeeded()
         await page.screenshot({
           path: path.join(artifacts, name + '-status.png')
@@ -3377,11 +3625,13 @@ test(
             path: path.join(artifacts, name + '-metadata.png')
           })
         }
+
         await canvas.locator('#pr-source-diff').scrollIntoViewIfNeeded()
         await page.screenshot({
           path: path.join(artifacts, name + '-source.png')
         })
       }
+
       assert.deepEqual(await read('/api/tasks/' + id + '/review'), review)
       assert.deepEqual((await read('/api/state')).mapping, before.mapping)
       assert.deepEqual(
@@ -3420,11 +3670,14 @@ test(
     const { LOCAL_ACTOR } = require('../service.cjs')
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'admission-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let browser
     const server = await startServer(root, {
@@ -3433,10 +3686,12 @@ test(
         agentOptions: { available: () => true }
       }
     })
+
     try {
       const source = await server.service.wait(
         server.service.start({}, LOCAL_ACTOR)
       )
+
       assert.equal(source.evidence.status, 'passed')
       const contract = server.service.contract()
       const work = {
@@ -3463,6 +3718,7 @@ test(
         },
         LOCAL_ACTOR
       )
+
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
         downloadsPath: temporary
@@ -3471,9 +3727,11 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       const errors = []
+
       page.on('pageerror', (e) => errors.push(e.message))
       await page.goto(server.origin + '/transaction-atomicity')
       const frame = page
+
       await frame.locator('[data-step-id="finalize-transaction-state"]').click()
       await frame.locator('#proof-controls > summary').click()
       await frame.locator('#target-controls > summary').click()
@@ -3499,19 +3757,24 @@ test(
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
         }
+
         await frame.locator('#target-controls').scrollIntoViewIfNeeded()
         await frame.locator('#target-observations').scrollIntoViewIfNeeded()
         await expect(frame.locator('#target-observations')).toBeVisible()
         await page.screenshot({ path: path.join(artifacts, name + '.png') })
       }
+
       await page.setViewportSize({ width: 1600, height: 1100 })
       const readState = server.service.state
       const executionAvailable = readState().tasks.available
+
       // Exercise unavailable containment on every host, not only Linux CI.
       server.service.state = () => {
         const state = readState()
+
         return { ...state, tasks: { ...state.tasks, available: false } }
       }
+
       await frame.locator('#refresh').click()
       await expect(frame.locator('#agent-start')).toBeDisabled()
       assert.equal(server.service.state().tasks.records.length, 0)
@@ -3523,6 +3786,7 @@ test(
         await frame.locator('#agent-start').click()
         await expect(frame.locator('#agent-work-binding')).toHaveText('')
         const id = server.service.getTarget(target.id).works[0].taskIds[0]
+
         await server.service.waitTask(id)
         assert.deepEqual(server.service.getTask(id).task.workBinding, {
           targetId: target.id,
@@ -3538,6 +3802,7 @@ test(
         await expect(frame.locator('#agent-start')).toBeDisabled()
         assert.equal(server.service.state().tasks.records.length, 0)
       }
+
       assert.deepEqual(errors, [])
       fs.writeFileSync(
         path.join(artifacts, 'review.json'),
@@ -3569,15 +3834,19 @@ test(
   async () => {
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'full-runtime-'))
     const temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const fixture = createFullRuntimeFixture(root, artifacts)
     const runs = path.join(fixture.repository, 'runs')
     let prepared, server, browser
+
     try {
       prepared = await fixture.prepareService(runs)
       assert.deepEqual(prepared.service.getTarget(prepared.target.id).pending, [
@@ -3597,6 +3866,7 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       const errors = []
+
       page.on('pageerror', (error) => errors.push(error.message))
       await page.route('**/workspace-bundle.data.js', (route) =>
         route.fulfill({
@@ -3651,6 +3921,7 @@ test(
         server.service,
         prepared.targetSource
       )
+
       await page.locator('#refresh').click()
       await page
         .locator('#assessment-history')
@@ -3688,6 +3959,7 @@ test(
         server.origin + '/api/target-assessments/' + integrated.assessment.id
       ).then((response) => response.json())
       const output = []
+
       assert.equal(
         await runCli(
           [
@@ -3698,16 +3970,19 @@ test(
           ],
           {
             repositoryRoot: fixture.repository,
+
             write: (value) => output.push(value)
           }
         ),
         0
       )
       const cli = JSON.parse(output.join(''))
+
       assert.deepEqual(cli, api)
       assert.deepEqual(api, server.service.getTargetAssessment(api.id))
 
       const screenshots = []
+
       for (const [name, viewport] of [
         ['desktop', { width: 1600, height: 1100 }],
         ['tablet', { width: 900, height: 1000 }],
@@ -3717,9 +3992,11 @@ test(
         const closeCatalog = page.getByRole('button', {
           name: 'Close Inspector catalog'
         })
+
         if (viewport.width <= 900 && (await closeCatalog.isVisible())) {
           await closeCatalog.click()
         }
+
         await page.locator('#assessment-summary').scrollIntoViewIfNeeded()
         await page.locator('#assessment-summary').evaluate((element) => {
           element.scrollIntoView({ block: 'start' })
@@ -3731,14 +4008,17 @@ test(
         const closeBounds = await page
           .getByRole('button', { name: 'Close step details' })
           .boundingBox()
+
         assert.ok(
           summaryBounds.y >= closeBounds.y + closeBounds.height + 4,
           `The retained assessment identity must not be covered by the sticky close control: ${JSON.stringify({ viewport, summaryBounds, closeBounds })}`
         )
         const file = path.join(artifacts, name + '.png')
+
         await page.screenshot({ path: file })
         screenshots.push({ path: file, viewport })
         const detail = page.locator('#detail')
+
         assert.equal(
           await detail.evaluate(
             (element) => element.scrollWidth <= element.clientWidth + 1
@@ -3786,6 +4066,7 @@ test(
       } else {
         await prepared?.service.close()
       }
+
       fixture.cleanup()
       if (previous === undefined) {
         delete process.env.TMPDIR

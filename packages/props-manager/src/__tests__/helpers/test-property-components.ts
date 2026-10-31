@@ -151,6 +151,7 @@ class CustomComponent extends BasePropertyComponent<PropertyComponentInstanceDat
   save(): PropertyComponentRawData {
     const data = super.save()
     const customData = this.getValue()
+
     return {
       ...data,
       ...customData
@@ -161,6 +162,7 @@ class CustomComponent extends BasePropertyComponent<PropertyComponentInstanceDat
     this.data.id = typeof data.id === 'string' ? data.id : this.data.id
     const dataObj = data as unknown as Record<string, unknown>
     const dataRecord = this.data as unknown as Record<string, unknown>
+
     Object.keys(dataObj).forEach((key) => {
       if (this.isValidKey(key) && dataObj[key] !== undefined) {
         dataRecord[key] = dataObj[key] as DataTypes
@@ -171,14 +173,17 @@ class CustomComponent extends BasePropertyComponent<PropertyComponentInstanceDat
   getValue(): Record<string, DataTypes> {
     const result: Record<string, DataTypes> = {}
     const dataObj = this.data as unknown as Record<string, unknown>
+
     Object.keys(dataObj).forEach((key) => {
       if (this.isValidKey(key)) {
         const val = dataObj[key]
+
         if (val !== undefined) {
           result[key] = val as DataTypes
         }
       }
     })
+
     return result
   }
 
@@ -264,6 +269,7 @@ const toHandle = (value: unknown): { x: number; y: number } | null => {
   }
 
   const handle = value as { x?: unknown; y?: unknown }
+
   if (typeof handle.x !== 'number' || typeof handle.y !== 'number') {
     return null
   }
@@ -324,6 +330,7 @@ class AnchorPointsComponent extends BasePropertyComponent<AnchorPointsAttrs> {
           set: (key: string, value: unknown) => void
           get: (key: string) => unknown
         }
+
         setter.set('x', pointData.x)
         setter.set('y', pointData.y)
         setter.set('pointType', pointData.pointType)
@@ -331,18 +338,21 @@ class AnchorPointsComponent extends BasePropertyComponent<AnchorPointsAttrs> {
         setter.set('inHandle', pointData.inHandle)
         setter.set('outHandle', pointData.outHandle)
         nextIds.push(setter.get('id') as string)
+
         return
       }
 
       const created = accessor.createComponent(
         pointId ? { id: pointId, ...pointData } : pointData
       )
+
       if (!created) {
         return
       }
 
       accessor.addToMap(created)
       const createdId = (created as { get: (key: string) => unknown }).get('id')
+
       if (typeof createdId === 'string') {
         nextIds.push(createdId)
       }
@@ -369,6 +379,7 @@ class AnchorPointsComponent extends BasePropertyComponent<AnchorPointsAttrs> {
     ) {
       this.data.anchorPoints = value as string[]
       super.set(key, value)
+
       return
     }
 
@@ -379,6 +390,7 @@ class AnchorPointsComponent extends BasePropertyComponent<AnchorPointsAttrs> {
       const pointIds = this.upsertAnchorPoints(
         value as unknown as AnchorPointLike[]
       )
+
       this.data.anchorPoints = pointIds
       super.set(key, pointIds as AnchorPointsAttrs[K])
     }
@@ -386,19 +398,23 @@ class AnchorPointsComponent extends BasePropertyComponent<AnchorPointsAttrs> {
 
   load(data: AnchorPointsComponentRawData): void {
     const rawAnchorPoints = data.anchorPoints
+
     if (!Array.isArray(rawAnchorPoints)) {
       this.data.anchorPoints = []
+
       return
     }
 
     if (rawAnchorPoints.every((value) => typeof value === 'string')) {
       this.data.anchorPoints = rawAnchorPoints as string[]
+
       return
     }
 
     if (rawAnchorPoints.every((value) => value && typeof value === 'object')) {
       const legacyPoints = rawAnchorPoints.map((value) => {
         const point = value as unknown as Record<string, unknown>
+
         return {
           id: typeof point.id === 'string' ? point.id : '',
           x: toNumber(point.x),
@@ -411,6 +427,7 @@ class AnchorPointsComponent extends BasePropertyComponent<AnchorPointsAttrs> {
       })
 
       this.data.anchorPoints = this.upsertAnchorPoints(legacyPoints)
+
       return
     }
 
@@ -433,6 +450,7 @@ class AnchorPointsComponent extends BasePropertyComponent<AnchorPointsAttrs> {
               get: (key: string) => unknown
             }
           | undefined
+
         if (!component) {
           return null
         }

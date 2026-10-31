@@ -9,7 +9,9 @@ export type AiActionBatchContractErrorCode = 'AI_ACTION_BATCH_MALFORMED'
 
 export class AiActionBatchContractError extends Error {
   readonly code: AiActionBatchContractErrorCode = 'AI_ACTION_BATCH_MALFORMED'
+
   readonly retryable = true
+
   readonly stage = 'provider' as const
 
   constructor() {
@@ -28,6 +30,7 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   }
 
   const prototype = Object.getPrototypeOf(value)
+
   return prototype === Object.prototype || prototype === null
 }
 
@@ -36,6 +39,7 @@ const readDataProperty = (
   key: string
 ): { readonly present: boolean; readonly value: unknown } => {
   const descriptor = Object.getOwnPropertyDescriptor(value, key)
+
   if (!descriptor?.enumerable || !('value' in descriptor)) {
     return {
       present: false,
@@ -73,6 +77,7 @@ export type AiActionBatchResolutionErrorCode =
 
 export class AiActionBatchResolutionError extends Error {
   readonly code: AiActionBatchResolutionErrorCode
+
   readonly stage = 'resolution' as const
 
   constructor(code: AiActionBatchResolutionErrorCode, message: string) {
@@ -128,6 +133,7 @@ const preflightActionBatchShell = (
   if (signal.aborted) {
     throw signal.reason
   }
+
   if (!isPlainObject(value)) {
     return malformedActionBatch()
   }
@@ -155,32 +161,40 @@ const preflightActionBatchShell = (
 
   const actionIds = new Set<string>()
   const rawActions: RawResolvedAction[] = []
+
   for (let index = 0; index < actions.value.length; index += 1) {
     if (signal.aborted) {
       throw signal.reason
     }
+
     const descriptor = Object.getOwnPropertyDescriptor(
       actions.value,
       String(index)
     )
+
     if (!descriptor?.enumerable || !('value' in descriptor)) {
       return malformedActionBatch()
     }
+
     const action = readRawAction(descriptor.value)
+
     if (actionIds.has(action.id)) {
       return resolutionError(
         'AI_ACTION_BATCH_DUPLICATE_ACTION_ID',
         'AI action batch contains a duplicate action id.'
       )
     }
+
     actionIds.add(action.id)
     const definition = registry.get(action.name)
+
     if (!definition) {
       return resolutionError(
         'AI_ACTION_BATCH_UNKNOWN_ACTION',
         'AI action batch references an unknown action.'
       )
     }
+
     rawActions.push({
       ...action,
       definition
@@ -196,6 +210,7 @@ const preflightActionBatchShell = (
         }
       : {})
   }
+
   return batch
 }
 

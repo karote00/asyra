@@ -18,12 +18,14 @@ describe('UIContext', () => {
     uiContext.registerProperty<number>('zoom', { defaultValue: 1 })
 
     const subject = uiContext.getSubject<number>('zoom')
+
     expect(subject).toBeInstanceOf(BehaviorSubject)
     expect(uiContext.get<number>('zoom')).toBe(1)
   })
 
   it('should sync values from a source observable', () => {
     const source$ = new BehaviorSubject<number>(1)
+
     uiContext.registerProperty<number>('zoom', {
       defaultValue: 1,
       source$: source$

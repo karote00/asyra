@@ -29,6 +29,7 @@ export const createEllipseHitArea = (
     contains: (x: number, y: number) => {
       const normalizedX = (x - centerX) / radiusX
       const normalizedY = (y - centerY) / radiusY
+
       return normalizedX * normalizedX + normalizedY * normalizedY <= 1
     }
   }

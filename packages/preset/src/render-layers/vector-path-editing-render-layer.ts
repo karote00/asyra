@@ -62,6 +62,7 @@ export const VECTOR_EDITING_SELECTED_SEGMENT_STROKE: OverlayStrokeStyle = {
   width: 3,
   color: SELECTED_POINT_OUTLINE_COLOR
 }
+
 export interface OverlayAnchorPoint extends PositionData {
   id: string
   inHandle: PositionData | null
@@ -137,9 +138,11 @@ const getNetworkAdjacentPointIds = (
     previousPointId = network.pointIds[network.pointIds.length - 1]
     nextPointId = network.pointIds[0]
   }
+
   if (pointIndex > 0) {
     previousPointId = network.pointIds[pointIndex - 1]
   }
+
   if (pointIndex < network.pointIds.length - 1) {
     nextPointId = network.pointIds[pointIndex + 1]
   }
@@ -179,6 +182,7 @@ const appendPositionSignature = (
   parts.push(prefix)
   if (!point) {
     parts.push('')
+
     return
   }
 
@@ -193,6 +197,7 @@ const appendSelectedPointSignature = (
   parts.push(prefix)
   if (!point) {
     parts.push('')
+
     return
   }
 
@@ -222,6 +227,7 @@ const appendSelectedSegmentSignature = (
   parts.push(prefix)
   if (!segment) {
     parts.push('')
+
     return
   }
 
@@ -236,6 +242,7 @@ const appendInsertPointSignature = (
   parts.push(prefix)
   if (!point) {
     parts.push('')
+
     return
   }
 
@@ -267,6 +274,7 @@ const buildOverlayDrawSignature = (input: {
     input.pathEditingVectorId ?? '',
     input.startNewSubpath ? '1' : '0'
   ]
+
   appendPositionSignature(parts, 'mouse', input.mousePosition)
   appendSelectedPointSignature(
     parts,
@@ -294,6 +302,7 @@ const buildOverlayDrawSignature = (input: {
     'insert-point',
     input.hoveredVectorSegmentInsertPoint
   )
+
   return parts.join('|')
 }
 
@@ -305,6 +314,7 @@ const appendSortedVectorPointSignature = (
     .sort()
     .forEach((pointId) => {
       const point = points[pointId]
+
       if (!point) {
         return
       }
@@ -324,6 +334,7 @@ const appendSortedVectorSegmentSignature = (
     .sort()
     .forEach((segmentId) => {
       const segment = segments[segmentId]
+
       if (!segment) {
         return
       }
@@ -347,6 +358,7 @@ const appendSortedVectorNetworkSignature = (
     .sort()
     .forEach((networkId) => {
       const network = networks[networkId]
+
       if (!network) {
         return
       }
@@ -385,9 +397,11 @@ const buildOverlayVectorDataSignature = (
     String(transform.tx),
     String(transform.ty)
   ]
+
   appendSortedVectorPointSignature(parts, computed.points)
   appendSortedVectorSegmentSignature(parts, computed.segments)
   appendSortedVectorNetworkSignature(parts, computed.networks)
+
   return parts.join('|')
 }
 
@@ -400,44 +414,56 @@ const getPathEditingVectorDataWithDeps = (
   const pathEditingVectorId = deps.systemContext.getManagedProperty<
     string | null
   >(PresetSystemPropertyKeys.PATH_EDITING_VECTOR_ID)
+
   if (!pathEditingVectorId) {
     if (cache) {
       cache.current = null
     }
+
     return null
   }
 
   const element = deps.sceneTree.getElementById(pathEditingVectorId)
+
   if (!element || element.get('type') !== 'vector') {
     if (cache) {
       cache.current = null
     }
+
     return null
   }
 
   const computed = element.getAllComputedData() as VectorComputedData
+
   if (!computed.points || !computed.segments || !computed.networks) {
     if (cache) {
       cache.current = null
     }
+
     return null
   }
+
   if (computed.pointCoordinateSpace !== 'workspace') {
     if (cache) {
       cache.current = null
     }
+
     return null
   }
+
   const canonicalPoints = computed.points
   const computedSegments = computed.segments
   const computedNetworks = computed.networks
   const renderElement = deps.render.getElementById(pathEditingVectorId)
+
   if (!renderElement) {
     if (cache) {
       cache.current = null
     }
+
     return null
   }
+
   const signature = measureVectorEditingOverlayPhase(
     'editing-overlay:model-signature',
     () =>
@@ -454,12 +480,14 @@ const getPathEditingVectorDataWithDeps = (
       )
   )
   const cached = cache?.current
+
   if (
     cached &&
     cached.vectorId === pathEditingVectorId &&
     cached.signature === signature
   ) {
     emitDiagnosticCounter('editing-overlay-model-cache-hit')
+
     return cached.data
   }
 
@@ -479,17 +507,21 @@ const getPathEditingVectorDataWithDeps = (
   )
 
   const computedPoints: Record<string, VectorPointNode> = {}
+
   for (const [pointId, point] of Object.entries(canonicalPoints)) {
     const localPosition = getVectorRenderLocalPoint(renderElement, point)
     const workspacePosition = localPosition
       ? deps.render.elementLocalToWorkspace(pathEditingVectorId, localPosition)
       : null
+
     if (!workspacePosition) {
       if (cache) {
         cache.current = null
       }
+
       return null
     }
+
     computedPoints[pointId] = {
       ...point,
       x: workspacePosition.x,
@@ -512,6 +544,7 @@ const getPathEditingVectorDataWithDeps = (
 
     network.pointIds.forEach((pointId, pointIndex) => {
       const anchor = computedPoints[pointId]
+
       if (!anchor || anchor.kind !== VECTOR_TOKENS.POINT.KIND.ANCHOR) {
         return
       }
@@ -577,12 +610,14 @@ const getPathEditingVectorDataWithDeps = (
 
     network.segmentIds.forEach((segmentId) => {
       const segment = computedSegments[segmentId]
+
       if (!segment) {
         return
       }
 
       const start = computedPoints[segment.startId]
       const end = computedPoints[segment.endId]
+
       if (
         !start ||
         !end ||
@@ -631,6 +666,7 @@ const getPathEditingVectorDataWithDeps = (
     if (cache) {
       cache.current = null
     }
+
     return null
   }
 
@@ -657,6 +693,7 @@ const projectOverlayVectorDataToScreen = (
   cache?: { current: ScreenOverlayVectorDataCache | null }
 ): ScreenOverlayVectorData => {
   const cached = cache?.current
+
   if (
     cached &&
     cached.source === vectorData &&
@@ -665,6 +702,7 @@ const projectOverlayVectorDataToScreen = (
     cached.viewportScale === viewportScale
   ) {
     emitDiagnosticCounter('editing-overlay-screen-cache-hit')
+
     return cached.data
   }
 
@@ -723,6 +761,7 @@ const projectOverlayVectorDataToScreen = (
               viewportScale
             )
           : null
+
         return {
           ...segment,
           from,
@@ -781,12 +820,15 @@ const drawSegment = (
 ) => {
   if (segment.sampledPoints) {
     canvas.polyline(segment.sampledPoints, stroke)
+
     return
   }
 
   const hasCurve = !!segment.outHandle || !!segment.inHandle
+
   if (!hasCurve) {
     canvas.line(segment.from, segment.to, stroke)
+
     return
   }
 
@@ -815,9 +857,11 @@ const drawSubpathSegments = (
 
   subpath.segmentIds.forEach((segmentId) => {
     const segment = segmentsById[segmentId]
+
     if (!segment) {
       return
     }
+
     drawSegment(canvas, segment, stroke)
   })
 }
@@ -830,6 +874,7 @@ const drawHighlightedSegments = (
 ) => {
   if (selectedSegmentId) {
     const selectedSegment = segmentsById[selectedSegmentId]
+
     if (selectedSegment) {
       drawSegment(
         canvas,
@@ -844,6 +889,7 @@ const drawHighlightedSegments = (
   }
 
   const hoveredSegment = segmentsById[hoveredSegmentId]
+
   if (!hoveredSegment) {
     return
   }
@@ -999,18 +1045,22 @@ const appendVisibleHandleAnchorIdsForSubpathIndex = (
 ) => {
   const pointCount = subpath.points.length
   const offsets = [-1, 0, 1]
+
   offsets.forEach((offset) => {
     const rawIndex = index + offset
+
     if (!subpath.closed) {
       if (rawIndex < 0 || rawIndex >= pointCount) {
         return
       }
 
       visibleIds.add(subpath.points[rawIndex].id)
+
       return
     }
 
     const wrappedIndex = ((rawIndex % pointCount) + pointCount) % pointCount
+
     visibleIds.add(subpath.points[wrappedIndex].id)
   })
 }
@@ -1024,18 +1074,22 @@ const appendVisibleHandleAnchorIdsForSelection = (
 
   if (typeof selection.index === 'number' && selection.index >= 0) {
     let flatStartIndex = 0
+
     for (const subpath of subpaths) {
       const pointCount = subpath.points.length
       const flatEndIndex = flatStartIndex + pointCount
+
       if (selection.index >= flatStartIndex && selection.index < flatEndIndex) {
         const index = selection.index - flatStartIndex
         const selectedPoint = subpath.points[index]
+
         if (selectedPoint?.id === selectedAnchorId) {
           appendVisibleHandleAnchorIdsForSubpathIndex(
             visibleIds,
             subpath,
             index
           )
+
           return
         }
       }
@@ -1048,11 +1102,13 @@ const appendVisibleHandleAnchorIdsForSelection = (
     const index = subpath.points.findIndex(
       (point) => point.id === selectedAnchorId
     )
+
     if (index === -1) {
       continue
     }
 
     appendVisibleHandleAnchorIdsForSubpathIndex(visibleIds, subpath, index)
+
     return
   }
 }
@@ -1062,9 +1118,11 @@ export const getVisibleHandleAnchorIds = (
   selections: SelectedHandleAnchorRef[]
 ): Set<string> => {
   const visibleIds = new Set<string>()
+
   selections.forEach((selection) =>
     appendVisibleHandleAnchorIdsForSelection(visibleIds, subpaths, selection)
   )
+
   return visibleIds
 }
 
@@ -1079,6 +1137,7 @@ const isSubpathEndpoint = (
 
     const firstPoint = subpath.points[0]
     const lastPoint = subpath.points[subpath.points.length - 1]
+
     return firstPoint.id === pointId || lastPoint.id === pointId
   })
 
@@ -1095,11 +1154,13 @@ const drawPreview = (
 
   const handle = handleSide === 'in' ? lastPoint.inHandle : lastPoint.outHandle
   const hasCurve = !!handle
+
   if (!hasCurve) {
     canvas.line(lastPoint, mouseScreenPos, {
       width: PREVIEW_WIDTH,
       color: SEGMENT_COLOR
     })
+
     return
   }
 
@@ -1145,20 +1206,25 @@ export const registerVectorPathEditingRenderLayer = (
   const layerRegistration = createOverlayLayerRegistration({
     name: VECTOR_EDITING_LAYER_NAME,
     zIndex: 10,
+
     update: (canvas: OverlayCanvas) => {
       const vectorData = measureVectorEditingOverlayPhase(
         'editing-overlay:model',
         () => getPathEditingVectorDataWithDeps(deps, vectorDataCache)
       )
+
       if (!vectorData) {
         screenDataCache.current = null
         if (drawState.current?.signature !== 'empty') {
           canvas.clear()
           drawState.current = { signature: 'empty' }
+
           return true
         }
+
         return false
       }
+
       const vectorModelSignature =
         vectorDataCache.current?.data === vectorData
           ? vectorDataCache.current.signature
@@ -1214,10 +1280,13 @@ export const registerVectorPathEditingRenderLayer = (
         hoveredVectorSegmentInsertPoint,
         startNewSubpath
       })
+
       if (drawState.current?.signature === drawSignature) {
         emitDiagnosticCounter('editing-overlay-draw-cache-hit')
+
         return false
       }
+
       emitDiagnosticCounter('editing-overlay-draw-cache-miss')
       drawState.current = { signature: drawSignature }
       canvas.clear()
@@ -1235,6 +1304,7 @@ export const registerVectorPathEditingRenderLayer = (
             selection !== null && selection.elementId === pathEditingVectorId
         )
       let selectedHandleAnchorRefs: SelectedHandleAnchorRef[] = []
+
       if (activeSelectedPoint) {
         selectedHandleAnchorRefs = [
           {
@@ -1243,6 +1313,7 @@ export const registerVectorPathEditingRenderLayer = (
           }
         ]
       }
+
       if (selectedPointRefs.length > 0) {
         selectedHandleAnchorRefs = selectedPointRefs.map((selection) => ({
           pointId: selection.pointId,
@@ -1252,6 +1323,7 @@ export const registerVectorPathEditingRenderLayer = (
               : null
         }))
       }
+
       const activeHoveredPoint =
         pathEditingVectorId &&
         hoveredVectorPoint?.elementId === pathEditingVectorId &&
@@ -1318,8 +1390,10 @@ export const registerVectorPathEditingRenderLayer = (
           if (subpath.points.length === 0) {
             return false
           }
+
           const firstPoint = subpath.points[0]
           const lastPoint = subpath.points[subpath.points.length - 1]
+
           return (
             firstPoint.id === previewStartPoint.id ||
             lastPoint.id === previewStartPoint.id
@@ -1331,6 +1405,7 @@ export const registerVectorPathEditingRenderLayer = (
         }
 
         const firstPoint = matchingSubpath.points[0]
+
         if (firstPoint.id === previewStartPoint.id) {
           return 'in'
         }
@@ -1342,12 +1417,15 @@ export const registerVectorPathEditingRenderLayer = (
         !startNewSubpath &&
         previewStartPoint !== null
       let previewMode: PenPreviewMode = PenPreviewMode.NONE
+
       if (snapshot.primaryTool === 'pen') {
         previewMode = PenPreviewMode.SEGMENT_INSERT_PREVIEW
       }
+
       if (shouldRenderPreview) {
         previewMode = PenPreviewMode.CONNECTED_SEGMENT_PREVIEW
       }
+
       const activeGhostInsertPoint =
         activeHoveredPoint ||
         previewMode !== PenPreviewMode.SEGMENT_INSERT_PREVIEW ||
@@ -1389,6 +1467,7 @@ export const registerVectorPathEditingRenderLayer = (
             previewHandleSide
           )
         }
+
         drawGhostInsertPoint(canvas, activeGhostInsertPoint)
         drawAnchorPoints(
           canvas,
@@ -1408,6 +1487,7 @@ export const registerVectorPathEditingRenderLayer = (
           activeHoveredPoint?.target ?? null
         )
       })
+
       return true
     }
   })

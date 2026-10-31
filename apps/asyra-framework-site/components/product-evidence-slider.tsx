@@ -21,6 +21,7 @@ function stackScale(depth: number) {
   if (depth === 0) {
     return 1
   }
+
   return depth === 1 ? 0.9 : 0.81
 }
 
@@ -28,12 +29,14 @@ function stackOffset(offset: number) {
   if (offset === 0) {
     return '-50%'
   }
+
   const direction = Math.sign(offset)
   let centerOffset = 0
   let previousScale = 1
 
   for (let depth = 1; depth <= Math.abs(offset); depth += 1) {
     const scale = stackScale(depth)
+
     centerOffset += previousScale / 2 - scale * 0.25
     previousScale = scale
   }
@@ -47,9 +50,11 @@ function createStackSlots(
   maxVisible: number
 ) {
   const count = Math.min(slides.length, maxVisible)
+
   return Array.from({ length: count }, (_, slot) => {
     const offset = count === 2 ? slot : slot - Math.floor(count / 2)
     const slideIndex = (activeIndex + offset + slides.length) % slides.length
+
     return { offset, slide: slides[slideIndex], slideIndex }
   })
 }
@@ -67,19 +72,23 @@ export function ProductEvidenceSlider({
 
   useEffect(() => {
     const query = window.matchMedia('(min-width: 1025px)')
+
     const update = () => {
       setDesktopPreview(query.matches)
       if (!query.matches) {
         setPreviewOpen(false)
       }
     }
+
     update()
     query.addEventListener('change', update)
+
     return () => query.removeEventListener('change', update)
   }, [])
 
   useEffect(() => {
     const dialog = dialogRef.current
+
     if (previewOpen && desktopPreview && dialog && !dialog.open) {
       dialog.showModal()
     } else if ((!previewOpen || !desktopPreview) && dialog?.open) {
@@ -105,6 +114,7 @@ export function ProductEvidenceSlider({
     if (slides.length < 2) {
       return
     }
+
     setActiveIndex(
       (index) => (index + direction + slides.length) % slides.length
     )
@@ -128,15 +138,19 @@ export function ProductEvidenceSlider({
 
   function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
     const start = pointerStartRef.current
+
     pointerStartRef.current = null
     if (!start) {
       return
     }
+
     const deltaX = event.clientX - start.x
     const deltaY = event.clientY - start.y
+
     if (Math.abs(deltaX) < 44 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) {
       return
     }
+
     moveBy(deltaX < 0 ? 1 : -1)
   }
 
@@ -169,21 +183,26 @@ export function ProductEvidenceSlider({
           const isSide = offset !== 0
           const isInteractive = isSide || (isActive && desktopPreview)
           let ariaLabel: string | undefined
+
           if (isSide) {
             ariaLabel = `Show ${label} image: ${slide.label}`
           } else if (isActive && desktopPreview) {
             ariaLabel = `Open ${label} image preview`
           }
+
           let onClick: (() => void) | undefined
+
           if (isSide) {
             onClick = () => setActiveIndex(slideIndex)
           } else if (isActive && desktopPreview) {
             onClick = () => setPreviewOpen(true)
           }
+
           const imageStyle = {
             opacity: isActive ? 1 : 0.88,
             transform: `translateX(${x}) scale(${scale})`
           }
+
           return (
             <figure
               aria-label={ariaLabel}
@@ -256,6 +275,7 @@ export function ProductEvidenceSlider({
                 const scale = stackScale(depth)
                 const x = stackOffset(offset)
                 const widthLimit = previewSlots.length >= 4 ? 36 : 62
+
                 return (
                   <button
                     aria-label={`Show ${label} image: ${slide.label}`}

@@ -9,16 +9,19 @@ import { ConfigurationError } from '../../domain/farm-configuration'
 import { en, zhTW, type Locale, type MessageKey } from './messages'
 
 export const LOCALE_STORAGE_KEY = 'greenhouse-workspace.locale'
+
 export function translate(
   locale: Locale,
   key: MessageKey,
   values: Record<string, string | number> = {}
 ) {
   const message = (locale === 'en' ? en : zhTW)[key]
+
   return message.replace(/\{(\w+)\}/g, (_, name: string) =>
     String(values[name] ?? `{${name}}`)
   )
 }
+
 type Translator = (
   key: MessageKey,
   values?: Record<string, string | number>
@@ -26,7 +29,11 @@ type Translator = (
 const LocaleContext = createContext<{
   locale: Locale
   setLocale: (locale: Locale) => void
-}>({ locale: 'zh-TW', setLocale: () => undefined })
+}>({
+  locale: 'zh-TW',
+
+  setLocale: () => undefined
+})
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>(() => {
@@ -36,6 +43,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       return 'zh-TW'
     }
   })
+
   useEffect(() => {
     document.documentElement.lang = locale
     document.title = translate(locale, 'app.title')
@@ -45,6 +53,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       // Storage may be unavailable in private or embedded browsers.
     }
   }, [locale])
+
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>
       {children}
@@ -54,19 +63,23 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
 export function useTranslation() {
   const { locale, setLocale } = useContext(LocaleContext)
+
   const t: Translator = (key, values) => translate(locale, key, values)
+
   return { locale, setLocale, t }
 }
 
 export function localizeError(error: unknown, t: Translator) {
   if (error instanceof ConfigurationError) {
     const field = error.field ? t(`field.${error.field}`) : ''
+
     return t(`validation.${error.code}`, {
       field,
       min: error.min ?? '',
       max: error.max ?? ''
     })
   }
+
   return t('error.unexpected', {
     detail: error instanceof Error ? error.message : String(error)
   })
@@ -74,6 +87,7 @@ export function localizeError(error: unknown, t: Translator) {
 
 export function LanguageSelector() {
   const { locale, setLocale, t } = useTranslation()
+
   return (
     <label className="flex shrink-0 items-center gap-2 text-xs text-[#50664f]">
       <span>{t('language.label')}</span>

@@ -12,9 +12,11 @@ const workspaceRoot = path.resolve(packageRoot, '../..')
 const getSourceFiles = (directory: string): string[] =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       return entry.name === '__tests__' ? [] : getSourceFiles(entryPath)
     }
+
     return entry.name.endsWith('.ts') ? [entryPath] : []
   })
 

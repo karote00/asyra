@@ -12,13 +12,17 @@ test('consultation shares one deadline and preserves ordinary prompts', async ()
   const seen = []
   const result = await runConsultationPhases({
     now: () => 10,
+
     workDeadlineAt: 100,
     prompts: ['Direction', 'Material detail'],
+
     runTurn: async (input) => {
       seen.push(input)
+
       return { settled: true, resultSaved: true, outcome: 'success' }
     }
   })
+
   assert.equal(result.stopped, 'completed')
   assert.deepEqual(
     seen.map((x) => [x.prompt, x.workDeadlineAt]),
@@ -33,13 +37,17 @@ test('first-turn work and capture cannot reset the work budget or start another 
     calls = 0
   const result = await runConsultationPhases({
     now: () => time,
+
     workDeadlineAt: 100,
+
     runTurn: async () => {
       calls++
       time = 101
+
       return { settled: true, resultSaved: true, outcome: 'success' }
     }
   })
+
   assert.equal(calls, 1)
   assert.equal(result.stopped, 'work-deadline')
 })
@@ -52,12 +60,16 @@ test('missing evidence or unsuccessful work does not trigger an automatic follow
     let calls = 0
     const result = await runConsultationPhases({
       now: () => 0,
+
       workDeadlineAt: 100,
+
       runTurn: async () => {
         calls++
+
         return turn
       }
     })
+
     assert.equal(calls, 1)
     assert.notEqual(result.stopped, 'completed')
   }
@@ -65,12 +77,16 @@ test('missing evidence or unsuccessful work does not trigger an automatic follow
 
 test('only the final turn receives an evaluation window; the predecessor stays ordinary', async () => {
   const seen = []
+
   await runConsultationPhases({
     now: () => 10,
+
     workDeadlineAt: 100,
     reportTimeoutMs: 60,
+
     runTurn: async (input) => {
       seen.push(input)
+
       return { settled: true, resultSaved: true, outcome: 'no-change' }
     }
   })
@@ -84,10 +100,13 @@ test('only the final turn receives an evaluation window; the predecessor stays o
 
 test('a predecessor deadline failure never dispatches the next model request', async () => {
   let calls = 0
+
   await assert.rejects(
     runConsultationPhases({
       now: () => 0,
+
       workDeadlineAt: 100,
+
       runTurn: async () => {
         calls++
         throw new Error('First work deadline')
@@ -100,6 +119,7 @@ test('a predecessor deadline failure never dispatches the next model request', a
 
 test('drawing continuity keeps frozen 101 references and separates drawing from follow-up', () => {
   const scenario = consultationScenario(['--scenario=architecture-101'])
+
   assert.equal(scenario.id, 'taipei-101-continuity')
   assert.equal(scenario.prompts.length, 2)
   assert.match(scenario.prompts[0], /Draw the entire Taipei 101/)
@@ -110,11 +130,13 @@ test('drawing continuity keeps frozen 101 references and separates drawing from 
     const bytes = fs.readFileSync(
       new URL('../' + attachment.path, import.meta.url)
     )
+
     assert.equal(
       createHash('sha256').update(bytes).digest('hex'),
       attachment.sha256
     )
   }
+
   assert.equal(consultationScenario([]).attachments.length, 0)
   assert.throws(() => consultationScenario(['--scenario=unknown']), /Unknown/)
 })
@@ -140,15 +162,19 @@ test('retained terminal partial initial work continues once without replay or ou
   const seen = []
   const result = await runConsultationPhases({
     now: () => 79,
+
     workDeadlineAt: 120,
     prompts: ['Initial drawing', 'Refine existing materials'],
+
     runTurn: async (input) => {
       seen.push(input)
+
       return input.index === 0
         ? first
         : { settled: true, resultSaved: true, outcome: 'no-change' }
     }
   })
+
   assert.equal(result.stopped, 'completed')
   assert.deepEqual(
     seen.map((s) => s.prompt),
@@ -186,12 +212,16 @@ test('partial continuation requires saved evidence, identity and idle input', as
     let calls = 0
     const result = await runConsultationPhases({
       now: () => 79,
+
       workDeadlineAt: 120,
+
       runTurn: async () => {
         calls++
+
         return { ...retainedPartial(), ...missing }
       }
     })
+
     assert.equal(calls, 1, JSON.stringify(missing))
     assert.notEqual(result.stopped, 'completed', JSON.stringify(missing))
   }
@@ -202,13 +232,17 @@ test('capture crossing the deadline cannot continue partial work', async () => {
     calls = 0
   const result = await runConsultationPhases({
     now: () => time,
+
     workDeadlineAt: 120,
+
     runTurn: async () => {
       calls++
       time = 120
+
       return retainedPartial()
     }
   })
+
   assert.equal(calls, 1)
   assert.equal(result.stopped, 'work-deadline')
 })
@@ -216,7 +250,9 @@ test('capture crossing the deadline cannot continue partial work', async () => {
 test('a captured final partial report completes collection without artwork acceptance', async () => {
   const result = await runConsultationPhases({
     now: () => 79,
+
     workDeadlineAt: 120,
+
     runTurn: async ({ index }) =>
       index === 0
         ? retainedPartial()
@@ -228,6 +264,7 @@ test('a captured final partial report completes collection without artwork accep
             report: { text: 'Work remains.' }
           }
   })
+
   assert.equal(result.stopped, 'completed')
   assert.equal(result.turns.length, 2)
   assert.equal(result.turns[1].outcome, 'partial')

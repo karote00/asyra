@@ -101,10 +101,12 @@ const platformFixtures: readonly PlatformFixture[] = [
 
 const hashText = (value: string): string => {
   let hash = 2166136261
+
   for (let index = 0; index < value.length; index += 1) {
     hash ^= value.charCodeAt(index)
     hash = Math.imul(hash, 16777619)
   }
+
   return (hash >>> 0).toString(16).padStart(8, '0')
 }
 
@@ -112,10 +114,12 @@ const installPlatformFixture = async (page: Page, fixture: PlatformFixture) => {
   await page.addInitScript((platform) => {
     Object.defineProperty(navigator, 'platform', {
       configurable: true,
+
       get: () => platform
     })
     Object.defineProperty(navigator, 'userAgentData', {
       configurable: true,
+
       get: () => ({ platform })
     })
   }, fixture.navigatorPlatform)
@@ -149,6 +153,7 @@ const selectLayers = async (page: Page, elementIds: readonly string[]) => {
   } finally {
     await page.keyboard.up('Shift')
   }
+
   await expect.poll(() => getSelectedIds(page)).toEqual(elementIds)
 }
 
@@ -158,10 +163,12 @@ const getCanonicalSnapshot = async (
 ) =>
   page.evaluate(async (ids) => {
     const core = (await import('../src/testing/runtime-access')).core
+
     return {
       selectedIds: core.deps.selection.getElementSelectionIds(),
       elements: ids.map((id) => {
         const element = core.deps.sceneTree.getElementById(id)
+
         return {
           id,
           type: element?.get('type'),
@@ -178,7 +185,9 @@ const openContextMenu = async (
 ) => {
   await page.mouse.click(position.x, position.y, { button: 'right' })
   const menu = page.getByRole('menu', { name: 'Canvas commands' })
+
   await expect(menu).toBeVisible()
+
   return menu
 }
 
@@ -190,6 +199,7 @@ const expectFixedRows = async (
   await expect(page.getByTestId('layers-group-button')).toHaveCount(0)
   await expect(page.getByTestId('layers-ungroup-button')).toHaveCount(0)
   const rows = menu.getByRole('menuitem')
+
   await expect(rows).toHaveCount(3)
   await expect(rows.nth(0)).toHaveText(
     `Toggle Agent Panel${fixture.agentLabel}`
@@ -221,11 +231,14 @@ const captureRuleOverlay = async ({
         width: rect.width,
         height: rect.height
       })
+
       const menus = [...document.querySelectorAll<HTMLElement>('[role="menu"]')]
       const menu = menus[0]
+
       if (!menu) {
         throw new Error('Visual review menu is unavailable')
       }
+
       const rows = [
         ...menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')
       ]
@@ -258,9 +271,11 @@ const captureRuleOverlay = async ({
           const shortcut = row.querySelector<HTMLElement>(
             '[data-context-menu-shortcut]'
           )
+
           if (!label || !shortcut) {
             throw new Error('Visual review row parts are unavailable')
           }
+
           return {
             label: label.textContent ?? '',
             shortcut: shortcut.textContent ?? '',
@@ -274,6 +289,7 @@ const captureRuleOverlay = async ({
         layerIds: ids,
         canonical: ids.map((id) => {
           const element = core.deps.sceneTree.getElementById(id)
+
           return {
             id,
             type: element?.get('type'),
@@ -312,19 +328,24 @@ const captureRuleOverlay = async ({
   const overlayResult = await page.evaluate(
     async ({ screenshotURL, snapshot }) => {
       const image = new Image()
+
       image.src = screenshotURL
       await image.decode()
       const canvas = document.createElement('canvas')
+
       canvas.width = image.naturalWidth
       canvas.height = image.naturalHeight
       const context = canvas.getContext('2d', { willReadFrequently: true })
+
       if (!context) {
         throw new Error('Visual review canvas context unavailable')
       }
+
       context.drawImage(image, 0, 0)
 
       const scaleX = canvas.width / snapshot.viewport.width
       const scaleY = canvas.height / snapshot.viewport.height
+
       const pixelAt = (x: number, y: number) => {
         const pixel = context.getImageData(
           Math.max(0, Math.min(canvas.width - 1, Math.round(x * scaleX))),
@@ -332,8 +353,10 @@ const captureRuleOverlay = async ({
           1,
           1
         ).data
+
         return [pixel[0], pixel[1], pixel[2]]
       }
+
       const colorDistance = (actual: number[], expected: readonly number[]) =>
         Math.sqrt(
           actual.reduce(
@@ -342,16 +365,20 @@ const captureRuleOverlay = async ({
             0
           )
         )
+
       const menuPalette = [
         [56, 56, 56],
         [68, 68, 68],
         [51, 51, 51]
       ] as const
+
       const isMenuPixel = (x: number, y: number) =>
         menuPalette.some((color) => colorDistance(pixelAt(x, y), color) <= 18)
+
       const sampleCoverage = (rect: ClientRectSnapshot) => {
         let matching = 0
         let total = 0
+
         for (let y = rect.top + 4; y < rect.bottom - 4; y += 4) {
           for (let x = rect.left + 4; x < rect.right - 4; x += 4) {
             total += 1
@@ -360,6 +387,7 @@ const captureRuleOverlay = async ({
             }
           }
         }
+
         return total === 0 ? 0 : matching / total
       }
 
@@ -443,6 +471,7 @@ const captureRuleOverlay = async ({
           (row) => row.labelRect.right < row.shortcutRect.left
         )
       const failures: OverlayMetrics['failures'] = []
+
       perSourceCoverage.forEach((source) => {
         if (source.coverage < 0.55) {
           failures.push({
@@ -459,6 +488,7 @@ const captureRuleOverlay = async ({
           message: `Menu pixel recall ${recall.toFixed(3)} is below 0.65`
         })
       }
+
       leakingProbes.forEach((sample) => {
         failures.push({
           category: 'forbidden_region_leak',
@@ -472,6 +502,7 @@ const captureRuleOverlay = async ({
           message: 'A label/shortcut gap did not retain menu background'
         })
       }
+
       if (!boundaryPass) {
         failures.push({
           category: 'model_render_drift',
@@ -480,12 +511,14 @@ const captureRuleOverlay = async ({
           )}) or viewport boundary failed`
         })
       }
+
       if (snapshot.menuCount !== 1) {
         failures.push({
           category: 'overdraw_or_double_render',
           message: `Expected one menu, received ${snapshot.menuCount}`
         })
       }
+
       if (!statePass) {
         failures.push({
           category: 'interaction_state_mismatch',
@@ -522,6 +555,7 @@ const captureRuleOverlay = async ({
       context.restore()
       snapshot.rows.forEach((row, index) => {
         const sourcePass = (perSourceCoverage[index]?.coverage ?? 0) >= 0.55
+
         context.strokeStyle = sourcePass ? '#5cff85' : '#ff405a'
         context.strokeRect(
           row.rect.left,
@@ -530,12 +564,14 @@ const captureRuleOverlay = async ({
           row.rect.height
         )
       })
+
       const drawProbe = (point: { x: number; y: number }, pass: boolean) => {
         context.beginPath()
         context.fillStyle = pass ? '#5cff85' : '#ff405a'
         context.arc(point.x, point.y, 3, 0, Math.PI * 2)
         context.fill()
       }
+
       gapProbes.forEach((point) =>
         drawProbe(point, isMenuPixel(point.x, point.y))
       )
@@ -553,6 +589,7 @@ const captureRuleOverlay = async ({
         const x = failure.sample?.x ?? snapshot.menu.right + 8
         const y =
           failure.sample?.y ?? snapshot.menu.top + 10 + Math.min(index, 6) * 8
+
         context.fillStyle = '#ff405a'
         context.fillRect(x - 3, y - 3, 6, 6)
       })
@@ -656,6 +693,7 @@ const captureRuleOverlay = async ({
   })
 
   expect(overlayResult.metrics.failures).toEqual([])
+
   return {
     plainPath,
     overlayPath,
@@ -679,6 +717,7 @@ for (const fixture of platformFixtures) {
       await createRectangle(page, 0.35, 0.42)
       await createRectangle(page, 0.65, 0.58)
       const elementIds = await getLayerIds(page)
+
       expect(elementIds).toHaveLength(2)
       await selectLayers(page, elementIds)
       const beforeMenu = await getCanonicalSnapshot(page, elementIds)
@@ -692,16 +731,21 @@ for (const fixture of platformFixtures) {
             clientX: 20,
             clientY: 20
           })
+
           target.dispatchEvent(event)
+
           return event.defaultPrevented
         })
+
       expect(nativeEventPrevented).toBe(false)
       await expect(page.getByRole('menu')).toHaveCount(0)
 
       const center = await getCanvasPosition(page, 0.5, 0.5)
       const menu = await openContextMenu(page, center)
+
       await expectFixedRows(page, menu, fixture)
       const menuBounds = await menu.boundingBox()
+
       expect(menuBounds).not.toBeNull()
       expect(Math.abs((menuBounds?.x ?? 0) - center.x)).toBeLessThanOrEqual(1)
       expect(Math.abs((menuBounds?.y ?? 0) - center.y)).toBeLessThanOrEqual(1)
@@ -712,6 +756,7 @@ for (const fixture of platformFixtures) {
         name: 'Ungroup',
         exact: true
       })
+
       await expect(disabledUngroup).toBeDisabled()
       await disabledUngroup.evaluate(async (row) =>
         (row as HTMLButtonElement).click()
@@ -728,6 +773,7 @@ for (const fixture of platformFixtures) {
       await expect(page.getByRole('menu')).toHaveCount(0)
       await expect.poll(() => getSelectedIds(page)).toHaveLength(1)
       const menuGroupId = (await getSelectedIds(page))[0]
+
       await expect
         .poll(() =>
           page.evaluate(
@@ -749,6 +795,7 @@ for (const fixture of platformFixtures) {
       await page.keyboard.press(fixture.groupShortcut)
       await expect.poll(() => getSelectedIds(page)).toHaveLength(1)
       const shortcutGroupId = (await getSelectedIds(page))[0]
+
       await expect
         .poll(() =>
           page.evaluate(
@@ -774,12 +821,14 @@ for (const fixture of platformFixtures) {
       await createRectangle(page, 0.35, 0.42)
       await createRectangle(page, 0.65, 0.58)
       const elementIds = await getLayerIds(page)
+
       await selectLayers(page, elementIds)
       const requested =
         fixture.visualPosition === 'center'
           ? await getCanvasPosition(page, 0.5, 0.5)
           : await getCanvasPosition(page, 0.98, 0.98)
       const menu = await openContextMenu(page, requested)
+
       await expectFixedRows(page, menu, fixture)
 
       const result = await captureRuleOverlay({
@@ -789,6 +838,7 @@ for (const fixture of platformFixtures) {
         requested,
         elementIds
       })
+
       expect(result.metrics.boundaryPass).toBe(true)
       expect(result.metrics.statePass).toBe(true)
       expect(result.metrics.precisionLeakCount).toBe(0)

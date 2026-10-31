@@ -16,6 +16,7 @@ export async function originalWorkcellSnapshot() {
 
   for (const part of createMechanicalVisuals()) {
     const asset = await decodeRestrictedGlb(part.bytes)
+
     sources.set(asset.source.sha256, asset)
     const body = example.workcell.bodies.find(
       (body) => body.id === `example:${part.body}`

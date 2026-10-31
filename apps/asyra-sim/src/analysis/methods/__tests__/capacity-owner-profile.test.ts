@@ -11,6 +11,7 @@ import { supervisedTestProgress } from './heavy-test-progress'
 
 const enabled = process.env.SIM_CAPACITY_PROFILE === '1'
 const progress = enabled ? supervisedTestProgress() : undefined
+
 afterEach(() => {
   progress?.endQuery()
   vi.restoreAllMocks()
@@ -25,6 +26,7 @@ it.skipIf(!enabled)(
         'Capacity profiling requires the owned external supervisor'
       )
     }
+
     for (const candidate of [1, 2]) {
       progress.stage('fixture-' + candidate)
       const original = await representativeSnapshot(candidate)
@@ -32,6 +34,7 @@ it.skipIf(!enabled)(
         ...original,
         budget: { ...original.budget, maxDurationMs: 120000 }
       }
+
       expect(snapshot.workcell.bodies).toHaveLength(39)
       expect(snapshot.pairs).toHaveLength(298)
       expect(snapshot.trajectory.keyframes).toHaveLength(200)
@@ -72,15 +75,19 @@ it.skipIf(!enabled)(
         worldBoundsMs: 0,
         repeatedWorldBounds: 0
       }
+
       let activeWork = () => 0
+
       let transformed = new WeakMap<object, WeakSet<object>>()
       const distance = OriginalMeshQuery.prototype.distance
+
       vi.spyOn(OriginalMeshQuery.prototype, 'distance').mockImplementation(
         function (this: OriginalMeshQuery, ...args) {
           activeWork = () => this.work
           transformed = new WeakMap()
           const before = this.work,
             start = performance.now()
+
           counts.staticCalls++
           try {
             return distance.apply(this, args)
@@ -91,12 +98,14 @@ it.skipIf(!enabled)(
         }
       )
       const lower = OriginalMeshQuery.prototype.lowerOver
+
       vi.spyOn(OriginalMeshQuery.prototype, 'lowerOver').mockImplementation(
         function (this: OriginalMeshQuery, ...args) {
           activeWork = () => this.work
           transformed = new WeakMap()
           const before = this.work,
             start = performance.now()
+
           counts.intervalCalls++
           try {
             return lower.apply(this, args)
@@ -107,10 +116,12 @@ it.skipIf(!enabled)(
         }
       )
       const build = meshIndex.buildMeshIndex
+
       vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
         (geometry, checkpoint, hierarchy, checkExecution) => {
           counts.preparationCalls++
           const start = performance.now()
+
           try {
             return build(
               geometry,
@@ -127,10 +138,12 @@ it.skipIf(!enabled)(
         }
       )
       const refine = meshIndex.refineMeshIndex
+
       vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
         (index, checkpoint) => {
           counts.refinementCalls++
           const start = performance.now()
+
           try {
             return refine(index, () => {
               counts.refinementWork++
@@ -142,10 +155,12 @@ it.skipIf(!enabled)(
         }
       )
       const contains = membership.shapeMembership
+
       vi.spyOn(membership, 'shapeMembership').mockImplementation(
         (point, shape, index, checkpoint) => {
           counts.membershipCalls++
           const start = performance.now()
+
           try {
             return contains(point, shape, index, () => {
               counts.membershipWork++
@@ -157,9 +172,11 @@ it.skipIf(!enabled)(
         }
       )
       const solve = convex.convexDistance
+
       vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
         counts.convexCalls++
         const start = performance.now()
+
         try {
           return solve(...args)
         } finally {
@@ -167,15 +184,19 @@ it.skipIf(!enabled)(
         }
       })
       const bounds = meshIndex.worldBounds
+
       vi.spyOn(meshIndex, 'worldBounds').mockImplementation((box, pose) => {
         counts.worldBoundsCalls++
         const poses = transformed.get(box) ?? new WeakSet<object>()
+
         if (poses.has(pose)) {
           counts.repeatedWorldBounds++
         }
+
         poses.add(pose)
         transformed.set(box, poses)
         const start = performance.now()
+
         try {
           return bounds(box, pose)
         } finally {
@@ -200,6 +221,7 @@ it.skipIf(!enabled)(
       const expired = new Error('Diagnostic 120-second window expired')
       let evidence: ReturnType<typeof runOriginalPartMethod> | undefined
       let failure: unknown
+
       try {
         evidence = runOriginalPartMethod(
           snapshot,
@@ -212,6 +234,7 @@ it.skipIf(!enabled)(
           (pair) => {
             const now = performance.now(),
               work = activeWork()
+
             rows.push({
               pairId: pair.pairId,
               elapsedMs: now - previousTime,
@@ -235,11 +258,14 @@ it.skipIf(!enabled)(
       } finally {
         progress.endQuery()
       }
+
       const elapsedMs = performance.now() - start
       let execution = failure ? 'failed' : 'completed'
+
       if (failure === expired) {
         execution = 'timed-out'
       }
+
       const report = {
         candidate: candidate + 1,
         diagnosticOnly: true,
@@ -266,6 +292,7 @@ it.skipIf(!enabled)(
           : null
       }
       const folder = resolve(process.cwd(), '../../tmp/capacity')
+
       mkdirSync(folder, { recursive: true })
       writeFileSync(
         resolve(folder, 'candidate-' + (candidate + 1) + '-owner-profile.json'),
@@ -280,8 +307,10 @@ it.skipIf(!enabled)(
         expect(evidence.pairs).toHaveLength(298)
         expect(evidence.coverage).toBe('complete')
       }
+
       vi.restoreAllMocks()
     }
+
     progress.complete()
   },
   progress ? 0 : 20000

@@ -11,6 +11,7 @@ const {
 } = require('./accepted-repository-fixture.cjs')
 const { prepareCIContext, verifierFiles } = require('../ci-context.cjs')
 const root = path.resolve(__dirname, '../../../..')
+
 for (const selectedManifestPath of [
   MANIFEST_PATH,
   'apps/example/flow-contracts.json'
@@ -20,19 +21,25 @@ for (const selectedManifestPath of [
       selectedManifestPath,
     (t) => {
       const parent = path.join(root, 'tmp/flow-inspector/ci-context-tests')
+
       fs.mkdirSync(parent, { recursive: true })
       const dir = fs.mkdtempSync(path.join(parent, 'run-'))
+
       t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
       const contract = loadContract(root),
         snapshot = captureSource(root, dir, contract)
       const repository = createAcceptedRepository(root, dir)
+
       if (selectedManifestPath !== MANIFEST_PATH) {
         const selectedDefinition = structuredClone(contract.definition)
+
         selectedDefinition.manifestPath = selectedManifestPath
         const target = path.join(repository, selectedManifestPath)
+
         fs.mkdirSync(path.dirname(target), { recursive: true })
         fs.writeFileSync(target, JSON.stringify(selectedDefinition))
       }
+
       const git = (...args) =>
         execFileSync('git', args, {
           cwd: repository,
@@ -40,6 +47,7 @@ for (const selectedManifestPath of [
         })
           .toString()
           .trim()
+
       git('add', '.')
       git(
         '-c',
@@ -58,6 +66,7 @@ for (const selectedManifestPath of [
         loadContract(repository, undefined, selectedManifestPath)
       )
       const result = prepareCIContext(repository, 'origin/main', captured)
+
       assert.equal(result.accepted.manifestPath, selectedManifestPath)
       assert.equal(result.accepted.cases.length, contract.cases.length)
       assert.equal(result.expected.sourceDigest, captured.digest)
@@ -75,6 +84,7 @@ for (const selectedManifestPath of [
         )
       )
       const corrupted = structuredClone(captured)
+
       corrupted.files[0].digest = '0'.repeat(64)
       assert.ok(
         prepareCIContext(

@@ -35,15 +35,21 @@ const options = Object.freeze({
 } as const)
 const defaultApis: DesignEditApis = {
   getData: (id) => core.getElementData(id),
+
   getComputed: (id, fields) => core.getElementComputedData(id, fields),
+
   properties: (id, values) =>
     elementApis.updateElementProperties([id], values, options),
+
   rename: (id, name) => {
     core.updateElementData(id, { name }, options)
   },
+
   fill: (id, color) => fillApis.updatePrimaryFillColor(id, color, options),
+
   stroke: (id, color) => strokeApis.updatePrimaryStrokeColor(id, color, options)
 }
+
 const colorValid = (value: unknown) =>
   typeof value === 'string' && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value)
 
@@ -70,7 +76,9 @@ export const createDesignElementEditPreparer =
     ) {
       throw new Error('Invalid design edit.')
     }
+
     const { elementId, name, properties, fillColor, strokeColor } = request
+
     if (
       (name !== undefined &&
         (typeof name !== 'string' || !name.trim() || name.length > 160)) ||
@@ -84,6 +92,7 @@ export const createDesignElementEditPreparer =
     ) {
       throw new Error('Invalid design edit values.')
     }
+
     if (
       [name, properties, fillColor, strokeColor].every(
         (value) => value === undefined
@@ -91,40 +100,54 @@ export const createDesignElementEditPreparer =
     ) {
       throw new Error('The design edit has no changes.')
     }
+
     const target = apis.getData(elementId)
+
     if (!target || target.type === 'workspace') {
       throw new Error('The edit target is unavailable.')
     }
+
     const visited = new Set<string>()
     let id: string | undefined = elementId
     let data = target
+
     while (id) {
       if (visited.has(id) || visited.size >= 512) {
         throw new Error('The target hierarchy is invalid.')
       }
+
       visited.add(id)
       if (data.lock) {
         throw new Error('The target or its parent is locked.')
       }
+
       if (data.type === 'workspace') {
         break
       }
+
       id = data.parentId
       const parent = id ? apis.getData(id) : undefined
+
       if (!parent) {
         throw new Error('The target parent is unavailable.')
       }
+
       data = parent
     }
+
     const computed = apis.getComputed(elementId, observationFields)
+
     if (!computed) {
       throw new Error('The target properties are unavailable.')
     }
+
     const patch: Record<string, string | number> = {}
+
     for (const [key, value] of Object.entries(properties ?? {})) {
       if (!Object.prototype.hasOwnProperty.call(computed, key)) {
         throw new Error(`The target does not support ${key}.`)
       }
+
       if (geometryFields.includes(key)) {
         if (
           typeof value !== 'number' ||
@@ -138,14 +161,17 @@ export const createDesignElementEditPreparer =
         const field = TEXT_PROPERTY_SCHEMA.fields.find(
           (field) => field.key === key
         )
+
         if (target.type !== 'text' || !field?.validate?.(value)) {
           throw new Error(`Unsupported or invalid ${key}.`)
         }
       }
+
       if (computed[key] !== value) {
         patch[key] = value
       }
     }
+
     for (const [key, color] of [
       ['fills', fillColor],
       ['strokes', strokeColor]
@@ -157,22 +183,28 @@ export const createDesignElementEditPreparer =
         throw new Error(`The target has no primary ${key} to update.`)
       }
     }
+
     return () => {
       let changed = false
+
       if (name !== undefined && name !== target.name) {
         apis.rename(elementId, name)
         changed = true
       }
+
       if (Object.keys(patch).length) {
         apis.properties(elementId, patch)
         changed = true
       }
+
       if (fillColor !== undefined) {
         changed = apis.fill(elementId, fillColor) || changed
       }
+
       if (strokeColor !== undefined) {
         changed = apis.stroke(elementId, strokeColor) || changed
       }
+
       return {
         status: changed ? 'complete' : 'no-change',
         compositionId: elementId,
@@ -180,11 +212,14 @@ export const createDesignElementEditPreparer =
       }
     }
   }
+
 export const createDesignElementEditor = (
   apis: DesignEditApis = defaultApis
 ) => {
   const prepare = createDesignElementEditPreparer(apis)
+
   return (request: DesignElementEdit) => prepare(request)()
 }
+
 export const prepareDesignElementEdit = createDesignElementEditPreparer()
 export const editDesignElement = createDesignElementEditor()

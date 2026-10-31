@@ -36,11 +36,14 @@ export const createPublicPackageReference = async ({ repositoryRoot }) => {
   const packages = inputs.packages.map((packageRecord) => {
     const guideId = `reference/packages/${packageRecord.directory}`
     const page = pagesById.get(guideId)
+
     if (!page) {
       throw new Error(`${packageRecord.name} has no public package guide`)
     }
+
     const guidePath = `docs/public/${page.path}`
     const guideSource = fs.readFileSync(path.join(root, guidePath), 'utf8')
+
     for (const heading of REQUIRED_GUIDE_HEADINGS) {
       if (!guideSource.includes(heading)) {
         throw new Error(`${guidePath} is missing ${heading}`)
@@ -84,6 +87,7 @@ export const serializePublicPackageReference = (reference) =>
 
 export const writePublicPackageReference = async ({ repositoryRoot }) => {
   const reference = await createPublicPackageReference({ repositoryRoot })
+
   fs.mkdirSync(
     path.dirname(path.join(repositoryRoot, PUBLIC_PACKAGE_REFERENCE_PATH)),
     { recursive: true }
@@ -92,6 +96,7 @@ export const writePublicPackageReference = async ({ repositoryRoot }) => {
     path.join(repositoryRoot, PUBLIC_PACKAGE_REFERENCE_PATH),
     serializePublicPackageReference(reference)
   )
+
   return reference
 }
 
@@ -100,17 +105,21 @@ export const checkPublicPackageReference = async ({ repositoryRoot }) => {
     await createPublicPackageReference({ repositoryRoot })
   )
   const referencePath = path.join(repositoryRoot, PUBLIC_PACKAGE_REFERENCE_PATH)
+
   if (!fs.existsSync(referencePath)) {
     throw new Error(
       `${PUBLIC_PACKAGE_REFERENCE_PATH} is missing; run the public package reference writer`
     )
   }
+
   const actual = fs.readFileSync(referencePath, 'utf8')
+
   if (actual !== expected) {
     throw new Error(
       `${PUBLIC_PACKAGE_REFERENCE_PATH} is stale; regenerate public documentation`
     )
   }
+
   return JSON.parse(actual)
 }
 
@@ -120,11 +129,13 @@ const isDirectInvocation =
 
 if (isDirectInvocation) {
   const [mode, ...unexpected] = process.argv.slice(2)
+
   if (!['--check', '--write'].includes(mode) || unexpected.length > 0) {
     throw new Error(
       'Usage: node scripts/docs/public-package-reference.mjs --check|--write'
     )
   }
+
   const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '../..'
@@ -133,6 +144,7 @@ if (isDirectInvocation) {
     mode === '--write'
       ? await writePublicPackageReference({ repositoryRoot })
       : await checkPublicPackageReference({ repositoryRoot })
+
   process.stdout.write(
     `Public package reference ${
       mode === '--write' ? 'written' : 'current'

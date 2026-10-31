@@ -16,22 +16,30 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
   const pending = usePending()
   const [draft, setDraft] = useState<string | null>(null)
   const draftRef = useRef<string | null>(null)
+
   const updateDraft = (value: string | null): void => {
     draftRef.current = value
     setDraft(value)
   }
+
   const commitTitle = (): boolean => {
     const title = draftRef.current
+
     if (title === null) {
       return true
     }
+
     if (!controller.editItem(item.id, { title }, 'Title accepted')) {
       return false
     }
+
     updateDraft(null)
+
     return true
   }
+
   useLayoutEffect(() => controller.registerDraft(commitTitle))
+
   const cancelTitle = (): void => {
     updateDraft(null)
     controller.status({ tone: 'ok', message: 'Title edit cancelled' })
@@ -59,9 +67,11 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
           ) {
             return
           }
+
           if (event.key === 'Enter') {
             controller.prepareAction()
           }
+
           if (event.key === 'Escape') {
             cancelTitle()
           }
@@ -89,6 +99,7 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
               if (status === item.status) {
                 return
               }
+
               controller.editItem(item.id, { status }, 'Status accepted')
             }}
           >
@@ -103,6 +114,7 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
 export const ItemProperties = () => {
   const id = useSelectedId()
   const item = useItem(id)
+
   return item ? (
     <SelectedItemEditor key={item.id} item={item} />
   ) : (

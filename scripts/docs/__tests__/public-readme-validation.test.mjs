@@ -20,6 +20,7 @@ const repositoryRoot = path.resolve(
 
 test('complete public README corpus passes owner, link, API, policy, and generation gates', async () => {
   const summary = await validatePublicReadmes({ repositoryRoot })
+
   assert.equal(summary.surfaceCount, 23)
   assert.equal(summary.packageCount, 19)
   assert.ok(summary.linkCount > 70)
@@ -68,6 +69,7 @@ test('README learning surfaces reject retired example runners and source links',
 test('published Starter entry requires the tested CLI version, Node runtime, and package managers', () => {
   const source =
     'npx create-asyra-app@0.1.0 my-app --package-manager=npm; Node.js 24; npm or Yarn'
+
   assert.doesNotThrow(() =>
     validateStarterPublicationState({ source, sourcePath: 'README.md' })
   )
@@ -127,6 +129,7 @@ test('README named imports resolve against the exact public entrypoint', () => {
       }
     ]
   }
+
   assert.doesNotThrow(() =>
     validateReadmeNamedImports({
       apiIndex,

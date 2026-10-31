@@ -46,6 +46,7 @@ const registerTarget = (
       options.install ??
       ((context) => {
         context.events.push('default')
+
         return cleanup(context.events, 'default')
       })
   })
@@ -74,6 +75,7 @@ describe('ExtensionRegistry', () => {
 
   it('resolves explicit strategy buckets deterministically', () => {
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry)
 
     const add = (key: string, strategy: ExtensionStrategy) => {
@@ -82,8 +84,10 @@ describe('ExtensionRegistry', () => {
         targetKey: 'preset.target',
         owner: APP_OWNER,
         strategy,
+
         install: (context) => {
           context.events.push(key)
+
           return cleanup(context.events, key)
         }
       })
@@ -128,17 +132,20 @@ describe('ExtensionRegistry', () => {
 
   it('returns detached query metadata', () => {
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry)
     registry.registerExtension({
       key: 'app.after',
       targetKey: 'preset.target',
       owner: APP_OWNER,
       strategy: 'after',
+
       install: (context) => cleanup(context.events, 'app.after')
     })
 
     const target = registry.getTarget('preset.target')
     const extension = registry.getExtension('app.after')
+
     expect(target).toMatchObject({
       key: 'preset.target',
       name: 'Preset target',
@@ -155,6 +162,7 @@ describe('ExtensionRegistry', () => {
     if (!target || !extension) {
       throw new Error('Expected query metadata')
     }
+
     ;(target.owner as { name: string }).name = 'mutated'
     ;(target.supportedStrategies as ExtensionStrategy[]).pop()
     ;(extension.owner as { name: string }).name = 'mutated'
@@ -170,6 +178,7 @@ describe('ExtensionRegistry', () => {
 
   it('fails fast with stable structured registration errors', () => {
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry)
 
     expectContractError(() => registerTarget(registry), 'DUPLICATE_TARGET')
@@ -180,6 +189,7 @@ describe('ExtensionRegistry', () => {
           targetKey: 'missing.target',
           owner: APP_OWNER,
           strategy: 'after',
+
           install: (context) => cleanup(context.events, 'missing')
         }),
       'TARGET_NOT_FOUND'
@@ -191,6 +201,7 @@ describe('ExtensionRegistry', () => {
           targetKey: 'preset.target',
           owner: APP_OWNER,
           strategy: 'around' as ExtensionStrategy,
+
           install: (context) => cleanup(context.events, 'invalid')
         }),
       'INVALID_STRATEGY'
@@ -201,6 +212,7 @@ describe('ExtensionRegistry', () => {
       targetKey: 'preset.target',
       owner: APP_OWNER,
       strategy: 'after',
+
       install: (context) => cleanup(context.events, 'duplicate')
     })
     expectContractError(
@@ -210,6 +222,7 @@ describe('ExtensionRegistry', () => {
           targetKey: 'preset.target',
           owner: APP_OWNER,
           strategy: 'append',
+
           install: (context) => cleanup(context.events, 'duplicate:second')
         }),
       'DUPLICATE_EXTENSION'
@@ -218,6 +231,7 @@ describe('ExtensionRegistry', () => {
 
   it('rejects unsupported and non-additive strategies before apply', () => {
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry, { supportedStrategies: ['after'] })
 
     expectContractError(
@@ -227,6 +241,7 @@ describe('ExtensionRegistry', () => {
           targetKey: 'preset.target',
           owner: APP_OWNER,
           strategy: 'before',
+
           install: (context) => cleanup(context.events, 'unsupported')
         }),
       'UNSUPPORTED_STRATEGY'
@@ -239,6 +254,7 @@ describe('ExtensionRegistry', () => {
           targetKey: 'preset.target',
           owner: APP_OWNER,
           strategy: 'replace' as ExtensionStrategy,
+
           install: (context) => cleanup(context.events, 'non-additive')
         }),
       'INVALID_STRATEGY'
@@ -247,14 +263,17 @@ describe('ExtensionRegistry', () => {
 
   it('rolls back applied resources in reverse order when apply fails', () => {
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry)
     registry.registerExtension({
       key: 'app.after',
       targetKey: 'preset.target',
       owner: APP_OWNER,
       strategy: 'after',
+
       install: (context) => {
         context.events.push('app.after')
+
         return cleanup(context.events, 'app.after')
       }
     })
@@ -263,12 +282,14 @@ describe('ExtensionRegistry', () => {
       targetKey: 'preset.target',
       owner: APP_OWNER,
       strategy: 'append',
+
       install: () => {
         throw new Error('installer failed')
       }
     })
 
     const events: string[] = []
+
     expectContractError(() => registry.apply({ events }), 'APPLY_FAILED')
     expect(events).toEqual([
       'default',
@@ -280,14 +301,17 @@ describe('ExtensionRegistry', () => {
 
   it('unregisters one applied target and disposes resources in reverse order', () => {
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry)
     registry.registerExtension({
       key: 'app.after',
       targetKey: 'preset.target',
       owner: APP_OWNER,
       strategy: 'after',
+
       install: (context) => {
         context.events.push('app.after')
+
         return cleanup(context.events, 'app.after')
       }
     })
@@ -315,6 +339,7 @@ describe('ExtensionRegistry', () => {
 
   it('reports cleanup failure without allowing redefine to continue', () => {
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry, {
       install: () => () => {
         throw new Error('cleanup failed')
@@ -322,6 +347,7 @@ describe('ExtensionRegistry', () => {
     })
 
     const application = registry.apply({ events: [] })
+
     expectContractError(
       () => application.unregisterTarget('preset.target'),
       'CLEANUP_FAILED'
@@ -332,6 +358,7 @@ describe('ExtensionRegistry', () => {
     const registry = new ExtensionRegistry<TestContext>()
     const cleanupEvents: string[] = []
     let shouldFail = true
+
     registerTarget(registry, {
       install: () => () => {
         cleanupEvents.push('default')
@@ -342,6 +369,7 @@ describe('ExtensionRegistry', () => {
       targetKey: 'preset.target',
       owner: APP_OWNER,
       strategy: 'after',
+
       install: () => () => {
         cleanupEvents.push('extension')
         if (shouldFail) {
@@ -351,6 +379,7 @@ describe('ExtensionRegistry', () => {
     })
 
     const application = registry.apply({ events: [] })
+
     expectContractError(
       () => application.unregisterTarget('preset.target'),
       'CLEANUP_FAILED'
@@ -372,6 +401,7 @@ describe('ExtensionRegistry', () => {
   it('supports deterministic unregister then app redefine fallback', () => {
     const events: string[] = []
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry, { supportedStrategies: [] })
 
     expectContractError(
@@ -381,12 +411,14 @@ describe('ExtensionRegistry', () => {
           targetKey: 'preset.target',
           owner: APP_OWNER,
           strategy: 'after',
+
           install: (context) => cleanup(context.events, 'app.after')
         }),
       'UNSUPPORTED_STRATEGY'
     )
 
     const application = registry.apply({ events })
+
     application.unregisterTarget('preset.target')
     events.push('app:redefine')
 
@@ -396,10 +428,12 @@ describe('ExtensionRegistry', () => {
   it('applies targets in target registration order and disposes in reverse', () => {
     const events: string[] = []
     const registry = new ExtensionRegistry<TestContext>()
+
     registerTarget(registry, { key: 'preset.first' })
     registerTarget(registry, { key: 'preset.second' })
 
     const application = registry.apply({ events })
+
     expect(events).toEqual(['default', 'default'])
 
     application.dispose()

@@ -6,10 +6,13 @@ describe('Factory owned deep-freeze evidence', () => {
     const nested = { value: 1 }
     let nestedReads = 0
     const evidence = {}
+
     Object.defineProperty(evidence, 'nested', {
       enumerable: true,
+
       get: () => {
         nestedReads += 1
+
         return nested
       }
     })
@@ -27,10 +30,13 @@ describe('Factory owned deep-freeze evidence', () => {
     const nested = { value: 1 }
     let nestedReads = 0
     const evidence = {}
+
     Object.defineProperty(evidence, 'nested', {
       enumerable: true,
+
       get: () => {
         nestedReads += 1
+
         return nested
       }
     })

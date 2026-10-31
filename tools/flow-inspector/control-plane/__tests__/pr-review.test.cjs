@@ -8,11 +8,13 @@ const { sha256 } = require('../snapshot.cjs')
 const { createReviewOwner } = require('../pr-review.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const file = 'packages/factory/src/data-transact.ts'
+
 function fixture({
   packageName = '@asyra/factory',
   file = 'packages/factory/src/data-transact.ts'
 } = {}) {
   const parent = path.join(root, 'tmp/flow-inspector/review-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'case-'))
   const sourceRoot = path.join(directory, 'source')
@@ -20,6 +22,7 @@ function fixture({
   const verifiedRoot = path.join(directory, 'verification/source')
   const before = 'export const value = 1\n',
     after = 'export const value = 2\n'
+
   for (const [dir, text] of [
     [sourceRoot, before],
     [candidateRoot, after],
@@ -28,7 +31,9 @@ function fixture({
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
     fs.writeFileSync(path.join(dir, file), text)
   }
+
   const reportPath = path.join(directory, 'verification/report.json')
+
   fs.writeFileSync(reportPath, '{}')
   const files = [
     { path: file, digest: sha256(after), size: Buffer.byteLength(after) }
@@ -86,53 +91,68 @@ function fixture({
   const adapter = {
     repository: 'owner/repo',
     base: 'main',
+
     async inspect() {
       counts.inspect++
+
       return { baseSha, baseTree: 'c'.repeat(40) }
     },
+
     async deliver(preview, checkpoint) {
       counts.deliver++
       await checkpoint('create-branch')
       if (failure) {
         throw failure
       }
+
       remote = {
         number: 1,
         state: 'open',
         headSha: 'd'.repeat(40),
         draft: true
       }
+
       return remote
     },
+
     async observe() {
       counts.observe++
+
       return remote
     }
   }
   const options = {
     directory: path.join(directory, 'reviews'),
+
     getTask: () => record,
+
     getBaseline: () => baseline,
+
     changes: () =>
       record.changes.map((c) => ({
         ...c,
         before: fs.readFileSync(path.join(sourceRoot, file), 'utf8'),
         after: fs.readFileSync(path.join(candidateRoot, file), 'utf8')
       })),
+
     candidateDirectory: () => candidateRoot,
+
     adapter
   }
   const packageDirectory = packageName.slice('@asyra/'.length)
   const manifestPath = 'packages/' + packageDirectory + '/package.json'
   const manifest = JSON.stringify({ name: packageName, version: '1.0.0' })
+
   for (const dir of [sourceRoot, verifiedRoot]) {
     fs.writeFileSync(path.join(dir, manifestPath), manifest)
   }
+
   const manifestFile = {
     path: manifestPath,
     digest: sha256(manifest),
     size: Buffer.byteLength(manifest)
   }
+
   record.snapshot.files.push(manifestFile)
   record.snapshot.runtimeAuthority = {
     format: 1,
@@ -154,6 +174,7 @@ function fixture({
   files.push(manifestFile)
   record.attempts[0].verdict.sourceDigest = sha256(JSON.stringify(files))
   const owner = createReviewOwner(root, options)
+
   return {
     owner,
     options,
@@ -164,23 +185,31 @@ function fixture({
     candidateRoot,
     sourceRoot,
     verifiedRoot,
+
     setBase: () => (baseSha = 'e'.repeat(40)),
+
     setBaseline: () =>
       (baseline = { contract: { digest: 'other' }, revision: 2 }),
+
     setFailure: (value) => (failure = value),
+
     setRemote: (value) => (remote = value)
   }
 }
+
 const prepare = (f) => f.owner.prepare(f.record.id, 'human')
+
 const confirm = (f, p) =>
   f.owner.confirm(
     f.record.id,
     { previewDigest: p.previewDigest, confirm: true },
     'human'
   )
+
 test('eligible preview is read-only; exact confirmation submits review without accepting baseline', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   assert.equal(p.state, 'preview')
   assert.equal(p.preview.draft, false)
   assert.equal(f.counts.deliver, 0)
@@ -212,6 +241,7 @@ test('eligible preview is read-only; exact confirmation submits review without a
     /preview/
   )
   const r = await confirm(f, p)
+
   assert.equal(r.state, 'submitted-for-review')
   assert.equal(r.observation.number, 1)
   assert.equal(f.record.deliveryStatus, 'not-delivered')
@@ -220,6 +250,7 @@ test('eligible preview is read-only; exact confirmation submits review without a
 test('retained draft preview cannot authorize ready-for-review creation after restart', async () => {
   const f = fixture(),
     p = structuredClone(await prepare(f))
+
   delete p.preview.draft
   p.previewDigest = sha256(JSON.stringify(p.preview))
   fs.writeFileSync(
@@ -230,6 +261,7 @@ test('retained draft preview cannot authorize ready-for-review creation after re
   await assert.rejects(() => confirm(f, p), /fresh preview/)
   assert.equal(f.counts.deliver, 0)
   const fresh = await prepare(f)
+
   assert.notEqual(fresh.previewDigest, p.previewDigest)
   assert.equal(fresh.preview.draft, false)
   await confirm(f, fresh)
@@ -270,32 +302,39 @@ for (const [name, change] of [
 ]) {
   test(name + ' refuses before external effects', async () => {
     const f = fixture()
+
     change(f)
     await assert.rejects(() => prepare(f))
     assert.equal(f.counts.deliver, 0)
   })
 }
+
 test('changed remote base or attempt refuses exact confirmation', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   f.setBase()
   await assert.rejects(() => confirm(f, p), /base/)
   assert.equal(f.counts.deliver, 0)
   const g = fixture(),
     q = await prepare(g)
+
   g.record.attempts[0].id = randomUUID()
   await assert.rejects(() => confirm(g, q), /attempt/)
 })
 test('duplicate clicks and restart retain one delivery and zero-work reads', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   await Promise.all([confirm(f, p), confirm(f, p)])
   assert.equal(f.counts.deliver, 1)
   const next = createReviewOwner(root, f.options)
   const counts = { ...f.counts }
+
   for (let i = 0; i < 30; i++) {
     assert.equal(next.get(f.record.id).previewDigest, p.previewDigest)
   }
+
   assert.deepEqual(f.counts, counts)
   await next.confirm(
     f.record.id,
@@ -307,11 +346,14 @@ test('duplicate clicks and restart retain one delivery and zero-work reads', asy
 test('possibly successful timeout and restart reconcile only by query; absence never permits blind resend', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   f.setFailure(new Error('secret-transport-marker'))
   const r = await confirm(f, p)
+
   assert.equal(r.state, 'uncertain')
   assert.equal(JSON.stringify(r).includes('secret-transport-marker'), false)
   const next = createReviewOwner(root, f.options)
+
   await next.refresh(f.record.id, 'human')
   await assert.rejects(
     () =>
@@ -329,12 +371,14 @@ test('possibly successful timeout and restart reconcile only by query; absence n
     draft: true
   })
   const reconciled = await next.refresh(f.record.id, 'human')
+
   assert.equal(reconciled.state, 'submitted-for-review')
   assert.equal(f.counts.deliver, 1)
 })
 test('definite no-effect refusal permits explicit retry and records audit', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   f.setFailure(
     Object.assign(new Error('private details'), {
       code: 'authentication',
@@ -350,8 +394,10 @@ test('definite no-effect refusal permits explicit retry and records audit', asyn
 test('GitHub closed, merged or changed HEAD never writes task, baseline or local verdict', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   await confirm(f, p)
   const before = JSON.stringify(f.record)
+
   for (const state of ['open', 'closed', 'merged']) {
     f.setRemote({
       number: 1,
@@ -364,15 +410,18 @@ test('GitHub closed, merged or changed HEAD never writes task, baseline or local
       state
     )
   }
+
   assert.equal(JSON.stringify(f.record), before)
 })
 
 test('restart during an effect remains uncertain and lookup failure clears current checks', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   await confirm(f, p)
   const file = path.join(f.options.directory, f.record.id + '.json')
   const saved = JSON.parse(fs.readFileSync(file))
+
   saved.state = 'submitting'
   saved.observation.checks = { headSha: 'd'.repeat(40), status: 'passed' }
   fs.writeFileSync(file, JSON.stringify(saved))
@@ -380,13 +429,16 @@ test('restart during an effect remains uncertain and lookup failure clears curre
     ...f.options,
     adapter: {
       ...f.adapter,
+
       observe: async () => {
         throw new Error('secret')
       }
     }
   })
+
   assert.equal(next.get(f.record.id).state, 'uncertain')
   const r = await next.refresh(f.record.id, 'human')
+
   assert.equal(r.observation.checks, null)
   assert.equal(r.observation.stale, true)
 })
@@ -394,6 +446,7 @@ test('restart during an effect remains uncertain and lookup failure clears curre
 test('a resumed task cannot silently replace an already submitted attempt identity', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   await confirm(f, p)
   f.record.attempts[0].id = randomUUID()
   await assert.rejects(() => prepare(f), /another attempt/)
@@ -405,12 +458,16 @@ test('only equivalent authorized requests coalesce while a delivery effect is pe
     p = await prepare(f)
   let entered, release
   const ready = new Promise((resolve) => (entered = resolve))
+
   f.adapter.deliver = async () => {
     entered()
     await new Promise((resolve) => (release = resolve))
+
     return { number: 1, state: 'open' }
   }
+
   const pending = confirm(f, p)
+
   await ready
   try {
     await assert.rejects(
@@ -434,10 +491,12 @@ test('only equivalent authorized requests coalesce while a delivery effect is pe
 test('trusted Changeset is complete, correctly owned and separate from source verification', async () => {
   const f = fixture(),
     p = await prepare(f)
+
   assert.equal(p.preview.metadata.validation.status, 'passed')
   assert.equal(p.preview.metadata.releaseType, 'patch')
   assert.equal(p.preview.metadata.packageName, '@asyra/factory')
   const metadata = p.preview.metadata
+
   assert.equal(
     metadata.path,
     `.changeset/flow-review-${f.record.id}-${f.record.attempts[0].id}.md`
@@ -460,6 +519,7 @@ test('trusted Changeset uses the task primary package captured manifest', async 
     file: sourceFile
   })
   const p = await prepare(f)
+
   assert.equal(p.preview.packageOwnership.packageName, '@asyra/collaboration')
   assert.equal(
     p.preview.packageOwnership.path,
@@ -483,11 +543,13 @@ for (const [name, mutate] of [
 ]) {
   test(name + ' prevents preparation', async () => {
     const f = fixture()
+
     mutate(f)
     await assert.rejects(() => prepare(f), /ownership/)
     assert.equal(f.counts.deliver, 0)
   })
 }
+
 for (const [name, mutate] of [
   ['release type', (p) => (p.metadata.releaseType = 'minor')],
   ['package name', (p) => (p.metadata.packageName = '@asyra/core')],
@@ -503,6 +565,7 @@ for (const [name, mutate] of [
     async () => {
       const f = fixture(),
         p = structuredClone(await prepare(f))
+
       mutate(p.preview)
       p.previewDigest = sha256(JSON.stringify(p.preview))
       fs.writeFileSync(
@@ -515,6 +578,7 @@ for (const [name, mutate] of [
     }
   )
 }
+
 for (const forbidden of [
   '.changeset/escape.md',
   'packages/factory/src/__tests__/escape.ts',
@@ -522,6 +586,7 @@ for (const forbidden of [
 ]) {
   test('candidate cannot contribute ' + forbidden, async () => {
     const f = fixture()
+
     fs.mkdirSync(path.dirname(path.join(f.candidateRoot, forbidden)), {
       recursive: true
     })
@@ -533,6 +598,7 @@ for (const forbidden of [
 
 test('strict review entry cannot accept a third scoped argument or upgrade a failed candidate', async () => {
   const f = fixture()
+
   f.record.verificationStatus = 'failed'
   await assert.rejects(
     () =>

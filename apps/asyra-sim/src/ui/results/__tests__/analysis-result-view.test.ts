@@ -274,8 +274,10 @@ it('compares authored inputs using the shared executable result and treats curre
     mapping: canonicalCsvMapping(example.workcell)
   }
   const reader = new ExperimentInputReader()
+
   reader.previewTrajectory(input, example.workcell)
   const convert = vi.spyOn(importer, 'previewTrajectoryCsv')
+
   try {
     expect(
       isPresentedRunStale(
@@ -382,6 +384,7 @@ it('distinguishes retained penetration, clearance and unresolved intervals with 
   const host = document.createElement('div')
   const root = createRoot(host)
   const replay = vi.fn()
+
   try {
     await act(() =>
       root.render(
@@ -393,9 +396,11 @@ it('distinguishes retained penetration, clearance and unresolved intervals with 
       )
     )
     const pair = host.querySelector<HTMLDetailsElement>('.evidence-pair')
+
     if (!pair) {
       throw new Error('Missing pair')
     }
+
     await act(() => {
       pair.open = true
       pair.dispatchEvent(new Event('toggle'))
@@ -409,6 +414,7 @@ it('distinguishes retained penetration, clearance and unresolved intervals with 
     const buttons = [...pair.querySelectorAll('button')].filter((button) =>
       /^Replay (witness|interval start)$/.test(button.textContent ?? '')
     )
+
     expect(buttons).toHaveLength(3)
     for (let index = 0; index < buttons.length; index++) {
       await act(() => buttons[index].click())
@@ -418,6 +424,7 @@ it('distinguishes retained penetration, clearance and unresolved intervals with 
         [snapshot.pairs[0].a.bodyId, snapshot.pairs[0].b.bodyId]
       )
     }
+
     expect(JSON.stringify({ snapshot, result })).toBe(before)
     expect(projection).toHaveBeenCalledOnce()
     projection.mockRestore()
@@ -474,6 +481,7 @@ it('prioritizes finding and unresolved pairs, discloses all records exactly once
   const host = document.createElement('div')
   const root = createRoot(host)
   const replay = vi.fn()
+
   try {
     await act(() =>
       root.render(
@@ -484,9 +492,11 @@ it('prioritizes finding and unresolved pairs, discloses all records exactly once
         })
       )
     )
+
     const pairs = () => [
       ...host.querySelectorAll<HTMLElement>('.evidence-pair')
     ]
+
     expect(pairs().map((node) => node.dataset.pairId)).toEqual([
       records[2].pairId,
       records[3].pairId
@@ -494,19 +504,24 @@ it('prioritizes finding and unresolved pairs, discloses all records exactly once
     const showAll = [...host.querySelectorAll('button')].find(
       (node) => node.textContent === 'Show all pairs'
     )
+
     expect(showAll).toBeDefined()
     await act(() => showAll?.click())
     const seen: string[] = []
+
     for (;;) {
       seen.push(...pairs().map((node) => node.dataset.pairId ?? ''))
       const next = [...host.querySelectorAll('button')].find(
         (node) => node.textContent === 'Next pairs'
       )
+
       if (!next || next.disabled) {
         break
       }
+
       await act(() => next.click())
     }
+
     expect(new Set(seen).size).toBe(records.length)
     expect([...seen].sort()).toEqual(records.map((pair) => pair.pairId).sort())
     expect(JSON.stringify({ snapshot, result })).toBe(before)
@@ -516,6 +531,7 @@ it('prioritizes finding and unresolved pairs, discloses all records exactly once
       runId: 'replacement-run',
       pairEvidence: [records[2]]
     }
+
     await act(() =>
       root.render(
         createElement(AnalysisResultView, {
@@ -529,9 +545,11 @@ it('prioritizes finding and unresolved pairs, discloses all records exactly once
       node.textContent?.includes('Unresolved pairs without evidence')
     )
     const evidence = host.querySelector('.evidence-list')
+
     if (!unresolved || !evidence) {
       throw new Error('Missing pair sections')
     }
+
     expect(
       unresolved.compareDocumentPosition(evidence) &
         Node.DOCUMENT_POSITION_FOLLOWING

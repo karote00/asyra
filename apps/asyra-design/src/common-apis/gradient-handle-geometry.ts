@@ -32,6 +32,7 @@ export const computeNextGradientForHandleWithDelta = (
 
   if (handleIndex === 1 && isNonLinearGradient(baseGradient.gradientType)) {
     const [startHandle, endHandle] = baseGradient.gradientHandles
+
     if (!startHandle || !endHandle) {
       return {
         ...baseGradient,
@@ -55,12 +56,14 @@ export const computeNextGradientForHandleWithDelta = (
             y: startHandle.y - deltaY
           }
         }
+
         if (index === 1) {
           return {
             x: endHandle.x + deltaX,
             y: endHandle.y + deltaY
           }
         }
+
         return handle
       })
     }

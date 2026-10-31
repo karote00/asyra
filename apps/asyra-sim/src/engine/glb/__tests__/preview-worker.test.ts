@@ -21,9 +21,13 @@ const asset: VisualAsset = {
 
 class WorkerStub {
   onmessage: ((event: MessageEvent) => void) | null = null
+
   onerror: ((event: ErrorEvent) => void) | null = null
+
   onmessageerror: ((event: MessageEvent) => void) | null = null
+
   postMessage = vi.fn()
+
   terminate = vi.fn()
 }
 
@@ -35,6 +39,7 @@ describe('M2 restricted GLB preview worker ownership', () => {
     const pending = preview
       .decode(new Uint8Array(GLB_LIMITS.bytes + 1))
       .catch((error: unknown) => error)
+
     try {
       expect(create).not.toHaveBeenCalled()
       expect(await pending).toMatchObject({
@@ -55,6 +60,7 @@ describe('M2 restricted GLB preview worker ownership', () => {
     const pending = preview
       .decode(new Uint8Array([1, 2, 3]))
       .catch((error: unknown) => error)
+
     try {
       vi.advanceTimersByTime(4999)
       expect(worker.terminate).not.toHaveBeenCalled()
@@ -80,6 +86,7 @@ describe('M2 restricted GLB preview worker ownership', () => {
     const pending = preview
       .decode(new Uint8Array([1, 2, 3]))
       .catch((error: unknown) => error)
+
     try {
       expect(worker.onmessageerror).toBeTypeOf('function')
       worker.onmessageerror?.(new MessageEvent('messageerror'))
@@ -104,14 +111,18 @@ describe('M2 restricted GLB preview worker ownership', () => {
       .spyOn(globalThis, 'structuredClone')
       .mockImplementation((value) => {
         const result = clone(value)
+
         vi.setSystemTime(Date.now() + GLB_LIMITS.deadlineMs)
+
         return result
       })
     const pending = preview
       .decode(new Uint8Array([1, 2, 3]))
       .catch((error: unknown) => error)
+
     try {
       const message = worker.postMessage.mock.calls[0]?.[0] as { id: number }
+
       worker.onmessage?.(
         new MessageEvent('message', {
           data: { id: message.id, ok: true, asset }
@@ -137,11 +148,13 @@ describe('M2 restricted GLB preview worker ownership', () => {
     )
     const source = new Uint8Array([1, 2, 3])
     const pending = preview.decode(source)
+
     source.fill(9)
     const [message, transfer] = worker.postMessage.mock.calls[0] as [
       { id: number; bytes: ArrayBuffer },
       Transferable[]
     ]
+
     expect(Array.from(new Uint8Array(message.bytes))).toEqual([1, 2, 3])
     expect(transfer).toEqual([message.bytes])
     worker.onmessage?.(
@@ -150,6 +163,7 @@ describe('M2 restricted GLB preview worker ownership', () => {
       })
     )
     const result = await pending
+
     expect(result).toEqual(asset)
     expect(Object.isFrozen(result.meshes[0]?.positions)).toBe(true)
     expect(worker.terminate).toHaveBeenCalledOnce()
@@ -163,6 +177,7 @@ describe('M2 restricted GLB preview worker ownership', () => {
       )
     const pending = preview.decode(new Uint8Array([1, 2, 3]), controller.signal)
     const message = worker.postMessage.mock.calls[0]?.[0] as { id: number }
+
     controller.abort()
     worker.onmessage?.(
       new MessageEvent('message', {
@@ -182,6 +197,7 @@ describe('M2 restricted GLB preview worker ownership', () => {
     const message = decoderWorker.postMessage.mock.calls[0]?.[0] as {
       id: number
     }
+
     decoderWorker.onmessage?.(
       new MessageEvent('message', {
         data: { id: message.id, ok: false, error: 'Unsupported GLB feature' }
@@ -195,6 +211,7 @@ describe('M2 restricted GLB preview worker ownership', () => {
         () => crashedWorker as unknown as Worker
       ),
       crashedPending = crashed.decode(new Uint8Array([1]))
+
     crashedWorker.onerror?.({ message: 'Worker crashed' } as ErrorEvent)
     await expect(crashedPending).rejects.toThrow('Worker crashed')
     expect(crashedWorker.terminate).toHaveBeenCalledOnce()

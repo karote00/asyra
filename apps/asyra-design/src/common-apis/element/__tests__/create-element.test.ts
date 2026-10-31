@@ -44,9 +44,11 @@ vi.mock('../../../contexts', () => ({
     ),
     getElementData: vi.fn((elementId: string) => {
       const element = mocks.getElementById(elementId)
+
       if (!element) {
         return undefined
       }
+
       return {
         visible: element.get('visible'),
         children: element.get('children'),
@@ -69,6 +71,7 @@ vi.mock('../../../contexts', () => ({
 
 vi.mock('../vector-apis', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../vector-apis')>()
+
   return {
     ...actual,
     vectorApis: {
@@ -106,14 +109,17 @@ describe('create-element explicit parent and coordinates', () => {
       if (elementId !== 'group-2') {
         return undefined
       }
+
       return {
         get: (key: string) => {
           if (key === 'type') {
             return 'group'
           }
+
           if (key === 'children') {
             return ['existing-child']
           }
+
           return undefined
         }
       }
@@ -257,6 +263,7 @@ describe('create-element explicit parent and coordinates', () => {
       { type: 'vector', parentId: 'workspace' },
       { type: 'vector', parentId: 'workspace' }
     ] as const
+
     mocks.createVectorElementsInParent.mockReturnValue(['vector-1', 'vector-2'])
 
     expect(
@@ -284,6 +291,7 @@ describe('create-element explicit parent and coordinates', () => {
       { type: 'vector', parentId: 'b' },
       { type: 'vector', parentId: 'a' }
     ] as const
+
     mocks.createVectorElementsInParent
       .mockReturnValueOnce(['a1', 'a2'])
       .mockReturnValueOnce(['b1'])
@@ -306,6 +314,7 @@ describe('create-element explicit parent and coordinates', () => {
       undoable: true
     } as const
     const coreResult = Object.freeze(['oval-1', 'vector-1'])
+
     mocks.createElementsInParent.mockReturnValue(coreResult)
 
     const descriptors = Object.freeze([
@@ -406,6 +415,7 @@ describe('create-element explicit parent and coordinates', () => {
         y: 0
       })
     ])
+
     mocks.createElementsInParent.mockReturnValue(
       Object.freeze(['oval-1', 'rect-1'])
     )
@@ -494,11 +504,14 @@ describe('create-element explicit parent and coordinates', () => {
         'rect-2': { x: 10, y: 20 }
       }
       const position = positions[elementId]
+
       if (!position) {
         return undefined
       }
+
       return {
         get: (key: string) => (key === 'type' ? 'rect' : undefined),
+
         getAllComputedData: () => ({
           ...position,
           width: 100,
@@ -638,11 +651,14 @@ describe('create-element explicit parent and coordinates', () => {
         }
       }
       const fixture = fixtures[elementId]
+
       if (!fixture) {
         return undefined
       }
+
       return {
         get: (key: string) => (key === 'type' ? fixture.type : undefined),
+
         getAllComputedData: () => fixture.computed
       }
     })
@@ -696,9 +712,11 @@ it('sets visibility for a whole target set in one transaction with ordered truth
             if (key === 'type') {
               return id === 'workspace' ? 'workspace' : 'rect'
             }
+
             if (key === 'visible') {
               return id !== 'already-hidden'
             }
+
             return undefined
           }
         }
@@ -707,6 +725,7 @@ it('sets visibility for a whole target set in one transaction with ordered truth
     ['a', 'already-hidden', 'missing', 'workspace', 'b'],
     false
   )
+
   expect(result).toEqual([
     'changed',
     'unchanged',

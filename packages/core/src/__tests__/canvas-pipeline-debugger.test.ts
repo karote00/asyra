@@ -8,6 +8,7 @@ const createCoreWithRender = (_name: string) => {
   const render = new Render()
   const registerLayer = vi.fn(render.registerLayer.bind(render))
   const unregisterLayer = vi.fn(render.unregisterLayer.bind(render))
+
   render.registerLayer = registerLayer
   render.unregisterLayer = unregisterLayer
   const core = new Core({
@@ -23,6 +24,7 @@ const createCoreWithRender = (_name: string) => {
     selection: {} as never,
     systemContext: {} as never
   })
+
   return { core, render, registerLayer, unregisterLayer }
 }
 
@@ -77,6 +79,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
       enabled: true,
       overlay: { visible: false }
     })
+
     registerLayer.mockImplementationOnce(() => {
       throw new Error('overlay registration failed')
     })
@@ -97,6 +100,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
     const pipelineDebugger = createCanvasPipelineDebugger(core, {
       enabled: true
     })
+
     requestRender.mockClear()
 
     pipelineDebugger.setFocusedElementIds(['element-a', 'element-a'])
@@ -117,6 +121,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
     first.dispose()
 
     const recreated = createCanvasPipelineDebugger(core)
+
     expect(recreated.isEnabled()).toBe(false)
     recreated.dispose()
   })
@@ -149,6 +154,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
 
     render.addContainer({
       label: 'faulting-container',
+
       get diagnosticOnly() {
         throw new Error('diagnostic normalization failed')
       }
@@ -158,6 +164,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
     pipelineDebugger.enable()
     await Promise.resolve()
     const traceCount = pipelineDebugger.getTrace().length
+
     render.panTo(7, 8)
 
     expect(pipelineDebugger.isEnabled()).toBe(true)
@@ -174,6 +181,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
     const registration = registerLayer.mock.calls[0]?.[0]
     const root = registration?.layer as RenderContainer
     const graphics = root.children[0] as RenderGraphics
+
     graphics.clear = vi.fn(() => {
       throw new Error('overlay graphics update failed')
     })
@@ -200,6 +208,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
     const pipelineDebugger = createCanvasPipelineDebugger(core, {
       enabled: true
     })
+
     unregisterLayer.mockImplementationOnce(() => {
       throw new Error('overlay unregistration failed')
     })
@@ -212,6 +221,7 @@ describe('Core Canvas Pipeline Debugger facade', () => {
     )
 
     const recreated = createCanvasPipelineDebugger(core)
+
     expect(recreated.isEnabled()).toBe(false)
     recreated.dispose()
   })

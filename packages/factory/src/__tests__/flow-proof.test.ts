@@ -17,6 +17,7 @@ import type { SharedPublication } from '../shared-delivery.js'
 const exercise = async (cancel: boolean) => {
   const factory = new Factory()
   const channel = SharedDataChannelNames.SCENE_TREE
+
   factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
   const projected: unknown[] = []
   const replayed: unknown[] = []
@@ -36,6 +37,7 @@ const exercise = async (cancel: boolean) => {
     EventTypes.UPDATE_PROPERTY,
     (event) => {
       replayed.push((event as AllEvent & { payload: unknown }).payload)
+
       return true
     }
   )
@@ -44,6 +46,7 @@ const exercise = async (cancel: boolean) => {
     before: { value: 0 },
     after: { value: 1 }
   }
+
   try {
     factory.startTransaction()
     const handle = factory.updateTransaction({
@@ -55,6 +58,7 @@ const exercise = async (cancel: boolean) => {
         sharedDelivery: cancel ? 'immediate' : 'transaction-end'
       }
     })
+
     if (cancel) {
       handle?.setDeliverySequence({
         mode: 'atomic',
@@ -62,15 +66,18 @@ const exercise = async (cancel: boolean) => {
         slices: []
       })
     }
+
     await Promise.resolve()
     const beforeClose = {
       projectionCount: projected.length,
       publicationCount: publications.length
     }
+
     payload.before.value = 40
     payload.after.value = 41
     factory.endTransaction({ outcome: cancel ? 'rollback' : 'commit' })
     await Promise.resolve()
+
     return {
       projected,
       replayed,
@@ -90,6 +97,7 @@ const exercise = async (cancel: boolean) => {
 describe('Factory flow proof', () => {
   describe('deferred', () => {
     let deferred: Awaited<ReturnType<typeof exercise>>
+
     beforeAll(async () => {
       deferred = await exercise(false)
     })
@@ -121,6 +129,7 @@ describe('Factory flow proof', () => {
   })
   describe('cancel', () => {
     let cancelled: Awaited<ReturnType<typeof exercise>>
+
     beforeAll(async () => {
       cancelled = await exercise(true)
     })
@@ -168,15 +177,18 @@ describe('Factory flow proof history group', () => {
   it('member snapshot', () => {
     const factory = new Factory()
     const replayed: unknown[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push((event as AllEvent & { payload: unknown }).payload)
+
         return true
       }
     )
     const group = factory.startHistoryGroup()
     const payload = { id: 'x', before: 0, after: 1 }
+
     factory.updateHistoryGroup(group, () =>
       factory.updateTransaction({
         type: EventTypes.UPDATE_TRANSACTION,
@@ -195,12 +207,15 @@ describe('Factory flow proof history group', () => {
   it('member delivery', () => {
     const factory = new Factory()
     const channel = SharedDataChannelNames.SCENE_TREE
+
     factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
     const projected: unknown[] = []
     const commits: TransactionStatusPayload[] = []
+
     factory.observeSharedDataChannel(channel, (value) => projected.push(value))
     factory.subscribeToCommitCapture((value) => commits.push(value))
     const group = factory.startHistoryGroup()
+
     for (const after of [1, 2]) {
       factory.updateHistoryGroup(group, () =>
         factory.updateTransaction({
@@ -211,6 +226,7 @@ describe('Factory flow proof history group', () => {
         })
       )
     }
+
     expect(projected).toHaveLength(2)
     expect(commits).toHaveLength(2)
     expect(factory.getUndoHistoryDepth()).toBe(0)
@@ -226,14 +242,17 @@ describe('Factory flow proof history group', () => {
       SharedDataChannelNames.PROPS,
       SharedDataChannelNames.SCENE_TREE
     ]
+
     for (const channel of channels) {
       factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
     }
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((value) => publications.push(value))
     factory.startTransaction()
     for (const [index, channel] of channels.entries()) {
@@ -243,6 +262,7 @@ describe('Factory flow proof history group', () => {
         payload: { id: `entry-${index}`, before: 0, after: 1 },
         options: { shared: channel, sharedDelivery: 'immediate' }
       })
+
       if (index === 0) {
         handle?.setDeliverySequence({
           mode: 'atomic',
@@ -251,6 +271,7 @@ describe('Factory flow proof history group', () => {
         })
       }
     }
+
     await Promise.resolve()
     expect(publications).toHaveLength(1)
     expect(
@@ -274,16 +295,20 @@ describe('Factory flow proof history group', () => {
     const factory = new Factory()
     const props = SharedDataChannelNames.PROPS
     const scene = SharedDataChannelNames.SCENE_TREE
+
     for (const channel of [props, scene]) {
       factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
     }
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((value) => publications.push(value))
     const group = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(group, () => {
       for (const [index, channel] of [props, scene, props].entries()) {
         factory.updateTransaction({
@@ -314,16 +339,20 @@ describe('Factory flow proof history group', () => {
   it('pending and ordered replay', () => {
     const factory = new Factory()
     let value = 0
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         value = (event as AllEvent & { payload: { after: number } }).payload
           .after
+
         return true
       }
     )
+
     const write = (after: number) => {
       const before = value
+
       value = after
       factory.updateTransaction({
         type: EventTypes.UPDATE_TRANSACTION,
@@ -332,10 +361,12 @@ describe('Factory flow proof history group', () => {
         options: {}
       })
     }
+
     factory.startTransaction()
     write(10)
     factory.endTransaction()
     const group = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(group, () => write(20))
     expect(factory.getUndoHistoryDepth()).toBe(1)
     factory.undo()

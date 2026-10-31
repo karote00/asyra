@@ -40,6 +40,7 @@ const createRequests = () =>
       workspaceList: [],
       elements: {}
     }),
+
     getCurrentWorkspaceId: vi.fn(() => 'workspace-1'),
     getElementComputedData: vi.fn<SceneTreeRequests['getElementComputedData']>(
       () => undefined
@@ -80,7 +81,9 @@ const createRequests = () =>
       (data: readonly ElementRawData[]) =>
         Object.freeze(data.map(({ id }) => id))
     ),
+
     getAllElementsBounds: () => null,
+
     isContainerType: () => false
   }) satisfies SceneTreeRequests
 
@@ -115,6 +118,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     )
     const [normalized, parent, index, forwarded] =
       requests.createElementsInParent.mock.calls[0]
+
     expect(normalized).toEqual([
       {
         type: 'rect',
@@ -150,6 +154,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     const mutable = { type: 'rect', x: 17, y: 0 }
     const scalar = apis.createElementInParent(mutable, 'workspace-1')
     const [scalarInput] = requests.createElementsInParent.mock.calls[1]
+
     mutable.x = 99
     expect(scalarInput[0]).toEqual({
       type: 'rect',
@@ -168,6 +173,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     const apis = createSceneTreeAPIs(requests)
     const addSubscriber = vi.fn()
     const subscription = subscribeToAddElement(addSubscriber)
+
     addSubscriber.mockClear()
     const options = { sharedDelivery: 'immediate' as const }
 
@@ -237,6 +243,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
 
   it('rejects a scalar owner result that is not exactly one id', () => {
     const requests = createRequests()
+
     vi.mocked(requests.createElementsInParent).mockReturnValueOnce(
       Object.freeze([])
     )
@@ -254,6 +261,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     const requests = createRequests()
     const sourceIds = ['first', 'second']
     const ownerResult = Object.freeze([...sourceIds])
+
     vi.mocked(requests.createElementsInParent).mockReturnValueOnce(ownerResult)
     const apis = createSceneTreeAPIs(requests)
 
@@ -264,6 +272,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
       ],
       'workspace-1'
     )
+
     sourceIds[0] = 'mutated'
     expect(result).toBe(ownerResult)
     expect(() => (result as string[]).push('forbidden')).toThrow()
@@ -395,6 +404,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
       fills: [{ color: '#ffffff' }]
     }
     const requests = createRequests()
+
     vi.mocked(requests.getElementComputedData).mockReturnValue(source)
     const apis = createSceneTreeAPIs(requests)
 
@@ -414,12 +424,14 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
       throw new Error('Omitted geometry was traversed')
     })
     const source = { x: 10, fills: [{ color: '#ffffff' }], points: {} }
+
     Object.defineProperty(source.points, 'largeNetwork', {
       enumerable: true,
       get: geometryRead
     })
     const requests = createRequests()
     const element = new SnapshotElement()
+
     element.computed.data = source as unknown as typeof element.computed.data
     requests.getElementComputedData = vi.fn(
       (_id, fields?: readonly string[]) =>
@@ -427,6 +439,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     )
     const apis = createSceneTreeAPIs(requests)
     const first = apis.getElementComputedData('element-1', ['x', 'fills', 'x'])
+
     expect(first).toEqual({ x: 10, fills: [{ color: '#ffffff' }] })
     expect(first?.fills).not.toBe(source.fills)
     source.x = 25
@@ -443,8 +456,10 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
   it('preserves missing objects and selects own fields only', () => {
     const requests = createRequests(),
       apis = createSceneTreeAPIs(requests)
+
     expect(apis.getElementComputedData('missing', [])).toBeUndefined()
     const element = new SnapshotElement()
+
     element.computed.data = Object.create({ inherited: 42 })
     requests.getElementComputedData = vi.fn(
       (_id, fields?: readonly string[]) =>
@@ -461,6 +476,7 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     (fields) => {
       const requests = createRequests(),
         apis = createSceneTreeAPIs(requests)
+
       expect(() =>
         apis.getElementComputedData('element-1', fields as never)
       ).toThrow()

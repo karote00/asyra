@@ -50,9 +50,11 @@ function fixture() {
   }
   const contacts = cycle.recipe.groups[0].map((chainId) => {
     const anchor = cycle.recipe.anchors.find((a) => a.chainId === chainId)
+
     if (!anchor) {
       throw new Error('Missing canonical support')
     }
+
     return {
       part: anchor.part,
       patch: anchor.patch,
@@ -69,7 +71,9 @@ function fixture() {
     ],
     contacts
   }
+
   owner.configure(profile)
+
   return {
     source,
     context,
@@ -77,6 +81,7 @@ function fixture() {
     owner,
     profile,
     sample,
+
     retire: () => {
       current = false
     }
@@ -86,6 +91,7 @@ function fixture() {
 it('walking runtime monitor computes fresh bounded orientation and three exact support contacts', () => {
   const f = fixture()
   const first = f.owner.evaluate(f.context, f.sample)
+
   expect(first.status).toBe('within-synthetic-profile')
   expect(first.source).toBe(f.source)
   expect(first.load).toBe(f.context.load)
@@ -111,6 +117,7 @@ it('walking runtime monitor computes fresh bounded orientation and three exact s
       { at: 1.1, rotation: [0, 0, 0, 1] }
     ]
   })
+
   expect(second.status).toBe('within-synthetic-profile')
   expect(second.work.orientationSamples).toBe(2)
   expect(second.work.stanceContacts).toBe(3)
@@ -124,11 +131,15 @@ it('walking runtime monitor computes fresh bounded orientation and three exact s
 
 it('walking runtime monitor holds missing foreign zero-force tilted fast or stale sensor evidence', () => {
   const f = fixture()
+
   const unknown = (sample: typeof f.sample) => {
     const result = f.owner.evaluate(f.context, sample)
+
     expect(result.status).not.toBe('within-synthetic-profile')
+
     return result
   }
+
   expect(
     unknown({ ...f.sample, contacts: f.sample.contacts.slice(1) }).status
   ).toBe('unknown')
@@ -164,6 +175,7 @@ it('walking runtime monitor holds missing foreign zero-force tilted fast or stal
       { at: 1, rotation: [1, 0, 0, 0] as const }
     ]
   }
+
   expect(f.owner.evaluate(f.context, tilted).status).toBe('hold')
   const turning = f.owner.evaluate(f.context, {
     ...f.sample,
@@ -172,6 +184,7 @@ it('walking runtime monitor holds missing foreign zero-force tilted fast or stal
       { at: 1, rotation: [0, Math.sin(0.1), 0, Math.cos(0.1)] }
     ]
   })
+
   expect(turning.status).toBe('hold')
   expect(turning.values.tilt.high).toBeLessThan(f.profile.limits.maxTiltRadians)
   expect(turning.reasons).toContain('synthetic-rate-bound-not-within-profile')

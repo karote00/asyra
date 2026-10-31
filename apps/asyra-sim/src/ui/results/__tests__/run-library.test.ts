@@ -25,7 +25,9 @@ const observationAccess = {
       removeObservation: vi.fn()
     }
   },
+
   getObservations: () => [],
+
   getObservationAttachment: vi.fn(),
   exportObservations: vi.fn()
 }
@@ -138,9 +140,12 @@ it('discloses incompatible comparisons and limits selection to three immutable r
         onRetain: vi.fn(),
         onReplay: vi.fn(),
         onCandidate: vi.fn(),
+
         isStale: () => false,
+
         onClose: vi.fn(),
         runtime: observationAccess,
+
         isCurrent: () => true
       })
     )
@@ -190,9 +195,12 @@ it('retains the exact result and reports failure without claiming acknowledgemen
     onRetain,
     onReplay: vi.fn(),
     onCandidate: vi.fn(),
+
     isStale: () => false,
+
     onClose: vi.fn(),
     runtime: observationAccess,
+
     isCurrent: () => true
   }
 
@@ -237,6 +245,7 @@ it('identifies selected revisions in selection order and removes a slot without 
   const onReplay = vi.fn(),
     onRetain = vi.fn(),
     onCandidate = vi.fn()
+
   await act(() =>
     root.render(
       createElement(RunLibrary, {
@@ -246,9 +255,12 @@ it('identifies selected revisions in selection order and removes a slot without 
         onRetain,
         onReplay,
         onCandidate,
+
         isStale: () => false,
+
         onClose: vi.fn(),
         runtime: observationAccess,
+
         isCurrent: () => true
       })
     )
@@ -260,15 +272,18 @@ it('identifies selected revisions in selection order and removes a slot without 
         ?.click()
     )
   }
+
   const selection = host.querySelector(
     '[aria-label="Selected comparison runs"]'
   )
+
   expect(selection?.textContent).toContain('1 - c')
   expect(selection?.textContent).toContain('2 - a')
   expect(selection?.textContent).toContain('Experiment revision 1')
   await act(() => button('Compare selected runs (2/3)').click())
   await completeComparison()
   const comparison = host.querySelector('[aria-label="Run comparison"]')
+
   expect(
     [...(comparison?.querySelectorAll('article h4') ?? [])].map(
       (node) => node.textContent
@@ -298,11 +313,15 @@ it('retires comparison when a canonical run disappears instead of displaying rem
     onRetain: vi.fn(),
     onReplay: vi.fn(),
     onCandidate: vi.fn(),
+
     isStale: () => false,
+
     onClose: vi.fn(),
     runtime: observationAccess,
+
     isCurrent: () => true
   }
+
   await act(() => root.render(createElement(RunLibrary, props)))
   for (const id of ['a', 'b']) {
     await act(() =>
@@ -311,6 +330,7 @@ it('retires comparison when a canonical run disappears instead of displaying rem
         ?.click()
     )
   }
+
   await act(() => button('Compare selected runs (2/3)').click())
   await completeComparison()
   expect(host.querySelector('[aria-label="Run comparison"]')).not.toBeNull()
@@ -320,6 +340,7 @@ it('retires comparison when a canonical run disappears instead of displaying rem
       root.render(createElement(RunLibrary, { ...props, runs: [...runs] }))
     )
   }
+
   expect(compare).toHaveBeenCalledTimes(1)
   expect(host.querySelector('[aria-label="Run comparison"]')).not.toBeNull()
   await act(() =>
@@ -347,11 +368,15 @@ async function selectPair() {
     onRetain: vi.fn(),
     onReplay: vi.fn(),
     onCandidate: vi.fn(),
+
     isStale: () => false,
+
     onClose: vi.fn(),
     runtime: observationAccess,
+
     isCurrent: () => true
   }
+
   await act(() => root.render(createElement(RunLibrary, props)))
   for (const id of ['a', 'b']) {
     await act(() =>
@@ -360,6 +385,7 @@ async function selectPair() {
         ?.click()
     )
   }
+
   return props
 }
 
@@ -367,6 +393,7 @@ it('paints pending feedback before comparing once and automatically reveals the 
   await selectPair()
   const compare = vi.spyOn(comparisonOwner, 'compareRuns')
   const action = button('Compare selected runs (2/3)')
+
   await act(() => {
     action.click()
     action.click()
@@ -382,6 +409,7 @@ it('paints pending feedback before comparing once and automatically reveals the 
   const result = host.querySelector<HTMLElement>(
     '[aria-label="Run comparison"]'
   )
+
   expect(result).not.toBeNull()
   expect(document.activeElement).toBe(result)
   expect(result?.scrollIntoView).toHaveBeenCalledTimes(1)
@@ -394,10 +422,12 @@ it.each(['selection', 'source', 'unmount'])(
   async (change) => {
     const props = await selectPair()
     const compare = vi.spyOn(comparisonOwner, 'compareRuns')
+
     await act(() => button('Compare selected runs (2/3)').click())
     if (change === 'selection') {
       await act(() => button('Remove 1 - a').click())
     }
+
     if (change === 'source') {
       await act(() =>
         root.render(
@@ -405,10 +435,12 @@ it.each(['selection', 'source', 'unmount'])(
         )
       )
     }
+
     if (change === 'unmount') {
       await act(() => root.unmount())
       root = createRoot(host)
     }
+
     await completeComparison()
     expect(compare).not.toHaveBeenCalled()
     expect(host.querySelector('[aria-label="Run comparison"]')).toBeNull()
@@ -423,6 +455,7 @@ it('restores comparison action after failure and permits a fresh explicit retry'
     .mockImplementationOnce(() => {
       throw new Error('Comparison unavailable')
     })
+
   await act(() => button('Compare selected runs (2/3)').click())
   await completeComparison()
   expect(host.querySelector('[role="alert"]')?.textContent).toBe(
@@ -444,9 +477,11 @@ it('reveals the explicitly selected run detail without starting a comparison', a
   const entry = host.querySelector<HTMLButtonElement>(
     '.run-history article button'
   )
+
   if (!entry) {
     throw new Error('Missing run entry')
   }
+
   await act(() => entry.click())
   expect(document.activeElement?.getAttribute('aria-label')).toBe(
     'Selected run'

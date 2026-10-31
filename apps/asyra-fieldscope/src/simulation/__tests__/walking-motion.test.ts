@@ -38,6 +38,7 @@ describe('canonical nonlinear admission negatives', () => {
       },
       { id: 8, kind: 'unknown', proofs: [{ kind: 'unknown', reason: 'open' }] }
     ]
+
     expect(rows.slice(0, 4).filter((r) => r.kind === 'unknown')).toEqual([])
     expect(
       firstVisitedReason(rows).map((v) => [v.row.id, v.proof.reason])
@@ -55,6 +56,7 @@ type Mutable<T> = T extends readonly (infer Item)[]
   : T extends object
     ? { -readonly [Key in keyof T]: Mutable<T[Key]> }
     : T
+
 const evidence = (id: string) => ({
   kind: 'synthetic' as const,
   id,
@@ -213,14 +215,18 @@ function fixture() {
   let demand = makeDemand()
   const owner = new WalkingMotionOwner({
     getCurrentSceneDemand: () => demand,
+
     getCurrentWalkingRobotSource: () => sourceOwner.read()
   })
+
   return {
     sourceOwner,
     source,
     raw,
     owner,
+
     getDemand: () => demand,
+
     setDemand: (next: SceneDemand) => {
       demand = next
     }
@@ -232,6 +238,7 @@ describe('walking whole-machine motion admission', () => {
     const { source, raw, owner } = fixture()
     const request = readWalkingMotionRequest(raw, source)
     const admission = owner.prepare(request)
+
     expect(admission.reasons).toContain('source-relations-version-two-required')
     expect(admission.source).toBe(source)
     expect(admission.path).toBe(request.path)
@@ -263,6 +270,7 @@ describe('walking whole-machine motion admission', () => {
   it('includes carried source geometry and preserves its mass identity for W4', () => {
     const { source, raw, owner } = fixture()
     const carried = structuredClone(raw) as Mutable<typeof raw>
+
     carried.load = {
       id: 'carried-load',
       provenance: evidence('carried'),
@@ -289,7 +297,9 @@ describe('walking whole-machine motion admission', () => {
     for (const assessment of carried.terrain.contactAssessments) {
       assessment.loadCaseId = carried.load.id
     }
+
     const admission = owner.prepare(readWalkingMotionRequest(carried, source))
+
     expect(admission.segments[0].carriedEnvelopes).toHaveLength(1)
     expect(admission.segments[0].carriedEnvelopes[0].attachment).toMatchObject({
       sourceId: 'fruit-triangles',
@@ -300,6 +310,7 @@ describe('walking whole-machine motion admission', () => {
       ...admission.segments[0].carriedEnvelopes
     ]
     let selfPairs = 0
+
     for (let left = 0; left < all.length; left++) {
       for (let right = left + 1; right < all.length; right++) {
         if (!(
@@ -311,6 +322,7 @@ describe('walking whole-machine motion admission', () => {
         }
       }
     }
+
     expect(admission.work.envelopePairs).toBe(selfPairs + all.length)
   })
 
@@ -321,9 +333,11 @@ describe('walking whole-machine motion admission', () => {
       readWalkingMotionRequest(baseline.raw, baseline.source)
     )
     const chassis = next.source.parts.find(({ id }) => id === 'chassis')
+
     if (!chassis) {
       throw new Error('Missing test chassis')
     }
+
     next.raw.load.crate = {
       kind: 'attached',
       sourceCoverage: 'complete',
@@ -351,6 +365,7 @@ describe('walking whole-machine motion admission', () => {
     const result = next.owner.prepare(
       readWalkingMotionRequest(next.raw, next.source)
     )
+
     expect(result.status).toBe('unknown')
     expect(result.reasons).not.toContain('crate-geometry-unknown')
     expect(result.work.unresolvedEnvelopePairs).toBeGreaterThan(
@@ -366,12 +381,14 @@ describe('walking whole-machine motion admission', () => {
     const partial = next.owner.prepare(
       readWalkingMotionRequest(next.raw, next.source)
     )
+
     expect(partial.status).toBe('unknown')
     expect(partial.reasons).toContain('crate-source-geometry-incomplete')
   })
 
   it('keeps a declared fruit with unknown geometry unknown without fabricated bounds', () => {
     const { source, raw, owner } = fixture()
+
     raw.load.carried = {
       kind: 'attached',
       items: [
@@ -387,6 +404,7 @@ describe('walking whole-machine motion admission', () => {
       ]
     }
     const result = owner.prepare(readWalkingMotionRequest(raw, source))
+
     expect(result.status).toBe('unknown')
     expect(result.reasons).toContain('carried-source-geometry-unknown')
     expect(result.segments[0].carriedEnvelopes).toHaveLength(0)
@@ -395,6 +413,7 @@ describe('walking whole-machine motion admission', () => {
 
   it('retains partial fruit geometry without treating it as complete source', () => {
     const { source, raw, owner } = fixture()
+
     raw.load.carried = {
       kind: 'attached',
       items: [
@@ -414,6 +433,7 @@ describe('walking whole-machine motion admission', () => {
       ]
     }
     const result = owner.prepare(readWalkingMotionRequest(raw, source))
+
     expect(result.status).toBe('unknown')
     expect(result.reasons).toContain('carried-source-geometry-incomplete')
     expect(result.segments[0].carriedEnvelopes).toHaveLength(1)
@@ -432,15 +452,18 @@ describe('walking whole-machine motion admission', () => {
       },
       bounds: { min: [-2, -2, -2], max: [2, 2, 2] }
     } as Extract<SceneDemandExclusion, { kind: 'growth' }>
+
     exact.setDemand(makeDemand([growth]))
     const blocked = exact.owner.prepare(
       readWalkingMotionRequest(exact.raw, exact.source)
     )
+
     expect(blocked.status).toBe('blocked')
     expect(blocked.reasons).toContain('hard-exclusion-knot-witness')
 
     const middle = fixture()
     const moving = structuredClone(middle.raw) as Mutable<typeof middle.raw>
+
     moving.path.knots[0].base.position[0] = -2
     moving.path.knots[1].base.position[0] = 2
     moving.gait.id = 'middle-crossing-gait'
@@ -449,10 +472,12 @@ describe('walking whole-machine motion admission', () => {
       volume: { ...growth.volume, id: 'middle-growth' },
       bounds: { min: [-0.1, -2, -2], max: [0.1, 2, 2] }
     } as SceneDemandExclusion
+
     middle.setDemand(makeDemand([narrow]))
     const unresolved = middle.owner.prepare(
       readWalkingMotionRequest(moving, middle.source)
     )
+
     expect(unresolved.status).toBe('unknown')
     expect(unresolved.reasons).toContain('hard-exclusion-exact-query-required')
     expect(unresolved.reasons).not.toContain('hard-exclusion-knot-witness')
@@ -460,6 +485,7 @@ describe('walking whole-machine motion admission', () => {
 
   it('keeps a boundary source vertex unresolved instead of claiming an interior witness', () => {
     const { source, raw, owner, setDemand, getDemand } = fixture()
+
     raw.load.carried = {
       kind: 'attached',
       items: [
@@ -490,6 +516,7 @@ describe('walking whole-machine motion admission', () => {
       bounds: { min: [10, -2, -2], max: [11, 2, 2] }
     }
     const demand = makeDemand([exclusion])
+
     setDemand(
       Object.freeze({
         ...demand,
@@ -500,6 +527,7 @@ describe('walking whole-machine motion admission', () => {
       })
     )
     const result = owner.prepare(readWalkingMotionRequest(raw, source))
+
     expect(result.reasons).not.toContain('hard-exclusion-knot-witness')
     expect(result.status).toBe('unknown')
   })
@@ -532,10 +560,12 @@ describe('walking whole-machine motion admission', () => {
       transform: { descriptor },
       bounds: { min: [-2, -2, -2], max: [2, 2, 2] }
     } as SceneDemandExclusion
+
     overlapFixture.setDemand(makeDemand([sourceEnvelope]))
     const overlap = overlapFixture.owner.prepare(
       readWalkingMotionRequest(overlapFixture.raw, overlapFixture.source)
     )
+
     expect(overlap.status).toBe('unknown')
     expect(overlap.reasons).toContain('source-envelope-exact-query-required')
     expect(overlap.reasons).not.toContain('source-envelope-collision')
@@ -544,15 +574,18 @@ describe('walking whole-machine motion admission', () => {
     const limited = structuredClone(exhaustedFixture.raw) as Mutable<
       typeof exhaustedFixture.raw
     >
+
     limited.budget.maxEnvelopePairs = 1
     const exhausted = exhaustedFixture.owner.prepare(
       readWalkingMotionRequest(limited, exhaustedFixture.source)
     )
+
     expect(exhausted.status).toBe('unknown')
     expect(exhausted.work.unvisitedEnvelopePairs).toBeGreaterThan(0)
     expect(exhausted.reasons).toContain('envelope-pair-budget-exhausted')
     const intervalFixture = fixture()
     const intervalLimited = intervalFixture.raw
+
     intervalLimited.path.knots.splice(1, 0, {
       ...structuredClone(intervalLimited.path.knots[0]),
       time: 0.5
@@ -562,6 +595,7 @@ describe('walking whole-machine motion admission', () => {
     const intervalResult = intervalFixture.owner.prepare(
       readWalkingMotionRequest(intervalLimited, intervalFixture.source)
     )
+
     expect(intervalResult.status).toBe('unknown')
     expect(intervalResult.work.unvisitedIntervals).toBe(1)
     expect(
@@ -576,6 +610,7 @@ describe('walking whole-machine motion admission', () => {
   it('uses a declared debris keep-out witness but not raw terrain AABB as collision', () => {
     const declared = fixture()
     const raw = structuredClone(declared.raw) as Mutable<typeof declared.raw>
+
     raw.terrain.regions.push({
       id: 'debris-region',
       classification: 'debris',
@@ -597,11 +632,13 @@ describe('walking whole-machine motion admission', () => {
     const blocked = declared.owner.prepare(
       readWalkingMotionRequest(raw, declared.source)
     )
+
     expect(blocked.status).toBe('blocked')
     expect(blocked.reasons).toContain('debris-keep-out-knot-witness')
 
     const rawOnly = fixture()
     const unknown = structuredClone(rawOnly.raw) as Mutable<typeof rawOnly.raw>
+
     unknown.terrain.regions.push({
       ...raw.terrain.regions[1],
       id: 'raw-debris',
@@ -610,6 +647,7 @@ describe('walking whole-machine motion admission', () => {
     const unresolved = rawOnly.owner.prepare(
       readWalkingMotionRequest(unknown, rawOnly.source)
     )
+
     expect(unresolved.status).toBe('unknown')
     expect(unresolved.reasons).toContain(
       'debris-source-overlap-exact-query-required'
@@ -620,11 +658,13 @@ describe('walking whole-machine motion admission', () => {
     for (let index = 0; index < 100; index++) {
       expect(rawOnly.owner.read()).toBe(unresolved)
     }
+
     unknown.terrain.id = 'changed-debris-survey'
     unknown.terrain.revision++
     const changed = rawOnly.owner.prepare(
       readWalkingMotionRequest(unknown, rawOnly.source)
     )
+
     expect(changed.work.terrainBoundsPreparations).toBe(1)
     expect(rawOnly.owner.work.preparations).toBe(2)
   })
@@ -636,9 +676,11 @@ describe('walking whole-machine motion admission', () => {
       fixtureValue.source
     )
     const first = fixtureValue.owner.prepare(request)
+
     for (let count = 0; count < 100; count++) {
       expect(fixtureValue.owner.read()).toBe(first)
     }
+
     expect(fixtureValue.owner.prepare(request)).toBe(first)
     expect(fixtureValue.owner.work.preparations).toBe(1)
     const originalBuilds = fixtureValue.sourceOwner.work.builds
@@ -648,6 +690,7 @@ describe('walking whole-machine motion admission', () => {
     )
     expect(fixtureValue.owner.isCurrent(first)).toBe(false)
     const second = fixtureValue.owner.prepare(request)
+
     expect(second).not.toBe(first)
     expect(second.revision).toBe(first.revision + 1)
     expect(fixtureValue.sourceOwner.work.builds).toBe(originalBuilds)
@@ -655,6 +698,7 @@ describe('walking whole-machine motion admission', () => {
     const changedPath = structuredClone(fixtureValue.raw) as Mutable<
       typeof fixtureValue.raw
     >
+
     changedPath.path.knots[1].base.position[0] = 0.1
     expect(() =>
       fixtureValue.owner.prepare(
@@ -668,13 +712,16 @@ describe('walking whole-machine motion admission', () => {
     const { raw, owner } = fixture()
     const shallow = Object.freeze(raw)
     const first = owner.prepare(shallow)
+
     raw.path.knots[1].base.position[0] = 0.1
     raw.gait.id = 'changed-shallow-gait'
     const second = owner.prepare(shallow)
+
     expect(second).not.toBe(first)
     if ('format' in second) {
       throw new Error('Legacy request changed authority')
     }
+
     expect(second.path.knots[1].base.position[0]).toBe(0.1)
     expect(owner.work.preparations).toBe(2)
   })
@@ -682,10 +729,12 @@ describe('walking whole-machine motion admission', () => {
   it('rejects malformed input before owner work and retires on clear', () => {
     const { source, raw, owner } = fixture()
     const malformed = structuredClone(raw) as Mutable<typeof raw>
+
     malformed.budget.maxIntervals = 0
     expect(() => owner.prepare(malformed)).toThrow()
     expect(owner.work.preparations).toBe(0)
     const admission = owner.prepare(readWalkingMotionRequest(raw, source))
+
     owner.clear()
     expect(owner.read()).toBeUndefined()
     expect(owner.isCurrent(admission)).toBe(false)
@@ -693,6 +742,7 @@ describe('walking whole-machine motion admission', () => {
 
   it('does not issue collision decisions from incompatible terrain evidence', () => {
     const { source, raw, owner, setDemand, getDemand } = fixture()
+
     raw.terrain.sceneRevision = 6
     setDemand(
       Object.freeze({
@@ -704,6 +754,7 @@ describe('walking whole-machine motion admission', () => {
       })
     )
     const result = owner.prepare(readWalkingMotionRequest(raw, source))
+
     expect(result.status).toBe('unknown')
     expect(result.reasons).toContain('terrain-scene-mismatch')
     expect(result.reasons).not.toContain('route-boundary-knot-witness')
@@ -713,6 +764,7 @@ describe('walking whole-machine motion admission', () => {
   it('retains a compatible W1 block but never borrows one from another route', () => {
     for (const incompatible of [false, true]) {
       const { source, raw, owner, setDemand, getDemand } = fixture()
+
       setDemand(
         Object.freeze({
           ...getDemand(),
@@ -728,7 +780,9 @@ describe('walking whole-machine motion admission', () => {
           stripId: 'another-strip'
         }
       }
+
       const result = owner.prepare(readWalkingMotionRequest(raw, source))
+
       expect(result.status).toBe(incompatible ? 'unknown' : 'blocked')
       if (!incompatible) {
         expect(result.reasons).toContain('scene-demand-blocked')
@@ -787,23 +841,29 @@ describe('walking whole-machine motion admission', () => {
         }
       }
     ]
+
     for (const [index, change] of changes.entries()) {
       const next = structuredClone(raw)
+
       change(next)
       next.gait.id = `semantic-change-${index}`
       const request = readWalkingMotionRequest(next, source)
       const result = owner.prepare(request)
+
       expect(owner.isCurrent(previous)).toBe(false)
       expect(owner.work.preparations).toBe(index + 2)
       for (let read = 0; read < 100; read++) {
         expect(owner.read()).toBe(result)
         expect(owner.prepare(request)).toBe(result)
       }
+
       expect(owner.work.preparations).toBe(index + 2)
       previous = result
     }
+
     const builds = sourceOwner.work.builds
     const demand = getDemand()
+
     setDemand(
       Object.freeze({
         ...demand,
@@ -815,6 +875,7 @@ describe('walking whole-machine motion admission', () => {
     )
     expect(owner.isCurrent(previous)).toBe(false)
     const refreshed = owner.prepare(readWalkingMotionRequest(raw, source))
+
     expect(refreshed.demand.configuration.clearanceMargin).toEqual({
       kind: 'bounded',
       metres: 0.04
@@ -846,14 +907,17 @@ describe('walking whole-machine motion admission', () => {
       clearanceMargin: { kind: 'bounded', metres: 0 }
     })
     let previous: ReturnType<typeof owner.prepare> | undefined
+
     for (const length of [2, 3]) {
       const farm = validateConfiguration({ ...DEFAULT_CONFIGURATION, length })
       const scene = geometry.prepareScene(farm, buildSiteMeshes(farm, geometry))
       const demand = prepareSceneDemand(farm, scene, configuration)
+
       setDemand(demand)
       if (previous) {
         expect(owner.isCurrent(previous)).toBe(false)
       }
+
       raw.terrain.sceneRevision = scene.revision
       raw.terrain.route.stripId = 'strip-3'
       raw.terrain.regions[0].binding = {
@@ -863,16 +927,20 @@ describe('walking whole-machine motion admission', () => {
       }
       const request = readWalkingMotionRequest(raw, source)
       const result = owner.prepare(request)
+
       expect(result.demand).toBe(demand)
       expect(result.source).toBe(source)
       expect(sourceOwner.work.builds).toBe(1)
       const work = { ...demand.work }
+
       for (let read = 0; read < 100; read++) {
         expect(owner.read()).toBe(result)
       }
+
       expect(demand.work).toEqual(work)
       previous = result
     }
+
     expect(owner.work.preparations).toBe(2)
   }, 30000)
 })

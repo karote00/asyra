@@ -33,25 +33,33 @@ test('queries current regions and composes relative edits with Undo', async ({
       )
     )
     const [a, b, c] = ids
+
     if (!a || !b || !c) {
       throw new Error('Query fixture creation failed')
     }
+
     const bounds = { x: 11, y: 21, width: 1, height: 1 }
+
     const query = () =>
       readDesignContext({
         scope: 'region',
         bounds,
         filter: { type: 'rect', parentId: workspace, locked: false }
       }).elements.map((e) => e.id)
+
     const before = query()
+
     transactionApis.runTransaction(() =>
       core.updateElementProperties([{ elementId: a, values: { x: 300 } }])
     )
     const after = query()
+
     await historyApis.undo()
     const undone = query()
+
     await historyApis.redo()
     const redone = query()
+
     transactionApis.runTransaction(() =>
       hierarchyApis.moveElementsRelative({
         elementIds: [a],
@@ -60,10 +68,13 @@ test('queries current regions and composes relative edits with Undo', async ({
       })
     )
     const order = core.getElementChildren(workspace, 0, 20).elementIds
+
     await historyApis.undo()
     const orderUndone = core.getElementChildren(workspace, 0, 20).elementIds
+
     return { a, b, c, before, after, undone, redone, order, orderUndone }
   })
+
   expect(result.before).toEqual([result.a])
   expect(result.after).toEqual([])
   expect(result.undone).toEqual([result.a])
@@ -82,6 +93,7 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
   )
   test.setTimeout(240_000)
   const { identity, manifest } = await prepareLargeNavigationDocument(baseURL)
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   await expect
@@ -89,6 +101,7 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
       () =>
         page.evaluate(async () => {
           const { core } = await import('../src/testing/runtime-access')
+
           return {
             canonical: core.getCanonicalElementCount(),
             projected: core.getProjectedElementCount()
@@ -108,16 +121,20 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
       (id) => core.getElementMetadata(id)?.childCount === 0
     )
     const node = leafId ? core.deps.render.getElementById(leafId) : undefined
+
     if (!node) {
       throw new Error('Missing document projection')
     }
+
     let workspace = node
+
     while (
       workspace.parent &&
       workspace.label !== core.getCurrentWorkspaceId()
     ) {
       workspace = workspace.parent
     }
+
     const bounds = node.getBoundsRelativeTo(workspace)
     const region = {
       x: bounds.x + bounds.width / 2,
@@ -131,40 +148,55 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
         counts[name] = (counts[name] ?? 0) + value
       }
     })
+
     try {
       const first = core.getElementIdsInBounds(region)
       const build = { ...counts }
+
       for (const key of Object.keys(counts)) {
         Reflect.deleteProperty(counts, key)
       }
+
       const repeats = []
+
       for (let i = 0; i < 10; i++) {
         repeats.push(core.getElementIdsInBounds(region))
       }
+
       const repeat = { ...counts }
+
       for (const key of Object.keys(counts)) {
         Reflect.deleteProperty(counts, key)
       }
+
       const position = viewportApis.getPosition()
+
       viewportApis.panTo(position.x + 40, position.y + 20)
       const afterPan = core.getElementIdsInBounds(region)
       const pan = { ...counts }
       const oracle = ids.filter((id) => {
         const element = core.deps.render.getElementById(id)
+
         if (!element) {
           return false
         }
+
         let current = element
+
         while (current !== workspace) {
           if (!current.visible || !current.renderable) {
             return false
           }
+
           if (!current.parent) {
             return false
           }
+
           current = current.parent
         }
+
         const b = element.getBoundsRelativeTo(workspace)
+
         return (
           b.x <= region.x + region.width &&
           b.x + b.width >= region.x &&
@@ -176,6 +208,7 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
         await import('../src/common-apis/design-context')
       const compactIds: string[] = []
       let offset: number | null = 0
+
       while (offset !== null) {
         const page = readDesignContext({
           scope: 'region',
@@ -183,12 +216,15 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
           result: 'ids',
           offset
         })
+
         if (page.elements.length) {
           throw new Error('Identity query returned element summaries')
         }
+
         compactIds.push(...(page.elementIds ?? []))
         offset = page.nextOffset
       }
+
       return {
         compactIds,
         elements: ids.length,
@@ -205,6 +241,7 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
       unsubscribe()
     }
   })
+
   await writeFile(
     info.outputPath('indexed-query.json'),
     JSON.stringify(report, null, 2)
@@ -265,35 +302,45 @@ test('edits a bounded part of one tier without reading its shared parent childre
     })
     const runner = createAiTransactionRunner()
     const signal = new AbortController().signal
+
     const invoke = async (name: string, input: unknown) => {
       const action = runtime.actionDefinitions.find(
         (item) => item.name === name
       )
+
       if (!action) {
         throw new Error(`Missing registered action: ${name}`)
       }
+
       return runner.run(name, (runMutation) =>
         action.execute(input, { signal, runMutation })
       )
     }
+
     const original = core.getElementChildren
     let childReads = 0
+
     core.getElementChildren = (...args) => {
       childReads++
+
       return original.apply(core, args)
     }
+
     try {
       const receipt = (await invoke('resolve_design_targets', {
         scope: 'region',
         bounds: { x: 300, y: 300, width: 40, height: 80 },
         filter: { ancestorId: parent, type: 'rect', locked: false }
       })) as { elementIds: string[] }
+
       await invoke('api_element_setElementsVisible', {
         elementIds: receipt.elementIds,
         visible: false
       })
       const hidden = ids.filter((id) => !elementApis.isElementVisible(id))
+
       await historyApis.undo()
+
       return {
         ids,
         candidates: receipt.elementIds,
@@ -308,6 +355,7 @@ test('edits a bounded part of one tier without reading its shared parent childre
       }
     }
   })
+
   expect(result.candidates).toEqual([result.ids[4]])
   expect(result.hidden).toEqual(result.candidates)
   expect(result.childReads).toBe(0)
@@ -341,13 +389,17 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         workspace
       )
     )
+
     if (ids.some((id) => !id)) {
       throw new Error('Missing retained fixture')
     }
+
     const targets = ids as string[]
+
     transactionApis.runTransaction(() =>
       fillApis.updateFillsAtIndex(targets, 0, { color: '#123456' })
     )
+
     const readColors = () =>
       targets.map(
         (id) =>
@@ -357,8 +409,10 @@ test('retained region fills use current positions, keep Undo, and reject stale s
             }[]
           )[0].color
       )
+
     const store = createRetainedDesignContext(core, observeDesignChanges)
     const signal = new AbortController().signal
+
     try {
       const first = store.read(
         {
@@ -389,6 +443,7 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         ]
       }
       const runner = createAiTransactionRunner()
+
       await runner
         .run(
           'Map colors',
@@ -399,11 +454,14 @@ test('retained region fills use current positions, keep Undo, and reject stale s
           throw error instanceof Error && error.cause ? error.cause : error
         })
       const mapped = readColors()
+
       await historyApis.undo()
       const undone = readColors()
+
       await historyApis.redo()
       const redone = readColors()
       let stale = ''
+
       try {
         await runner.run(
           'Stale mapping',
@@ -415,7 +473,9 @@ test('retained region fills use current positions, keep Undo, and reject stale s
           error instanceof Error && error.cause ? error.cause : error
         )
       }
+
       const afterRejected = readColors()
+
       transactionApis.runTransaction(() =>
         fillApis.shareFillAtIndex(targets[0], targets.slice(1), 0)
       )
@@ -428,6 +488,7 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         },
         signal
       )
+
       input.mappings[0].snapshotId = shared.snapshotId
       input.mappings[0].leaseId = shared.leaseId
       // A local Fill edit masks the shared source per target; it does not
@@ -438,8 +499,10 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         { signal }
       )
       const localMapped = readColors()
+
       await historyApis.undo()
       const localUndone = readColors()
+
       await historyApis.redo()
       const localRedone = readColors()
       const refreshed = store.read(
@@ -451,6 +514,7 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         },
         signal
       )
+
       input.mappings[0].snapshotId = refreshed.snapshotId
       input.mappings[0].leaseId = refreshed.leaseId
       input.mappings[0].stops = [
@@ -463,8 +527,10 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         { signal }
       )
       const sharedMapped = readColors()
+
       await historyApis.undo()
       const sharedUndone = readColors()
+
       return {
         localMapped,
         localUndone,
@@ -482,6 +548,7 @@ test('retained region fills use current positions, keep Undo, and reject stale s
       store.dispose()
     }
   })
+
   expect(result.mapped).toEqual(['#000000', '#808080', '#ffffff'])
   expect(result.undone).toEqual(['#123456', '#123456', '#123456'])
   expect(result.redone).toEqual(result.mapped)
@@ -514,9 +581,11 @@ test('retained regions invalidate on ancestor moves, new matches and Undo', asyn
         workspace
       )
     )[0]
+
     if (!group) {
       throw new Error('Missing group fixture')
     }
+
     transactionApis.runTransaction(() =>
       core.createElementsInParent(
         [{ type: 'rect', x: 0, y: 0, width: 20, height: 20 }],
@@ -529,21 +598,26 @@ test('retained regions invalidate on ancestor moves, new matches and Undo', asyn
       bounds: { x: 0, y: 0, width: 1000, height: 1000 },
       fields: ['x']
     }
+
     const stale = (id: string) => {
       try {
         store.get(id)
+
         return false
       } catch {
         return true
       }
     }
+
     try {
       const initial = store.read(query)
+
       transactionApis.runTransaction(() =>
         core.updateElementProperties([{ elementId: group, values: { x: 10 } }])
       )
       const ancestor = stale(initial.snapshotId)
       const moved = store.read(query)
+
       transactionApis.runTransaction(() =>
         core.createElementsInParent(
           [{ type: 'rect', x: 50, y: 50, width: 10, height: 10 }],
@@ -552,12 +626,15 @@ test('retained regions invalidate on ancestor moves, new matches and Undo', asyn
       )
       const created = stale(moved.snapshotId)
       const next = store.read(query)
+
       await historyApis.undo()
+
       return { ancestor, created, undone: stale(next.snapshotId) }
     } finally {
       store.dispose()
     }
   })
+
   expect(evidence).toEqual({ ancestor: true, created: true, undone: true })
 })
 
@@ -565,6 +642,7 @@ test('recovers a rejected recorded query through explicit refinement, local edit
   page
 }) => {
   const document = createTestDocumentIdentity()
+
   await page.goto(document.url)
   await waitForAppReady(page)
   await expect
@@ -610,21 +688,28 @@ test('recovers a rejected recorded query through explicit refinement, local edit
         workspace
       )
     )
+
     if (!ids[0] || !ids[1]) {
       throw new Error('Missing query fixture')
     }
+
     const targets = ids as string[]
+
     transactionApis.runTransaction(() =>
       fillApis.updateFillsAtIndex(targets, 0, { color: '#123456' })
     )
     let childReads = 0
     const source = {
       getCurrentWorkspaceId: () => core.getCurrentWorkspaceId(),
+
       getSelectedElementIds: () => core.getSelectedElementIds(),
+
       getElementChildren: (id: string, offset: number, limit: number) => {
         childReads++
+
         return core.getElementChildren(id, offset, limit)
       },
+
       getElementIdsInBounds: core.getElementIdsInBounds.bind(core),
       getElementMetadata: core.getElementMetadata.bind(core),
       getElementComputedData: core.getElementComputedData.bind(core)
@@ -632,6 +717,7 @@ test('recovers a rejected recorded query through explicit refinement, local edit
     const store = createRetainedDesignContext(source, observeDesignChanges)
     const action = createDocumentContextAction(store.read)
     const signal = new AbortController().signal
+
     const colors = () =>
       targets.map(
         (id) =>
@@ -641,21 +727,26 @@ test('recovers a rejected recorded query through explicit refinement, local edit
             }[]
           )[0].color
       )
+
     try {
       let failure = ''
+
       try {
         await action.execute(recorded as never, { signal })
       } catch (error) {
         failure = String(error)
       }
+
       const rejectedReads = childReads
       const parent = store.read(
         { scope: 'children', parentId: workspace, delivery: 'reference' },
         signal
       )
+
       if (!parent.snapshotId) {
         throw new Error('Missing parent reference')
       }
+
       const filtered = store.read(
         {
           scope: 'snapshot',
@@ -667,24 +758,29 @@ test('recovers a rejected recorded query through explicit refinement, local edit
       )
       const selected = filtered.elements.map((row) => row.id)
       const readsAfterRefinement = childReads
+
       transactionApis.runTransaction(() =>
         fillApis.updateFillsAtIndex(selected, 0, { color: '#abcdef' })
       )
       const edited = colors()
       let stale = ''
+
       try {
         store.read({ scope: 'snapshot', snapshotId: parent.snapshotId }, signal)
       } catch (error) {
         stale = String(error)
       }
+
       await historyApis.undo()
       const undone = colors()
+
       await historyApis.redo()
       const redone = colors()
       const refreshed = store.read(
         { scope: 'ids', elementIds: selected, delivery: 'reference' },
         signal
       )
+
       return {
         failure,
         rejectedReads,
@@ -701,6 +797,7 @@ test('recovers a rejected recorded query through explicit refinement, local edit
       store.dispose()
     }
   }, recordedQuery)
+
   expect(result.failure).toMatch(/filter.*region.*snapshot/)
   expect(result.rejectedReads).toBe(0)
   expect(result.readsAfterRefinement).toBe(1)
@@ -711,6 +808,7 @@ test('recovers a rejected recorded query through explicit refinement, local edit
   expect(result.stale).toContain('stale')
   expect(result.refreshed).toBe(1)
   const digest = await getCoreDocumentDigest(page)
+
   await expect
     .poll(() => getPersistedDocumentDigest(document.fileId))
     .toEqual(digest)

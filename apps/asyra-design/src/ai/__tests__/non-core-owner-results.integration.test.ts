@@ -21,6 +21,7 @@ const required = <T>(value: T | null | undefined): T => {
   if (value == null) {
     throw new Error('Required integration fixture value is missing')
   }
+
   return value
 }
 
@@ -59,6 +60,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   const actions = createBasicApiActions()
   const runner = createAiTransactionRunner()
   const calls: string[] = []
+
   const invoke = async (
     name: string,
     args: Record<string, unknown>,
@@ -89,6 +91,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
             (mutate) => executeAiActions(batch, requestSignal, {}, mutate),
             { signal: requestSignal }
           )
+
           return JSON.stringify(receipt.actionResults[0].result)
         }
       },
@@ -96,12 +99,15 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       args,
       signal
     )
+
     return { ...result, receipt: JSON.parse(result.text) }
   }
+
   const lock = await invoke('api_element_setElementLock', {
     elementId: 'a',
     lock: true
   })
+
   expect(lock.receipt).toMatchObject({
     status: 'complete',
     changed: true,
@@ -110,6 +116,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     toolOutcome: { status: 'success', settlement: 'completed' }
   })
   const depth = core.getUndoHistoryDepth()
+
   expect(
     (await invoke('api_element_setElementLock', { elementId: 'a', lock: true }))
       .receipt
@@ -148,6 +155,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   })
   expect(core.getElementComputedData('a')).toMatchObject({ x: 4, y: 5 })
   const fill = await invoke('api_fill_addFills', { elementIds: ['a'] })
+
   expect(fill.receipt).toMatchObject({
     status: 'complete',
     changed: true,
@@ -157,6 +165,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   const fillArgs = {
     updates: [{ elementId: 'a', fillId, patch: { opacity: 0.4 } }]
   }
+
   expect(
     (await invoke('api_fill_updateFillFieldsBatch', fillArgs)).receipt
   ).toMatchObject({ status: 'complete', changed: true })
@@ -164,12 +173,14 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     (await invoke('api_fill_updateFillFieldsBatch', fillArgs)).receipt
   ).toMatchObject({ status: 'no-change', changed: false })
   const stroke = await invoke('api_stroke_addStroke', { elementId: 'a' })
+
   expect(stroke.receipt).toMatchObject({ status: 'complete', changed: true })
   const strokeArgs = {
     updates: [
       { elementId: 'a', strokeId: stroke.receipt.value, patch: { width: 4 } }
     ]
   }
+
   expect(
     (await invoke('api_stroke_updateStrokeFieldsBatch', strokeArgs)).receipt
   ).toMatchObject({ status: 'complete', changed: true })
@@ -182,6 +193,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     ).toMatchObject({ status: 'complete', changed: true })
     await invoke(`api_element_${method}`, { elementId: 'a' })
   }
+
   expect(
     (await invoke('api_element_resetElementSize', { elementId: 'a' })).receipt
   ).toMatchObject({ status: 'complete', changed: true })
@@ -202,6 +214,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   )
   const otherFill = (await invoke('api_fill_addFills', { elementIds: ['b'] }))
     .receipt.value[0]
+
   expect(
     (
       await invoke('api_fill_updateFillsAtIndex', {
@@ -240,6 +253,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   const independentFill = (
     await invoke('api_fill_addFills', { elementIds: ['b'] })
   ).receipt.value[0]
+
   expect(
     (
       await invoke('api_fill_removeFills', {
@@ -282,6 +296,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       }
     ]
   })
+
   expect(gradientPrepared.receipt).toMatchObject({
     status: 'complete',
     changed: true
@@ -326,6 +341,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
         y: clientY
       }))
   ]
+
   try {
     expect(
       (
@@ -346,8 +362,10 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   } finally {
     projections.forEach((projection) => projection.mockRestore())
   }
+
   const extraStroke = (await invoke('api_stroke_addStroke', { elementId: 'b' }))
     .receipt.value
+
   expect(
     (
       await invoke('api_stroke_removeStroke', {
@@ -368,8 +386,10 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     'api_element_createVectorElementFromSinglePoint',
     { pointId: 'anchor-a', position: { x: 0, y: 0 } }
   )
+
   expect(vector.receipt).toMatchObject({ status: 'complete', changed: true })
   const vectorId = vector.receipt.value
+
   expect(
     (
       await invoke('api_element_setVectorClosed', {
@@ -387,6 +407,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       })
     ).receipt
   ).toMatchObject({ status: 'failed', changed: false })
+
   const vectorCall = (method: string, args: Record<string, unknown> = {}) =>
     invoke(
       `api_element_${method}`,
@@ -394,6 +415,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
         ? args
         : { elementId: vectorId, ...args }
     )
+
   expect(
     (
       await vectorCall('appendVectorAnchorPoint', {
@@ -452,6 +474,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
         method === 'scaleVectorElementAroundCenter' ? 'complete' : 'no-change'
     })
   }
+
   await vectorCall('appendVectorAnchorPoint', {
     point: {
       id: 'isolated',
@@ -510,6 +533,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       ).receipt
     ).toMatchObject({ status: 'complete', changed: true })
   }
+
   expect(
     (
       await vectorCall('connectVectorAnchorEndpoints', {
@@ -534,9 +558,11 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       endId: string
     }[]
   ).find((entry) => entry.endId === 'anchor-d')
+
   if (!segment) {
     throw new Error('Missing straight segment')
   }
+
   const anchors = (await vectorCall('getVectorAnchorPoints')).receipt.value as {
     id: string
     x: number
@@ -551,17 +577,22 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       endId: string
     }[]
   ).find((entry) => entry.endId === 'anchor-b')
+
   if (!start || !end || !curved) {
     throw new Error('Missing split fixture')
   }
+
   const curvedStart = anchors.find((point) => point.id === curved.startId)
   const curvedEnd = anchors.find((point) => point.id === curved.endId)
+
   if (!curvedStart || !curvedEnd) {
     throw new Error('Missing curved endpoints')
   }
+
   const beforeRejectedSplit = structuredClone(
     core.getElementComputedData(vectorId)
   )
+
   expect(() =>
     vectorApis.splitVectorSegmentAtWorkspacePos(vectorId, curved.id, {
       x: (curvedStart.x + curvedEnd.x) / 2,
@@ -571,10 +602,13 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   expect(core.getElementComputedData(vectorId)).toEqual(beforeRejectedSplit)
   const retained: AiBatchReceipt[] = []
   const add = actions.find((entry) => entry.name === 'api_fill_addFills')
+
   if (!add) {
     throw new Error('Missing Fill action')
   }
+
   const original = add.execute
+
   add.execute = vi.fn(original)
   const beforePrefix = core.getElementComputedData('a')?.fills?.length
   const runtime = createAiAgentRuntime({
@@ -623,6 +657,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
             ]
           })
         )
+
         return {
           batchId: 'read-recovery',
           actions: [
@@ -642,6 +677,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     confirmationHandler: { confirm: async () => true },
     transactionRunner: runner
   })
+
   try {
     expect(
       (
@@ -673,6 +709,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   } finally {
     await runtime.dispose()
   }
+
   expect(
     (
       await vectorCall('splitVectorSegmentAtWorkspacePos', {
@@ -682,6 +719,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     ).receipt
   ).toMatchObject({ status: 'complete', changed: true })
   const widthBefore = core.getElementComputedData('a')?.strokes?.[0]?.width
+
   await invoke('api_stroke_updateStrokeFieldsBatch', {
     updates: [
       { elementId: 'a', strokeId: stroke.receipt.value, patch: { width: 7 } }
@@ -698,6 +736,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     props: props.save(),
     sceneTree: scene.save()
   }
+
   core.load(saved)
   expect({ props: props.save(), sceneTree: scene.save() }).toEqual({
     props: saved.props,
@@ -708,6 +747,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       .receipt
   ).toMatchObject({ status: 'complete', changed: true })
   const beforeInvalid = calls.length
+
   expect(await invoke('api_fill_addFills', { elementIds: 'a' })).toMatchObject({
     success: false,
     receipt: { code: 'PREPARATION_REJECTED', settlement: 'not-started' }
@@ -716,9 +756,11 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   const declared = basicApiContracts
     .filter((action) => action.result.kind === 'mutation-receipt')
     .map((action) => action.name)
+
   expect(declared).toHaveLength(31)
   expect(declared.filter((name) => !calls.includes(name))).toEqual([])
   const beforeCancelled = calls.length
+
   await expect(
     invoke('api_fill_addFills', { elementIds: ['a'] }, AbortSignal.abort())
   ).rejects.toThrow()

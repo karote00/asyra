@@ -14,6 +14,7 @@ export const createPropertyWithConstructor = (
   PropClass: PropertyComponentConstructor
 ): PropertyComponentInstanceTypes => {
   let comId = data.id
+
   if (isNil(comId)) {
     comId = id(IDTypes.PROPS)
   } else {
@@ -29,6 +30,7 @@ export const createPropertyWithConstructor = (
 export const createProperty = (data: Partial<PropertyComponentRawData>) => {
   const type = data.type as string
   const PropClass = getPropertyComponent(type)
+
   if (!PropClass) {
     throw new Error(
       `[props-manager] Property component type "${type}" is not registered.`

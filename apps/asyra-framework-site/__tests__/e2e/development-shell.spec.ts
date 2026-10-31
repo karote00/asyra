@@ -9,6 +9,7 @@ test('development shell does not surface a Next error overlay', async ({
   page
 }, testInfo) => {
   const browserErrors: string[] = []
+
   page.on('console', (message) => {
     if (message.type() === 'error') {
       browserErrors.push(message.text())
@@ -26,6 +27,7 @@ test('development shell does not surface a Next error overlay', async ({
         response.headers.get('content-security-policy')
       )
     )
+
   expect(policy).toContain("'unsafe-eval'")
   const errorOverlayState = await page
     .locator('nextjs-portal')
@@ -37,6 +39,7 @@ test('development shell does not surface a Next error overlay', async ({
         text: portal.shadowRoot?.textContent ?? ''
       }))
     )
+
   expect(errorOverlayState).not.toEqual(
     expect.arrayContaining([expect.objectContaining({ hasErrorFooter: true })])
   )

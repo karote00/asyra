@@ -10,6 +10,7 @@ const {
   FLOW_EXECUTION_ID
 } = process.env
 const passed = process.env.FLOW_EXAMPLE_FAIL !== '1'
+
 openProject(FLOW_FILE_DIRECTORY).update(FLOW_ID, {
   expectedRevision: Number(FLOW_EXPECTED_REVISION),
   kind: 'observation',

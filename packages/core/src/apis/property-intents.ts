@@ -75,6 +75,7 @@ export const applyPreparedPropertyIntent = (
   const retired = retirement
     ? requests.applyPreparedPropertyMutationBatch(retirement)
     : undefined
+
   return (
     properties.evidence.length > 0 ||
     !!binding?.evidence.length ||
@@ -89,6 +90,7 @@ export const createElementPropertyIntentAPIs = (
     targets: readonly ElementPropertyTarget[]
   ): readonly PropertyTarget[] => {
     const roots = requests.resolveElementPropertyBindings(targets)
+
     return targets.map((target, index) => ({
       root: roots[index].relation,
       sharedRoot: roots[index].shared,
@@ -101,6 +103,7 @@ export const createElementPropertyIntentAPIs = (
         : { expectedSourceId: target.expectedSourceId })
     }))
   }
+
   const apply = (
     targets: readonly ElementPropertyTarget[],
     toIntent: (target: PropertyTarget, index: number) => PropertyIntent,
@@ -109,11 +112,13 @@ export const createElementPropertyIntentAPIs = (
     if (targets.length === 0) {
       return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
     }
+
     const prepared = requests.preparePropertyIntentBatch(
       resolve(targets).map(toIntent),
       options
     )
     const changed = applyPreparedPropertyIntent(requests, prepared, options)
+
     return Object.freeze({
       acceptedIds: Object.freeze([
         ...new Set(targets.map((target) => target.elementId))
@@ -121,9 +126,11 @@ export const createElementPropertyIntentAPIs = (
       changed
     })
   }
+
   return {
     readElementPropertyTargets: (targets) =>
       requests.readPropertyTargets(resolve(targets)),
+
     updateElementPropertyTargets: (updates, options) =>
       apply(
         updates.map((update) => update.target),
@@ -134,6 +141,7 @@ export const createElementPropertyIntentAPIs = (
         }),
         options
       ),
+
     resetElementPropertyOverrides: (updates, options) =>
       apply(
         updates.map((update) => update.target),
@@ -144,8 +152,10 @@ export const createElementPropertyIntentAPIs = (
         }),
         options
       ),
+
     detachElementPropertyTargets: (targets, options) =>
       apply(targets, (target) => ({ kind: 'detach', target }), options),
+
     shareElementPropertyTargets: (updates, options) =>
       apply(
         updates.map((update) => update.target),
@@ -156,12 +166,14 @@ export const createElementPropertyIntentAPIs = (
         }),
         options
       ),
+
     updateSharedPropertySources: (updates, options) => {
       const prepared = requests.prepareSharedPropertySourceBatch(
         updates,
         options
       )
       const result = requests.applyPreparedPropertyMutationBatch(prepared)
+
       return Object.freeze({
         acceptedIds: Object.freeze([
           ...new Set(updates.map((update) => update.propertyId))

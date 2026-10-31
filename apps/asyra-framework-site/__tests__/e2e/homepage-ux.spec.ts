@@ -7,6 +7,7 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
     const header = page.locator('header').first()
+
     await expect(header.getByRole('link', { name: 'Asyra home' })).toHaveText(
       'ASYRA'
     )
@@ -14,9 +15,11 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
       .getByRole('link', { name: 'Asyra home' })
       .boundingBox()
     const actions = await header.locator(':scope > div').boundingBox()
+
     if (!logo || !actions) {
       throw new Error('Header layout is missing')
     }
+
     expect(actions.x - logo.x - logo.width).toBeGreaterThanOrEqual(8)
     if (width >= 1024) {
       await expect(header.locator('summary')).toBeHidden()
@@ -29,20 +32,26 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
     } else {
       await expect(header.locator('summary')).toBeVisible()
     }
+
     const links = await header.locator('a, summary').all()
     const boxes = []
+
     for (const link of links) {
       if (!(await link.isVisible())) {
         continue
       }
+
       const font = await link.evaluate((el) =>
         parseFloat(getComputedStyle(el).fontSize)
       )
+
       expect.soft(font).toBeGreaterThanOrEqual(14)
       const box = await link.boundingBox()
+
       if (!box) {
         throw new Error('Header control has no bounds')
       }
+
       expect.soft(box.height).toBeGreaterThanOrEqual(40)
       expect.soft(box.x).toBeGreaterThanOrEqual(0)
       expect.soft(box.x + box.width).toBeLessThanOrEqual(width)
@@ -56,11 +65,14 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
           )
           .toBe(true)
       }
+
       boxes.push(box)
     }
+
     for (const chapter of await page.locator('[data-story-chapter]').all()) {
       const copy = chapter.locator(':scope > div').first()
       const body = copy.locator(':scope > p').nth(1)
+
       expect
         .soft(
           await body.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))
@@ -75,10 +87,12 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
           )
           .toBeGreaterThanOrEqual(14)
       }
+
       expect
         .soft(await copy.evaluate((el) => el.scrollWidth <= el.clientWidth))
         .toBe(true)
     }
+
     await page.screenshot({ path: testInfo.outputPath(`home-ux-${width}.png`) })
     expect(
       await page.evaluate(
@@ -100,9 +114,11 @@ test('short desktop windows retain the complete readable story in natural flow',
   await expect(page.locator('[data-shared-scene]')).toBeHidden()
   for (const chapter of await page.locator('[data-story-chapter]').all()) {
     const copy = chapter.locator(':scope > div').first()
+
     expect(await copy.evaluate((el) => getComputedStyle(el).position)).not.toBe(
       'sticky'
     )
   }
+
   await page.screenshot({ path: testInfo.outputPath('short-desktop.png') })
 })

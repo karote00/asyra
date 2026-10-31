@@ -22,6 +22,7 @@ function definition(): ExperimentDefinition {
   const influencingBodyIds = example.workcell.bodies
     .filter((body) => body.role === 'fixture')
     .map((body) => body.id)
+
   return {
     version: 1,
     revision: 1,
@@ -99,6 +100,7 @@ describe('M2 experiment preflight and snapshot', () => {
     const reports = cases.map((item) =>
       preflightExperiment(example.workcell, item, [method])
     )
+
     expect(
       reports[0]?.blockers.some((issue) => issue.code === 'no-pairs')
     ).toBe(true)
@@ -115,9 +117,11 @@ describe('M2 experiment preflight and snapshot', () => {
     const emptyBody = example.workcell.bodies.find(
       (body) => body.role === 'fixture'
     )
+
     if (!emptyBody) {
       throw new Error('Expected fixture')
     }
+
     const workcell = {
       ...example.workcell,
       bodies: example.workcell.bodies.map((body) =>
@@ -126,6 +130,7 @@ describe('M2 experiment preflight and snapshot', () => {
     }
 
     const report = preflightExperiment(workcell, definition(), [method])
+
     expect(
       report.blockers.some((issue) => issue.code === 'missing-collider')
     ).toBe(true)
@@ -135,9 +140,11 @@ describe('M2 experiment preflight and snapshot', () => {
     const example = createSyntheticExample()
     const base = definition()
     const excluded = base.scope.influencingBodyIds[0]
+
     if (!excluded) {
       throw new Error('Expected influencing fixture')
     }
+
     const unacknowledged: ExperimentDefinition = {
       ...base,
       scope: {
@@ -150,6 +157,7 @@ describe('M2 experiment preflight and snapshot', () => {
     const warning = preflightExperiment(example.workcell, unacknowledged, [
       method
     ])
+
     expect(
       warning.assumptions.some(
         (issue) => issue.code === 'visible-background-unacknowledged'
@@ -174,6 +182,7 @@ describe('M2 experiment preflight and snapshot', () => {
         acknowledgedExcludedVisibleBodyIds: [excluded]
       }
     }
+
     expect(
       preflightExperiment(example.workcell, acknowledged, [method]).assumptions
     ).toEqual([])
@@ -185,6 +194,7 @@ describe('M2 experiment preflight and snapshot', () => {
     const report = preflightExperiment(example.workcell, definition(), [
       smallMethod
     ])
+
     expect(report.blockers).toEqual([])
     expect(report.resourceWarnings.map((issue) => issue.code)).toContain(
       'large-workload'
@@ -199,6 +209,7 @@ describe('M2 experiment preflight and snapshot', () => {
       methods: [smallMethod],
       acknowledgedWarningCodes: ['large-workload']
     })
+
     expect(snapshot.acknowledgedWarnings).toEqual(['large-workload'])
   })
 
@@ -235,9 +246,11 @@ describe('M2 experiment preflight and snapshot', () => {
     const example = createSyntheticExample()
     const base = definition()
     const first = base.scope.excludedPairs[0]
+
     if (!first) {
       throw new Error('Expected exclusion')
     }
+
     for (const excludedPairs of [
       [{ ...first, reason: '' }],
       [first, { ...first }],
@@ -248,6 +261,7 @@ describe('M2 experiment preflight and snapshot', () => {
         { ...base, scope: { ...base.scope, excludedPairs } },
         [method]
       )
+
       expect(
         report.blockers.some((issue) => issue.code === 'invalid-exclusion')
       ).toBe(true)
@@ -257,6 +271,7 @@ describe('M2 experiment preflight and snapshot', () => {
 
 it('rejects unresolved authored input instead of executing an older normalized trajectory', () => {
   const source = definition()
+
   source.trajectoryInput = {
     version: 1,
     kind: 'csv',

@@ -17,6 +17,7 @@ const geometry: MeshGeometry = Object.freeze({
   indices: Object.freeze([0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3])
 })
 const mesh = { geometry, pose: ops.fromPose(IDENTITY_POSE) }
+
 const sphere = (x: number) => ({
   geometry: { kind: 'sphere' as const, radius: 0.02 },
   pose: ops.fromPose({ ...IDENTITY_POSE, position: [x, 0.2, 0.2] })
@@ -49,6 +50,7 @@ it('reuses immutable preparation between independent pose queries with exact evi
 it('misses replaced or mutable geometry and retains no failed preparation', () => {
   const indices = new WeakMap()
   const build = vi.spyOn(indexModule, 'buildMeshIndex')
+
   const query = () => new OriginalMeshQuery(undefined, 500000, true, indices)
 
   query().distance(mesh, sphere(5), 0.02, 1e-6, 48)
@@ -70,6 +72,7 @@ it('misses replaced or mutable geometry and retains no failed preparation', () =
   expect(build).toHaveBeenCalledTimes(4)
 
   const fresh = new WeakMap()
+
   expect(() =>
     new OriginalMeshQuery(undefined, 1, true, fresh).distance(
       mesh,
@@ -92,6 +95,7 @@ it('misses replaced or mutable geometry and retains no failed preparation', () =
 it('retains independent invocation budgets and current cancellation on warm hits', () => {
   const indices = new WeakMap()
   const first = new OriginalMeshQuery(undefined, 500000, true, indices)
+
   first.distance(mesh, sphere(5), 0.02, 1e-6, 48)
 
   expect(() =>

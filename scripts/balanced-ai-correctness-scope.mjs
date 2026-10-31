@@ -51,6 +51,7 @@ const normalizeRepositoryPath = (filePath) =>
 
 export const isBalancedAiCorrectnessPath = (filePath) => {
   const normalized = normalizeRepositoryPath(filePath)
+
   return (
     EXACT_PATHS.has(normalized) ||
     PATH_PREFIXES.some((prefix) => normalized.startsWith(prefix))
@@ -65,9 +66,11 @@ export const resolveBalancedAiCorrectnessScope = ({
   if (eventName === 'workflow_dispatch') {
     return manualRequested
   }
+
   if (eventName !== 'pull_request') {
     return false
   }
+
   return changedPaths.some(isBalancedAiCorrectnessPath)
 }
 
@@ -77,6 +80,7 @@ const changedPathsBetween = (baseSha, headSha) => {
       'Pull-request balanced AI scope requires both base and head SHAs.'
     )
   }
+
   const result = spawnSync(
     'git',
     ['diff', '--name-only', '--diff-filter=ACMRDT', `${baseSha}...${headSha}`],
@@ -84,11 +88,13 @@ const changedPathsBetween = (baseSha, headSha) => {
       encoding: 'utf8'
     }
   )
+
   if (result.status !== 0) {
     throw new Error(
       `Unable to resolve balanced AI changed paths: ${result.stderr.trim()}`
     )
   }
+
   return result.stdout.split(/\r?\n/).filter(Boolean)
 }
 
@@ -107,6 +113,7 @@ if (isMainModule) {
     eventName,
     manualRequested: process.env.E2E_MANUAL_BALANCED_AI_CORRECTNESS === 'true'
   })
+
   process.stdout.write(
     `run_balanced_ai_correctness=${runBalancedAiCorrectness ? '1' : '0'}\n`
   )

@@ -7,6 +7,7 @@ import {
 
 // Checked by TypeScript as well as exercised through the public package entry.
 const acceptsPolicy = (value: SessionCancelPolicy) => value
+
 const acceptsOutcome = (value: SessionCancelOutcome) => value
 
 describe('public session cancellation policies', () => {
@@ -19,6 +20,7 @@ describe('public session cancellation policies', () => {
     for (const value of Object.values(SessionCancelPolicies)) {
       expect(acceptsPolicy(value)).toBe(value)
     }
+
     expect(acceptsOutcome(SessionCancelPolicies.ROLLBACK)).toBe('rollback')
     expect(acceptsOutcome(SessionCancelPolicies.COMMIT_CURRENT)).toBe(
       'commit-current'

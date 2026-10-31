@@ -5,13 +5,17 @@ import type { MeshGeometry } from '../part-geometry'
 function bipyramid(count: number): MeshGeometry {
   const positions = [0, 0, 1, 0, 0, -1]
   const indices: number[] = []
+
   for (let i = 0; i < count; i++) {
     const angle = (2 * Math.PI * i) / count
+
     positions.push(Math.cos(angle), Math.sin(angle), 0)
     const a = i + 2,
       b = ((i + 1) % count) + 2
+
     indices.push(0, a, b, 1, b, a)
   }
+
   return {
     kind: 'mesh',
     version: 1,
@@ -26,15 +30,18 @@ afterEach(() => vi.restoreAllMocks())
 it('observes cancellation during the initial complete vertex scan', () => {
   const mesh = bipyramid(2048)
   let reads = 0
+
   mesh.positions = new Proxy(mesh.positions, {
     get(target, key, receiver) {
       if (typeof key === 'string' && /^\d+$/.test(key)) {
         reads++
       }
+
       return Reflect.get(target, key, receiver)
     }
   })
   const cancelled = new Error('cancelled during vertex admission')
+
   expect(() =>
     inspectMeshTopology(mesh, () => {
       if (reads >= 768) {
@@ -51,11 +58,13 @@ it('bounds graph operations between checkpoints through component and high-valen
     maximum = 0
   const has = Set.prototype.has,
     add = Set.prototype.add
+
   vi.spyOn(Set.prototype, 'has').mockImplementation(function (
     this: Set<unknown>,
     value
   ) {
     pending++
+
     return has.call(this, value)
   })
   vi.spyOn(Set.prototype, 'add').mockImplementation(function (
@@ -63,12 +72,14 @@ it('bounds graph operations between checkpoints through component and high-valen
     value
   ) {
     pending++
+
     return add.call(this, value)
   })
   const result = inspectMeshTopology(mesh, () => {
     maximum = Math.max(maximum, pending)
     pending = 0
   })
+
   maximum = Math.max(maximum, pending)
   vi.restoreAllMocks()
   expect(result.issue).toBeNull()

@@ -42,6 +42,7 @@ describe('selected-chain root motion', () => {
       chainId: 'right-front',
       targetAbduction: over(cycle.recipe.alpha, exact(2))
     })
+
     expect(motion.startAbduction).toEqual(cycle.recipe.alpha)
     expect(owner.work.evaluations - before).toBe(1)
     const start = owner.evaluateSelectedChainMotion(motion, exact(0))
@@ -55,6 +56,7 @@ describe('selected-chain root motion', () => {
       low: fraction(1n, 4n),
       high: fraction(3n, 4n)
     })
+
     expect(owner.work.evaluations - before).toBe(1)
     expect(start.bodies).toHaveLength(4)
     for (const entry of start.bodies) {
@@ -62,20 +64,24 @@ describe('selected-chain root motion', () => {
         required(point.bodies.find((p) => p.body === entry.body)).exact
       )
     }
+
     for (const entry of end.parts) {
       const bounds = required(
         whole.parts.find((p) => p.part === entry.part)
       ).frame
+
       for (let row = 0; row < 3; row++) {
         const value = roundFraction(
           entry.exact.origin[row].numerator,
           entry.exact.origin[row].denominator,
           'nearest-even'
         )
+
         expect(value).toBeGreaterThanOrEqual(bounds.origin[row].low)
         expect(value).toBeLessThanOrEqual(bounds.origin[row].high)
       }
     }
+
     expect(whole.work.selectedBodyVisits).toBe(4)
     expect(whole.work.selectedPartVisits).toBe(motion.parts.length)
     expect(whole.work.sourceVertices).toBe(0)
@@ -84,6 +90,7 @@ describe('selected-chain root motion', () => {
       const bounds = required(
         narrowed.parts.find((p) => p.part === entry.part)
       ).frame
+
       for (let row = 0; row < 3; row++) {
         for (let column = 0; column < 3; column++) {
           const v = entry.exact.matrix[row][column]
@@ -92,21 +99,25 @@ describe('selected-chain root motion', () => {
             v.denominator,
             'nearest-even'
           )
+
           expect(value).toBeGreaterThanOrEqual(bounds.matrix[row][column].low)
           expect(value).toBeLessThanOrEqual(bounds.matrix[row][column].high)
         }
       }
     }
+
     expect(whole.work.otherBodyVisits).toBe(0)
     expect(start.fixed).toBe(motion.fixed)
     expect(end.fixed).toBe(motion.fixed)
     const work = owner.work
+
     expect(owner.readSelectedChainMotion(cycle, motion)).toBe(motion)
     expect(owner.work).toEqual(work)
     expect(Object.isFrozen(motion.fixed.parts)).toBe(true)
     for (const u of [exact(-1), exact(2), { numerator: 2n, denominator: 4n }]) {
       expect(() => owner.evaluateSelectedChainMotion(motion, u)).toThrow()
     }
+
     expect(() =>
       owner.boundSelectedChainMotion(motion, { low: exact(1), high: exact(0) })
     ).toThrow()
@@ -123,6 +134,7 @@ describe('selected-chain root motion', () => {
         })
       ).toThrow()
     }
+
     expect(() =>
       new WalkingConstrainedCycleOwner().prepareSelectedChainMotion(
         cycle,
@@ -147,13 +159,16 @@ describe('exact polynomial complementary tripod cycle', () => {
       const owner = new WalkingConstrainedCycleOwner()
       const cycle = owner.prepare(source, raw)
       const receipt = owner.readPhaseRootMotion(cycle, phase)
+
       if (!receipt) {
         throw new Error('Missing phase-root receipt')
       }
+
       expect(receipt.phase).toBe(phase)
       expect(receipt.cycle).toBe(cycle)
       expect(receipt.source).toBe(source)
       const support = new Set(cycle.recipe.groups[phase])
+
       for (const chain of source.rig.legChains) {
         expect(receipt.bodies.some((e) => e.body.id === chain.bodyIds[0])).toBe(
           support.has(chain.id)
@@ -162,17 +177,21 @@ describe('exact polynomial complementary tripod cycle', () => {
           expect(receipt.bodies.some((e) => e.body.id === id)).toBe(false)
         }
       }
+
       for (const contact of source.rig.contacts.feet) {
         expect(receipt.parts.some((e) => e.part === contact.part)).toBe(false)
       }
+
       const point = owner.evaluate(cycle, phase, fraction(1n, 3n))
       const root = required(
         point.bodies.find((p) => p.body.id === 'base')
       ).exact
+
       for (const entry of receipt.parts) {
         const actual = required(
           point.parts.find((p) => p.part === entry.part)
         ).exact
+
         for (let i = 0; i < 3; i++) {
           expect(actual.origin[i]).toEqual(
             plus(
@@ -193,7 +212,9 @@ describe('exact polynomial complementary tripod cycle', () => {
           }
         }
       }
+
       const work = owner.work.operations
+
       expect(owner.readPhaseRootMotion(cycle, phase)).toBe(receipt)
       expect(owner.work.operations).toBe(work)
       expect(owner.readPhaseRootMotion(cycle, 0)).not.toBe(
@@ -217,16 +238,20 @@ describe('exact polynomial complementary tripod cycle', () => {
     const owner = new WalkingConstrainedCycleOwner()
     const cycle = owner.prepare(source, raw)
     const receipt = owner.readConstantMotion(cycle)
+
     expect(receipt?.source).toBe(source)
     expect(receipt?.recipe).toBe(cycle.recipe)
     if (!receipt) {
       throw new Error('Missing constant-root receipt')
     }
+
     expect(receipt.bodies.some((p) => p.body.id === 'carriage')).toBe(true)
     const legs = new Set(source.rig.legChains.flatMap((c) => c.bodyIds))
+
     for (const entry of receipt.bodies) {
       expect(legs.has(entry.body.id)).toBe(false)
     }
+
     expect(receipt.parts.some((p) => p.part.id === 'lift-rail-negative')).toBe(
       true
     )
@@ -239,10 +264,12 @@ describe('exact polynomial complementary tripod cycle', () => {
       const root = required(
         point.bodies.find((p) => p.body.id === 'base')
       ).exact
+
       for (const entry of receipt.parts) {
         const actual = required(
           point.parts.find((p) => p.part === entry.part)
         ).exact
+
         for (let i = 0; i < 3; i++) {
           expect(actual.origin[i]).toEqual(
             plus(
@@ -264,7 +291,9 @@ describe('exact polynomial complementary tripod cycle', () => {
         }
       }
     }
+
     const work = owner.work.operations
+
     expect(owner.readConstantMotion(cycle)).toBe(receipt)
     expect(owner.work.operations).toBe(work)
     expect(owner.readConstantMotion({ ...cycle })).toBeUndefined()
@@ -278,6 +307,7 @@ describe('exact polynomial complementary tripod cycle', () => {
     const owner = new WalkingConstrainedCycleOwner()
     const cycle = owner.prepare(source, raw)
     const receipt = owner.readBaseMotion(cycle)
+
     expect(receipt?.cycle).toBe(cycle)
     expect(receipt?.source).toBe(source)
     expect(receipt?.recipe).toBe(cycle.recipe)
@@ -288,16 +318,19 @@ describe('exact polynomial complementary tripod cycle', () => {
     if (!receipt) {
       throw new Error('Missing base receipt')
     }
+
     for (const phase of [0, 1]) {
       const point = owner.evaluate(cycle, phase, fraction(1n, 2n))
       const root = required(
         point.bodies.find((p) => p.body === receipt.body)
       ).exact
+
       expect(root.matrix).toEqual(receipt.rootMatrix)
       for (const entry of receipt.parts) {
         const actual = required(
           point.parts.find((p) => p.part === entry.part)
         ).exact
+
         for (let i = 0; i < 3; i++) {
           expect(actual.origin[i]).toEqual(
             plus(
@@ -319,7 +352,9 @@ describe('exact polynomial complementary tripod cycle', () => {
         }
       }
     }
+
     const work = owner.work.operations
+
     expect(owner.readBaseMotion(cycle)).toBe(receipt)
     expect(owner.work.operations).toBe(work)
     expect(owner.readBaseMotion({ ...cycle })).toBeUndefined()
@@ -344,6 +379,7 @@ describe('exact polynomial complementary tripod cycle', () => {
         ]
       }))
     })
+
     expect(owner.readBaseMotion(reverse)?.rootMatrix).toEqual([
       [exact(-1), exact(0), exact(0)],
       [exact(0), exact(1), exact(0)],
@@ -363,8 +399,10 @@ describe('exact polynomial complementary tripod cycle', () => {
     }
     const owner = new WalkingConstrainedCycleOwner(),
       cycle = owner.prepare(source, reversed)
+
     expect(cycle.netDisplacement[2].numerator).toBeGreaterThan(0n)
     const work = owner.work
+
     expect(owner.prepare(source, cycle.recipe)).toBe(cycle)
     expect(owner.read(source, cycle.recipe)).toBe(cycle)
     expect(owner.work).toEqual(work)
@@ -409,12 +447,15 @@ describe('exact polynomial complementary tripod cycle', () => {
       { ...raw, budget: { maxOperations: 1, maxBits: 24000 } },
       { ...raw, budget: { maxOperations: 10000000, maxBits: 32 } }
     ]
+
     for (const bad of cases) {
       expect(() =>
         new WalkingConstrainedCycleOwner().prepare(source, bad)
       ).toThrow()
     }
+
     const defaults = cycleFixture({ authored: false })
+
     expect(() =>
       new WalkingConstrainedCycleOwner().prepare(defaults.source, defaults.raw)
     ).toThrow(/domain/)
@@ -423,12 +464,14 @@ describe('exact polynomial complementary tripod cycle', () => {
     const { source, raw } = cycleFixture(),
       owner = new WalkingConstrainedCycleOwner(),
       cycle = owner.prepare(source, raw)
+
     expect(
       cycle.phases.every((p) =>
         p.swing.every((s) => s.certificate.openPhasePositive)
       )
     ).toBe(true)
     const before = owner.work
+
     expect(() => owner.evaluate(cycle, 0, fraction(1n, 1n << 2000n))).toThrow(
       /budget/
     )
@@ -454,11 +497,13 @@ describe('exact polynomial complementary tripod cycle', () => {
     })
     const single = owner.bound(cycle, 0, { low: exact(0.5), high: exact(0.5) })
     const point = owner.evaluate(cycle, 0, exact(0.5))
+
     const width = (value: typeof whole) =>
       value.parts.reduce(
         (sum, p) => sum + p.sourceBounds.max[2] - p.sourceBounds.min[2],
         0
       )
+
     expect(width(narrow)).toBeLessThan(width(whole))
     expect(width(single)).toBeLessThan(width(narrow))
     for (let i = 0; i < point.bodies.length; i++) {
@@ -469,6 +514,7 @@ describe('exact polynomial complementary tripod cycle', () => {
         )
       }
     }
+
     expect(single.cycle).toBe(cycle)
     expect(single.work.unvisited).toBe(0)
   })
@@ -476,12 +522,14 @@ describe('exact polynomial complementary tripod cycle', () => {
     const { source, raw } = cycleFixture()
     const owner = new WalkingConstrainedCycleOwner()
     const cycle = owner.prepare(source, raw)
+
     expect(cycle.source).toBe(source)
     expect(cycle.phases).toHaveLength(2)
     const start = owner.evaluate(cycle, 0, exact(0))
     const handoff = owner.evaluate(cycle, 0, exact(1))
     const next = owner.evaluate(cycle, 1, exact(0))
     const end = owner.evaluate(cycle, 1, exact(1))
+
     expect(handoff.bodies).toEqual(next.bodies)
     expect(start.bodies).toHaveLength(46)
     for (let i = 0; i < start.bodies.length; i++) {
@@ -492,6 +540,7 @@ describe('exact polynomial complementary tripod cycle', () => {
         )
       )
     }
+
     expect(cycle.netDisplacement[2].numerator).toBeLessThan(0n)
   })
 })
@@ -500,24 +549,30 @@ describe('constrained projection formal dependencies and original material', () 
     // A/N and B/N are independent rational expressions, not ideal sin/cos.
     // (c²-s²)²+(2cs)²=(c²+s²)² certifies the inverse for every nonzero q.
     type Polynomial = Record<string, bigint>
+
     const product = (a: Polynomial, b: Polynomial) => {
       const result: Polynomial = {}
+
       for (const [ka, va] of Object.entries(a)) {
         for (const [kb, vb] of Object.entries(b)) {
           const aa = ka.split(',').map(Number),
             bb = kb.split(',').map(Number),
             key = [aa[0] + bb[0], aa[1] + bb[1]].join(',')
+
           result[key] = (result[key] ?? 0n) + va * vb
         }
       }
+
       return result
     }
+
     const A = { '0,2': 1n, '2,0': -1n },
       B = { '1,1': 2n },
       N = { '0,2': 1n, '2,0': 1n }
     const aa = product(A, A),
       bb = product(B, B),
       nn = product(N, N)
+
     for (const key of new Set([
       ...Object.keys(aa),
       ...Object.keys(bb),
@@ -525,6 +580,7 @@ describe('constrained projection formal dependencies and original material', () 
     ])) {
       expect((aa[key] ?? 0n) + (bb[key] ?? 0n) - (nn[key] ?? 0n)).toBe(0n)
     }
+
     const { source, recipe } = fixture()
     const baseOrientation = [exact(1), exact(2), exact(3), exact(4)]
     const transformed = {
@@ -537,6 +593,7 @@ describe('constrained projection formal dependencies and original material', () 
     }
     const owner = new WalkingConstrainedKinematicsOwner()
     const projection = owner.prepare(source, transformed)
+
     expect(projection.certificate.quaternionNormBounds.low).toBeGreaterThan(0)
     let reference:
       | {
@@ -547,6 +604,7 @@ describe('constrained projection formal dependencies and original material', () 
         }
       | undefined
     let originalVertices = 0
+
     for (const support of projection.supports) {
       const chain = required(
         source.rig.legChains.find((chain) => chain.id === support.chainId)
@@ -571,14 +629,17 @@ describe('constrained projection formal dependencies and original material', () 
       const k = joints[2].frame.position.map(exact)
       const ca = [k[0], k[1], k[2]],
         cb = [exact(0), k[2], negate(k[1])]
+
       expect(k[0]).toEqual(exact(0))
       const constant = vectorPlus(
         vectorPlus(offset, foot.position.map(exact)),
         contact.localFrame.position.map(exact)
       )
+
       if (!reference) {
         reference = { constant, a: ca, b: cb, anchor: support.anchorOrigin }
       }
+
       const variableA = rotateOracle(
         baseOrientation,
         vectorMinus(ca, reference.a)
@@ -587,9 +648,11 @@ describe('constrained projection formal dependencies and original material', () 
         baseOrientation,
         vectorMinus(cb, reference.b)
       )
+
       expect(variableA).toEqual([exact(0), exact(0), exact(0)])
       expect(variableB).toEqual([exact(0), exact(0), exact(0)])
       const indices = new Set<number>()
+
       for (const range of support.patch.ranges) {
         for (
           let offset = range.indexStart;
@@ -599,6 +662,7 @@ describe('constrained projection formal dependencies and original material', () 
           indices.add(support.part.shape.indices[offset])
         }
       }
+
       expect(
         support.fixedVertices
           .map((vertex) => vertex.index)
@@ -630,6 +694,7 @@ describe('constrained projection formal dependencies and original material', () 
             vectorMinus(local, contact.localFrame.position.map(exact))
           )
         )
+
         expect(commonRootResult).toEqual(anchorResult)
         expect(
           required(
@@ -639,6 +704,7 @@ describe('constrained projection formal dependencies and original material', () 
         originalVertices++
       }
     }
+
     expect(originalVertices).toBeGreaterThanOrEqual(12)
   })
   it('does not use legacy rounded anchor corrections or Math trigonometry as its authority', () => {
@@ -651,6 +717,7 @@ describe('constrained projection formal dependencies and original material', () 
             (chain) => chain.side === leg.side && chain.station === leg.station
           )
         )
+
         return recipe.supports.some((entry) => entry.chainId === chain.id)
           ? { ...leg, hip: -alpha, knee: alpha }
           : leg
@@ -673,11 +740,13 @@ describe('constrained projection formal dependencies and original material', () 
       base: { position: root, rotation: [0, 0, 0, 1] },
       joints
     })
+
     expect(
       recipe.supports.some((entry) => {
         const foot = required(
           legacy.frames.contacts.feet.find((foot) => foot.part === entry.part)
         )
+
         return entry.anchorOrigin.some(
           (value, index) =>
             minus(exact(foot.position[index]), value).numerator !== 0n
@@ -686,15 +755,19 @@ describe('constrained projection formal dependencies and original material', () 
     ).toBe(true)
     const oldSin = Math.sin,
       oldCos = Math.cos
+
     Math.sin = () => {
       throw new Error('Unexpected Math.sin leaf')
     }
+
     Math.cos = () => {
       throw new Error('Unexpected Math.cos leaf')
     }
+
     try {
       const owner = new WalkingConstrainedKinematicsOwner()
       const projection = owner.prepare(source, recipe)
+
       expect(owner.evaluate(projection, alpha).frames).toHaveLength(46)
     } finally {
       Math.sin = oldSin
@@ -706,11 +779,13 @@ describe('constrained projection formal dependencies and original material', () 
     const owner = new WalkingConstrainedKinematicsOwner()
     const projection = owner.prepare(source, recipe)
     const work = owner.work
+
     expect(owner.prepare(source, projection.recipe)).toBe(projection)
     expect(owner.read(source, projection.recipe)).toBe(projection)
     expect(owner.work).toEqual(work)
     const point = owner.evaluate(projection, alpha)
     const pointWork = owner.work
+
     expect(owner.evaluate(projection, alpha)).toBe(point)
     expect(owner.work).toEqual(pointWork)
     recipe.supports[0].anchorOrigin[0] = plus(
@@ -724,6 +799,7 @@ describe('constrained projection formal dependencies and original material', () 
     expect(owner.read(source, projection.recipe)).toBeUndefined()
     expect(() => owner.evaluate(projection, 0)).toThrow('stale projection')
     const fresh = fixture()
+
     expect(() => owner.prepare(fresh.source, projection.recipe)).toThrow(
       'source or recipe binding'
     )
@@ -744,6 +820,7 @@ describe('constrained projection formal dependencies and original material', () 
     (kind) => {
       const { source, recipe } = fixture()
       let invalid: unknown = recipe
+
       if (kind === 'rounded-anchor') {
         invalid = {
           ...recipe,
@@ -755,6 +832,7 @@ describe('constrained projection formal dependencies and original material', () 
           }))
         }
       }
+
       if (kind === 'rational-residual') {
         invalid = {
           ...recipe,
@@ -770,6 +848,7 @@ describe('constrained projection formal dependencies and original material', () 
           )
         }
       }
+
       if (kind === 'wrong-patch') {
         invalid = {
           ...recipe,
@@ -778,18 +857,22 @@ describe('constrained projection formal dependencies and original material', () 
           )
         }
       }
+
       if (kind === 'independent-hip') {
         invalid = { ...recipe, hipMode: 'independently-evaluated' }
       }
+
       if (kind === 'mutable-fixed-state') {
         invalid = { ...recipe, fixedJoints: { ...recipe.fixedJoints } }
       }
+
       if (kind === 'zero-norm') {
         invalid = {
           ...recipe,
           baseOrientation: [exact(0), exact(0), exact(0), exact(0)]
         }
       }
+
       if (kind === 'zero-denominator') {
         invalid = {
           ...recipe,
@@ -801,19 +884,24 @@ describe('constrained projection formal dependencies and original material', () 
           ]
         }
       }
+
       if (kind === 'nonfinite-interval') {
         invalid = { ...recipe, interval: { low: NaN, high: 1 } }
       }
+
       if (kind === 'budget') {
         invalid = { ...recipe, budget: { maxOperations: 1, maxBits: 24000 } }
       }
+
       if (kind === 'bit-budget') {
         invalid = {
           ...recipe,
           budget: { maxOperations: 1000000, maxBits: 256 }
         }
       }
+
       const owner = new WalkingConstrainedKinematicsOwner()
+
       expect(() => owner.prepare(source, invalid)).toThrow(
         'Unavailable constrained projection'
       )
@@ -821,6 +909,7 @@ describe('constrained projection formal dependencies and original material', () 
   )
   it('rejects default negative domains and unequal source dependencies, but permits nonunit rational base orientation', () => {
     const defaultFixture = fixture({ authored: false })
+
     expect(() =>
       new WalkingConstrainedKinematicsOwner().prepare(
         defaultFixture.source,
@@ -828,6 +917,7 @@ describe('constrained projection formal dependencies and original material', () 
       )
     ).toThrow('support joint domain')
     const unequal = fixture({ upperLengthDelta: 0.01 })
+
     expect(() =>
       new WalkingConstrainedKinematicsOwner().prepare(
         unequal.source,
@@ -842,6 +932,7 @@ describe('constrained projection formal dependencies and original material', () 
       ...recipe,
       baseOrientation: [exact(0), exact(0), exact(0), exact(-2)]
     })
+
     expect(
       firstOwner.evaluate(first, 0).frames.map((entry) => entry.exact)
     ).toEqual(
@@ -857,6 +948,7 @@ describe('canonical constrained support projection', () => {
       source,
       recipe
     )
+
     expect(complete.work.maxBits).toBeGreaterThan(1)
     expect(() =>
       new WalkingConstrainedKinematicsOwner().prepare(source, {
@@ -869,6 +961,7 @@ describe('canonical constrained support projection', () => {
     const { source, recipe } = fixture()
     const owner = new WalkingConstrainedKinematicsOwner()
     const projection = owner.prepare(source, recipe)
+
     expect(projection.source).toBe(source)
     expect(projection.certificate.sharedTranslations).toBe(1)
     expect(projection.certificate.sharedDisplacements).toBe(1)

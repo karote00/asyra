@@ -74,10 +74,14 @@ export function installObservationStorageFeatures(
         detachObservationFiles(files),
         options
       ),
+
     cancel: () => cancelFeatureTask(FeatureNames.PREPARE_OBSERVATION),
+
     discard: (receipt) => archive.discard(receipt),
+
     retain: async (receipt, intent) => {
       const input = structuredClone(intent)
+
       validateIntent(input)
       if (
         !receipt?.attachments?.length ||
@@ -95,9 +99,11 @@ export function installObservationStorageFeatures(
           'Observation metadata must include every prepared attachment'
         )
       }
+
       archive.accept(receipt)
       archive.resolve(input.draft.attachments)
       let id: string
+
       if (input.edit) {
         await editing.updateObservation(
           input.runId,
@@ -109,14 +115,18 @@ export function installObservationStorageFeatures(
       } else {
         id = await editing.addObservation(input.runId, input.draft)
       }
+
       archive.discard(receipt)
+
       return id
     }
   }
+
   core.defineFeature(FeatureNames.PREPARE_OBSERVATION, undefined, {
     priority: 90,
     exclusive: true,
     api: { prepare: api.prepare, cancel: api.cancel, discard: api.discard },
+
     task: (input: unknown, { signal }) => archive.prepare(input, signal)
   })
   core.defineFeature(FeatureNames.RETAIN_OBSERVATION, undefined, {
@@ -127,5 +137,6 @@ export function installObservationStorageFeatures(
   core.registerRuntimeCleanup(FeatureNames.PREPARE_OBSERVATION, () =>
     archive.dispose()
   )
+
   return api
 }

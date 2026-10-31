@@ -13,6 +13,7 @@ type Mutable<T> = T extends readonly (infer Item)[]
   : T extends object
     ? { -readonly [Key in keyof T]: Mutable<T[Key]> }
     : T
+
 const evidence = (id: string) => ({
   kind: 'synthetic' as const,
   id,
@@ -127,6 +128,7 @@ function fixture() {
     route: { bay: 0, stripId: 'soil-strip' },
     channels: []
   } as unknown as SceneDemand
+
   return { source, raw, demand }
 }
 
@@ -135,6 +137,7 @@ describe('walking terrain and support contact', () => {
     const { source, raw, demand } = fixture()
     const request = readWalkingMotionRequest(raw, source)
     const result = evaluateWalkingTerrainContact(demand, source, request)
+
     expect(result.status).toBe('clear')
     expect(result.contacts).toHaveLength(6)
     expect(result.contacts.every(({ status }) => status === 'admitted')).toBe(
@@ -153,6 +156,7 @@ describe('walking terrain and support contact', () => {
     const { source, raw, demand } = fixture()
     const mutable = structuredClone(raw) as Mutable<typeof raw>
     const region = mutable.terrain.regions[0]
+
     region.classification = 'channel'
     region.binding = {
       kind: 'scene-channel',
@@ -176,6 +180,7 @@ describe('walking terrain and support contact', () => {
       source,
       readWalkingMotionRequest(mutable, source)
     )
+
     expect(result.status).toBe('blocked')
     expect(result.reasons).toContain('support-on-authored-channel')
     expect(result.contacts.every(({ status }) => status === 'blocked')).toBe(
@@ -187,6 +192,7 @@ describe('walking terrain and support contact', () => {
     for (const name of ['height', 'slope', 'rut', 'debris'] as const) {
       for (const coverage of ['unknown', 'sampled'] as const) {
         const { source, raw, demand } = fixture()
+
         raw.terrain.observations[name] =
           coverage === 'unknown'
             ? { kind: 'unknown' }
@@ -196,14 +202,17 @@ describe('walking terrain and support contact', () => {
           source,
           readWalkingMotionRequest(raw, source)
         )
+
         expect(result.status).toBe('unknown')
         expect(result.reasons).toContain(`terrain-${name}-coverage-incomplete`)
       }
     }
+
     const observation = fixture()
     const sampled = structuredClone(observation.raw) as Mutable<
       typeof observation.raw
     >
+
     sampled.terrain.observations.height = {
       coverage: 'sampled',
       evidence: evidence('sampled-height')
@@ -220,47 +229,56 @@ describe('walking terrain and support contact', () => {
     const incomplete = structuredClone(relation.raw) as Mutable<
       typeof relation.raw
     >
+
     incomplete.terrain.contactAssessments[0].friction = { kind: 'unknown' }
     const result = evaluateWalkingTerrainContact(
       relation.demand,
       relation.source,
       readWalkingMotionRequest(incomplete, relation.source)
     )
+
     expect(result.status).toBe('unknown')
     expect(result.reasons).toContain('contact-evidence-incomplete')
   })
 
   it('does not reuse contact evidence with the wrong patch, path, time or load', () => {
     const variants = ['footPatchId', 'pathId', 'from', 'loadCaseId'] as const
+
     for (const field of variants) {
       const { source, raw } = fixture()
       const invalid = structuredClone(raw) as Mutable<typeof raw>
       const assessment = invalid.terrain.contactAssessments[0]
+
       if (field === 'from') {
         assessment.from = 0.5
       } else {
         assessment[field] = `wrong-${field}`
       }
+
       expect(() => readWalkingMotionRequest(invalid, source)).toThrow()
     }
   })
 
   it('does not treat an all-swing schedule as admitted walking support', () => {
     const { source, raw, demand } = fixture()
+
     for (const leg of raw.stance.phases[0].legs) {
       leg.state = { kind: 'swing' }
     }
+
     const result = evaluateWalkingTerrainContact(
       demand,
       source,
       readWalkingMotionRequest(raw, source)
     )
+
     expect(result.status).toBe('unknown')
     expect(result.reasons).toContain('stance-contact-evidence-missing')
   })
 
   it('preserves a complete blocked relation when another property is unknown', () => {
     const { source, raw, demand } = fixture()
+
     raw.terrain.contactAssessments[0].friction = {
       status: 'blocked',
       evidence: evidence('blocked-friction')
@@ -271,6 +289,7 @@ describe('walking terrain and support contact', () => {
       source,
       readWalkingMotionRequest(raw, source)
     )
+
     expect(result.status).toBe('blocked')
     expect(result.reasons).toContain('contact-assessment-blocked')
   })
@@ -291,6 +310,7 @@ describe('walking terrain and support contact', () => {
       source,
       request
     )
+
     expect(stale).toMatchObject({
       status: 'unknown',
       reasons: expect.arrayContaining(['terrain-scene-mismatch'])

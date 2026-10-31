@@ -50,6 +50,7 @@ for (const asset of [
         path: info.outputPath(`${asset}-${view.toLowerCase()}.png`)
       })
     }
+
     await expect(page.getByRole('alert')).toHaveCount(0)
     await info.attach('review-state', {
       body: JSON.stringify({

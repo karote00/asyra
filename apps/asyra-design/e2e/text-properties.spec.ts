@@ -25,9 +25,11 @@ const createTextFixture = async (page: Page) => {
     const { selectionApis } = await import('../src/common-apis/selection')
     const { viewportApis } = await import('../src/common-apis/viewport')
     const parent = hierarchyApis.getWorkspaceId()
+
     if (!parent) {
       throw new Error('Missing workspace')
     }
+
     transactionApis.runTransaction(() =>
       elementApis.createElementsInParent(
         [
@@ -83,6 +85,7 @@ const createTextFixture = async (page: Page) => {
 const readTypography = (page: Page) =>
   page.evaluate(async (id) => {
     const { core } = await import('../src/testing/runtime-access')
+
     return core.getElementComputedData(id) as unknown as Record<
       string,
       string | number
@@ -92,6 +95,7 @@ const readTypography = (page: Page) =>
 const readTextFills = async (page: Page) =>
   page.evaluate(async (id) => {
     const { core } = await import('../src/testing/runtime-access')
+
     return core.getElementComputedData(id, ['fills']).fills as {
       color: string
       opacity: number
@@ -114,9 +118,11 @@ const captureText = async (page: Page) => {
     page.getByTestId('toolbar').boundingBox()
   ])
   const viewport = page.viewportSize()
+
   if (!left || !right || !toolbar || !viewport) {
     throw new Error('Missing canvas viewport bounds')
   }
+
   const x = left.x + left.width
   const y = toolbar.y + toolbar.height
   // Canvas spans the window behind the DOM panels; sample only its visible area.
@@ -131,9 +137,11 @@ const captureText = async (page: Page) => {
   let maxX = -1
   let minY = info.height
   let maxY = -1
+
   for (let y = 0; y < info.height; y++) {
     for (let x = 0; x < info.width; x++) {
       const offset = (y * info.width + x) * 4
+
       // The fixture's white glyphs exclude the blue selection outline and dark canvas.
       if (
         data[offset] > 240 &&
@@ -147,6 +155,7 @@ const captureText = async (page: Page) => {
       }
     }
   }
+
   return {
     pixels,
     hash: createHash('sha256').update(data).digest('hex'),
@@ -183,6 +192,7 @@ for (const entry of cases) {
     const beforeData = await readTypography(page)
     const before = await captureText(page)
     const depth = await getUndoHistoryDepth(page)
+
     if (entry.control === 'button') {
       await page.getByRole('button', { name: entry.label, exact: true }).click()
     } else if (entry.control === 'select') {
@@ -194,14 +204,17 @@ for (const entry of cases) {
         typeof entry.value === 'number' ? 'spinbutton' : 'textbox',
         { name: entry.label, exact: true }
       )
+
       await input.fill(String(entry.value))
       await input.press('Tab')
     }
+
     await expect
       .poll(async () => (await readTypography(page))[entry.key])
       .toBe(entry.value)
     await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + 1)
     const after = await captureText(page)
+
     await testInfo.attach('before', {
       body: before.pixels,
       contentType: 'image/png'
@@ -215,15 +228,19 @@ for (const entry of cases) {
     if (entry.key === 'fontSize' || entry.key === 'letterSpacing') {
       expect(after.ink.width).toBeGreaterThan(before.ink.width)
     }
+
     if (entry.key === 'lineHeight') {
       expect(after.ink.height).toBeGreaterThan(before.ink.height)
     }
+
     if (entry.key === 'textAlign') {
       expect(after.ink.x).toBeGreaterThan(before.ink.x + 50)
       const alignedData = await readTypography(page)
+
       expect(alignedData.width).toBe(beforeData.width)
       expect(alignedData.fontSize).toBe(beforeData.fontSize)
     }
+
     await undo(page)
     await expect
       .poll(async () => (await readTypography(page))[entry.key])
@@ -257,6 +274,7 @@ test('Text toolbar and layer share their SVG and typography drafts preserve cano
   const tool = page.getByRole('button', { name: 'Text', exact: true })
   const layer = page.locator(`[data-layer-element-id="${elementId}"]`)
   const toolPath = await tool.locator('svg path').getAttribute('d')
+
   expect(toolPath).toBeTruthy()
   expect(await layer.locator('svg path').first().getAttribute('d')).toBe(
     toolPath
@@ -269,6 +287,7 @@ test('Text toolbar and layer share their SVG and typography drafts preserve cano
 
   const size = page.getByLabel('Font size', { exact: true })
   const depth = await getUndoHistoryDepth(page)
+
   await size.fill('-4')
   await size.press('Tab')
   await expect(size).toHaveAttribute('aria-invalid', 'true')
@@ -298,6 +317,7 @@ test('Typography controls match the compact geometry rows', async ({
   const height = await page
     .getByLabel('Line height', { exact: true })
     .boundingBox()
+
   expect(geometry).not.toBeNull()
   expect(size).not.toBeNull()
   expect(spacing).not.toBeNull()
@@ -305,41 +325,50 @@ test('Typography controls match the compact geometry rows', async ({
   if (!geometry || !size || !spacing || !height) {
     throw new Error('Missing property controls')
   }
+
   for (const label of ['Line height', 'Letter spacing']) {
     const offset = await page
       .getByLabel(label, { exact: true })
       .evaluate((input) => {
         const icon = input.parentElement?.querySelector('svg')
+
         if (!icon) {
           throw new Error('Missing spacing prefix icon')
         }
+
         const iconBounds = icon.getBoundingClientRect()
         const inputBounds = input.getBoundingClientRect()
+
         return Math.abs(
           iconBounds.y +
             iconBounds.height / 2 -
             (inputBounds.y + inputBounds.height / 2)
         )
       })
+
     expect(
       offset,
       `${label} icon must be vertically centered`
     ).toBeLessThanOrEqual(0.5)
   }
+
   expect(size.height).toBe(geometry.height)
   expect(Math.abs(spacing.y - height.y)).toBeLessThan(1)
   const style = await page
     .getByRole('combobox', { name: 'Font style', exact: true })
     .boundingBox()
+
   if (!style) {
     throw new Error('Missing font style selector')
   }
+
   expect(Math.abs(style.y - size.y)).toBeLessThan(1)
   expect(spacing.y).toBeGreaterThan(size.y + size.height)
   const typography = page.getByRole('region', {
     name: 'Typography',
     exact: true
   })
+
   await expect(
     typography.getByText('Line height', { exact: true })
   ).toBeVisible()
@@ -366,9 +395,11 @@ test('Shared text color picker commits a color with one undo step', async ({
   await createTextFixture(page)
   const before = await captureText(page)
   const depth = await getUndoHistoryDepth(page)
+
   await page.getByTestId('prop-fill-color-picker-0-trigger').click()
   await expect(page.getByTestId('prop-fill-color-picker-0-alpha')).toBeVisible()
   const hex = page.getByTestId('prop-fill-color-picker-0-hex')
+
   await hex.fill('43CBA5')
   await hex.press('Tab')
   await expect
@@ -390,15 +421,18 @@ test('Combined font style changes both properties in one reversible action', asy
   const before = await captureText(page)
   const depth = await getUndoHistoryDepth(page)
   const style = page.getByRole('combobox', { name: 'Font style', exact: true })
+
   await style.selectOption('bold-italic')
   await expect
     .poll(async () => {
       const data = await readTypography(page)
+
       return [data.fontWeight, data.fontStyle]
     })
     .toEqual(['bold', 'italic'])
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
   const after = await captureText(page)
+
   expect(after.hash).not.toBe(before.hash)
   await undo(page)
   await expect(style).toHaveValue('regular')
@@ -412,6 +446,7 @@ test('Combined font style changes both properties in one reversible action', asy
   await expect
     .poll(async () => {
       const data = await readTypography(page)
+
       return [data.fontWeight, data.fontStyle]
     })
     .toEqual(['normal', 'normal'])
@@ -430,6 +465,7 @@ test('Font menu, spacing icons, and themed size steps update real text', async (
     name: 'Font family',
     exact: true
   })
+
   await expect(family).toBeVisible()
   expect(
     await family.evaluate((select) => getComputedStyle(select).appearance)
@@ -438,14 +474,17 @@ test('Font menu, spacing icons, and themed size steps update real text', async (
     0
   )
   const before = await captureText(page)
+
   await family.selectOption('monospace')
   await expect
     .poll(async () => (await readTypography(page)).fontFamily)
     .toBe('monospace')
   const mono = await captureText(page)
+
   expect(mono.hash).not.toBe(before.hash)
   const depth = await getUndoHistoryDepth(page)
   const size = page.getByRole('spinbutton', { name: 'Font size', exact: true })
+
   expect(
     await size.evaluate((input) => getComputedStyle(input).appearance)
   ).toBe('textfield')
@@ -464,6 +503,7 @@ test('Font menu, spacing icons, and themed size steps update real text', async (
   await expect(size).toHaveValue('31')
   await expect.poll(async () => (await readTypography(page)).fontSize).toBe(31)
   const draftDepth = await getUndoHistoryDepth(page)
+
   await size.fill('40')
   await page
     .getByRole('button', { name: 'Increase Font size', exact: true })
@@ -486,18 +526,21 @@ test('Text uses complete Fill controls with rendered opacity visibility layers a
   const original = await captureText(page)
   const depth = await getUndoHistoryDepth(page)
   const opacity = page.getByTestId('prop-fill-opacity-0')
+
   await opacity.fill('35')
   await opacity.press('Enter')
   await expect
     .poll(() => readTextFills(page))
     .toEqual([{ ...initial[0], opacity: 0.35 }])
   const faded = await captureText(page)
+
   expect(faded.hash).not.toBe(original.hash)
   await page.getByTestId('prop-fill-visible-0').click()
   await expect
     .poll(() => readTextFills(page))
     .toEqual([{ ...initial[0], opacity: 0.35, visible: false }])
   const hidden = await captureText(page)
+
   expect(hidden.hash).not.toBe(faded.hash)
   await undo(page)
   expect((await captureText(page)).hash).toBe(faded.hash)
@@ -510,6 +553,7 @@ test('Text uses complete Fill controls with rendered opacity visibility layers a
   await undo(page)
   await undo(page)
   const color = page.getByTestId('prop-fill-color-0')
+
   await color.fill('43CBA5')
   await color.press('Enter')
   await expect
@@ -526,9 +570,11 @@ test('Text uses complete Fill controls with rendered opacity visibility layers a
   await page.getByTestId('prop-fill-add').click()
   await expect.poll(async () => (await readTextFills(page)).length).toBe(2)
   const secondColor = page.getByTestId('prop-fill-color-1')
+
   await secondColor.fill('FF0000')
   await secondColor.press('Enter')
   const layered = await captureText(page)
+
   expect(layered.hash).not.toBe(original.hash)
   await page.getByTestId('prop-fill-visible-1').click()
   expect((await captureText(page)).hash).toBe(original.hash)
@@ -544,6 +590,7 @@ for (const gradientType of ['linear', 'radial', 'angular', 'diamond']) {
   }, testInfo) => {
     await createTextFixture(page)
     const before = await captureText(page)
+
     await page.getByTestId('prop-fill-color-picker-0-trigger').click()
     await page.getByTestId('prop-fill-mode-gradient-0').click()
     await page
@@ -563,6 +610,7 @@ for (const gradientType of ['linear', 'radial', 'angular', 'diamond']) {
       .raw()
       .toBuffer()
     let outsideGlyphs = 0
+
     for (let i = 0; i < baselinePixels.length; i += 3) {
       if (
         baselinePixels[i] < 30 &&
@@ -575,11 +623,13 @@ for (const gradientType of ['linear', 'radial', 'angular', 'diamond']) {
         outsideGlyphs++
       }
     }
+
     expect(outsideGlyphs, 'Fill must remain inside native glyph coverage').toBe(
       0
     )
     expect(gradient.hash).not.toBe(before.hash)
     const opacity = page.getByTestId('prop-fill-opacity-0')
+
     await opacity.fill('25')
     await opacity.press('Enter')
     expect((await captureText(page)).hash).not.toBe(gradient.hash)
@@ -603,16 +653,20 @@ test('Old text color documents load into complete Fill data without losing their
     const fillsId = element.props.fills
     const typographyId = element.props.typography
     const list = document.props[fillsId] as unknown as { fills: string[] }
+
     for (const fillId of list.fills) {
       Reflect.deleteProperty(document.props, fillId)
     }
+
     Reflect.deleteProperty(document.props, fillsId)
     delete element.props.fills
     Object.assign(document.props[typographyId], { textColor: '#ffffff' })
+
     return document
   }, elementId)
   const identity = createTestDocumentIdentity()
   const directory = resolve(process.cwd(), 'test-results/document-backend')
+
   await mkdir(directory, { recursive: true })
   await writeFile(
     resolve(
@@ -633,32 +687,41 @@ test('Old text color documents load into complete Fill data without losing their
   )
   await page.goto(identity.url)
   await waitForAppReady(page)
+
   const selectText = () =>
     page.evaluate(async (id) => {
       const { selectionApis } = await import('../src/common-apis/selection')
+
       selectionApis.selectElements([id])
       const { viewportApis } = await import('../src/common-apis/viewport')
+
       viewportApis.zoomFit()
     }, elementId)
+
   await selectText()
   await expect(page.getByTestId('prop-fill-opacity-0')).toHaveValue('100')
   expect((await captureText(page)).hash).toBe(before.hash)
   const saved = await page.evaluate(async (id) => {
     const { core } = await import('../src/testing/runtime-access')
     const document = await core.save()
+
     return document.props[document.sceneTree.elements[id].props.typography]
   }, elementId)
+
   expect(saved).not.toHaveProperty('textColor')
   await page.getByTestId('prop-fill-visible-0').click()
   expect((await captureText(page)).hash).not.toBe(before.hash)
   await undo(page)
   expect((await captureText(page)).hash).toBe(before.hash)
   const opacity = page.getByTestId('prop-fill-opacity-0')
+
   await opacity.fill('35')
   await opacity.press('Enter')
   const faded = await captureText(page)
+
   expect(faded.hash).not.toBe(before.hash)
   const digest = await getCoreDocumentDigest(page)
+
   await expect
     .poll(() => getPersistedDocumentDigest(identity.fileId), { timeout: 15000 })
     .toEqual(digest)

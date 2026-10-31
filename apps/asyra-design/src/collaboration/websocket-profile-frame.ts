@@ -15,6 +15,7 @@ const textEncoder = new TextEncoder()
 
 const decodeBase64 = (value: string): Uint8Array => {
   let decoded: string
+
   try {
     decoded = atob(value)
   } catch (error) {
@@ -23,10 +24,13 @@ const decodeBase64 = (value: string): Uint8Array => {
       { cause: error }
     )
   }
+
   const bytes = new Uint8Array(decoded.length)
+
   for (let index = 0; index < decoded.length; index += 1) {
     bytes[index] = decoded.charCodeAt(index)
   }
+
   return bytes
 }
 
@@ -40,10 +44,13 @@ export const decodeProfiledWebSocketFrame = ({
       wireByteLength: textEncoder.encode(payloadData).byteLength
     }
   }
+
   if (opcode !== 2) {
     return null
   }
+
   const bytes = decodeBase64(payloadData)
+
   return {
     value: decodeCompactBinary(bytes),
     wireByteLength: bytes.byteLength

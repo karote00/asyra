@@ -71,6 +71,7 @@ export function ObservationEditor({
             if (submit.current && event.relatedTarget === submit.current) {
               return
             }
+
             if (
               (event.target instanceof HTMLInputElement &&
                 event.target.type !== 'file') ||
@@ -144,6 +145,7 @@ export function ObservationEditor({
                   const attachments = existing.filter(
                     (item) => item.sourceId !== reference.sourceId
                   )
+
                   setExisting(attachments)
                   void save({ ...draft, attachments }, false)
                 }}

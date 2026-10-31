@@ -10,7 +10,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -166,8 +168,10 @@ test('routes and artifacts retain one valid owner and declared consumers', () =>
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
     if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner ${id}`)
       if (route.to) {
@@ -198,6 +202,7 @@ test('all Node.js 24 specification anchors resolve', () => {
     'utf8'
   )
   const anchors = anchorsIn(markdown)
+
   ;[
     ...data.steps.flatMap((item) => item.specRefs),
     ...data.invariants.flatMap((item) => item.specRefs),
@@ -285,6 +290,7 @@ test('acceptance contracts cover every Node.js 24 owner step', () => {
   const acceptedStepIds = new Set(
     data.acceptanceContracts.flatMap((contract) => contract.stepIds)
   )
+
   data.steps.forEach((item) =>
     assert.ok(acceptedStepIds.has(item.id), `${item.id} lacks product case/DoD`)
   )

@@ -26,6 +26,7 @@ export type { VectorPointSelectionRef, VectorSegmentSelectionRef }
 
 const getSelectionIds = (selectionType: string): string[] => {
   const selectionState = core.getSelection(selectionType)
+
   if (selectionState) {
     return [...selectionState.getSelectedIds()]
   }
@@ -85,6 +86,7 @@ export const selectionApis = {
     const newIds = currentIds.includes(elementId)
       ? currentIds.filter((id: string) => id !== elementId)
       : [...currentIds, elementId]
+
     selectionApis.selectElements(newIds, options)
   },
 
@@ -97,6 +99,7 @@ export const selectionApis = {
         throw new SelectionTargetUnavailableError(elementId)
       }
     }
+
     core.selectElements(elementIds, options)
   },
 

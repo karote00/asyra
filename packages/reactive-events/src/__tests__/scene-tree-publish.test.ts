@@ -56,6 +56,7 @@ describe('scene-tree publishers', () => {
         committed(events)
       }
     })
+
     try {
       runTransaction(() => {
         sceneTreeEvents.publishLocalComputedDataEvents([
@@ -91,10 +92,12 @@ describe('scene-tree publishers', () => {
       const changes = events.filter(
         (e) => e.type === EventTypes.SCENE_TREE_CHANGED
       ) as SceneTreeChangedEvent[]
+
       if (changes.length) {
         observed.push(changes)
       }
     })
+
     const publish = (id: string, owner: symbol, immediate = false) =>
       sceneTreeEvents.publishLocalSceneTreeChanges(
         [
@@ -111,12 +114,14 @@ describe('scene-tree publishers', () => {
         owner,
         immediate
       )
+
     const ids = () =>
       observed.map((events) =>
         events.flatMap((e) =>
           e.payload.changes.map((c) => ('id' in c ? c.id : ''))
         )
       )
+
     try {
       runTransaction(() => {
         publish('deferred-first', first)
@@ -252,6 +257,7 @@ describe('scene-tree publishers', () => {
     const subscription = subscribeToUpdateElementData((event) => {
       observed.push(event)
     })
+
     observed.length = 0
 
     updateElementData('element-1', [
@@ -288,6 +294,7 @@ describe('scene-tree publishers', () => {
     const batchSubscription = subscribeToEventBatches(batchObserver)
     const scalarSubscription = subscribeToUpdateComputedData(scalarObserver)
     const patchSubscription = subscribeToUpdateComputedDataPatch(patchObserver)
+
     batchObserver.mockClear()
     scalarObserver.mockClear()
     patchObserver.mockClear()
@@ -353,6 +360,7 @@ describe('scene-tree publishers', () => {
       EventTypes.UPDATE_COMPUTED_DATA_PATCH,
       synchronousOwner
     )
+
     scalarObserved.length = 0
     patchObserved.length = 0
 

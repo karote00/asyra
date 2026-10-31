@@ -31,8 +31,11 @@ const createCoreForTest = (
       start: vi.fn(),
       dispose: vi.fn(),
       setEngineProvider: vi.fn(() => vi.fn()),
+
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1,
+
       registerLayer: vi.fn(),
       unregisterLayer: vi.fn(() => true),
       ...renderOverrides
@@ -41,9 +44,11 @@ const createCoreForTest = (
     selection: {} as never,
     systemContext: {} as never
   })
+
   core.setupInputSystem = vi.fn()
   core.initFeatureSystem = vi.fn()
   core.renderIsReady = vi.fn()
+
   return core
 }
 
@@ -51,12 +56,17 @@ const createRenderer = (init: IRenderer['init']): IRenderer => ({
   name: 'test-renderer',
   init,
   destroy: vi.fn(),
+
   getViewportPosition: () => ({ x: 0, y: 0 }),
+
   getViewportScale: () => 1,
+
   setViewportPosition: vi.fn(),
   setViewportScale: vi.fn(),
   resize: vi.fn(),
+
   getCanvas: () => null,
+
   getInstance: () => null
 })
 
@@ -68,6 +78,7 @@ describe('Core render startup', () => {
   it('forwards surface size through the Core-owned RenderAdapter', () => {
     const resize = vi.fn()
     const core = createCoreForTest({}, { resize })
+
     core.resizeRenderer(640.5, 480.25)
     expect(resize).toHaveBeenCalledExactlyOnceWith(640.5, 480.25)
     expect(core.isCompositionOpen()).toBe(true)
@@ -79,6 +90,7 @@ describe('Core render startup', () => {
     const renderer = createRenderer(
       vi.fn(async () => ({ canvas: null, instance: null }))
     )
+
     core.setRenderer(renderer)
     await core.start(document.createElement('div'), { width: 100, height: 100 })
     core.resizeRenderer(800, 600)
@@ -90,6 +102,7 @@ describe('Core render startup', () => {
   it('rejects invalid surface sizes before touching the renderer', () => {
     const resize = vi.fn(),
       core = createCoreForTest({}, { resize })
+
     for (const [width, height] of [
       [0, 10],
       [-1, 10],
@@ -102,6 +115,7 @@ describe('Core render startup', () => {
         'finite and positive'
       )
     }
+
     expect(resize).not.toHaveBeenCalled()
   })
 
@@ -115,6 +129,7 @@ describe('Core render startup', () => {
         }
       }
     )
+
     expect(() => core.resizeRenderer(10, 10)).toThrow(failure)
   })
 
@@ -131,6 +146,7 @@ describe('Core render startup', () => {
       backgroundColor: 0x101010
     }
     const init = vi.fn(async () => ({ canvas, instance: {} }))
+
     core.registerDataChannelObserver({
       name: 'startup-order-observer',
       channel: 'startup-order-channel',
@@ -167,6 +183,7 @@ describe('Core render startup', () => {
         elements: {}
       }
     }
+
     core.load = vi.fn(() => {
       order.push('load')
     })
@@ -179,9 +196,11 @@ describe('Core render startup', () => {
     const session = {
       prepare: vi.fn(async () => {
         order.push('prepare')
+
         return {
           loadSource: {
             name: 'test-collaboration',
+
             load: async () => checkpoint
           }
         }
@@ -193,6 +212,7 @@ describe('Core render startup', () => {
         order.push('dispose')
       })
     }
+
     core.registerCollaborationSession(session)
 
     await core.start(document.createElement('div'), { width: 1, height: 1 })
@@ -243,6 +263,7 @@ describe('Core render startup', () => {
         start: runtimeStart
       }
     )
+
     core.registerDataChannelObserver({
       name: 'headless-observer',
       channel: 'headless-channel',
@@ -269,6 +290,7 @@ describe('Core render startup', () => {
       { observeSharedDataChannel: initObservers },
       { init: vi.fn(async () => Promise.reject(failure)) }
     )
+
     core.registerDataChannelObserver({
       name: 'configured-provider-failure-observer',
       channel: 'configured-provider-failure-channel',
@@ -308,6 +330,7 @@ describe('Core render startup', () => {
   it('keeps an advanced renderer missing-provider failure strict', async () => {
     const core = createCoreForTest()
     const failure = new MissingRenderEngineProviderError()
+
     core.setRenderer(createRenderer(vi.fn(async () => Promise.reject(failure))))
 
     await expect(
@@ -318,6 +341,7 @@ describe('Core render startup', () => {
 
   it('rejects renderer replacement after start closes composition', async () => {
     const core = createCoreForTest()
+
     core.setRenderer(
       createRenderer(vi.fn(async () => ({ canvas: null, instance: null })))
     )
@@ -339,6 +363,7 @@ describe('Core render startup', () => {
       }
     )
     const container = document.createElement('div')
+
     await core.start(container, { width: 1, height: 1 })
 
     core.destroyRenderer()
@@ -355,12 +380,14 @@ describe('Core render startup', () => {
     const core = createCoreForTest({
       observeSharedDataChannel: initObservers
     })
+
     core.registerDataChannelObserver({
       name: 'failed-start-observer',
       channel: 'failed-start-channel',
       onChange: vi.fn()
     })
     const failure = new Error('engine initialization failed')
+
     core.setRenderer(createRenderer(vi.fn(async () => Promise.reject(failure))))
 
     await expect(
@@ -422,6 +449,7 @@ describe('Core render startup', () => {
     )
     const firstValue = Object.freeze({ owner: 'first' }),
       secondValue = Object.freeze({ owner: 'second' })
+
     observeFirst.mock.calls[0][1](firstValue)
     observeSecond.mock.calls[0][1](secondValue)
     expect(registration.onChange.mock.calls).toEqual([
@@ -459,6 +487,7 @@ describe('Core render startup', () => {
     const observeBatch = vi.fn(
       (_channel: string, handler: (changes: readonly unknown[]) => void) => {
         notifyBatch = handler
+
         return vi.fn()
       }
     )
@@ -467,6 +496,7 @@ describe('Core render startup', () => {
       observeSharedDataChannelBatch: observeBatch
     })
     const onBatch = vi.fn()
+
     core.registerDataChannelObserver({
       name: 'exact-batch-observer',
       channel: 'scene-tree',
@@ -484,6 +514,7 @@ describe('Core render startup', () => {
     await core.start(document.createElement('div'), { width: 1, height: 1 })
 
     const changes = Object.freeze([{ id: 'a' }, { id: 'b' }, { id: 'c' }])
+
     notifyBatch?.(changes)
 
     expect(observeBatch).toHaveBeenCalledWith(
@@ -501,6 +532,7 @@ describe('Core render startup', () => {
     const cleanup = vi.fn()
     const observe = vi.fn(() => cleanup)
     const originalObserve = factory.observeSharedDataChannel
+
     factory.observeSharedDataChannel = observe
     defaultCore.setupInputSystem = vi.fn()
     defaultCore.initFeatureSystem = vi.fn()
@@ -538,6 +570,7 @@ describe('Core render startup', () => {
       if (!unregistered) {
         unregisterDataChannelObserver(observerName)
       }
+
       factory.observeSharedDataChannel = originalObserve
     }
   })

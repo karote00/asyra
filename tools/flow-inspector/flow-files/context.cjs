@@ -13,18 +13,23 @@ function compactContext(context) {
     ...identity
   } = context
   const truncatedFields = []
+
   const take = (name, values, limit) => {
     if (values.length > limit) {
       truncatedFields.push(name)
     }
+
     return values.slice(0, limit)
   }
+
   const text = (name, value) => {
     if (value.length > 1200) {
       truncatedFields.push(name)
     }
+
     return value.slice(0, 1200)
   }
+
   return {
     ...identity,
     errors: take('errors', errors, 12).map((error) => ({
@@ -40,7 +45,9 @@ function compactContext(context) {
     })),
     actions: take('actions', actions, 20).map((action) => {
       const result = { ...action }
+
       delete result.inputs
+
       return result
     }),
     criteria: take('criteria', criteria, 24),
@@ -60,4 +67,5 @@ function compactContext(context) {
       encodeURIComponent(context.nodeId)
   }
 }
+
 module.exports = { compactContext }

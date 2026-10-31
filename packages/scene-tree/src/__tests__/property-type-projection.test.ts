@@ -78,6 +78,7 @@ describe('Scene Tree canonical property projection', () => {
     const property = propsManager.getPropertyById(
       propertyId as string
     ) as CustomPropertyComponent
+
     property.set('customCount', 7)
 
     expect(computed.get('customCount')).toBe(1)

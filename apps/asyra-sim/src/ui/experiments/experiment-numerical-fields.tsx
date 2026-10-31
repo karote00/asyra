@@ -43,6 +43,7 @@ export function ThresholdFields({ source }: Props) {
 export function DurationFields({ source }: Props) {
   useViewValue(source, (value) => value.draft.budget.maxDurationMs)
   const draft = source.getSnapshot().draft
+
   return (
     <label>
       Wall-time budget (ms)
@@ -89,7 +90,9 @@ export function IntervalFields({ source }: Props) {
             value={draft.interval[index]}
             diagnose={(text) => {
               const interval: [number, number] = [...draft.interval]
+
               interval[index] = Number(text)
+
               return trajectoryIntervalError(interval, draft.trajectory)
             }}
             onCommit={(text) => {

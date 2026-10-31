@@ -6,6 +6,7 @@ export interface GeometryInstance {
   basis: [Vec, Vec, Vec]
   scale: number
 }
+
 /** Convert a right-handed local basis to one normalized renderer quaternion. */
 export function spatialInstance(instance: GeometryInstance): SpatialInstance {
   const [a, b, c] = instance.basis.map(renderPosition)
@@ -22,31 +23,37 @@ export function spatialInstance(instance: GeometryInstance): SpatialInstance {
     r22 = m[2][2],
     trace = r00 + r11 + r22
   let x: number, y: number, z: number, w: number
+
   if (trace > 0) {
     const s = Math.sqrt(trace + 1) * 2
+
     w = s / 4
     x = (r21 - r12) / s
     y = (r02 - r20) / s
     z = (r10 - r01) / s
   } else if (r00 > r11 && r00 > r22) {
     const s = Math.sqrt(1 + r00 - r11 - r22) * 2
+
     w = (r21 - r12) / s
     x = s / 4
     y = (r01 + r10) / s
     z = (r02 + r20) / s
   } else if (r11 > r22) {
     const s = Math.sqrt(1 + r11 - r00 - r22) * 2
+
     w = (r02 - r20) / s
     x = (r01 + r10) / s
     y = s / 4
     z = (r12 + r21) / s
   } else {
     const s = Math.sqrt(1 + r22 - r00 - r11) * 2
+
     w = (r10 - r01) / s
     x = (r02 + r20) / s
     y = (r12 + r21) / s
     z = s / 4
   }
+
   return {
     id: instance.id,
     position: renderPosition(instance.position),

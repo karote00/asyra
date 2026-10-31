@@ -2,8 +2,10 @@ import { expect, it, vi } from 'vitest'
 import sharp from 'sharp'
 import { createLocalReferenceTools as createOwner } from '../local-reference-tools'
 import { withToolContractAssertions } from './tool-contract-assertions'
+
 const createLocalReferenceTools = (...args: Parameters<typeof createOwner>) =>
   withToolContractAssertions(createOwner(...args))
+
 import { createLocalImageTools } from '../local-image-tools'
 import { localToolContent } from '../local-operation-tools'
 import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
@@ -25,9 +27,11 @@ it('imports a native-research URL through the safe downloader once per request',
   }
   const signal = new AbortController().signal
   const result = await tools.call('import_reference_image', args, signal)
+
   expect(JSON.parse(result).source.url).toBe(args.sourceUrl)
   expect((await localToolContent(result))[1]?.type).toBe('inputImage')
   const repeated = await tools.call('import_reference_image', args, signal)
+
   expect(
     (await localToolContent(repeated)).filter(
       (item) => item.type === 'inputImage'
@@ -42,6 +46,7 @@ it('imports a native-research URL through the safe downloader once per request',
     { ...args, refresh: true },
     signal
   )
+
   expect(
     (await localToolContent(refreshed)).filter(
       (item) => item.type === 'inputImage'
@@ -59,6 +64,7 @@ it('imports a native-research URL through the safe downloader once per request',
       signal
     )
   )
+
   expect(otherSource.source.url).toBe(
     'https://brand.example/updated-attribution'
   )
@@ -75,6 +81,7 @@ it('does not authorize an invented approximation after reference import fails', 
       new AbortController().signal
     )
   )
+
   expect(result.available).toBe(false)
   expect(result.message).toContain(
     'do not substitute an invented or inspired drawing'
@@ -95,6 +102,7 @@ it('does not replace an SVG source with a publisher raster thumbnail', async () 
       new AbortController().signal
     )
   )
+
   expect(receipt.available).toBe(false)
   expect(receipt.message).toContain('SVG')
   expect(download).not.toHaveBeenCalled()
@@ -120,6 +128,7 @@ it('preserves original reference dimensions through import and native image deli
     new AbortController().signal
   )
   const receipt = JSON.parse(result)
+
   expect(receipt.actionResults[0].result.image).toMatchObject({
     width: 1800,
     height: 1200
@@ -133,6 +142,7 @@ it('preserves original reference dimensions through import and native image deli
     addReference.mock.calls[0][0].dataUrl.split(',')[1],
     'base64'
   )
+
   expect(await sharp(bytes).metadata()).toMatchObject({
     width: 1800,
     height: 1200
@@ -164,6 +174,7 @@ it('keeps source failure recoverable and permits a different public source in th
       signal
     )
   )
+
   expect(failed).toMatchObject({
     available: false,
     recoverable: true,
@@ -182,6 +193,7 @@ it('keeps source failure recoverable and permits a different public source in th
       signal
     )
   )
+
   expect(success.attachmentIndex).toBe(0)
   expect(success.nextStep).toContain('unsuitable')
   expect(success.nextStep).toContain('continue research')
@@ -189,6 +201,7 @@ it('keeps source failure recoverable and permits a different public source in th
 
 it('offers generic reference acquisition without source-specific search tools', () => {
   const tools = createLocalReferenceTools(vi.fn(), vi.fn())
+
   expect(tools.definitions.map((tool) => tool.name)).toEqual([
     'import_reference_image'
   ])
@@ -223,6 +236,7 @@ it('imports and traces an original public reference without source-specific look
       signal
     )
   )
+
   expect(receipt.attachmentIndex).toBe(0)
   expect(download).toHaveBeenCalledWith(
     'https://publisher.example/original.png',
@@ -241,6 +255,7 @@ it('imports and traces an original public reference without source-specific look
       signal
     )
   )
+
   expect(result.imageArtifactId).toBeDefined()
   expect(convert).toHaveBeenCalledOnce()
 })
@@ -266,6 +281,7 @@ it('imports originals larger than four megapixels without resizing', async () =>
       new AbortController().signal
     )
   )
+
   expect(receipt.actionResults?.[0].result.image).toMatchObject({
     width: 2001,
     height: 2000
@@ -299,6 +315,7 @@ it('preserves compressed JPEG bytes and display orientation instead of inflating
       new AbortController().signal
     )
   )
+
   expect(receipt.actionResults?.[0].result.image).toMatchObject({
     width: 2000,
     height: 2001
@@ -335,6 +352,7 @@ it('rejects corrupt raster data without registering a reference', async () => {
       new AbortController().signal
     )
   )
+
   expect(receipt).toMatchObject({
     available: false,
     recoverable: true,
@@ -380,6 +398,7 @@ it('keeps the imported display orientation through whole-image vector conversion
       signal
     )
   )
+
   expect(result).toMatchObject({ width: 24, height: 12 })
 })
 
@@ -405,6 +424,7 @@ it.each(['png', 'jpeg', 'webp'] as const)(
       new AbortController().signal
     )
     const content = await localToolContent(result)
+
     expect(content).toContainEqual({
       type: 'inputImage',
       imageUrl: `data:image/${format};base64,${bytes.toString('base64')}`
@@ -436,11 +456,13 @@ it('delivers an EXIF-oriented original JPEG without changing bytes and rejects m
     },
     new AbortController().signal
   )
+
   expect(await localToolContent(result)).toContainEqual({
     type: 'inputImage',
     imageUrl: `data:image/jpeg;base64,${bytes.toString('base64')}`
   })
   const invalid = JSON.parse(result)
+
   invalid.actionResults[0].result.image.width = 999
   await expect(localToolContent(JSON.stringify(invalid))).rejects.toThrow(
     'metadata'
@@ -459,6 +481,7 @@ it('acquires candidates concurrently once per URL and preserves ordered partial 
   })
   const download = vi.fn(async (url: string) => {
     await ready
+
     return url.endsWith('missing.png')
       ? new Response('', { status: 404 })
       : new Response(bytes, { headers: { 'content-type': 'image/png' } })
@@ -484,12 +507,15 @@ it('acquires candidates concurrently once per URL and preserves ordered partial 
     { references },
     new AbortController().signal
   )
+
   try {
     await vi.waitFor(() => expect(download).toHaveBeenCalledTimes(2))
   } finally {
     release()
   }
+
   const receipt = JSON.parse(await result)
+
   expect(
     receipt.references.map((entry: { available: boolean }) => entry.available)
   ).toEqual([true, false, true])
@@ -531,6 +557,7 @@ it('coalesces simultaneous singular imports but retries failed sources and stops
     sourceUrl: 'https://brand.example/source'
   }
   const controller = new AbortController()
+
   await Promise.all([
     tools.call('import_reference_image', args, controller.signal),
     tools.call('import_reference_image', args, controller.signal)
@@ -569,6 +596,7 @@ it('retries a failed acquisition without replaying successful siblings', async (
   const failed = JSON.parse(
     await tools.call('import_reference_image', args, signal)
   )
+
   expect(failed.references[0].available).toBe(false)
   expect(localToolOutcome(failed).status).toBe('failed')
   expect(
@@ -597,6 +625,7 @@ it('admits batch reference input at the shared native boundary and delivers sour
     args,
     signal
   )
+
   expect(download).toHaveBeenCalledOnce()
   expect(JSON.parse(result.text)).toMatchObject({
     available: false,
@@ -614,6 +643,7 @@ it('admits batch reference input at the shared native boundary and delivers sour
     { references: args.references, ...args.references[0] },
     signal
   )
+
   expect(JSON.parse(invalid.text).code).toBe('PREPARATION_REJECTED')
   expect(download).toHaveBeenCalledOnce()
 })
@@ -637,10 +667,12 @@ it('deduplicates image delivery across batch calls and restores it explicitly', 
     }
   ]
   const signal = new AbortController().signal
+
   const imageCount = async (result: string) =>
     (await localToolContent(result)).filter(
       (item) => item.type === 'inputImage'
     ).length
+
   const first = await tools.call(
     'import_reference_image',
     { references },
@@ -651,6 +683,7 @@ it('deduplicates image delivery across batch calls and restores it explicitly', 
     { references },
     signal
   )
+
   expect(await imageCount(first)).toBe(1)
   expect(await imageCount(second)).toBe(0)
   expect(JSON.parse(second).references[0]).toMatchObject({
@@ -662,10 +695,12 @@ it('deduplicates image delivery across batch calls and restores it explicitly', 
     { references, refresh: true },
     signal
   )
+
   expect(await imageCount(restored)).toBe(1)
   expect(download).toHaveBeenCalledOnce()
   expect(add).toHaveBeenCalledOnce()
   const successor = createLocalReferenceTools(add, download)
+
   expect(
     await imageCount(
       await successor.call('import_reference_image', { references }, signal)
@@ -688,6 +723,7 @@ it('records each candidate result before a slower sibling finishes without downl
       await wait
       throw new Error('network unavailable')
     }
+
     return new Response(png, { headers: { 'content-type': 'image/png' } })
   })
   const events: Record<string, unknown>[] = []
@@ -696,6 +732,7 @@ it('records each candidate result before a slower sibling finishes without downl
     download,
     {
       parentCallId: () => 'parent-call',
+
       trace: (stage, evidence) => events.push({ stage, ...evidence })
     }
   )
@@ -713,6 +750,7 @@ it('records each candidate result before a slower sibling finishes without downl
     },
     new AbortController().signal
   )
+
   try {
     await vi.waitFor(() =>
       expect(events.filter((e) => e.stage === 'action_completed')).toHaveLength(
@@ -728,6 +766,7 @@ it('records each candidate result before a slower sibling finishes without downl
     release()
     await run
   }
+
   expect(events.filter((e) => e.stage === 'action_failed')).toHaveLength(1)
   await tools.call(
     'import_reference_image',
@@ -750,6 +789,7 @@ it('reuses admitted identical bytes across URL aliases without decoding or attac
     async () => new Response(png, { headers: { 'content-type': 'image/png' } })
   )
   const tools = createLocalReferenceTools(add, download)
+
   try {
     for (const suffix of ['?a=1', '?a=2']) {
       await tools.call(
@@ -761,6 +801,7 @@ it('reuses admitted identical bytes across URL aliases without decoding or attac
         new AbortController().signal
       )
     }
+
     expect(download).toHaveBeenCalledTimes(2)
     expect(decode).toHaveBeenCalledOnce()
     expect(add).toHaveBeenCalledOnce()
@@ -774,6 +815,7 @@ it('shares concurrent alias decoding and attachment admission, but keeps differe
     sharp({ create: { width: 8, height: 10, channels: 4, background } })
       .png()
       .toBuffer()
+
   const first = await image('#123456')
   const second = await image('#654321')
   const decode = vi.spyOn(sharp.prototype, 'stats')
@@ -786,6 +828,7 @@ it('shares concurrent alias decoding and attachment admission, but keeps differe
       })
   )
   const tools = createLocalReferenceTools(add, download)
+
   try {
     const receipts = await Promise.all(
       ['a.png', 'b.png', 'other.png'].map(async (path) =>
@@ -801,6 +844,7 @@ it('shares concurrent alias decoding and attachment admission, but keeps differe
         )
       )
     )
+
     expect(receipts[0].attachmentIndex).toBe(receipts[1].attachmentIndex)
     expect(receipts[2].attachmentIndex).not.toBe(receipts[0].attachmentIndex)
     expect(decode).toHaveBeenCalledTimes(2)
@@ -828,6 +872,7 @@ it('preserves page HTTP rejection and format diagnostics instead of a generic do
       new AbortController().signal
     )
   )
+
   expect(rejected).toMatchObject({
     available: false,
     recoverable: true,
@@ -852,6 +897,7 @@ it('preserves page HTTP rejection and format diagnostics instead of a generic do
       new AbortController().signal
     )
   )
+
   expect(unsupported.failure).toMatchObject({
     stage: 'response',
     reason: 'unsupported-media',
@@ -881,6 +927,7 @@ it('retains successful transport retry count when decoding rejects the downloade
       new AbortController().signal
     )
   )
+
   expect(result.failure).toMatchObject({
     stage: 'decode',
     reason: 'invalid-image-bytes',

@@ -17,6 +17,7 @@ function mesh(points: Vec3[], indices: number[]): MeshGeometry {
     indices
   }
 }
+
 function fan(dent = 0) {
   const ring = [
     [2, 0],
@@ -28,16 +29,19 @@ function fan(dent = 0) {
     [0, -2],
     [2, -2]
   ]
+
   return mesh(
     [[0, 0, dent], ...ring.map(([x, y]) => [x, y, x + y] as Vec3)],
     ring.flatMap((_, i) => [0, i + 1, ((i + 1) % 8) + 1])
   )
 }
+
 function measured(input: MeshGeometry) {
   const counts: Record<string, number> = {}
   const result = planarRegions(input, (kind) => {
     counts[kind] = (counts[kind] ?? 0) + 1
   })
+
   return {
     result,
     counts,
@@ -51,6 +55,7 @@ it('proves non-cardinal exact planes and detects a subnormal departure', () => {
     [0, 1, 1],
     [-1, 0, -1]
   ]
+
   expect(coplanar([...base, [0, 0, 0]], () => undefined)).toBe(true)
   expect(coplanar([...base, [0, 0, Number.MIN_VALUE]], () => undefined)).toBe(
     false
@@ -62,6 +67,7 @@ it('proves non-cardinal exact planes and detects a subnormal departure', () => {
 
 it('partitions a planar fan exactly once and does not erase a tiny dent', () => {
   const flat = measured(fan())
+
   expect(flat.result.regions).toHaveLength(1)
   expect(flat.result.sharedEdges).toBe(8)
   expect(flat.result.coplanarEdges).toBe(8)
@@ -93,6 +99,7 @@ it('keeps a planar hole optimistic and never claims its union is convex', () => 
     0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7
   ]
   const result = measured(mesh(points, indices)).result
+
   expect(result.regions).toHaveLength(1)
   expect(result.optimisticFourfold).toBe(true)
   expect(Object.keys(result).sort()).toEqual(
@@ -118,6 +125,7 @@ it('keeps disconnected coplanar triangles separate and accepts exact coordinate 
     ],
     [0, 1, 2, 3, 4, 5]
   )
+
   expect(measured(separate).result.regions).toHaveLength(2)
   const duplicated = mesh(
     [
@@ -131,6 +139,7 @@ it('keeps disconnected coplanar triangles separate and accepts exact coordinate 
     [0, 1, 2, 3, 4, 5]
   )
   const result = measured(duplicated).result
+
   expect(result.regions).toHaveLength(1)
   expect(result.sharedEdges).toBe(1)
   expect(result.optimisticFourfold).toBe(false)
@@ -143,6 +152,7 @@ it('rejects malformed original adjacency and nonfinite coordinates', () => {
     [0, 1, 0],
     [0, -1, 0]
   ]
+
   expect(() => measured(mesh(points, [0, 1, 2, 0, 1, 3]))).toThrow(
     'orientation'
   )
@@ -160,9 +170,11 @@ it('owns fresh preparation and equivalent repeated charges without source-hash a
   const source = fan()
   const first = measured(source),
     second = measured(source)
+
   expect(second).toEqual(first)
   expect(second.result).not.toBe(first.result)
   const sameHashDifferentData = fan(Number.MIN_VALUE)
+
   expect(sameHashDifferentData.source).toEqual(source.source)
   expect(measured(sameHashDifferentData).result.regions).toHaveLength(4)
 })
@@ -178,8 +190,10 @@ it('propagates every checkpoint interruption and never publishes a partial regio
     [0, 1, 2, 1, 3, 2]
   )
   const stop = new Error('cancelled')
+
   for (const input of [source, fan()]) {
     const complete = measured(input)
+
     if (input === source) {
       expect(complete.counts['exact-buffer']).toBeUndefined()
     } else {
@@ -196,9 +210,11 @@ it('propagates every checkpoint interruption and never publishes a partial regio
         expect(complete.counts[kind]).toBeGreaterThan(0)
       }
     }
+
     for (let at = 1; at <= complete.work; at++) {
       let work = 0,
         published: unknown
+
       try {
         published = planarRegions(input, () => {
           if (++work === at) {
@@ -208,24 +224,31 @@ it('propagates every checkpoint interruption and never publishes a partial regio
       } catch (caught) {
         expect(caught).toBe(stop)
       }
+
       expect(work).toBe(at)
       expect(published).toBeUndefined()
     }
+
     expect(measured(input)).toEqual(complete)
   }
 })
 
 const project = fileURLToPath(new URL('../../../../../../', import.meta.url))
+
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex')
+
 it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
   'screens all original source bindings once under the frozen preparation ceiling',
   async () => {
     const censusPath = process.env.SIM_PLANAR_CENSUS_FILE
+
     if (!censusPath) {
       throw new Error('Missing reviewed census file path')
     }
+
     const censusText = readFileSync(censusPath, 'utf8')
+
     expect(digest(censusText)).toBe(
       'b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99'
     )
@@ -235,9 +258,11 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
       evaluations: number
       rows: { pair: string; kind: string; traversal: boolean }[]
     }
+
     expect(census.work).toBe(500197)
     expect(census.evaluations).toBe(20265)
     const snapshot = await representativeSnapshot(0)
+
     expect(digest(JSON.stringify(snapshot))).toBe(census.manifest.inputHash)
     const required = new Set(
       census.rows
@@ -250,6 +275,7 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
         geometry: c.geometry
       }))
     )
+
     expect(bindings).toHaveLength(39)
     const counts: Record<string, number> = {},
       rows: {
@@ -265,6 +291,7 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
         if (geometry.kind !== 'mesh') {
           throw new Error('Expected full original source')
         }
+
         return {
           binding: key,
           asset: geometry.source.assetId,
@@ -273,30 +300,37 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
           state: 'unvisited'
         }
       })
+
     expect(rows.filter((r) => r.required)).toHaveLength(3)
     const started = performance.now()
     let work = 0,
       error: string | undefined
+
     const tick = (kind: string) => {
       if (performance.now() - started >= 20000) {
         throw new Error('20000 ms preparation limit')
       }
+
       counts[kind] = (counts[kind] ?? 0) + 1
       if (++work >= 230088) {
         throw new Error('230088 preparation ceiling leaves no query reserve')
       }
     }
+
     try {
       for (let index = 0; index < bindings.length; index++) {
         const row = rows[index],
           geometry = bindings[index].geometry
+
         row.state = 'running'
         row.start = work
         tick('binding-admission')
         if (geometry.kind !== 'mesh') {
           throw new Error('Expected mesh')
         }
+
         const result = planarRegions(geometry, tick)
+
         tick('binding-publication')
         row.result = result
         row.state = 'complete'
@@ -305,11 +339,13 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
     } catch (caught) {
       error = caught instanceof Error ? caught.message : String(caught)
       const active = rows.find((r) => r.state === 'running')
+
       if (active) {
         active.state = 'interrupted'
         active.end = work
       }
     }
+
     const milliseconds = performance.now() - started
     const complete = rows.every((r) => r.state === 'complete')
     const admitted =
@@ -332,6 +368,7 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
       rows,
       note: 'Optimistic exact coplanar regions only. No convex union, global intersection, surface witness, collision or G4 conclusion.'
     }
+
     mkdirSync(resolve(project, 'tmp/capacity'), { recursive: true })
     writeFileSync(
       resolve(project, 'tmp/capacity/planar-region-screen.json'),
@@ -356,6 +393,7 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
           if (r.end === undefined || r.start === undefined) {
             throw new Error('Missing charged binding range')
           }
+
           return n + r.end - r.start
         }, 0)
     ).toBe(work)
@@ -369,6 +407,7 @@ it.runIf(process.env.SIM_PLANAR_REGION_SCREEN === '1')(
         if (!row.result) {
           throw new Error('Missing complete region receipt')
         }
+
         expect(new Set(row.result.regions.flat()).size).toBe(row.triangles)
         expect(row.result.regions.flat().length).toBe(row.triangles)
       }

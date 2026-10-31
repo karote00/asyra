@@ -2,6 +2,7 @@ import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { expect, it, vi } from 'vitest'
 
 const nativeIt = it.runIf(Boolean(process.env.NATIVE_DELIVERY_CODEX))
+
 import { createLocalKnowledgeTools } from '../local-knowledge'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { operationInputIssue } from '../operation-input-schema'
@@ -34,18 +35,23 @@ it('delivers complete advice through bounded same-owner pages without source rel
     offset = 0,
     pages = 0
   const definition = owner.definitions.find((d) => d.name === tool)
+
   if (!definition) {
     throw new Error('Missing read declaration')
   }
+
   try {
     for (;;) {
       const raw = await owner.call(tool, input, new AbortController().signal)
+
       expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
       const value = JSON.parse(raw)
+
       expect(
         operationInputIssue(value, definition.outputSchema)
       ).toBeUndefined()
       const page = value.contentDelivery
+
       expect(page.kind).toBe('json-fragment')
       expect(page.startByte).toBe(offset)
       text += page.text
@@ -55,9 +61,11 @@ it('delivers complete advice through bounded same-owner pages without source rel
         expect(offset).toBe(page.totalBytes)
         break
       }
+
       input = page.next.arguments
       expect(pages).toBeLessThan(20)
     }
+
     expect(JSON.parse(text).documents[0].text).toBe(advice)
     expect(load).toHaveBeenCalledTimes(1)
   } finally {
@@ -93,41 +101,59 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
   let generation = 0
   const owner = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     dispatch,
-    { getNativeTools: () => [native], getNativeToolsRevision: () => generation }
+    {
+      getNativeTools: () => [native],
+
+      getNativeToolsRevision: () => generation
+    }
   )
   let input: Record<string, unknown> = { names: ['test_tools.choose'] }
   let text = '',
     first: Record<string, unknown> | undefined
+
   for (let index = 0; index < 20; index++) {
     const raw = await owner.call(
       AiDesignToolIds.DESCRIBE_DESIGN_APIS,
       input,
       new AbortController().signal
     )
+
     expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
     const declared = owner.definitions.find(
       (d) => d.name === AiDesignToolIds.DESCRIBE_DESIGN_APIS
     )
+
     if (!declared) {
       throw new Error('Missing discovery contract')
     }
+
     if (includeNative) {
       await verifyNativePage(owner, declared, input, 'design_operations')
     }
+
     const page = JSON.parse(raw).contentDelivery
+
     expect(page.kind).toBe('json-fragment')
     text += page.text
     if (!first) {
       first = page.next.arguments
     }
+
     if (page.lastPage) {
       break
     }
+
     input = page.next.arguments
   }
+
   const saved = JSON.parse(text)
+
   for (let i = 0; i < 63; i++) {
     await owner.call(
       AiDesignToolIds.DESCRIBE_DESIGN_APIS,
@@ -135,17 +161,20 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
       new AbortController().signal
     )
   }
+
   let selectedInput: Record<string, unknown> = {
     names: ['test_tools.choose'],
     fromResult: saved.resultKey
   }
   let selectedText = ''
+
   for (;;) {
     const raw = await owner.call(
       AiDesignToolIds.DESCRIBE_DESIGN_APIS,
       selectedInput,
       new AbortController().signal
     )
+
     expect(
       await owner.call(
         AiDesignToolIds.DESCRIBE_DESIGN_APIS,
@@ -154,14 +183,18 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
       )
     ).toBe(raw)
     const page = JSON.parse(raw).contentDelivery
+
     selectedText += page.text
     if (page.lastPage) {
       break
     }
+
     selectedInput = page.next.arguments
   }
+
   expect(JSON.parse(selectedText).tools).toEqual(saved.tools)
   const definition = JSON.parse(text).tools[0]
+
   expect(definition.inputSchema).toEqual(inputSchema)
   expect(definition.execution).toEqual({
     kind: 'native-tool',
@@ -205,11 +238,14 @@ nativeIt(
     )
     const tool = AiDesignToolIds.READ_KNOWLEDGE
     const definition = owner.definitions.find((d) => d.name === tool)
+
     if (!definition) {
       throw new Error('Missing definition')
     }
+
     let input: Record<string, unknown> = { ids: ['test.advice'] },
       assembled = ''
+
     try {
       for (let count = 0; count < 20; count++) {
         const reply = await invokeLocalTool(
@@ -218,6 +254,7 @@ nativeIt(
           input,
           new AbortController().signal
         )
+
         expect(reply.success, reply.text.slice(0, 1200)).toBe(true)
         expect(Buffer.byteLength(reply.text)).toBeLessThanOrEqual(24000)
         const fixture = {
@@ -243,16 +280,20 @@ nativeIt(
           }
         }
         const evidence = await runNativeDelivery({ fixture })
+
         expect(evidence.comparison.exact).toBe(true)
         expect(evidence.comparison.truncationMarker).toBe(false)
         expect(evidence.receipt.status).toBe('saved')
         const page = JSON.parse(reply.text).contentDelivery
+
         assembled += page.text
         if (page.lastPage) {
           break
         }
+
         input = page.next.arguments
       }
+
       expect(JSON.parse(assembled).documents[0].text).toBe(advice)
     } finally {
       owner.dispose()
@@ -265,16 +306,20 @@ it('preserves cancellation and rehydrate invalidation without repeating source l
   const load = vi.fn(async () => files)
   const owner = createLocalKnowledgeTools('recovery-pages', load)
   const tool = AiDesignToolIds.READ_KNOWLEDGE
+
   const read = (args: unknown, signal = new AbortController().signal) =>
     owner.call(tool, args, signal).then(JSON.parse)
+
   try {
     const first = await read({ ids: ['test.advice'] })
     const next = first.contentDelivery.next.arguments
     const cancelled = new AbortController()
+
     cancelled.abort()
     await expect(read(next, cancelled.signal)).rejects.toThrow()
     expect(await read(next)).toEqual(await read(next))
     const reset = await read({ ids: ['test.advice'], rehydrate: true })
+
     expect(reset.contentDelivery.revision).not.toBe(
       first.contentDelivery.revision
     )
@@ -294,6 +339,7 @@ import type {
   LocalToolOwner,
   LocalToolDefinition
 } from '../local-tool-invocation'
+
 async function verifyNativePage(
   owner: LocalToolOwner,
   definition: LocalToolDefinition,
@@ -311,6 +357,7 @@ async function verifyNativePage(
     input,
     new AbortController().signal
   )
+
   expect(reply.success, reply.text.slice(0, 1200)).toBe(true)
   const evidence = await runNativeDelivery({
     fixture: {
@@ -336,9 +383,11 @@ async function verifyNativePage(
       }
     }
   })
+
   expect(evidence.comparison.exact).toBe(true)
   expect(evidence.comparison.truncationMarker).toBe(false)
   expect(evidence.receipt.status).toBe('saved')
+
   return evidence.directory as string
 }
 
@@ -353,14 +402,18 @@ nativeIt(
     ).href
     const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
     const owner = createLocalKnowledgeTools('native-complete-topics')
+
     try {
       const definition = owner.definitions.find(
         (tool) => tool.name === AiDesignToolIds.READ_KNOWLEDGE
       )
+
       if (!definition) {
         throw new Error('Missing Knowledge read definition')
       }
+
       const executions = []
+
       for (const entry of recorded.cases) {
         const reply = await invokeLocalTool(
           owner,
@@ -368,8 +421,10 @@ nativeIt(
           entry.input,
           new AbortController().signal
         )
+
         expect(reply.success).toBe(true)
         const value = JSON.parse(reply.text)
+
         expect(value.contentDelivery).toBeUndefined()
         expect(
           value.documents.some(
@@ -382,6 +437,7 @@ nativeIt(
           expected: reply.text
         })
       }
+
       const first = executions[0]
       const result = await runNativeDelivery({
         executions,
@@ -408,12 +464,14 @@ nativeIt(
           }
         }
       })
+
       expect(result.nativeReplies).toBe(recorded.cases.length)
       expect(result.comparisons).toHaveLength(recorded.cases.length)
       for (const comparison of result.comparisons) {
         expect(comparison.exact, result.directory).toBe(true)
         expect(comparison.truncationMarker).toBe(false)
       }
+
       expect(result.cleanup.errors).toEqual([])
       expect(result.receipt.status).toBe('saved')
     } finally {
@@ -447,6 +505,7 @@ it('rehydrates paged reuse after lost context and executes only the returned rea
   if (!definition) {
     throw new Error('Missing Knowledge read definition')
   }
+
   const read = async (input: Record<string, unknown>) => {
     const reply = await invokeLocalTool(
       owner,
@@ -454,9 +513,12 @@ it('rehydrates paged reuse after lost context and executes only the returned rea
       input,
       new AbortController().signal
     )
+
     expect(reply.success, reply.text).toBe(true)
+
     return JSON.parse(reply.text)
   }
+
   try {
     const base = await read({ ids: ['base'] })
     const first = await read({
@@ -467,20 +529,25 @@ it('rehydrates paged reuse after lost context and executes only the returned rea
     let current = first,
       text = '',
       pages = 0
+
     while (current.contentDelivery) {
       const page = current.contentDelivery
+
       text += page.text
       pages++
       if (!page.next) {
         break
       }
+
       expect(page.next.tool).toBe(AiDesignToolIds.READ_KNOWLEDGE)
       expect(page.next.arguments.reuseFrom).toBeUndefined()
       current = await read(page.next.arguments)
       expect(pages).toBeLessThan(12)
     }
+
     expect(pages).toBeGreaterThan(1)
     const restored = JSON.parse(text)
+
     expect(
       restored.documents.every(
         (doc: { text?: string }) => typeof doc.text === 'string'
@@ -501,6 +568,7 @@ it('recovers unavailable retained advice by executing the returned same-read exa
   if (!definition) {
     throw new Error('Missing Knowledge read definition')
   }
+
   try {
     const invalid = await invokeLocalTool(
       owner,
@@ -508,6 +576,7 @@ it('recovers unavailable retained advice by executing the returned same-read exa
       { ids: ['test.advice'], reuseFrom: ['foreign-result'] },
       new AbortController().signal
     )
+
     expect(invalid.success).toBe(false)
     expect(JSON.parse(invalid.text)).toMatchObject({
       code: 'KNOWLEDGE_REUSE_UNAVAILABLE',
@@ -516,11 +585,14 @@ it('recovers unavailable retained advice by executing the returned same-read exa
     const expression = JSON.parse(invalid.text).message.match(
       /`(read_knowledge\([^`]+\))`/
     )?.[1]
+
     expect(expression).toBeDefined()
     let calls = 0
+
     const invoke = async (input: Record<string, unknown>) => {
       calls++
       expect(input.reuseFrom).toBeUndefined()
+
       return invokeLocalTool(
         owner,
         definition,
@@ -528,12 +600,14 @@ it('recovers unavailable retained advice by executing the returned same-read exa
         new AbortController().signal
       )
     }
+
     const restored = await new Function(
       'read_knowledge',
       'ids',
       'contexts',
       `return ${expression}`
     )(invoke, ['test.advice'], undefined)
+
     expect(restored.success).toBe(true)
     expect(JSON.parse(restored.text).contentDelivery.startByte).toBe(0)
     expect(calls).toBe(1)
@@ -566,29 +640,37 @@ it('keeps cross-query pages byte-stable and rejects stale continuation without w
   if (!definition) {
     throw new Error('Missing Knowledge read definition')
   }
+
   const read = (input: Record<string, unknown>) =>
     invokeLocalTool(owner, definition, input, new AbortController().signal)
+
   try {
     const base = JSON.parse((await read({ ids: ['base'] })).text)
     const input = { ids: ['child'], reuseFrom: [base.contextKey] }
     let args: Record<string, unknown> = input,
       joined = '',
       firstPage: Record<string, unknown> | undefined
+
     for (let count = 0; count < 10; count++) {
       const a = await read(args),
         b = await read(args)
+
       expect(a.success, a.text).toBe(true)
       expect(a.text).toBe(b.text)
       expect(Buffer.byteLength(a.text)).toBeLessThanOrEqual(24000)
       const page = JSON.parse(a.text).contentDelivery
+
       firstPage ??= page.next.arguments
       joined += page.text
       if (page.lastPage) {
         break
       }
+
       args = page.next.arguments
     }
+
     const complete = JSON.parse(joined)
+
     expect(complete.documents[0]).toMatchObject({
       retainedFrom: base.contextKey
     })
@@ -597,7 +679,9 @@ it('keeps cross-query pages byte-stable and rejects stale continuation without w
     if (!firstPage) {
       throw new Error('Missing expected continuation')
     }
+
     const stale = await read(firstPage)
+
     expect(stale.success).toBe(false)
     expect(stale.text).toContain('KNOWLEDGE_REUSE_UNAVAILABLE')
   } finally {
@@ -623,7 +707,9 @@ nativeIt(
     if (!definition) {
       throw new Error('Missing Knowledge read definition')
     }
+
     const signal = new AbortController().signal
+
     try {
       const first = await invokeLocalTool(
         owner,
@@ -631,14 +717,17 @@ nativeIt(
         recorded.reads[0],
         signal
       )
+
       expect(first.success).toBe(true)
       const previous = JSON.parse(first.text)
       const expression = definition.description.match(
         /`(read_knowledge\([^`]+\))`/
       )?.[1]
+
       expect(expression).toBeDefined()
       const args = { ...recorded.reads[1], reuseFrom: [previous.contextKey] }
       const second = await invokeLocalTool(owner, definition, args, signal)
+
       expect(second.success, second.text).toBe(true)
       const executions = [
         {
@@ -677,12 +766,14 @@ nativeIt(
           }
         }
       })
+
       expect(result.nativeReplies).toBe(2)
       expect(result.comparisons).toHaveLength(2)
       for (const comparison of result.comparisons) {
         expect(comparison.exact, result.directory).toBe(true)
         expect(comparison.truncationMarker).toBe(false)
       }
+
       expect(JSON.parse(second.text).documents[0]).toMatchObject({
         retainedFrom: previous.contextKey
       })
@@ -705,8 +796,10 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
     properties: {
       value: {
         type: 'string',
+
         get description() {
           projections++
+
           return 'Required source constraint. '.repeat(20)
         }
       }
@@ -723,12 +816,21 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
   const dispatch = vi.fn()
   const owner = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     dispatch,
-    { getNativeTools: () => tools, getNativeToolsRevision: () => revision }
+    {
+      getNativeTools: () => tools,
+
+      getNativeToolsRevision: () => revision
+    }
   )
   const name = AiDesignToolIds.DESCRIBE_DESIGN_APIS
   const definition = requiredInformationTool(owner, name)
+
   const read = async (args: Record<string, unknown>) => {
     const reply = await invokeLocalTool(
       owner,
@@ -736,12 +838,16 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
       args,
       new AbortController().signal
     )
+
     expect(reply.success, reply.text).toBe(true)
+
     return JSON.parse(reply.text)
   }
+
   const original = await read({
     names: tools.map((t) => 'retained_test.' + t.name)
   })
+
   expect(original.resultKey).toEqual(expect.any(String))
   const count = projections
   const expression = definition.description
@@ -749,6 +855,7 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
     .find((part) =>
       part.startsWith('describe_design_apis({ names, fromResult:')
     )
+
   expect(expression).toBeDefined()
   const selected = await new Function(
     'describe_design_apis',
@@ -756,11 +863,13 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
     'previous',
     'return ' + expression
   )(read, ['retained_test.a', 'retained_test.c'], original)
+
   expect(projections).toBe(count)
   const { resultKey: _key, ...withoutHandle } = original
   const coldBytes = Buffer.byteLength(JSON.stringify(original))
   const selectedBytes = Buffer.byteLength(JSON.stringify(selected))
   const baselineBytes = 2 * Buffer.byteLength(JSON.stringify(withoutHandle))
+
   expect(coldBytes + selectedBytes).toBeLessThan(baselineBytes)
   process.stdout.write(
     JSON.stringify({
@@ -792,9 +901,11 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
     { names: ['retained_test.a'], fromResult: original.resultKey },
     new AbortController().signal
   )
+
   expect(stale.success).toBe(false)
   expect(stale.text).toContain('fromResult')
   const fresh = await read({ names: ['retained_test.a'] })
+
   expect(fresh.tools[0].description).toBe('Changed operation')
   expect(dispatch).not.toHaveBeenCalled()
 })
@@ -820,6 +931,7 @@ it('executes published retained Knowledge selection with dependencies and read-o
     owner,
     AiDesignToolIds.READ_KNOWLEDGE
   )
+
   const read = async (input: Record<string, unknown>) => {
     const reply = await invokeLocalTool(
       owner,
@@ -827,9 +939,12 @@ it('executes published retained Knowledge selection with dependencies and read-o
       input,
       new AbortController().signal
     )
+
     expect(reply.success, reply.text).toBe(true)
+
     return JSON.parse(reply.text)
   }
+
   try {
     const original = await read({
       ids: ['a.1', 'a.2', 'a.3', 'b', 'b.1', 'c.3', 'd.5']
@@ -837,6 +952,7 @@ it('executes published retained Knowledge selection with dependencies and read-o
     const expression = definition.description
       .split('`')
       .find((part) => part.startsWith('read_knowledge({ ids, fromResult:'))
+
     expect(expression).toBeDefined()
     const selected = await new Function(
       'read_knowledge',
@@ -844,6 +960,7 @@ it('executes published retained Knowledge selection with dependencies and read-o
       'previous',
       'return ' + expression
     )(read, ['a.3', 'c.3'], original)
+
     expect(selected.documents.map((d: { target: string }) => d.target)).toEqual(
       ['b', 'a.3', 'c.3']
     )
@@ -861,11 +978,13 @@ it('executes published retained Knowledge selection with dependencies and read-o
       { ids: ['a.3', 'c.3'], fromResult: original.contextKey },
       new AbortController().signal
     )
+
     expect(failed.success).toBe(false)
     expect(failed.text).toContain('without fromResult/reuseFrom')
     const recovery = definition.description.includes(
       'ordinary ids/contexts reads'
     )
+
     expect(recovery).toBe(true)
     expect(
       (await read({ ids: ['a.3', 'c.3'] })).documents.map(
@@ -891,16 +1010,27 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
     },
     ...toolSemantics({ type: 'object' }, 'read', [])
   }))
+
   const make = () =>
     createLocalOperationTools(
       basicApiContracts,
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       vi.fn(),
-      { getNativeTools: () => native, getNativeToolsRevision: () => 0 }
+      {
+        getNativeTools: () => native,
+
+        getNativeToolsRevision: () => 0
+      }
     )
+
   const owner = make()
   const name = AiDesignToolIds.DESCRIBE_DESIGN_APIS
   const definition = requiredInformationTool(owner, name)
+
   const read = async (input: Record<string, unknown>) =>
     JSON.parse(
       (
@@ -912,6 +1042,7 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
         )
       ).text
     )
+
   for (const scope of [
     { view: 'usage' },
     { view: 'full' },
@@ -925,12 +1056,14 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
       names: ['left.choose'],
       fromResult: saved.resultKey
     })
+
     expect(selected.tools).toEqual([saved.tools[0]])
     expect(selected.tools[0].definition).toEqual(saved.tools[0].definition)
     const partial = await read({
       names: ['left.choose', 'absent'],
       fromResult: saved.resultKey
     })
+
     expect(partial.tools).toEqual([saved.tools[0]])
     expect(partial.missingNames).toEqual(['absent'])
     expect(partial.toolOutcome.status).toBe('partial')
@@ -938,12 +1071,14 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
       names: ['choose'],
       fromResult: saved.resultKey
     })
+
     expect(ambiguous.tools).toEqual([])
     expect(ambiguous.ambiguousNames[0].candidates).toEqual([
       'left.choose',
       'right.choose'
     ])
     const foreign = make()
+
     expect(
       (
         await invokeLocalTool(
@@ -971,7 +1106,9 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
         ).success
       ).toBe(false)
     }
+
     const abort = new AbortController()
+
     abort.abort()
     await expect(
       owner.call(
@@ -981,17 +1118,21 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
       )
     ).rejects.toThrow()
   }
+
   const menu = await read({ query: 'left.choose' })
   const selectedMenu = await read({
     names: ['left.choose'],
     fromResult: menu.resultKey
   })
+
   expect(selectedMenu.tools).toEqual(menu.tools)
   expect(selectedMenu.tools[0].inputSchema).toBeUndefined()
   const old = await read({ names: ['left.choose'] })
+
   for (let i = 0; i < 65; i++) {
     await read({ names: ['missing' + i] })
   }
+
   expect(
     (await read({ names: ['left.choose'], fromResult: old.resultKey }))
       .toolOutcome.status
@@ -1011,33 +1152,43 @@ it('keeps selected retained information page bytes stable at capacity without an
   const load = vi.fn(async () => [...files, ...fillers])
   const owner = createLocalKnowledgeTools('selected-pages', load)
   const tool = AiDesignToolIds.READ_KNOWLEDGE
+
   const assemble = async (input: Record<string, unknown>) => {
     let query = input,
       text = ''
+
     for (;;) {
       const raw = await owner.call(tool, query, new AbortController().signal)
       const page = JSON.parse(raw).contentDelivery
+
       if (!page) {
         return JSON.parse(raw)
       }
+
       text += page.text
       if (page.lastPage) {
         return JSON.parse(text)
       }
+
       query = page.next.arguments
     }
   }
+
   try {
     const original = await assemble({ ids: ['test.advice'] })
+
     for (const filler of fillers) {
       await assemble({ ids: [filler.id] })
     }
+
     const query = { ids: ['test.advice'], fromResult: original.contextKey }
     const raw = await owner.call(tool, query, new AbortController().signal)
+
     expect(await owner.call(tool, query, new AbortController().signal)).toBe(
       raw
     )
     const selected = await assemble(query)
+
     expect(selected.documents).toEqual(original.documents)
     expect(load).toHaveBeenCalledTimes(1)
     owner.invalidateContext()
@@ -1055,9 +1206,11 @@ it('keeps selected retained information page bytes stable at capacity without an
 
 function requiredInformationTool(owner: LocalToolOwner, name: string) {
   const definition = owner.definitions.find((entry) => entry.name === name)
+
   if (!definition) {
     throw new Error('Missing information tool: ' + name)
   }
+
   return definition
 }
 
@@ -1092,6 +1245,7 @@ nativeIt(
       AiDesignToolIds.READ_KNOWLEDGE
     )
     const input = { ids: ['test.constraints'] }
+
     try {
       const reply = await invokeLocalTool(
         owner,
@@ -1099,6 +1253,7 @@ nativeIt(
         input,
         new AbortController().signal
       )
+
       expect(reply.success).toBe(true)
       const evidence = await runNativeDelivery({
         fixture: {
@@ -1134,6 +1289,7 @@ nativeIt(
           }
         ]
       })
+
       expect(evidence.requests).toBe(3)
       expect(evidence.searchResults[0][0].type).toBe('tool_search_output')
       expect(evidence.nativeReplyExact).toBe(true)

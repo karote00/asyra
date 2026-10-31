@@ -10,6 +10,7 @@ it('profiles cold source hierarchy and two warm poses without Cartesian triangle
     site = new SiteGeometry()
   const f = setup(buildSiteMeshes(configuration, site), configuration, site),
     tree = prepareHierarchy(f.source)
+
   expect(tree.work.leafReferences).toBe(tree.work.builtTriangles)
   console.log(
     'hierarchy cold source profile',
@@ -21,9 +22,11 @@ it('profiles cold source hierarchy and two warm poses without Cartesian triangle
   )
   for (const yaw of [0, 0.4]) {
     const input = coverage()
+
     if (!input.robot) {
       throw new Error('Expected robot')
     }
+
     input.robot = {
       ...input.robot,
       base: {
@@ -35,6 +38,7 @@ it('profiles cold source hierarchy and two warm poses without Cartesian triangle
       baseline = f.query.cover(f.source, { ...input, maxTrianglePairs: 0 }),
       baselineMs = performance.now() - baselineStart
     const report = queryHierarchy(tree, input)
+
     expect(report.work.total).toBe(expectedInventory(f.source).trianglePairs)
     expect(
       report.work.excluded + report.work.candidates + report.work.unvisited

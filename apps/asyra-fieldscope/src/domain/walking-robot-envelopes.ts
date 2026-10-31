@@ -86,6 +86,7 @@ interface EnvelopeWork {
   attachmentVertices: number
   contributors: number
 }
+
 const zeroWork = (): EnvelopeWork => ({
   preparations: 0,
   fk: 0,
@@ -93,23 +94,30 @@ const zeroWork = (): EnvelopeWork => ({
   attachmentVertices: 0,
   contributors: 0
 })
+
 const fail = (reason: string): never => {
   throw new Error(reason)
 }
+
 const object = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
+
 const keys = (v: Record<string, unknown>, expected: readonly string[]) =>
   Object.keys(v).length === expected.length &&
   expected.every((k) => Object.hasOwn(v, k))
+
 const id = (v: unknown): v is string =>
   typeof v === 'string' && v.trim().length > 0
+
 function freeze<T>(v: T): T {
   if (v && typeof v === 'object' && !Object.isFrozen(v)) {
     Object.values(v).forEach(freeze)
     Object.freeze(v)
   }
+
   return v
 }
+
 function point(v: unknown): Point3 {
   if (
     !Array.isArray(v) ||
@@ -118,14 +126,18 @@ function point(v: unknown): Point3 {
   ) {
     return fail('nonfinite-point')
   }
+
   return [v[0], v[1], v[2]]
 }
+
 function frame(raw: unknown): WalkingRigidTransform {
   if (!object(raw) || !keys(raw, ['position', 'rotation'])) {
     return fail('invalid-frame')
   }
+
   const p = point(raw.position),
     q = raw.rotation
+
   if (
     !Array.isArray(q) ||
     q.length !== 4 ||
@@ -134,12 +146,15 @@ function frame(raw: unknown): WalkingRigidTransform {
   ) {
     return fail('invalid-frame')
   }
+
   return { position: p, rotation: [q[0], q[1], q[2], q[3]] }
 }
+
 const origin: WalkingRigidTransform = freeze({
   position: [0, 0, 0],
   rotation: [0, 0, 0, 1]
 })
+
 function transform(
   f: WalkingRigidTransform,
   v: readonly Interval[]
@@ -149,6 +164,7 @@ function transform(
   const tx = multiply(two, subtract(multiply(y, v[2]), multiply(z, v[1])))
   const ty = multiply(two, subtract(multiply(z, v[0]), multiply(x, v[2])))
   const tz = multiply(two, subtract(multiply(x, v[1]), multiply(y, v[0])))
+
   return [
     add(
       interval(f.position[0]),
@@ -173,13 +189,16 @@ function transform(
     )
   ]
 }
+
 const exactInterval = (v: Dyadic): Interval =>
   v.exponent >= 0
     ? fractionInterval(v.significand << BigInt(v.exponent), 1n)
     : fractionInterval(v.significand, 1n << BigInt(-v.exponent))
+
 function accumulator() {
   const low = [Infinity, Infinity, Infinity],
     high = [-Infinity, -Infinity, -Infinity]
+
   return {
     include(v: readonly Interval[]) {
       v.forEach((p, k) => {
@@ -190,20 +209,24 @@ function accumulator() {
         ) {
           fail('nonfinite-point')
         }
+
         low[k] = Math.min(low[k], p.low)
         high[k] = Math.max(high[k], p.high)
       })
     },
+
     bounds(): WalkingEnvelopeBounds {
       const min = point(low),
         max = point(high)
       const size = point(
         max.map((v, k) => subtract(interval(v), interval(min[k])).high)
       )
+
       return freeze({ min, max, size })
     }
   }
 }
+
 function geometry(raw: unknown): WalkingEnvelopeLoadPart {
   if (
     !object(raw) ||
@@ -215,7 +238,9 @@ function geometry(raw: unknown): WalkingEnvelopeLoadPart {
   ) {
     return fail('invalid-load-part')
   }
+
   const { positions, indices } = raw.shape
+
   if (
     !Array.isArray(positions) ||
     positions.length < 9 ||
@@ -229,10 +254,12 @@ function geometry(raw: unknown): WalkingEnvelopeLoadPart {
   ) {
     return fail('invalid-load-geometry')
   }
+
   const regions = readSourceRegions(
     raw.regions as readonly SourceRegion[],
     indices.length
   )
+
   return {
     id: raw.id,
     shape: {
@@ -244,6 +271,7 @@ function geometry(raw: unknown): WalkingEnvelopeLoadPart {
     localFrame: frame(raw.localFrame)
   }
 }
+
 function readRequest(
   raw: unknown,
   source: WalkingRobotSource
@@ -258,12 +286,16 @@ function readRequest(
   ) {
     return fail('noncanonical-stowed-pose')
   }
+
   const pose = { base: frame(raw.pose.base), joints: source.rig.presets.stowed }
   const c = raw.crate
+
   if (!object(c)) {
     return fail('crate-inventory-unavailable')
   }
+
   let crate: WalkingStowedEnvelopeRequest['crate']
+
   if (c.kind === 'none' && keys(c, ['kind'])) {
     crate = { kind: 'none' }
   } else if (c.kind === 'mounted' && keys(c, ['kind', 'product'])) {
@@ -271,11 +303,15 @@ function readRequest(
   } else {
     return fail('crate-inventory-unavailable')
   }
+
   const l = raw.load
+
   if (!object(l) || !id(l.id)) {
     return fail('load-geometry-unavailable')
   }
+
   let load: WalkingStowedEnvelopeRequest['load']
+
   if (l.kind === 'empty' && keys(l, ['kind', 'id'])) {
     load = { kind: 'empty', id: l.id }
   } else if (
@@ -292,8 +328,10 @@ function readRequest(
     ) {
       return fail('load-source-inventory-mismatch')
     }
+
     const parts = l.parts.map(geometry),
       expected = new Set(l.requiredPartIds)
+
     if (
       parts.length !== expected.size ||
       parts.some((p) => !expected.delete(p.id)) ||
@@ -301,6 +339,7 @@ function readRequest(
     ) {
       return fail('load-source-inventory-mismatch')
     }
+
     load = {
       kind: 'geometry',
       id: l.id,
@@ -311,13 +350,16 @@ function readRequest(
   } else {
     return fail('load-geometry-unavailable')
   }
+
   return { format: 'walking-stowed-envelope-request/1', pose, crate, load }
 }
 
 /** One complete geometric product; there is no route, contact or safety verdict. */
 export class WalkingRobotEnvelopeOwner {
   readonly work = zeroWork()
+
   private current: WalkingStowedEnvelope | undefined
+
   constructor(
     private readonly sourceOwner: WalkingRobotSourceOwner,
     private readonly mounted?: {
@@ -325,11 +367,13 @@ export class WalkingRobotEnvelopeOwner {
       readonly getCurrent: () => WalkingMountedCrate | undefined
     }
   ) {}
+
   private valid(
     source: WalkingRobotSource,
     request: WalkingStowedEnvelopeRequest
   ) {
     const mounted = this.mounted?.getCurrent()
+
     return (
       this.sourceOwner.isCurrent(source) &&
       (request.crate.kind === 'none'
@@ -339,6 +383,7 @@ export class WalkingRobotEnvelopeOwner {
             request.crate.product)
     )
   }
+
   read(source: WalkingRobotSource, request: WalkingStowedEnvelopeRequest) {
     if (
       this.current &&
@@ -346,14 +391,18 @@ export class WalkingRobotEnvelopeOwner {
     ) {
       this.current = undefined
     }
+
     if (this.current?.source === source && this.current.request === request) {
       return this.current
     }
+
     return undefined
   }
+
   clear() {
     this.current = undefined
   }
+
   prepare(source: WalkingRobotSource, raw: unknown): WalkingEnvelopeResult {
     if (
       this.current &&
@@ -362,29 +411,36 @@ export class WalkingRobotEnvelopeOwner {
     ) {
       return this.current
     }
+
     this.current = undefined
     const before = { ...this.work }
+
     this.work.preparations++
     try {
       if (!this.sourceOwner.isCurrent(source)) {
         return fail('stale-source')
       }
+
       if (
         readActiveWalkingRobotDefinition(source.definition) !==
         source.definition
       ) {
         return fail('foreign-definition')
       }
+
       const request = readRequest(raw, source)
+
       if (!this.valid(source, request)) {
         return fail('stale-mounted-crate')
       }
+
       freeze(request)
       // A completed canonical stowed FK is rigidly placed once by the request base.
       const posed = this.sourceOwner.evaluate(source, {
         base: origin,
         joints: source.rig.presets.stowed
       })
+
       this.work.fk++
       const frames = new Map(
         posed.bodyTransforms.map((b) => [b.id, b.transform])
@@ -395,6 +451,7 @@ export class WalkingRobotEnvelopeOwner {
           .map((b) => b.id)
       )
       let advanced = true
+
       while (advanced) {
         advanced = false
         for (const body of source.rig.bodies) {
@@ -409,9 +466,11 @@ export class WalkingRobotEnvelopeOwner {
           }
         }
       }
+
       const bodyBox = accumulator(),
         union = accumulator(),
         contributors: WalkingEnvelopeContributor[] = []
+
       const include = (
         kind: WalkingEnvelopeContributor['kind'],
         part: WalkingEnvelopeContributor['part'],
@@ -421,16 +480,21 @@ export class WalkingRobotEnvelopeOwner {
       ) => {
         const box = accumulator()
         const positions = part.shape.positions
+
         if (positions.length < 3 || positions.length % 3) {
           fail('incomplete-source-vertices')
         }
+
         for (let offset = 0; offset < positions.length; offset += 3) {
           const local = point(positions.slice(offset, offset + 3)).map(interval)
           const canonical = place(local)
+
           if (central) {
             bodyBox.include(canonical)
           }
+
           const world = transform(request.pose.base, canonical)
+
           box.include(world)
           union.include(world)
           if (kind === 'robot') {
@@ -439,7 +503,9 @@ export class WalkingRobotEnvelopeOwner {
             this.work.attachmentVertices++
           }
         }
+
         const vertices = positions.length / 3
+
         contributors.push(
           freeze({
             kind,
@@ -452,8 +518,10 @@ export class WalkingRobotEnvelopeOwner {
         )
         this.work.contributors++
       }
+
       for (const part of source.parts) {
         const body = frames.get(part.bodyId) ?? fail('missing-source-body')
+
         include(
           'robot',
           part,
@@ -462,9 +530,11 @@ export class WalkingRobotEnvelopeOwner {
           fixed.has(part.bodyId)
         )
       }
+
       if (request.crate.kind === 'mounted') {
         const crate = request.crate.product,
           translation = crate.placement.translation.map(exactInterval)
+
         for (const part of crate.geometry.parts) {
           include(
             'crate',
@@ -475,6 +545,7 @@ export class WalkingRobotEnvelopeOwner {
           )
         }
       }
+
       if (request.load.kind === 'geometry') {
         for (const part of request.load.parts) {
           include(
@@ -486,17 +557,23 @@ export class WalkingRobotEnvelopeOwner {
           )
         }
       }
+
       const bodyBounds = bodyBox.bounds()
+
       if (bodyBounds.size[0] > MAX_WALKING_BODY_WIDTH) {
         return fail('body-width-exceeded')
       }
+
       if (!this.valid(source, request)) {
         return fail('stale-envelope-input')
       }
+
       const delta = zeroWork()
+
       for (const k of Object.keys(delta) as (keyof EnvelopeWork)[]) {
         delta[k] = this.work[k] - before[k]
       }
+
       this.current = freeze({
         status: 'complete',
         format: 'walking-stowed-envelope/1',
@@ -511,9 +588,11 @@ export class WalkingRobotEnvelopeOwner {
         completeness: 'all-source-and-declared-load',
         work: delta
       })
+
       return this.current
     } catch (error) {
       this.current = undefined
+
       return freeze({
         status: 'unavailable',
         reason: error instanceof Error ? error.message : 'envelope-unavailable'

@@ -26,6 +26,7 @@ const buildProductionBundle = async (collaborationEndpoint) => {
       write: false
     }
   })
+
   return (Array.isArray(result) ? result : [result]).flatMap(
     (buildResult) => buildResult.output
   )

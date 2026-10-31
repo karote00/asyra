@@ -43,6 +43,7 @@ export const createAiInvoker = <T>(options: {
 }) => {
   const middleware = [...(options.middleware ?? [])]
   const now = options.now ?? (() => performance.now())
+
   const emit = (event: AiInvocationEvent<T>) => {
     try {
       // Even an async observer failure cannot alter execution or become unhandled.
@@ -51,6 +52,7 @@ export const createAiInvoker = <T>(options: {
       /* Diagnostic isolation. */
     }
   }
+
   return {
     async invoke(input: AiInvocation): Promise<T> {
       const call = Object.freeze({
@@ -59,19 +61,25 @@ export const createAiInvoker = <T>(options: {
       })
       const started = now()
       let active = true
+
       const event = (detail: AiInvocationOutcome<T>) =>
         emit({ call, durationMs: Math.max(0, now() - started), ...detail })
+
       event({ phase: 'started' })
+
       const dispatch = async (index: number): Promise<T> => {
         call.signal?.throwIfAborted()
         const handler = middleware[index]
+
         if (!handler) {
           return options.execute(call)
         }
+
         let used = false
         let open = true
         let downstream: Promise<T> | undefined
         let output: T
+
         try {
           output = await handler(call, () => {
             if (used || !active || !open) {
@@ -79,9 +87,11 @@ export const createAiInvoker = <T>(options: {
                 new Error('Invocation next must run at most once while active')
               )
             }
+
             used = true
             downstream = dispatch(index + 1)
             void downstream.catch(() => undefined)
+
             return downstream
           })
         } catch (error) {
@@ -90,13 +100,18 @@ export const createAiInvoker = <T>(options: {
         } finally {
           open = false
         }
+
         // An observer cannot report settlement while started canonical work runs.
         await downstream
+
         return output
       }
+
       try {
         const output = await dispatch(0)
+
         event({ phase: 'completed', output })
+
         return output
       } catch (error) {
         event({ phase: call.signal?.aborted ? 'cancelled' : 'failed', error })

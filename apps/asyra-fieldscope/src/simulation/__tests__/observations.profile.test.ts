@@ -8,6 +8,7 @@ it('declared synthetic sight volume below route height is obstacle-inventory evi
     min: [0, -f.demand.farm.height, 0] as const,
     max: [100, 20, 10] as const
   }
+
   f.dynamics.prepare({ ...f.world, domain })
   const request = {
     ...walking.input,
@@ -27,13 +28,16 @@ it('declared synthetic sight volume below route height is obstacle-inventory evi
     walking.context,
     request
   )
+
   expect(result.coverage).toBe('complete-empty')
   expect(result.detections).toEqual([])
   expect(result.work.sightQueries).toBe(1)
   const space = walking.getSpace()
+
   if (!space) {
     throw new Error('Missing lazy obstacle inventory')
   }
+
   expect(space.provenance).toBe('w1-canonical-obstacles/1')
   expect(
     space.sources.some(
@@ -47,6 +51,7 @@ it('declared synthetic sight volume below route height is obstacle-inventory evi
       max: [2.46, domain.min[1] - 1, 1.55]
     }
   })
+
   expect(outside.coverage).not.toBe('complete-empty')
   expect(outside.reasons).toContain('outside-observation-domain')
 }, 30000)
@@ -54,12 +59,14 @@ it('walking observation shares the action kernel with exact walking currentness 
   const { observations, context, input, operating, prepareSpace } =
     walkingActionFixture('actual-site')
   const result = observations.observeActionVolume(context, input)
+
   expect(prepareSpace).toHaveBeenCalledTimes(1)
   expect(result.format).toBe('walking-action-volume-observation/1')
   expect(result.context).toBe(context)
   expect(result.coverage).toBe('complete-empty')
   expect(observations.isCurrent(result)).toBe(true)
   const again = observations.observeActionVolume(context, input)
+
   expect(again.work.membershipBuilds).toBe(0)
   expect(again.work.cameraFrames).toBe(1)
   expect(again.work.sightQueries).toBe(1)

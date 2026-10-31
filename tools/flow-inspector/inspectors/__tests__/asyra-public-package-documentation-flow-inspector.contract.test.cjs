@@ -6,9 +6,12 @@ const test = require('node:test')
 const data = require('../asyra-public-package-documentation-flow-inspector.data.cjs')
 
 const repoRoot = path.resolve(__dirname, '../../../..')
+
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing documentation Inspector step: ${id}`)
+
   return value
 }
 
@@ -30,6 +33,7 @@ test('documentation authority and exact page inventory are frozen', () => {
 test('package guide inventory matches the release owner exactly', async () => {
   const { FRAMEWORK_RELEASE_PACKAGE_NAMES } =
     await import('../../../../scripts/framework-release-packages.js')
+
   assert.deepEqual(data.packageNames, FRAMEWORK_RELEASE_PACKAGE_NAMES)
   assert.deepEqual(
     data.packageGuideIds,
@@ -47,6 +51,7 @@ test('input resolution uses public package and canonical documentation authoriti
     ...input.allowedContributors,
     ...input.forbiddenContributors
   ].join(' ')
+
   assert.match(contract, /manifests and declarations/i)
   assert.match(contract, /active canonical authorities/i)
   assert.doesNotMatch(contract, /example inventory|docs\/examples/i)
@@ -64,6 +69,7 @@ test('content contract owns schema, stable ids, mappings, and exclusions', () =>
     ...content.allowedContributors,
     ...content.forbiddenContributors
   ].join(' ')
+
   assert.match(contract, /additional update pages.*manifest/i)
   assert.match(contract, /Markdown path.*sources.*packages/is)
   assert.doesNotMatch(contract, /example ids/i)
@@ -80,6 +86,7 @@ test('authoring steps preserve current support, future roadmap, and domain owner
     step('author-design-case-study')
   ]
   const contract = JSON.stringify(authoring)
+
   assert.match(contract, /create-asyra-design-app/i)
   assert.match(contract, /current browser\/Core support/i)
   assert.match(contract, /future Headless\/Core Kernel/i)
@@ -95,6 +102,7 @@ test('generated handoff is deterministic, public-only, and site-neutral', () => 
   const publish = step('publish-documentation-indexes')
   const verify = step('verify-public-documentation')
   const contract = JSON.stringify([publish, verify, data.acceptanceContracts])
+
   assert.match(contract, /deterministic/i)
   assert.match(contract, /source-mapped/i)
   assert.match(contract, /Plain-text discovery/i)
@@ -111,6 +119,7 @@ test('routes, artifacts, failure owners, and cache boundaries resolve', () => {
   const artifactOwners = new Map(
     data.artifacts.map(({ id, ownerStepId }) => [id, ownerStepId])
   )
+
   assert.equal(stepIds.size, data.steps.length)
   assert.equal(artifactOwners.size, data.artifacts.length)
 

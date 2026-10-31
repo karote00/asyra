@@ -22,12 +22,19 @@ export class RuntimeController {
     error: '',
     recoveryAvailable: false
   })
+
   private owned: SimRuntime | null = null
+
   private recovery: ProjectSnapshot | null = null
+
   private operation: Promise<unknown> | null = null
+
   private closing: Promise<void> | undefined
+
   private preparation: AbortController | null = null
+
   private closed = false
+
   private listeners = new Set<() => void>()
 
   constructor(
@@ -43,45 +50,58 @@ export class RuntimeController {
   ) {}
 
   getState = (): RuntimeState => this.state
+
   getRecovery = (): ProjectSnapshot | null =>
     this.closed ? null : structuredClone(this.recovery)
+
   subscribe = (listener: () => void): (() => void) => {
     this.assertOpen()
     this.listeners.add(listener)
+
     return () => {
       this.listeners.delete(listener)
     }
   }
+
   private publish(patch: Partial<RuntimeState>): void {
     if (this.closed) {
       return
     }
+
     this.state = Object.freeze({ ...this.state, ...patch })
     this.listeners.forEach((listener) => listener())
   }
+
   private assertOpen(): void {
     if (this.closed) {
       throw new Error('Runtime controller is closed')
     }
   }
+
   private requireReady(): SimRuntime {
     this.assertOpen()
     if (this.state.status !== 'ready' || !this.owned) {
       throw new Error('No editable runtime is ready')
     }
+
     return this.owned
   }
+
   private run<T>(action: () => Promise<T>): Promise<T> {
     if (this.closed) {
       return Promise.reject(new Error('Runtime controller is closed'))
     }
+
     if (this.operation) {
       return Promise.reject(
         new Error('Another runtime operation is still running')
       )
     }
+
     const operation = Promise.resolve().then(action)
+
     this.operation = operation
+
     return operation.finally(() => {
       this.operation = null
     })
@@ -93,6 +113,7 @@ export class RuntimeController {
       if (this.state.status !== 'idle') {
         throw new Error('Runtime controller already started')
       }
+
       this.publish({ status: 'starting', error: '' })
       try {
         this.owned = await this.create()
@@ -120,14 +141,19 @@ export class RuntimeController {
     if (this.operation) {
       throw new Error('Another runtime operation is still running')
     }
+
     const runtime = this.requireReady()
     const resume = runtime.pauseEditing()
+
     try {
       const captured = await runtime.captureSnapshot()
+
       if (this.requireReady() !== runtime) {
         throw new Error('Runtime changed during capture')
       }
+
       onCaptured?.()
+
       return captured
     } finally {
       resume()
@@ -137,8 +163,10 @@ export class RuntimeController {
   replace(snapshot: ProjectSnapshot, assertCurrent: () => void) {
     // Detach synchronously: callers cannot change B while this operation awaits A.
     const target = structuredClone(snapshot)
+
     return this.run(async () => {
       const previous = this.requireReady()
+
       assertCurrent()
       encodeProject(target)
       previous.preflight(target.document)
@@ -147,6 +175,7 @@ export class RuntimeController {
         prepared: VisualAssetArchive | undefined,
         resume: (() => void) | undefined
       const preparation = new AbortController()
+
       this.preparation = preparation
       try {
         await verifyProjectObservations(target, preparation.signal)
@@ -157,9 +186,11 @@ export class RuntimeController {
         resume = previous.pauseEditing()
         this.publish({ status: 'replacing', error: '' })
         const recovery = await previous.captureSnapshot()
+
         this.assertOpen()
         assertCurrent()
         const detached = structuredClone(recovery)
+
         encodeProject(detached)
         this.recovery = detached
         retired = true
@@ -175,14 +206,18 @@ export class RuntimeController {
         this.assertOpen()
         assertCurrent()
         const issues = successor.getLoadIssues()
+
         this.activate(successor)
+
         return issues
       } catch (error) {
         let failure = error
+
         if (!retired) {
           if (!this.closed) {
             resume?.()
           }
+
           this.publish({
             status: 'ready',
             runtime: previous,
@@ -200,6 +235,7 @@ export class RuntimeController {
               )
             }
           }
+
           this.publish({
             status: 'failed',
             runtime: null,
@@ -207,6 +243,7 @@ export class RuntimeController {
             recoveryAvailable: this.recovery !== null
           })
         }
+
         throw failure
       } finally {
         this.preparation = null
@@ -219,9 +256,11 @@ export class RuntimeController {
     if (this.closing) {
       return this.closing
     }
+
     this.closed = true
     this.preparation?.abort()
     const pending = this.operation
+
     this.state = Object.freeze({
       ...this.state,
       status: 'closed',
@@ -233,10 +272,12 @@ export class RuntimeController {
       // A failed operation must not prevent disposal of a runtime it acquired.
       await pending?.catch(() => undefined)
       const owned = this.owned
+
       this.owned = null
       this.recovery = null
       await owned?.dispose()
     })
+
     return this.closing
   }
 }

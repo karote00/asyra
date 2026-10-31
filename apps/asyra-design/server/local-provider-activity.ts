@@ -15,33 +15,40 @@ export const selectPublicActivity = (
     nativeTurnId: params.turnId,
     itemId: typeof itemId === 'string' ? itemId : null
   }
+
   const text = (value: unknown, key: 'text' | 'delta' | 'summary') => {
     if (value == null) {
       return { ...base, status: 'unavailable' }
     }
+
     if (key === 'summary') {
       if (!Array.isArray(value) || !value.every((v) => typeof v === 'string')) {
         return { ...base, status: 'malformed' }
       }
+
       return {
         ...base,
         status: value.length ? 'available' : 'empty',
         summary: value
       }
     }
+
     if (typeof value !== 'string') {
       return { ...base, status: 'malformed' }
     }
+
     return {
       ...base,
       status: value.length ? 'available' : 'empty',
       [key]: value
     }
   }
+
   if (method === 'turn/plan/updated') {
     if (!Array.isArray(params.plan)) {
       return { ...base, status: 'malformed' }
     }
+
     if (
       params.plan.some(
         (v) =>
@@ -52,6 +59,7 @@ export const selectPublicActivity = (
     ) {
       return { ...base, status: 'malformed' }
     }
+
     return {
       ...base,
       status: params.plan.length ? 'available' : 'empty',
@@ -61,9 +69,11 @@ export const selectPublicActivity = (
         : {})
     }
   }
+
   if (method === 'item/agentMessage/delta' || method === 'item/plan/delta') {
     return text(params.delta, 'delta')
   }
+
   if (
     method === 'item/reasoning/summaryTextDelta' ||
     method === 'item/reasoning/summaryPartAdded'
@@ -74,15 +84,19 @@ export const selectPublicActivity = (
     ) {
       return { ...base, status: 'malformed' }
     }
+
     const content = method.endsWith('summaryPartAdded')
       ? { ...base, status: 'available' }
       : text(params.delta, 'delta')
+
     return { ...content, summaryIndex: params.summaryIndex }
   }
+
   if (method === 'item/completed') {
     if (item.type === 'reasoning') {
       return text(item.summary, 'summary')
     }
+
     if (item.type === 'agentMessage' || item.type === 'plan') {
       return {
         ...text(item.text, 'text'),

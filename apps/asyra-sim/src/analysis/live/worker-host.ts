@@ -26,8 +26,11 @@ import { LivePairProgress } from './pair-progress'
 /** One admitted input lifetime; each sample invokes the installed static method. */
 export class LiveWorkerHost {
   private snapshot: ExperimentSnapshot | null = null
+
   private busy = false
+
   private lastId = 0
+
   private execute: MethodRegistration['execute'] | null = null
 
   constructor(
@@ -92,6 +95,7 @@ export class LiveWorkerHost {
     }
 
     const isInterval = intervalRequest
+
     if (
       isInterval &&
       !this.methods.resolve(
@@ -108,6 +112,7 @@ export class LiveWorkerHost {
     const maxIntervals = isInterval
       ? (input as { maxIntervals: number }).maxIntervals
       : 0
+
     if (
       interval &&
       (!Number.isFinite(interval[0]) ||
@@ -137,9 +142,11 @@ export class LiveWorkerHost {
           (input as { acceptedPairs?: readonly MethodPairEvidence[] })
             .acceptedPairs ?? []
         )
+
     if (acceptedPairs.some((pair) => pair.evidence.coverage !== 'complete')) {
       throw new Error('Retained live pairs must be complete')
     }
+
     const id = input.id
     const time = interval ? interval[0] : (input.time as number)
     const startedAt = this.now()
@@ -149,9 +156,11 @@ export class LiveWorkerHost {
     )
     const deadline = startedAt + effectiveDurationMs
     const progress = new LivePairProgress(snapshot)
+
     for (const pair of acceptedPairs) {
       progress.append(pair)
     }
+
     let pending: MethodPairEvidence[] = []
     let lastSent = -Infinity
     let sentCollision = false
@@ -179,6 +188,7 @@ export class LiveWorkerHost {
       const missingPairs = snapshot.pairs.filter(
         (pair) => !acceptedIds.has(pair.id)
       )
+
       acceptedEvaluations = acceptedPairs.reduce(
         (sum, pair) => sum + pair.evidence.evaluations,
         0
@@ -192,10 +202,12 @@ export class LiveWorkerHost {
           pairs: missingPairs,
           budget: { ...snapshot.budget, maxIntervals: availableEvaluations }
         }
+
         checkpointName = 'method-execution'
         const result = await this.execute(missingSnapshot, {
           signal: abort.signal,
           checkpoint,
+
           emitPair: (pair) => {
             checkpoint()
             if (interval) {
@@ -204,6 +216,7 @@ export class LiveWorkerHost {
 
             checkpointName = 'pair-admission'
             const admitted = progress.append(pair)
+
             checkpointName = 'method-execution'
             const finding = admitted.evidence.leaves.some(
               (leaf) => leaf.state === 'finding'
@@ -217,6 +230,7 @@ export class LiveWorkerHost {
             }
 
             const now = this.now()
+
             if (
               pending.length &&
               ((collision && !sentCollision) ||
@@ -229,6 +243,7 @@ export class LiveWorkerHost {
                 time,
                 pairs: pending
               }
+
               measureWorkerPayload(message)
               checkpoint()
               checkpointName = 'progress-transport'
@@ -240,6 +255,7 @@ export class LiveWorkerHost {
             }
           }
         })
+
         checkpointName = 'evidence-validation'
         newlyChecked = validateMethodEvidence(missingSnapshot, result)
         evaluations = result.evaluations
@@ -277,9 +293,11 @@ export class LiveWorkerHost {
       )
       const pairs = snapshot.pairs.map((pair) => {
         const evidence = pairsById.get(pair.id)
+
         if (!evidence) {
           throw new Error('Live sample omitted a required pair')
         }
+
         return evidence
       })
       const evidence = {
@@ -297,10 +315,12 @@ export class LiveWorkerHost {
       checkpoint()
       if (!interval) {
         const sample = validateLiveEvidence(snapshot, time, evidence)
+
         progress.assertConsistent(sample.pairs)
       } else {
         validateMethodEvidence(snapshot, evidence)
       }
+
       checkpointName = 'result-transport'
       measureWorkerPayload(evidence)
       checkpoint()
@@ -326,6 +346,7 @@ export class LiveWorkerHost {
           pairs,
           null
         )
+
         this.post({
           type: LiveMessages.RESULT,
           id,
@@ -342,6 +363,7 @@ export class LiveWorkerHost {
         const message = error instanceof Error ? error.message : String(error)
         const deadlineExceeded = message.includes('deadline exceeded')
         let stopCause: LiveSampleDiagnostic['stopCause'] = 'validation-error'
+
         if (deadlineExceeded) {
           stopCause = 'deadline'
         } else if (checkpointName.includes('transport')) {
@@ -349,6 +371,7 @@ export class LiveWorkerHost {
         } else if (checkpointName === 'method-execution') {
           stopCause = 'executor-error'
         }
+
         const diagnostic = this.createDiagnostic(
           snapshot,
           id,
@@ -363,6 +386,7 @@ export class LiveWorkerHost {
           observedPairs,
           error
         )
+
         this.post({
           type: LiveMessages.ERROR,
           id,

@@ -5,6 +5,7 @@ import type { AiBatchReceipt } from '../../src/ai/action-batch-protocol'
 
 it('executes correction discovery through real owners and recovers only the unfinished edit', async () => {
   const review = createLocalDesignReview()
+
   review.record({
     phase: 'plan',
     method: 'Correct the observed surface',
@@ -21,9 +22,11 @@ it('executes correction discovery through real owners and recovers only the unfi
     detailRequired: false
   })
   const image = review.inspect('part', true, true)
+
   if (!image) {
     throw new Error('Missing image')
   }
+
   const bound = review.bindReview('visual', [
     { criterionId: 'appearance', inspectionIds: [image.inspectionId] }
   ])
@@ -35,6 +38,7 @@ it('executes correction discovery through real owners and recovers only the unfi
       evidence: 'The selected surface needs a different color'
     }))
   })
+
   expect(result.accepted).toBe(false)
   await exerciseCorrectionConsumer(
     result.correction as ReturnType<typeof review.correctionContext>
@@ -58,12 +62,15 @@ it('executes correction discovery through real owners and recovers only the unfi
     })
   ).toThrow()
   const fresh = review.inspect('part', true, true)
+
   if (!fresh) {
     throw new Error('Missing fresh image')
   }
+
   const next = review.bindReview('visual', [
     { criterionId: 'appearance', inspectionIds: [fresh.inspectionId] }
   ])
+
   expect(
     review.recordBoundReview({
       ...next,
@@ -84,9 +91,11 @@ async function exerciseCorrectionConsumer(
   >
 ) {
   const hadWindow = 'window' in globalThis
+
   if (!hadWindow) {
     vi.stubGlobal('window', {})
   }
+
   const { default: core } = await import('@asyra/core')
   const { applyPreset, PresetProfiles, PresetDefaults } =
     await import('@asyra/preset')
@@ -96,6 +105,7 @@ async function exerciseCorrectionConsumer(
   const { createAiToolContract, createAiAgentRuntime } =
     await import('@asyra/ai-agent-runtime')
   const { operationInputIssue } = await import('../operation-input-schema')
+
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
@@ -135,7 +145,11 @@ async function exerciseCorrectionConsumer(
   const signal = new AbortController().signal
   const tools = createOperationOwner(
     actions.map(createAiToolContract),
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     async (batch) => {
       invoked.push(
         batch.actions.map((a) =>
@@ -149,6 +163,7 @@ async function exerciseCorrectionConsumer(
             receipt = (await options.executeBatch?.(
               batch as never
             )) as AiBatchReceipt
+
             return { batchId: 'report', actions: [] }
           }
         },
@@ -158,22 +173,27 @@ async function exerciseCorrectionConsumer(
         confirmationHandler: { confirm: async () => true },
         transactionRunner: runner
       })
+
       try {
         await runtime.run({ intent: 'Correct selected surface', signal })
         if (!receipt) {
           throw new Error('Missing actual runtime receipt')
         }
+
         receipts.push(receipt)
+
         return receipt
       } finally {
         await runtime.dispose()
       }
     }
   )
+
   try {
     if (!correction.discovery) {
       throw new Error('Missing correction discovery')
     }
+
     const selection = {
       ...correction.discovery.arguments,
       query: 'fill.updateFillsAtIndex'
@@ -188,18 +208,23 @@ async function exerciseCorrectionConsumer(
         signal
       )
     )
+
     expect(missing.apis).toEqual([])
     expect(invoked).toHaveLength(0)
     const lookup = JSON.parse(
       await tools.call(correction.discovery.tool, selection, signal)
     )
+
     expect(lookup.missingNames).toEqual([])
     const contract = lookup.apis[0]
+
     expect(contract.execution.kind).toBe('batch-action')
     const args = { elementIds: ['part'], index: 0, patch: { color: '#334455' } }
+
     expect(operationInputIssue(args, contract.inputSchema)).toBeUndefined()
     const before = await core.save()
     const independent = core.getElementComputedData('independent', ['fills'])
+
     const invoke = (input: typeof args, currentSignal = signal) =>
       tools.call(
         contract.execution.tool,
@@ -209,8 +234,10 @@ async function exerciseCorrectionConsumer(
         },
         currentSignal
       )
+
     await expect(invoke({ ...args, index: -1 })).rejects.toThrow()
     const cancelled = new AbortController()
+
     cancelled.abort()
     await expect(invoke(args, cancelled.signal)).rejects.toThrow()
     expect(invoked).toHaveLength(0)
@@ -231,6 +258,7 @@ async function exerciseCorrectionConsumer(
         signal
       )
     )
+
     expect(partial, JSON.stringify(partial)).toHaveProperty('actionResults')
     expect(
       partial.actionResults[0]?.result,
@@ -249,6 +277,7 @@ async function exerciseCorrectionConsumer(
     expect(invoked).toEqual([['part', 'unavailable'], ['unavailable']])
     expect(receipts).toHaveLength(2)
     const { default: factory } = await import('@asyra/factory')
+
     factory.undo()
     expect(core.getElementComputedData('part', ['fills'])?.fills).toMatchObject(
       [{ color: '#334455' }]
@@ -265,6 +294,7 @@ async function exerciseCorrectionConsumer(
       independent
     )
     const saved = await core.save()
+
     core.load(saved)
     expect(core.getElementComputedData('part', ['fills'])?.fills).toMatchObject(
       [{ color: '#334455' }]

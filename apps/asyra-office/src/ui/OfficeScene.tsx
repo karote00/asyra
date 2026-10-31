@@ -6,10 +6,13 @@ import { DEMO_TASKS, DEMO_LOGS } from '../scene/controller'
 import { Icon } from './Icons'
 
 type Tab = 'Places' | 'Agents' | 'Logs' | 'Tasks'
+
 function ViewLabel({ runtime }: { runtime: SceneRuntime }) {
   const s = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot)
+
   return <span aria-label="Current view">{s.view}</span>
 }
+
 function Avatar({ name, index = 0 }: { name: string; index?: number }) {
   return (
     <span className={`avatar avatar-${index % 4}`} aria-hidden="true">
@@ -21,6 +24,7 @@ function Avatar({ name, index = 0 }: { name: string; index?: number }) {
     </span>
   )
 }
+
 export function OfficeScene() {
   const host = useRef<HTMLDivElement>(null),
     [runtime, setRuntime] = useState<SceneRuntime | null>(null),
@@ -31,12 +35,15 @@ export function OfficeScene() {
     [query, setQuery] = useState(''),
     [drawer, setDrawer] = useState<'left' | 'right' | null>(null)
   const drag = useRef<{ x: number; y: number } | null>(null)
+
   useEffect(() => {
     if (!host.current) {
       return
     }
+
     let retired = false
     const pending = startReferenceScene(host.current)
+
     pending
       .then((value) => {
         if (retired) {
@@ -50,6 +57,7 @@ export function OfficeScene() {
           setError(e instanceof Error ? e.message : String(e))
         }
       })
+
     return () => {
       retired = true
       void pending
@@ -59,6 +67,7 @@ export function OfficeScene() {
         })
     }
   }, [])
+
   const act = (fn: () => void) => {
     try {
       fn()
@@ -68,8 +77,10 @@ export function OfficeScene() {
       setError(e instanceof Error ? e.message : String(e))
     }
   }
+
   const focus = (id: string) => act(() => runtime?.focusPlace(id)),
     follow = (id: string) => act(() => runtime?.follow(id))
+
   const searchResults = query.trim()
     ? [
         ...PLACES.filter((p) =>
@@ -83,6 +94,7 @@ export function OfficeScene() {
         ).map((p) => ({ id: p.agent, name: p.title, type: 'agent' }))
       ]
     : []
+
   const tab = (
     name: Tab,
     current: Tab,
@@ -98,6 +110,7 @@ export function OfficeScene() {
       {name}
     </button>
   )
+
   return (
     <main className="office-app">
       <header className="office-header">
@@ -132,6 +145,7 @@ export function OfficeScene() {
                       } else {
                         follow(r.id)
                       }
+
                       setQuery('')
                     }}
                   >
@@ -216,6 +230,7 @@ export function OfficeScene() {
               if (e.button !== 0) {
                 return
               }
+
               drag.current = { x: e.clientX, y: e.clientY }
               e.currentTarget.setPointerCapture(e.pointerId)
             }}
@@ -223,7 +238,9 @@ export function OfficeScene() {
               if (!drag.current || !runtime) {
                 return
               }
+
               const p = drag.current
+
               runtime.orbit(
                 (p.x - e.clientX) * 0.005,
                 (p.y - e.clientY) * 0.005
@@ -345,6 +362,7 @@ export function OfficeScene() {
                   (t) => filter === 'All' || t.status === filter
                 ).map((task) => {
                   const actor = ACTORS.find((a) => a.id === task.agent)
+
                   return (
                     <button
                       className="task-row"

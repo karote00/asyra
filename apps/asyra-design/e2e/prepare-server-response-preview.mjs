@@ -9,6 +9,7 @@ const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : ''
 if (invokedPath === modulePath) {
   try {
     const summary = await prepareServerResponsePreview()
+
     process.stdout.write(
       `${JSON.stringify({
         currentPath: summary.currentPath,
@@ -25,6 +26,7 @@ if (invokedPath === modulePath) {
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
+
     process.stderr.write(
       `Prepared server response preview failed: ${message.slice(0, 500)}\n`
     )

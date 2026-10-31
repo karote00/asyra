@@ -8,6 +8,7 @@ const object = (properties: Record<string, AiJsonValue>) => ({
   required: Object.keys(properties),
   additionalProperties: false
 })
+
 const text = { type: 'string', minLength: 1, pattern: '\\S' }
 const revision = {
   type: 'integer',
@@ -87,6 +88,7 @@ export const recipeExecutionSteps = (
 }[] => {
   const steps = recipe.steps.map((step) => ({ step, weight: 1 }))
   const iteration = recipe.iteration
+
   if (iteration) {
     steps.push({ step: iteration.check, weight: iteration.maxIterations + 1 })
     steps.push(
@@ -96,5 +98,6 @@ export const recipeExecutionSteps = (
       }))
     )
   }
+
   return steps
 }

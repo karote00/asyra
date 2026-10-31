@@ -25,11 +25,13 @@ function delivery(root, id) {
           output: 'apps/asyra-framework-site/out'
         }
       : DEPLOYMENT_APPS.find((item) => item.id === id)
+
   assert.ok(app, 'Unknown Cloudflare release owner')
   const directory = path.join(
     root,
     id === 'asyra-framework' ? app.output : `tmp/cloudflare-apps/${id}`
   )
+
   return {
     ...app,
     directory,
@@ -48,6 +50,7 @@ export async function cloudflareBaseline(
   } = {}
 ) {
   const app = delivery(root, id)
+
   assert.match(accountId ?? '', /^[a-f0-9]{32}$/, 'Invalid Cloudflare account')
   assert.ok(token, 'Missing Cloudflare read token')
   const response = await request(
@@ -58,14 +61,17 @@ export async function cloudflareBaseline(
       signal: AbortSignal.timeout(10000)
     }
   )
+
   assert.ok(
     response.ok,
     `Release coverage gap: Cloudflare project read failed (${response.status})`
   )
   const data = await response.json()
+
   assert.equal(data.success, true, 'Cloudflare project read failed')
   assert.equal(data.result.name, app.project)
   const deployed = data.result.canonical_deployment
+
   assert.ok(
     deployed?.id &&
       deployed.environment === 'production' &&
@@ -74,6 +80,7 @@ export async function cloudflareBaseline(
     'Release coverage gap: previous successful production deployment is required'
   )
   const sourceSha = deployed.deployment_trigger?.metadata?.commit_hash
+
   assert.match(
     sourceSha ?? '',
     /^[a-f0-9]{40}$/,
@@ -83,8 +90,10 @@ export async function cloudflareBaseline(
     `https://${app.project}.pages.dev/deployment-version.json`,
     { cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000) }
   )
+
   assert.equal(marker.status, 200, 'Previous production marker is unavailable')
   const version = await marker.json()
+
   assert.equal(
     version.sourceSha,
     sourceSha,
@@ -93,11 +102,13 @@ export async function cloudflareBaseline(
   if (id !== 'asyra-framework') {
     assert.equal(version.app, id)
   }
+
   return { id, sourceSha, deploymentId: deployed.id }
 }
 
 function publicationFor(file, evidence) {
   const resultFile = `${file}.result.json.${guidanceHash(evidence)}.json`
+
   return fs.existsSync(resultFile) ? readGuidance(resultFile) : undefined
 }
 
@@ -113,20 +124,25 @@ function requireVerifiedBaseline(root, app, baseline) {
     ],
     { cwd: root }
   ).trim()
+
   if (!usesGuidance) {
     return
   }
+
   const files = [
     app.evidenceFile,
     path.join(path.dirname(app.evidenceFile), 'baseline', `${app.id}.json`)
   ]
+
   for (const file of files) {
     if (!fs.existsSync(file)) {
       continue
     }
+
     const candidate = readGuidance(file)
     const result = publicationFor(file, candidate)
     const outcome = result?.outcomes[app.id]
+
     if (
       candidate.sourceSha === baseline.sourceSha &&
       candidate.owner === `cloudflare/${app.id}` &&
@@ -140,6 +156,7 @@ function requireVerifiedBaseline(root, app, baseline) {
       return
     }
   }
+
   throw new Error(
     'Release coverage gap: restore the verified production guidance or recover and verify its original candidate first'
   )
@@ -153,6 +170,7 @@ export async function restoreCloudflareGuidance(id, options = {}) {
   const repository = options.repository ?? process.env.GH_REPO
   const runId = String(options.runId ?? process.env.GITHUB_RUN_ID)
   const runCommand = options.runCommand ?? runReleaseCommand
+
   assert.match(
     sourceSha ?? '',
     /^[a-f0-9]{40}$/,
@@ -163,6 +181,7 @@ export async function restoreCloudflareGuidance(id, options = {}) {
     /^[\w.-]+\/[\w.-]+$/,
     'Missing GitHub repository'
   )
+
   const api = (endpoint) =>
     JSON.parse(
       runCommand(
@@ -171,11 +190,15 @@ export async function restoreCloudflareGuidance(id, options = {}) {
         { cwd: root }
       )
     )
+
   const list = (endpoint) => api(endpoint).flatMap((page) => page.artifacts)
+
   const download = (archive) => {
     const parent = path.join(root, 'tmp/cloudflare-release-guidance/restore')
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, `${archive.id}-`))
+
     runCommand(
       'gh',
       [
@@ -191,9 +214,12 @@ export async function restoreCloudflareGuidance(id, options = {}) {
       ],
       { cwd: root }
     )
+
     return directory
   }
+
   let retained = false
+
   const restore = (sha, file) => {
     const name = `release-guidance-${id}-${sha}`
     const archives = list(`actions/artifacts?name=${name}&per_page=100`)
@@ -210,17 +236,21 @@ export async function restoreCloudflareGuidance(id, options = {}) {
     let selected
     let latestResult
     let latestResultId = -1
+
     for (const archive of archives) {
       const run = api(`actions/runs/${archive.workflow_run.id}`)[0]
       const workflow =
         id === 'asyra-framework' ? 'site-cloudflare.yml' : 'app-cloudflare.yml'
+
       if (
         run.path !== `.github/workflows/${workflow}` ||
         run.event !== 'workflow_dispatch'
       ) {
         continue
       }
+
       const candidate = readGuidance(path.join(download(archive), `${id}.json`))
+
       assert.equal(
         candidate.owner,
         `cloudflare/${id}`,
@@ -234,6 +264,7 @@ export async function restoreCloudflareGuidance(id, options = {}) {
       if (!selected) {
         selected = candidate
       }
+
       assert.deepEqual(
         candidate,
         selected,
@@ -242,6 +273,7 @@ export async function restoreCloudflareGuidance(id, options = {}) {
       if (sha === sourceSha && String(archive.workflow_run.id) === runId) {
         retained = true
       }
+
       const results = list(
         `actions/runs/${archive.workflow_run.id}/artifacts?per_page=100`
       )
@@ -249,15 +281,18 @@ export async function restoreCloudflareGuidance(id, options = {}) {
           (item) => !item.expired && item.name.startsWith(`${name}-result-`)
         )
         .sort((a, b) => b.id - a.id)
+
       for (const result of results) {
         if (result.id <= latestResultId) {
           break
         }
+
         const filename = `${id}.json.result.json.${guidanceHash(selected)}.json`
         const resultFile = path.join(
           download({ ...result, workflow_run: archive.workflow_run }),
           filename
         )
+
         assert.ok(
           fs.existsSync(resultFile),
           'Publication archive does not match frozen candidate'
@@ -272,6 +307,7 @@ export async function restoreCloudflareGuidance(id, options = {}) {
         break
       }
     }
+
     if (selected) {
       if (fs.existsSync(file)) {
         assert.deepEqual(
@@ -280,6 +316,7 @@ export async function restoreCloudflareGuidance(id, options = {}) {
           'Local candidate differs from retained evidence'
         )
       }
+
       writeGuidance(file, selected)
       if (latestResult) {
         writeGuidance(
@@ -289,8 +326,10 @@ export async function restoreCloudflareGuidance(id, options = {}) {
       }
     }
   }
+
   restore(sourceSha, app.evidenceFile)
   const baseline = await cloudflareBaseline(id, { ...options, root })
+
   if (baseline.sourceSha !== sourceSha) {
     restore(
       baseline.sourceSha,
@@ -303,10 +342,13 @@ export async function restoreCloudflareGuidance(id, options = {}) {
       'Release coverage gap: missing original candidate for deployed retry'
     )
   }
+
   const output = options.output ?? process.env.GITHUB_OUTPUT
+
   if (output) {
     fs.appendFileSync(output, `candidate-retained=${retained}\n`)
   }
+
   return { retained }
 }
 
@@ -316,9 +358,11 @@ export async function cloudflareGuidance(mode, id, options = {}) {
   const evidence = fs.existsSync(app.evidenceFile)
     ? readGuidance(app.evidenceFile)
     : undefined
+
   if (mode === 'check') {
     assert.ok(evidence, 'Missing release guidance')
   }
+
   const sourceSha =
     options.sourceSha ??
     process.env.SOURCE_SHA ??
@@ -327,6 +371,7 @@ export async function cloudflareGuidance(mode, id, options = {}) {
   const marker = JSON.parse(
     fs.readFileSync(path.join(app.directory, 'deployment-version.json'), 'utf8')
   )
+
   assert.equal(
     marker.sourceSha,
     sourceSha,
@@ -335,6 +380,7 @@ export async function cloudflareGuidance(mode, id, options = {}) {
   if (id !== 'asyra-framework') {
     assert.equal(marker.app, id, 'Candidate artifact owner changed')
   }
+
   const artifact = { id, integrity: artifactIntegrity(app.directory) }
   const baseline = await cloudflareBaseline(id, { ...options, root })
   const inputs = {
@@ -343,6 +389,7 @@ export async function cloudflareGuidance(mode, id, options = {}) {
     sourceSha,
     deliveries: [{ id, roots: app.roots, baseline, artifact }]
   }
+
   if (mode === 'prepare') {
     if (evidence?.sourceSha === sourceSha) {
       admitGuidance({
@@ -351,8 +398,10 @@ export async function cloudflareGuidance(mode, id, options = {}) {
         current: [baseline],
         publication: publicationFor(app.evidenceFile, evidence)
       })
+
       return evidence
     }
+
     assert.notEqual(
       baseline.sourceSha,
       sourceSha,
@@ -360,10 +409,14 @@ export async function cloudflareGuidance(mode, id, options = {}) {
     )
     requireVerifiedBaseline(root, app, baseline)
     const candidate = prepareGuidance(inputs)
+
     writeGuidance(app.evidenceFile, candidate)
+
     return candidate
   }
+
   assert.equal(mode, 'check', 'Expected prepare or check')
+
   return admitGuidance({
     ...inputs,
     evidence,
@@ -398,12 +451,14 @@ export function recordCloudflareGuidance(
       attemptVerified: verified
     }
   )
+
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(
       process.env.GITHUB_STEP_SUMMARY,
       `\nRelease guidance: \`${path.relative(root, app.evidenceFile)}\` (${result.guidance})\n\nLatest attempt - published: ${published}; verified: ${verified}.\n\nRecorded deployment - published: ${result.outcomes[id].published}; verified: ${result.outcomes[id].verified}.\n`
     )
   }
+
   return result
 }
 
@@ -412,6 +467,7 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const [mode, id] = process.argv.slice(2)
+
   if (mode === 'record') {
     recordCloudflareGuidance(id, {
       deploymentId: process.env.DEPLOYMENT_ID,

@@ -14,6 +14,7 @@ test('native text stays editable and survives undo, redo and save', async ({
   page
 }, testInfo) => {
   const identity = createTestDocumentIdentity()
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   await page.evaluate(async () => {
@@ -22,9 +23,11 @@ test('native text stays editable and survives undo, redo and save', async ({
     const { selectionApis } = await import('../src/common-apis/selection')
     const { transactionApis } = await import('../src/common-apis/transaction')
     const parent = hierarchyApis.getWorkspaceId()
+
     if (!parent) {
       throw new Error('Missing workspace')
     }
+
     transactionApis.runTransaction(() =>
       elementApis.createElementsInParent(
         [
@@ -74,12 +77,16 @@ test('native text stays editable and survives undo, redo and save', async ({
       throw new Error('Text creation failed')
     }
   })
+
   const measure = () =>
     page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
+
       return core.measureElementContentBounds(['native-text-example'])[0].bounds
     })
+
   const initialContent = await measure()
+
   expect(initialContent?.width).toBeGreaterThan(0)
   expect(initialContent?.width).toBeLessThan(320)
   expect(initialContent?.height).toBeGreaterThan(40)
@@ -91,6 +98,7 @@ test('native text stays editable and survives undo, redo and save', async ({
   const captures = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
     const { fillApis } = await import('../src/common-apis')
+
     fillApis.updateFillFields(
       'native-text-example',
       'text-initial-fill',
@@ -99,6 +107,7 @@ test('native text stays editable and survives undo, redo and save', async ({
     )
     const { viewportApis } = await import('../src/common-apis/viewport')
     const snapshots = []
+
     for (const scale of [0.25, 2]) {
       viewportApis.zoomToCenter(scale, 400, 300)
       await new Promise<void>((resolve) =>
@@ -110,9 +119,12 @@ test('native text stays editable and survives undo, redo and save', async ({
         })
       )
     }
+
     viewportApis.zoomFit()
+
     return snapshots
   })
+
   for (const [index, capture] of captures.entries()) {
     expect(capture.width).toBe(capture.bounds.width)
     expect(capture.height).toBe(capture.bounds.height)
@@ -125,6 +137,7 @@ test('native text stays editable and survives undo, redo and save', async ({
       contentType: 'image/png'
     })
   }
+
   await undo(page)
   expect(captures[0].width).toBeGreaterThan(0)
   expect(captures[0].dataUrl === captures[1].dataUrl).toBe(true)
@@ -133,20 +146,25 @@ test('native text stays editable and survives undo, redo and save', async ({
     name: 'Canvas text editor',
     exact: true
   })
+
   await expect(content).toHaveValue('Editable design\nHello 世界')
   const depth = await getUndoHistoryDepth(page)
+
   await content.fill('Updated heading\nHello 世界')
   await content.press('Control+Enter')
   await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + 1)
+
   const readText = () =>
     page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
+
       return (
         core.getElementComputedData('native-text-example') as unknown as {
           text: string
         }
       ).text
     })
+
   await expect.poll(readText).toBe('Updated heading\nHello 世界')
   await undo(page)
   await expect.poll(readText).toBe('Editable design\nHello 世界')
@@ -155,18 +173,22 @@ test('native text stays editable and survives undo, redo and save', async ({
   expect(
     await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
+
       return JSON.stringify(await core.save())
     })
   ).toContain('Updated heading')
+
   const review = () =>
     page.evaluate(async () =>
       (await import('../src/common-apis/design-review')).reviewDesign(
         'native-text-example'
       )
     )
+
   expect(await review()).toMatchObject({ complete: true, findings: [] })
   await page.evaluate(async () => {
     const { elementApis } = await import('../src/testing/runtime-access')
+
     elementApis.updateElementProperties(
       ['native-text-example'],
       { height: 20 },
@@ -182,6 +204,7 @@ test('native text stays editable and survives undo, redo and save', async ({
   await undo(page)
   expect(await review()).toMatchObject({ complete: true, findings: [] })
   const savedDigest = await getCoreDocumentDigest(page)
+
   await expect
     .poll(() => getPersistedDocumentDigest(identity.fileId), {
       timeout: 15_000
@@ -192,6 +215,7 @@ test('native text stays editable and survives undo, redo and save', async ({
   await expect.poll(readText).toBe('Updated heading\nHello 世界')
   await page.evaluate(async () => {
     const { selectionApis } = await import('../src/common-apis/selection')
+
     selectionApis.selectElements(['native-text-example'])
   })
   await page.getByRole('button', { name: 'Edit text on Canvas' }).click()

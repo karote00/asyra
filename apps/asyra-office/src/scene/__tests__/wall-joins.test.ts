@@ -12,6 +12,7 @@ function footprintContains(mesh: Mesh, point: readonly number[]) {
       .map((index) => mesh.positions.slice(index * 3, index * 3 + 3))
     const sides = vertices.map((a, j) => {
       const b = vertices[(j + 1) % 3]
+
       return (
         (b[0] - a[0]) * (point[1] - a[1]) - (b[1] - a[1]) * (point[0] - a[0])
       )
@@ -19,13 +20,16 @@ function footprintContains(mesh: Mesh, point: readonly number[]) {
     // Vertical/degenerate projected faces cannot cover a plan area.
     const [a, b, c] = vertices
     const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
     if (Math.abs(area) < 1e-10) {
       continue
     }
+
     if (sides.every((v) => v >= -1e-10) || sides.every((v) => v <= 1e-10)) {
       return true
     }
   }
+
   return false
 }
 
@@ -42,6 +46,7 @@ describe('composed rear wall corners', () => {
       const scene = createReferenceScene('structure')
       const parts = new Map<string, AssetPart[]>()
       let offset = 0
+
       for (const assembly of scene.assemblies) {
         parts.set(
           assembly.id,
@@ -49,19 +54,25 @@ describe('composed rear wall corners', () => {
         )
         offset += assembly.parts.length
       }
+
       for (const suffix of ['', '-cap']) {
         const pair = ids.map((id) => parts.get(id + suffix)?.[0])
+
         if (pair.some((part) => !part)) {
           throw new Error('Missing joined wall')
         }
+
         for (const detail of ['near', 'distant'] as const) {
           const meshes = pair.map((part) => {
             const mesh = detail === 'near' ? part?.mesh : part?.distant?.mesh
+
             if (!mesh) {
               throw new Error('Missing wall representation')
             }
+
             return mesh
           })
+
           // Samples cover all four quadrants, avoiding the diagonal seam itself.
           for (const dx of suffix
             ? [-0.085, -0.02, 0.02, 0.085]
@@ -70,6 +81,7 @@ describe('composed rear wall corners', () => {
               ? [-0.082, -0.015, 0.015, 0.082]
               : [-0.055, -0.015, 0.015, 0.055]) {
               const point = [x + dx, OFFICE_FIT.parameters.rearY + dy]
+
               expect(
                 meshes.filter((mesh) => footprintContains(mesh, point)).length,
                 `${name}${suffix}/${detail} coverage at ${dx},${dy}`
@@ -87,6 +99,7 @@ describe('partition wall abutments', () => {
     const scene = createReferenceScene('structure')
     const parts = new Map<string, AssetPart[]>()
     let offset = 0
+
     for (const assembly of scene.assemblies) {
       parts.set(
         assembly.id,
@@ -94,6 +107,7 @@ describe('partition wall abutments', () => {
       )
       offset += assembly.parts.length
     }
+
     const p = OFFICE_FIT.parameters
     const cases = [
       {
@@ -146,6 +160,7 @@ describe('partition wall abutments', () => {
         points: [-0.05, 0.05, 0.1].map((x) => [p.loungeX + x, p.loungeY + 0.02])
       }
     ]
+
     // Joining the hidden ends must not move reference-visible free ends.
     for (const [id, axis, end, expected] of [
       ['work-back-partition', 0, 'max', p.creamEnd],
@@ -155,24 +170,31 @@ describe('partition wall abutments', () => {
     ] as const) {
       for (const suffix of ['', '-cap']) {
         const positions = parts.get(id + suffix)?.[0].mesh.positions
+
         if (!positions) {
           throw new Error('Missing wall endpoint')
         }
+
         const values = positions.filter((_, index) => index % 3 === axis)
         const actual = end === 'max' ? Math.max(...values) : Math.min(...values)
+
         expect(actual, id + suffix + ' free endpoint').toBeCloseTo(expected, 8)
       }
     }
+
     for (const fixture of cases) {
       for (const detail of ['near', 'distant'] as const) {
         const meshes = fixture.ids.map((id) => {
           const part = parts.get(id)?.[0]
           const mesh = detail === 'near' ? part?.mesh : part?.distant?.mesh
+
           if (!mesh) {
             throw new Error('Missing wall representation: ' + id)
           }
+
           return mesh
         })
+
         for (const point of fixture.points) {
           expect(
             meshes.filter((mesh) => footprintContains(mesh, point)).length,
@@ -192,20 +214,26 @@ describe('reference rear-wall discontinuity', () => {
     const gapEnd =
       p.pantryX -
       (OFFICE_SHELL.exteriorThickness / 2) * OFFICE_SHELL.capDepthRatio
+
     expect(gapEnd).toBeGreaterThan(gapStart)
     let offset = 0
+
     for (const assembly of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + assembly.parts.length)
+
       offset += assembly.parts.length
       if (assembly.asset !== 'wall-segment') {
         continue
       }
+
       for (const detail of ['near', 'distant'] as const) {
         for (const part of parts) {
           const mesh = detail === 'near' ? part.mesh : part.distant?.mesh
+
           if (!mesh) {
             throw new Error('Missing wall representation')
           }
+
           for (const ratio of [0.2, 0.5, 0.8]) {
             expect(
               footprintContains(mesh, [
@@ -225,6 +253,7 @@ it('joins the lounge rear return at body and cap faces while retaining a rear pa
   const scene = createReferenceScene('structure')
   const parts = new Map<string, AssetPart[]>()
   let offset = 0
+
   for (const assembly of scene.assemblies) {
     parts.set(
       assembly.id,
@@ -232,25 +261,33 @@ it('joins the lounge rear return at body and cap faces while retaining a rear pa
     )
     offset += assembly.parts.length
   }
+
   for (const suffix of ['', '-cap']) {
     for (const detail of ['near', 'distant'] as const) {
       const member = parts.get('lounge-rear-return' + suffix)?.[0]
       const host = parts.get('lounge-right-wall' + suffix)?.[0]
+
       if (!member || !host) {
         throw new Error('Missing actual T-return member')
       }
+
       const a = detail === 'near' ? member.mesh : member.distant?.mesh
       const b = detail === 'near' ? host.mesh : host.distant?.mesh
+
       if (!a || !b) {
         throw new Error('Missing wall representation')
       }
+
       const extent = (mesh: Mesh, axis: number) => {
         const values = mesh.positions.filter((_, i) => i % 3 === axis)
+
         return [Math.min(...values), Math.max(...values)]
       }
+
       const x = extent(a, 0),
         y = extent(a, 1),
         z = extent(a, 2)
+
       expect(y[0]).toBeCloseTo(extent(b, 1)[1], 8)
       expect(z).toEqual(extent(b, 2).map((v) => expect.closeTo(v, 8)))
       for (const fraction of [0.2, 0.5, 0.8]) {
@@ -265,7 +302,9 @@ it('joins the lounge rear return at body and cap faces while retaining a rear pa
           ).toHaveLength(1)
         }
       }
+
       const door = (OFFICE_FIT.parameters.doorWidth / 1.66) * 1.52
+
       expect(
         OFFICE_FIT.parameters.rearY - OFFICE_SHELL.exteriorThickness / 2 - y[1]
       ).toBeGreaterThanOrEqual(door)
@@ -277,6 +316,7 @@ it('keeps the indoor pantry entrance at least as wide as the reference main door
   const scene = createReferenceScene('structure')
   const byId = new Map<string, AssetPart[]>()
   let offset = 0
+
   for (const assembly of scene.assemblies) {
     byId.set(
       assembly.id,
@@ -284,15 +324,19 @@ it('keeps the indoor pantry entrance at least as wide as the reference main door
     )
     offset += assembly.parts.length
   }
+
   const bounds = (id: string, axis: number) => {
     const values = byId
       .get(id)
       ?.flatMap((part) => part.mesh.positions.filter((_, i) => i % 3 === axis))
+
     if (!values?.length) {
       throw new Error(`Missing structural member ${id}`)
     }
+
     return [Math.min(...values), Math.max(...values)]
   }
+
   const pantryBounds = [
     bounds('pantry-divider', 0),
     bounds('pantry-divider', 1)
@@ -300,6 +344,7 @@ it('keeps the indoor pantry entrance at least as wide as the reference main door
   const clearGap = Math.min(
     ...['lounge-left-return', 'lounge-divider'].map((id) => {
       const memberBounds = [bounds(id, 0), bounds(id, 1)]
+
       return Math.hypot(
         ...memberBounds.map((range, axis) =>
           Math.max(
@@ -312,31 +357,40 @@ it('keeps the indoor pantry entrance at least as wide as the reference main door
     })
   )
   const frame = byId.get('entrance-door')
+
   if (!frame) {
     throw new Error('Missing entrance frame')
   }
+
   const jamb = (id: string, edge: 'min' | 'max') => {
     const member = frame.find((part) => part.id === id)
+
     if (!member) {
       throw new Error(`Missing jamb ${id}`)
     }
+
     const values = member.mesh.positions.filter((_, i) => i % 3 === 0)
+
     return edge === 'min' ? Math.min(...values) : Math.max(...values)
   }
+
   const aperture = jamb('jamb-right', 'min') - jamb('jamb-left', 'max')
   const specification = architecture.modules.find(
     (module) => module.moduleId === 'entry-door-set'
   )
+
   if (
     !specification?.mainLeafWidthMetres ||
     !specification.openingClearSizeMetres
   ) {
     throw new Error('Missing main door leaf dimensions')
   }
+
   // The full frame also contains a fixed side panel; only the leaf supplies passage.
   const leafWidth =
     (aperture * specification.mainLeafWidthMetres) /
     specification.openingClearSizeMetres[0]
+
   expect(clearGap).toBeGreaterThanOrEqual(leafWidth - 1e-7)
 })
 
@@ -344,6 +398,7 @@ it('meets the rear and lounge bodies with a flush pantry floor band', () => {
   const scene = createReferenceScene('structure')
   const members = new Map<string, AssetPart[]>()
   let offset = 0
+
   for (const assembly of scene.assemblies) {
     members.set(
       assembly.id,
@@ -351,17 +406,23 @@ it('meets the rear and lounge bodies with a flush pantry floor band', () => {
     )
     offset += assembly.parts.length
   }
+
   expect(members.has('pantry-east-wall')).toBe(false)
+
   const bounds = (id: string, axis: number) => {
     const group = members.get(id)
+
     if (!group) {
       throw new Error(`Missing structural member ${id}`)
     }
+
     const values = group.flatMap((p) =>
       p.mesh.positions.filter((_, i) => i % 3 === axis)
     )
+
     return [Math.min(...values), Math.max(...values)]
   }
+
   expect(bounds('pantry-floor-band', 1)[0]).toBeCloseTo(
     bounds('lounge-right-wall', 1)[1],
     8
@@ -380,6 +441,7 @@ it('places the cream and green west-room dividers end-to-end on one partition li
   const scene = createReferenceScene('structure')
   const members = new Map<string, AssetPart[]>()
   let offset = 0
+
   for (const assembly of scene.assemblies) {
     members.set(
       assembly.id,
@@ -387,20 +449,26 @@ it('places the cream and green west-room dividers end-to-end on one partition li
     )
     offset += assembly.parts.length
   }
+
   for (const detail of ['near', 'distant'] as const) {
     const bounds = (id: string) => {
       const part = members.get(id)?.[0]
       const mesh = detail === 'near' ? part?.mesh : part?.distant?.mesh
+
       if (!mesh) {
         throw new Error(`Missing divider ${id}/${detail}`)
       }
+
       return [0, 1, 2].map((axis) => {
         const values = mesh.positions.filter((_, index) => index % 3 === axis)
+
         return [Math.min(...values), Math.max(...values)]
       })
     }
+
     const cream = bounds('work-back-partition')
     const green = bounds('work-divider')
+
     // Owner clarification plus enlarged source: adjacent lengths on one line,
     // with a visible opening between ends, not parallel walls in different rooms.
     expect((green[1][0] + green[1][1]) / 2).toBeCloseTo(

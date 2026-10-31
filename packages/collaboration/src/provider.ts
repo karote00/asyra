@@ -61,7 +61,9 @@ export const isProviderFailureCode = (
 
 export class ProviderFailure extends Error {
   readonly code: ProviderFailureCode
+
   readonly cause?: unknown
+
   readonly publicationId?: string
 
   constructor(

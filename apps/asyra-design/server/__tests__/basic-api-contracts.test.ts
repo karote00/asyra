@@ -19,10 +19,13 @@ it('admits only nonnegative hierarchy insertion indices and explains append sema
   const move = basicApiContracts.find(
     (contract) => contract.name === 'api_hierarchy_moveElements'
   )
+
   if (!move) {
     throw new Error('Missing hierarchy move contract')
   }
+
   const request = { elementIds: ['detail'], targetParentId: 'drawing' }
+
   expect(
     operationInputIssue(
       { request: { ...request, targetIndex: -1 } },
@@ -102,6 +105,7 @@ it('binds every action to the existing public method signature in argument order
   const checker = program.getTypeChecker()
   const issues: string[] = []
   const audited: Record<string, unknown>[] = []
+
   // Check required members against the real typed owner, not a second field registry.
   const requiredMembers = (
     type: ts.Type,
@@ -112,24 +116,33 @@ it('binds every action to the existing public method signature in argument order
     if (depth > 5 || !schema || typeof schema !== 'object') {
       return
     }
+
     const shape = schema as Record<string, unknown>
+
     if (type.isUnion() || shape.anyOf || shape.oneOf || shape.$ref) {
       return
     }
+
     const item = checker.getIndexTypeOfType(type, ts.IndexKind.Number)
+
     if (shape.type === 'array' && item) {
       requiredMembers(item, shape.items, at + '[]', depth + 1)
+
       return
     }
+
     if (shape.type !== 'object') {
       return
     }
+
     const properties = shape.properties as Record<string, unknown> | undefined
     const required = new Set(
       Array.isArray(shape.required) ? shape.required : []
     )
+
     for (const member of checker.getPropertiesOfType(type)) {
       const declaration = member.valueDeclaration
+
       if (
         !declaration ||
         ts.isMethodSignature(declaration) ||
@@ -137,6 +150,7 @@ it('binds every action to the existing public method signature in argument order
       ) {
         continue
       }
+
       if (
         !(member.flags & ts.SymbolFlags.Optional) &&
         !required.has(member.name)
@@ -145,6 +159,7 @@ it('binds every action to the existing public method signature in argument order
           `${at}.${member.name}: required by owner but optional in delivery`
         )
       }
+
       if (properties?.[member.name]) {
         requiredMembers(
           checker.getTypeOfSymbolAtLocation(member, declaration),
@@ -161,11 +176,14 @@ it('binds every action to the existing public method signature in argument order
     expect(sources[owner], owner).toBeDefined()
     const [file, variable] = sources[owner]
     const source = program.getSourceFile(path.join(root, file))
+
     expect(source, file).toBeDefined()
     if (!source) {
       continue
     }
+
     let type: ts.Type | undefined
+
     const visit = (node: ts.Node) => {
       if (
         (ts.isVariableDeclaration(node) || ts.isClassDeclaration(node)) &&
@@ -173,20 +191,25 @@ it('binds every action to the existing public method signature in argument order
       ) {
         type = checker.getTypeAtLocation(node)
       }
+
       ts.forEachChild(node, visit)
     }
+
     visit(source)
     expect(type, variable).toBeDefined()
     if (!type) {
       continue
     }
+
     for (const entry of basicApiContracts.filter((c) => c.owner === owner)) {
       const property = type.getProperty(entry.method)
       const declaration = property?.valueDeclaration
+
       if (!property || !declaration) {
         issues.push(`${owner}.${entry.method}: missing`)
         continue
       }
+
       if (
         ts.canHaveModifiers(declaration) &&
         ts
@@ -200,23 +223,29 @@ it('binds every action to the existing public method signature in argument order
         issues.push(`${owner}.${entry.method}: not public`)
         continue
       }
+
       const signature = checker
         .getTypeOfSymbolAtLocation(property, declaration)
         .getCallSignatures()[0]
+
       if (!signature) {
         issues.push(`${owner}.${entry.method}: not callable`)
         continue
       }
+
       const returnType = checker.typeToString(signature.getReturnType())
+
       if (['write', 'delete'].includes(entry.effect) && returnType === 'void') {
         issues.push(`${entry.name}: mutation owner returns no result`)
       }
+
       for (const parameter of signature
         .getParameters()
         .slice(0, entry.parameters.length)) {
         const input = entry.inputSchema as {
           properties?: Record<string, unknown>
         }
+
         requiredMembers(
           checker.getTypeOfSymbolAtLocation(
             parameter,
@@ -226,7 +255,9 @@ it('binds every action to the existing public method signature in argument order
           entry.name + '.' + parameter.name
         )
       }
+
       const actualSource = declaration.getSourceFile()
+
       audited.push({
         name: entry.name,
         file: path.relative(root, actualSource.fileName),
@@ -239,6 +270,7 @@ it('binds every action to the existing public method signature in argument order
       })
       const params = signature.getParameters().map((p) => p.name)
       const supplied = entry.parameters
+
       if (
         JSON.stringify(params.slice(0, supplied.length)) !==
         JSON.stringify(supplied)
@@ -247,20 +279,24 @@ it('binds every action to the existing public method signature in argument order
           `${owner}.${entry.method}: expected ${params.join(',')} received ${supplied.join(',')}`
         )
       }
+
       for (const p of signature.getParameters().slice(supplied.length)) {
         const d = p.valueDeclaration
+
         if (d && ts.isParameter(d) && !d.questionToken && !d.initializer) {
           issues.push(`${owner}.${entry.method}: omitted required ${p.name}`)
         }
       }
     }
   }
+
   if (process.env.API_DELIVERY_AUDIT) {
     writeFileSync(
       path.resolve(root, 'tmp/api-owner-audit.json'),
       JSON.stringify(audited, null, 2)
     )
   }
+
   expect(issues).toEqual([])
 })
 
@@ -272,6 +308,7 @@ it('admits typed vector batches and rejects malformed geometry and history suppr
     [{ name, arguments: valid }],
     basicApiContracts
   )
+
   expect(batch[0].arguments).toBe(valid)
   expect(() =>
     prepareOperationBatch(
@@ -308,6 +345,7 @@ it('keeps declared parameter order while excluding optional fields from required
     ],
     description: 'Read selected fields.'
   })
+
   expect(contract.parameters).toEqual(['elementId', 'fields'])
   expect(contract.inputSchema).toEqual({
     type: 'object',
@@ -340,6 +378,7 @@ it('supports parameterless APIs without allowing undeclared model arguments', ()
     effect: 'read',
     parameters: []
   })
+
   expect(contract.parameters).toEqual([])
   expect(contract.inputSchema).toEqual({
     type: 'object',
@@ -352,6 +391,7 @@ it('supports parameterless APIs without allowing undeclared model arguments', ()
 it('explains computed projections versus canonical value and record mutations', () => {
   const description = (name: string) =>
     basicApiContracts.find((contract) => contract.name === name)?.description
+
   expect(description('api_core_getElementComputedData')).toContain(
     'not a canonical write payload'
   )
@@ -380,13 +420,16 @@ it('admits Fill updates with target IDs and new values without caller snapshots'
       }
     }
   ]
+
   for (const { name, parameters, input } of cases) {
     const contract = basicApiContracts.find(
       (contract) => contract.name === name
     )
+
     if (!contract) {
       throw new Error(`Missing ${name}`)
     }
+
     expect(contract.parameters).toEqual(parameters)
     expect(operationInputIssue(input, contract.inputSchema)).toBeUndefined()
     expect(
@@ -410,15 +453,19 @@ it('rejects flattened gradient fields and admits the canonical nested Fill patch
       ]
     }
   }
+
   for (const name of ['api_fill_updateFillFieldsBatch']) {
     const contract = basicApiContracts.find((c) => c.name === name)
+
     if (!contract) {
       throw new Error(name)
     }
+
     const input = (patch: unknown) =>
       name.endsWith('Batch')
         ? { updates: [{ elementId: 'a', fillId: 'fa', patch }] }
         : { elementId: 'a', fillId: 'fa', patch }
+
     expect(
       operationInputIssue(input(patch), contract.inputSchema)
     ).toBeUndefined()
@@ -445,6 +492,7 @@ it('never asks callers for prior component snapshots in a public task API', () =
 
 it('exposes one mutation route for scalar and plural property edits', () => {
   const names = basicApiContracts.map(({ name }) => name)
+
   for (const name of [
     'api_fill_updateFillField',
     'api_fill_updateFillFields',
@@ -460,6 +508,7 @@ it('exposes one mutation route for scalar and plural property edits', () => {
   ]) {
     expect(names).not.toContain(name)
   }
+
   for (const name of [
     'api_fill_updateFillFieldsBatch',
     'api_fill_updateFillsAtIndex',
@@ -497,9 +546,11 @@ it('admits ordinary values through the canonical empty-record patch format', () 
   const api = basicApiContracts.find(
     (api) => api.name === 'api_core_patchElementProperties'
   )
+
   if (!api) {
     throw new Error('Missing canonical patch operation')
   }
+
   expect(
     operationInputIssue(
       { patches: [{ elementId: 'a', values: { width: 12 }, records: [] }] },
@@ -512,12 +563,15 @@ it('rejects malformed Stroke field patches before dispatch without requesting ol
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_stroke_updateStrokeFieldsBatch'
   )
+
   if (!contract) {
     throw new Error('Missing Stroke batch contract')
   }
+
   const input = (patch: unknown) => ({
     updates: [{ elementId: 'rect', strokeId: 'stroke', patch }]
   })
+
   expect(
     operationInputIssue(input({ width: 4 }), contract.inputSchema)
   ).toBeUndefined()
@@ -537,9 +591,11 @@ it('exposes the complete structured point selection contract', () => {
   const contract = basicApiContracts.find(
     (c) => c.name === 'api_selection_selectVectorPoint'
   )
+
   if (!contract) {
     throw new Error('Missing point selection contract')
   }
+
   for (const target of ['anchor', 'inHandle', 'outHandle']) {
     expect(
       operationInputIssue(
@@ -548,6 +604,7 @@ it('exposes the complete structured point selection contract', () => {
       )
     ).toBeUndefined()
   }
+
   expect(
     operationInputIssue(
       { point: { elementId: 'v', pointId: 'a' } },
@@ -588,12 +645,14 @@ it('requires fresh document identities in recipes but keeps field names and new 
     minLength: 1,
     'x-runtime-value': 'document'
   }
+
   const object = (properties: Record<string, unknown>) => ({
     type: 'object',
     properties,
     required: Object.keys(properties),
     additionalProperties: false
   })
+
   const cases = [
     {
       name: 'api_core_getElementComputedData',
@@ -625,15 +684,18 @@ it('requires fresh document identities in recipes but keeps field names and new 
       }
     }
   ]
+
   // The exact registered method determines inputs; no runtime field-name inference.
   for (const test of cases) {
     const source = basicApiContracts.find(
       (contract) => contract.name === test.name
     )
+
     expect(source, test.name).toBeDefined()
     if (!source) {
       throw new Error('Missing contract')
     }
+
     const dependency = createAiToolContract({
       name: source.name,
       description: source.description,
@@ -641,6 +703,7 @@ it('requires fresh document identities in recipes but keeps field names and new 
       composition: 'allowed',
       ...toolSemantics(basicApiResultSchema(source), 'read', ['document'])
     })
+
     const submit = (fields: unknown) =>
       admitAiRecipe(
         {
@@ -662,6 +725,7 @@ it('requires fresh document identities in recipes but keeps field names and new 
         },
         {
           resolve: () => dependency,
+
           validate: operationContractIssue,
           limits: {
             bytes: 16000,
@@ -672,20 +736,24 @@ it('requires fresh document identities in recipes but keeps field names and new 
           }
         }
       )
+
     const fresh = submit(test.fields)
     const captured = JSON.parse(JSON.stringify(test.fields))
+
     const replace = (node: Record<string, unknown>) => {
       if (node.kind === 'input') {
         node.kind = 'literal'
         delete node.path
         node.value = 'previous-document-id'
       }
+
       if (node.fields) {
         Object.values(
           node.fields as Record<string, Record<string, unknown>>
         ).forEach(replace)
       }
     }
+
     Object.values(captured as Record<string, Record<string, unknown>>).forEach(
       replace
     )
@@ -706,9 +774,11 @@ it('hands canonical created identities to a later selection without capturing do
   const selection = basicApiContracts.find(
     (item) => item.name === 'api_selection_selectElements'
   )
+
   if (!creation || !selection) {
     throw new Error('Missing public creation or selection')
   }
+
   const contracts = [creation, selection].map((source) =>
     createAiToolContract({
       name: source.name,
@@ -756,6 +826,7 @@ it('hands canonical created identities to a later selection without capturing do
   }
   const result = admitAiRecipe(proposal, {
     resolve: (name) => contracts.find((contract) => contract.name === name),
+
     validate: operationContractIssue,
     limits: {
       bytes: 16000,
@@ -765,6 +836,7 @@ it('hands canonical created identities to a later selection without capturing do
       issues: 8
     }
   })
+
   expect(result.ok, JSON.stringify(result)).toBe(true)
   expect(
     (
@@ -779,6 +851,7 @@ it('publishes non-Core receipt semantics in the provider-facing description', ()
   const contracts = basicApiContracts.filter(
     (entry) => entry.result.kind === 'mutation-receipt'
   )
+
   expect(contracts).toHaveLength(31)
   for (const contract of contracts) {
     expect(contract.description, contract.name).toContain('acceptedIds')
@@ -791,10 +864,13 @@ it('delivers computed selection owner limits before invocation without restricti
   const contract = basicApiContracts.find(
     (c) => c.name === 'api_core_getElementComputedData'
   )
+
   if (!contract) {
     throw new Error('Missing computed read owner')
   }
+
   const schema = contract.inputSchema
+
   for (const fields of [
     Array.from({ length: 65 }, (_, i) => `field-${i}`),
     ['x'.repeat(129)],
@@ -804,6 +880,7 @@ it('delivers computed selection owner limits before invocation without restricti
       operationInputIssue({ elementId: 'drawing', fields }, schema)
     ).toBeTruthy()
   }
+
   for (const input of [
     { elementId: 'drawing' },
     { elementId: 'drawing', fields: [] },
@@ -820,10 +897,13 @@ it.each([
   '%s delivers required record patches consistently with the canonical owner',
   (name) => {
     const contract = basicApiContracts.find((c) => c.name === name)
+
     if (!contract) {
       throw new Error('Missing patch owner')
     }
+
     const schema = contract.inputSchema
+
     expect(
       operationInputIssue(
         { patches: [{ elementId: 'drawing', values: { x: 1 } }] },

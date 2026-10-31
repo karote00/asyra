@@ -35,6 +35,7 @@ const createCoreState = ({
     isCompositionOpen,
     hasRenderEngineProvider
   } as unknown as PresetCoreAPIs
+
   return { core, hasRenderEngineProvider, isCompositionOpen }
 }
 

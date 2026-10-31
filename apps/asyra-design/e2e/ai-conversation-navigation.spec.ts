@@ -11,11 +11,13 @@ for (const width of [360, 1440]) {
   }, testInfo) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     let requests = 0
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
     await page.route('**/api/ai/action-batch', (route) => {
       requests++
+
       return route.fulfill({
         json: {
           batchId: `advice-${requests}`,
@@ -37,6 +39,7 @@ for (const width of [360, 1440]) {
     await waitForAppReady(page)
     await page.setViewportSize({ width, height: 900 })
     const before = await getCoreDocumentDigest(page)
+
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await expect(
       page.getByRole('note', { name: 'Your AI subscription' })
@@ -54,12 +57,14 @@ for (const width of [360, 1440]) {
       name: 'Toggle conversation history'
     })
     const history = page.getByRole('region', { name: 'Conversation history' })
+
     const openConversation = async (name: string) => {
       await toggleHistory.click()
       await expect(history).toBeVisible()
       await history.getByRole('button', { name, exact: true }).click()
       await expect(history).toHaveCount(0)
     }
+
     await page.getByLabel('Message Agent').fill('Unsent first draft')
     await page.getByRole('button', { name: 'New conversation' }).click()
     await expect(page.getByLabel('Message Agent')).toHaveValue('')
@@ -85,9 +90,11 @@ for (const width of [360, 1440]) {
     ]) {
       await expect(control).toBeInViewport()
       const box = await control.boundingBox()
+
       expect(box?.x).toBeGreaterThanOrEqual(0)
       expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width)
     }
+
     await page.screenshot({
       path: testInfo.outputPath(`conversation-${width}.png`),
       fullPage: false

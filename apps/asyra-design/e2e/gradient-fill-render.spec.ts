@@ -26,6 +26,7 @@ const sampleSelectedElementColors = async (
   samplePoints: { x: number; y: number }[]
 ): Promise<SampledColor[]> => {
   const snapshot = await getSelectedGradientSnapshot(page)
+
   if (!snapshot) {
     throw new Error('Missing selected gradient snapshot')
   }
@@ -63,9 +64,11 @@ const sampleSelectedElementColors = async (
       const blob = await response.blob()
       const bitmap = await createImageBitmap(blob)
       const canvas = document.createElement('canvas')
+
       canvas.width = bitmap.width
       canvas.height = bitmap.height
       const context = canvas.getContext('2d')
+
       if (!context) {
         return []
       }
@@ -130,24 +133,29 @@ const expectRampSamples = async (
   expectedHandleY: readonly [number, number]
 ) => {
   const snapshot = await getSelectedGradientSnapshot(page)
+
   expect(snapshot?.gradient?.gradientStops).toEqual(
     DEFAULT_TEST_GRADIENT.gradientStops
   )
   if (!snapshot?.gradient) {
     throw new Error('Missing canonical gradient')
   }
+
   const handles = snapshot.gradient.gradientHandles
+
   expect(handles[0].x).toBeCloseTo(0.5, 2)
   expect(handles[1].x).toBeCloseTo(0.5, 2)
   expect(handles[0].y).toBeCloseTo(expectedHandleY[0], 2)
   expect(handles[1].y).toBeCloseTo(expectedHandleY[1], 2)
   const span = expectedHandleY[1] - expectedHandleY[0]
+
   expect(Math.abs(span)).toBeGreaterThan(0.05)
   for (const sample of samples) {
     const phase = Math.min(
       1,
       Math.max(0, (sample.localY - expectedHandleY[0]) / span)
     )
+
     expectColorNear(
       sample,
       {
@@ -230,6 +238,7 @@ test.describe('Gradient Fill Render', () => {
 
     for (let step = 1; step <= 90; step += 1) {
       const currentY = startHandle.y + (clientDeltaY * step) / 90
+
       await page.mouse.move(startHandle.x, currentY, { steps: 1 })
       await page.waitForTimeout(8)
       // The existing Feature treats sub-threshold motion as a click, not a drag.
@@ -326,6 +335,7 @@ test.describe('Gradient Fill Render', () => {
 
     for (let step = 1; step <= 90; step += 1) {
       const currentY = startHandle.y - (clientDeltaY * step) / 90
+
       await page.mouse.move(startHandle.x, currentY, { steps: 1 })
       await page.waitForTimeout(8)
       // The existing Feature treats sub-threshold motion as a click, not a drag.
@@ -372,6 +382,7 @@ test.describe('Gradient Fill Render', () => {
 
     for (let step = 1; step <= 90; step += 1) {
       const currentY = endHandle.y + (clientDeltaY * step) / 90
+
       await page.mouse.move(endHandle.x, currentY, { steps: 1 })
       await page.waitForTimeout(8)
       // The existing Feature treats sub-threshold motion as a click, not a drag.

@@ -25,6 +25,7 @@ describe('selected-chain source relations', () => {
     const first = { region: prepared, frames: Object.freeze([frame(0)]) }
     const second = { region: prepared, frames: Object.freeze([frame(1)]) }
     const relation = evaluator.relate(first, second, 0)
+
     expect(relation.kind).toBe('boundary')
     const patch = Object.freeze({
       id: 'complete-boundary-source',
@@ -46,6 +47,7 @@ describe('selected-chain source relations', () => {
     })
     const firstReferences = [{ part: firstPart, patch }]
     const secondReferences = [{ part: secondPart, patch }]
+
     const prove = (left = firstReferences, right = secondReferences) =>
       WalkingSelectedChainRelationOwner.proveNamedBoundaryLocus(
         evaluator,
@@ -57,6 +59,7 @@ describe('selected-chain source relations', () => {
         left,
         right
       )
+
     expect(prove()).toBeDefined()
     expect(prove([], secondReferences)).toBeUndefined()
     expect(prove(firstReferences, [])).toBeUndefined()
@@ -81,15 +84,19 @@ describe('selected-chain source relations', () => {
     const chain = source.rig.legChains.find(
       (entry) => entry.id === 'right-front'
     )
+
     if (!chain) {
       throw new Error('Missing selected chain')
     }
+
     const rootJoint = source.rig.joints.find(
       (entry) => entry.id === chain.jointIds[0]
     )
+
     if (!rootJoint) {
       throw new Error('Missing selected root')
     }
+
     const motion = owner.prepareSelectedChainMotion(cycle, {
       format: 'walking-selected-chain-root-motion/1',
       cycle,
@@ -111,6 +118,7 @@ describe('selected-chain source relations', () => {
         }
       }
     )
+
     console.info(
       'selected-chain subdivision',
       JSON.stringify({
@@ -148,6 +156,7 @@ describe('selected-chain source relations', () => {
       numerator,
       denominator
     })
+
     const fixed = {
       origin: [scalar(1n, 3n), scalar(0n), scalar(0n)] as const,
       matrix: [
@@ -168,6 +177,7 @@ describe('selected-chain source relations', () => {
     )
     const input = material(),
       prepared = evaluator.prepare(input.shape, input.region)
+
     for (const numerator of [4n, 8n]) {
       const moving = {
         ...fixed,
@@ -179,13 +189,16 @@ describe('selected-chain source relations', () => {
         [moving],
         [0]
       )
+
       expect(evaluator.work.nodeScalarVisits - before).toBe(12)
       const reference = evaluator.prepareRationalNode(
         [fixed, moving],
         limits.maxBits
       )
+
       expect(extended.scale).toEqual(reference.scale)
       expect(extended.frames).toEqual(reference.frames)
+
       const relation = (
         node: ReturnType<WalkingSourceRelationEvaluator['prepareRationalNode']>
       ) =>
@@ -195,8 +208,10 @@ describe('selected-chain source relations', () => {
           node,
           0
         )
+
       expect(relation(extended)).toEqual(relation(reference))
     }
+
     expect(evaluator.work.fixedFrameRescales).toBe(2)
     expect(() =>
       new WalkingSourceRelationEvaluator(limits).extendRationalFrameTemplate(
@@ -219,6 +234,7 @@ describe('selected-chain source relations', () => {
     }
     const first = new WalkingSourceRelationEvaluator(limits)
     const product = first.prepare(input.shape, input.region)
+
     expect(product.certified).toBe(true)
     const second = new WalkingSourceRelationEvaluator(limits)
     const rebound = second.reuseCertifiedSource(
@@ -227,6 +243,7 @@ describe('selected-chain source relations', () => {
       input.shape,
       input.region
     )
+
     expect(second.work.regionPreparations).toBe(0)
     expect(second.work.sourceCertificationReuses).toBe(1)
     expect(second.work.sourceScalarRebindings).toBe(product.points.length * 3)
@@ -244,6 +261,7 @@ describe('selected-chain source relations', () => {
     ).toThrow()
     const shell = material('open-shell'),
       incomplete = first.prepare(shell.shape, shell.region)
+
     expect(() =>
       second.reuseCertifiedSource(first, incomplete, shell.shape, shell.region)
     ).toThrow()
@@ -251,6 +269,7 @@ describe('selected-chain source relations', () => {
       ...limits,
       maxExactPredicates: 1
     })
+
     expect(() =>
       exhausted.reuseCertifiedSource(first, product, input.shape, input.region)
     ).toThrow()
@@ -264,7 +283,9 @@ describe('selected-chain source relations', () => {
     })
     const input = material(),
       region = evaluator.prepare(input.shape, input.region)
+
     const scalar = (numerator: bigint) => ({ numerator, denominator: 1n })
+
     const identity = {
       origin: [scalar(0n), scalar(0n), scalar(0n)] as const,
       matrix: [
@@ -284,6 +305,7 @@ describe('selected-chain source relations', () => {
       first,
       node
     )
+
     expect(overlap.relation.kind).toBe('volume-overlap')
     expect(overlap.kind).toBe('blocked')
     const boundary = WalkingSelectedChainRelationOwner.classifyLeaf(
@@ -292,6 +314,7 @@ describe('selected-chain source relations', () => {
       evaluator.rationalPlacement(region, node, 1),
       node
     )
+
     expect(boundary.relation.kind).toBe('boundary')
     expect(boundary.kind).toBe('pending')
   })
@@ -299,6 +322,7 @@ describe('selected-chain source relations', () => {
 
 function material(kind: 'closed-solid' | 'open-shell' = 'closed-solid') {
   const builder = new TriangleBuilder()
+
   builder.box([0, 0, 0], [1, 1, 1])
   const descriptor = readSpatialDescriptor({
     kind: 'mesh',
@@ -314,16 +338,20 @@ function material(kind: 'closed-solid' | 'open-shell' = 'closed-solid') {
     wireframe: false,
     selectable: false
   })
+
   if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles') {
     throw new Error('Missing test material')
   }
+
   return {
     shape: descriptor.shape,
     region: Object.freeze({ ...builder.regions()[0], kind })
   }
 }
+
 const frame = (x: number) =>
   prepareQueryExactForwardFrame({ position: [x, 0, 0], rotation: [0, 0, 0, 1] })
+
 describe('canonical nonlinear exact axis work', () => {
   type Vector = readonly [number, number, number]
   type Matrix = readonly [Vector, Vector, Vector]
@@ -347,6 +375,7 @@ describe('canonical nonlinear exact axis work', () => {
     [4, 0, 0.5],
     [4, 0, -0.5]
   ]
+
   function fixture(
     firstMatrix = faceMatrix,
     secondMatrix = faceMatrix,
@@ -360,20 +389,26 @@ describe('canonical nonlinear exact axis work', () => {
     })
     const input = material(),
       solid = owner.prepare(input.shape, input.region)
+
     const fraction = (n: number) => {
       let numerator = BigInt(n * 4),
         denominator = 4n,
         x = numerator < 0n ? -numerator : numerator,
         y = denominator
+
       while (y) {
         const r = x % y
+
         x = y
         y = r
       }
+
       numerator /= x
       denominator /= x
+
       return Object.freeze({ numerator, denominator })
     }
+
     const exact = (m: Matrix, p: Vector) =>
       Object.freeze({
         origin: Object.freeze([
@@ -399,12 +434,14 @@ describe('canonical nonlinear exact axis work', () => {
           ] as const)
         ] as const)
       })
+
     const node = owner.prepareRationalNode(
       [exact(firstMatrix, [0, 0, 0]), exact(secondMatrix, origin)],
       24000
     )
     const first = owner.rationalPlacement(solid, node, 0),
       second = owner.rationalPlacement(solid, node, 1)
+
     return {
       owner,
       node,
@@ -416,7 +453,9 @@ describe('canonical nonlinear exact axis work', () => {
       origin
     }
   }
+
   type IntegerVector = readonly [bigint, bigint, bigint]
+
   function sheetFixture(
     positions: readonly number[],
     indices: readonly number[],
@@ -436,16 +475,19 @@ describe('canonical nonlinear exact axis work', () => {
       indexCount: indices.length
     })
     const prepared = input.owner.prepare(shape, region)
+
     return {
       ...input,
       sheet: input.owner.rationalPlacement(prepared, input.node, 1)
     }
   }
+
   it('separates each noncoplanar original sheet triangle without filling the aggregate sheet', () => {
     const input = sheetFixture(
       [-2, -1, -1, -2, 1, -1, -2, 0, 1, -1, -1, 2, 1, -1, 2, 0, 1, 2],
       [0, 1, 2, 3, 4, 5]
     )
+
     expect(input.sheet.region.certified).toBe(false)
     const proofs = [0, 3].map((offset) =>
       input.owner.relateRationalSheetTriangle(
@@ -455,6 +497,7 @@ describe('canonical nonlinear exact axis work', () => {
         offset
       )
     )
+
     expect(proofs.map((p) => p.kind)).toEqual(['separated', 'separated'])
     expect(proofs.map((p) => p.triangleOffset)).toEqual([0, 3])
     expect(input.owner.work.sheetTrianglePairs).toBe(2)
@@ -474,6 +517,7 @@ describe('canonical nonlinear exact axis work', () => {
     'retains an original triangle witness for $name sheet surface intersection',
     (item) => {
       const input = sheetFixture(item.points, [0, 1, 2])
+
       expect(
         input.owner.relateRationalSheetTriangle(
           input.first,
@@ -492,6 +536,7 @@ describe('canonical nonlinear exact axis work', () => {
   it('does not promote degenerate or unresolved open-shell geometry into a sheet certificate', () => {
     for (const kind of ['sheet', 'open-shell'] as const) {
       const input = sheetFixture([0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 1, 2], kind)
+
       expect(
         input.owner.relateRationalSheetTriangle(
           input.first,
@@ -510,15 +555,19 @@ describe('canonical nonlinear exact axis work', () => {
       [0.5, -0.25, -0.25, 0.5, 0.25, -0.25, 0.5, 0, 0.25],
       [0.75, 0.75, 0, 0.75, 0, 0.75, 0, 0.75, 0.75]
     ]
+
     const cross = (a: readonly bigint[], b: readonly bigint[]) => [
       a[1] * b[2] - a[2] * b[1],
       a[2] * b[0] - a[0] * b[2],
       a[0] * b[1] - a[1] * b[0]
     ]
+
     const sub = (a: readonly bigint[], b: readonly bigint[]) =>
       a.map((v, k) => v - b[k])
+
     const dot = (a: readonly bigint[], b: readonly bigint[]) =>
       a.reduce((n, v, k) => n + v * b[k], 0n)
+
     const cube = [-2n, 2n].flatMap((x) =>
       [-2n, 2n].flatMap((y) => [-2n, 2n].map((z) => [x, y, z]))
     )
@@ -527,6 +576,7 @@ describe('canonical nonlinear exact axis work', () => {
       [0n, 1n, 0n],
       [0n, 0n, 1n]
     ]
+
     for (const triangle of triangles) {
       const points = [0, 3, 6].map((i) =>
         triangle.slice(i, i + 3).map((v) => BigInt(v * 4))
@@ -542,11 +592,14 @@ describe('canonical nonlinear exact axis work', () => {
         .some((axis) => {
           const a = cube.map((p) => dot(p, axis)),
             b = points.map((p) => dot(p, axis))
+
           const min = (v: bigint[]) => v.reduce((a, b) => (a < b ? a : b)),
             max = (v: bigint[]) => v.reduce((a, b) => (a > b ? a : b))
+
           return max(a) < min(b) || max(b) < min(a)
         })
       const input = sheetFixture(triangle, [0, 1, 2])
+
       expect(
         input.owner.relateRationalSheetTriangle(
           input.first,
@@ -560,6 +613,7 @@ describe('canonical nonlinear exact axis work', () => {
   it('preserves duplicate-coordinate original offsets and rejects foreign, unaligned or exhausted triangle work', () => {
     const positions = [-1, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 1, 0, 0, 0, 1, 0]
     const input = sheetFixture(positions, [0, 1, 2, 3, 4, 5])
+
     expect(input.sheet.region.points).toHaveLength(3)
     expect(
       input.owner.relateRationalSheetTriangle(
@@ -586,6 +640,7 @@ describe('canonical nonlinear exact axis work', () => {
       )
     ).toThrow()
     const foreign = sheetFixture(positions, [0, 1, 2])
+
     expect(() =>
       input.owner.relateRationalSheetTriangle(
         input.first,
@@ -597,6 +652,7 @@ describe('canonical nonlinear exact axis work', () => {
     const baseline = sheetFixture(positions, [0, 1, 2])
     const cap = baseline.owner.work.exactPredicates + 1
     const limited = sheetFixture(positions, [0, 1, 2], 'sheet', cap)
+
     expect(
       limited.owner.relateRationalSheetTriangle(
         limited.first,
@@ -610,6 +666,7 @@ describe('canonical nonlinear exact axis work', () => {
     expect(limited.owner.work.sheetTriangleIntersections).toBe(0)
     expect(limited.owner.work.sheetTriangleUnknown).toBe(1)
   })
+
   const originalIntervalBounds = (
     placement: ReturnType<typeof fixture>['first']
   ) => {
@@ -633,8 +690,10 @@ describe('canonical nonlinear exact axis work', () => {
           { low: number; high: number }
         ]
     )
+
     return { placement, indices, vertices }
   }
+
   it('dispatches original sheet region interval coverage and preserves mathematical input identities', () => {
     const input = sheetFixture([-2, -1, -1, -2, 1, -1, -2, 0, 1], [0, 1, 2])
     const solid = originalIntervalBounds(input.first),
@@ -645,6 +704,7 @@ describe('canonical nonlinear exact axis work', () => {
     }
     const evidence = { solid, sheet, node: input.node, parameter, margin: 0 }
     const result = input.owner.relateRationalSheetRegion(evidence)
+
     expect(result.kind).toBe('separated')
     expect(result.input).toBe(evidence)
     expect(result.work).toMatchObject({ required: 1, visited: 1, unvisited: 0 })
@@ -657,12 +717,14 @@ describe('canonical nonlinear exact axis work', () => {
         )
       }
     }
+
     expect(input.owner.relateRationalSheetRegion(wide).kind).toBe('pending')
     const half = { numerator: 1n, denominator: 2n }
     const children = [
       { low: parameter.low, high: half },
       { low: half, high: parameter.high }
     ]
+
     expect(
       children.map(
         (parameter) =>
@@ -706,8 +768,10 @@ describe('canonical nonlinear exact axis work', () => {
       -2, -1, -1, -2, 1, -1, -2, 0, 1, -0.25, 0, -0.25, 0.25, 0, -0.25, 0, 0,
       0.25
     ]
+
     const make = (cap = 1000000) =>
       sheetFixture(positions, [0, 1, 2, 3, 4, 5], 'sheet', cap)
+
     const run = (input: ReturnType<typeof make>) =>
       input.owner.relateRationalSheetRegion({
         solid: originalIntervalBounds(input.first),
@@ -719,7 +783,9 @@ describe('canonical nonlinear exact axis work', () => {
         },
         margin: 0
       })
+
     const input = make()
+
     expect(run(input)).toMatchObject({
       kind: 'blocked',
       triangleOffset: 3,
@@ -728,6 +794,7 @@ describe('canonical nonlinear exact axis work', () => {
     const baseline = make()
     const limited = make(baseline.owner.work.exactPredicates + 1)
     const partial = run(limited)
+
     expect(partial.kind).toBe('unknown')
     expect(partial.work.required).toBe(
       partial.work.visited + partial.work.unvisited
@@ -746,6 +813,7 @@ describe('canonical nonlinear exact axis work', () => {
       input.second,
       item.margin
     )
+
     expect(canonicalResult(relation)).toEqual(
       eager(input, item.margin, item.translation)
     )
@@ -757,6 +825,7 @@ describe('canonical nonlinear exact axis work', () => {
   })
   it('keeps semantic point witnesses independent of complete placement directions', () => {
     const input = fixture(identity, identity, [2, 0, 0])
+
     expect(
       input.owner.rationalVertexInBounds(input.first, input.node, {
         min: [-1, -1, -1],
@@ -789,6 +858,7 @@ describe('canonical nonlinear exact axis work', () => {
       region: owner.prepare(shape, region),
       frames: Object.freeze([frame(0)])
     }
+
     expect(
       owner.proveHorizontalPlane(placed, { numerator: 0n, denominator: 1n })
     ).toBe(true)
@@ -797,11 +867,13 @@ describe('canonical nonlinear exact axis work', () => {
   })
   it('prepares complete directions once per current point product across equivalent pair wrappers', () => {
     const input = fixture()
+
     expect(
       input.owner.relateRational(input.first, input.second, input.node, 0).kind
     ).toBe('separated')
     expect(input.owner.work.directionPreparations).toBe(2)
     const before = input.owner.work
+
     expect(
       input.owner.relate({ ...input.first }, { ...input.second }, 0).kind
     ).toBe('separated')
@@ -816,15 +888,18 @@ describe('canonical nonlinear exact axis work', () => {
       ...input.second,
       frames: Object.freeze([...input.second.frames])
     }
+
     expect(input.owner.relate(input.first, changed, 0).kind).toBe('separated')
     expect(input.owner.work.directionPreparations).toBe(3)
     expect(input.owner.work.directionOperatorPreparations).toBe(2)
     const mutable = { ...input.second, frames: [...input.second.frames] }
+
     input.owner.relate(input.first, mutable, 0)
     input.owner.relate(input.first, mutable, 0)
     expect(input.owner.work.directionPreparations).toBe(5)
     expect(input.owner.work.directionOperatorPreparations).toBe(4)
     const foreign = fixture()
+
     expect(() =>
       input.owner.relateRational(input.first, foreign.second, input.node, 0)
     ).toThrow()
@@ -832,6 +907,7 @@ describe('canonical nonlinear exact axis work', () => {
   })
   it('does not publish or rebuild an exhausted partial direction product', () => {
     const full = fixture()
+
     full.owner.relateRational(full.first, full.second, full.node, 0)
     const beforeDirections =
       full.owner.work.stages.sourceCertification.predicates +
@@ -846,6 +922,7 @@ describe('canonical nonlinear exact axis work', () => {
       [-1.5, -1.5, 1.5],
       beforeDirections + 1
     )
+
     expect(
       input.owner.relateRational(input.first, input.second, input.node, 0)
     ).toEqual({ kind: 'unknown', proof: 'unproved' })
@@ -853,6 +930,7 @@ describe('canonical nonlinear exact axis work', () => {
     expect(input.owner.work.directionPreparationFailures).toBe(1)
     expect(input.owner.work.directionPreparations).toBe(0)
     const before = input.owner.work
+
     expect(
       input.owner.relateRational(input.first, input.second, input.node, 0)
     ).toEqual({ kind: 'unknown', proof: 'unproved' })
@@ -868,44 +946,59 @@ describe('canonical nonlinear exact axis work', () => {
       )
     ).toBe(before.exactPredicates)
   })
+
   const dotInteger = (a: IntegerVector, b: IntegerVector) =>
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
   const subtractInteger = (
     a: IntegerVector,
     b: IntegerVector
   ): IntegerVector => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+
   const crossInteger = (a: IntegerVector, b: IntegerVector): IntegerVector => [
     a[1] * b[2] - a[2] * b[1],
     a[2] * b[0] - a[0] * b[2],
     a[0] * b[1] - a[1] * b[0]
   ]
+
   const gcdInteger = (left: bigint, right: bigint) => {
     let a = left < 0n ? -left : left,
       b = right < 0n ? -right : right
+
     while (b) {
       const r = a % b
+
       a = b
       b = r
     }
+
     return a
   }
+
   const direction = (v: IntegerVector): IntegerVector => {
     const d = v.reduce(gcdInteger, 0n)
+
     return d ? [v[0] / d, v[1] / d, v[2] / d] : v
   }
+
   const unique = (values: readonly IntegerVector[]) => {
     const result = new Map<string, IntegerVector>()
+
     for (const value of values) {
       const reduced = direction(value),
         first = reduced.find((v) => v !== 0n)
+
       if (first === undefined) {
         continue
       }
+
       const key = reduced.map((v) => (first < 0n ? -v : v)).join(',')
+
       if (!result.has(key)) {
         result.set(key, reduced)
       }
     }
+
     return [...result.values()]
   }
 
@@ -917,10 +1010,13 @@ describe('canonical nonlinear exact axis work', () => {
     const exponent = Math.min(
       ...placed.points.flatMap((p) => p.map((v) => v.exponent))
     )
+
     const check = (v: bigint) => {
       expect((v < 0n ? -v : v).toString(2).length).toBeLessThanOrEqual(24000)
+
       return v
     }
+
     const points = placed.points.map(
       (p) =>
         p.map((v) => check(v.significand << BigInt(v.exponent - exponent))) as [
@@ -929,25 +1025,31 @@ describe('canonical nonlinear exact axis work', () => {
           bigint
         ]
     )
+
     const subtract = (a: IntegerVector, b: IntegerVector): IntegerVector => [
       check(a[0] - b[0]),
       check(a[1] - b[1]),
       check(a[2] - b[2])
     ]
+
     const multiply = (a: bigint, b: bigint) => {
       expect(
         (a < 0n ? -a : a).toString(2).length +
           (b < 0n ? -b : b).toString(2).length
       ).toBeLessThanOrEqual(24000)
+
       return check(a * b)
     }
+
     const normal = (a: IntegerVector, b: IntegerVector): IntegerVector => [
       check(multiply(a[1], b[2]) - multiply(a[2], b[1])),
       check(multiply(a[2], b[0]) - multiply(a[0], b[2])),
       check(multiply(a[0], b[1]) - multiply(a[1], b[0]))
     ]
+
     const normals: IntegerVector[] = [],
       edges: IntegerVector[] = []
+
     for (const [a, b, c] of placed.triangles) {
       normals.push(
         normal(subtract(points[b], points[a]), subtract(points[c], points[a]))
@@ -958,27 +1060,33 @@ describe('canonical nonlinear exact axis work', () => {
         subtract(points[a], points[c])
       )
     }
+
     return { normals: unique(normals), edges: unique(edges) }
   }
+
   const primitiveDirections = (
     value: ReturnType<WalkingSourceRelationEvaluator['directions']>
   ) => ({
     normals: value.normals.map((p) =>
       p.map((v) => {
         expect(v.exponent).toBe(0)
+
         return v.significand
       })
     ),
     edges: value.edges.map((p) =>
       p.map((v) => {
         expect(v.exponent).toBe(0)
+
         return v.significand
       })
     )
   })
+
   it('reuses completed transported direction values across regions sharing an operator', () => {
     const input = fixture()
     const first = input.owner['place'](input.first)
+
     input.owner['directions'](first)
     const before = input.owner.work
     const region = input.owner.prepare(
@@ -988,6 +1096,7 @@ describe('canonical nonlinear exact axis work', () => {
     const second = input.owner['place'](
       input.owner.rationalPlacement(region, input.node, 0)
     )
+
     expect(primitiveDirections(input.owner['directions'](second))).toEqual(
       oldPointDirections(second)
     )
@@ -1003,10 +1112,12 @@ describe('canonical nonlinear exact axis work', () => {
   })
   it('compiles each exact node scalar and denominator once without lending admission to later inputs', () => {
     const input = fixture()
+
     const f = (numerator: bigint, denominator = 1n) => ({
       numerator,
       denominator
     })
+
     const frame = {
       origin: [f(1n, 3n), f(0n), f(0n)] as const,
       matrix: [
@@ -1020,6 +1131,7 @@ describe('canonical nonlinear exact axis work', () => {
       [frame, structuredClone(frame)],
       24000
     )
+
     expect(node.frames[0]).toEqual(node.frames[1])
     expect(node.scale.significand).toBe(3n)
     expect(input.owner.work.nodeScalarProofs - before.nodeScalarProofs).toBe(3)
@@ -1031,6 +1143,7 @@ describe('canonical nonlinear exact axis work', () => {
       input.owner.work.nodeIntegerPreparations - before.nodeIntegerPreparations
     ).toBe(3)
     const bad = structuredClone(frame)
+
     bad.origin[0].denominator = -3n
     expect(() => input.owner.prepareRationalNode([frame, bad], 24000)).toThrow()
     bad.origin[0].numerator = 2n
@@ -1041,6 +1154,7 @@ describe('canonical nonlinear exact axis work', () => {
     expect(() => input.owner.prepareRationalNode([frame, bad], 24000)).toThrow()
     frame.origin[0].numerator = 2n
     const changed = input.owner.prepareRationalNode([frame], 24000)
+
     expect(changed.frames[0].position).not.toEqual(node.frames[0].position)
   })
   it('prepares projective local directions once and transports each distinct placement without reconstructing triangles', () => {
@@ -1048,13 +1162,16 @@ describe('canonical nonlinear exact axis work', () => {
     const a = input.owner['place'](input.first),
       b = input.owner['place'](input.second)
     const before = input.owner.work
+
     expect(before.directionPreparationAttempts).toBe(0)
     for (const placed of [a, b]) {
       const expected = oldPointDirections(placed)
+
       expect(primitiveDirections(input.owner['directions'](placed))).toEqual(
         expected
       )
     }
+
     expect(input.owner.work).toMatchObject({
       localDirectionPreparations: 1,
       directionPreparations: 2,
@@ -1062,12 +1179,14 @@ describe('canonical nonlinear exact axis work', () => {
       directionTransports: 2
     })
     const work = input.owner.work
+
     expect(input.owner['directions'](a)).toBe(input.owner['directions'](a))
     expect(input.owner.work).toEqual(work)
     const changed = input.owner['place']({
       ...input.first,
       frames: Object.freeze([...input.first.frames])
     })
+
     input.owner['directions'](changed)
     expect(input.owner.work).toMatchObject({
       localDirectionPreparations: 1,
@@ -1080,6 +1199,7 @@ describe('canonical nonlinear exact axis work', () => {
     const replacementPoint = input.owner['place'](
       input.owner.rationalPlacement(replacement, input.node, 0)
     )
+
     input.owner['directions'](replacementPoint)
     expect(input.owner.work).toMatchObject({
       localDirectionPreparations: 2,
@@ -1090,6 +1210,7 @@ describe('canonical nonlinear exact axis work', () => {
       ...input.first,
       frames: Object.freeze([Object.freeze({ ...input.first.frames[0] })])
     })
+
     expect(primitiveDirections(input.owner['directions'](newFrame))).toEqual(
       oldPointDirections(newFrame)
     )
@@ -1123,6 +1244,7 @@ describe('canonical nonlinear exact axis work', () => {
       const points = placed.points,
         triangles = placed.triangles
       const expected = oldPointDirections(placed)
+
       expect(primitiveDirections(input.owner['directions'](placed))).toEqual(
         expected
       )
@@ -1140,7 +1262,9 @@ describe('canonical nonlinear exact axis work', () => {
     const m = material(),
       solid = owner.prepare(m.shape, m.region)
     const factor = 1n << 1500n
+
     const f = (numerator: bigint) => ({ numerator, denominator: 1n })
+
     const node = owner.prepareRationalNode(
       [
         {
@@ -1155,6 +1279,7 @@ describe('canonical nonlinear exact axis work', () => {
       24000
     )
     const placed = owner['place'](owner.rationalPlacement(solid, node, 0))
+
     expect(primitiveDirections(owner['directions'](placed))).toEqual(
       oldPointDirections(placed)
     )
@@ -1173,10 +1298,13 @@ describe('canonical nonlinear exact axis work', () => {
     const m = material(),
       region = owner.prepare(m.shape, m.region)
     const placed = owner['place']({ region, frames: Object.freeze([frame(2)]) })
+
     type D = (typeof placed.points)[number][number]
     type P = (typeof placed.points)[number]
+
     const sub = (a: D, b: D): D => {
       const exponent = Math.min(a.exponent, b.exponent)
+
       return {
         significand:
           (a.significand << BigInt(a.exponent - exponent)) -
@@ -1184,22 +1312,27 @@ describe('canonical nonlinear exact axis work', () => {
         exponent
       }
     }
+
     const mul = (a: D, b: D): D => ({
       significand: a.significand * b.significand,
       exponent: a.exponent + b.exponent
     })
+
     const delta = (a: P, b: P): P => [
       sub(a[0], b[0]),
       sub(a[1], b[1]),
       sub(a[2], b[2])
     ]
+
     const cross = (a: P, b: P): P => [
       sub(mul(a[1], b[2]), mul(a[2], b[1])),
       sub(mul(a[2], b[0]), mul(a[0], b[2])),
       sub(mul(a[0], b[1]), mul(a[1], b[0]))
     ]
+
     const uniqueRaw = (values: P[]) => {
       const seen = new Set<string>()
+
       return values.filter((p) => {
         const e = Math.min(...p.map((v) => v.exponent))
         const v = direction(
@@ -1210,19 +1343,26 @@ describe('canonical nonlinear exact axis work', () => {
           ]
         )
         const sign = v.find((n) => n !== 0n)
+
         if (!sign) {
           return false
         }
+
         const key = v.map((n) => (sign < 0n ? -n : n)).join(',')
+
         if (seen.has(key)) {
           return false
         }
+
         seen.add(key)
+
         return true
       })
     }
+
     const normals: P[] = [],
       edges: P[] = []
+
     for (const [a, b, c] of placed.triangles) {
       normals.push(
         cross(
@@ -1236,6 +1376,7 @@ describe('canonical nonlinear exact axis work', () => {
         delta(placed.points[a], placed.points[c])
       )
     }
+
     expect(owner['directions'](placed)).toEqual({
       normals: uniqueRaw(normals),
       edges: uniqueRaw(edges)
@@ -1248,8 +1389,10 @@ describe('canonical nonlinear exact axis work', () => {
   })
   it('attributes required bits to the actual exclusive stage without extra predicates', () => {
     const input = fixture()
+
     input.owner.relateRational(input.first, input.second, input.node, 0)
     const work = input.owner.work
+
     expect(
       Object.values(work.requiredBitsByStage).reduce(
         (n, s) => Math.max(n, s.maxRequired),
@@ -1272,7 +1415,9 @@ describe('canonical nonlinear exact axis work', () => {
       maxExactPredicates: 100000,
       maxBits: 64
     })
+
     const f = (numerator: bigint) => ({ numerator, denominator: 1n })
+
     expect(() =>
       owner.prepareRationalNode(
         [
@@ -1308,29 +1453,36 @@ describe('canonical nonlinear exact axis work', () => {
       { length: input.shape.indices.length / 3 },
       (_, i) => input.shape.indices.slice(i * 3, i * 3 + 3)
     )
+
     // Keep every original source triangle; only author X-normal faces first.
     const hasXNormal = (triangle: readonly number[]) => {
       const p = triangle.map((i) =>
         input.shape.positions.slice(i * 3, i * 3 + 3)
       )
+
       return (
         (p[1][1] - p[0][1]) * (p[2][2] - p[0][2]) -
           (p[1][2] - p[0][2]) * (p[2][1] - p[0][1]) !==
         0
       )
     }
+
     triangles.sort((a, b) => Number(hasXNormal(b)) - Number(hasXNormal(a)))
     const shape = Object.freeze({
       ...input.shape,
       indices: Object.freeze(triangles.flat())
     })
+
     expect([...shape.indices].sort()).toEqual([...input.shape.indices].sort())
     const solid = owner.prepare(shape, input.region)
+
     expect(solid.certified).toBe(true)
+
     const f = (numerator: bigint, denominator = 1n) => ({
       numerator,
       denominator
     })
+
     const n = kind === 'axisConstraint' ? 1n << 6500n : 0n
     const matrix = [
       [f(1n), f(n), f(0n)],
@@ -1359,24 +1511,34 @@ describe('canonical nonlinear exact axis work', () => {
     const exponent = Math.min(
       ...[...a.points, ...b.points].flatMap((p) => p.map((v) => v.exponent))
     )
+
     const bits = (n: bigint) => (n < 0n ? -n : n).toString(2).length
+
     const project = (points: typeof a.points, axis: IntegerVector) =>
       points.map((p) => {
         const value = p.reduce((sum, v, i) => {
           const integer = v.significand << BigInt(v.exponent - exponent)
+
           expect(bits(integer) + bits(axis[i])).toBeLessThanOrEqual(24000)
+
           return sum + integer * axis[i]
         }, 0n)
+
         expect(bits(value)).toBeLessThanOrEqual(24000)
+
         return value
       })
+
     const strict = (axis: IntegerVector) => {
       const left = project(a.points, axis),
         right = project(b.points, axis)
+
       const min = (p: bigint[]) => p.reduce((a, b) => (a < b ? a : b)),
         max = (p: bigint[]) => p.reduce((a, b) => (a > b ? a : b))
+
       return max(left) < min(right) || max(right) < min(left)
     }
+
     if (kind === 'axisConstraint') {
       for (const axis of [
         [1n, 0n, 0n],
@@ -1386,6 +1548,7 @@ describe('canonical nonlinear exact axis work', () => {
         expect(strict(axis)).toBe(false)
       }
     }
+
     expect(strict(expectedAxis)).toBe(true)
     // The oracle needs only ordered exact projection signs, never gap².
     expect(
@@ -1393,8 +1556,10 @@ describe('canonical nonlinear exact axis work', () => {
         (s) => s.firstExcess === null
       )
     ).toBe(true)
+
     return { owner, node, first, second, expectedAxis }
   }
+
   it.each(['XYZ', 'axisConstraint'] as const)(
     'proves a positive zero-margin %s gap without unnecessary squared overflow',
     (stage) => {
@@ -1411,6 +1576,7 @@ describe('canonical nonlinear exact axis work', () => {
       )
       const expectedStage =
         stage === 'XYZ' ? 'relationSetupAndXYZ' : 'axisConstraint'
+
       expect(excess.every(([key]) => key === expectedStage)).toBe(true)
       expect(
         actual.kind,
@@ -1436,6 +1602,7 @@ describe('canonical nonlinear exact axis work', () => {
   )
   it('retains positive-margin overflow as unknown and treats negative zero as zero', () => {
     const large = largeStrictGap('axisConstraint')
+
     expect(
       large.owner.relateRational(
         large.first,
@@ -1448,24 +1615,29 @@ describe('canonical nonlinear exact axis work', () => {
       large.owner.work.requiredBitsByStage.axisConstraint.firstExcess
     ).not.toBeNull()
     const small = fixture()
+
     expect(
       canonicalResult(
         small.owner.relateRational(small.first, small.second, small.node, -0)
       )
     ).toEqual(eager(small, 0))
   })
+
   const canonicalResult = (
     result: ReturnType<WalkingSourceRelationEvaluator['relate']>
   ) => {
     if (!result.axis) {
       return result
     }
+
     const exponent = Math.min(...result.axis.map((v) => v.exponent))
     const vector = result.axis.map(
       (v) => v.significand << BigInt(v.exponent - exponent)
     ) as [bigint, bigint, bigint]
+
     return { ...result, axis: direction(vector) }
   }
+
   // Test-private eager SAT: integer coordinates represent exact world eighths.
   // All fixture coefficients are quarters; divisibility is checked, never rounded.
   function eager(
@@ -1477,14 +1649,19 @@ describe('canonical nonlinear exact axis work', () => {
       (p) =>
         p.map((v) => {
           const power = v.exponent + 3
+
           if (power >= 0) {
             return v.significand << BigInt(power)
           }
+
           const denominator = 1n << BigInt(-power)
+
           expect(v.significand % denominator).toBe(0n)
+
           return v.significand / denominator
         }) as [bigint, bigint, bigint]
     )
+
     const placed = (matrix: Matrix, origin: Vector) => {
       const points = source.map(
         (p) =>
@@ -1493,12 +1670,15 @@ describe('canonical nonlinear exact axis work', () => {
               (sum, n, j) => sum + BigInt(n * 4) * p[j],
               0n
             )
+
             expect(numerator % 4n).toBe(0n)
+
             return numerator / 4n + BigInt(origin[k] * 8)
           }) as [bigint, bigint, bigint]
       )
       const normals: IntegerVector[] = [],
         edges: IntegerVector[] = []
+
       for (const [a, b, c] of input.solid.triangles) {
         normals.push(
           crossInteger(
@@ -1512,8 +1692,10 @@ describe('canonical nonlinear exact axis work', () => {
           subtractInteger(points[a], points[c])
         )
       }
+
       return { points, normals: unique(normals), edges: unique(edges) }
     }
+
     const a = placed(input.firstMatrix, [0, 0, 0]),
       b = placed(input.secondMatrix, input.origin)
     const velocity = translation.map((n) => BigInt(n * 8)) as [
@@ -1523,18 +1705,22 @@ describe('canonical nonlinear exact axis work', () => {
     ]
     const zero = velocity.every((v) => v === 0n),
       proof = zero ? 'complete-sat' : 'linear-time-sat'
+
     const projection = (
       points: readonly IntegerVector[],
       axis: IntegerVector
     ) => {
       const values = points.map((p) => dotInteger(p, axis))
+
       return {
         min: values.reduce((x, y) => (x < y ? x : y)),
         max: values.reduce((x, y) => (x > y ? x : y))
       }
     }
+
     const enough = (gap: bigint, axis: IntegerVector) =>
       gap > 0n && gap * gap >= BigInt(margin * 8) ** 2n * dotInteger(axis, axis)
+
     const whole = (
       left: { min: bigint; max: bigint },
       right: { min: bigint; max: bigint },
@@ -1543,6 +1729,7 @@ describe('canonical nonlinear exact axis work', () => {
     ) =>
       enough(right.min - left.max - (slope > 0n ? slope : 0n), axis) ||
       enough(left.min - right.max + (slope < 0n ? slope : 0n), axis)
+
     for (const axis of [
       [1n, 0n, 0n],
       [0n, 1n, 0n],
@@ -1559,6 +1746,7 @@ describe('canonical nonlinear exact axis work', () => {
         return { kind: 'separated', proof: 'strict-bounds', axis }
       }
     }
+
     const axes = unique([
       ...a.normals,
       ...b.normals,
@@ -1566,25 +1754,32 @@ describe('canonical nonlinear exact axis work', () => {
         b.edges.map((other) => crossInteger(edge, other))
       )
     ])
+
     interface Bound {
       n: bigint
       d: bigint
       strict: boolean
     }
+
     const compare = (a: Bound, b: Bound) => {
       const x = a.n * b.d - b.n * a.d
+
       if (x < 0n) {
         return -1
       }
+
       return x > 0n ? 1 : 0
     }
+
     const timeRange = () => ({
       low: { n: 0n, d: 1n, strict: false },
       high: { n: 1n, d: 1n, strict: false },
       empty: false
     })
+
     const closed = timeRange(),
       interior = timeRange()
+
     const constrain = (
       range: ReturnType<typeof timeRange>,
       offset: bigint,
@@ -1594,10 +1789,13 @@ describe('canonical nonlinear exact axis work', () => {
       if (range.empty) {
         return
       }
+
       if (slope === 0n) {
         range.empty = strict ? offset <= 0n : offset < 0n
+
         return
       }
+
       const threshold = {
         n: slope < 0n ? offset : -offset,
         d: slope < 0n ? -slope : slope,
@@ -1605,26 +1803,33 @@ describe('canonical nonlinear exact axis work', () => {
       }
       const key = slope > 0n ? 'low' : 'high',
         order = compare(threshold, range[key])
+
       if ((key === 'low' && order > 0) || (key === 'high' && order < 0)) {
         range[key] = threshold
       } else if (order === 0) {
         range[key].strict ||= strict
       }
+
       const crossed = compare(range.low, range.high)
+
       range.empty =
         crossed > 0 ||
         (crossed === 0 && (range.low.strict || range.high.strict))
     }
+
     let separating: IntegerVector | undefined,
       contact: IntegerVector | undefined,
       level: bigint | undefined
+
     for (const axis of axes) {
       const left = projection(a.points, axis),
         right = projection(b.points, axis),
         slope = dotInteger(velocity, axis)
+
       if (!separating && whole(left, right, slope, axis)) {
         separating = axis
       }
+
       constrain(closed, left.max - right.min, slope, false)
       constrain(closed, right.max - left.min, -slope, false)
       constrain(interior, left.max - right.min, slope, true)
@@ -1639,24 +1844,30 @@ describe('canonical nonlinear exact axis work', () => {
         }
       }
     }
+
     if (separating) {
       return { kind: 'separated', proof, axis: separating }
     }
+
     if (!interior.empty) {
       return { kind: 'volume-overlap', proof }
     }
+
     if (closed.empty) {
       return margin === 0
         ? { kind: 'separated', proof }
         : { kind: 'unknown', proof: 'unproved' }
     }
+
     if (margin !== 0) {
       return { kind: 'unknown', proof: 'unproved' }
     }
+
     if (contact && level !== undefined) {
       const axis = contact,
         feature = (points: readonly IntegerVector[]) =>
           points.flatMap((p, i) => (dotInteger(p, axis) === level ? [i] : []))
+
       return {
         kind: 'boundary',
         proof,
@@ -1665,8 +1876,10 @@ describe('canonical nonlinear exact axis work', () => {
         secondFeature: feature(b.points)
       }
     }
+
     return { kind: 'boundary', proof }
   }
+
   it.each([
     {
       name: 'first face',
@@ -1727,6 +1940,7 @@ describe('canonical nonlinear exact axis work', () => {
         input.node,
         item.margin
       )
+
       expect(canonicalResult(actual)).toEqual(eager(input, item.margin))
     }
   )
@@ -1743,16 +1957,19 @@ describe('canonical nonlinear exact axis work', () => {
     }
   ])('matches eager linear-time constraints for $name', (item) => {
     const input = fixture(identity, identity, item.origin)
+
     expect(input.node.scale.significand).toBe(1n)
     const actual = input.owner.relate(
       { ...input.first, translation: item.translation },
       input.second,
       0
     )
+
     expect(canonicalResult(actual)).toEqual(eager(input, 0, item.translation))
   })
   it('does not publish separation when preparation, projection or constraint work exhausts', () => {
     const full = fixture()
+
     full.owner.relateRational(full.first, full.second, full.node, 0)
     const work = full.owner.work
     const before =
@@ -1768,14 +1985,17 @@ describe('canonical nonlinear exact axis work', () => {
         work.axisProjectionPredicates +
         1
     ]
+
     for (const [stage, cap] of caps.entries()) {
       const input = fixture(faceMatrix, faceMatrix, [-1.5, -1.5, 1.5], cap)
+
       expect(
         input.owner.relateRational(input.first, input.second, input.node, 0)
       ).toEqual({ kind: 'unknown', proof: 'unproved' })
       expect(input.owner.work.exactPredicates).toBe(cap)
       expect(input.owner.work.earlySeparatedPairs).toBe(0)
       const observed = input.owner.work
+
       expect(observed.axisPreparationPredicates).toBe(
         stage === 0 ? 1 : work.axisPreparationPredicates
       )
@@ -1797,9 +2017,11 @@ describe('canonical nonlinear exact axis work', () => {
   })
   it('attributes counted exact work and stops at the first complete normal gap', () => {
     const { owner, node, first, second } = fixture()
+
     expect(owner.relateRational(first, second, node, 0).kind).toBe('separated')
     const work = owner.work,
       summary = JSON.stringify(work)
+
     expect(work.axisCandidates, summary).toBe(1)
     expect(work.normalAxisCandidates, summary).toBe(1)
     expect(work.edgeCrossProducts, summary).toBe(0)
@@ -1812,10 +2034,12 @@ describe('canonical nonlinear exact axis work', () => {
   it('attributes exclusive work with node reuse and unchanged warm reads', () => {
     const input = fixture()
     const prepared = input.owner.work
+
     expect(
       input.owner.relateRational(input.first, input.second, input.node, 0).kind
     ).toBe('separated')
     const work = input.owner.work
+
     expect(work.stages, JSON.stringify({ prepared, work })).toBeDefined()
     expect(
       Object.values(work.stages).reduce((n, s) => n + s.arithmeticOperations, 0)
@@ -1824,6 +2048,7 @@ describe('canonical nonlinear exact axis work', () => {
       Object.values(work.stages).reduce((n, s) => n + s.predicates, 0)
     ).toBe(work.exactPredicates)
     const before = input.owner.work
+
     expect(prepared.rationalArithmeticOperations).toBe(1496)
     expect(prepared.exactPredicates).toBe(1604)
     // Old point-derived preparation was 4378 scalar / 4552 predicates.
@@ -1847,8 +2072,10 @@ describe('canonical nonlinear exact axis work', () => {
       maxBits: 24000
     })
     const input = material()
+
     expect(owner.prepare(input.shape, input.region).certified).toBe(false)
     const work = owner.work
+
     expect(work.stages, JSON.stringify(work)).toBeDefined()
     expect(work.certificationOutcomes.resourceIncomplete).toBe(1)
     expect(
@@ -1864,9 +2091,11 @@ describe('canonical nonlinear exact axis work', () => {
       secondRod,
       [0.75, -0.75, 0.75]
     )
+
     expect(owner.relateRational(first, second, node, 0).kind).toBe('separated')
     const work = owner.work,
       summary = JSON.stringify(work)
+
     expect(work.edgeCrossProducts, summary).toBe(1)
     expect(work.crossAxisCandidates, summary).toBe(1)
     expect(work.earlySeparatedPairs, summary).toBe(1)
@@ -1882,11 +2111,13 @@ describe('canonical nonlinear exact axis work', () => {
         0,
         0
       ])
+
       expect(owner.relateRational(first, second, node, 0).kind).toBe(
         x ? 'boundary' : 'volume-overlap'
       )
       const work = owner.work,
         summary = JSON.stringify(work)
+
       expect(work.earlySeparatedPairs, summary).toBe(0)
       expect(work.edgeCrossProducts, summary).toBeGreaterThan(0)
       expect(work.axisCandidates, summary).toBe(
@@ -1906,8 +2137,10 @@ describe('canonical nonlinear rational source placement', () => {
     })
     const input = material(),
       solid = owner.prepare(input.shape, input.region)
+
     const f = (n: bigint, d = 1n) =>
       Object.freeze({ numerator: n, denominator: d })
+
     const transform = (x: ReturnType<typeof f>) =>
       Object.freeze({
         origin: Object.freeze([x, f(0n), f(0n)] as const),
@@ -1917,6 +2150,7 @@ describe('canonical nonlinear rational source placement', () => {
           Object.freeze([f(0n), f(0n), f(1n)] as const)
         ] as const)
       })
+
     const node = owner.prepareRationalNode(
       [
         transform(f(0n)),
@@ -1929,6 +2163,7 @@ describe('canonical nonlinear rational source placement', () => {
     const placements = [0, 1, 2, 3].map((index) =>
       owner.rationalPlacement(solid, node, index)
     )
+
     expect(
       owner.relateRational(placements[0], placements[1], node, 0.25).kind
     ).toBe('separated')
@@ -1942,6 +2177,7 @@ describe('canonical nonlinear rational source placement', () => {
       owner.relateRational(placements[0], placements[3], node, 0).kind
     ).toBe('volume-overlap')
     const prepared = owner.work.transformPreparations
+
     owner.relateRational(placements[0], placements[1], node, 0)
     expect(owner.work.transformPreparations).toBe(prepared)
     expect(() => owner.rationalPlacement(solid, { ...node }, 0)).toThrow()
@@ -1956,9 +2192,11 @@ describe('canonical nonlinear rational source placement', () => {
 describe('canonical nonlinear budgeted region covers', () => {
   function inputs(count: number) {
     const builder = new TriangleBuilder()
+
     for (let i = 0; i < count; i++) {
       builder.box([i / 1000, 0, 0], [1, 1, 1])
     }
+
     const descriptor = readSpatialDescriptor({
       kind: 'mesh',
       position: [0, 0, 0],
@@ -1973,22 +2211,27 @@ describe('canonical nonlinear budgeted region covers', () => {
       wireframe: false,
       selectable: false
     })
+
     if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles') {
       throw new Error('Missing cover source')
     }
+
     return {
       shape: descriptor.shape,
       regions: Object.freeze(builder.regions().map((r) => Object.freeze(r)))
     }
   }
+
   function setup(positions: readonly number[]) {
     const evaluator = new WalkingSourceRelationEvaluator({
       maxRegionPairs: 100,
       maxExactPredicates: 5000000,
       maxBits: 24000
     })
+
     const fraction = (n: number) =>
       Object.freeze({ numerator: BigInt(n), denominator: 1n })
+
     const node = evaluator.prepareRationalNode(
       positions.map((x) => ({
         origin: [fraction(x), fraction(0), fraction(0)] as const,
@@ -2000,8 +2243,10 @@ describe('canonical nonlinear budgeted region covers', () => {
       })),
       24000
     )
+
     return { evaluator, node }
   }
+
   it('covers a 100 by 100 original-region product with one source-bound proof and no SAT preparation', () => {
     const material = inputs(100),
       { evaluator, node } = setup([0, 3])
@@ -2014,6 +2259,7 @@ describe('canonical nonlinear budgeted region covers', () => {
       { movingGroups: 1, maxGroupPairs: 100, maxLeaves: 10000, margin: 0 }
     )
     const proof = cover.next()
+
     expect(proof?.kind).toBe('strictBounds')
     expect(proof?.cardinality).toBe(10000)
     expect(proof?.ordinal).toEqual([0, 10000])
@@ -2046,9 +2292,11 @@ describe('canonical nonlinear budgeted region covers', () => {
       { movingGroups: 1, maxGroupPairs: 100, maxLeaves: 100, margin: 0 }
     )
     const proofs = []
+
     for (let proof = cover.next(); proof; proof = cover.next()) {
       proofs.push(proof)
     }
+
     expect(proofs.every((p) => p.kind === 'strictBounds')).toBe(true)
     expect(proofs.reduce((sum, p) => sum + p.cardinality, 0)).toBe(4)
     expect(cover.work.groupPairs).toBe(5)
@@ -2078,9 +2326,11 @@ describe('canonical nonlinear budgeted region covers', () => {
     )
     const actual = new Map<string, string>(),
       order: number[] = []
+
     const relation = (i: number, j: number) => {
       const a = cover.inventory[i],
         b = cover.inventory[j]
+
       return evaluator.relateRational(
         evaluator.rationalPlacement(
           evaluator.prepare(a.shape, a.region),
@@ -2096,11 +2346,13 @@ describe('canonical nonlinear budgeted region covers', () => {
         0
       ).kind
     }
+
     for (let proof = cover.next(); proof; proof = cover.next()) {
       for (let k = proof.ordinal[0]; k < proof.ordinal[1]; k++) {
         const i = proof.first.start + Math.floor(k / proof.second.count),
           j = proof.second.start + (k % proof.second.count),
           key = i + ':' + j
+
         expect(actual.has(key)).toBe(false)
         actual.set(
           key,
@@ -2111,6 +2363,7 @@ describe('canonical nonlinear budgeted region covers', () => {
         }
       }
     }
+
     expect(order).toEqual([...order].sort((a, b) => a - b))
     expect(cover.finish()).toEqual([])
     expect(actual.size).toBe(4)
@@ -2119,6 +2372,7 @@ describe('canonical nonlinear budgeted region covers', () => {
         expect(actual.get(i + ':' + j)).toBe(relation(i, j))
       }
     }
+
     expect(cover.coRigidOwner).toBe(1)
     expect(cover.required).toBe(4)
   })
@@ -2133,8 +2387,10 @@ describe('canonical nonlinear budgeted region covers', () => {
       node,
       { movingGroups: 1, maxGroupPairs: 1, maxLeaves: 1, margin: 0 }
     )
+
     expect(cover.next()).toBeUndefined()
     const remainder = cover.finish()
+
     expect(remainder.reduce((sum, p) => sum + p.cardinality, 0)).toBe(10000)
     expect(remainder).toHaveLength(1)
     expect(remainder[0].ordinal).toEqual([0, 10000])
@@ -2157,9 +2413,11 @@ describe('canonical nonlinear budgeted region covers', () => {
     }
     const cover = evaluator.prepareRegionCover(groups, node, options)
     const leaves = []
+
     for (let p = cover.next(); p; p = cover.next()) {
       leaves.push(p)
     }
+
     expect(leaves).toHaveLength(4)
     expect(leaves.every((p) => p.kind === 'leaf')).toBe(true)
     expect(cover.coRigidOwner).toBe(2)
@@ -2211,6 +2469,7 @@ describe('walking source region relations', () => {
       })
     ]
     const witness = owner.proveBoundary(first, second, relation, ranges, ranges)
+
     expect(witness).toBeDefined()
     expect(witness?.firstTriangle).toBeGreaterThanOrEqual(
       input.region.indexStart
@@ -2232,12 +2491,14 @@ describe('walking source region relations', () => {
     })
     const input = material(),
       solid = owner.prepare(input.shape, input.region)
+
     const relation = (x: number) =>
       owner.relate(
         { region: solid, frames: [frame(0)] },
         { region: solid, frames: [frame(x)] },
         0
       )
+
     expect(relation(2).kind).toBe('separated')
     expect(relation(0.5).kind).toBe('volume-overlap')
     // The second source centre is outside the first material's bounds, but
@@ -2245,6 +2506,7 @@ describe('walking source region relations', () => {
     expect(relation(0.9).kind).toBe('volume-overlap')
     expect(relation(1).kind).toBe('boundary')
     const shell = material('open-shell')
+
     expect(
       owner.relate(
         {
@@ -2268,6 +2530,7 @@ describe('walking source region relations', () => {
       const input = material(),
         solid = owner.prepare(input.shape, input.region)
       const stationary = { region: solid, frames: [frame(0)] }
+
       expect(
         owner.relate(
           { region: solid, frames: [frame(-2 * direction)] },
@@ -2304,6 +2567,7 @@ describe('walking source region relations', () => {
       solid = owner.prepare(input.shape, input.region)
     const first = { region: solid, frames: [frame(0)] },
       second = { region: solid, frames: [frame(1.1)] }
+
     expect(owner.relate(first, second, 0.2).kind).toBe('unknown')
     expect(owner.relate(first, second, 0.05).kind).toBe('separated')
     expect(owner.relate({ ...first, motion: 'unproved' }, second, 0).kind).toBe(
@@ -2317,6 +2581,7 @@ describe('walking source region relations', () => {
     })
     const input = material(),
       solid = owner.prepare(input.shape, input.region)
+
     expect(
       owner.relate(
         { region: solid, frames: [frame(0)] },
@@ -2339,6 +2604,7 @@ describe('walking source region relations', () => {
       displacement: { from: [0, 0, 0] as const, until: [4, 0, 0] as const }
     }
     const second = { region: solid, frames: Object.freeze([frame(0)]) }
+
     expect(
       owner.relate(first, second, 0, {
         from: 0,
@@ -2371,6 +2637,7 @@ describe('walking source region relations', () => {
     ).toThrow()
     const preparations = owner.work.regionPreparations,
       transforms = owner.work.transformPreparations
+
     owner.relate(first, second, 0)
     expect(owner.work.regionPreparations).toBe(preparations)
     expect(owner.work.transformPreparations).toBe(transforms)

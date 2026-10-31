@@ -21,8 +21,10 @@ const baseQuaternion = (heading: number, pitch: number, roll: number) => {
     .setFromAxisAngle(new Vector3(0, 1, 0), heading)
     .multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), pitch))
     .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), roll))
+
   return [rotation.x, rotation.y, rotation.z, rotation.w] as const
 }
+
 function fixture(intent: 'straight' | 'reverse' | 'turn' = 'straight') {
   const source = new WalkingRobotSourceOwner().prepare(
     createSyntheticWalkingRobotDefinition({ definitionId: 'motion-interval' })
@@ -30,6 +32,7 @@ function fixture(intent: 'straight' | 'reverse' | 'turn' = 'straight') {
   const middle = structuredClone(source.rig.presets.stowed) as Mutable<
     typeof source.rig.presets.stowed
   >
+
   middle.carriage = 0.8
   middle.arms[0].rootYaw = 0.3
   middle.legs[0].abduction = 0.2
@@ -79,6 +82,7 @@ function fixture(intent: 'straight' | 'reverse' | 'turn' = 'straight') {
     },
     budget: { maxIntervals: 8, maxEnvelopePairs: 1000 }
   }
+
   return { source, path, input }
 }
 
@@ -88,6 +92,7 @@ describe('walking motion interval FK', () => {
     const first = prepareWalkingMotionIntervals(source, input)
     const other = { ...input }
     const second = prepareWalkingMotionIntervals(source, other)
+
     expect(first.inputIdentity).toBe(input)
     expect(second.inputIdentity).toBe(other)
     expect(first.inputIdentity).not.toBe(second.inputIdentity)
@@ -106,8 +111,10 @@ describe('walking motion interval FK', () => {
     ] as const
     const sourceParts = dimensions.map(({ id, center, size }) => {
       const builder = new TriangleBuilder()
+
       builder.box(center, size)
       expect(builder.regions()[0].kind).toBe('closed-solid')
+
       return {
         id,
         sourceId: id,
@@ -138,6 +145,7 @@ describe('walking motion interval FK', () => {
       ...input,
       load: { crate, carried: { kind: 'none' as const } }
     })
+
     for (const segment of result.segments) {
       expect(segment.carriedEnvelopes).toHaveLength(5)
       expect(
@@ -150,6 +158,7 @@ describe('walking motion interval FK', () => {
         )
       ).toBe(true)
     }
+
     expect(result.work.partBounds).toBe(
       (source.parts.reduce((sum, part) => sum + part.regions.length, 0) + 5) * 2
     )
@@ -167,6 +176,7 @@ describe('walking motion interval FK', () => {
       load: { crate, carried: { kind: 'none' } }
     })
     const cavityPoint = [0, 0.5, 0]
+
     for (const segment of stationary.segments) {
       for (const { bounds } of segment.carriedEnvelopes) {
         expect(
@@ -185,6 +195,7 @@ describe('walking motion interval FK', () => {
       until: 0.5,
       attachments: []
     })
+
     expect(new Set(result.envelopes.map(({ body }) => body.id)).size).toBe(
       source.rig.bodies.length
     )
@@ -201,6 +212,7 @@ describe('walking motion interval FK', () => {
         part.regions.reduce((sum, region) => sum + region.indexCount, 0)
       ).toBe(part.shape.indices.length)
     }
+
     const knot = path.knots[1]
     const pointPose = evaluateWalkingRobotPose(source, {
       base: {
@@ -213,16 +225,19 @@ describe('walking motion interval FK', () => {
       },
       joints: knot.joints
     })
+
     for (const envelope of result.envelopes) {
       expect(envelope.part).toBeDefined()
       expect(envelope.part.regions).toContain(envelope.region)
       const body = pointPose.bodyTransforms.find(
         ({ id }) => id === envelope.body.id
       )
+
       expect(body).toBeDefined()
       if (!body) {
         throw new Error('Missing test body')
       }
+
       const bodyPosition = new Vector3(...body.transform.position)
       const bodyRotation = new Quaternion(...body.transform.rotation)
       const partPosition = new Vector3(...envelope.part.localFrame.position)
@@ -231,6 +246,7 @@ describe('walking motion interval FK', () => {
       const partRotation = bodyRotation
         .clone()
         .multiply(new Quaternion(...envelope.part.localFrame.rotation))
+
       for (const index of new Set(
         envelope.part.shape.indices.slice(
           envelope.region.indexStart,
@@ -245,6 +261,7 @@ describe('walking motion interval FK', () => {
         )
           .applyQuaternion(partRotation)
           .add(partPosition)
+
         for (let axis = 0; axis < 3; axis++) {
           expect(envelope.bounds.min[axis]).toBeLessThanOrEqual(
             point.getComponent(axis)
@@ -255,6 +272,7 @@ describe('walking motion interval FK', () => {
         }
       }
     }
+
     expect(result.work.pointFk).toBe(1)
     expect(result.work.partBounds).toBe(
       source.parts.reduce((sum, part) => sum + part.regions.length, 0)
@@ -264,6 +282,7 @@ describe('walking motion interval FK', () => {
   it('covers every path and stance boundary without endpoint-only motion', () => {
     const { source, input } = fixture()
     const result = prepareWalkingMotionIntervals(source, input)
+
     expect(result.segments.map(({ from, until }) => [from, until])).toEqual([
       [0, 0.5],
       [0.5, 1]
@@ -277,6 +296,7 @@ describe('walking motion interval FK', () => {
     const firstChassis = result.segments[0].envelopes.filter(
       ({ part }) => part.id === 'chassis'
     )
+
     expect(firstChassis.length).toBeGreaterThan(0)
     expect(
       Math.min(...firstChassis.map(({ bounds }) => bounds.min[0]))
@@ -301,6 +321,7 @@ describe('walking motion interval FK', () => {
         }))
       }
       const result = prepareWalkingMotionIntervals(source, { ...input, path })
+
       for (const segment of result.segments) {
         for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
           const time = segment.from + (segment.until - segment.from) * fraction
@@ -308,13 +329,16 @@ describe('walking motion interval FK', () => {
             source,
             walkingMotionPoseAt(path, time)
           )
+
           for (const { body, part, region, bounds } of segment.envelopes) {
             const bodyTransform = pose.bodyTransforms.find(
               ({ id }) => id === body.id
             )
+
             if (!bodyTransform) {
               throw new Error('Missing test body')
             }
+
             const frame = bodyTransform.transform
             const rotation = new Quaternion(...frame.rotation),
               position = new Vector3(...part.localFrame.position)
@@ -325,6 +349,7 @@ describe('walking motion interval FK', () => {
                 .multiply(new Quaternion(...part.localFrame.rotation))
             const minima = [Infinity, Infinity, Infinity],
               maxima = [-Infinity, -Infinity, -Infinity]
+
             for (const index of new Set(
               part.shape.indices.slice(
                 region.indexStart,
@@ -336,11 +361,13 @@ describe('walking motion interval FK', () => {
               )
                 .applyQuaternion(partRotation)
                 .add(position)
+
               for (let axis = 0; axis < 3; axis++) {
                 minima[axis] = Math.min(minima[axis], value.getComponent(axis))
                 maxima[axis] = Math.max(maxima[axis], value.getComponent(axis))
               }
             }
+
             for (let axis = 0; axis < 3; axis++) {
               expect(
                 bounds.min[axis],
@@ -354,6 +381,7 @@ describe('walking motion interval FK', () => {
           }
         }
       }
+
       expect(result.work.intervalFk).toBe(2)
       expect(result.work.partBounds).toBe(
         source.parts.reduce((sum, part) => sum + part.regions.length, 0) * 2
@@ -372,6 +400,7 @@ describe('walking motion interval FK', () => {
       ...turn.input,
       budget: { ...turn.input.budget, maxIntervals: 1 }
     })
+
     expect(reverseResult.path.intent).toBe('reverse')
     expect(exhausted.path.intent).toBe('turn')
     expect(exhausted.segments).toHaveLength(2)

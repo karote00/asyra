@@ -4,6 +4,7 @@ test('the homepage uses one interactive story instead of loading the retired fil
   page
 }) => {
   const media: string[] = []
+
   page.on('request', (request) => {
     if (/\.(mp4|webm)(\?|$)/.test(request.url())) {
       media.push(request.url())

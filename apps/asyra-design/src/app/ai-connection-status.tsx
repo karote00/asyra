@@ -13,11 +13,14 @@ export const AiConnectionStatus = ({
 }) => {
   const [state, setState] = useState<AiConnectionState>('checking')
   const [revision, setRevision] = useState(0)
+
   useEffect(() => {
     const controller = new AbortController()
     let active = true
+
     setState('checking')
     const timeout = setTimeout(() => controller.abort(), 12_000)
+
     void checkAiConnection(controller.signal)
       .then((next) => {
         if (active) {
@@ -25,6 +28,7 @@ export const AiConnectionStatus = ({
         }
       })
       .finally(() => clearTimeout(timeout))
+
     return () => {
       active = false
       clearTimeout(timeout)
@@ -39,11 +43,13 @@ export const AiConnectionStatus = ({
   const connected = state === 'ready' || state === 'configured'
   const canRetry = !connected && state !== 'checking'
   let indicatorColor = 'bg-[#81838b]'
+
   if (connected) {
     indicatorColor = 'bg-[#74c69d]'
   } else if (canRetry) {
     indicatorColor = 'bg-[#dda56b]'
   }
+
   return (
     <div className="mb-2 flex items-start gap-2 text-[12px] leading-4 text-[#9b9da7]">
       <span

@@ -22,9 +22,11 @@ describe('multilevel region index', () => {
         height: id % 19 === 0 ? 2000 : 10
       }
     }))
+
     for (const { id, bounds } of entries) {
       index.set(id, bounds)
     }
+
     for (let i = 0; i < 100; i++) {
       const region = {
         x: i * 37 - 2100,
@@ -32,10 +34,12 @@ describe('multilevel region index', () => {
         width: i % 3 ? 70 : 0,
         height: 40
       }
+
       expect(index.query(region).values.sort((a, b) => a - b)).toEqual(
         entries.filter((e) => intersects(e.bounds, region)).map((e) => e.id)
       )
     }
+
     index.set(1, { x: 0, y: 0, width: 0, height: 0 })
     index.delete(2)
     expect(index.query({ x: 0, y: 0, width: 0, height: 0 }).values).toContain(1)
@@ -45,15 +49,19 @@ describe('multilevel region index', () => {
   })
   it('visits local candidates rather than all 20000 entries on repeated queries', () => {
     const index = new RegionIndex<number>()
+
     for (let i = 0; i < 20000; i++) {
       index.set(i, { x: i * 50, y: 0, width: 10, height: 10 })
     }
+
     for (let i = 0; i < 10; i++) {
       const result = index.query({ x: 5000, y: 0, width: 10, height: 10 })
+
       expect(result.values).toEqual([100])
       expect(result.checkedEntries).toBeLessThan(5)
       expect(result.visitedCells).toBeLessThan(17)
     }
+
     index.set(100, { x: -100, y: 0, width: 10, height: 10 })
     expect(
       index.query({ x: 5000, y: 0, width: 10, height: 10 }).values
@@ -61,6 +69,7 @@ describe('multilevel region index', () => {
   })
   it('rejects invalid bounds without losing the previous entry', () => {
     const index = new RegionIndex<string>()
+
     index.set('a', { x: 0, y: 0, width: 1, height: 1 })
     expect(() => index.set('a', { x: 0, y: 0, width: -1, height: 1 })).toThrow()
     expect(() => index.query({ x: NaN, y: 0, width: 1, height: 1 })).toThrow()

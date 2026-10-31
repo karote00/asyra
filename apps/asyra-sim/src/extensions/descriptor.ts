@@ -26,14 +26,18 @@ export function validParameterValues(
   if (!hasExactOwnKeys(input, Object.keys(schema))) {
     return false
   }
+
   return Object.entries(schema).every(([key, field]) => {
     const value = input[key]
+
     if (field.kind === 'boolean') {
       return typeof value === 'boolean'
     }
+
     if (field.kind === 'enum') {
       return typeof value === 'string' && field.values.includes(value)
     }
+
     return (
       typeof value === 'number' &&
       Number.isFinite(value) &&
@@ -60,6 +64,7 @@ function validateParameterSchema(
   ) {
     throw new Error('Invalid method parameter schema')
   }
+
   for (const [key, field] of Object.entries(input)) {
     if (
       !validIdentifier(key) ||
@@ -69,6 +74,7 @@ function validateParameterSchema(
     ) {
       throw new Error('Invalid method parameter declaration')
     }
+
     if (field.kind === 'number') {
       if (
         !hasExactOwnKeys(field, [
@@ -109,7 +115,9 @@ function validateParameterSchema(
       throw new Error('Unsupported method parameter kind')
     }
   }
+
   const schema = input as MethodParameterSchema
+
   if (!validParameterValues(schema, defaultMethodParameters(schema))) {
     throw new Error('Invalid method parameter default')
   }
@@ -122,6 +130,7 @@ export function validateInstalledDescriptor(
     isPlainRecord(input) && Object.hasOwn(input, 'warningWorkUnits')
       ? ['warningWorkUnits']
       : []
+
   if (
     !hasExactOwnKeys(input, [
       'id',
@@ -155,7 +164,9 @@ export function validateInstalledDescriptor(
   ) {
     throw new Error('Invalid installed method descriptor')
   }
+
   const manifest = input.manifest
+
   if (
     !hasExactOwnKeys(manifest, [
       'contractVersion',
@@ -207,5 +218,6 @@ export function validateInstalledDescriptor(
   ) {
     throw new Error('Invalid or incompatible method manifest')
   }
+
   validateParameterSchema(input.parameterSchema)
 }

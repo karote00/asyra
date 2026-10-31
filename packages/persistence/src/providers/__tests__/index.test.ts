@@ -30,7 +30,9 @@ describe('LocalStoragePersistence', () => {
     values = new Map()
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => values.get(key) ?? null,
+
       setItem: (key: string, value: string) => values.set(key, value),
+
       removeItem: (key: string) => values.delete(key)
     })
   })
@@ -93,6 +95,7 @@ describe('IndexedDbPersistence', () => {
     const localStorageSetItem = vi.fn(() => {
       throw new DOMException('Storage quota exceeded', 'QuotaExceededError')
     })
+
     vi.stubGlobal('localStorage', {
       getItem: vi.fn(() => null),
       setItem: localStorageSetItem,
@@ -104,6 +107,7 @@ describe('IndexedDbPersistence', () => {
         highDetailFixture: 'x'.repeat(6 * 1024 * 1024)
       }
     } satisfies CoreRawData
+
     expect(JSON.stringify(document).length).toBeGreaterThan(5 * 1024 * 1024)
 
     const persistence = new IndexedDbPersistence('FILE', {

@@ -18,6 +18,7 @@ const settings: QuerySettings = {
   maxIntervals: 64,
   maxIterations: 64
 }
+
 function query(times = [0, 1]): PairQuery {
   const base: Body = {
     id: 'base',
@@ -35,6 +36,7 @@ function query(times = [0, 1]): PairQuery {
     geometry: { kind: 'sphere' as const, radius: 0.125 },
     pose: IDENTITY_POSE
   }
+
   return {
     workcell: {
       version: 1,
@@ -73,6 +75,7 @@ function query(times = [0, 1]): PairQuery {
     interval: [times[0], times[times.length - 1]]
   }
 }
+
 function schedule(
   input: PairQuery,
   enabled: boolean,
@@ -81,14 +84,18 @@ function schedule(
   const counts = { static: 0, lower: 0, handoffs: 0, work: 0 }
   const kernel: PairQueryKernel = {
     certifyClearBeforeResampling: true,
+
     distance: (a, b) => {
       counts.static++
       counts.work += 10
+
       return convex.convexDistance(a, b, 1e-6, 64)
     },
+
     lower: (a, b) => {
       counts.lower++
       counts.work += 20
+
       // Deliberately conservative but independent: true sphere separation is
       // at least 7/4 throughout [0,1]; the wider interval is left unproved.
       return Math.max(
@@ -98,14 +105,17 @@ function schedule(
         ? 0
         : 1
     },
+
     exhaustionReason: 'owned budget',
     ...(enabled
       ? {
           handoffEvidence: () => {
             counts.handoffs++
             counts.work++
+
             return true
           },
+
           lowerUsesPositiveWitnessOnly: () => true
         }
       : {})
@@ -116,8 +126,10 @@ function schedule(
     () => undefined,
     kernel
   )
+
   return { result, counts }
 }
+
 afterEach(() => vi.restoreAllMocks())
 
 describe('subdivision completed evidence ownership', () => {
@@ -125,6 +137,7 @@ describe('subdivision completed evidence ownership', () => {
     const input = query(),
       control = schedule(input, false),
       candidate = schedule(input, true)
+
     expect(control.counts).toEqual({
       static: 13,
       lower: 10,
@@ -150,6 +163,7 @@ describe('subdivision completed evidence ownership', () => {
     const input = query([0, 0.5, 1]),
       first = schedule(input, true),
       next = schedule(input, true)
+
     expect(first).toEqual(next)
     expect(first.counts).toEqual({
       static: 6,
@@ -158,12 +172,14 @@ describe('subdivision completed evidence ownership', () => {
       work: 186
     })
     const changed = query([0, 0.5, 1])
+
     changed.workcell.bodies[2].pose = { ...IDENTITY_POSE, position: [4, 0, 0] }
     expect(schedule(changed, true).counts.static).toBe(6)
     expect(schedule(changed, true).result).not.toEqual(first.result)
   })
   it('keeps reversal and changed query dependencies equivalent to fresh traversal', () => {
     const reversed = query()
+
     ;[reversed.a, reversed.b] = [reversed.b, reversed.a]
     expect(schedule(reversed, true).result).toEqual(
       schedule(reversed, false).result
@@ -175,12 +191,14 @@ describe('subdivision completed evidence ownership', () => {
       work: 201
     })
     const source = query()
+
     source.workcell.bodies[1].colliders[0].geometry = {
       kind: 'sphere',
       radius: 0.25
     }
     for (const input of [query(), source]) {
       const changed = { ...settings, threshold: 0.04, distanceTolerance: 1e-5 }
+
       expect(schedule(input, true, changed).result).toEqual(
         schedule(input, false, changed).result
       )
@@ -193,13 +211,17 @@ describe('subdivision completed evidence ownership', () => {
     const kernel: PairQueryKernel = {
       certifyClearBeforeResampling: true,
       handoffEvidence,
+
       lowerUsesPositiveWitnessOnly: () => true,
+
       distance: (a, b) => {
         const evidence = convex.convexDistance(a, b, 1e-6, 64)
+
         return ++calls === 1
           ? evidence
           : { ...evidence, lower: 0, upper: 0, penetration: true }
       },
+
       lower,
       exhaustionReason: 'budget'
     }
@@ -209,6 +231,7 @@ describe('subdivision completed evidence ownership', () => {
       () => undefined,
       kernel
     )
+
     expect(calls).toBe(2)
     expect(lower).toHaveBeenCalledTimes(2)
     expect(handoffEvidence).not.toHaveBeenCalled()
@@ -222,13 +245,18 @@ describe('subdivision completed evidence ownership', () => {
   it('does not bypass cancellation on an inherited endpoint', () => {
     const kernel: PairQueryKernel = {
       certifyClearBeforeResampling: true,
+
       handoffEvidence: () => {
         throw new Error('cancelled endpoint')
       },
+
       distance: (a, b) => convex.convexDistance(a, b, 1e-6, 64),
+
       lower: () => 0,
+
       exhaustionReason: 'budget'
     }
+
     expect(() =>
       queryContinuousPair(query(), settings, () => undefined, kernel)
     ).toThrow('cancelled endpoint')
@@ -238,15 +266,20 @@ describe('subdivision completed evidence ownership', () => {
     const lower = vi.fn(() => 0)
     const kernel: PairQueryKernel = {
       certifyClearBeforeResampling: true,
+
       handoffEvidence: () => true,
+
       lowerUsesPositiveWitnessOnly: () => true,
+
       distance: (a, b) => ({
         ...convex.convexDistance(a, b, 1e-6, 64),
         lower: ++calls === 1 ? 0 : 1
       }),
+
       lower,
       exhaustionReason: 'budget'
     }
+
     queryContinuousPair(
       query(),
       { ...settings, maxIntervals: 1 },
@@ -259,11 +292,13 @@ describe('subdivision completed evidence ownership', () => {
     const context = new OriginalMeshQuery()
     let calls = 0
     const distance = context.distance.bind(context)
+
     context.distance = (...args) => ({
       ...distance(...args),
       axis: ++calls === 1 ? [1, 0, 0] : [0, 1, 0]
     })
     const lower = vi.spyOn(convex, 'separationLowerBound').mockReturnValue(0)
+
     queryOriginalPartPair(
       query(),
       { ...settings, maxIntervals: 1 },
@@ -277,6 +312,7 @@ describe('subdivision completed evidence ownership', () => {
   it('charges actual evidence handoffs before publication and checkpoints cancellation', () => {
     const checkpoint = vi.fn()
     const context = new OriginalMeshQuery(checkpoint, 2)
+
     context.chargeEvidenceHandoff()
     context.chargeEvidenceHandoff()
     expect(context.work).toBe(2)
@@ -285,16 +321,22 @@ describe('subdivision completed evidence ownership', () => {
     const aborted = new OriginalMeshQuery(() => {
       throw new Error('cancelled')
     })
+
     expect(() => aborted.chargeEvidenceHandoff()).toThrow('cancelled')
     expect(aborted.work).toBe(0)
   })
   it('retains established evidence when same-node certificate handoff exhausts', () => {
     const kernel: PairQueryKernel = {
       certifyClearBeforeResampling: true,
+
       handoffEvidence: () => false,
+
       lowerUsesPositiveWitnessOnly: () => true,
+
       distance: (a, b) => convex.convexDistance(a, b, 1e-6, 64),
+
       lower: () => 0,
+
       exhaustionReason: 'handoff budget'
     }
     const result = queryContinuousPair(
@@ -303,6 +345,7 @@ describe('subdivision completed evidence ownership', () => {
       () => undefined,
       kernel
     )
+
     expect(result.evaluations).toBe(1)
     expect(result.coverage).toBe('partial')
     expect(result.leaves).toHaveLength(1)
@@ -317,12 +360,17 @@ describe('subdivision completed evidence ownership', () => {
     let calls = 0
     const kernel: PairQueryKernel = {
       certifyClearBeforeResampling: true,
+
       handoffEvidence: () => false,
+
       distance: (a, b) => {
         calls++
+
         return convex.convexDistance(a, b, 1e-6, 64)
       },
+
       lower: () => 0,
+
       exhaustionReason: 'handoff budget'
     }
     const result = queryContinuousPair(
@@ -331,6 +379,7 @@ describe('subdivision completed evidence ownership', () => {
       () => undefined,
       kernel
     )
+
     expect(calls).toBe(3)
     expect(result.evaluations).toBe(1)
     expect(result.coverage).toBe('partial')

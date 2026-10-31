@@ -161,6 +161,7 @@ export const createMeshMaterialShader = (maxTextures: number): Shader => {
       main: `let uvDx = dpdx(vUV); let uvDy = dpdy(vUV);\nif(vMaterial == 1u) { outColor = materialColor(vTextureId,vUV); } else { switch vTextureId { ${textureIds.map((i) => `${i === maxTextures - 1 ? 'default' : `case ${i}`}:{ outColor = textureSampleGrad(materialSource${i},materialSampler${i},vUV,uvDx,uvDy); break; }`).join('\n')} } }`
     }
   }
+
   return new Shader({
     glProgram: GlProgram.from({
       name: 'analytic-mesh-material',

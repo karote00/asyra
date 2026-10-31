@@ -28,6 +28,7 @@ it('mounted crate consumer proves every base pair and only original tray contact
     f.mounted,
     24000
   )
+
   expect(relations.placement.exact[0].position).toBe(
     f.crate.placement.translation
   )
@@ -38,6 +39,7 @@ it('mounted crate consumer proves every base pair and only original tray contact
         ? nonlinearFraction(value.significand << BigInt(value.exponent))
         : nonlinearFraction(value.significand, 1n << BigInt(-value.exponent))
     const bound = relations.placement.bounds[0].position[axis]
+
     expect(
       nonlinearSub(nonlinearExact(bound.low), exactValue).numerator
     ).toBeLessThanOrEqual(0n)
@@ -45,6 +47,7 @@ it('mounted crate consumer proves every base pair and only original tray contact
       nonlinearSub(nonlinearExact(bound.high), exactValue).numerator
     ).toBeGreaterThanOrEqual(0n)
   }
+
   expect(
     relations.placement.bounds[0].position.some((v) => v.low < v.high)
   ).toBe(true)
@@ -54,11 +57,13 @@ it('mounted crate consumer proves every base pair and only original tray contact
   let visited = 0,
     separated = 0,
     boundary = 0
+
   for (const part of base.parts) {
     for (const region of part.regions) {
       for (const cp of f.crate.geometry.parts) {
         for (const cr of cp.regions) {
           const result = relations.relate(part, region, cp, cr, 0)
+
           visited++
           if (result?.kind === 'exactSeparated') {
             separated++
@@ -76,6 +81,7 @@ it('mounted crate consumer proves every base pair and only original tray contact
       }
     }
   }
+
   expect(visited).toBe(
     base.parts.reduce((n, p) => n + p.regions.length, 0) *
       f.crate.geometry.parts.reduce((n, p) => n + p.regions.length, 0)
@@ -84,6 +90,7 @@ it('mounted crate consumer proves every base pair and only original tray contact
   expect(boundary).toBe(1)
   expect(evaluator.work.rationalNodePreparations).toBe(1)
   const before = evaluator.work.transformPreparations
+
   relations.relate(
     f.crate.tray,
     f.crate.trayPatch.region,

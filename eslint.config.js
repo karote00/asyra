@@ -2,6 +2,7 @@ import { includeIgnoreFile } from '@eslint/compat'
 import tseslint from 'typescript-eslint'
 import js from '@eslint/js'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import readability from './scripts/eslint-readability.mjs'
 import { fileURLToPath } from 'url'
 import path from 'path'
 const __filename = fileURLToPath(import.meta.url)
@@ -35,6 +36,7 @@ export default tseslint.config(
   tseslint.configs.strict,
   tseslint.configs.stylistic,
   eslintPluginPrettierRecommended,
+  readability,
   {
     rules: {
       curly: ['error', 'all'],
@@ -107,6 +109,9 @@ export default tseslint.config(
     ],
     rules: {
       curly: 'off',
+      '@stylistic/padding-line-between-statements': 'off',
+      '@stylistic/lines-between-class-members': 'off',
+      'readability/object-function-spacing': 'off',
       'prettier/prettier': 'off'
     }
   },

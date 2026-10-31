@@ -31,6 +31,7 @@ it('the full-workcell starter checks every part, independently finding tool/tabl
       ...snapshot,
       interval: [time, time]
     })
+
     expect(endpoint.coverage).toBe('complete')
     expect(
       endpoint.pairs
@@ -40,13 +41,16 @@ it('the full-workcell starter checks every part, independently finding tool/tabl
         )
     ).toBe(true)
   }
+
   const evidence = runOriginalPartMethod(snapshot)
+
   expect(evidence.coverage).toBe('complete')
   expect(evidence.pairs.map((pair) => pair.pairId)).toEqual(
     snapshot.pairs.map((pair) => pair.id)
   )
   for (const pairId of tablePairIds) {
     const pair = evidence.pairs.find((pair) => pair.pairId === pairId)
+
     expect(
       pair?.evidence.leaves.some(
         (leaf) =>
@@ -91,6 +95,7 @@ it('the full-workcell starter checks every part, independently finding tool/tabl
       )
     ).toBe(true)
   }
+
   const result = completeAnalysisResult(
     { ...snapshot, interval: [4, 4] },
     pose,
@@ -100,6 +105,7 @@ it('the full-workcell starter checks every part, independently finding tool/tabl
       endedAt: 200
     }
   )
+
   expect(result.execution).toBe('completed')
   expect(result.summary).toBe('issue-found')
   expect(result.verdict).toBe('does-not-meet')

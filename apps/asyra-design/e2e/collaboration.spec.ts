@@ -21,10 +21,13 @@ import {
 
 const captureNavigationEvidence = async (page: Page) => {
   const events: { at: number; kind: string; data: unknown }[] = []
+
   const record = (kind: string, data: unknown) => {
     events.push({ at: Date.now(), kind, data })
   }
+
   const session = await page.context().newCDPSession(page)
+
   await session.send('Page.enable')
   await session.send('Network.enable')
   session.on('Page.frameRequestedNavigation', (event) =>
@@ -45,8 +48,10 @@ const captureNavigationEvidence = async (page: Page) => {
       if (typeof payload !== 'string') {
         return
       }
+
       try {
         const message = JSON.parse(payload)
+
         if (['full-reload', 'update', 'error'].includes(message.type)) {
           record('development-server', message)
         }
@@ -55,6 +60,7 @@ const captureNavigationEvidence = async (page: Page) => {
       }
     })
   })
+
   return events
 }
 
@@ -70,17 +76,21 @@ const CRDT_ACTION_UNDO_REDO_CASE_TIMEOUT_MS = 600_000
 const CANONICAL_COORDINATE_TOLERANCE = 1e-9
 const sliceElementBudget = (() => {
   const value = Number(process.env.E2E_SLICE_ELEMENT_BUDGET ?? 32)
+
   if (value !== 32 && value !== 64) {
     throw new Error('E2E_SLICE_ELEMENT_BUDGET must be 32 or 64')
   }
+
   return value
 })() as 32 | 64
 
 const requireAppUrl = (testInfo: TestInfo): string => {
   const appUrl = String(testInfo.project.use.baseURL ?? '')
+
   if (!appUrl) {
     throw new Error('Asyra Design App URL is unavailable')
   }
+
   return appUrl
 }
 
@@ -107,6 +117,7 @@ const getSelectedIds = (page: Page): Promise<string[]> =>
 
 const expectNoBrowserPersistenceEvidence = async (page: Page) => {
   const evidence = await getClientPersistenceEvidence(page)
+
   expect(evidence.captureCount).toBe(0)
   expect(evidence.saveCount).toBe(0)
 }
@@ -117,9 +128,11 @@ const groupLayerIds = async (
 ): Promise<string> => {
   const contentsPanel = getContentsPanel(page)
   const panelBounds = await contentsPanel.boundingBox()
+
   if (!panelBounds) {
     throw new Error('Layers panel bounds are unavailable')
   }
+
   await page.mouse.click(
     panelBounds.x + panelBounds.width / 2,
     panelBounds.y + panelBounds.height - 50
@@ -135,8 +148,10 @@ const groupLayerIds = async (
   } finally {
     await page.keyboard.up('Shift')
   }
+
   await pressGroupCommandShortcut(page, 'group')
   await expect.poll(() => getSelectedIds(page)).toHaveLength(1)
+
   return (await getSelectedIds(page))[0]
 }
 
@@ -202,6 +217,7 @@ const seedPriorGenerationRemoval = async (page: Page, fileId: string) => {
     }
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('collaboration-publications', 1)
+
       request.addEventListener('success', () => resolve(request.result), {
         once: true
       })
@@ -209,11 +225,13 @@ const seedPriorGenerationRemoval = async (page: Page, fileId: string) => {
         once: true
       })
     })
+
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(
         'pending-publications',
         'readwrite'
       )
+
       transaction.objectStore('pending-publications').put({
         fileId: documentId,
         publicationId,
@@ -273,6 +291,7 @@ const seedCurrentGenerationOrphanPropertyUpdate = async (
     }
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('collaboration-publications', 1)
+
       request.addEventListener('success', () => resolve(request.result), {
         once: true
       })
@@ -280,11 +299,13 @@ const seedCurrentGenerationOrphanPropertyUpdate = async (
         once: true
       })
     })
+
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(
         'pending-publications',
         'readwrite'
       )
+
       transaction.objectStore('pending-publications').put({
         fileId: documentId,
         publicationId,
@@ -349,6 +370,7 @@ test('does not replay a prior-generation removal after document Reset', async ({
 }, testInfo) => {
   const fileId = `reset-generation-${Date.now()}-${testInfo.workerIndex}`
   const startupErrors: string[] = []
+
   page.on('console', (message) => {
     if (message.type() === 'error') {
       startupErrors.push(message.text())
@@ -398,6 +420,7 @@ test('isolates a blocked local draft while an independent peer continues saving'
 }, testInfo) => {
   const fileId = `rejected-source-recovery-${Date.now()}-${testInfo.workerIndex}`
   const startupErrors: string[] = []
+
   page.on('console', (message) => {
     if (message.type() === 'error') {
       startupErrors.push(message.text())
@@ -444,6 +467,7 @@ test('isolates a blocked local draft while an independent peer continues saving'
     baseURL: requireAppUrl(testInfo)
   })
   const peer = await peerContext.newPage()
+
   try {
     await peer.goto(collaborationUrl(fileId))
     await waitForAppReady(peer)
@@ -467,18 +491,23 @@ test('isolates a blocked local draft while an independent peer continues saving'
     const blocked = await page.evaluate(async () => {
       const runtime = await import('../src/testing/runtime-access')
       const handle = runtime.getActiveCollaborationHandle()
+
       if (!handle) {
         throw new Error('Missing document session')
       }
+
       await handle.whenIdle()
       let failure = ''
+
       try {
         await handle.confirmPersistence(AbortSignal.timeout(10000))
       } catch (error) {
         failure = error instanceof Error ? error.message : String(error)
       }
+
       return { state: handle.getSessionState(), failure }
     })
+
     expect(blocked.state.sync).toBe('conflicted')
     expect(blocked.state.pendingCount).toBeGreaterThan(1)
     expect(blocked.failure).toContain('pending, conflicted or unavailable')
@@ -510,6 +539,7 @@ const getCanonicalSnapshot = (page: Page) =>
     const profiledElements = runtimeAccess
       .getActiveAiDrawingPerformanceProfile()
       ?.readCanonicalElements()
+
     if (profiledElements) {
       return profiledElements
         .filter(({ type }) => type !== 'workspace')
@@ -521,10 +551,13 @@ const getCanonicalSnapshot = (page: Page) =>
         }))
         .sort((left, right) => left.id.localeCompare(right.id))
     }
+
     const elements = runtimeAccess.core?.deps?.sceneTree?.getAllElements?.()
+
     if (!(elements instanceof Map)) {
       return []
     }
+
     return Array.from(elements.entries())
       .filter(([, element]) => element.get?.('type') !== 'workspace')
       .map(([id, element]) => ({
@@ -552,6 +585,7 @@ const findFirstSerializableDifference = (
   if (Object.is(actorA, actorB)) {
     return null
   }
+
   if (Array.isArray(actorA) && Array.isArray(actorB)) {
     if (actorA.length !== actorB.length) {
       return {
@@ -560,18 +594,22 @@ const findFirstSerializableDifference = (
         path
       }
     }
+
     for (let index = 0; index < actorA.length; index += 1) {
       const difference = findFirstSerializableDifference(
         actorA[index],
         actorB[index],
         `${path}[${index}]`
       )
+
       if (difference) {
         return difference
       }
     }
+
     return null
   }
+
   if (
     actorA !== null &&
     actorB !== null &&
@@ -585,6 +623,7 @@ const findFirstSerializableDifference = (
     const keys = [
       ...new Set([...Object.keys(actorARecord), ...Object.keys(actorBRecord)])
     ].sort((left, right) => left.localeCompare(right))
+
     for (const key of keys) {
       if (!(key in actorARecord) || !(key in actorBRecord)) {
         return {
@@ -593,17 +632,21 @@ const findFirstSerializableDifference = (
           path: `${path}.${key}`
         }
       }
+
       const difference = findFirstSerializableDifference(
         actorARecord[key],
         actorBRecord[key],
         `${path}.${key}`
       )
+
       if (difference) {
         return difference
       }
     }
+
     return null
   }
+
   return { actorA, actorB, path }
 }
 
@@ -612,6 +655,7 @@ const expectCanonicalSnapshotsToConverge = (
   actorB: Awaited<ReturnType<typeof getCanonicalSnapshot>>
 ) => {
   const difference = findFirstSerializableDifference(actorA, actorB)
+
   expect(
     difference,
     difference
@@ -643,19 +687,23 @@ const getCanonicalStrokeIdentityViolations = (
 ) =>
   snapshot.flatMap(({ computed, id: elementId }) => {
     const strokes = (computed as { strokes?: unknown }).strokes
+
     if (!Array.isArray(strokes)) {
       return []
     }
+
     return strokes.flatMap((stroke, index) => {
       if (!stroke || typeof stroke !== 'object' || Array.isArray(stroke)) {
         return [{ elementId, fillId: null, index, strokeId: null }]
       }
+
       const strokeId = (stroke as { id?: unknown }).id
       const fill = (stroke as { fill?: unknown }).fill
       const fillId =
         fill && typeof fill === 'object' && !Array.isArray(fill)
           ? (fill as { id?: unknown }).id
           : undefined
+
       return typeof strokeId === 'string' &&
         strokeId.length > 0 &&
         fillId === strokeId
@@ -696,11 +744,13 @@ const getCanonicalHierarchyGeometry = (page: Page) =>
       key: string
     ): number => {
       const result = Number(value)
+
       if (!Number.isFinite(result)) {
         throw new Error(
           `Element "${elementId}" has non-finite computed "${key}"`
         )
       }
+
       return result
     }
 
@@ -714,15 +764,20 @@ const getCanonicalHierarchyGeometry = (page: Page) =>
         if (visited.has(currentId)) {
           throw new Error(`Hierarchy cycle reaches "${currentId}"`)
         }
+
         visited.add(currentId)
         const element = elementsById.get(currentId)
+
         if (!element) {
           throw new Error(`Missing hierarchy element "${currentId}"`)
         }
+
         if (element.type === 'workspace') {
           break
         }
+
         const computed = element.computed as Record<string, unknown>
+
         x += getFiniteNumber(computed.x, currentId, 'x')
         y += getFiniteNumber(computed.y, currentId, 'y')
         currentId = String(element.raw.parentId ?? '')
@@ -736,6 +791,7 @@ const getCanonicalHierarchyGeometry = (page: Page) =>
       .map(({ computed: computedValue, id, raw, type }) => {
         const computed = computedValue as Record<string, unknown>
         const children = type === 'group' ? raw.children : undefined
+
         return {
           id,
           type,
@@ -760,6 +816,7 @@ const getCollaborationDiagnostics = (page: Page) =>
       .getActiveAiDrawingPerformanceProfile()
       ?.readCanonicalElements()
     const handle = runtimeAccess.getActiveCollaborationHandle()
+
     return {
       status: handle?.getStatus() ?? 'missing',
       sessionState: handle?.getSessionState(),
@@ -803,9 +860,11 @@ const getCanonicalDocumentSave = (page: Page) =>
     const profiledSnapshot = (await import('../src/testing/runtime-access'))
       .getActiveAiDrawingPerformanceProfile()
       ?.readCanonicalOwnerSnapshot()
+
     if (profiledSnapshot) {
       return profiledSnapshot
     }
+
     const sceneTree = (await import('../src/testing/runtime-access')).core.deps
       .sceneTree
     const sceneSave = sceneTree.save()
@@ -814,6 +873,7 @@ const getCanonicalDocumentSave = (page: Page) =>
     ).core.deps.props.save() as Record<string, Record<string, unknown>>
     const referencedPropertyIds = new Set<string>()
     const pendingPropertyIds: string[] = []
+
     const enqueuePropertyReferences = (value: unknown): void => {
       if (typeof value === 'string') {
         if (
@@ -822,12 +882,16 @@ const getCanonicalDocumentSave = (page: Page) =>
         ) {
           pendingPropertyIds.push(value)
         }
+
         return
       }
+
       if (Array.isArray(value)) {
         value.forEach(enqueuePropertyReferences)
+
         return
       }
+
       if (value && typeof value === 'object') {
         Object.values(value).forEach(enqueuePropertyReferences)
       }
@@ -837,13 +901,16 @@ const getCanonicalDocumentSave = (page: Page) =>
       if (element.get?.('type') === 'workspace') {
         return
       }
+
       enqueuePropertyReferences(element.save().props)
     })
     while (pendingPropertyIds.length > 0) {
       const propertyId = pendingPropertyIds.shift()
+
       if (!propertyId || referencedPropertyIds.has(propertyId)) {
         continue
       }
+
       referencedPropertyIds.add(propertyId)
       enqueuePropertyReferences(allProps[propertyId])
     }
@@ -863,9 +930,11 @@ const getUndoDepth = (page: Page) =>
     const performanceProfile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
+
     if (performanceProfile) {
       return performanceProfile.readHistoryDepth()
     }
+
     return (
       (
         (await import('../src/testing/runtime-access')).core.deps.factory
@@ -881,16 +950,20 @@ const captureTransactionStatuses = (page: Page) =>
     const performanceProfile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
+
     if (performanceProfile) {
       performanceProfile.reset()
+
       return
     }
+
     const { core, testRuntimeState } =
       await import('../src/testing/runtime-access')
     const statuses = testRuntimeState.set<unknown[]>(
       'factory-transaction-statuses',
       []
     )
+
     core.deps.factory.subscribeToTransactionStatus((status) => {
       statuses.push({
         transactionId: status.transactionId,
@@ -916,10 +989,13 @@ const getTransactionStatuses = (page: Page) =>
     const performanceProfile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
+
     if (performanceProfile) {
       return performanceProfile.getRuntimeEvidence().factoryStatuses
     }
+
     const { testRuntimeState } = await import('../src/testing/runtime-access')
+
     return testRuntimeState.get('factory-transaction-statuses') ?? []
   })
 
@@ -932,6 +1008,7 @@ const captureFactoryPublicationShapes = (page: Page) =>
     ) {
       return
     }
+
     const { core, testRuntimeState } =
       await import('../src/testing/runtime-access')
     const shapes = testRuntimeState.set<unknown[]>(
@@ -942,6 +1019,7 @@ const captureFactoryPublicationShapes = (page: Page) =>
       'factory-publications',
       []
     )
+
     core.deps.factory.subscribeToSharedPublication((publication) => {
       publications.push(publication)
       shapes.push({
@@ -959,6 +1037,7 @@ const captureFactoryPublicationShapes = (page: Page) =>
                 !Array.isArray(delivery.payload)
                   ? (delivery.payload as Record<string, unknown>)
                   : {}
+
               return {
                 eventName: delivery.eventName,
                 action: payload.action,
@@ -998,10 +1077,13 @@ const getFactoryPublicationShapes = (page: Page) =>
     const performanceProfile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
+
     if (performanceProfile) {
       return performanceProfile.getRuntimeEvidence().factoryPublications
     }
+
     const { testRuntimeState } = await import('../src/testing/runtime-access')
+
     return testRuntimeState.get('factory-publication-shapes') ?? []
   })
 
@@ -1013,6 +1095,7 @@ const captureFactoryPublicationSummaries = (page: Page) =>
       'factory-publication-summaries',
       []
     )
+
     core.deps.factory.subscribeToSharedPublication((publication) => {
       summaries.push({
         publicationId: publication.publicationId,
@@ -1039,6 +1122,7 @@ const captureFactoryPublicationSummaries = (page: Page) =>
 const getFactoryPublicationSummaries = (page: Page) =>
   page.evaluate(async () => {
     const { testRuntimeState } = await import('../src/testing/runtime-access')
+
     return testRuntimeState.get('factory-publication-summaries') ?? []
   })
 
@@ -1060,6 +1144,7 @@ const getFactoryUndoXChanges = (page: Page) =>
           }[]
         }[]
       >('factory-publications') ?? []
+
     return publications.flatMap((publication) =>
       publication.origin !== 'undo'
         ? []
@@ -1072,6 +1157,7 @@ const getFactoryUndoXChanges = (page: Page) =>
                   !Array.isArray(delivery.payload)
                     ? (delivery.payload as Record<string, unknown>)
                     : null
+
                 return delivery.eventName === 'updateProperty' &&
                   payload?.key === 'x'
                   ? [
@@ -1099,17 +1185,20 @@ const classifyFactoryPublicationsInApp = (page: Page) =>
     const canonicalRequests: (readonly CanonicalChange[])[] = []
     const processor = operationsModule.createPublicationProcessor({
       decideRemotePublication: (publication) => publication,
+
       applyRemoteCanonicalChangeSlices: ({ slices }) => {
         slices.forEach((changes) => {
           canonicalRequests.push(changes)
         })
       }
     })
+
     for (const publication of testRuntimeState.get<
       Parameters<typeof processor>[0][]
     >('factory-publications') ?? []) {
       await processor(prepareDocumentPublication(publication))
     }
+
     return canonicalRequests
   })
 
@@ -1122,6 +1211,7 @@ const capturePublicationOutcomes = (page: Page) =>
       []
     )
     const handle = getActiveCollaborationHandle()
+
     handle?.observePublicationOutcomes((outcome) => {
       outcomes.push({
         ...outcome,
@@ -1141,6 +1231,7 @@ const capturePublicationOutcomes = (page: Page) =>
 const getPublicationOutcomes = (page: Page) =>
   page.evaluate(async () => {
     const { testRuntimeState } = await import('../src/testing/runtime-access')
+
     return testRuntimeState.get('remote-restore-outcomes') ?? []
   })
 
@@ -1152,6 +1243,7 @@ const getPublicationOutcomeIds = (
   page.evaluate(
     async ({ expectedDirection, expectedStatus }) => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+
       return (
         testRuntimeState.get<
           {
@@ -1177,10 +1269,12 @@ const getRemoteElementBatchEvidence = (page: Page) =>
       (await import('../src/testing/runtime-access'))
         .getActiveAiDrawingPerformanceProfile()
         ?.snapshot().counters ?? []
+
     const sum = (name: string) =>
       counters
         .filter((counter) => counter.name === name)
         .reduce((total, counter) => total + counter.value, 0)
+
     return {
       batchCount: sum('collaboration:remote-add-element-batch-count'),
       batchedElementCount: sum('collaboration:remote-add-element-batch-size'),
@@ -1193,9 +1287,11 @@ const resetAiDrawingPerformanceEvidence = (page: Page) =>
     const profile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
+
     if (!profile) {
       throw new Error('AI drawing performance profile is unavailable')
     }
+
     profile.reset()
   })
 
@@ -1205,8 +1301,10 @@ const getClientPersistenceEvidence = (page: Page) =>
       (await import('../src/testing/runtime-access'))
         .getActiveAiDrawingPerformanceProfile()
         ?.snapshot().phases ?? []
+
     const count = (name: string) =>
       phases.filter((phase) => phase.name === name).length
+
     return {
       captureCount: count('core:persistence-capture'),
       saveCount: count('core:persistence-save')
@@ -1218,16 +1316,20 @@ const getVectorTopologySummary = (page: Page) =>
     const elements = (
       await import('../src/testing/runtime-access')
     ).core?.deps?.sceneTree?.getAllElements?.()
+
     if (!(elements instanceof Map)) {
       return null
     }
+
     const vector = Array.from(elements.values()).find(
       (element) => element.get?.('type') === 'vector'
     )
     const computed = vector?.getAllComputedData?.()
+
     if (!computed) {
       return null
     }
+
     const points = Object.values(computed.points ?? {}) as {
       kind?: unknown
     }[]
@@ -1235,6 +1337,7 @@ const getVectorTopologySummary = (page: Page) =>
       inControlId?: unknown
       outControlId?: unknown
     }[]
+
     return {
       anchorCount: points.filter((point) => point.kind === 'anchor').length,
       controlCount: points.filter((point) => point.kind === 'control').length,
@@ -1250,9 +1353,11 @@ const expectSelectedElementInteriorToConverge = async (
   peer: Page
 ) => {
   const center = await getSelectedElementClientCenter(source)
+
   if (!center) {
     throw new Error('Selected element center is unavailable for visual parity')
   }
+
   const clip = {
     x: Math.round(center.x - 10),
     y: Math.round(center.y - 10),
@@ -1277,6 +1382,7 @@ test('16-item server response publishes each finite member with one Undo and Red
   })
   const artifact = record.batch.actions[0].arguments as PreparedDrawingArtifact
   const expectedMemberCount = 1 + artifact.slices.length
+
   await page.goto(collaborationUrl(fileId))
   await waitForAppReady(page)
   await captureFactoryPublicationShapes(page)
@@ -1304,6 +1410,7 @@ test('16-item server response publishes each finite member with one Undo and Red
   const shapes = (await getFactoryPublicationShapes(page)) as {
     origin?: string
   }[]
+
   await testInfo.attach('fast-ai-factory-publication-shapes.json', {
     body: Buffer.from(JSON.stringify(shapes, null, 2)),
     contentType: 'application/json'
@@ -1318,10 +1425,12 @@ test('16-item server response publishes each finite member with one Undo and Red
   )
 
   const canonical = await classifyFactoryPublicationsInApp(page)
+
   expect(canonical).toHaveLength(expectedMemberCount * 3)
   const created = canonical.slice(0, expectedMemberCount)
   const removed = canonical.slice(expectedMemberCount, expectedMemberCount * 2)
   const restored = canonical.slice(expectedMemberCount * 2)
+
   expect(created.map((changes) => changes.map(({ kind }) => kind))).toEqual(
     Array.from({ length: expectedMemberCount }, () => ['element-creation'])
   )
@@ -1333,6 +1442,7 @@ test('16-item server response publishes each finite member with one Undo and Red
   )
   const retiredProperties = removed.flatMap(([element, ...properties]) => {
     expect(element.kind).toBe('element-removal')
+
     return properties.flatMap((change) => {
       expect(change).toEqual({
         kind: 'property-components',
@@ -1344,12 +1454,16 @@ test('16-item server response publishes each finite member with one Undo and Red
           'Expected exact property retirement after element removal'
         )
       }
+
       expect(change.removals?.length).toBeGreaterThan(0)
+
       return change.removals ?? []
     })
   })
+
   const byId = <Value extends { id: string }>(values: Value[]) =>
     values.sort((left, right) => left.id.localeCompare(right.id))
+
   expect(createdProperties.length).toBeGreaterThan(0)
   expect(byId(retiredProperties)).toEqual(byId(createdProperties))
 })
@@ -1384,6 +1498,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
       const { core, historyApis, testRuntimeState } =
         await import('../src/testing/runtime-access')
       const events: unknown[] = []
+
       const capture = (phase: string, detail?: unknown) =>
         events.push({
           phase,
@@ -1392,21 +1507,27 @@ test('16-item AI response converges through the ordinary two-actor publication p
           busy: core.isInUndoRedo(),
           undoDepth: core.getUndoHistoryDepth()
         })
+
       const keydown = (event: KeyboardEvent) => {
         if (event.code === 'KeyZ') {
           capture('keydown', { shift: event.shiftKey })
         }
       }
+
       const admitted = (raw: RawInputEvent) => {
         capture('admitted', { modifiers: raw.modifiers, detail: raw.detail })
       }
+
       const original = { ...historyApis }
+
       for (const name of ['undo', 'redo'] as const) {
         historyApis[name] = async (options) => {
           capture(`${name}-entry`)
           try {
             const result = await original[name](options)
+
             capture(`${name}-return`)
+
             return result
           } catch (error) {
             capture(`${name}-failure`, String(error))
@@ -1414,6 +1535,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
           }
         }
       }
+
       document.addEventListener('keydown', keydown, true)
       core.deps.inputSystem.on('input.shortcut.undoredo', admitted)
       testRuntimeState.set('collaboration-history-input', events)
@@ -1436,6 +1558,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
       getUndoDepth(actorA),
       getUndoDepth(actorB)
     ])
+
     await resetAiDrawingPerformanceEvidence(actorB)
 
     await actorA.getByTestId('ai-agent-toolbar-button').click()
@@ -1446,6 +1569,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
     await actorA.getByRole('button', { name: 'Send' }).click()
 
     const settledTurn = actorA.getByTestId('ai-agent-message').last()
+
     await expect(settledTurn).toHaveAttribute('data-outcome', 'success', {
       timeout: 30_000
     })
@@ -1461,6 +1585,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
         { cause: error }
       )
     }
+
     checkpoint = 'initial-ai-convergence-complete'
     await actorA.getByTestId('ai-agent-toolbar-button').click()
     await expect(actorA.getByTestId('ai-agent-panel')).toBeHidden()
@@ -1517,17 +1642,21 @@ test('16-item AI response converges through the ordinary two-actor publication p
     ).toEqual([])
 
     const targetVector = actorASnapshot.find(({ type }) => type === 'vector')
+
     expect(targetVector).toBeDefined()
     if (!targetVector) {
       return
     }
+
     await layerRow(actorA, targetVector.id).click()
     const propertiesPanel = getPropertiesPanel(actorA)
+
     await propertiesPanel
       .getByTestId('prop-fill-color-picker-0-trigger')
       .click()
     const colorHexInput = actorA.getByTestId('prop-fill-color-picker-0-hex')
     const propertyUndoDepthBefore = await getUndoDepth(actorA)
+
     await colorHexInput.fill('44AAEE')
     await colorHexInput.press('Enter')
 
@@ -1535,6 +1664,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
       waitForCanonicalSnapshotsToConverge(actorA, actorB))
     checkpoint = 'property-change-converged'
     const propertySnapshot = await getCanonicalSnapshot(actorA)
+
     expect(
       (
         propertySnapshot.find(({ id }) => id === targetVector.id)?.computed as {
@@ -1601,6 +1731,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
         { cause: error }
       )
     }
+
     try {
       await expect.poll(() => getElementCount(actorB)).toBe(0)
     } catch (error) {
@@ -1614,6 +1745,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
         { cause: error }
       )
     }
+
     await Promise.all([
       expectNoBrowserPersistenceEvidence(actorA),
       expectNoBrowserPersistenceEvidence(actorB)
@@ -1640,6 +1772,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
         { cause: error }
       )
     }
+
     expect(await getCanonicalHierarchyGeometry(actorB)).toEqual(actorAHierarchy)
     expect(await getCanonicalDocumentSave(actorB)).toEqual(actorACanonicalSave)
     expect(await getUndoDepth(actorB)).toBe(actorBUndoDepthBefore)
@@ -1671,10 +1804,13 @@ test('16-item AI response converges through the ordinary two-actor publication p
       const evidence = await actorA.evaluate(async () => {
         const { testRuntimeState } =
           await import('../src/testing/runtime-access')
+
         testRuntimeState.get<() => void>('collaboration-history-dispose')?.()
+
         return testRuntimeState.get('collaboration-history-input')
       })
       const evidencePath = testInfo.outputPath('history-input.json')
+
       await writeFile(evidencePath, JSON.stringify(evidence))
       await testInfo.attach('history-input.json', {
         path: evidencePath,
@@ -1686,6 +1822,7 @@ test('16-item AI response converges through the ordinary two-actor publication p
         description: String(error)
       })
     }
+
     await testInfo.attach('16-item-last-checkpoint.txt', {
       body: Buffer.from(checkpoint),
       contentType: 'text/plain'
@@ -1707,6 +1844,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
   const actorBNavigation = await captureNavigationEvidence(actorB)
   const actorAPageErrors: string[] = []
   const actorBPageErrors: string[] = []
+
   actorA.on('pageerror', (error) =>
     actorAPageErrors.push(error.stack ?? error.message)
   )
@@ -1744,19 +1882,24 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
       getUndoDepth(actorB)
     ])
     const startedAt = Date.now()
+
     const getCanonicalCount = async (page: Page) =>
       (await getCollaborationDiagnostics(page)).canonicalElementCount
+
     const waitForFirstCanonical = async (page: Page) => {
       await expect
         .poll(() => getCanonicalCount(page), { timeout: 30_000 })
         .toBeGreaterThan(0)
+
       return Date.now() - startedAt
     }
+
     const waitForCompleteProjection = async (page: Page) => {
       await expect
         .poll(
           async () => {
             const snapshot = await getCanonicalSnapshot(page)
+
             return {
               canonicalCount: snapshot.length,
               renderedCount: snapshot.filter(({ rendered }) => rendered).length
@@ -1768,8 +1911,10 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
           canonicalCount: 321,
           renderedCount: 321
         })
+
       return Date.now() - startedAt
     }
+
     const actorAFirstVisible = waitForFirstCanonical(actorA)
     const actorBFirstVisible = waitForFirstCanonical(actorB)
     const actorAComplete = waitForCompleteProjection(actorA)
@@ -1783,6 +1928,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
     await actorA.getByRole('button', { name: 'Send' }).click()
 
     const settledTurn = actorA.getByTestId('ai-agent-message').last()
+
     await expect(settledTurn).toHaveAttribute('data-outcome', 'success', {
       timeout: CRDT_COMPLETION_TIMEOUT_MS
     })
@@ -1797,6 +1943,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
       actorAComplete,
       actorBComplete
     ])
+
     await waitForCanonicalSnapshotsToConverge(actorA, actorB)
     const convergenceCompleteMs = Date.now() - startedAt
 
@@ -1849,6 +1996,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
     })
 
     const undoStartedAt = Date.now()
+
     await undo(actorA)
     await expect
       .poll(() => getCanonicalCount(actorA), {
@@ -1856,6 +2004,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
       })
       .toBe(0)
     const actorAUndoCompleteMs = Date.now() - undoStartedAt
+
     try {
       await expect
         .poll(() => getCanonicalCount(actorB), {
@@ -1878,6 +2027,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
         actorBTransactions: (await getTransactionStatuses(actorB)).slice(-24),
         sliceElementBudget
       }
+
       await testInfo.attach('320-item-actor-b-undo-failure.json', {
         body: Buffer.from(JSON.stringify(diagnostics, null, 2)),
         contentType: 'application/json'
@@ -1887,10 +2037,13 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
         { cause: error }
       )
     }
+
     const actorBUndoCompleteMs = Date.now() - undoStartedAt
+
     expect(await getUndoDepth(actorB)).toBe(actorBUndoDepthBefore)
 
     const redoStartedAt = Date.now()
+
     await redo(actorA)
     await expect
       .poll(() => getCanonicalCount(actorA), {
@@ -1898,6 +2051,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
       })
       .toBe(321)
     const actorARedoCompleteMs = Date.now() - redoStartedAt
+
     await expect
       .poll(() => getCanonicalCount(actorB), {
         timeout: CRDT_COMPLETION_TIMEOUT_MS
@@ -1911,6 +2065,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
         getCanonicalSnapshot(actorB),
         getCanonicalHierarchyGeometry(actorB)
       ])
+
     expectCanonicalSnapshotsToConverge(actorASnapshot, actorARedoneSnapshot)
     expectCanonicalSnapshotsToConverge(actorASnapshot, actorBRedoneSnapshot)
     expect(
@@ -1929,6 +2084,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
       actorBUndoCompleteMs,
       sliceElementBudget
     }
+
     testInfo.annotations.push({
       description: JSON.stringify(timings),
       type: '320-item CRDT timings'
@@ -1947,6 +2103,7 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
     const evidencePath = testInfo.outputPath(
       '320-item-navigation-evidence.json'
     )
+
     await writeFile(
       evidencePath,
       JSON.stringify(
@@ -1975,6 +2132,7 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
   const actorB = await actorBContext.newPage()
   const actorAPageErrors: string[] = []
   const actorBPageErrors: string[] = []
+
   actorA.on('pageerror', (error) =>
     actorAPageErrors.push(error.stack ?? error.message)
   )
@@ -2006,30 +2164,39 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
         const profile = (
           await import('../src/testing/runtime-access')
         ).getActiveAiDrawingPerformanceProfile()
+
         if (!profile) {
           throw new Error('AI drawing performance profile is unavailable')
         }
+
         return profile.readCanonicalElementCount()
       })
+
     const getAppliedRenderProjectionCount = (page: Page) =>
       page.evaluate(async () => {
         const profile = (
           await import('../src/testing/runtime-access')
         ).getActiveAiDrawingPerformanceProfile()
+
         if (!profile) {
           throw new Error('AI drawing performance profile is unavailable')
         }
+
         return profile.readCounterTotal('render-projection-outcome-applied')
       })
+
     const getActorProgressDiagnostics = (page: Page) =>
       page.evaluate(async () => {
         const runtimeAccess = await import('../src/testing/runtime-access')
         const profile = runtimeAccess.getActiveAiDrawingPerformanceProfile()
+
         if (!profile) {
           throw new Error('AI drawing performance profile is unavailable')
         }
+
         const snapshot = profile.snapshot()
         const runtimeEvidence = profile.getRuntimeEvidence()
+
         return {
           canonicalElementCount: profile.readCanonicalElementCount(),
           collaborationStatus:
@@ -2049,6 +2216,7 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
           retainedPhases: snapshot.phases
         }
       })
+
     const [
       actorAUndoDepthBefore,
       actorBUndoDepthBefore,
@@ -2063,6 +2231,7 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
 
     const firstVectorTimeoutMs = 30_000
     let startedAt = 0
+
     const waitForFirstVector = async (
       actor: 'actor-a' | 'actor-b',
       page: Page,
@@ -2075,22 +2244,26 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
             timeout: firstVectorTimeoutMs
           })
           .toBeGreaterThan(canonicalBaseline + 1)
+
         return Date.now() - startedAt
       } catch (error) {
         const finalCanonicalCount = await getCanonicalCount(page)
         const finalElapsedMs = Date.now() - startedAt
+
         if (
           finalCanonicalCount > canonicalBaseline + 1 &&
           finalElapsedMs <= firstVectorTimeoutMs
         ) {
           return finalElapsedMs
         }
+
         const diagnostics = {
           actor,
           elapsedMs: finalElapsedMs,
           pageErrors,
           progress: await getActorProgressDiagnostics(page)
         }
+
         await testInfo.attach(`1280-item-${actor}-first-vector-timeout.json`, {
           body: Buffer.from(JSON.stringify(diagnostics, null, 2)),
           contentType: 'application/json'
@@ -2117,6 +2290,7 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
         )
       }
     }
+
     const waitForCompleteProjection = async (
       page: Page,
       canonicalBaseline: number
@@ -2127,11 +2301,13 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
         })
         .toBe(canonicalBaseline + 1281)
       const canonicalCompleteMs = Date.now() - startedAt
+
       await expect
         .poll(() => getAppliedRenderProjectionCount(page), {
           timeout: CRDT_COMPLETION_TIMEOUT_MS
         })
         .toBeGreaterThanOrEqual(1281)
+
       return {
         canonicalCompleteMs,
         renderedCompleteMs: Date.now() - startedAt
@@ -2164,9 +2340,11 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
       actorB,
       actorBCanonicalBaseline
     )
+
     await actorA.getByRole('button', { name: 'Send' }).click()
 
     const settledTurn = actorA.getByTestId('ai-agent-message').last()
+
     await expect(settledTurn).toHaveAttribute('data-outcome', 'success', {
       timeout: CRDT_COMPLETION_TIMEOUT_MS
     })
@@ -2182,6 +2360,7 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
       actorAComplete,
       actorBComplete
     ])
+
     await waitForCanonicalSnapshotsToConverge(actorA, actorB)
     const convergenceCompleteMs = Date.now() - startedAt
 
@@ -2200,6 +2379,7 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
       getUndoDepth(actorA),
       getUndoDepth(actorB)
     ])
+
     const getPointCount = (
       snapshot: Awaited<ReturnType<typeof getCanonicalSnapshot>>
     ) =>
@@ -2207,7 +2387,9 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
         if (type !== 'vector') {
           return total
         }
+
         const points = (computed as { points?: Record<string, unknown> }).points
+
         return total + (points ? Object.keys(points).length : 0)
       }, 0)
 
@@ -2238,6 +2420,7 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
       convergenceCompleteMs,
       sliceElementBudget
     }
+
     testInfo.annotations.push({
       description: JSON.stringify(timings),
       type: '1,280-item CRDT timings'
@@ -2295,12 +2478,14 @@ test('two real Asyra Design windows converge while connected and catch up throug
         first: await getCollaborationDiagnostics(first),
         second: await getCollaborationDiagnostics(second)
       }
+
       await testInfo.attach('collaboration-diagnostics.json', {
         body: JSON.stringify(diagnostics, null, 2),
         contentType: 'application/json'
       })
       throw error
     }
+
     expect(await getElementCount(isolated)).toBe(0)
     try {
       await expect
@@ -2311,12 +2496,14 @@ test('two real Asyra Design windows converge while connected and catch up throug
         first: await getCollaborationDiagnostics(first),
         second: await getCollaborationDiagnostics(second)
       }
+
       await testInfo.attach('canonical-convergence-diagnostics.json', {
         body: JSON.stringify(diagnostics, null, 2),
         contentType: 'application/json'
       })
       throw error
     }
+
     await expectSelectedElementInteriorToConverge(first, second)
     expect(
       await second.evaluate(
@@ -2328,6 +2515,7 @@ test('two real Asyra Design windows converge while connected and catch up throug
     ).toBe(0)
 
     const unmovedSnapshot = await getCanonicalSnapshot(first)
+
     await dragSelectedElementBy(first, 90, 55, 12)
     await expect
       .poll(() => getCanonicalSnapshot(second))
@@ -2335,6 +2523,7 @@ test('two real Asyra Design windows converge while connected and catch up throug
     expect(await getElementCount(isolated)).toBe(0)
 
     const movedSnapshot = await getCanonicalSnapshot(first)
+
     expect(movedSnapshot).not.toEqual(unmovedSnapshot)
     await undo(first)
     await expect
@@ -2367,6 +2556,7 @@ test('two real Asyra Design windows converge while connected and catch up throug
         secondOutcomes: secondOutcomes.slice(-12),
         secondTransactions: secondTransactions.slice(-12)
       }
+
       await testInfo.attach('delete-convergence-diagnostics.json', {
         body: JSON.stringify(diagnostics, null, 2),
         contentType: 'application/json'
@@ -2376,6 +2566,7 @@ test('two real Asyra Design windows converge while connected and catch up throug
         { cause: error }
       )
     }
+
     expect(await getElementCount(isolated)).toBe(0)
 
     await second.evaluate(async () =>
@@ -2457,11 +2648,13 @@ test('remote undo restores an exact nested Group with and without local tombston
       ({ id }) => id
     )
     const innerGroupId = await groupLayerIds(sender, rectangleIds.slice(0, 2))
+
     await sender.getByTestId(`layers-group-toggle-${innerGroupId}`).click()
     const outerGroupId = await groupLayerIds(sender, [
       rectangleIds[2],
       innerGroupId
     ])
+
     await sender.getByTestId(`layers-group-toggle-${innerGroupId}`).click()
     await expect.poll(() => getElementCount(tombstonePeer)).toBe(5)
     await expect
@@ -2489,6 +2682,7 @@ test('remote undo restores an exact nested Group with and without local tombston
             .deps.props as unknown as {
             _deletedMap?: Map<string, unknown>
           }
+
           return (
             sceneTree._deletedMap?.size === expectedSceneCount &&
             (props._deletedMap?.size ?? 0) > 0
@@ -2501,6 +2695,7 @@ test('remote undo restores an exact nested Group with and without local tombston
       .poll(
         async () => {
           const payload = await getPersistedDocumentCheckpoint(fileId)
+
           return {
             hasDurablePublication:
               typeof payload.durableSequence === 'number' &&
@@ -2534,6 +2729,7 @@ test('remote undo restores an exact nested Group with and without local tombston
           .props as unknown as {
           _deletedMap?: Map<string, unknown>
         }
+
         return {
           scene: sceneTree._deletedMap?.size ?? 0,
           props: props._deletedMap?.size ?? 0
@@ -2552,6 +2748,7 @@ test('remote undo restores an exact nested Group with and without local tombston
         'remote-restore-commits',
         []
       )
+
       core.deps.factory.subscribeToSharedPublication((publication) =>
         publications.push(publication)
       )
@@ -2562,6 +2759,7 @@ test('remote undo restores an exact nested Group with and without local tombston
       })
     })
     const noTombstoneUndoDepth = await getUndoDepth(noTombstonePeer)
+
     await Promise.all([
       capturePublicationOutcomes(tombstonePeer),
       capturePublicationOutcomes(noTombstonePeer)
@@ -2584,6 +2782,7 @@ test('remote undo restores an exact nested Group with and without local tombston
           'status' in outcome &&
           outcome.status === 'process-failed'
       )
+
     if (processFailures.length > 0) {
       throw new Error(
         `Remote restore processing failed:\n${JSON.stringify(
@@ -2612,6 +2811,7 @@ test('remote undo restores an exact nested Group with and without local tombston
       })
       throw error
     }
+
     await expect
       .poll(() => getOwnerSave(noTombstonePeer as Page))
       .toEqual(expectedOwnerSave)
@@ -2630,6 +2830,7 @@ test('remote undo restores an exact nested Group with and without local tombston
       await noTombstonePeer.evaluate(async () => {
         const { testRuntimeState } =
           await import('../src/testing/runtime-access')
+
         return {
           publications:
             testRuntimeState.get<unknown[]>('remote-restore-publications')
@@ -2661,6 +2862,7 @@ test('remote undo restores an exact nested Group with and without local tombston
         { cause: error }
       )
     }
+
     expect(await getUndoDepth(noTombstonePeer)).toBe(noTombstoneUndoDepth)
   } finally {
     await Promise.all([senderContext.close(), tombstoneContext.close()])
@@ -2698,11 +2900,13 @@ test('remote Group redo preserves exact hierarchy and world geometry', async ({
 
     const rectangleIds = (await getCanonicalSnapshot(first)).map(({ id }) => id)
     const ungroupedGeometry = await getCanonicalHierarchyGeometry(first)
+
     await expect
       .poll(() => getCanonicalHierarchyGeometry(second))
       .toEqual(ungroupedGeometry)
 
     const groupId = await groupLayerIds(first, rectangleIds)
+
     try {
       await expect.poll(() => getElementCount(second)).toBe(3)
     } catch (error) {
@@ -2714,12 +2918,15 @@ test('remote Group redo preserves exact hierarchy and world geometry', async ({
         publications: publications.slice(-12),
         secondOutcomes: secondOutcomes.slice(-12)
       }
+
       throw new Error(
         `Group convergence failed: ${JSON.stringify(diagnostics)}`,
         { cause: error }
       )
     }
+
     const groupedGeometry = await getCanonicalHierarchyGeometry(first)
+
     await expect
       .poll(() => getCanonicalHierarchyGeometry(second))
       .toEqual(groupedGeometry)
@@ -2737,11 +2944,13 @@ test('remote Group redo preserves exact hierarchy and world geometry', async ({
         publications: publications.slice(-12),
         secondOutcomes: secondOutcomes.slice(-12)
       }
+
       throw new Error(
         `Group Undo convergence failed: ${JSON.stringify(diagnostics)}`,
         { cause: error }
       )
     }
+
     await expect
       .poll(() => getCanonicalHierarchyGeometry(first))
       .toEqual(ungroupedGeometry)
@@ -2762,6 +2971,7 @@ test('remote Group redo preserves exact hierarchy and world geometry', async ({
     const remoteGroup = (await getCanonicalHierarchyGeometry(second)).find(
       ({ id }) => id === groupId
     )
+
     expect(remoteGroup).toEqual(
       groupedGeometry.find(({ id }) => id === groupId)
     )
@@ -2808,6 +3018,7 @@ test('vector creation and anchor movement converge through the canonical collabo
     const firstPointClient = await getCanvasPosition(first, 0.32, 0.3)
     const secondPointClient = await getCanvasPosition(first, 0.5, 0.46)
     const secondHandleClient = await getCanvasPosition(first, 0.58, 0.38)
+
     await first.keyboard.press('p')
     await first.mouse.click(firstPointClient.x, firstPointClient.y)
     await first.mouse.move(secondPointClient.x, secondPointClient.y)
@@ -2838,9 +3049,11 @@ test('vector creation and anchor movement converge through the canonical collabo
           point.kind === 'anchor' &&
           computed?.points?.[`${point.id}:out`]?.kind === 'control'
       ) as { id: string; x: number; y: number } | undefined
+
       if (!vectorId || !anchor) {
         throw new Error('Created vector has no editable anchor')
       }
+
       const zoom = core?.getSystemProperty?.('zoom') ?? 1
       const viewport = core?.getSystemProperty?.('viewportPosition') ?? {
         x: 0,
@@ -2849,6 +3062,7 @@ test('vector creation and anchor movement converge through the canonical collabo
       const usesWorkspacePoints = computed?.pointCoordinateSpace === 'workspace'
       const offsetX = usesWorkspacePoints ? 0 : (computed?.x ?? 0)
       const offsetY = usesWorkspacePoints ? 0 : (computed?.y ?? 0)
+
       return {
         vectorId,
         pointId: anchor.id,
@@ -2867,12 +3081,14 @@ test('vector creation and anchor movement converge through the canonical collabo
     const pointXInput = getPropertiesPanel(first).getByTestId(
       'prop-vector-point-x'
     )
+
     await expect(pointXInput).toBeVisible()
     const [firstUndoDepthBefore, secondUndoDepthBefore] = await Promise.all([
       getUndoDepth(first),
       getUndoDepth(second)
     ])
     const nextX = before.point.x + 48 / before.zoom
+
     await first.mouse.move(before.client.x, before.client.y)
     await first.mouse.down()
     await first.mouse.move(before.client.x + 48, before.client.y, { steps: 8 })
@@ -2886,11 +3102,14 @@ test('vector creation and anchor movement converge through the canonical collabo
             ).core?.deps?.sceneTree
               ?.getElementById?.(vectorId)
               ?.getAllComputedData?.()?.points?.[pointId]
+
             return point ? { x: point.x, y: point.y } : null
           }, before)
+
           if (!point) {
             return Number.POSITIVE_INFINITY
           }
+
           return Math.max(
             Math.abs(point.x - nextX),
             Math.abs(point.y - before.point.y)
@@ -2917,6 +3136,7 @@ test('vector creation and anchor movement converge through the canonical collabo
         publications: publications.slice(-12),
         secondOutcomes: secondOutcomes.slice(-12)
       }
+
       throw new Error(
         `Vector anchor convergence failed: ${JSON.stringify(diagnostics)}`,
         { cause: error }
@@ -2929,8 +3149,10 @@ test('vector creation and anchor movement converge through the canonical collabo
       ).core?.deps?.sceneTree
         ?.getElementById?.(vectorId)
         ?.getAllComputedData?.()?.points?.[pointId]
+
       return point ? { x: point.x, y: point.y } : null
     }, before)
+
     expect(remotePoint).not.toBeNull()
     expect(
       Math.max(
@@ -2942,6 +3164,7 @@ test('vector creation and anchor movement converge through the canonical collabo
     expect(await getUndoDepth(second)).toBe(secondUndoDepthBefore)
 
     let canonicalAfter = await getCanonicalSnapshot(first)
+
     await undo(first)
     await waitForCanonicalSnapshotsToConverge(first, second)
     expect(await getCanonicalSnapshot(first)).toEqual(canonicalBefore)
@@ -2958,9 +3181,11 @@ test('vector creation and anchor movement converge through the canonical collabo
         ?.getElementById?.(vectorId)
         ?.getAllComputedData?.()
       const handle = computed?.points?.[`${pointId}:out`]
+
       if (!handle || handle.kind !== 'control') {
         throw new Error('Created vector has no editable out-handle')
       }
+
       const zoom = core?.getSystemProperty?.('zoom') ?? 1
       const viewport = core?.getSystemProperty?.('viewportPosition') ?? {
         x: 0,
@@ -2969,6 +3194,7 @@ test('vector creation and anchor movement converge through the canonical collabo
       const usesWorkspacePoints = computed?.pointCoordinateSpace === 'workspace'
       const offsetX = usesWorkspacePoints ? 0 : (computed?.x ?? 0)
       const offsetY = usesWorkspacePoints ? 0 : (computed?.y ?? 0)
+
       return {
         point: { x: handle.x, y: handle.y },
         zoom,
@@ -2978,6 +3204,7 @@ test('vector creation and anchor movement converge through the canonical collabo
         }
       }
     }, before)
+
     await first.mouse.click(handleBefore.client.x, handleBefore.client.y)
     const [handleUndoDepthBefore, peerUndoDepthBefore] = await Promise.all([
       getUndoDepth(first),
@@ -2989,6 +3216,7 @@ test('vector creation and anchor movement converge through the canonical collabo
       x: handleBefore.point.x + handleDelta.x / handleBefore.zoom,
       y: handleBefore.point.y + handleDelta.y / handleBefore.zoom
     }
+
     await first.mouse.move(handleBefore.client.x, handleBefore.client.y)
     await first.mouse.down()
     await first.mouse.move(
@@ -3006,6 +3234,7 @@ test('vector creation and anchor movement converge through the canonical collabo
             ).core?.deps?.sceneTree
               ?.getElementById?.(vectorId)
               ?.getAllComputedData?.()?.points?.[`${pointId}:out`]
+
             return handle ? { x: handle.x, y: handle.y } : null
           }, before),
         {
@@ -3039,12 +3268,14 @@ test('vector creation and anchor movement converge through the canonical collabo
       const saved = await (
         await import('../src/testing/runtime-access')
       ).core.save()
+
       return {
         version: saved.version,
         sceneTree: saved.sceneTree,
         props: saved.props
       }
     })
+
     await expect
       .poll(
         async () => (await getPersistedDocumentCheckpoint(fileId)).checkpoint,
@@ -3081,6 +3312,7 @@ test('mouse-down create and drag frames reach peer canonical state before pointe
     ])
     await first.keyboard.press('r')
     const createPosition = await getCanvasPosition(first, 0.35, 0.35)
+
     await first.mouse.move(createPosition.x, createPosition.y)
     await first.mouse.down()
     await expect.poll(() => getElementCount(second)).toBe(1)
@@ -3092,12 +3324,14 @@ test('mouse-down create and drag frames reach peer canonical state before pointe
 
     const clickCreated = (await getCanonicalSnapshot(second))[0]?.computed as
       { width?: unknown; height?: unknown } | undefined
+
     expect(clickCreated?.width).toBe(100)
     expect(clickCreated?.height).toBe(100)
 
     const snapshot = await getCanonicalSnapshot(first)
     const elementId = snapshot[0]?.id
     const center = await getSelectedElementClientCenter(first)
+
     if (!elementId || !center) {
       throw new Error('move return-to-origin setup did not produce an element')
     }
@@ -3134,6 +3368,7 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
   const first = await firstContext.newPage()
   const second = await secondContext.newPage()
   const firstPageErrors: string[] = []
+
   first.on('pageerror', (error) => {
     firstPageErrors.push(error.message)
   })
@@ -3195,6 +3430,7 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
         publications: publications.slice(-12),
         secondOutcomes: secondOutcomes.slice(-12)
       }
+
       throw new Error(
         `Pen topology convergence failed: ${JSON.stringify(diagnostics)}`,
         { cause: error }
@@ -3221,6 +3457,7 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
       const firstOutcomes = await getPublicationOutcomes(first)
       const secondOutcomes = await getPublicationOutcomes(second)
       const publications = await getFactoryPublicationShapes(first)
+
       throw new Error(
         `Pen pointer-up convergence failed: ${JSON.stringify({
           firstOutcomes: firstOutcomes.slice(-16),
@@ -3230,14 +3467,17 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
         { cause: error }
       )
     }
+
     const undoDepthAfterDrag = await first.evaluate(
       async () =>
         (await import('../src/testing/runtime-access')).core?.deps?.factory
           ?.transact?.undoStack?.length ?? 0
     )
+
     if (undoDepthAfterDrag !== undoDepthBeforeDrag + 1) {
       const firstOutcomes = await getPublicationOutcomes(first)
       const publications = await getFactoryPublicationShapes(first)
+
       throw new Error(
         `Pen transaction did not create exactly one Undo entry: ${JSON.stringify(
           {
@@ -3277,6 +3517,7 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
       const firstHistoryState = await first.evaluate(async () => {
         const transact = (await import('../src/testing/runtime-access')).core
           ?.deps?.factory?.transact
+
         return {
           inRedo: transact?.inRedo,
           inUndo: transact?.inUndo,
@@ -3284,6 +3525,7 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
           undoDepth: transact?.undoStack?.length ?? 0
         }
       })
+
       throw new Error(
         `Pen Undo convergence failed: ${JSON.stringify({
           firstSnapshot,
@@ -3313,6 +3555,7 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
       const firstOutcomes = await getPublicationOutcomes(first)
       const secondOutcomes = await getPublicationOutcomes(second)
       const publications = await getFactoryPublicationShapes(first)
+
       throw new Error(
         `Pen Redo convergence failed: ${JSON.stringify({
           firstOutcomes: firstOutcomes.slice(-16),
@@ -3322,6 +3565,7 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
         { cause: error }
       )
     }
+
     await expect
       .poll(() => getCanonicalSnapshot(second))
       .toEqual(await getCanonicalSnapshot(first))
@@ -3338,6 +3582,7 @@ test('partial Fill updates preserve computed and UI fields on both peers through
   const peerContext = await browser.newContext()
   const sender = await senderContext.newPage()
   const peer = await peerContext.newPage()
+
   try {
     await Promise.all([
       sender.goto(collaborationUrl(fileId)),
@@ -3351,17 +3596,23 @@ test('partial Fill updates preserve computed and UI fields on both peers through
     await createRectangle(sender, 0.35, 0.35)
     await expect.poll(() => getElementCount(peer)).toBe(1)
     const elementId = (await getSelectedIds(sender))[0]
+
     await layerRow(peer, elementId).click()
+
     const read = (page: Page) =>
       page.evaluate(async (elementId) => {
         const { core } = await import('../src/testing/runtime-access')
+
         return {
           fills: core.getElementComputedData(elementId, ['fills'])?.fills,
           ui: core.getUIProperty('fills')
         }
       }, elementId)
+
     const initial = await read(sender)
+
     await expect.poll(() => read(peer)).toEqual(initial)
+
     const mutate = (patch: Record<string, unknown>) =>
       sender.evaluate(
         async ({ elementId, patch }) => {
@@ -3372,15 +3623,19 @@ test('partial Fill updates preserve computed and UI fields on both peers through
               id: string
             }[]
           )[0].id
+
           fillApis.updateFillFields(elementId, fillId, patch)
         },
         { elementId, patch }
       )
+
     await mutate({ color: '#2468ac' })
     const recolored = await read(sender)
+
     await expect.poll(() => read(peer)).toEqual(recolored)
     await mutate({ opacity: 0.4, visible: false })
     const final = await read(sender)
+
     expect(final.fills).toEqual(
       (recolored.fills as object[]).map((fill) => ({
         ...fill,
@@ -3408,22 +3663,28 @@ test('rolls back a visible publication through peer compensation and durable rel
   context
 }, testInfo) => {
   const fileId = `published-compensation-${Date.now()}-${testInfo.workerIndex}`
+
   await page.goto(collaborationUrl(fileId))
   await waitForAppReady(page)
   await waitForCollaboration(page)
   const peer = await context.newPage()
+
   await peer.goto(collaborationUrl(fileId))
   await waitForAppReady(peer)
   await waitForCollaboration(peer)
   const before = await page.evaluate(async () => {
     const runtime = await import('../src/testing/runtime-access')
+
     runtime.startDocumentPublicationCapture('compensation-proof')
+
     return runtime.core.save()
   })
+
   try {
     await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
       const { transactionApis } = await import('../src/common-apis')
+
       transactionApis.startTransaction()
       transactionApis.configureSharedDeliverySequence({
         mode: 'atomic',
@@ -3441,6 +3702,7 @@ test('rolls back a visible publication through peer compensation and durable rel
       body: JSON.stringify(
         await page.evaluate(async () => {
           const runtime = await import('../src/testing/runtime-access')
+
           return {
             document: runtime.core.save(),
             publications: runtime.readTestCapture('compensation-proof'),
@@ -3453,6 +3715,7 @@ test('rolls back a visible publication through peer compensation and durable rel
     await expect.poll(() => getElementCount(peer)).toBe(1)
     await page.evaluate(async () => {
       const { transactionApis } = await import('../src/common-apis')
+
       transactionApis.rollbackTransaction({
         kind: 'explicit',
         message: 'Reject the staged operation'
@@ -3475,12 +3738,15 @@ test('rolls back a visible publication through peer compensation and durable rel
     const result = await page.evaluate(async () => {
       const runtime = await import('../src/testing/runtime-access')
       const handle = runtime.getActiveCollaborationHandle()
+
       if (!handle) {
         throw new Error('Missing document session')
       }
+
       const receipt = await handle.confirmPersistence(
         AbortSignal.timeout(10000)
       )
+
       return {
         receipt,
         failures:
@@ -3488,6 +3754,7 @@ test('rolls back a visible publication through peer compensation and durable rel
         publications: runtime.readTestCapture('compensation-proof')
       }
     })
+
     expect(result.failures).toEqual([])
     expect(result.publications).toEqual(
       expect.arrayContaining([
@@ -3524,6 +3791,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
   browser
 }, testInfo) => {
   const fileId = `complete-recovery-${Date.now()}`
+
   // Fault injection stays in the test's served module, never in product routing.
   await page.route(
     '**/src/collaboration/factory-adapter.ts*',
@@ -3531,6 +3799,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
       const response = await route.fetch()
       const source = await response.text()
       const marker = 'let publicationIsDocumentOnly = true;'
+
       expect(source).toContain(marker)
       await route.fulfill({
         response,
@@ -3545,6 +3814,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     baseURL: requireAppUrl(testInfo)
   })
   const peer = await peerContext.newPage()
+
   try {
     await page.goto(collaborationUrl(fileId))
     await waitForAppReady(page)
@@ -3554,6 +3824,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     await waitForCollaboration(peer)
     await createRectangle(page, 0.4, 0.4)
     const recovery = page.getByRole('region', { name: 'Document recovery' })
+
     await expect(recovery).toBeVisible()
     await createRectangle(page, 0.7, 0.65)
     await expect.poll(() => getElementCount(page)).toBe(2)
@@ -3564,6 +3835,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
       const { transactionApis } = await import('../src/common-apis')
+
       transactionApis.startTransaction()
       transactionApis.configureSharedDeliverySequence({
         mode: 'atomic',
@@ -3588,6 +3860,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     })
     await expect.poll(() => getElementCount(page)).toBe(2)
     const localIds = await getLayerIds(page)
+
     await page.evaluate(async () => {
       await (
         await import('../src/testing/runtime-access')
@@ -3606,15 +3879,18 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     expect(await getElementCount(page)).toBe(2)
     await page.screenshot({ path: testInfo.outputPath('recovery-blocked.png') })
     const downloadPromise = page.waitForEvent('download')
+
     await recovery
       .getByRole('button', { name: 'Download recovery file' })
       .click()
     const download = await downloadPromise
+
     expect(download.suggestedFilename()).toBe('document-recovery.json')
     await download.saveAs(testInfo.outputPath('recovered-document.json'))
     const exported = JSON.parse(
       await readFile(testInfo.outputPath('recovered-document.json'), 'utf8')
     )
+
     expect(Object.keys(exported.sceneTree.elements)).toEqual(
       expect.arrayContaining(localIds)
     )
@@ -3625,10 +3901,12 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
         ),
       exported
     )
+
     expect(diagnostics).toEqual([])
     await createRectangle(peer, 0.2, 0.3)
     await expect.poll(() => getElementCount(peer)).toBe(1)
     const peerIds = await getLayerIds(peer)
+
     expect(await getElementCount(page)).toBe(2)
     await page.evaluate(() => {
       sessionStorage.setItem('document-preparation-fault', 'disabled')
@@ -3638,6 +3916,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     const resumedDocument = page.waitForNavigation({
       waitUntil: 'domcontentloaded'
     })
+
     await recovery.getByRole('button', { name: 'Retry saving' }).click()
     await resumedDocument
     await waitForAppReady(page)
@@ -3645,6 +3924,7 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     await expect.poll(() => getElementCount(page)).toBe(3)
     await expect.poll(() => getElementCount(peer)).toBe(3)
     const expectedIds = [...localIds, ...peerIds].sort()
+
     expect((await getLayerIds(page)).sort()).toEqual(expectedIds)
     await capturePublicationOutcomes(page)
     await createRectangle(page, 0.5, 0.3)
@@ -3657,13 +3937,16 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
       )
     await expect.poll(() => getElementCount(peer)).toBe(4)
     const savedIds = (await getLayerIds(page)).sort()
+
     await page.evaluate(async () => {
       const handle = (
         await import('../src/testing/runtime-access')
       ).getActiveCollaborationHandle()
+
       if (!handle) {
         throw new Error('Missing session')
       }
+
       await handle.whenIdle()
       await handle.confirmPersistence(AbortSignal.timeout(10000))
       if (handle.getSessionState().sync !== 'synced') {
@@ -3685,11 +3968,13 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
   page
 }) => {
   const fileId = `storage-prefix-recovery-${Date.now()}`
+
   await page.goto(collaborationUrl(fileId))
   await waitForAppReady(page)
   await waitForCollaboration(page)
   await page.evaluate(() => {
     const put = IDBObjectStore.prototype.put
+
     Object.assign(globalThis, { __rejectPublicationPut: true })
     IDBObjectStore.prototype.put = function (...args) {
       if (
@@ -3701,11 +3986,13 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
           'QuotaExceededError'
         )
       }
+
       return put.apply(this, args)
     }
   })
   await createRectangle(page, 0.4, 0.4)
   const recovery = page.getByRole('region', { name: 'Document recovery' })
+
   await expect(recovery).toBeVisible()
   await createRectangle(page, 0.7, 0.65)
   await expect.poll(() => getElementCount(page)).toBe(2)
@@ -3714,6 +4001,7 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
   await redo(page)
   await expect.poll(() => getElementCount(page)).toBe(2)
   const ids = (await getLayerIds(page)).sort()
+
   await recovery.getByRole('button', { name: 'Retry saving' }).click()
   await expect(recovery.getByRole('alert')).toHaveText(
     'Retained publications could not be persisted'
@@ -3722,9 +4010,11 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
     const handle = (
       await import('../src/testing/runtime-access')
     ).getActiveCollaborationHandle()
+
     if (!handle?.hasUnpersistedChanges()) {
       throw new Error('Missing unsaved recovery warning')
     }
+
     Object.assign(globalThis, { __rejectPublicationPut: false })
     await handle.prepareRecovery()
     if (handle.hasUnpersistedChanges()) {
@@ -3740,9 +4030,11 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
     const handle = (
       await import('../src/testing/runtime-access')
     ).getActiveCollaborationHandle()
+
     if (!handle) {
       throw new Error('Missing recovered session')
     }
+
     await handle.confirmPersistence(AbortSignal.timeout(10000))
   })
   await page.reload()
@@ -3756,12 +4048,14 @@ test('explicit Reset completes its server barrier from a reopened isolated recov
   page
 }) => {
   const fileId = `isolated-reset-${Date.now()}`
+
   await page.route(
     '**/src/collaboration/factory-adapter.ts*',
     async (route) => {
       const response = await route.fetch()
       const source = await response.text()
       const marker = 'let publicationIsDocumentOnly = true;'
+
       expect(source).toContain(marker)
       await route.fulfill({
         response,
@@ -3777,6 +4071,7 @@ test('explicit Reset completes its server barrier from a reopened isolated recov
   await waitForCollaboration(page)
   await createRectangle(page, 0.4, 0.4)
   const recovery = page.getByRole('region', { name: 'Document recovery' })
+
   await expect(recovery).toBeVisible()
   await page.reload()
   await waitForAppReady(page)
@@ -3791,6 +4086,7 @@ test('explicit Reset completes its server barrier from a reopened isolated recov
   await expect(recovery).toHaveCount(0)
   expect(await getElementCount(page)).toBe(0)
   const checkpoint = (await getPersistedDocumentCheckpoint(fileId)).checkpoint
+
   expect(
     Object.values(checkpoint.sceneTree.elements).filter(
       (element) => element.type !== 'workspace'
@@ -3803,12 +4099,14 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
   browser
 }, testInfo) => {
   const fileId = `accepted-cleanup-recovery-${Date.now()}`
+
   await page.route(
     '**/src/collaboration/websocket-provider.ts*',
     async (route) => {
       const response = await route.fetch()
       const source = await response.text()
       const entry = /async sendPublicationWithAcceptance\([^)]*\) \{/
+
       expect(source).toMatch(entry)
       await route.fulfill({
         response,
@@ -3824,6 +4122,7 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     baseURL: requireAppUrl(testInfo)
   })
   const peer = await peerContext.newPage()
+
   try {
     await page.goto(collaborationUrl(fileId))
     await waitForAppReady(page)
@@ -3833,6 +4132,7 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     await waitForCollaboration(peer)
     await page.evaluate(() => {
       const remove = IDBObjectStore.prototype.delete
+
       Object.assign(globalThis, { __rejectPublicationDelete: true })
       IDBObjectStore.prototype.delete = function (...args) {
         if (
@@ -3844,11 +4144,13 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
             'UnknownError'
           )
         }
+
         return remove.apply(this, args)
       }
     })
     await createRectangle(page, 0.3, 0.35)
     const recovery = page.getByRole('region', { name: 'Document recovery' })
+
     await expect(recovery).toBeVisible()
     await expect.poll(() => getElementCount(peer)).toBe(1)
     await createRectangle(page, 0.65, 0.6)
@@ -3857,6 +4159,7 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     await redo(page)
     await expect.poll(() => getElementCount(page)).toBe(2)
     const originalIds = (await getLayerIds(page)).sort()
+
     expect(await getElementCount(peer)).toBe(1)
     await page.evaluate(() => {
       Object.assign(globalThis, { __rejectPublicationDelete: false })
@@ -3864,6 +4167,7 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     const cleanupRecoveredDocument = page.waitForNavigation({
       waitUntil: 'domcontentloaded'
     })
+
     await recovery.getByRole('button', { name: 'Retry saving' }).click()
     await cleanupRecoveredDocument
     await waitForAppReady(page)
@@ -3885,12 +4189,14 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     await redo(page)
     await expect.poll(() => getElementCount(page)).toBe(3)
     const recoveredIds = (await getLayerIds(page)).sort()
+
     await page.evaluate(() => {
       Object.assign(globalThis, { __rejectLivePublication: false })
     })
     const liveRecoveredDocument = page.waitForNavigation({
       waitUntil: 'domcontentloaded'
     })
+
     await recovery.getByRole('button', { name: 'Retry saving' }).click()
     await liveRecoveredDocument
     await waitForAppReady(page)
@@ -3901,13 +4207,16 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     await createRectangle(page, 0.7, 0.3)
     await expect.poll(() => getElementCount(peer)).toBe(4)
     const savedIds = (await getLayerIds(page)).sort()
+
     await page.evaluate(async () => {
       const handle = (
         await import('../src/testing/runtime-access')
       ).getActiveCollaborationHandle()
+
       if (!handle) {
         throw new Error('Missing recovered session')
       }
+
       await handle.whenIdle()
       await handle.confirmPersistence(AbortSignal.timeout(10000))
       if (handle.getSessionState().sync !== 'synced') {
@@ -3915,6 +4224,7 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
       }
     })
     const checkpoint = (await getPersistedDocumentCheckpoint(fileId)).checkpoint
+
     expect(Object.keys(checkpoint.sceneTree.elements)).toEqual(
       expect.arrayContaining(savedIds)
     )

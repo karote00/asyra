@@ -34,9 +34,11 @@ const itemProperty = (core: CoreRawData): Record<string, unknown> => {
       typeof entry === 'object' &&
       (entry as { type?: unknown }).type === ITEM_PROPERTY_TYPE
   )
+
   if (!property || typeof property !== 'object') {
     throw new Error('Expected an Item property in the saved document.')
   }
+
   return property as Record<string, unknown>
 }
 
@@ -49,6 +51,7 @@ describe('opt-in priority Item extension exercise', () => {
     const field = createItemPropertySchema(priorityItemField).fields.find(
       ({ key }) => key === 'priority'
     )
+
     expect(field?.defaultValue).toBe('normal')
     expect(field?.validate?.('high')).toBe(true)
     expect(field?.validate?.('urgent')).toBe(false)
@@ -59,6 +62,7 @@ describe('opt-in priority Item extension exercise', () => {
       itemField: priorityItemField,
       storage: new MemoryStorage()
     })
+
     try {
       await runtime.start(document.createElement('div'), {
         width: 320,
@@ -69,11 +73,13 @@ describe('opt-in priority Item extension exercise', () => {
         status: 'todo',
         fields: { priority: 'low' }
       })
+
       await settleProjection()
       expect(priorityOf(runtime, id)).toBe('low')
       expect(itemProperty(await runtime.core.save()).priority).toBe('low')
 
       const otherId = runtime.itemActions.addItem({ title: 'Other item' })
+
       await settleProjection()
       expect(priorityOf(runtime, otherId)).toBe('normal')
       const otherProjection = runtime.projection
@@ -135,6 +141,7 @@ describe('opt-in priority Item extension exercise', () => {
       itemField: priorityItemField,
       storage
     })
+
     try {
       await runtime.start(document.createElement('div'), {
         width: 320,
@@ -145,6 +152,7 @@ describe('opt-in priority Item extension exercise', () => {
         status: 'done',
         fields: { priority: 'high' }
       })
+
       await settleProjection()
       expect((await runtime.storageApis.save()).ok).toBe(true)
       expect(itemProperty(await runtime.core.save()).priority).toBe('high')
@@ -167,6 +175,7 @@ describe('opt-in priority Item extension exercise', () => {
       const acceptedProjection = runtime.projection.getSnapshot()
       const acceptedDepth = runtime.core.getUndoHistoryDepth()
       const invalidCore = structuredClone(acceptedCore)
+
       itemProperty(invalidCore).priority = 'urgent'
       storage.setItem(
         STARTER_STORAGE_SLOT,
@@ -175,6 +184,7 @@ describe('opt-in priority Item extension exercise', () => {
       const preflight = vi.spyOn(runtime.core, 'preflightLoad')
       const load = vi.spyOn(runtime.core, 'load')
       const invalidResult = await runtime.storageApis.reload()
+
       expect(invalidResult.ok).toBe(false)
       expect(invalidResult.message).toContain('priority')
       expect(preflight).not.toHaveBeenCalled()
@@ -184,6 +194,7 @@ describe('opt-in priority Item extension exercise', () => {
       expect(runtime.core.getUndoHistoryDepth()).toBe(acceptedDepth)
 
       const beforeInvalidWrite = await runtime.core.save()
+
       expect(() =>
         runtime.itemActions.editItem(id, { fields: { priority: 'urgent' } })
       ).toThrow('priority')
@@ -191,6 +202,7 @@ describe('opt-in priority Item extension exercise', () => {
       expect(runtime.core.getUndoHistoryDepth()).toBe(acceptedDepth)
 
       const legacyCore = structuredClone(acceptedCore)
+
       delete itemProperty(legacyCore).priority
       storage.setItem(
         STARTER_STORAGE_SLOT,

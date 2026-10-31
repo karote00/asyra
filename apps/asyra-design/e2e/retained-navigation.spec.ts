@@ -13,6 +13,7 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
       await import('../e2e/fixtures/__tests__/render-engine-access')
     const engine = new PixiRenderEngine()
     const host = document.createElement('div')
+
     document.body.appendChild(host)
     const initialized = await engine.initialize({
       host,
@@ -31,11 +32,15 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
     const boundary = runtime.renderer.events.rootBoundary
     const originalHitTest = boundary.hitTest.bind(boundary)
     let hitTests = 0
+
     boundary.hitTest = (x, y) => {
       hitTests++
+
       return originalHitTest(x, y)
     }
+
     let nativeWheels = 0
+
     canvas.addEventListener('wheel', () => nativeWheels++)
     const pointerTargets: unknown[] = []
     const unsubscribe = engine.subscribeToInteraction((event) => {
@@ -43,6 +48,7 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
         pointerTargets.push(event.target)
       }
     })
+
     try {
       const object = engine.execute({
         type: 'create-object',
@@ -50,9 +56,11 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
         objectType: 'graphics',
         properties: { eventMode: 'static' }
       }).object
+
       if (!object) {
         throw new Error('Missing interactive handle')
       }
+
       engine.execute({
         type: 'draw',
         object,
@@ -68,6 +76,7 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
       })
       engine.execute({ type: 'flush' })
       const bounds = canvas.getBoundingClientRect()
+
       for (const metaKey of [false, true]) {
         canvas.dispatchEvent(
           new WheelEvent('wheel', {
@@ -79,7 +88,9 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
           })
         )
       }
+
       const wheelHitTests = hitTests
+
       canvas.dispatchEvent(
         new PointerEvent('pointerdown', {
           clientX: bounds.left + 40,
@@ -92,6 +103,7 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
         })
       )
       const query = engine.query({ type: 'hit-test', point: { x: 40, y: 40 } })
+
       return {
         wheelHitTests,
         nativeWheels,
@@ -106,6 +118,7 @@ test('wheel input avoids unused engine hit tests while pointer targets remain av
       host.remove()
     }
   })
+
   expect(result).toEqual({
     wheelHitTests: 0,
     nativeWheels: 2,
@@ -126,6 +139,7 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
       await import('../e2e/fixtures/__tests__/render-engine-access')
     const engine = new PixiRenderEngine()
     const host = document.createElement('div')
+
     document.body.appendChild(host)
     const { root } = await engine.initialize({ host, width: 300, height: 300 })
     const camera = engine.execute({
@@ -134,9 +148,11 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
       objectType: 'container',
       properties: { transformGroup: true }
     }).object
+
     if (!camera) {
       throw new Error('Missing camera handle')
     }
+
     engine.execute({ type: 'append-child', parent: root, child: camera })
     const objects = []
     const operations = [
@@ -144,6 +160,7 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
       { type: 'rect' as const, x: 0, y: 0, width: 4, height: 4 },
       { type: 'fill' as const, paint: { color: '#338899' } }
     ]
+
     for (let index = 0; index < 1024; index++) {
       const object = engine.execute({
         type: 'create-object',
@@ -155,13 +172,16 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
           y: Math.floor(index / 32) * 6
         }
       }).object
+
       if (!object) {
         throw new Error('Missing graphic handle')
       }
+
       engine.execute({ type: 'draw', object, operations })
       engine.execute({ type: 'append-child', parent: camera, child: object })
       objects.push(object)
     }
+
     const reset = () => {
       window.navigationGpuWork = {
         draws: 0,
@@ -169,9 +189,11 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
         uniformMatrices: 0
       }
     }
+
     reset()
     engine.execute({ type: 'flush' })
     const cold = { ...window.navigationGpuWork }
+
     reset()
     for (let index = 0; index < 5; index++) {
       engine.execute({
@@ -185,7 +207,9 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
       })
       engine.execute({ type: 'flush' })
     }
+
     const navigation = { ...window.navigationGpuWork }
+
     reset()
     engine.execute({
       type: 'draw',
@@ -198,10 +222,13 @@ test('retains camera batches and bounds geometry uploads for a local edit', asyn
     })
     engine.execute({ type: 'flush' })
     const edit = { ...window.navigationGpuWork }
+
     engine.destroy()
     host.remove()
+
     return { cold, navigation, edit }
   })
+
   await writeFile(
     testInfo.outputPath('retained-work.json'),
     JSON.stringify(work, null, 2)
@@ -253,9 +280,11 @@ test('native linear material preserves source-space colors and polygon coverage'
         }
       }
     }).resource
+
     if (!object || !resource) {
       throw new Error('Missing native material handles')
     }
+
     engine.execute({
       type: 'draw',
       object,
@@ -281,17 +310,21 @@ test('native linear material preserves source-space colors and polygon coverage'
       maxDimension: 400,
       nativeResolution: true
     })
+
     if (result.type !== 'snapshot') {
       throw new Error('Missing source-space snapshot')
     }
+
     const bitmap = await createImageBitmap(
       await (await fetch(result.dataUrl)).blob()
     )
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
     const context = canvas.getContext('2d')
+
     if (!context) {
       throw new Error('Missing pixel comparison context')
     }
+
     context.drawImage(bitmap, 0, 0)
     const points = [
       [40, 20],
@@ -302,8 +335,10 @@ test('native linear material preserves source-space colors and polygon coverage'
     const samples = points.map(([x, y]) =>
       Array.from(context.getImageData(x, y, 1, 1).data)
     )
+
     bitmap.close()
     engine.destroy()
+
     return {
       samples,
       dataUrl: result.dataUrl,
@@ -311,6 +346,7 @@ test('native linear material preserves source-space colors and polygon coverage'
       height: result.height
     }
   })
+
   await testInfo.attach('native-gradient-source', {
     body: Buffer.from(evidence.dataUrl.split(',')[1], 'base64'),
     contentType: 'image/png'
@@ -321,6 +357,7 @@ test('native linear material preserves source-space colors and polygon coverage'
     [85, 123, 128],
     [41, 75, 85]
   ]
+
   for (const [index, [x, y]] of [
     [40, 20],
     [150, 75],
@@ -332,13 +369,16 @@ test('native linear material preserves source-space colors and polygon coverage'
     )
     const part = t <= 0.5 ? 0 : 1
     const ratio = (t - part * 0.5) * 2
+
     colors[part].forEach((value, channel) => {
       const expected = value + (colors[part + 1][channel] - value) * ratio
+
       expect(
         Math.abs(evidence.samples[index][channel] - expected)
       ).toBeLessThanOrEqual(2)
     })
     expect(evidence.samples[index][3]).toBe(255)
   }
+
   expect(evidence.samples[3]).toEqual([255, 255, 255, 255])
 })

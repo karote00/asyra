@@ -17,15 +17,19 @@ describe('AI connection status', () => {
   it('checks once, ignores unrelated rerenders, and refreshes on explicit retry', async () => {
     const fetch = vi.fn().mockResolvedValue({
       ok: true,
+
       json: async () => ({ state: 'local-unavailable' })
     })
+
     vi.stubGlobal('fetch', fetch)
     const view = render(<AiConnectionStatus />)
+
     await screen.findByText(/Local AI unavailable/)
     view.rerender(<AiConnectionStatus />)
     expect(fetch).toHaveBeenCalledTimes(1)
     fetch.mockResolvedValue({
       ok: true,
+
       json: async () => ({ state: 'ready' })
     })
     fireEvent.click(screen.getByRole('button', { name: 'Check AI connection' }))
@@ -45,12 +49,15 @@ describe('AI connection status', () => {
           if (kind === 'offline') {
             throw new Error('private endpoint')
           }
+
           return {
             ok: true,
+
             json: async () => {
               if (kind === 'html') {
                 throw new Error('not JSON')
               }
+
               return { state: 'private@example.test' }
             }
           }
@@ -69,12 +76,15 @@ describe('AI connection status', () => {
           /* Deliberately pending until unmount. */
         })
     )
+
     vi.stubGlobal('fetch', fetch)
     const view = render(<AiConnectionStatus />)
+
     await waitFor(() => expect(fetch).toHaveBeenCalledOnce())
     const signal = (
       fetch.mock.calls[0] as unknown as [string, { signal: AbortSignal }]
     )[1].signal
+
     view.unmount()
     expect(signal.aborted).toBe(true)
   })

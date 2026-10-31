@@ -14,6 +14,7 @@ import { runTransaction } from '@asyra/reactive-events'
  */
 export class ExecutionRegistryClass implements ExecutionRegistry {
   private executionHandlers = new Map<string, ExecutionParticipant[]>()
+
   private activeFeatureCounts = new Map<string, number>()
 
   register(
@@ -23,11 +24,13 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
     handler: ExecutionHandler
   ): void {
     const mode = config.executionMode ?? 'queued'
+
     if (
       this.getHandlers(eventName).some((entry) => entry.executionMode !== mode)
     ) {
       throw new Error(`Execution event ${eventName} cannot mix execution modes`)
     }
+
     const participant: ExecutionParticipant = {
       executionMode: mode,
       featureName,
@@ -42,6 +45,7 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
     }
 
     const handlers = this.executionHandlers.get(eventName)
+
     if (handlers) {
       handlers.push(participant)
       // Sort by priority (descending) - higher priority runs first
@@ -54,6 +58,7 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
     snapshot: SystemContextSnapshot
   ): Promise<boolean> {
     const handlers = this.executionHandlers.get(eventName)
+
     if (!handlers || handlers.length === 0) {
       return false
     }
@@ -67,17 +72,20 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
           if (exclusiveFound) {
             break
           }
+
           if (!this.executionHandlers.get(eventName)?.includes(participant)) {
             continue
           }
 
           this.markFeatureActive(participant.featureName)
           let result: Awaited<ReturnType<ExecutionHandler>>
+
           try {
             result = await participant.handler(snapshot)
           } finally {
             this.markFeatureInactive(participant.featureName)
           }
+
           if (result !== null && result !== undefined) {
             participant.result = result
             ranAny = true
@@ -104,6 +112,7 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
       const nextHandlers = handlers.filter(
         (participant) => participant.featureName !== featureName
       )
+
       if (nextHandlers.length === handlers.length) {
         continue
       }
@@ -136,10 +145,13 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
 
   private markFeatureInactive(featureName: string): void {
     const count = this.activeFeatureCounts.get(featureName) ?? 0
+
     if (count <= 1) {
       this.activeFeatureCounts.delete(featureName)
+
       return
     }
+
     this.activeFeatureCounts.set(featureName, count - 1)
   }
 }

@@ -13,16 +13,31 @@ describe('Registration graph terminal runtime disposal', () => {
       preflight = vi.fn()
     const target = { kind: 'property', key: 'p' },
       source = { kind: 'component', key: 'c' }
+
     graph.registerNode({
       ref: target,
-      resources: [{ key: 'p', dispose: () => calls.push('p') }]
+      resources: [
+        {
+          key: 'p',
+
+          dispose: () => calls.push('p')
+        }
+      ]
     })
     graph.registerNode({
       ref: source,
       handlers: { preflightUnregister: preflight, detachRelation: detach },
       resources: [
-        { key: 'c1', dispose: () => calls.push('c1') },
-        { key: 'c2', dispose: () => calls.push('c2') }
+        {
+          key: 'c1',
+
+          dispose: () => calls.push('c1')
+        },
+        {
+          key: 'c2',
+
+          dispose: () => calls.push('c2')
+        }
       ]
     })
     graph.defineRelation(source, {
@@ -51,12 +66,14 @@ describe('Registration graph terminal runtime disposal', () => {
       first = vi.fn(),
       last = vi.fn()
     const cause = new Error('resource failure')
+
     graph.registerNode({
       ref: { kind: 'test', key: 'node' },
       resources: [
         { key: 'first', dispose: first },
         {
           key: 'bad',
+
           dispose: () => {
             throw cause
           }
@@ -65,11 +82,13 @@ describe('Registration graph terminal runtime disposal', () => {
       ]
     })
     let failure: unknown
+
     try {
       graph.disposeRuntime()
     } catch (error) {
       failure = error
     }
+
     expect(failure).toBeInstanceOf(RegistrationRelationError)
     expect(failure).toMatchObject({
       code: 'UNREGISTER_FAILED',
@@ -94,6 +113,7 @@ describe('Registration graph terminal runtime disposal', () => {
         throw new Error('retry')
       })
     const ref = { kind: 'test', key: 'partial' }
+
     graph.registerNode({
       ref,
       resources: [
@@ -112,6 +132,7 @@ describe('Registration graph terminal runtime disposal', () => {
     const first = new RegistrationGraph(),
       other = new RegistrationGraph()
     const ref = { kind: 'test', key: 'retained' }
+
     other.registerNode({ ref })
     first.disposeRuntime()
     expect(other.getRegistration(ref)).toBeDefined()
@@ -121,11 +142,13 @@ describe('Registration graph terminal runtime disposal', () => {
   it('rejects reentrant terminal disposal while a resource cleanup is active', () => {
     const graph = new RegistrationGraph()
     let rejection: unknown
+
     graph.registerNode({
       ref: { kind: 'test', key: 'reentrant' },
       resources: [
         {
           key: 'callback',
+
           dispose: () => {
             try {
               graph.disposeRuntime()

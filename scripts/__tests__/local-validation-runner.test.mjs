@@ -11,13 +11,18 @@ const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../..'
 )
+
 function directory(t) {
   const parent = path.join(repositoryRoot, 'tmp/local-runner-fixtures')
+
   fs.mkdirSync(parent, { recursive: true })
   const root = fs.mkdtempSync(path.join(parent, 'run-'))
+
   t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+
   return root
 }
+
 const command = (id, code, evidence = { type: 'exit' }) => ({
   id,
   executable: process.execPath,
@@ -35,6 +40,7 @@ test('cancellation also stops detached descendants while leaving unrelated proce
     { detached: true, stdio: 'ignore' }
   )
   let descendant
+
   t.after(() => {
     for (const pid of [descendant, unrelated.pid]) {
       if (pid) {
@@ -52,17 +58,22 @@ test('cancellation also stops detached descendants while leaving unrelated proce
     outputDirectory: path.join(root, 'results'),
     commands: [command('detached', code)],
     signal: controller.signal,
+
     verifyInputs: () => true
   })
+
   for (let attempt = 0; attempt < 100 && !fs.existsSync(pidPath); attempt++) {
     await new Promise((resolve) => setTimeout(resolve, 20))
   }
+
   assert.ok(fs.existsSync(pidPath), 'fixture child must start')
   descendant = Number(fs.readFileSync(pidPath, 'utf8'))
   controller.abort()
   const result = await pending
+
   assert.equal(result.status, 'cancelled')
   let state
+
   for (let attempt = 0; attempt < 100; attempt++) {
     state = spawnSync('ps', ['-p', String(descendant), '-o', 'stat='], {
       encoding: 'utf8'
@@ -70,8 +81,10 @@ test('cancellation also stops detached descendants while leaving unrelated proce
     if (!state || state.startsWith('Z')) {
       break
     }
+
     await new Promise((resolve) => setTimeout(resolve, 20))
   }
+
   assert.ok(
     !state || state.startsWith('Z'),
     `owned detached child remains ${state}`
@@ -82,6 +95,7 @@ test('cancellation also stops detached descendants while leaving unrelated proce
 test('an all-skipped TAP suite and incomplete workspace evidence cannot pass', async (t) => {
   const root = directory(t)
   const reportPath = path.join(root, 'workspace.json')
+
   fs.writeFileSync(
     reportPath,
     JSON.stringify({
@@ -102,13 +116,16 @@ test('an all-skipped TAP suite and incomplete workspace evidence cannot pass', a
       workspace: '@fixture/app'
     })
   ]
+
   for (const candidate of cases) {
     const result = await runLocalChecks({
       repositoryRoot,
       outputDirectory: path.join(root, candidate.id),
       commands: [candidate],
+
       verifyInputs: () => true
     })
+
     assert.equal(result.status, 'failed', candidate.id)
   }
 })
@@ -120,6 +137,7 @@ test('owned runner records passing checks and rejects changes made during valida
     repositoryRoot,
     outputDirectory,
     commands,
+
     onStarted: () =>
       assert.equal(
         JSON.parse(
@@ -127,8 +145,10 @@ test('owned runner records passing checks and rejects changes made during valida
         ).status,
         'running'
       ),
+
     verifyInputs: () => true
   })
+
   assert.equal(result.status, 'passed')
   assert.ok(result.checks[0].pid > 0)
   assert.match(fs.readFileSync(result.checks[0].logPath, 'utf8'), /done/)
@@ -136,8 +156,10 @@ test('owned runner records passing checks and rejects changes made during valida
     repositoryRoot,
     outputDirectory: path.join(outputDirectory, 'changed'),
     commands,
+
     verifyInputs: () => false
   })
+
   assert.equal(changed.status, 'unverified')
 })
 
@@ -150,8 +172,10 @@ test('failed commands stop subsequent work and cannot produce a passing result',
       command('failure', 'process.exit(2)'),
       command('later', 'process.exit(0)')
     ],
+
     verifyInputs: () => true
   })
+
   assert.equal(result.status, 'failed')
   assert.deepEqual(
     result.checks.map(({ id }) => id),
@@ -162,21 +186,26 @@ test('failed commands stop subsequent work and cannot produce a passing result',
 
 test('missing and zero-test E2E reports fail even when the command exits zero', async (t) => {
   const root = directory(t)
+
   for (const [name, report] of [
     ['missing', null],
     ['zero', { suites: [] }],
     ['failed', { suites: [], errors: ['runner failure'] }]
   ]) {
     const reportPath = path.join(root, `${name}.json`)
+
     if (report) {
       fs.writeFileSync(reportPath, JSON.stringify(report))
     }
+
     const result = await runLocalChecks({
       repositoryRoot,
       outputDirectory: path.join(root, name),
       commands: [command(name, '', { type: 'playwright', path: reportPath })],
+
       verifyInputs: () => true
     })
+
     assert.equal(result.status, 'failed', name)
   }
 })
@@ -213,8 +242,10 @@ test('Playwright expected failures and successful retries retain their meaning w
       outcome: 'failed'
     }
   ]
+
   for (const item of cases) {
     const reportPath = path.join(root, `${item.id}.json`)
+
     fs.writeFileSync(
       reportPath,
       JSON.stringify({ suites: [{ specs: [{ tests: [item] }] }], errors: [] })
@@ -225,8 +256,10 @@ test('Playwright expected failures and successful retries retain their meaning w
       commands: [
         command(item.id, '', { type: 'playwright', path: reportPath })
       ],
+
       verifyInputs: () => true
     })
+
     assert.equal(result.status, item.outcome, item.id)
   }
 })
@@ -242,9 +275,12 @@ test('cancellation terminates the owned process and prevents another check', asy
       command('later', '')
     ],
     signal: controller.signal,
+
     onStarted: () => controller.abort(),
+
     verifyInputs: () => true
   })
+
   assert.equal(result.status, 'cancelled')
   assert.equal(result.checks.length, 1)
   assert.throws(() => process.kill(result.checks[0].pid, 0), { code: 'ESRCH' })
@@ -252,6 +288,7 @@ test('cancellation terminates the owned process and prevents another check', asy
 
 test('workspace result directory retains the CI default and rejects paths outside the checkout', (t) => {
   const root = directory(t)
+
   assert.equal(
     resolveWorkspaceResultDirectory(root),
     path.join(root, '.ci-workspace-results')
@@ -269,6 +306,7 @@ test('workspace result directory retains the CI default and rejects paths outsid
 test('workspace evidence preserves the existing owner verdict for expected or retried failures', async (t) => {
   const root = directory(t)
   const reportPath = path.join(root, 'workspace.json')
+
   fs.writeFileSync(
     reportPath,
     JSON.stringify({
@@ -291,7 +329,9 @@ test('workspace evidence preserves the existing owner verdict for expected or re
         workspace: '@fixture/app'
       })
     ],
+
     verifyInputs: () => true
   })
+
   assert.equal(result.status, 'passed')
 })

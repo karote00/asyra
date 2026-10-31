@@ -56,6 +56,7 @@ const assertPropertyRelationMutationAllowed = (
   }
 
   const propertyIds = manager.getPropertyIdsByType(parentPropertyType)
+
   if (propertyIds.length > 0) {
     return relationFailure(
       'REGISTRATION_IN_USE',
@@ -69,6 +70,7 @@ const assertPropertyRelationMutationAllowed = (
   }
 
   const definition = getPropertyComponentConfigDefinition(parentPropertyType)
+
   if (!definition) {
     return relationFailure(
       'RELATION_REMOVE_FAILED',
@@ -77,6 +79,7 @@ const assertPropertyRelationMutationAllowed = (
       { source: { kind: 'property', key: parentPropertyType } }
     )
   }
+
   return clonePropertyComponentConfigRegistration(
     definition
   ) as PropertyComponentConfigDefinition
@@ -89,6 +92,7 @@ const commitPropertyComponentRegistration = (
 ): void => {
   const currentComponent = getPropertyComponent(type)
   const currentDefinition = getPropertyComponentConfigDefinition(type)
+
   if (!currentComponent) {
     return relationFailure(
       'REGISTRATION_NOT_FOUND',
@@ -128,8 +132,10 @@ export const getPropertyChildRelations = (
       { registration: { kind: 'property', key: parentPropertyType } }
     )
   }
+
   const children =
     getPropertyComponentConfigDefinition(parentPropertyType)?.children
+
   if (!children) {
     return []
   }
@@ -157,6 +163,7 @@ export const removePropertyChildRelation = (
     manager
   )
   const children = definition.children
+
   if (!children || children.key !== key) {
     return relationFailure(
       'RELATION_NOT_FOUND',
@@ -171,6 +178,7 @@ export const removePropertyChildRelation = (
 
   const nextDefinition = { ...definition, children: undefined }
   const Constructor = createPropertyComponentFromConfig(nextDefinition)
+
   commitPropertyComponentRegistration(
     parentPropertyType,
     Constructor,
@@ -183,6 +191,7 @@ export const removePropertyChildRelation = (
     target: { kind: 'property', key: children.childType },
     onTargetUnregister: 'detach'
   }
+
   return {
     ok: true,
     operation: 'remove-relation',
@@ -201,6 +210,7 @@ export const definePropertyChildRelation = (
     'define-relation',
     manager
   )
+
   if (definition.children) {
     return relationFailure(
       'DUPLICATE_RELATION',
@@ -212,6 +222,7 @@ export const definePropertyChildRelation = (
       }
     )
   }
+
   if (!getPropertyComponent(relationDefinition.childType)) {
     return relationFailure(
       'RELATION_TARGET_NOT_FOUND',
@@ -230,6 +241,7 @@ export const definePropertyChildRelation = (
     children: { ...relationDefinition }
   }
   const Constructor = createPropertyComponentFromConfig(nextDefinition)
+
   commitPropertyComponentRegistration(
     parentPropertyType,
     Constructor,
@@ -242,6 +254,7 @@ export const definePropertyChildRelation = (
     target: { kind: 'property', key: relationDefinition.childType },
     onTargetUnregister: 'detach'
   }
+
   return {
     ok: true,
     operation: 'define-relation',
@@ -289,5 +302,6 @@ export function unregisterPropertyComponent(type: string): boolean {
   }
 
   propertyComponentRegistry.unregister(type)
+
   return true
 }

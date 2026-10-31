@@ -18,5 +18,6 @@ export function projectBounds(
   const q = pose.rotation,
     d = ops.vector(direction)
   const local = ops.rotate([ineg(q[0]), ineg(q[1]), ineg(q[2]), q[3]], d)
+
   return intervalAlgebra.add(ops.dot(pose.position, d), ops.dot(bounds, local))
 }

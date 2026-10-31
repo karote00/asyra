@@ -10,8 +10,11 @@ import type { LiveSample } from './protocol'
 /** One invocation's admitted progress; independent instances at both trust boundaries. */
 export class LivePairProgress {
   private readonly pairs = new Map<string, MethodPairEvidence>()
+
   private bytes = 2
+
   private leaves = 0
+
   private evaluations = 0
 
   constructor(private readonly snapshot: ExperimentSnapshot) {}

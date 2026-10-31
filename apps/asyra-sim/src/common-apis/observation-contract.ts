@@ -53,6 +53,7 @@ export function observationMediaType(filename: unknown): string | undefined {
     filename.length > OBSERVATION_LIMITS.filename ||
     [...filename].some((character) => {
       const code = character.charCodeAt(0)
+
       return (
         code < 32 ||
         (code >= 127 && code <= 159) ||
@@ -63,7 +64,9 @@ export function observationMediaType(filename: unknown): string | undefined {
   ) {
     return undefined
   }
+
   const extension = /\.([a-z]+)$/i.exec(filename)?.[1].toLowerCase()
+
   return extension && Object.hasOwn(MEDIA_TYPES, extension)
     ? MEDIA_TYPES[extension]
     : undefined

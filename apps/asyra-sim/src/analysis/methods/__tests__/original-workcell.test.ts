@@ -14,6 +14,7 @@ it('profiles repeated original-workcell poses with preparation separate from que
     .spyOn(meshIndex, 'buildMeshIndex')
     .mockImplementation((...args) => {
       const start = performance.now()
+
       try {
         return build(...args)
       } finally {
@@ -21,16 +22,20 @@ it('profiles repeated original-workcell poses with preparation separate from que
       }
     })
   const start = performance.now()
+
   try {
     const cold = []
+
     for (const time of [3.8, 3.9, 4, 4.1, 4.2]) {
       const evidence = runOriginalPartMethod({
         ...snapshot,
         interval: [time, time]
       })
+
       expect(evidence.pairs).toHaveLength(snapshot.pairs.length)
       cold.push(evidence)
     }
+
     // eslint-disable-next-line no-console -- permanent bounded performance profile
     console.info(
       JSON.stringify({
@@ -42,6 +47,7 @@ it('profiles repeated original-workcell poses with preparation separate from que
       })
     )
     const coldBuilds = index.mock.calls.length
+
     index.mockClear()
     preparationMs = 0
     const execute = createOriginalPartExecutor()
@@ -52,13 +58,18 @@ it('profiles repeated original-workcell poses with preparation separate from que
         { ...snapshot, interval: [time, time] },
         {
           signal: new AbortController().signal,
+
           checkpoint: () => undefined,
+
           emitPair: () => undefined
         }
       )
+
       durations.push(performance.now() - poseStart)
+
       return evidence
     })
+
     expect(warm).toEqual(cold)
     expect(index.mock.calls.length).toBe(coldBuilds / 5)
     // eslint-disable-next-line no-console -- permanent bounded performance profile
@@ -83,6 +94,7 @@ it('runs the complete ordinary six-axis original-part study without exhausting t
   const exhausted = evidence.pairs.filter((pair) =>
     pair.evidence.leaves.some((leaf) => /work budget/.test(leaf.reason))
   )
+
   // eslint-disable-next-line no-console -- bounded permanent resource profile
   console.info(
     JSON.stringify({
@@ -115,9 +127,11 @@ it('profiles the CI-trace slow original-part pair across live poses', async () =
   const pair = snapshot.pairs.find(
     ({ id }) => id === 'example:joint-1/main-body::example:joint-3/main-body'
   )
+
   if (!pair) {
     throw new Error('Missing trace-identified original-part pair')
   }
+
   const execute = createOriginalPartExecutor(),
     durations: number[] = []
   const evidence = [3.904, 3.92, 4].map((time) => {
@@ -126,15 +140,20 @@ it('profiles the CI-trace slow original-part pair across live poses', async () =
       { ...snapshot, interval: [time, time], pairs: [pair] },
       {
         signal: new AbortController().signal,
+
         checkpoint: () => undefined,
+
         emitPair: () => undefined
       }
     )
+
     durations.push(Math.round(performance.now() - started))
     expect(result.coverage).toBe('complete')
     expect(result.pairs).toHaveLength(1)
+
     return result
   })
+
   // eslint-disable-next-line no-console -- permanent bounded CI-trace performance profile
   console.info(
     JSON.stringify({

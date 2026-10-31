@@ -44,6 +44,7 @@ export function useProjectRuntime(
       new IndexedProjectRepository(undefined, EXISTING_APP_DATABASE),
       {
         capture: (onCaptured) => controller.capture(onCaptured),
+
         apply: (snapshot, assertCurrent) =>
           controller.replace(snapshot, assertCurrent)
       }
@@ -98,13 +99,17 @@ export function useProjectRuntime(
     )
     const unsubscribePersistence = session.subscribe(() => {
       const project = session.getState().project
+
       if (!project) {
         return
       }
+
       const url = new URL(window.location.href)
+
       if (url.searchParams.get('projectId') === project.id) {
         return
       }
+
       url.searchParams.set('projectId', project.id)
       window.history.replaceState(window.history.state, '', url)
     })

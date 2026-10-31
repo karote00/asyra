@@ -36,6 +36,7 @@ export function useHistoryShortcuts(
         onHistory(event.shiftKey ? 'redo' : 'undo')
       }
     }
+
     // Bubble after local controls, before the window-level browser input adapter.
     document.addEventListener('keydown', handleKeyDown)
 

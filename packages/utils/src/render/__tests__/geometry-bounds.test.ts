@@ -120,6 +120,7 @@ it('keeps analytic ellipse bounds exact under direction reversal and rejects non
     rotation: Math.PI / 2
   })
   const bounds = calculateEllipseBounds(input)
+
   expect(bounds.x).toBeCloseTo(-2, 12)
   expect(bounds.y).toBeCloseTo(3, 12)
   expect(bounds.width).toBeCloseTo(4, 12)

@@ -14,16 +14,20 @@ test('focused canvas moves with W/S and right-drag looks around without changing
   await page.getByRole('button', { name: '夾具近看', exact: true }).click()
   const scene = page.getByTestId('scene')
   const canvas = page.locator('canvas')
+
   await scene.focus()
   const before = await canvas.screenshot()
+
   await page.keyboard.press('w')
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
   expect((await canvas.screenshot()).equals(before)).toBe(false)
   await page.keyboard.press('s')
   const bounds = await scene.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing scene')
   }
+
   await page.mouse.move(
     bounds.x + bounds.width / 2,
     bounds.y + bounds.height / 2
@@ -37,6 +41,7 @@ test('focused canvas moves with W/S and right-drag looks around without changing
   await page.mouse.up({ button: 'right' })
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
   const looked = await canvas.screenshot()
+
   expect(looked.equals(before)).toBe(false)
   await page.screenshot({
     path: testInfo.outputPath('flight-look.png'),
@@ -44,6 +49,7 @@ test('focused canvas moves with W/S and right-drag looks around without changing
   })
   await page.getByLabel('溫室縱向深度', { exact: true }).focus()
   const editing = await canvas.screenshot()
+
   await page.keyboard.press('w')
   expect((await canvas.screenshot()).equals(editing)).toBe(true)
   await expect(
@@ -58,13 +64,16 @@ test('wheel travels in world space and right-wheel changes speed without moving 
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const scene = page.getByTestId('scene')
   const canvas = page.locator('canvas')
+
   await canvas.hover()
   const initial = await canvas.screenshot()
+
   await page.mouse.wheel(0, -600)
   await expect(page.getByTestId('zoom-percent')).toHaveText('182%')
   expect((await canvas.screenshot()).equals(initial)).toBe(false)
   await scene.focus()
   await page.keyboard.press('Shift')
+
   // Speed controls overlay the canvas and intentionally change during tuning.
   const cameraImage = () =>
     canvas.screenshot({
@@ -73,7 +82,9 @@ test('wheel travels in world space and right-wheel changes speed without moving 
         page.getByTestId('movement-speed')
       ]
     })
+
   const traveled = await cameraImage()
+
   await page.mouse.down({ button: 'right' })
   await page.mouse.wheel(0, -400)
   await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
@@ -100,10 +111,13 @@ test('left drag uses the same stationary look as right drag', async ({
   await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
   const scene = page.getByTestId('scene')
   const bounds = await scene.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing scene')
   }
+
   const images: Buffer[] = []
+
   for (const button of ['left', 'right'] as const) {
     await page.getByRole('button', { name: '端面', exact: true }).click()
     await page.getByRole('button', { name: '走道內部', exact: true }).click()
@@ -120,11 +134,14 @@ test('left drag uses the same stationary look as right drag', async ({
     await page.mouse.up({ button })
     // Compare settled frames, not an in-flight GPU submission after pointerup.
     let capture = await page.locator('canvas').screenshot()
+
     await expect
       .poll(async () => {
         const next = await page.locator('canvas').screenshot()
         const stable = capture.equals(next)
+
         capture = next
+
         return stable
       })
       .toBe(true)
@@ -134,6 +151,7 @@ test('left drag uses the same stationary look as right drag', async ({
     })
     images.push(capture)
   }
+
   expect(images[0].equals(images[1])).toBe(true)
   await page.screenshot({
     path: testInfo.outputPath('first-person-look.png'),

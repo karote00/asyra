@@ -24,11 +24,15 @@ const contract = loadContract(
   undefined,
   'apps/asyra-design/undo-redo-flow-contracts.json'
 )
+
 function fixture(t) {
   const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/files-test-'))
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+
   return dir
 }
+
 function record(status = 'failed', time = 0) {
   const context = {
     format: 1,
@@ -40,6 +44,7 @@ function record(status = 'failed', time = 0) {
     issues: [],
     command: { cwd: '.', argv: ['test', String(time)] }
   }
+
   return localizeReport(
     root,
     context,
@@ -62,6 +67,7 @@ function record(status = 'failed', time = 0) {
     { finishedAt: new Date(1700000000001 + time).toISOString() }
   )
 }
+
 test('offline production, refresh, restart and idempotent import consume evidence without runner execution', (t) => {
   const dir = fixture(t),
     destination = fixture(t)
@@ -69,6 +75,7 @@ test('offline production, refresh, restart and idempotent import consume evidenc
     pass = record('passed', 1000)
   let executions = 0,
     reads = 0
+
   for (const name of [
     'spawn',
     'spawnSync',
@@ -82,19 +89,23 @@ test('offline production, refresh, restart and idempotent import consume evidenc
       throw new Error('Unexpected execution')
     })
   }
+
   Reflect.deleteProperty(require.cache, require.resolve('../localization.cjs'))
   Reflect.deleteProperty(
     require.cache,
     require.resolve('../observation-files.cjs')
   )
   const passive = require('../observation-files.cjs')
+
   saveObservation(observationDirectory(dir), failure)
   const reader = createObservationReader(observationDirectory(dir), {
     readFile(file) {
       reads++
+
       return fs.readFileSync(file, 'utf8')
     }
   })
+
   assert.equal(reader.list().currentCases[0].status, 'failed')
   reader.list()
   assert.equal(reads, 1)
@@ -112,6 +123,7 @@ test('offline production, refresh, restart and idempotent import consume evidenc
   const restarted = createObservationReader(
     observationDirectory(destination)
   ).list()
+
   assert.deepEqual(restarted, reader.list())
   assert.equal(restarted.runs.length, 2)
   assert.equal(executions, 0)
@@ -120,6 +132,7 @@ test('completed discovery warnings gain durable associations without original re
   const dir = fixture(t),
     next = record('failed', 1000),
     previous = record('failed', 0)
+
   previous.cases = []
   previous.issues = ['No Playwright cases recorded']
   previous.executionFailureDetails = []
@@ -141,16 +154,19 @@ test('completed discovery warnings gain durable associations without original re
     caseIds: [contract.cases[0].id],
     reason: 'Correct exact selector'
   }
+
   associate(dir, previous.id, next.id, request)
   associate(dir, previous.id, next.id, request)
   let reads = 0
   const reader = createObservationReader(observationDirectory(dir), {
     readFile(file) {
       reads++
+
       return fs.readFileSync(file, 'utf8')
     }
   })
   const state = reader.list()
+
   assert.equal(state.warningGroups.current.length, 0)
   assert.equal(state.warningGroups.history[0].supersededBy, next.id)
   assert.equal(state.currentCases[0].status, 'failed')
@@ -170,6 +186,7 @@ test('a recovered case summary retains the earlier discovery recovery link', (t)
     previous = record('failed', 0),
     failed = record('failed', 1000),
     passed = record('passed', 2000)
+
   previous.cases = []
   previous.issues = ['No Playwright cases recorded']
   previous.executionFailureDetails = []
@@ -183,6 +200,7 @@ test('a recovered case summary retains the earlier discovery recovery link', (t)
   for (const value of [previous, failed, passed]) {
     saveObservation(observationDirectory(dir), value)
   }
+
   associate(dir, previous.id, failed.id, {
     version: 1,
     manifestPath: contract.manifestPath,
@@ -192,11 +210,14 @@ test('a recovered case summary retains the earlier discovery recovery link', (t)
   const context = createObservationReader(
     observationDirectory(dir)
   ).warningContext(passed.id)
+
   assert.equal(context.total, 1)
   assert.equal(context.items[0].supersededBy, failed.id)
   const later = record('failed', 3000)
+
   saveObservation(observationDirectory(dir), later)
   const state = createObservationReader(observationDirectory(dir)).list()
+
   assert.equal(state.currentCases[0].runId, later.id)
   assert.equal(state.warningGroups.current.length, 0)
   assert.equal(state.warningGroups.history[0].supersededBy, failed.id)
@@ -205,6 +226,7 @@ test('corrupt bundles and conflicting completed records are rejected before impo
   const dir = fixture(t),
     destination = fixture(t),
     input = record()
+
   saveObservation(observationDirectory(dir), input)
   exportBundle(dir, 'bundle')
   fs.cpSync(path.join(dir, 'bundle'), path.join(destination, 'bundle'), {
@@ -260,6 +282,7 @@ test('CI projects every retained mapped case, isolates identity and never launch
     },
     { projects: ['chromium'] }
   )
+
   localized.command.environment = Object.fromEntries(
     Object.entries(identity).map(([key, value]) => [
       'FLOW_RESULT_' + key.toUpperCase(),
@@ -269,12 +292,14 @@ test('CI projects every retained mapped case, isolates identity and never launch
   saveObservation(observationDirectory(dir), localized)
   exportBundle(dir, 'bundles/flow-observations-design-123-2', identity)
   let executions = 0
+
   for (const name of ['spawn', 'spawnSync', 'execFile', 'execFileSync']) {
     t.mock.method(childProcess, name, () => {
       executions++
       throw new Error('Unexpected execution')
     })
   }
+
   const { projectObservations } = require('../workflow-results.cjs')
   const envelopes = [
     {
@@ -293,6 +318,7 @@ test('CI projects every retained mapped case, isolates identity and never launch
     ['functional'],
     envelopes
   )
+
   assert.deepEqual(result.blockers, [])
   assert.equal(
     result.producers.design.currentCases[0].locations[0].stepId,
@@ -325,6 +351,7 @@ test('missing attachment and unsafe manifest entries cannot establish imported e
   const bytes = Buffer.from('evidence'),
     retainedPath =
       'tmp/flow-inspector/test-results/' + input.id + '/attachments/0'
+
   fs.mkdirSync(path.dirname(path.join(dir, retainedPath)), { recursive: true })
   fs.writeFileSync(path.join(dir, retainedPath), bytes)
   input.retainedArtifacts = [
@@ -346,6 +373,7 @@ test('missing attachment and unsafe manifest entries cannot establish imported e
   const manifest = JSON.parse(
     fs.readFileSync(path.join(dir, 'bundle/bundle.json'))
   )
+
   manifest.files[0].path = 'tmp/flow-inspector/test-results/../../outside'
   fs.writeFileSync(
     path.join(dir, 'bundle/bundle.json'),
@@ -364,6 +392,7 @@ test('a retained failure outside the representative inventory blocks CI projecti
     attempt: '2'
   }
   const input = record('failed')
+
   input.command.environment = Object.fromEntries(
     Object.entries(identity).map(([key, value]) => [
       'FLOW_RESULT_' + key.toUpperCase(),
@@ -388,6 +417,7 @@ test('a retained failure outside the representative inventory blocks CI projecti
       }
     ]
   )
+
   assert.equal(result.producers.design.status, 'failed')
   assert.ok(result.blockers.length)
 })
@@ -395,6 +425,7 @@ test('equal argv cannot bypass explicit discovery recovery or intended coverage'
   const dir = fixture(t),
     previous = record('failed', 0),
     next = record('passed', 1000)
+
   previous.cases = []
   previous.finishedAt = new Date(1700000000001).toISOString()
   previous.issues = ['No Playwright cases recorded']
@@ -420,6 +451,7 @@ test('refresh and restart expose lost attachments without rewriting evidence or 
   const retainedPath =
     'tmp/flow-inspector/test-results/' + input.id + '/attachments/0'
   const file = path.join(dir, retainedPath)
+
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, bytes)
   input.retainedArtifacts = [
@@ -435,15 +467,18 @@ test('refresh and restart expose lost attachments without rewriting evidence or 
     }
   ]
   const failure = record('failed', -1000)
+
   saveObservation(observationDirectory(dir), failure)
   saveObservation(observationDirectory(dir), input)
   let reads = 0
   const reader = createObservationReader(observationDirectory(dir), {
     readArtifact(file) {
       reads++
+
       return fs.readFileSync(file)
     }
   })
+
   assert.equal(reader.list().currentCases[0].resolution, 'mapped')
   reader.list()
   assert.equal(reads, 1)

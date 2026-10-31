@@ -37,6 +37,7 @@ export class FeatureRegistry {
    */
   getAPI(name: string): FeatureAPI {
     const entry = this.registry.get(name)
+
     return entry?.api || ({} as FeatureAPI)
   }
 
@@ -47,6 +48,7 @@ export class FeatureRegistry {
    */
   getDefinition(name: string): FeatureDefinition | undefined {
     const entry = this.registry.get(name)
+
     return entry?.definition
   }
 

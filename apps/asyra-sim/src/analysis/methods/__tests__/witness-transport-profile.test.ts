@@ -12,29 +12,38 @@ import { transport, type SourceWitness } from './witness-transport-control'
 
 const diagnosticWorkLimit = 500000
 const ops = kinematics.poseOperations(kinematics.intervalAlgebra)
+
 // Independent exact binary64-to-rational comparison, no production interval
 // arithmetic in the expected normalized-rotation coordinates or squared norm.
 function rational(value: number): readonly [bigint, bigint] {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   const bits = view.getBigUint64(0),
     exponent = Number((bits >> 52n) & 2047n)
   let numerator = bits & ((1n << 52n) - 1n)
+
   if (exponent) {
     numerator += 1n << 52n
   }
+
   if (bits >> 63n) {
     numerator = -numerator
   }
+
   const shift = exponent ? exponent - 1075 : -1074
+
   return shift >= 0
     ? [numerator << BigInt(shift), 1n]
     : [numerator, 1n << BigInt(-shift)]
 }
+
 function compare(value: number, numerator: bigint, denominator: bigint) {
   const [a, b] = rational(value)
+
   return a * denominator - numerator * b
 }
+
 function oracleInput(rotation: readonly [number, number, number, number]) {
   const point: Vec3 = [3 / 8, 1 / 4, -1 / 8]
   const geometry = Object.freeze({
@@ -91,8 +100,10 @@ function oracleInput(rotation: readonly [number, number, number, number]) {
       source.shapes[1]
     ]
   }
+
   return { source, target }
 }
+
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
@@ -120,10 +131,12 @@ it.each([
     const { source, target } = oracleInput(rotation)
     let work = 0
     const result = transport(source, target, () => work++)
+
     expect(result).toBeDefined()
     if (!result) {
       throw new Error('Missing eligible transport')
     }
+
     expect(work).toBe(6)
     point.forEach(([n, d], axis) => {
       expect(compare(result.a[axis][0], n, d)).toBeLessThanOrEqual(0n)
@@ -132,11 +145,13 @@ it.each([
       expect(result.b[axis][1]).toBeGreaterThanOrEqual(0)
     })
     const [n, d] = rational(result.upper)
+
     expect(n * n * squared[1] - squared[0] * d * d).toBeGreaterThanOrEqual(0n)
   }
 )
 it('rejects invalid provenance after one charge and propagates cancellation before transport output', () => {
   const { source, target } = oracleInput([0, 0, 3, 4])
+
   for (const rejected of [
     { ...source, node: [0, 1] as const },
     { ...source, time: 2 },
@@ -144,10 +159,13 @@ it('rejects invalid provenance after one charge and propagates cancellation befo
     { ...source, shapes: [source.shapes[1], source.shapes[0]] as const }
   ]) {
     let work = 0
+
     expect(transport(rejected, target, () => work++)).toBeUndefined()
     expect(work).toBe(1)
   }
+
   let work = 0
+
   expect(() =>
     transport(source, target, () => {
       if (++work === 4) {
@@ -170,9 +188,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             item.a.bodyId === 'example:joint-2' &&
             item.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing original source pair')
         }
+
         const node = [
           snapshot.trajectory.keyframes[segment].time,
           snapshot.trajectory.keyframes[segment + 1].time
@@ -180,9 +200,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const middle = node[0] + (node[1] - node[0]) / 2
         let time: Interval | undefined
         const interpolate = kinematics.interpolateSegment
+
         vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
           (trajectory, segment, value, algebra) => {
             time = value as Interval
+
             return interpolate(trajectory, segment, value, algebra)
           }
         )
@@ -193,8 +215,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         })[] = []
         let current: { before: number; firstWarningWork?: number } | undefined
         const solve = convex.convexDistance
+
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
           const result = solve(...args)
+
           if (
             current &&
             current.firstWarningWork === undefined &&
@@ -202,17 +226,22 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           ) {
             current.firstWarningWork = context.work - current.before
           }
+
           return result
         })
         const distance = context.distance.bind(context)
+
         context.distance = (a, b, ...args) => {
           if (!time || time[0] !== time[1]) {
             throw new Error('Missing actual static time')
           }
+
           const inputTime = time[0]
+
           current = { before: context.work }
           try {
             const evidence = distance(a, b, ...args)
+
             rows.push({
               node,
               time: inputTime,
@@ -221,13 +250,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               work: context.work - current.before,
               firstWarningWork: current.firstWarningWork
             })
+
             return evidence
           } finally {
             current = undefined
           }
         }
+
         // Retained passive protocol baseline predates node-owned seeding.
         const query = continuous.queryContinuousPair
+
         vi.spyOn(continuous, 'queryContinuousPair').mockImplementation(
           (input, settings, checkpoint, kernel) =>
             query(
@@ -253,14 +285,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         expect(baseline.coverage).toBe('complete')
         const sourceTime = segment === 114 ? node[0] : middle,
           targetTime = segment === 114 ? middle : node[1]
         const source = rows.find((row) => row.time === sourceTime),
           target = rows.find((row) => row.time === targetTime)
+
         if (!source || !target) {
           throw new Error('Missing frozen actual neighboring samples')
         }
+
         expect(source.evidence.penetration).toBe(false)
         expect(source.evidence.upper).toBeLessThan(
           snapshot.rule.minimumClearance
@@ -270,9 +305,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           if (shape.geometry.kind !== 'mesh') {
             throw new Error('Expected original mesh source')
           }
+
           expect(Object.isFrozen(shape.geometry.positions)).toBe(true)
           expect(Object.isFrozen(shape.geometry.indices)).toBe(true)
         }
+
         let work = 0
         const transported = transport(source, target, () => {
           if (context.work + ++work > diagnosticWorkLimit) {
@@ -281,10 +318,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             )
           }
         })
+
         expect(transported).toBeDefined()
         if (!transported) {
           throw new Error('Expected admissible original witness')
         }
+
         expect(work).toBe(6)
         expect(transported.upper).toBeGreaterThanOrEqual(target.evidence.lower)
         // eslint-disable-next-line no-console -- passive seed eligibility and complete baseline evidence, not measured savings

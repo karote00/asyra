@@ -9,9 +9,12 @@ const tokenFields = [
   'reasoningOutputTokens',
   'totalTokens'
 ] as const
+
 type TokenUsage = Record<(typeof tokenFields)[number], number>
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
 const correlationId = (value: unknown): string | undefined =>
   typeof value === 'string' && /^[a-zA-Z0-9:_-]{1,160}$/.test(value)
     ? value
@@ -271,6 +274,7 @@ const evidenceKeys = new Set([
   'view',
   'region'
 ])
+
 const summarizeEvidence = (
   value: unknown,
   depth = 0,
@@ -279,18 +283,22 @@ const summarizeEvidence = (
   if (--budget.nodes < 0) {
     return '[evidence budget exhausted]'
   }
+
   if (depth > 6) {
     return '[nested evidence omitted]'
   }
+
   if (typeof value === 'string') {
     if (/data:|base64|<svg|Bearer\s/i.test(value)) {
       return '[payload omitted]'
     }
+
     return (
       value
         .replace(/https?:\/\/[^\s"<>]+/g, (address) => {
           try {
             const url = new URL(address)
+
             return url.origin + url.pathname
           } catch {
             return '[invalid URL]'
@@ -299,6 +307,7 @@ const summarizeEvidence = (
         .slice(0, 500) + (value.length > 500 ? ' [truncated]' : '')
     )
   }
+
   if (
     typeof value === 'boolean' ||
     typeof value === 'number' ||
@@ -306,6 +315,7 @@ const summarizeEvidence = (
   ) {
     return value
   }
+
   if (Array.isArray(value)) {
     return {
       count: value.length,
@@ -315,9 +325,11 @@ const summarizeEvidence = (
       truncated: value.length > 12
     }
   }
+
   if (!isRecord(value)) {
     return undefined
   }
+
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => evidenceKeys.has(key))
@@ -336,6 +348,7 @@ const summarizeEvidence = (
             }
           ]
         }
+
         return [
           key,
           ['fillColor', 'strokeColor'].includes(key) &&
@@ -363,9 +376,11 @@ const persistedEvidence = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map(persistedEvidence)
   }
+
   if (!isRecord(value)) {
     return value
   }
+
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => [
       key,
@@ -380,13 +395,17 @@ const payloadShape = (value: unknown) => {
   if (Array.isArray(value)) {
     return 'array'
   }
+
   if (value === null) {
     return 'null'
   }
+
   return typeof value
 }
+
 const diagnosticSummary = (value: unknown) => {
   const summary = persistedEvidence(summarizeEvidence(value))
+
   if (JSON.stringify(summary ?? null).length > 4000) {
     return {
       truncated: true,
@@ -394,8 +413,10 @@ const diagnosticSummary = (value: unknown) => {
         'Diagnostic summary exceeds its display budget; inspect the local payload reference.'
     }
   }
+
   return summary
 }
+
 // Shape and omissions are explicit; this is not a raw-payload recorder.
 const payloadDiagnostic = (value: unknown) => ({
   shape: payloadShape(value),
@@ -412,6 +433,7 @@ const payloadDiagnostic = (value: unknown) => ({
     : [],
   policy: 'bounded-allowlist'
 })
+
 const outputDiagnostic = (
   value: unknown,
   failed: boolean,
@@ -427,6 +449,7 @@ const outputDiagnostic = (
   let usability = 'unknown'
   let basis = 'No explicit output-availability contract was returned.'
   const outcome = isRecord(result.toolOutcome) ? result.toolOutcome : {}
+
   if (
     !failed &&
     [
@@ -444,6 +467,7 @@ const outputDiagnostic = (
     } else if (outcome.status === 'success') {
       usability = 'usable'
     }
+
     basis =
       'The App invocation owner classified execution output; this does not certify visual correctness.'
   } else if (
@@ -486,6 +510,7 @@ const outputDiagnostic = (
     basis =
       'Receipt acknowledges output or operations; this does not certify visual correctness.'
   }
+
   const issue = Array.isArray(outcome.issues)
     ? outcome.issues.find(
         (item) => isRecord(item) && typeof item.message === 'string'
@@ -503,6 +528,7 @@ const outputDiagnostic = (
     reason: 'Execution receipt alone does not verify the requested result.'
   }
   const checks = result.checks
+
   if (
     Array.isArray(checks) &&
     checks.length > 0 &&
@@ -514,11 +540,13 @@ const outputDiagnostic = (
     )
   ) {
     let status = 'unverified'
+
     if (checks.some((check) => check.status === 'fail')) {
       status = 'failed'
     } else if (checks.every((check) => check.status === 'pass')) {
       status = 'passed'
     }
+
     correctness = {
       status,
       source: 'model-review',
@@ -526,16 +554,20 @@ const outputDiagnostic = (
         'Recorded criterion judgments only; see each check and its evidence. This is not independent verification of the artwork.'
     }
   }
+
   let executionStatus: string = usability
+
   if (usability === 'unusable') {
     executionStatus =
       result.stage === 'admission' || result.code === 'PREPARATION_REJECTED'
         ? 'rejected'
         : 'failed'
   }
+
   if (failed) {
     executionStatus = 'failed'
   }
+
   return {
     ...payloadDiagnostic(value),
     correctness,
@@ -597,6 +629,7 @@ export const createAiExecutionProfiler = (
   let intervalStartedAt = 0
   let observedToolAndResearchMs = 0
   let recordingFailures = 0
+
   const persist = (record: ExecutionRecord) => {
     try {
       options.sink?.write({
@@ -608,6 +641,7 @@ export const createAiExecutionProfiler = (
       // A diagnostic sink cannot change execution.
     }
   }
+
   persist({
     event: 'ai_request_started',
     schemaVersion: 2,
@@ -634,6 +668,7 @@ export const createAiExecutionProfiler = (
     sourceSpanId: correlationId(options.sourceSpanId) ?? null,
     ...(options.lifecycle ? { lifecycleVersion: 1 } : {})
   })
+
   const lifecycle = (
     stage: 'lifecycle_started' | 'lifecycle_completed',
     evidence: {
@@ -655,6 +690,7 @@ export const createAiExecutionProfiler = (
       recordedAt: new Date().toISOString(),
       evidence
     }
+
     persist(record)
     try {
       log(JSON.stringify(record))
@@ -662,17 +698,21 @@ export const createAiExecutionProfiler = (
       /* Diagnostics cannot fail work. */
     }
   }
+
   const root = {
     callId: 'request-lifecycle',
     owner: 'app' as const,
     purpose:
       options.purpose ?? 'Compose, execute and settle this provider invocation'
   }
+
   if (options.lifecycle) {
     lifecycle('lifecycle_started', root, 0)
   }
+
   return {
     requestId,
+
     span(evidence: {
       callId: string
       owner: 'app' | 'provider'
@@ -682,16 +722,20 @@ export const createAiExecutionProfiler = (
       if (finished) {
         return () => undefined
       }
+
       lifecycle('lifecycle_started', evidence)
       let closed = false
+
       return () => {
         if (closed || finished) {
           return
         }
+
         closed = true
         lifecycle('lifecycle_completed', evidence)
       }
     },
+
     recordTransport(
       direction: 'sent' | 'received',
       bytes: number,
@@ -700,10 +744,13 @@ export const createAiExecutionProfiler = (
       if (finished || !Number.isSafeInteger(bytes) || bytes < 0) {
         return
       }
+
       const key = direction === 'sent' ? 'sentBytes' : 'receivedBytes'
+
       if (stream === 'protocol') {
         transport[key] += bytes
       }
+
       persist({
         event: 'ai_request_trace',
         schemaVersion: 2,
@@ -715,6 +762,7 @@ export const createAiExecutionProfiler = (
         evidence: { direction, bytes, stream }
       })
     },
+
     trace(
       stage:
         | 'progress_projection'
@@ -748,15 +796,19 @@ export const createAiExecutionProfiler = (
       if (finished) {
         return
       }
+
       const observedElapsedMs = Math.max(0, now() - startedAt)
+
       try {
         if (isRecord(evidence) && typeof evidence.callId === 'string') {
           const research = stage.startsWith('research_')
           const key = `${research ? 'research' : 'tool'}:${evidence.callId}`
+
           if (stage === 'tool_started' || stage === 'research_started') {
             if (!activeIntervals.size) {
               intervalStartedAt = now()
             }
+
             activeIntervals.add(key)
           } else if (
             stage === 'tool_completed' ||
@@ -771,6 +823,7 @@ export const createAiExecutionProfiler = (
             }
           }
         }
+
         let diagnostic:
           | {
               input?: unknown
@@ -779,6 +832,7 @@ export const createAiExecutionProfiler = (
               contracts?: unknown
             }
           | undefined
+
         if (isRecord(evidence) && typeof evidence.callId === 'string') {
           const payload = (phase: 'input' | 'output', value: unknown) =>
             options.sink?.writePayload?.(
@@ -787,8 +841,10 @@ export const createAiExecutionProfiler = (
               phase,
               value
             ) ?? { status: 'unavailable', path: null }
+
           if (stage === 'research_started' || stage === 'research_completed') {
             const phase = stage === 'research_started' ? 'input' : 'output'
+
             // Native item metadata is not the upstream request/response payload.
             diagnostic = {
               [phase]: {
@@ -800,6 +856,7 @@ export const createAiExecutionProfiler = (
               }
             }
           }
+
           if (
             (stage === 'provider_item_completed' ||
               stage === 'provider_notification' ||
@@ -816,11 +873,13 @@ export const createAiExecutionProfiler = (
               }
             }
           }
+
           if (stage === 'visual_assessment_context') {
             diagnostic = {
               input: { payload: payload('input', evidence.arguments) }
             }
           }
+
           if (stage === 'provider_notifications') {
             diagnostic = {
               output: {
@@ -828,9 +887,11 @@ export const createAiExecutionProfiler = (
               }
             }
           }
+
           if (stage === 'capabilities_advertised') {
             diagnostic = { contracts: payload('input', evidence.definitions) }
           }
+
           if (stage === 'tool_started' || stage === 'action_started') {
             diagnostic = {
               attribution: {
@@ -854,6 +915,7 @@ export const createAiExecutionProfiler = (
               }
             }
           }
+
           if (
             [
               'tool_completed',
@@ -866,6 +928,7 @@ export const createAiExecutionProfiler = (
               code: evidence.code,
               reason: evidence.reason
             }
+
             diagnostic = {
               output: {
                 ...outputDiagnostic(
@@ -878,6 +941,7 @@ export const createAiExecutionProfiler = (
             }
           }
         }
+
         const summarized = summarizeEvidence(
           isRecord(evidence) && 'nativeOutput' in evidence
             ? Object.fromEntries(
@@ -913,17 +977,21 @@ export const createAiExecutionProfiler = (
                   reason: 'Evidence exceeded the per-event log budget.'
                 }
         }
+
         persist(record)
         log(JSON.stringify(record))
       } catch {
         // A diagnostic sink must not alter execution or settlement.
       }
     },
+
     update(value: unknown): void {
       if (finished) {
         return
       }
+
       const total = isRecord(value) ? value.total : undefined
+
       if (
         !isRecord(total) ||
         !tokenFields.every(
@@ -932,11 +1000,14 @@ export const createAiExecutionProfiler = (
         )
       ) {
         invalidSnapshot = true
+
         return
       }
+
       const snapshot = Object.fromEntries(
         tokenFields.map((field) => [field, total[field]])
       ) as TokenUsage
+
       if (
         snapshot.cachedInputTokens > snapshot.inputTokens ||
         snapshot.reasoningOutputTokens > snapshot.outputTokens ||
@@ -944,31 +1015,41 @@ export const createAiExecutionProfiler = (
         snapshot.totalTokens !== snapshot.inputTokens + snapshot.outputTokens
       ) {
         invalidSnapshot = true
+
         return
       }
+
       const previous = tokens
+
       if (
         previous &&
         tokenFields.some((field) => snapshot[field] < previous[field])
       ) {
         return
       }
+
       tokens = snapshot
     },
+
     finish(outcome: UsageOutcome): void {
       if (finished) {
         return
       }
+
       finished = true
       let usageStatus = 'unavailable'
+
       if (tokens !== null) {
         usageStatus =
           outcome === 'completed' && !invalidSnapshot ? 'reported' : 'partial'
       }
+
       const durationMs = Math.max(0, now() - startedAt)
+
       if (options.lifecycle) {
         lifecycle('lifecycle_completed', root, durationMs)
       }
+
       const observedMs = Math.min(
         durationMs,
         observedToolAndResearchMs +
@@ -1000,6 +1081,7 @@ export const createAiExecutionProfiler = (
         usageStatus,
         tokens
       }
+
       // Diagnostics must never change the drawing request's settlement.
       persist(report)
       try {

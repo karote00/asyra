@@ -8,9 +8,11 @@ export function ExperimentCreation() {
   const view = useExperimentView()
   const saving = useExperimentField('saving')
   const canonical = useExperimentValue((state) => !!state.canonical)
+
   if (canonical) {
     return null
   }
+
   return (
     <button
       className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
@@ -44,14 +46,17 @@ export function ExperimentRunAction() {
             const invalid = panel?.querySelector<HTMLInputElement>(
               'input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"]'
             )
+
             if (invalid) {
               view
                 .getSnapshot()
                 .setError(
                   `Correct ${invalid.getAttribute('aria-label') ?? invalid.closest('label')?.textContent ?? 'the marked input'} before analysis.`
                 )
+
               return
             }
+
             void view.getSnapshot().run()
           }}
         >

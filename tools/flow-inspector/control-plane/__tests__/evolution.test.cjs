@@ -15,10 +15,13 @@ const actor = {
   id: 'owner',
   capabilities: ['decide-contract', 'retire-contract']
 }
+
 function version(edit) {
   const input = structuredClone(manifest)
+
   edit?.(input)
   const contract = admitContract(input, architecture)
+
   return {
     contract,
     selectors: contract.cases.map((c) => ({
@@ -29,12 +32,14 @@ function version(edit) {
     }))
   }
 }
+
 const review = (base, candidate, options) =>
   compareVersion(createHistory(base), candidate, options)
 
 const targetId = '11111111-1111-4111-8111-111111111111'
 const assessmentId = '22222222-2222-4222-8222-222222222222'
 const requestId = '33333333-3333-4333-8333-333333333333'
+
 function targetAssessment(base, candidate, comparison) {
   const source = {
     repository: '/tmp/offline-target',
@@ -47,6 +52,7 @@ function targetAssessment(base, candidate, comparison) {
     acceptedBaseline: { revision: 1, contractDigest: base.contract.digest },
     source
   }
+
   return {
     id: assessmentId,
     actor: actor.id,
@@ -99,11 +105,14 @@ test('stable identity exposes rename, move and content change independently', ()
   const renamed = version((m) => {
     m.flows[0].cases[0].testName += ' renamed'
   })
+
   assert.ok(review(base, renamed).changes.some((c) => c.kind === 'rename'))
   const moved = structuredClone(base)
+
   moved.selectors[0].file = 'packages/factory/src/__tests__/moved.test.ts'
   assert.ok(review(base, moved).changes.some((c) => c.kind === 'move'))
   const changed = structuredClone(base)
+
   changed.selectors[0].contentDigest = 'b'.repeat(64)
   assert.ok(
     review(base, changed).changes.some((c) => c.kind === 'content-change')
@@ -114,6 +123,7 @@ test('stable identity exposes rename, move and content change independently', ()
 test('missing selector and unknown evidence are explicit unresolved outcomes', () => {
   const base = version(),
     candidate = structuredClone(base)
+
   candidate.selectors.shift()
   candidate.selectors.push({
     caseId: 'unknown',
@@ -122,6 +132,7 @@ test('missing selector and unknown evidence are explicit unresolved outcomes', (
     contentDigest: 'a'.repeat(64)
   })
   const r = review(base, candidate)
+
   assert.deepEqual(r.blockers.map((b) => b.kind).sort(), [
     'missing-selector',
     'unknown-evidence'
@@ -143,6 +154,7 @@ test('split and merge require explicit complete successor identities without heu
   const base = version()
   const split = version((m) => {
     const c = m.flows[0].cases[0]
+
     m.flows[0].cases.push({
       ...c,
       id: 'deferred.snapshot.extra',
@@ -158,6 +170,7 @@ test('split and merge require explicit complete successor identities without heu
       }
     ]
   })
+
   assert.ok(r.changes.some((c) => c.kind === 'split'))
   assert.throws(
     () =>
@@ -181,6 +194,7 @@ test('split and merge require explicit complete successor identities without heu
       }
     ]
   })
+
   assert.ok(merged.changes.some((c) => c.kind === 'merge'))
   assert.ok(merged.changes.some((c) => c.kind === 'deletion'))
 })
@@ -201,6 +215,7 @@ test('deletion requires separate retirement authority and preserves immutable hi
     reason: 'Retire duplicate requirement',
     retirement: ['extra']
   }
+
   assert.throws(
     () =>
       decideVersion(
@@ -221,6 +236,7 @@ test('deletion requires separate retirement authority and preserves immutable hi
     /authorized/
   )
   const next = decideVersion(history, r, candidate, request, actor)
+
   assert.equal(next.revision, 2)
   assert.equal(history.revision, 1)
   assert.deepEqual(next.versions[0], history.versions[0])
@@ -238,6 +254,7 @@ test('acceptance binds exact base, all observed bytes, actor, reason and replay 
   const history = createHistory(base),
     r = compareVersion(history, candidate)
   const request = { decision: 'accept', reason: 'Approved scope revision' }
+
   assert.throws(
     () =>
       decideVersion(history, r, candidate, request, {
@@ -252,12 +269,14 @@ test('acceptance binds exact base, all observed bytes, actor, reason and replay 
     /reason/
   )
   const changed = structuredClone(candidate)
+
   changed.selectors[0].contentDigest = 'b'.repeat(64)
   assert.throws(
     () => decideVersion(history, r, changed, request, actor),
     /candidate/
   )
   const next = decideVersion(history, r, candidate, request, actor)
+
   assert.strictEqual(decideVersion(next, r, candidate, request, actor), next)
   assert.throws(
     () =>
@@ -271,6 +290,7 @@ test('acceptance binds exact base, all observed bytes, actor, reason and replay 
     /decided/
   )
   const stale = compareVersion(history, base)
+
   assert.throws(() => decideVersion(next, stale, base, request, actor), /stale/)
   const rejected = decideVersion(
     history,
@@ -279,6 +299,7 @@ test('acceptance binds exact base, all observed bytes, actor, reason and replay 
     { decision: 'reject', reason: 'keep baseline' },
     actor
   )
+
   assert.equal(rejected.revision, 1)
   assert.deepEqual(rejected.versions, history.versions)
 })
@@ -299,6 +320,7 @@ test('target baseline acceptance binds complete current assessment and keeps eli
       retirement: []
     }
   const before = JSON.stringify({ history, assessment })
+
   assert.equal(assessment.projection.eligible, true)
   assert.equal(history.revision, 1)
   const accepted = acceptTargetBaseline(
@@ -309,6 +331,7 @@ test('target baseline acceptance binds complete current assessment and keeps eli
     request,
     actor
   )
+
   assert.equal(accepted.revision, 2)
   assert.equal(
     accepted.versions.at(-1).contract.digest,
@@ -356,6 +379,7 @@ test('authorized exact target acceptance replay precedes currentness work but ne
       actor
     )
   const stale = structuredClone(assessment)
+
   stale.projection.current = false
   stale.projection.eligible = false
   assert.strictEqual(
@@ -422,6 +446,7 @@ test('target acceptance identity is canonical across reordered creation, replay 
       reordered,
       actor
     )
+
   assert.strictEqual(
     acceptTargetBaseline(
       accepted,
@@ -471,6 +496,7 @@ test('target acceptance rejects incomplete evidence and generic target-pinned ac
       reason: 'Accept the complete offline integrated target',
       retirement: []
     }
+
   assert.throws(
     () =>
       decideVersion(
@@ -493,6 +519,7 @@ test('target acceptance rejects incomplete evidence and generic target-pinned ac
     (value) => (value.works[0].prerequisites.status = 'unknown')
   ]) {
     const assessment = targetAssessment(base, candidate, comparison)
+
     mutate(assessment.projection)
     assert.throws(
       () =>
@@ -529,6 +556,7 @@ test('target acceptance requires separate exact retirement authority', () => {
       reason: 'Retire the exact removed target obligation',
       retirement: ['retired.target.case']
     }
+
   assert.throws(
     () =>
       acceptTargetBaseline(
@@ -552,6 +580,7 @@ test('target acceptance requires separate exact retirement authority', () => {
     request,
     actor
   )
+
   assert.deepEqual(accepted.decisions.at(-1).retirement, [
     'retired.target.case'
   ])
@@ -560,6 +589,7 @@ test('target acceptance requires separate exact retirement authority', () => {
 test('duplicate or malformed selector identity cannot create accepted evidence', () => {
   const base = version(),
     candidate = structuredClone(base)
+
   candidate.selectors.push(candidate.selectors[0])
   assert.throws(() => review(base, candidate), /selector/)
   candidate.selectors.pop()
@@ -574,8 +604,10 @@ function sourceVersions(t) {
   const sourceOwner = require('../snapshot.cjs')
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/version-source-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const contract = version().contract
   const seed = sourceOwner.captureSource(
@@ -584,7 +616,9 @@ function sourceVersions(t) {
     contract
   )
   const repository = path.join(directory, 'repository')
+
   fs.cpSync(seed.sourceRoot, repository, { recursive: true })
+
   function capture() {
     const attemptId = randomUUID()
     const snapshot = sourceOwner.captureSource(
@@ -596,6 +630,7 @@ function sourceVersions(t) {
     const contentDigest = admitted.verificationSource.files.find(
       (file) => file.path === contract.testFile
     ).digest
+
     return {
       contract,
       selectors: contract.cases.map((item) => ({
@@ -614,10 +649,13 @@ function sourceVersions(t) {
       }
     }
   }
+
   return {
     capture,
+
     changeConfiguration() {
       const file = path.join(repository, contract.configFile)
+
       fs.chmodSync(file, 0o600)
       fs.appendFileSync(file, '\n')
     }
@@ -627,12 +665,15 @@ function sourceVersions(t) {
 test('version review exposes actual verification configuration changes even when selectors are unchanged', (t) => {
   const source = sourceVersions(t)
   const base = source.capture()
+
   source.changeConfiguration()
   const candidate = source.capture()
+
   assert.deepEqual(candidate.selectors, base.selectors)
   assert.equal(candidate.contract.digest, base.contract.digest)
   const history = createHistory(base)
   const comparison = compareVersion(history, candidate)
+
   assert.ok(
     comparison.changes.some(
       (item) =>
@@ -647,6 +688,7 @@ test('version review exposes actual verification configuration changes even when
     { decision: 'accept', reason: 'Review changed verification inputs' },
     actor
   )
+
   assert.deepEqual(
     accepted.versions.at(-1).verificationSource,
     candidate.verificationSource
@@ -665,6 +707,7 @@ test('same verification bytes in a different captured attempt change review iden
   const history = createHistory(base)
   const unchanged = compareVersion(history, base)
   const changedReference = compareVersion(history, candidate)
+
   assert.notEqual(changedReference.id, unchanged.id)
   assert.deepEqual(changedReference.changes, [])
   assert.equal(changedReference.invalidatesEvidence, false)
@@ -683,6 +726,7 @@ test('same verification bytes in a different captured attempt change review iden
 
 test('malformed verification references and conflicting contract role or selector identities reject validation', (t) => {
   const base = sourceVersions(t).capture()
+
   for (const corrupt of [
     (v) => {
       v.verificationSource = null
@@ -710,6 +754,7 @@ test('malformed verification references and conflicting contract role or selecto
     }
   ]) {
     const candidate = structuredClone(base)
+
     corrupt(candidate)
     assert.throws(() => createHistory(candidate), /verification/)
   }
@@ -720,6 +765,7 @@ test('a reviewed source reference cannot be removed by acceptance but an explici
   const candidate = { contract: base.contract, selectors: base.selectors }
   const history = createHistory(base)
   const comparison = compareVersion(history, candidate)
+
   assert.ok(
     comparison.blockers.some(
       (item) => item.kind === 'missing-verification-source'
@@ -743,6 +789,7 @@ test('a reviewed source reference cannot be removed by acceptance but an explici
     { decision: 'reject', reason: 'Keep existing source authority' },
     actor
   )
+
   assert.equal(rejected.versions.length, 1)
   assert.equal(rejected.decisions.at(-1).decision, 'reject')
 })
@@ -756,6 +803,7 @@ test('legacy absence remains unchanged and gains a source reference only through
   const history = createHistory(legacy)
   const before = JSON.stringify(history)
   const comparison = compareVersion(history, candidate)
+
   assert.equal(Object.hasOwn(history.versions[0], 'verificationSource'), false)
   const accepted = decideVersion(
     history,
@@ -764,6 +812,7 @@ test('legacy absence remains unchanged and gains a source reference only through
     { decision: 'accept', reason: 'Bind retained verification source' },
     actor
   )
+
   assert.ok(accepted.versions[1].verificationSource)
   assert.equal(Object.hasOwn(accepted.versions[0], 'verificationSource'), false)
   assert.equal(JSON.stringify(history), before)
@@ -773,9 +822,11 @@ test('version retention consumes admitted references without rereading or revali
   const candidate = sourceVersions(t).capture()
   const sourceOwner = require('../snapshot.cjs')
   const fs = require('node:fs')
+
   const forbidden = () => {
     throw new Error('Repeated source work')
   }
+
   const reads = t.mock.method(fs, 'readFileSync', forbidden)
   const source = t.mock.method(sourceOwner, 'validateSourceSnapshot', forbidden)
   const runtime = t.mock.method(sourceOwner, 'validateRuntimeSource', forbidden)
@@ -795,6 +846,7 @@ test('version retention consumes admitted references without rereading or revali
   )
   const recorded =
     accepted.versions.at(-1).verificationSource.configurationDigest
+
   candidate.verificationSource.configurationDigest = 'b'.repeat(64)
   assert.equal(
     accepted.versions.at(-1).verificationSource.configurationDigest,

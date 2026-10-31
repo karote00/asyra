@@ -88,6 +88,7 @@ export function useObservationController({
   }
 
   const currentKey = JSON.stringify(current)
+
   useEffect(() => {
     if (
       saving ||
@@ -96,6 +97,7 @@ export function useObservationController({
     ) {
       return
     }
+
     // External canonical replay refreshes clean fields. A competing publication
     // must not overwrite an unfinished local gesture.
     if (
@@ -105,6 +107,7 @@ export function useObservationController({
     ) {
       return
     }
+
     writes.current.acknowledged = current ?? null
     setEditing(current ? structuredClone(current) : null)
     setTitle(current?.title ?? '')
@@ -162,6 +165,7 @@ export function useObservationController({
     includePrepared = true
   ) => {
     const queue = writes.current
+
     if (
       !validObservationDraft(input) ||
       (stale && !queue.pending) ||
@@ -170,6 +174,7 @@ export function useObservationController({
     ) {
       return
     }
+
     if (
       !editing &&
       !queue.pending &&
@@ -179,20 +184,26 @@ export function useObservationController({
     ) {
       return
     }
+
     const next = structuredClone(input)
     const prepared = includePrepared ? files.prepared : null
     const ticket = generation.current
+
     const active = () =>
       mounted.current && ticket === generation.current && isCurrent()
+
     queue.pending++
     setSaving(true)
+
     const write = async () => {
       // Completed gestures outlive their editor, but never their document.
       // The preceding acknowledgement owns the identity/revision for this queue.
       if (!isCurrent()) {
         throw new Error('The document is no longer active')
       }
+
       const previous = queue.acknowledged
+
       if (
         previous &&
         !prepared &&
@@ -203,10 +214,13 @@ export function useObservationController({
       ) {
         return
       }
+
       if (active()) {
         setError('')
       }
+
       let id = previous?.id
+
       if (prepared) {
         id = await runtime.features.observations.retain(prepared, {
           runId,
@@ -225,12 +239,15 @@ export function useObservationController({
       } else {
         id = await runtime.features.edit.addObservation(runId, next)
       }
+
       const acknowledged = runtime
         .getObservations(runId)
         .find((note) => note.id === id)
+
       if (!acknowledged) {
         throw new Error('The observation acknowledgement is unavailable')
       }
+
       queue.acknowledged = acknowledged
       if (active()) {
         selectedId.current = acknowledged.id
@@ -238,15 +255,19 @@ export function useObservationController({
         if (queue.pending === 1) {
           setExisting(structuredClone(acknowledged.attachments))
         }
+
         if (prepared) {
           files.clear()
         }
+
         setStatus(
           'Observation updated - one Undo action for a material change.'
         )
       }
     }
+
     const pending = queue.tail.then(write)
+
     queue.tail = pending.catch(() => undefined)
     try {
       await pending

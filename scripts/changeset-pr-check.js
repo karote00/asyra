@@ -28,12 +28,14 @@ export const parseNameStatus = (output) =>
     .filter(Boolean)
     .flatMap((line) => {
       const [status, ...paths] = line.split('\t')
+
       if (status.startsWith('R')) {
         return [
           { status: 'D', path: paths[0] },
           { status: 'A', path: paths[1] }
         ]
       }
+
       return paths.map((changedPath) => ({
         status: status[0],
         path: changedPath
@@ -108,6 +110,7 @@ export const runChangesetPrCheck = ({ baseSha, headSha }) => {
 
   const detail =
     result.packages.length > 0 ? `: ${result.packages.join(', ')}` : ''
+
   process.stdout.write(`Changeset PR check passed (${result.mode})${detail}\n`)
 }
 

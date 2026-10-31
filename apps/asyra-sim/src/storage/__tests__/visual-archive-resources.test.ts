@@ -9,6 +9,7 @@ import { ComponentTypes, PropertyFields, PropertyNames } from '../../constants'
 
 vi.mock('../visual-source', async (load) => {
   const actual = await load<typeof import('../visual-source')>()
+
   return {
     ...actual,
     VISUAL_SOURCE_PROFILE: {
@@ -20,9 +21,12 @@ vi.mock('../visual-source', async (load) => {
     }
   }
 })
+
 const service = () => ({ decode: decodeRestrictedGlb, dispose: vi.fn() })
+
 function fixture(name: string, instances = 1, padding = '') {
   const { json, binary } = triangleFixture()
+
   return encodeGlb(
     {
       ...json,
@@ -39,6 +43,7 @@ function fixture(name: string, instances = 1, padding = '') {
 
 it('prepares every candidate independently and closes resources when an expanded workcell is excessive', async () => {
   const origin = new VisualAssetArchive(service())
+
   try {
     const receipt = await origin.prepare(fixture('ten', 10), 'ten.glb')
     const bindings = Array.from({ length: 3 }, (_, i) => ({
@@ -81,14 +86,17 @@ it('prepares every candidate independently and closes resources when an expanded
       visualSources: [receipt.source]
     }
     const prepared = await prepareProjectVisuals(snapshot, service())
+
     expect(prepared.get(receipt.source.assetId)).toBeDefined()
     prepared.dispose()
     const excessive = structuredClone(snapshot)
+
     excessive.document.props['first-props'][PropertyFields.BODY].visuals.push({
       ...bindings[0],
       id: 'fourth'
     })
     const rejected = service()
+
     await expect(prepareProjectVisuals(excessive, rejected)).rejects.toThrow(
       'geometry'
     )
@@ -100,22 +108,28 @@ it('prepares every candidate independently and closes resources when an expanded
 
 it('bounds retained sources by count, raw bytes and expanded geometry without erasing prior assets', async () => {
   const archive = new VisualAssetArchive(service())
+
   try {
     const first = await archive.prepare(fixture('first'), 'first.glb')
+
     archive.accept(first)
     const huge = await archive.prepare(
       fixture('huge', 1, 'x'.repeat(10000)),
       'huge.glb'
     )
+
     expect(() => archive.accept(huge)).toThrow('byte limit')
     const amplified = await archive.prepare(
       fixture('amplified', 34),
       'amplified.glb'
     )
+
     expect(() => archive.accept(amplified)).toThrow('geometry')
     const second = await archive.prepare(fixture('second'), 'second.glb')
+
     archive.accept(second)
     const third = await archive.prepare(fixture('third'), 'third.glb')
+
     expect(() => archive.accept(third)).toThrow('count')
     expect(
       archive.capture([first.source.assetId, second.source.assetId])
@@ -127,6 +141,7 @@ it('bounds retained sources by count, raw bytes and expanded geometry without er
 
 it('counts every binding instance and rejects missing sources before workcell projection', async () => {
   const archive = new VisualAssetArchive(service())
+
   try {
     const prepared = await archive.prepare(fixture('ten', 10), 'ten.glb')
     const workcell = createSyntheticExample().workcell
@@ -137,6 +152,7 @@ it('counts every binding instance and rejects missing sources before workcell pr
       pose: IDENTITY_POSE,
       scale: [1, 1, 1] as const
     }))
+
     workcell.bodies[0].visuals = bindings
     expect(() => archive.resolveWorkcell(workcell)).toThrow('Missing')
     expect(archive.resolveWorkcell(workcell, prepared).size).toBe(1)
@@ -152,13 +168,16 @@ it('counts every binding instance and rejects missing sources before workcell pr
 
 it('checks the index budget independently of the vertex count', async () => {
   const archive = new VisualAssetArchive(service())
+
   try {
     const { json, binary } = triangleFixture(),
       bytes = new Uint8Array(36 + 303)
+
     bytes.set(binary)
     for (let i = 0; i < 303; i++) {
       bytes[36 + i] = i % 3
     }
+
     const prepared = await archive.prepare(
       encodeGlb(
         {
@@ -180,6 +199,7 @@ it('checks the index budget independently of the vertex count', async () => {
       ),
       'indices.glb'
     )
+
     expect(prepared.asset.meshes[0].positions).toHaveLength(9)
     expect(() => archive.accept(prepared)).toThrow('geometry')
   } finally {

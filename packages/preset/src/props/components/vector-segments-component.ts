@@ -14,12 +14,14 @@ export const vectorSegmentsPropertyComponentDefinition =
     key: 'segments',
     childType: PropertyTypes.VECTOR_SEGMENT,
     childIdType: VECTOR_TOPOLOGY_SEGMENT_ID_TYPE,
+
     toChildData: (item) => ({
       startId: toString(item.startId),
       endId: toString(item.endId),
       outControlId: toNullableString(item.outControlId),
       inControlId: toNullableString(item.inControlId)
     }),
+
     toValue: (child, childId) => ({
       id: childId,
       startId: toString(child.get('startId')),

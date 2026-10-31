@@ -3,6 +3,7 @@ import type { FactoryMutationDeliverySequence } from './shared-delivery.js'
 
 export class FactoryMutationBatchAcceptanceError extends Error {
   readonly batchAccepted: boolean
+
   readonly batchCause: unknown
 
   constructor(batchAccepted: boolean, batchCause: unknown) {

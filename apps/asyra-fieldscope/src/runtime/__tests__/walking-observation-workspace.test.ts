@@ -17,9 +17,11 @@ it('walking observation selected action binds the issued non-stowed root and ret
     'bounded-source',
     fixture.source.definition
   )
+
   if (f.report.status === 'legacy-view') {
     throw new Error('Missing walking report')
   }
+
   const source = f.report.source
   const translation = [
     (f.request.actionBounds.min[0] + f.request.actionBounds.max[0]) / 2,
@@ -33,15 +35,19 @@ it('walking observation selected action binds the issued non-stowed root and ret
     fixedJoints: source.rig.presets.stowed,
     anchors: fixture.raw.anchors.map((a) => {
       const chain = source.rig.legChains.find((c) => c.id === a.chainId)
+
       if (!chain) {
         throw new Error('Missing authored chain')
       }
+
       const contact = source.rig.contacts.feet.find(
         (c) => c.part.bodyId === chain.footBodyId
       )
+
       if (!contact) {
         throw new Error('Missing authored contact')
       }
+
       return {
         ...a,
         part: contact.part,
@@ -60,6 +66,7 @@ it('walking observation selected action binds the issued non-stowed root and ret
     chainId: 'right-front',
     targetAbduction: over(cycle.recipe.alpha, exact(2))
   })
+
   f.workspace.configure(
     {
       ...f.config,
@@ -72,9 +79,11 @@ it('walking observation selected action binds the issued non-stowed root and ret
   )
   const request = { ...f.request, binding: { owner, cycle, motion } }
   const result = f.workspace.observeSelectedAction(request)
+
   if (result.status !== 'available') {
     throw new Error(result.reason)
   }
+
   expect(result.observation.context.motion).toBe(motion)
   expect(result.observation.input.camera.pose.position).toEqual(
     motion.root.origin.map((v) =>
@@ -119,6 +128,7 @@ it('walking observation selected action binds the issued non-stowed root and ret
     ...motion.recipe,
     cycle: rotatedCycle
   })
+
   expect(
     f.workspace.observeSelectedAction({
       ...request,
@@ -153,6 +163,7 @@ it('walking observation selected action binds the issued non-stowed root and ret
 it('walking observation workspace rejects missing and malformed scenarios before changing current admitted inputs with bounded canonical sources', () => {
   const f = walkingObservationWorkspaceFixture('bounded-source')
   const before = f.sourceOwner.work
+
   expect(f.workspace.observe(f.request)).toEqual({
     status: 'unavailable',
     reason: 'missing-walking-observation-scenario'
@@ -160,16 +171,20 @@ it('walking observation workspace rejects missing and malformed scenarios before
   expect(f.sourceOwner.work).toEqual(before)
   f.workspace.configure(f.config, f.world)
   const normal = f.workspace.observe(f.request)
+
   if (normal.status !== 'available') {
     throw new Error(normal.reason)
   }
+
   expect(normal.observation.coverage).toBe('complete-empty')
   expect(normal.work.sourcePreparation.inventoryBuilds).toBe(1)
   expect(normal.work.sourcePreparation.regionWorldBounds).toBeGreaterThan(0)
   const repeat = f.workspace.observe(f.request)
+
   if (repeat.status !== 'available') {
     throw new Error(repeat.reason)
   }
+
   expect(
     Object.values(repeat.work.sourcePreparation).every((value) => value === 0)
   ).toBe(true)
@@ -213,6 +228,7 @@ it('walking observation workspace rejects missing and malformed scenarios before
   expect(f.workspace.isCurrent(normal.observation)).toBe(true)
   expect(Object.isFrozen(normal.observation.context.sensorIdentity)).toBe(true)
   const invalidDynamic = { ...f.world, validUntil: -1 }
+
   expect(() => f.workspace.configure(f.config, invalidDynamic)).toThrow()
   expect(f.workspace.isCurrent(normal.observation)).toBe(true)
   f.workspace.configure(f.config, {
@@ -220,9 +236,11 @@ it('walking observation workspace rejects missing and malformed scenarios before
     assumption: 'Explicit successor dynamic scenario'
   })
   const dynamicSuccessor = f.workspace.observe(f.request)
+
   if (dynamicSuccessor.status !== 'available') {
     throw new Error(dynamicSuccessor.reason)
   }
+
   expect(f.workspace.isCurrent(normal.observation)).toBe(false)
   expect(
     Object.values(dynamicSuccessor.work.sourcePreparation).every(
@@ -244,14 +262,19 @@ it('walking observation workspace rejects missing and malformed scenarios before
 
 it('walking observation workspace never promotes incomplete optics dynamics or bounded work into complete-empty with bounded canonical sources', () => {
   const f = walkingObservationWorkspaceFixture('bounded-source')
+
   const observe = () => {
     const result = f.workspace.observe(f.request)
+
     if (result.status !== 'available') {
       throw new Error(result.reason)
     }
+
     expect(result.observation.coverage).not.toBe('complete-empty')
+
     return result
   }
+
   for (const optics of [
     { ...f.config.optics, illumination: null },
     { ...f.config.optics, filmTransmission: null },
@@ -264,6 +287,7 @@ it('walking observation workspace never promotes incomplete optics dynamics or b
     f.workspace.configure({ ...f.config, optics }, f.world)
     expect(observe().observation.reliability.status).not.toBe('reliable')
   }
+
   f.workspace.configure(f.config, { ...f.world, validFrom: 2 })
   expect(observe().observation.reasons).toContain('outside-source-time')
   f.workspace.configure(f.config, {
@@ -283,6 +307,7 @@ it('walking observation workspace never promotes incomplete optics dynamics or b
     )
     expect(observe().observation.unvisited).toBeGreaterThan(0)
   }
+
   f.workspace.configure(
     { ...f.config, camera: { ...f.config.camera, maxDistance: 0.001 } },
     f.world

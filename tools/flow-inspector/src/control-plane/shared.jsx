@@ -27,8 +27,10 @@ function sharedRead(resources, route, revision, signal, refresh) {
     (refresh && resource.settled)
   ) {
     const controller = new AbortController()
+
     resource = { controller, revision, settled: false, users: 0 }
     const current = resource
+
     current.promise = request(route, undefined, controller.signal).then(
       (value) => {
         current.settled = true
@@ -74,6 +76,7 @@ export async function request(route, body, signal) {
 
   if (body !== undefined) {
     const session = await request('/api/session', undefined, signal)
+
     options.method = 'POST'
     options.headers = {
       'Content-Type': 'application/json',
@@ -129,6 +132,7 @@ export function useRemote(
           controller.signal,
           Boolean(poll)
         )
+
         shouldPoll = typeof poll === 'function' ? poll(value) : poll
 
         if (!controller.signal.aborted) {
@@ -174,6 +178,7 @@ export function Field({
   maxLength
 }) {
   const value = fields[id] ?? (multiple ? [] : '')
+
   const onChange = (event) =>
     setField(
       id,
@@ -181,6 +186,7 @@ export function Field({
         ? Array.from(event.target.selectedOptions, (option) => option.value)
         : event.target.value
     )
+
   const common = { id, value, disabled, onChange }
   let control = <input {...common} type={type} maxLength={maxLength} />
 

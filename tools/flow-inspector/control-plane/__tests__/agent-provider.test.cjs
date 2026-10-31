@@ -14,23 +14,30 @@ const task = {
   provider: { model: 'selected-model' },
   credentials: 'must-not-be-context'
 }
+
 function fixture(complete) {
   const events = []
   const controller = new AbortController()
   const adapter = providerAdapter(task, {
     complete,
     signal: controller.signal,
+
     reserve: () => {
       events.push('reserved')
+
       return 'request'
     },
+
     settle: (id, value) => events.push({ id, ...value })
   })
+
   return { adapter, controller, events }
 }
+
 test('interruption confirmation is retained without permitting a late operation or settling usage', async () => {
   const f = fixture(async () => {
     f.controller.abort()
+
     return {
       terminal: false,
       interruptionConfirmed: true,
@@ -38,6 +45,7 @@ test('interruption confirmation is retained without permitting a late operation 
       text: '{"tool":"finish"}'
     }
   })
+
   await assert.rejects(f.adapter.next(null), /cancelled/)
   assert.deepEqual(f.events[1], {
     id: 'request',
@@ -51,12 +59,14 @@ test('provider receives only admitted context after reservation; operation stays
   const f = fixture(async (value) => {
     assert.deepEqual(f.events, ['reserved'])
     input = value
+
     return {
       text: '{"tool":"read","path":"source.ts"}',
       terminal: true,
       usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 }
     }
   })
+
   assert.deepEqual(await f.adapter.next(null), {
     tool: 'read',
     path: 'source.ts'
@@ -83,12 +93,15 @@ test('provider failures and unknown usage never masquerade as a valid operation 
     }
   ]) {
     const f = fixture(async () => response)
+
     await assert.rejects(f.adapter.next(null), /Provider/)
     assert.equal(f.events.length, 2)
   }
+
   const f = fixture(async () => {
     throw new Error('secret-token-in-provider-error')
   })
+
   await assert.rejects(
     f.adapter.next(null),
     (error) => !error.message.includes('secret-token')
@@ -104,6 +117,7 @@ test('cancellation blocks dispatch or late operation; remote uncertainty remains
       })
   )
   const pending = f.adapter.next(null)
+
   f.controller.abort()
   resolve({
     text: '{"tool":"finish"}',

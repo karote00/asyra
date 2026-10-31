@@ -21,7 +21,9 @@ const request = (body: unknown, extra = {}) =>
     socket: { remoteAddress: '127.0.0.1' },
     ...extra
   }) as unknown as IncomingMessage
+
 const response = () => ({ setHeader: vi.fn(), end: vi.fn(), statusCode: 200 })
+
 const store = () => ({
   read: vi.fn(),
   list: vi.fn(async () => []),
@@ -35,18 +37,22 @@ it.each(['GET', 'foreign', 'remote', 'invalid', 'oversized'])(
     const open = vi.fn(async () => store())
     let body: unknown = { operation: 'list' }
     const extra: Record<string, unknown> = {}
+
     if (kind === 'invalid') {
       body = { operation: 'execute' }
     }
+
     if (kind === 'oversized') {
       body = {
         operation: 'list',
         padding: 'a'.repeat(ToolLibraryManagement.requestBytes)
       }
     }
+
     if (kind === 'GET') {
       extra.method = 'GET'
     }
+
     if (kind === 'foreign') {
       extra.headers = {
         origin: 'https://example.test',
@@ -54,11 +60,14 @@ it.each(['GET', 'foreign', 'remote', 'invalid', 'oversized'])(
         'content-type': 'application/json'
       }
     }
+
     if (kind === 'remote') {
       extra.socket = { remoteAddress: '192.168.1.2' }
     }
+
     const req = request(body, extra)
     const res = response()
+
     await createToolLibraryManagementMiddleware({ open })(
       req,
       res as unknown as ServerResponse,
@@ -72,6 +81,7 @@ it.each(['GET', 'foreign', 'remote', 'invalid', 'oversized'])(
 it('lists through canonical management and closes the connection', async () => {
   const owned = store()
   const res = response()
+
   await createToolLibraryManagementMiddleware({ open: async () => owned })(
     request({ operation: 'list' }),
     res as unknown as ServerResponse,
@@ -88,6 +98,7 @@ it('lists through canonical management and closes the connection', async () => {
 
 it('reports storage failure and preserves the response when cleanup also fails', async () => {
   const owned = store()
+
   owned.list = vi.fn(async () => {
     throw new Error('Database unavailable')
   })
@@ -97,8 +108,10 @@ it('reports storage failure and preserves the response when cleanup also fails',
   const diagnostic = vi
     .spyOn(console, 'error')
     .mockImplementation(() => undefined)
+
   try {
     const res = response()
+
     await createToolLibraryManagementMiddleware({ open: async () => owned })(
       request({ operation: 'list' }),
       res as unknown as ServerResponse,
@@ -115,6 +128,7 @@ it('reports storage failure and preserves the response when cleanup also fails',
 it('leaves unrelated routes untouched', async () => {
   const open = vi.fn(async () => store())
   const next = vi.fn()
+
   await createToolLibraryManagementMiddleware({ open })(
     request({}, { url: '/other' }),
     response() as unknown as ServerResponse,
@@ -146,7 +160,9 @@ it('maps state changes through Runtime and rejects a stale version without anoth
   }
   const owned = {
     ...store(),
+
     read: async () => entry,
+
     write: vi.fn(
       async (input: {
         key: string
@@ -155,6 +171,7 @@ it('maps state changes through Runtime and rejects a stale version without anoth
       }) => {
         expect(input.expectedVersion).toBe(entry.version)
         entry = { key: input.key, record: input.record, version: 'changed' }
+
         return entry
       }
     )
@@ -169,6 +186,7 @@ it('maps state changes through Runtime and rejects a stale version without anoth
     expectedVersion: 'observed'
   }
   const first = response()
+
   await handler(request(input), first as unknown as ServerResponse, vi.fn())
   expect(first.statusCode).toBe(200)
   expect(JSON.parse(first.end.mock.calls[0][0])).toMatchObject({
@@ -177,6 +195,7 @@ it('maps state changes through Runtime and rejects a stale version without anoth
     version: 'changed'
   })
   const stale = response()
+
   await handler(request(input), stale as unknown as ServerResponse, vi.fn())
   expect(stale.statusCode).toBe(409)
   expect(owned.write).toHaveBeenCalledOnce()

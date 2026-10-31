@@ -17,6 +17,7 @@ const required = <T>(value: T | undefined): T => {
   if (value === undefined) {
     throw new Error('Missing source product')
   }
+
   return value
 }
 
@@ -42,6 +43,7 @@ const frozenSourceDirectory = new URL(
   './fixtures/pre-p5b-source/',
   import.meta.url
 )
+
 const sha256 = (value: Uint8Array | string) =>
   createHash('sha256').update(value).digest('hex')
 
@@ -84,12 +86,15 @@ function admitFrozenSourceFiles(
   bytesByPath: ReadonlyMap<string, Uint8Array>
 ): FrozenSourceManifest {
   const manifestBytes = required(bytesByPath.get('manifest.json'))
+
   if (sha256(manifestBytes) !== FROZEN_SOURCE_MANIFEST_SHA256) {
     throw new Error('Frozen source manifest digest mismatch')
   }
+
   const manifest = JSON.parse(
     Buffer.from(manifestBytes).toString('utf8')
   ) as FrozenSourceManifest
+
   if (
     manifest.format !== 'fieldscope-frozen-source/1' ||
     manifest.source.commit !== FROZEN_SOURCE_COMMIT ||
@@ -105,8 +110,10 @@ function admitFrozenSourceFiles(
   ) {
     throw new Error('Frozen source manifest identity mismatch')
   }
+
   for (const [index, path] of FROZEN_SOURCE_FILES.entries()) {
     const file = manifest.files[index]
+
     if (
       file?.path !== path ||
       file.sourcePath !== `apps/fieldscope/src/domain/${path}` ||
@@ -116,6 +123,7 @@ function admitFrozenSourceFiles(
       throw new Error(`Frozen source file digest mismatch: ${path}`)
     }
   }
+
   if (
     !manifest.historicalDarwinDiagnostics.snapshotExports[0].includes(
       'unchanged non-pedicel stem triangles and their hairs'
@@ -126,6 +134,7 @@ function admitFrozenSourceFiles(
   ) {
     throw new Error('Frozen source diagnostic history mismatch')
   }
+
   return manifest
 }
 
@@ -158,16 +167,19 @@ function captureCropModels(
       append(builder, density, length, sides, color, (range) => {
         observer?.(range)
         const events = hairEvents.get(builder.positions) ?? []
+
         events.push(range)
         hairEvents.set(builder.positions, events)
       })
     )
   let generated: CropModels
+
   try {
     generated = factory({ netTop: 3, netBottom: 0.45 })
   } finally {
     spy.mockRestore()
   }
+
   return { models: generated, hairs: hairEvents }
 }
 
@@ -184,6 +196,7 @@ function firstDifference(
   if (Object.is(left, right)) {
     return null
   }
+
   if (
     left === null ||
     right === null ||
@@ -192,50 +205,61 @@ function firstDifference(
   ) {
     return path
   }
+
   if (Array.isArray(left) || Array.isArray(right)) {
     if (!Array.isArray(left) || !Array.isArray(right)) {
       return path
     }
+
     if (left.length !== right.length) {
       return `${path}.length`
     }
+
     for (let index = 0; index < left.length; index++) {
       const difference = firstDifference(
         left[index],
         right[index],
         `${path}[${index}]`
       )
+
       if (difference) {
         return difference
       }
     }
+
     return null
   }
+
   const leftRecord = left as Record<string, unknown>
   const rightRecord = right as Record<string, unknown>
   const leftKeys = Object.keys(leftRecord)
   const rightKeys = Object.keys(rightRecord)
+
   if (
     leftKeys.length !== rightKeys.length ||
     leftKeys.some((key, index) => key !== rightKeys[index])
   ) {
     return `${path}.keys`
   }
+
   for (const key of leftKeys) {
     const difference = firstDifference(
       leftRecord[key],
       rightRecord[key],
       `${path}.${key}`
     )
+
     if (difference) {
       return difference
     }
   }
+
   return null
 }
 
 const expectExactValue = (left: unknown, right: unknown, path: string) => {
   const difference = firstDifference(left, right, path)
+
   if (difference) {
     throw new Error(`Frozen source mismatch at ${difference}`)
   }
@@ -262,10 +286,12 @@ function retainedStemTriangles(
   )
   const excluded = [...pedicelRanges, ...pedicelHairs]
   const patchesByTriangle = new Map<number, typeof patches>()
+
   for (const patch of patches) {
     if (patch.role === 'plant-pedicel' || patch.role === 'retained-pedicel') {
       continue
     }
+
     for (const range of patch.source.ranges) {
       for (
         let index = range.indexStart;
@@ -273,10 +299,12 @@ function retainedStemTriangles(
         index += 3
       ) {
         const owners = patchesByTriangle.get(index) ?? []
+
         patchesByTriangle.set(index, [...owners, patch])
       }
     }
   }
+
   let regionIndex = 0
   let partitionIndex = 0
   const triangles: {
@@ -285,16 +313,20 @@ function retainedStemTriangles(
     partition: (typeof partitions)[number]
     patches: (typeof patches)[number][]
   }[] = []
+
   for (let index = 0; index < shape.indices.length; index += 3) {
     if (excluded.some((range) => includesIndex(range, index))) {
       continue
     }
+
     while (!includesIndex(required(regions[regionIndex]), index)) {
       regionIndex++
     }
+
     while (!includesIndex(required(partitions[partitionIndex]), index)) {
       partitionIndex++
     }
+
     triangles.push({
       index,
       region: required(regions[regionIndex]),
@@ -302,6 +334,7 @@ function retainedStemTriangles(
       patches: [...(patchesByTriangle.get(index) ?? [])]
     })
   }
+
   return { shape, triangles }
 }
 
@@ -314,10 +347,12 @@ function validateRevisionPatchIdentities(
   const regions = detail ? required(part.distantRegions) : part.regions
   const patches = detail ? required(part.distantPatches) : part.patches
   const ids = patches.map((patch) => patch.id)
+
   expectExactValue(new Set(ids).size, ids.length, `${path}.partLocalPatchIds`)
   for (let patchIndex = 0; patchIndex < patches.length; patchIndex++) {
     const patch = required(patches[patchIndex])
     const region = patch.source.region
+
     if (
       patch.source.id !== patch.id ||
       !regions.includes(region) ||
@@ -355,6 +390,7 @@ function compareStemShape(
   validateRevisionPatchIdentities(currentPart, detail, `${path}.current`)
   const baseline = retainedStemTriangles(baselinePart, detail, baselineHairs)
   const current = retainedStemTriangles(currentPart, detail, currentHairs)
+
   expectExactValue(
     baseline.triangles.length,
     current.triangles.length,
@@ -362,6 +398,7 @@ function compareStemShape(
   )
   const baselineVertices = new Map<number, number>()
   const currentVertices = new Map<number, number>()
+
   for (
     let triangleIndex = 0;
     triangleIndex < baseline.triangles.length;
@@ -369,6 +406,7 @@ function compareStemShape(
   ) {
     const before = required(baseline.triangles[triangleIndex])
     const after = required(current.triangles[triangleIndex])
+
     expectExactValue(
       { id: before.region.id, kind: before.region.kind },
       { id: after.region.id, kind: after.region.kind },
@@ -387,6 +425,7 @@ function compareStemShape(
     for (let patchIndex = 0; patchIndex < before.patches.length; patchIndex++) {
       const beforePatch = required(before.patches[patchIndex])
       const afterPatch = required(after.patches[patchIndex])
+
       if (
         beforePatch.source.id !== beforePatch.id ||
         afterPatch.source.id !== afterPatch.id ||
@@ -403,6 +442,7 @@ function compareStemShape(
           `Invalid revision-local patch reference at ${path}.triangles[${triangleIndex}].patches[${patchIndex}]`
         )
       }
+
       expectExactValue(
         {
           targetFruitId: beforePatch.targetFruitId,
@@ -437,19 +477,24 @@ function compareStemShape(
         })
       }
     }
+
     for (let corner = 0; corner < 3; corner++) {
       const beforeVertex = baseline.shape.indices[before.index + corner]
       const afterVertex = current.shape.indices[after.index + corner]
       let beforeDense = baselineVertices.get(beforeVertex)
+
       if (beforeDense === undefined) {
         beforeDense = baselineVertices.size
         baselineVertices.set(beforeVertex, beforeDense)
       }
+
       let afterDense = currentVertices.get(afterVertex)
+
       if (afterDense === undefined) {
         afterDense = currentVertices.size
         currentVertices.set(afterVertex, afterDense)
       }
+
       expectExactValue(
         beforeDense,
         afterDense,
@@ -467,6 +512,7 @@ function compareStemShape(
           `${path}.triangles[${triangleIndex}].corners[${corner}].color[${axis}]`
         )
       }
+
       for (let axis = 0; axis < 2; axis++) {
         expectExactValue(
           baseline.shape.uvs?.[beforeVertex * 2 + axis],
@@ -483,6 +529,7 @@ function expectExactCropSource(
   current: { models: CropModels; hairs: HairRanges }
 ) {
   const identityDifferences: PatchIdentityDifference[] = []
+
   expectExactValue(
     baseline.models.length,
     current.models.length,
@@ -504,6 +551,7 @@ function expectExactCropSource(
       stemHairCount: afterStemHairs,
       ...afterMetadata
     } = after
+
     expectExactValue(
       cucumber
         ? beforeMetadata
@@ -516,10 +564,12 @@ function expectExactCropSource(
     expectExactValue(
       beforeFruits.map((fruit) => {
         const { cutSite, ...metadata } = fruit
+
         return cucumber ? metadata : { ...metadata, cutSite }
       }),
       afterFruits.map((fruit) => {
         const { cutSite, ...metadata } = fruit
+
         return cucumber ? metadata : { ...metadata, cutSite }
       }),
       `source.models[${modelIndex}].fruits`
@@ -533,6 +583,7 @@ function expectExactCropSource(
       const beforePart = required(beforeParts[partIndex])
       const afterPart = required(afterParts[partIndex])
       const path = `source.models[${modelIndex}].parts[${partIndex}]`
+
       expectExactValue(beforePart.id, afterPart.id, `${path}.id`)
       if (cucumber && beforePart.id === 'stems') {
         const {
@@ -557,6 +608,7 @@ function expectExactCropSource(
           distantPartitions: afterDistantPartitions,
           ...afterMaterial
         } = afterPart
+
         void beforeShape
         void beforeDistantShape
         void beforeRegions
@@ -597,13 +649,16 @@ function expectExactCropSource(
       }
     }
   }
+
   return identityDifferences
 }
 
 const nextFloat64 = (value: number) => {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   view.setBigUint64(0, view.getBigUint64(0) + (value < 0 ? -1n : 1n))
+
   return view.getFloat64(0)
 }
 
@@ -613,6 +668,7 @@ it('preserves every source product outside the cucumber pedicel revision against
   const changedManifest = Buffer.from(
     required(tamperedManifest.get('manifest.json'))
   )
+
   changedManifest[32] ^= 1
   tamperedManifest.set('manifest.json', changedManifest)
   expect(() => admitFrozenSourceFiles(tamperedManifest)).toThrow(
@@ -620,6 +676,7 @@ it('preserves every source product outside the cucumber pedicel revision against
   )
   const tamperedFile = new Map(sourceBytes)
   const changedFile = Buffer.from(required(tamperedFile.get('crop-models.ts')))
+
   changedFile[32] ^= 1
   tamperedFile.set('crop-models.ts', changedFile)
   expect(() => admitFrozenSourceFiles(tamperedFile)).toThrow(
@@ -639,8 +696,11 @@ it('preserves every source product outside the cucumber pedicel revision against
     frozenHairModule
   )
   const current = captureCropModels(createCropModels, hairSource)
+
   const expectCurrentSource = () => expectExactCropSource(baseline, current)
+
   const identityDifferences = expectCurrentSource()
+
   expect(identityDifferences).toContainEqual({
     triangle: 4086,
     baselineId: 'fruit-2/fruit-detail/5',
@@ -656,11 +716,13 @@ it('preserves every source product outside the cucumber pedicel revision against
     current.models[0].parts.find((part) => part.id === 'foliage')
   )
   const originalPosition = foliage.shape.positions[0]
+
   foliage.shape.positions[0] = nextFloat64(originalPosition)
   expect(expectCurrentSource).toThrow('Frozen source mismatch')
   foliage.shape.positions[0] = originalPosition
 
   const originalWinding = foliage.shape.indices.slice(0, 3)
+
   ;[foliage.shape.indices[0], foliage.shape.indices[1]] = [
     foliage.shape.indices[1],
     foliage.shape.indices[0]
@@ -669,11 +731,13 @@ it('preserves every source product outside the cucumber pedicel revision against
   foliage.shape.indices.splice(0, 3, ...originalWinding)
 
   const originalRoughness = foliage.roughness
+
   foliage.roughness = nextFloat64(originalRoughness)
   expect(expectCurrentSource).toThrow('Frozen source mismatch')
   foliage.roughness = originalRoughness
 
   const originalIndexCount = foliage.shape.indices.length
+
   foliage.shape.indices.push(...foliage.shape.indices.slice(0, 3))
   expect(expectCurrentSource).toThrow('Frozen source mismatch')
   foliage.shape.indices.length = originalIndexCount
@@ -699,6 +763,7 @@ it('preserves every source product outside the cucumber pedicel revision against
   )
   const hairPositionIndex = retainedHair.vertexStart * 3
   const originalHairPosition = stems.shape.positions[hairPositionIndex]
+
   stems.shape.positions[hairPositionIndex] = nextFloat64(originalHairPosition)
   expect(expectCurrentSource).toThrow('Frozen source mismatch')
   stems.shape.positions[hairPositionIndex] = originalHairPosition
@@ -713,18 +778,22 @@ it('preserves every source product outside the cucumber pedicel revision against
     source: { region: (typeof stems.regions)[number] }
   }
   const originalTarget = mutablePatch.targetFruitId
+
   mutablePatch.targetFruitId = 'wrong-target'
   expect(expectCurrentSource).toThrow('Frozen source mismatch')
   mutablePatch.targetFruitId = originalTarget
   const originalOwner = mutablePatch.owner
+
   mutablePatch.owner = 'plant'
   expect(expectCurrentSource).toThrow('Frozen source mismatch')
   mutablePatch.owner = originalOwner
   const originalRole = mutablePatch.role
+
   mutablePatch.role = 'fine-spines'
   expect(expectCurrentSource).toThrow('Frozen source mismatch')
   mutablePatch.role = originalRole
   const originalRegion = mutablePatch.source.region
+
   mutablePatch.source.region = { ...originalRegion }
   expect(expectCurrentSource).toThrow('Invalid revision-local patch reference')
   mutablePatch.source.region = originalRegion
@@ -737,6 +806,7 @@ it('preserves every source product outside the cucumber pedicel revision against
   }
   const originalExcludedId = excludedPatch.id
   const originalExcludedSourceId = excludedPatch.source.id
+
   excludedPatch.id = sourcePatch.id
   excludedPatch.source.id = sourcePatch.id
   expect(expectCurrentSource).toThrow('partLocalPatchIds')
@@ -751,18 +821,22 @@ it('provides an actual shared cucumber source ring between plant and retained pe
     (model) => model.species === 'cucumber-1914'
   )) {
     const stems = required(model.parts.find((part) => part.id === 'stems'))
+
     for (const fruit of model.fruits) {
       const cut = fruit.cutSite
+
       expect(cut?.kind).toBe('synthetic-source-boundary')
       if (cut?.kind !== 'synthetic-source-boundary') {
         throw new Error('Missing cucumber source cut ring')
       }
+
       const plant = required(
         stems.patches.find((patch) => patch.id === cut.boundary.plantPatchId)
       )
       const retained = required(
         stems.patches.find((patch) => patch.id === cut.boundary.retainedPatchId)
       )
+
       expect(plant.owner).toBe('plant')
       expect(retained.owner).toBe('target-fruit')
       expect(plant.source.region).toBe(retained.source.region)
@@ -773,6 +847,7 @@ it('provides an actual shared cucumber source ring between plant and retained pe
         plant.source.ranges[0].indexStart + 48
       )
       expect(retained.source.ranges[0].indexCount).toBe(48)
+
       const indices = (patch: typeof plant) =>
         new Set(
           patch.source.ranges.flatMap((range) =>
@@ -782,7 +857,9 @@ it('provides an actual shared cucumber source ring between plant and retained pe
             )
           )
         )
+
       const before = indices(plant)
+
       expect(
         [...indices(retained)]
           .filter((index) => before.has(index))
@@ -791,6 +868,7 @@ it('provides an actual shared cucumber source ring between plant and retained pe
       expect(cut.boundary.sourceVertexIndices).toHaveLength(8)
       expect(Math.hypot(...cut.towardPlant)).toBeGreaterThan(0)
       const ringStart = cut.boundary.sourceVertexIndices[0]
+
       const centroid = (start: number) =>
         [0, 1, 2].map(
           (axis) =>
@@ -799,8 +877,10 @@ it('provides an actual shared cucumber source ring between plant and retained pe
               (_, index) => stems.shape.positions[(start + index) * 3 + axis]
             ).reduce((sum, value) => sum + value, 0) / 8
         )
+
       const tip = centroid(ringStart - 8),
         top = centroid(ringStart + 8)
+
       for (let axis = 0; axis < 3; axis++) {
         expect(cut.position[axis]).toBeCloseTo((tip[axis] + top[axis]) / 2, 12)
         expect(cut.towardPlant[axis]).toBeCloseTo(
@@ -812,8 +892,10 @@ it('provides an actual shared cucumber source ring between plant and retained pe
           12
         )
       }
+
       for (const start of [ringStart - 8, ringStart, ringStart + 8]) {
         const center = centroid(start)
+
         for (let index = 0; index < 8; index++) {
           expect(
             Math.hypot(
@@ -825,6 +907,7 @@ it('provides an actual shared cucumber source ring between plant and retained pe
           ).toBeCloseTo(0.0009, 12)
         }
       }
+
       expect(cut.sourceAssumptions).toEqual(DEFAULT_CROP_SOURCE_ASSUMPTIONS)
       expect(Object.isFrozen(cut.sourceAssumptions)).toBe(true)
     }
@@ -837,19 +920,24 @@ it('captures each source assumption once before validating', () => {
     ...DEFAULT_CROP_SOURCE_ASSUMPTIONS,
     cucumberCutSite: {
       ...DEFAULT_CROP_SOURCE_ASSUMPTIONS.cucumberCutSite,
+
       get fraction() {
         return ++reads === 1 ? 0.5 : NaN
       }
     }
   }
   const generated = createCropModels({ netTop: 3, netBottom: 0.45 }, source)
+
   expect(reads).toBe(1)
   const cut = generated[0].fruits[0].cutSite
+
   if (cut?.kind !== 'synthetic-source-boundary') {
     throw new Error('Missing captured source')
   }
+
   expect(cut.sourceAssumptions?.cucumberCutSite.fraction).toBe(0.5)
   const surface = vi.spyOn(fruitSource, 'appendFruitSurface')
+
   try {
     expect(() =>
       createCropModels(
@@ -883,10 +971,13 @@ it('owns synthetic cut assumptions once per source generation and rejects collap
     .filter((model) => model.species === 'cucumber-1914')
     .flatMap((model) => model.fruits.map((fruit) => fruit.cutSite))
   const first = cuts[0]
+
   if (first?.kind !== 'synthetic-source-boundary') {
     throw new Error('Missing assumption source')
   }
+
   const admitted = required(first.sourceAssumptions)
+
   expect(admitted).not.toBe(assumptions)
   expect(Object.isFrozen(admitted.cucumberCutSite)).toBe(true)
   expect(Object.isFrozen(admitted.cucumberCutSite.evidence)).toBe(true)
@@ -894,8 +985,10 @@ it('owns synthetic cut assumptions once per source generation and rejects collap
     if (cut?.kind !== 'synthetic-source-boundary') {
       throw new Error('Missing custom cut source')
     }
+
     expect(cut.sourceAssumptions).toBe(admitted)
   }
+
   assumptions.cucumberCutSite.fraction = 0.75
   assumptions.cucumberCutSite.evidence.label = 'Changed caller label'
   expect(admitted.cucumberCutSite.fraction).toBe(0.25)
@@ -903,9 +996,11 @@ it('owns synthetic cut assumptions once per source generation and rejects collap
     DEFAULT_CROP_SOURCE_ASSUMPTIONS.cucumberCutSite.evidence.label
   )
   const defaultCut = models[0].fruits[0].cutSite
+
   if (defaultCut?.kind !== 'synthetic-source-boundary') {
     throw new Error('Missing default cut')
   }
+
   expect(defaultCut.sourceAssumptions).not.toBe(admitted)
   expect(defaultCut.position).not.toEqual(first.position)
   expect(
@@ -965,6 +1060,7 @@ it('partitions every near and distant source buffer exactly once with stable fru
     )
     const nearFruit = new Set<string>()
     const distantFruit = new Set<string>()
+
     for (const part of model.parts) {
       for (const [shape, spans, owners] of [
         [part.shape, part.partitions, nearFruit],
@@ -974,26 +1070,34 @@ it('partitions every near and distant source buffer exactly once with stable fru
         if (!spans) {
           throw new Error('Missing source partitions')
         }
+
         let indices = 0
         const restored: number[] = []
+
         for (const span of spans) {
           expect(span.indexStart).toBe(indices)
           for (let i = indices; i < indices + span.indexCount; i++) {
             const sourceIndex = shape.indices[i]
+
             if (sourceIndex < 0 || sourceIndex >= shape.positions.length / 3) {
               throw new Error('Invalid source vertex reference')
             }
+
             restored.push(sourceIndex)
           }
+
           if (span.fruitId !== null) {
             owners.add(span.fruitId)
           }
+
           indices += span.indexCount
         }
+
         expect(indices).toBe(shape.indices.length)
         expect(digest(restored)).toBe(digest(shape.indices))
       }
     }
+
     expect([...nearFruit].sort()).toEqual(
       model.fruits.map((fruit) => fruit.id).sort()
     )
@@ -1009,6 +1113,7 @@ it('owns cucumber spines and tomato calyx and distal pedicel with the target', (
           .filter((span) => span.fruitId === fruit.id)
           .map((span) => ({ ...span, part: part.id }))
       )
+
       expect(
         owned.some((span) => ['green', 'turning', 'ripe'].includes(span.part))
       ).toBe(true)
@@ -1017,6 +1122,7 @@ it('owns cucumber spines and tomato calyx and distal pedicel with the target', (
         if (fruit.cutSite?.kind !== 'synthetic-source-boundary') {
           throw new Error('Missing synthetic source cut boundary')
         }
+
         expect(fruit.cutSite.kind).toBe('synthetic-source-boundary')
         expect(fruit.cutSite.position[1]).toBeCloseTo(
           fruit.center[1] + fruit.length / 2 + 0.009 * Math.min(1, 3 / 3)
@@ -1025,6 +1131,7 @@ it('owns cucumber spines and tomato calyx and distal pedicel with the target', (
         const distal = required(
           stems.partitions.find((span) => span.fruitId === fruit.id)
         )
+
         expect(
           stems.partitions.some(
             (span) =>
@@ -1043,6 +1150,7 @@ it('owns cucumber spines and tomato calyx and distal pedicel with the target', (
             proximal.indexStart + proximal.indexCount
           )
         )
+
         expect(
           stems.shape.indices
             .slice(distal.indexStart, distal.indexStart + distal.indexCount)
@@ -1058,6 +1166,7 @@ it('identifies exact botanical roles without changing source triangle ownership'
     for (const part of model.parts) {
       expect(part.patches).toBeDefined()
       const occupied = new Set<number>()
+
       for (const patch of part.patches) {
         expect(
           model.fruits.some((fruit) => fruit.id === patch.targetFruitId)
@@ -1081,6 +1190,7 @@ it('identifies exact botanical roles without changing source triangle ownership'
             if (occupied.has(index)) {
               throw new Error('Overlapping semantic source triangles')
             }
+
             occupied.add(index)
             const partition = required(
               part.partitions.find(
@@ -1089,6 +1199,7 @@ it('identifies exact botanical roles without changing source triangle ownership'
                   index < span.indexStart + span.indexCount
               )
             )
+
             if (
               partition.fruitId !==
               (patch.owner === 'plant' ? null : patch.targetFruitId)
@@ -1099,10 +1210,12 @@ it('identifies exact botanical roles without changing source triangle ownership'
         }
       }
     }
+
     for (const fruit of model.fruits) {
       const patches = model.parts.flatMap((part) =>
         part.patches.filter((patch) => patch.targetFruitId === fruit.id)
       )
+
       expect(
         patches.filter((patch) => patch.role === 'fruit-skin')
       ).toHaveLength(1)
@@ -1122,9 +1235,11 @@ it('identifies exact botanical roles without changing source triangle ownership'
           patches.filter((patch) => patch.role === 'retained-pedicel')
         ).toHaveLength(1)
         const cut = fruit.cutSite
+
         if (cut?.kind !== 'synthetic-source-boundary') {
           throw new Error('Missing source boundary')
         }
+
         expect(cut.evidence.kind).toBe('synthetic')
         expect(Math.hypot(...cut.towardPlant)).toBeGreaterThan(0)
         const stems = required(
@@ -1136,11 +1251,13 @@ it('identifies exact botanical roles without changing source triangle ownership'
         const retained = required(
           patches.find((patch) => patch.id === cut.boundary.retainedPatchId)
         )
+
         expect(plant.role).toBe('plant-pedicel')
         expect(retained.role).toBe('retained-pedicel')
         expect(plant.source.ranges).toHaveLength(1)
         expect(plant.source.ranges[0].indexCount).toBe(48)
         expect(retained.source.ranges[0].indexCount).toBe(48)
+
         const vertices = (patch: typeof plant) =>
           new Set(
             patch.source.ranges.flatMap((range) =>
@@ -1150,10 +1267,12 @@ it('identifies exact botanical roles without changing source triangle ownership'
               )
             )
           )
+
         const proximal = vertices(plant)
         const shared = [...vertices(retained)]
           .filter((index) => proximal.has(index))
           .sort((a, b) => a - b)
+
         expect(cut.boundary.sourceVertexIndices).toEqual(shared)
         expect(shared).toHaveLength(8)
         for (let axis = 0; axis < 3; axis++) {
@@ -1162,6 +1281,7 @@ it('identifies exact botanical roles without changing source triangle ownership'
               (sum, index) => sum + stems.shape.positions[index * 3 + axis],
               0
             ) / shared.length
+
           expect(midpoint).toBeCloseTo(cut.position[axis], 12)
         }
       }
@@ -1174,14 +1294,17 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
     number[],
     { start: number; count: number; source?: number; kind: string }[]
   >()
+
   const add = (
     positions: number[],
     event: { start: number; count: number; source?: number; kind: string }
   ) => {
     const values = events.get(positions) ?? []
+
     values.push(event)
     events.set(positions, values)
   }
+
   const surface = fruitSource.appendFruitSurface
   const calyx = fruitSource.appendFruitCalyx
   const hairs = hairSource.appendSurfaceHairs
@@ -1190,17 +1313,20 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
     .mockImplementation((...args) => {
       const start = args[0].indices.length
       const result = surface(...args)
+
       add(args[0].positions, {
         start,
         count: args[0].indices.length - start,
         kind: 'surface'
       })
+
       return result
     })
   const calyxSpy = vi
     .spyOn(fruitSource, 'appendFruitCalyx')
     .mockImplementation((...args) => {
       const start = args[0].indices.length
+
       calyx(...args)
       add(args[0].positions, {
         start,
@@ -1221,8 +1347,10 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
         })
       })
     )
+
   try {
     const generated = createCropModels({ netTop: 3, netBottom: 0.45 })
+
     expect(digest(generated)).toBe(digest(models))
     expect(
       generated.some((model) =>
@@ -1232,6 +1360,7 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
     let retainedHair = 0,
       retainedCalyx = 0,
       retainedSurface = 0
+
     for (const model of generated) {
       for (const part of model.parts) {
         for (const [shape, partitions] of [
@@ -1244,8 +1373,10 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
                 index >= span.indexStart &&
                 index < span.indexStart + span.indexCount
             )?.fruitId
+
           for (const event of events.get(shape.positions) ?? []) {
             const owner = ownerAt(event.start)
+
             if (event.source !== undefined) {
               expect(owner).toBe(ownerAt(event.source))
               if (owner) {
@@ -1259,6 +1390,7 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
                 retainedSurface++
               }
             }
+
             // Every source triangle in the generated detail follows that owner.
             for (
               let index = event.start;
@@ -1273,6 +1405,7 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
         }
       }
     }
+
     expect(retainedHair).toBeGreaterThan(0)
     expect(retainedCalyx).toBeGreaterThan(0)
     expect(retainedSurface).toBe(

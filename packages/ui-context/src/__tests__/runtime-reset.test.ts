@@ -4,9 +4,11 @@ import { PropertyRegistry } from '../property-registry.js'
 
 const subject = (registry: PropertyRegistry, key: string) => {
   const value = registry.getSubject(key)
+
   if (!value) {
     throw new Error(`Missing test property: ${key}`)
   }
+
   return value
 }
 
@@ -14,6 +16,7 @@ describe('UI property runtime reset', () => {
   it('releases owned bindings and subjects but leaves caller-owned sources alive', () => {
     const registry = new PropertyRegistry(),
       source = new BehaviorSubject(1)
+
     registry.register('value', {
       defaultValue: 0,
       source$: source,
@@ -23,6 +26,7 @@ describe('UI property runtime reset', () => {
     const old = subject(registry, 'value')
     const complete = vi.fn(),
       next = vi.fn()
+
     old.subscribe({ next, complete })
     registry.resetRuntime()
     expect(registry.getAllPropertyKeys()).toEqual([])
@@ -45,17 +49,21 @@ describe('UI property runtime reset', () => {
     const registry = new PropertyRegistry(),
       source = new BehaviorSubject(1)
     const subscribe = source.subscribe.bind(source)
+
     source.subscribe = ((...args: Parameters<typeof source.subscribe>) => {
       const subscription = subscribe(...args)
+
       subscription.add(() => {
         throw new Error('source cleanup failed')
       })
+
       return subscription
     }) as typeof source.subscribe
     registry.register('first', { defaultValue: 0, source$: source })
     registry.register('second', { defaultValue: 0 })
     const firstComplete = vi.fn(),
       secondComplete = vi.fn()
+
     subject(registry, 'first').subscribe({ complete: firstComplete })
     subject(registry, 'second').subscribe({ complete: secondComplete })
     expect(() => registry.resetRuntime()).toThrow('source cleanup failed')
@@ -68,6 +76,7 @@ describe('UI property runtime reset', () => {
   it('leaves independent registries unchanged', () => {
     const registry = new PropertyRegistry(),
       other = new PropertyRegistry()
+
     other.register('retained', { defaultValue: 3 })
     registry.resetRuntime()
     expect(other.get('retained')).toBe(3)

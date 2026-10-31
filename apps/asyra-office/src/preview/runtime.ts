@@ -20,6 +20,7 @@ export async function startAssetPreview(
   if (active) {
     throw new Error('An asset preview is already active')
   }
+
   active = true
   const owner = runtimeCore
   let stopped = false,
@@ -31,10 +32,12 @@ export async function startAssetPreview(
     | undefined
   let layer: SpatialLayer | undefined
   let cleanup: Promise<void> | undefined
+
   const dispose = () => {
     if (cleanup) {
       return cleanup
     }
+
     stopped = true
     observer?.disconnect()
     controller?.dispose()
@@ -42,6 +45,7 @@ export async function startAssetPreview(
       owner.unregisterRenderLayer(layer.registration.name)
       layer.dispose()
     }
+
     cleanup = owner
       .resetRuntime()
       .then((next) => {
@@ -50,8 +54,10 @@ export async function startAssetPreview(
       .finally(() => {
         active = false
       })
+
     return cleanup
   }
+
   try {
     applyPreset(owner, {
       profile: PresetProfiles['3D'],
@@ -79,10 +85,12 @@ export async function startAssetPreview(
       }
     })
     owner.registerRenderLayer(layer.registration)
+
     const size = () => ({
       width: Math.max(1, host.clientWidth),
       height: Math.max(1, host.clientHeight)
     })
+
     controller = asset
       ? createAssetReviewController(layer, asset, size())
       : createPreviewController(layer, {
@@ -94,6 +102,7 @@ export async function startAssetPreview(
       priority: 10,
       exclusive: true
     })
+
     owner.load({
       version: '1.0.0',
       props: {},
@@ -104,7 +113,9 @@ export async function startAssetPreview(
       if (stopped) {
         return
       }
+
       const next = size()
+
       owner.resizeRenderer(next.width, next.height)
       if (asset && controller) {
         ;(controller as ReturnType<typeof createAssetReviewController>).resize(
@@ -117,6 +128,7 @@ export async function startAssetPreview(
       }
     })
     observer.observe(host)
+
     return {
       getSnapshot: controller.getSnapshot,
       subscribe: controller.subscribe,
@@ -129,4 +141,5 @@ export async function startAssetPreview(
     throw error
   }
 }
+
 export type PreviewRuntime = Awaited<ReturnType<typeof startAssetPreview>>

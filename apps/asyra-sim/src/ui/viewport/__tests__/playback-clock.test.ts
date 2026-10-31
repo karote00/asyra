@@ -8,11 +8,13 @@ function setup() {
 
   const clock = new PlaybackClock({
     now: () => 100,
+
     request: (callback) => {
       callbacks.set(++id, callback)
 
       return id
     },
+
     cancel: (handle) => {
       callbacks.delete(handle)
     }

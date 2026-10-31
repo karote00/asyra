@@ -25,19 +25,24 @@ export function duplicateCandidate(
   const ids = new Map(
     source.bodies.map((body) => [body.id, crypto.randomUUID()])
   )
+
   const remap = (id: string): string => {
     const next = ids.get(id)
+
     if (!next) {
       throw new Error(`Unresolved body reference in source candidate: ${id}`)
     }
+
     return next
   }
+
   const remapRecord = <T>(
     record: Readonly<Record<string, T>>
   ): Record<string, T> =>
     Object.fromEntries(
       Object.entries(record).map(([id, value]) => [remap(id), value])
     )
+
   const workcell = {
     ...structuredClone(source),
     robotRootId: source.robotRootId === null ? null : remap(source.robotRootId),
@@ -77,8 +82,10 @@ export function duplicateCandidate(
                         if (!/^\s*:/.test(text.slice(offset + token.length))) {
                           return token
                         }
+
                         try {
                           const next = ids.get(JSON.parse(token))
+
                           return next ? JSON.stringify(next) : token
                         } catch {
                           return token
@@ -127,6 +134,7 @@ export function duplicateCandidate(
         }))
       }
     }
+
     return { name: experiment.name, draft }
   })
   const nextLineage: CandidateLineage = {
@@ -142,8 +150,10 @@ export function duplicateCandidate(
       ])
     )
   }
+
   return runTransaction(() => {
     const id = createCandidate(core, name, workcell, admit)
+
     core.updateElementProperties([
       {
         elementId: id,
@@ -158,6 +168,7 @@ export function duplicateCandidate(
     for (const experiment of experiments) {
       createExperiment(core, id, experiment.name, experiment.draft)
     }
+
     return id
   })
 }

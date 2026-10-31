@@ -43,6 +43,7 @@ export const GroupContextMenu = ({
       viewport={session.viewport}
       onActivate={(itemId) => {
         const descriptor = descriptors.find(({ id }) => id === itemId)
+
         if (!descriptor?.enabled) {
           return
         }

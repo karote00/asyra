@@ -93,8 +93,10 @@ export const cases = [
 
 export function getCase(id) {
   const entry = cases.find((candidate) => candidate.id === id)
+
   if (!entry) {
     throw new Error(`Unknown case: ${id}`)
   }
+
   return entry
 }

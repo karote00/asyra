@@ -12,6 +12,7 @@ const { runProcess } = require('../control-plane/runner.cjs')
 const { participatingCases } = require('./producers.cjs')
 const localization = require('../control-plane/localization.cjs')
 const playwright = require('../control-plane/playwright-results.cjs')
+
 async function runSelected(
   root,
   manifestPath,
@@ -21,11 +22,14 @@ async function runSelected(
   if (!process.env.FLOW_FILE_DIRECTORY) {
     throw new Error('Select a current flow directory first')
   }
+
   const contract = loadContract(root, undefined, manifestPath),
     candidate = contract.cases.find((c) => c.id === caseId)
+
   if (!candidate) {
     throw new Error('Unknown mapped case')
   }
+
   projectName = projectName ?? candidate.projectName ?? ''
   const testFile = candidate.testFile ?? contract.testFile
   const command = selectedCommand(root, {
@@ -34,18 +38,22 @@ async function runSelected(
   })
   // Chrome creates Unix sockets below TMPDIR; keep this owned path shallow.
   const parent = path.join(root, 'tmp')
+
   fs.mkdirSync(parent, { recursive: true })
   const temporary = fs.mkdtempSync(path.join(parent, 'flow-'))
   const report = path.join(temporary, 'report.json'),
     config = path.join(temporary, 'selected.config.ts'),
     runtimeRequire = createRequire(path.join(root, 'package.json'))
+
   const controller = new AbortController(),
     cancel = () => controller.abort()
+
   process.once('SIGINT', cancel)
   process.once('SIGTERM', cancel)
   try {
     const isPlaywright = contract.runner === 'playwright'
     let executionConfig
+
     if (isPlaywright) {
       fs.writeFileSync(
         config,
@@ -63,21 +71,25 @@ async function runSelected(
       const exact = path
         .resolve(root, testFile)
         .replace(/[?*{}[\]]/g, (c) => '[' + c + ']')
+
       fs.writeFileSync(
         config,
         `import original from ${JSON.stringify(path.resolve(root, contract.configFile))}\nexport default async env=>{const config=await(typeof original==='function'?original(env):original);return {...config,test:{...config.test,include:${JSON.stringify([exact])}}}}\n`
       )
     }
+
     const args = [
       runtimeRequire.resolve(
         isPlaywright ? '@playwright/test/cli' : 'vitest/vitest.mjs'
       ),
       ...command.args
     ]
+
     args[args.indexOf('--config') + 1] = config
     if (!isPlaywright) {
       args.push('--outputFile', report)
     }
+
     const env = {
       ...process.env,
       PLAYWRIGHT_JSON_OUTPUT_FILE: report,
@@ -94,10 +106,12 @@ async function runSelected(
     }
     const request = { version: 1, manifestPath, caseIds: [caseId] }
     let context
+
     if (isPlaywright) {
       const source = ['functional', 'status', 'collaboration'].find((source) =>
         playwright.sourceManifestPaths(source).includes(manifestPath)
       )
+
       context = playwright.begin(
         root,
         path.relative(root, report),
@@ -118,6 +132,7 @@ async function runSelected(
     if (isPlaywright) {
       env.FLOW_OBSERVATION_ID = context.id
     }
+
     let completed
     const result = await runProcess({
       executable: process.execPath,
@@ -129,28 +144,34 @@ async function runSelected(
       timeoutMs: 110000,
       maxOutputBytes: 262144
     })
+
     if (isPlaywright) {
       completed = playwright.complete(root, path.relative(root, report))
     } else {
       let parsed = null
       const errors = []
+
       try {
         if (fs.statSync(report).size > 16 * 1024 * 1024) {
           throw new Error('Report exceeds 16 MiB')
         }
+
         parsed = JSON.parse(fs.readFileSync(report, 'utf8'))
       } catch (error) {
         errors.push(error.message)
       }
+
       if (result.reason) {
         errors.push(result.reason)
       }
+
       let normalized = {
         report: parsed,
         options: {
           projects: (parsed?.testResults ?? []).map(() => projectName)
         }
       }
+
       completed = localization.completeObservation(
         root,
         context,
@@ -161,6 +182,7 @@ async function runSelected(
         }
       )
     }
+
     return result.code === 0 &&
       !result.reason &&
       !completed.issues.length &&
@@ -179,6 +201,7 @@ async function runSelected(
     fs.rmSync(temporary, { recursive: true, force: true })
   }
 }
+
 if (require.main === module) {
   runSelected(process.cwd(), ...process.argv.slice(2))
     .then((code) => {
@@ -189,4 +212,5 @@ if (require.main === module) {
       process.exitCode = 1
     })
 }
+
 module.exports = { runSelected }

@@ -17,13 +17,16 @@ const fixture = (maxBytes?: number) => {
   let ids = ['a', 'b', 'c']
   const source = {
     getCurrentWorkspaceId: () => workspace,
+
     getSelectedElementIds: () => ids,
+
     getElementChildren: () => ({
       available: true,
       elementIds: ids,
       total: ids.length,
       nextOffset: null
     }),
+
     getElementIdsInBounds: vi.fn(() => ids),
     getElementMetadata: vi.fn((id: string) => ({
       name: id,
@@ -41,6 +44,7 @@ const fixture = (maxBytes?: number) => {
     source,
     (listener) => {
       change = listener
+
       return stop
     },
     { maxBytes }
@@ -50,16 +54,20 @@ const fixture = (maxBytes?: number) => {
     bounds: { x: 0, y: 0, width: 100, height: 100 },
     fields: ['x']
   }
+
   return {
     store,
     source,
     query,
     stop,
+
     change: () => change(),
+
     enter: () => {
       ids = [...ids, 'd']
       change()
     },
+
     replace: () => {
       workspace = 'other'
     }
@@ -68,6 +76,7 @@ const fixture = (maxBytes?: number) => {
 
 const fillByteBudget = <T>(read: (index: number) => T): T[] => {
   const values: T[] = []
+
   for (let index = 0; index < 100; index++) {
     try {
       values.push(read(index))
@@ -75,9 +84,11 @@ const fillByteBudget = <T>(read: (index: number) => T): T[] => {
       expect(error).toBeInstanceOf(Error)
       expect((error as Error).message).toMatch(/capacity/)
       expect(values.length).toBeGreaterThan(0)
+
       return values
     }
   }
+
   throw new Error('Expected bounded byte pressure')
 }
 
@@ -86,6 +97,7 @@ describe('retained current document queries', () => {
     const { store, source, query } = fixture()
     const first = store.read({ ...query, limit: 1 })
     const second = store.read({ ...query, offset: 1, limit: 1 })
+
     expect(first).toMatchObject({
       observation: {
         candidateCount: 3,
@@ -114,6 +126,7 @@ describe('retained current document queries', () => {
     (operation) => {
       const item = fixture()
       const first = item.store.read(item.query)
+
       item[operation]()
       expect(() => item.store.get(first.snapshotId)).toThrow(/stale/)
       item.store.dispose()
@@ -122,12 +135,14 @@ describe('retained current document queries', () => {
   it('releases references and bounds stored data without silently reselecting', () => {
     const { store, query, source, stop } = fixture()
     const first = store.read(query)
+
     store.release(first.snapshotId)
     expect(() => store.get(first.snapshotId)).toThrow(/missing/)
     expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(1)
     store.dispose()
     expect(stop).toHaveBeenCalledTimes(1)
     const tiny = fixture(1)
+
     expect(() => tiny.store.read(tiny.query)).toThrow(/capacity/)
     tiny.store.dispose()
   })
@@ -137,22 +152,28 @@ it('reads only the requested retained page rather than revisiting every row', ()
   const { store, query } = fixture()
   const first = store.read(query)
   let visits = 0
+
   for (const row of store.get(first.snapshotId).result.elements) {
     const id = row.id
+
     Object.defineProperty(row, 'id', {
       get: () => {
         visits++
+
         return id
       },
+
       enumerable: true
     })
   }
+
   const page = store.read({
     scope: 'snapshot',
     snapshotId: first.snapshotId,
     offset: 1,
     limit: 1
   })
+
   expect(page.elements.map((row) => row.id)).toEqual(['b'])
   expect(visits).toBe(1)
   store.dispose()
@@ -161,14 +182,17 @@ it('reads only the requested retained page rather than revisiting every row', ()
 it('returns an opaque reference without materializing retained rows', () => {
   const { store, query } = fixture()
   const first = store.read(query)
+
   for (const row of store.get(first.snapshotId).result.elements) {
     Object.defineProperty(row, 'id', {
       get: () => {
         throw new Error('Unexpected row transfer')
       },
+
       enumerable: true
     })
   }
+
   expect(
     store.read({
       scope: 'snapshot',
@@ -198,6 +222,7 @@ it('refuses new retained handoffs under pressure instead of evicting accepted co
       controller.signal
     )
   )
+
   expect(() =>
     store.read(
       { scope: 'ids', elementIds: ['ninth'], delivery: 'reference' },
@@ -207,10 +232,13 @@ it('refuses new retained handoffs under pressure instead of evicting accepted co
   for (const receipt of receipts) {
     expect(store.get(receipt.snapshotId).orderedIds).toHaveLength(1)
   }
+
   const firstLease = receipts[0].leaseId
+
   if (!firstLease) {
     throw new Error('Expected leased receipt')
   }
+
   store.releaseLease(firstLease)
   expect(() =>
     store.read(
@@ -235,6 +263,7 @@ it('releases request leases on settlement but still rejects stale values', () =>
     { scope: 'ids', elementIds: ['a'], delivery: 'reference' },
     signal
   )
+
   change()
   expect(() => store.get(receipt.snapshotId)).toThrow(/stale/)
   store.releaseFor(signal)
@@ -245,6 +274,7 @@ it('releases request leases on settlement but still rejects stale values', () =>
 it('can explicitly release a stale lease without returning a newly invalid consumer handle', () => {
   const { store, query, change } = fixture()
   const receipt = store.read({ ...query, delivery: 'reference' })
+
   change()
   expect(
     store.read({
@@ -262,6 +292,7 @@ it('rejects another request reading, releasing or consuming a same-workspace sna
   const first = new AbortController().signal,
     second = new AbortController().signal
   const receipt = store.read({ ...query, delivery: 'reference' }, first)
+
   expect(() =>
     store.read({ scope: 'snapshot', snapshotId: receipt.snapshotId }, second)
   ).toThrow('request')
@@ -278,6 +309,7 @@ it('rejects another request reading, releasing or consuming a same-workspace sna
     store.get(receipt.snapshotId, receipt.leaseId, first).orderedIds
   ).toHaveLength(3)
   const independent = store.read({ ...query, delivery: 'reference' }, second)
+
   expect(independent.snapshotId).not.toBe(receipt.snapshotId)
   expect(
     store.read({ ...query, delivery: 'reference' }, first).snapshotId
@@ -295,9 +327,11 @@ it('checks request identity before releasing an individual lease', () => {
   const first = new AbortController().signal,
     second = new AbortController().signal
   const receipt = store.read({ ...query, delivery: 'reference' }, first)
+
   if (!receipt.leaseId) {
     throw new Error('Expected a retained lease')
   }
+
   expect(() => store.releaseLease(receipt.leaseId, second)).toThrow('request')
   expect(
     store.get(receipt.snapshotId, receipt.leaseId, first).orderedIds
@@ -325,6 +359,7 @@ it.each(['page', 'columns'] as const)(
         signal
       )
     )
+
     expect(() =>
       store.read({ scope: 'ids', elementIds: ['new'], delivery }, signal)
     ).toThrow(/capacity/)
@@ -334,6 +369,7 @@ it.each(['page', 'columns'] as const)(
         store.get(receipt.snapshotId, receipt.leaseId, signal).orderedIds
       ).toHaveLength(1)
     }
+
     expect(source.getElementComputedData).toHaveBeenCalledTimes(
       receipts.length + 1
     )
@@ -348,6 +384,7 @@ it.each(['page', 'columns'] as const)(
     for (const receipt of receipts) {
       expect(() => store.get(receipt.snapshotId)).toThrow(/missing/)
     }
+
     store.dispose()
   }
 )
@@ -355,6 +392,7 @@ it.each(['page', 'columns'] as const)(
 it('refines 2736 retained candidates to 24 targets without another spatial query or row transfer', () => {
   const { store, source, query, change } = fixture()
   const ids = Array.from({ length: 2736 }, (_, index) => `part-${index}`)
+
   source.getElementIdsInBounds.mockReturnValue(ids)
   source.getElementMetadata.mockImplementation((id) => ({
     name: `crown-${Number(id.slice(5)) < 24 ? 'roof' : 'window'}-edge`,
@@ -364,6 +402,7 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
   }))
   const request = new AbortController()
   const first = store.read({ ...query, delivery: 'reference' }, request.signal)
+
   source.getElementMetadata.mockClear()
   source.getElementComputedData.mockClear()
   const refine = {
@@ -374,6 +413,7 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
     delivery: 'reference' as const
   }
   const result = store.read(refine, request.signal)
+
   expect(result).toMatchObject({
     total: 24,
     elements: [],
@@ -389,6 +429,7 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
   expect(source.getElementMetadata).toHaveBeenCalledTimes(2736)
   expect(source.getElementComputedData).not.toHaveBeenCalled()
   const again = store.read(refine, request.signal)
+
   expect(again.snapshotId).toBe(result.snapshotId)
   expect(again.observation).toMatchObject({
     refinementExecutions: 0,
@@ -405,6 +446,7 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
     { ...refine, filter: { name: { equals: 'missing' } }, expectedCount: 0 },
     request.signal
   )
+
   expect(store.get(empty.snapshotId).orderedIds).toEqual([])
   store.release(first.snapshotId)
   expect(
@@ -442,6 +484,7 @@ it('serves transient region IDs without reserving capacity or changing borrowed 
   )
   const reads = source.getElementIdsInBounds.mock.calls.length
   const borrowed = store.read({ ...query, delivery: 'transient' }, signal)
+
   expect(borrowed.elementIds).toEqual(['a', 'b', 'c'])
   expect(borrowed).not.toHaveProperty('snapshotId')
   expect(borrowed).not.toHaveProperty('leaseId')
@@ -451,15 +494,18 @@ it('serves transient region IDs without reserving capacity or changing borrowed 
       { ...query, bounds: { ...query.bounds, x }, delivery: 'transient' },
       signal
     )
+
     expect(result.elementIds).toEqual(['a', 'b', 'c'])
     expect(result).not.toHaveProperty('snapshotId')
   }
+
   expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(reads + 16)
   for (const snapshot of retained) {
     expect(
       store.get(snapshot.snapshotId, snapshot.leaseId, signal).orderedIds
     ).toEqual(['a', 'b', 'c'])
   }
+
   expect(() =>
     store.read({ ...query, bounds: { ...query.bounds, x: 99 } }, signal)
   ).toThrow(/capacity/)
@@ -482,6 +528,7 @@ it.each([
   { scope: 'snapshot', snapshotId: 'missing' }
 ])('rejects unsupported transient delivery before selection: %j', (query) => {
   const { store, source } = fixture()
+
   expect(() =>
     store.read({ ...query, delivery: 'transient' } as never)
   ).toThrow(/Transient/)
@@ -492,8 +539,10 @@ it.each([
 it('does not publish transient values when cancellation occurs during the canonical read', () => {
   const { store, source } = fixture(4000)
   const controller = new AbortController()
+
   source.getElementIdsInBounds = vi.fn(() => {
     controller.abort()
+
     return ['a']
   })
   expect(() =>
@@ -515,6 +564,7 @@ it('keeps receipt bytes bounded and query pins protected independently of receip
   const { store } = fixture(4000)
   const signal = new AbortController().signal
   const retained: string[] = []
+
   expect(() => {
     for (let i = 0; i < 50; i++) {
       retained.push(
@@ -532,6 +582,7 @@ it('keeps receipt bytes bounded and query pins protected independently of receip
       receipt: { payload: 'x'.repeat(100) }
     })
   }
+
   store.releaseFor(signal)
   expect(() =>
     store.read(
@@ -550,6 +601,7 @@ it('counts filtered structural targets as queries without copying mutation recei
     { operation: 'group' },
     signal
   )
+
   const refine = (index: number) =>
     store.read(
       {
@@ -560,8 +612,10 @@ it('counts filtered structural targets as queries without copying mutation recei
       },
       signal
     )
+
   try {
     const results = fillByteBudget(refine)
+
     expect(() => refine(results.length)).toThrow(/capacity/)
     for (const result of results) {
       expect(store.get(result.snapshotId).orderedIds).toEqual([])
@@ -576,6 +630,7 @@ it('counts filtered structural targets as queries without copying mutation recei
         )
       ).toThrow(/receipt unavailable/)
     }
+
     source.getElementMetadata.mockClear()
     expect(refine(0).snapshotId).toBe(results[0].snapshotId)
     expect(source.getElementMetadata).not.toHaveBeenCalled()
@@ -601,6 +656,7 @@ it('counts filtered structural targets as queries without copying mutation recei
 it('retains many small query handoffs within the byte budget without an entry quota', () => {
   const { store, source } = fixture()
   const signal = new AbortController().signal
+
   try {
     const results = Array.from({ length: 64 }, (_, index) =>
       store.read(
@@ -612,12 +668,15 @@ it('retains many small query handoffs within the byte budget without an entry qu
         signal
       )
     )
+
     for (const [index, result] of results.entries()) {
       expect(
         store.get(result.snapshotId, result.leaseId, signal).orderedIds
       ).toEqual([`small-${index}`])
     }
+
     const reads = source.getElementMetadata.mock.calls.length
+
     expect(
       store.read(
         { scope: 'ids', elementIds: ['small-0'], delivery: 'reference' },
@@ -634,11 +693,13 @@ it('recovers mixed-request byte pressure without releasing sibling pins or refre
   const { store, change } = fixture(4000)
   const first = new AbortController()
   const second = new AbortController()
+
   const read = (id: string, signal: AbortSignal) =>
     store.read(
       { scope: 'ids', elementIds: [id], delivery: 'reference' },
       signal
     )
+
   try {
     const sibling = read('sibling', second.signal)
     const historical = store.retainReceipt(
@@ -649,15 +710,18 @@ it('recovers mixed-request byte pressure without releasing sibling pins or refre
     const crowded = fillByteBudget((index) =>
       read(`request-${index}`, first.signal)
     )
+
     expect(() => read('retry', second.signal)).toThrow(/capacity/)
     first.abort()
     const retry = read('retry', second.signal)
+
     expect(
       store.get(sibling.snapshotId, sibling.leaseId, second.signal).orderedIds
     ).toEqual(['sibling'])
     for (const item of crowded) {
       expect(() => store.get(item.snapshotId, item.leaseId)).toThrow(/lease/)
     }
+
     store.releaseFor(first.signal)
     change()
     expect(() =>
@@ -679,6 +743,7 @@ it('recovers mixed-request byte pressure without releasing sibling pins or refre
     store.releaseFor(second.signal)
     const third = new AbortController()
     const current = read('retry', third.signal)
+
     expect(current.snapshotId).not.toBe(retry.snapshotId)
     expect(
       store.get(current.snapshotId, current.leaseId, third.signal).orderedIds
@@ -700,9 +765,11 @@ it('pages immutable receipt text without repeated serialization or live query re
   }
   const serialize = vi.fn(() => ({ ...receipt }))
   const handle = store.retainReceipt(ids, { toJSON: serialize }, signal)
+
   expect(serialize).toHaveBeenCalledTimes(1)
   const chunks: string[] = []
   let offset: number | null = 0
+
   change()
   do {
     const page = store.read(
@@ -717,6 +784,7 @@ it('pages immutable receipt text without repeated serialization or live query re
       current: boolean
       receiptPage: { text: string; nextOffset: number | null }
     }
+
     pageCount++
     expect(page.current).toBe(false)
     expect(
@@ -725,6 +793,7 @@ it('pages immutable receipt text without repeated serialization or live query re
     chunks.push(page.receiptPage.text)
     offset = page.receiptPage.nextOffset
   } while (offset !== null)
+
   expect(pageCount).toBeGreaterThan(1)
   expect(JSON.parse(chunks.join(''))).toEqual(receipt)
   expect(serialize).toHaveBeenCalledTimes(1)
@@ -750,6 +819,7 @@ it.each(['reference', 'page', 'columns'] as const)(
   (delivery) => {
     const { store, source, query, change } = fixture()
     const controller = new AbortController()
+
     try {
       const first = store.read(
         { ...query, delivery },
@@ -762,6 +832,7 @@ it.each(['reference', 'page', 'columns'] as const)(
         controller.signal,
         'consumer'
       )
+
       expect(
         new Set([first.leaseId, request.leaseId, sibling.leaseId]).size
       ).toBe(3)
@@ -772,6 +843,7 @@ it.each(['reference', 'page', 'columns'] as const)(
       if (!first.leaseId) {
         throw new Error('Expected consuming lease')
       }
+
       store.releaseLease(first.leaseId, controller.signal)
       expect(
         store.get(request.snapshotId, request.leaseId, controller.signal)
@@ -792,6 +864,7 @@ it.each(['reference', 'page', 'columns'] as const)(
         store.get(sibling.snapshotId, sibling.leaseId, controller.signal)
       ).toThrow(/stale/)
       const fresh = store.read({ ...query, delivery }, controller.signal)
+
       expect(fresh.snapshotId).not.toBe(request.snapshotId)
       expect(source.getElementComputedData).toHaveBeenCalledTimes(6)
       controller.abort()
@@ -805,6 +878,7 @@ it.each(['reference', 'page', 'columns'] as const)(
 it('isolates consuming refinement and receipt leases without rebuilding their sources', () => {
   const { store, source, query } = fixture()
   const signal = new AbortController().signal
+
   try {
     const original = store.read(query, signal)
     const refined = {
@@ -815,6 +889,7 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
     }
     const held = store.read(refined, signal)
     const consumed = store.read(refined, signal, 'consumer')
+
     expect(consumed.snapshotId).toBe(held.snapshotId)
     expect(consumed.observation).toMatchObject({
       refinementExecutions: 0,
@@ -823,6 +898,7 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
     if (!consumed.leaseId) {
       throw new Error('Expected consuming lease')
     }
+
     store.releaseLease(consumed.leaseId, signal)
     expect(store.get(held.snapshotId, held.leaseId, signal).orderedIds).toEqual(
       ['a']
@@ -834,11 +910,14 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
       delivery: 'receipt' as const
     }
     const internal = store.read(receiptInput, signal, 'consumer')
+
     if (!internal.leaseId) {
       throw new Error('Expected consuming receipt lease')
     }
+
     store.releaseLease(internal.leaseId, signal)
     const delivered = store.read(receiptInput, signal)
+
     expect(delivered.leaseId).toBe(saved.leaseId)
     expect(delivered).toMatchObject({ receipt: { status: 'complete' } })
     expect(source.getElementComputedData).toHaveBeenCalledTimes(3)
@@ -860,16 +939,20 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
     fields: ['x'],
     delivery: 'reference' as const
   }
+
   try {
     const caller = store.read(query, owner.signal)
     const consumer = store.read(query, owner.signal, 'consumer')
+
     if (!caller.leaseId || !consumer.leaseId) {
       throw new Error('Expected leases')
     }
+
     store.releaseLease(caller.leaseId, owner.signal)
     const others = fillByteBudget((index) =>
       store.read({ ...query, elementIds: [`other-${index}`] }, other.signal)
     )
+
     expect(
       store.get(consumer.snapshotId, consumer.leaseId, owner.signal).orderedIds
     ).toEqual(['a'])
@@ -878,12 +961,14 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
     )
     const reads = source.getElementComputedData.mock.calls.length
     const again = store.read(query, owner.signal, 'consumer')
+
     expect(again.snapshotId).toBe(consumer.snapshotId)
     expect(source.getElementComputedData).toHaveBeenCalledTimes(reads)
     expect(again.leaseId).not.toBe(consumer.leaseId)
     if (!again.leaseId) {
       throw new Error('Expected second consuming lease')
     }
+
     store.releaseLease(again.leaseId, owner.signal)
     expect(() =>
       store.read({ ...query, elementIds: ['replacement'] }, other.signal)
@@ -893,6 +978,7 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
       { ...query, elementIds: ['replacement'] },
       other.signal
     )
+
     expect(
       store.get(replacement.snapshotId, replacement.leaseId, other.signal)
         .orderedIds
@@ -904,6 +990,7 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
         store.get(receipt.snapshotId, receipt.leaseId, other.signal).orderedIds
       ).toHaveLength(1)
     }
+
     store.dispose()
     expect(() => store.read(query, other.signal, 'consumer')).toThrow(
       /disposed/
@@ -921,6 +1008,7 @@ it('rejects the recorded scope mismatch before reading or reserving resources, t
   const children = vi.spyOn(source, 'getElementChildren')
   const workspace = vi.spyOn(source, 'getCurrentWorkspaceId')
   const signal = new AbortController().signal
+
   expect(() => store.read(recordedQuery as never, signal)).toThrow(/filter/)
   expect(children).not.toHaveBeenCalled()
   expect(workspace).not.toHaveBeenCalled()
@@ -939,6 +1027,7 @@ it('rejects the recorded scope mismatch before reading or reserving resources, t
     },
     signal
   )
+
   expect(subset.elements.map((row) => row.id)).toEqual(['b'])
   expect(children).toHaveBeenCalledTimes(1)
   expect(store.get(parent.snapshotId, undefined, signal).orderedIds).toEqual([
@@ -958,6 +1047,7 @@ it.each([{ offset: -1 }, { offset: null }, { expectedCount: -1 }])(
   (patch) => {
     const { store, source } = fixture()
     const parent = store.read({ scope: 'children' })
+
     source.getElementMetadata.mockClear()
     expect(() =>
       store.read({
@@ -982,18 +1072,22 @@ it.each(['elements', 'ids'] as const)(
     const contract = createAiToolContract(action)
     const invoke = createAiInvoker({
       execute: (call) => action.execute(call.input as never, { signal }),
+
       middleware: [
         createAiToolMiddleware({
           resolve: () => contract,
+
           validate: operationContractIssue,
           classify: designActionOutcome
         })
       ]
     })
+
     const read = (input: unknown) =>
       invoke.invoke({ name: action.name, input, signal }) as Promise<
         ReturnType<typeof h.store.read>
       >
+
     try {
       const parent = await read({
         scope: 'children',
@@ -1002,10 +1096,13 @@ it.each(['elements', 'ids'] as const)(
         delivery: 'page',
         limit: 2
       })
+
       if (!parent.snapshotId) {
         throw new Error('Expected retained parent identity')
       }
+
       const computedReads = h.source.getElementComputedData.mock.calls.length
+
       for (const delivery of ['page', 'columns'] as const) {
         const selected = await read({
           scope: 'snapshot',
@@ -1014,6 +1111,7 @@ it.each(['elements', 'ids'] as const)(
           delivery,
           limit: 2
         })
+
         expect(selected.total).toBe(3)
         expect(selected.nextOffset).toBe(2)
         if (mode === 'ids') {
@@ -1021,6 +1119,7 @@ it.each(['elements', 'ids'] as const)(
         } else {
           expect(Object.hasOwn(selected, 'elementIds')).toBe(false)
         }
+
         const tail = await read({
           scope: 'snapshot',
           snapshotId: selected.snapshotId,
@@ -1028,6 +1127,7 @@ it.each(['elements', 'ids'] as const)(
           offset: 2,
           limit: 2
         })
+
         expect(tail.nextOffset).toBeNull()
         if (mode === 'ids') {
           expect(tail.elementIds).toEqual(['c'])
@@ -1036,12 +1136,14 @@ it.each(['elements', 'ids'] as const)(
         } else {
           expect(tail).toMatchObject({ columns: [{ id: 'c', x: 99, y: 0 }] })
         }
+
         const empty = await read({
           scope: 'snapshot',
           snapshotId: parent.snapshotId,
           filter: { type: 'missing-type' },
           delivery
         })
+
         expect(empty).toMatchObject({
           total: 0,
           elements: [],
@@ -1053,6 +1155,7 @@ it.each(['elements', 'ids'] as const)(
           expect(Object.hasOwn(empty, 'elementIds')).toBe(false)
         }
       }
+
       expect(h.source.getElementComputedData).toHaveBeenCalledTimes(
         computedReads
       )

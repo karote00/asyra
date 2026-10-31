@@ -18,8 +18,10 @@ import {
 } from '../mesh-index'
 
 const ops = poseOperations(intervalAlgebra)
+
 async function ring(segments = 16): Promise<MeshGeometry> {
   const mesh = new MechanicalMesh()
+
   mesh.lathe(
     0xffffff,
     [0, 0, 0],
@@ -44,11 +46,14 @@ async function ring(segments = 16): Promise<MeshGeometry> {
     },
     asset
   )
+
   if (part.geometry.kind !== 'mesh') {
     throw new Error('Missing mesh')
   }
+
   return part.geometry
 }
+
 const solid: MeshGeometry = {
   kind: 'mesh',
   version: 1,
@@ -56,10 +61,12 @@ const solid: MeshGeometry = {
   positions: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
   indices: [0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3]
 }
+
 const shape = (geometry: MeshGeometry, position: Vec3 = [0, 0, 0]) => ({
   geometry,
   pose: ops.fromPose({ ...IDENTITY_POSE, position })
 })
+
 const sphere = (position: Vec3, radius = 0.1) => ({
   geometry: { kind: 'sphere' as const, radius },
   pose: ops.fromPose({ ...IDENTITY_POSE, position })
@@ -75,6 +82,7 @@ describe('original mesh solid certificates', () => {
     const pose = shape(solid).pose,
       resolve = createWorldBoundsResolver(pose),
       first = resolve(bounds)
+
     expect(resolve(bounds)).toBe(first)
     expect(first[0][0]).toBeLessThanOrEqual(0)
     expect(first[0][1]).toBeGreaterThanOrEqual(1)
@@ -82,6 +90,7 @@ describe('original mesh solid certificates', () => {
     const translated = createWorldBoundsResolver(
       ops.fromPose({ ...IDENTITY_POSE, position: [2, 0, 0] })
     )(bounds)
+
     expect(translated).not.toBe(first)
     expect(translated[0][0]).toBeLessThanOrEqual(2)
     expect(translated[0][1]).toBeGreaterThanOrEqual(3)
@@ -100,7 +109,9 @@ describe('original mesh solid certificates', () => {
         }
 
         const result = distance(a, b, ...settings)
+
         warningObserved ||= result.upper < 0.5
+
         return result
       })
 
@@ -112,6 +123,7 @@ describe('original mesh solid certificates', () => {
         1e-6,
         48
       )
+
       expect(result.penetration).toBe(false)
       expect(result.upper).toBeLessThan(0.5)
       expect(result.lower).toBeGreaterThan(0)
@@ -130,8 +142,10 @@ describe('original mesh solid certificates', () => {
     const query = new OriginalMeshQuery(undefined, 1000)
     const a = shape(frozen),
       b = sphere([5, 0, 0])
+
     query.distance(a, b, 0.02, 1e-6, 48)
     const before = query.work
+
     query.distance(a, b, 0.02, 1e-6, 48)
     expect(query.work).toBeGreaterThan(before)
     query.work = 1000
@@ -145,6 +159,7 @@ describe('original mesh solid certificates', () => {
       a = shape(solid),
       b = sphere([0.9, 0.9, 0])
     const witness = query.distance(a, b, 0.02, 1e-6, 48)
+
     expect(witness.lower).toBeGreaterThan(0.02)
     expect(query.lowerOver(a, b, 0.02, witness)).toBeGreaterThan(0.02)
   })
@@ -155,8 +170,10 @@ describe('original mesh solid certificates', () => {
       indices: Object.freeze([...solid.indices])
     })
     const retained = new OriginalMeshQuery()
+
     retained.distance(shape(frozen), sphere([5, 0, 0]), 0.02, 1e-6, 48)
     const initialWork = retained.work
+
     retained.distance(shape(frozen), sphere([5, 0, 0]), 0.02, 1e-6, 48)
     expect(retained.work - initialWork).toBeLessThan(initialWork)
     for (const position of [
@@ -174,13 +191,16 @@ describe('original mesh solid certificates', () => {
         1e-6,
         48
       )
+
       expect(result.penetration).toBe(oracle.penetration)
       expect(result.lower > 0.02).toBe(oracle.lower > 0.02)
     }
+
     const changed = {
       ...frozen,
       positions: frozen.positions.map((n) => n * 0.01)
     }
+
     expect(
       retained.distance(
         shape(changed),
@@ -209,6 +229,7 @@ describe('original mesh solid certificates', () => {
           [0.1, 2, 0.1]
         ].map(async (size) => {
           const mesh = new MechanicalMesh()
+
           mesh.block(0xffffff, [0, 0, 0], size as unknown as Vec3)
           const asset = await decodeRestrictedGlb(mesh.toGlb('crossing-bar'))
           const part = resolvePart(
@@ -221,9 +242,11 @@ describe('original mesh solid certificates', () => {
             },
             asset
           )
+
           if (part.geometry.kind !== 'mesh') {
             throw new Error('Missing bar')
           }
+
           return part.geometry
         })
       )
@@ -234,6 +257,7 @@ describe('original mesh solid certificates', () => {
         1e-6,
         48
       )
+
       expect(result.penetration).toBe(true)
     }
   )
@@ -246,6 +270,7 @@ describe('original mesh solid certificates', () => {
     const query = new OriginalMeshQuery(),
       start = performance.now()
     const result = query.distance(shape(outer), shape(inner), 0.02, 1e-6, 48)
+
     // eslint-disable-next-line no-console -- bounded permanent resource profile
     console.info(
       JSON.stringify({
@@ -265,6 +290,7 @@ describe('original mesh solid certificates', () => {
       1e-6,
       48
     )
+
     expect(reference.lower).toBeGreaterThan(0.02)
     expect(reference.penetration).toBe(result.penetration)
     expect(query.work).toBeLessThan(exhaustive.work / 4)
@@ -278,6 +304,7 @@ describe('original mesh solid certificates', () => {
       1e-6,
       48
     )
+
     expect(result.penetration).toBe(false)
     expect(result.lower).toBeGreaterThan(0.02)
     expect(result.lower).toBeLessThanOrEqual(0.5 * Math.cos(Math.PI / 16) - 0.1)
@@ -293,6 +320,7 @@ describe('original mesh solid certificates', () => {
       1e-6,
       48
     )
+
     expect(result.penetration).toBe(true)
     expect(result.upper).toBe(0)
   })
@@ -304,6 +332,7 @@ describe('original mesh solid certificates', () => {
       1e-6,
       48
     )
+
     expect(result.penetration).toBe(true)
   })
   it('keeps separated concave solids clear under rigid transforms', async () => {
@@ -322,6 +351,7 @@ describe('original mesh solid certificates', () => {
       1e-6,
       48
     )
+
     expect(result.lower).toBeGreaterThan(0.02)
     expect(result.penetration).toBe(false)
   })
@@ -333,6 +363,7 @@ describe('original mesh solid certificates', () => {
       1e-6,
       48
     )
+
     expect(result.penetration).toBe(false)
     expect(result.lower).toBe(0)
   })

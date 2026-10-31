@@ -120,9 +120,11 @@ const actionByName = (
   const action = createAiActions(apis, {
     ...options
   }).find((candidate) => candidate.name === name)
+
   if (!action) {
     throw new Error(`Missing test action: ${name}`)
   }
+
   return action
 }
 
@@ -146,6 +148,7 @@ const createServerPreparedCompositionArtifact = (
     role: string
   }[] = []
   const seenRoles = new Set<string>()
+
   for (const item of descriptor.items) {
     if (seenRoles.has(item.role)) {
       skipped.push({
@@ -154,6 +157,7 @@ const createServerPreparedCompositionArtifact = (
       })
       continue
     }
+
     seenRoles.add(item.role)
     acceptedItems.push(item)
   }
@@ -161,6 +165,7 @@ const createServerPreparedCompositionArtifact = (
   const groupBounds = acceptedItems.reduce((bounds, item) => {
     const x = Math.min(bounds.x, item.bounds.x)
     const y = Math.min(bounds.y, item.bounds.y)
+
     return {
       height:
         Math.max(bounds.y + bounds.height, item.bounds.y + item.bounds.height) -
@@ -180,11 +185,14 @@ const createServerPreparedCompositionArtifact = (
           0
         )
       : 0
+
   const preparedDescriptors = acceptedItems.map(
     (item): PreparedElementDescriptor => {
       const elementId = `${item.role}-id`
+
       const propertyId = (propertyName: string) =>
         `${elementId}-${propertyName}`
+
       const common = {
         fills: [],
         height: item.bounds.height,
@@ -204,9 +212,11 @@ const createServerPreparedCompositionArtifact = (
         x: item.bounds.x - groupBounds.x,
         y: item.bounds.y - groupBounds.y
       } as const
+
       if (item.primitive === 'oval') {
         return Object.freeze(common)
       }
+
       return Object.freeze({
         ...common,
         closed: item.closed === true,
@@ -229,12 +239,15 @@ const createServerPreparedCompositionArtifact = (
   const roleToElementIds: Record<string, readonly string[]> = {}
   const pupilIds: string[] = []
   const whiskerIds: string[] = []
+
   acceptedItems.forEach((item, index) => {
     const elementId = preparedDescriptors[index].id
+
     roleToElementIds[item.role] = Object.freeze([elementId])
     if (item.role.includes('pupil')) {
       pupilIds.push(elementId)
     }
+
     if (item.role.includes('whisker')) {
       whiskerIds.push(elementId)
     }
@@ -242,6 +255,7 @@ const createServerPreparedCompositionArtifact = (
   if (pupilIds.length > 0) {
     roleToElementIds.pupils = Object.freeze(pupilIds)
   }
+
   if (whiskerIds.length > 0) {
     roleToElementIds.whiskers = Object.freeze(whiskerIds)
   }
@@ -254,10 +268,12 @@ const createServerPreparedCompositionArtifact = (
   let currentDescriptors: PreparedElementDescriptor[] = []
   let currentPointCount = 0
   let currentRoles: string[] = []
+
   const flushSlice = () => {
     if (currentDescriptors.length === 0) {
       return
     }
+
     slices.push({
       descriptors: currentDescriptors,
       pointCount: currentPointCount,
@@ -267,8 +283,10 @@ const createServerPreparedCompositionArtifact = (
     currentPointCount = 0
     currentRoles = []
   }
+
   acceptedItems.forEach((item, index) => {
     const itemPointCount = pointCountForItem(item)
+
     if (
       currentDescriptors.length > 0 &&
       (currentDescriptors.length >= PREPARED_DRAWING_SLICE_ELEMENT_BUDGET ||
@@ -277,6 +295,7 @@ const createServerPreparedCompositionArtifact = (
     ) {
       flushSlice()
     }
+
     currentDescriptors.push(preparedDescriptors[index])
     currentPointCount += itemPointCount
     currentRoles.push(item.role)
@@ -341,12 +360,15 @@ describe('Asyra Design AI composition action catalog', () => {
   it('enrolls native composition writes without holding a member during paint', async () => {
     const apis = actionApis()
     let inMutation = false
+
     apis.createCompositionGroup = vi.fn((descriptor) => {
       expect(inMutation).toBe(true)
+
       return descriptor.id
     })
     apis.createCompositionElements = vi.fn((descriptors) => {
       expect(inMutation).toBe(true)
+
       return descriptors.map(({ id }) => id)
     })
     const action = actionByName(AiActionNames.INSERT_VECTOR_COMPOSITION, apis, {
@@ -354,6 +376,7 @@ describe('Asyra Design AI composition action catalog', () => {
         expect(inMutation).toBe(false)
       }
     })
+
     await action.execute(
       createServerPreparedCompositionArtifact({
         compositionRole: 'drawing',
@@ -362,6 +385,7 @@ describe('Asyra Design AI composition action catalog', () => {
       }),
       {
         signal: new AbortController().signal,
+
         runMutation: async (mutate) => {
           inMutation = true
           try {
@@ -436,6 +460,7 @@ describe('Asyra Design AI composition action execution', () => {
       status: 'complete'
     })
     const prepared = createServerPreparedCompositionArtifact(argumentsValue)
+
     expect(apis.createCompositionGroup).toHaveBeenCalledOnce()
     expect(apis.createCompositionElements).toHaveBeenCalledWith(
       prepared.slices[0].descriptors,
@@ -449,6 +474,7 @@ describe('Asyra Design AI composition action execution', () => {
   it('submits one validated composition batch into the precreated Group', async () => {
     const apis = actionApis()
     const items = [vectorItem('fur-1'), vectorItem('fur-2')]
+
     apis.createCompositionElements.mockReturnValue(
       canonicalElementIds(['fur-1-id', 'fur-2-id'])
     )
@@ -475,6 +501,7 @@ describe('Asyra Design AI composition action execution', () => {
       items,
       parent: 'workspace'
     })
+
     expect(apis.createCompositionElements).toHaveBeenCalledWith(
       prepared.slices[0].descriptors,
       {
@@ -490,6 +517,7 @@ describe('Asyra Design AI composition action execution', () => {
       vectorItem(`fur-${index}`)
     )
     const orderedElementIds = items.map(({ role }) => `${role}-id`)
+
     apis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -533,6 +561,7 @@ describe('Asyra Design AI composition action execution', () => {
   it('paints exact accepted bounds before the first canonical mutation and clears terminal state', async () => {
     const apis = actionApis()
     const calls: string[] = []
+
     apis.setDrawingProgress.mockImplementation(
       (
         state: {
@@ -556,10 +585,12 @@ describe('Asyra Design AI composition action execution', () => {
     )
     apis.createCompositionGroup.mockImplementation(() => {
       calls.push('canonical:group')
+
       return 'cat-group-id'
     })
     apis.createCompositionElements.mockImplementation((descriptors) => {
       calls.push('canonical:children')
+
       return canonicalElementIds(descriptors.map(({ id }) => id))
     })
     const yieldToHost = vi.fn(async () => {
@@ -596,6 +627,7 @@ describe('Asyra Design AI composition action execution', () => {
     const items = Array.from({ length: 513 }, (_, index) =>
       ovalItem(`detail-${index}`)
     )
+
     apis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -654,6 +686,7 @@ describe('Asyra Design AI composition action execution', () => {
     const items = Array.from({ length: 513 }, (_, index) =>
       ovalItem(`detail-${index}`)
     )
+
     apis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -698,6 +731,7 @@ describe('Asyra Design AI composition action execution', () => {
     const items = Array.from({ length: 72 }, (_, index) =>
       ovalItem(`detail-${index}`)
     )
+
     apis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -714,12 +748,15 @@ describe('Asyra Design AI composition action execution', () => {
     let maxInFlight = 0
     const yieldToHost = vi.fn(() => {
       const boundary = boundaries[boundaryIndex]
+
       if (!boundary) {
         throw new Error('Unexpected extra cooperative boundary')
       }
+
       boundaryIndex += 1
       inFlight += 1
       maxInFlight = Math.max(maxInFlight, inFlight)
+
       return boundary.promise.finally(() => {
         inFlight -= 1
       })
@@ -813,6 +850,7 @@ describe('Asyra Design AI composition action execution', () => {
     )
     const orderedElementIds = items.map(({ role }) => `${role}-id`)
     const yieldToHost = vi.fn(async () => undefined)
+
     apis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -852,6 +890,7 @@ describe('Asyra Design AI composition action execution', () => {
     ]
     const orderedElementIds = items.map(({ role }) => `${role}-id`)
     const progressiveApis = actionApis()
+
     progressiveApis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -891,6 +930,7 @@ describe('Asyra Design AI composition action execution', () => {
     const items = Array.from({ length: 513 }, (_, index) =>
       vectorItem(`fur-${index}`)
     )
+
     apis.createCompositionGroup.mockReturnValue('cat-group-id')
     apis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
@@ -1053,12 +1093,15 @@ describe('Asyra Design AI composition action execution', () => {
   it('revalidates update targets immediately before mutation and skips only missing items', async () => {
     const apis = actionApis()
     const reads = new Map<string, number>()
+
     apis.getElementType.mockImplementation((elementId: string) => {
       const count = (reads.get(elementId) ?? 0) + 1
+
       reads.set(elementId, count)
       if (elementId === 'eye-gone' && count > 1) {
         return undefined
       }
+
       return elementId.startsWith('eye') ? 'oval' : 'vector'
     })
     apis.getElementBounds.mockReturnValue({
@@ -1136,6 +1179,7 @@ describe('Asyra Design AI composition action execution', () => {
   it('applies one ordered progressive style batch before yielding once', async () => {
     const apis = actionApis()
     const yieldToHost = vi.fn(async () => undefined)
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementStrokeColor.mockReturnValue('#5B3A29')
     const action = actionByName(
@@ -1192,6 +1236,7 @@ describe('Asyra Design AI composition action execution', () => {
       elementId: `whisker-${index}`,
       style: { strokeColor: '#2563EB' }
     }))
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementStrokeColor.mockReturnValue('#5B3A29')
     const action = actionByName(
@@ -1230,6 +1275,7 @@ describe('Asyra Design AI composition action execution', () => {
       elementId: `whisker-${index}`,
       style: { strokeColor: '#2563EB' }
     }))
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementStrokeColor.mockReturnValue('#5B3A29')
     const action = actionByName(
@@ -1251,6 +1297,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('aligns applied and no-change outcomes from a style batch', async () => {
     const apis = actionApis()
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementFillColor.mockReturnValue('#050504')
     apis.updateElementFillColors.mockReturnValue([
@@ -1286,6 +1333,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('rejects a style batch result that is not index-aligned', async () => {
     const apis = actionApis()
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementFillColor.mockReturnValue('#050504')
     apis.updateElementFillColors.mockReturnValue(['changed'])
@@ -1316,6 +1364,7 @@ describe('Asyra Design AI composition action execution', () => {
   it('preserves contiguous fill and stroke batch order', async () => {
     const apis = actionApis()
     const yieldToHost = vi.fn(async () => undefined)
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementFillColor.mockReturnValue('#050504')
     apis.getElementStrokeColor.mockReturnValue('#5B3A29')
@@ -1369,6 +1418,7 @@ describe('Asyra Design AI composition action execution', () => {
     const yieldToHost = vi.fn(async () => {
       controller.abort()
     })
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementStrokeColor.mockReturnValue('#5B3A29')
     const action = actionByName(
@@ -1400,6 +1450,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('scales existing vector eye topology without regenerating composition elements', async () => {
     const apis = actionApis()
+
     apis.getElementType.mockReturnValue('vector')
     const action = actionByName(AiActionNames.UPDATE_COMPOSITION_ELEMENTS, apis)
 
@@ -1440,6 +1491,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('updates only existing pupil fills through the canonical fill boundary', async () => {
     const apis = actionApis()
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementFillColor.mockReturnValue('#050504')
     const action = actionByName(AiActionNames.UPDATE_COMPOSITION_ELEMENTS, apis)
@@ -1492,6 +1544,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('skips a missing pupil fill while committing the valid sibling as partial', async () => {
     const apis = actionApis()
+
     apis.getElementType.mockReturnValue('vector')
     apis.getElementFillColor.mockImplementation((elementId: string) =>
       elementId === 'pupil-left' ? null : '#050504'
@@ -1545,6 +1598,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('returns no-change for a missing removal target and removes an existing Group once', async () => {
     const missingApis = actionApis()
+
     missingApis.getElementType.mockReturnValue(undefined)
     const missing = actionByName(
       AiActionNames.REMOVE_AI_COMPOSITION,
@@ -1573,6 +1627,7 @@ describe('Asyra Design AI composition action execution', () => {
     expect(missingApis.removeSubtree).not.toHaveBeenCalled()
 
     const existingApis = actionApis()
+
     existingApis.getElementType.mockReturnValue('group')
     existingApis.removeSubtree.mockReturnValue({
       removed: ['cat-group', 'face-id'],
@@ -1605,6 +1660,7 @@ describe('Asyra Design AI composition action execution', () => {
   it('rejects a pre-aborted insert before requesting Group or child mutation', async () => {
     const apis = actionApis()
     const controller = new AbortController()
+
     controller.abort()
     const action = actionByName(AiActionNames.INSERT_VECTOR_COMPOSITION, apis)
 
@@ -1626,6 +1682,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('rejects a null canonical child result as fatal', async () => {
     const apis = actionApis()
+
     apis.createCompositionElements.mockReturnValue(null)
     const action = actionByName(AiActionNames.INSERT_VECTOR_COMPOSITION, apis)
 
@@ -1649,6 +1706,7 @@ describe('Asyra Design AI composition action execution', () => {
 
   it('rejects canonical child result cardinality mismatch as fatal', async () => {
     const apis = actionApis()
+
     apis.createCompositionElements.mockReturnValue(
       canonicalElementIds(['face-id'])
     )
@@ -1676,6 +1734,7 @@ describe('Asyra Design AI composition action execution', () => {
     const items = Array.from({ length: 6 }, (_, index) =>
       vectorItemWithPointCount(1024, `detail-${index}`)
     )
+
     apis.createCompositionElements
       .mockImplementationOnce((batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -1714,6 +1773,7 @@ describe('Asyra Design AI composition action execution', () => {
     const items = Array.from({ length: 6 }, (_, index) =>
       vectorItemWithPointCount(1024, `detail-${index}`)
     )
+
     apis.createCompositionElements.mockImplementation(
       (batch: readonly PreparedElementDescriptor[]) =>
         canonicalElementIds(batch.map(({ id }) => id))
@@ -1754,6 +1814,7 @@ describe('Asyra Design AI composition action execution', () => {
   it('propagates canonical common-API rejection as fatal without accepted partial evidence', async () => {
     const apis = actionApis()
     const failure = new Error('canonical creation failed')
+
     apis.createCompositionElements.mockImplementationOnce(() => {
       throw failure
     })
@@ -1778,10 +1839,12 @@ describe('atomic reference replacement', () => {
     'prepares and inserts the replacement before removing only the old %s composition',
     async (type) => {
       const apis = actionApis()
+
       apis.getElementType.mockReturnValue(type)
       apis.removeSubtree.mockReturnValue({ removed: ['old-composition'] })
       const replacement = actionByName('replace_vector_composition', apis, {
         waitForPaint: async () => undefined,
+
         yieldToHost: async () => undefined
       })
       const drawing = createServerPreparedCompositionArtifact({
@@ -1793,6 +1856,7 @@ describe('atomic reference replacement', () => {
         { compositionId: 'old-composition', drawing },
         executionContext()
       )
+
       expect(
         apis.createCompositionGroup.mock.invocationCallOrder[0]
       ).toBeLessThan(apis.removeSubtree.mock.invocationCallOrder[0])
@@ -1809,12 +1873,14 @@ describe('atomic reference replacement', () => {
 
   it('never removes the old composition when replacement insertion fails', async () => {
     const apis = actionApis()
+
     apis.getElementType.mockReturnValue('group')
     apis.createCompositionElements.mockImplementation(() => {
       throw new Error('insertion failed')
     })
     const replacement = actionByName('replace_vector_composition', apis, {
       waitForPaint: async () => undefined,
+
       yieldToHost: async () => undefined
     })
     const drawing = createServerPreparedCompositionArtifact({
@@ -1822,6 +1888,7 @@ describe('atomic reference replacement', () => {
       items: [ovalItem()],
       parent: 'workspace'
     })
+
     await expect(
       replacement.execute(
         { compositionId: 'old-composition', drawing },
@@ -1836,6 +1903,7 @@ it.each(['workspace', 'vector', undefined])(
   'rejects a %s replacement root with a public reason before writes',
   async (type) => {
     const apis = actionApis()
+
     apis.getElementType.mockReturnValue(type)
     const action = actionByName('replace_vector_composition', apis)
     const drawing = createServerPreparedCompositionArtifact({
@@ -1843,6 +1911,7 @@ it.each(['workspace', 'vector', undefined])(
       items: [ovalItem()],
       parent: 'workspace'
     })
+
     await expect(
       action.execute(
         { compositionId: 'old-composition', drawing },

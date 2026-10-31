@@ -26,11 +26,14 @@ export const defineDataChannelObserver = <TChange>(
   if (!registration.name.trim()) {
     throw new Error('[core] Data channel observer name is required')
   }
+
   if (!registration.channel.trim()) {
     throw new Error('[core] Data channel observer channel is required')
   }
+
   const hasChangeHandler = typeof registration.onChange === 'function'
   const hasBatchHandler = typeof registration.onBatch === 'function'
+
   if (hasChangeHandler === hasBatchHandler) {
     throw new Error(
       '[core] Data channel observer requires exactly one onChange or onBatch handler'
@@ -50,13 +53,18 @@ export class DataChannelObserverRegistry {
     string,
     DataChannelObserverRegistration<unknown>
   >()
+
   private readonly activeObserverCleanups = new Map<
     string,
     DataChannelObserverCleanup
   >()
+
   private initialized = false
+
   private runtimeGeneration = 0
+
   private acquiring = 0
+
   private resetting = false
 
   constructor(private readonly factory: DataChannelObserverFactory) {}
@@ -67,6 +75,7 @@ export class DataChannelObserverRegistry {
     if (this.resetting) {
       throw new Error('[core] Observer runtime is resetting')
     }
+
     if (this.observerRegistrations.has(registration.name)) {
       throw new Error(
         `[core] Data channel observer "${registration.name}" is already registered`
@@ -90,6 +99,7 @@ export class DataChannelObserverRegistry {
 
     this.observerRegistrations.delete(name)
     this.deactivate(name)
+
     return true
   }
 
@@ -97,6 +107,7 @@ export class DataChannelObserverRegistry {
     if (this.resetting) {
       throw new Error('[core] Observer runtime is resetting')
     }
+
     if (this.initialized) {
       return
     }
@@ -111,6 +122,7 @@ export class DataChannelObserverRegistry {
     if (!this.initialized) {
       return
     }
+
     ;[...this.activeObserverCleanups.keys()].forEach((name) => {
       this.deactivate(name)
     })
@@ -121,13 +133,16 @@ export class DataChannelObserverRegistry {
     if (this.acquiring > 0 || this.resetting) {
       throw new Error('[core] Observer runtime reset requires idle acquisition')
     }
+
     this.resetting = true
     this.runtimeGeneration++
     const cleanups = [...this.activeObserverCleanups.values()]
+
     this.activeObserverCleanups.clear()
     this.observerRegistrations.clear()
     this.initialized = false
     const failures: unknown[] = []
+
     for (const cleanup of cleanups) {
       try {
         cleanup()
@@ -135,6 +150,7 @@ export class DataChannelObserverRegistry {
         failures.push(error)
       }
     }
+
     this.resetting = false
     if (failures.length > 0) {
       throw failures[0]
@@ -146,6 +162,7 @@ export class DataChannelObserverRegistry {
   ): void {
     const generation = this.runtimeGeneration
     const { onBatch, onChange } = registration
+
     this.acquiring++
     try {
       const cleanup = onBatch
@@ -165,6 +182,7 @@ export class DataChannelObserverRegistry {
               }
             }
           )
+
       this.activeObserverCleanups.set(registration.name, cleanup)
     } finally {
       this.acquiring--

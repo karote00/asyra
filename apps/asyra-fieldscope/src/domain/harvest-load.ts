@@ -29,6 +29,7 @@ export function assessCrateLoad(load: CrateLoad) {
       throw new Error(`Invalid load ${key}`)
     }
   }
+
   for (const key of [
     'payload',
     'nextFruit',
@@ -41,6 +42,7 @@ export function assessCrateLoad(load: CrateLoad) {
       throw new Error(`Invalid load ${key}`)
     }
   }
+
   for (const key of [
     'baseOffset',
     'payloadOffset',
@@ -51,6 +53,7 @@ export function assessCrateLoad(load: CrateLoad) {
       throw new Error(`Invalid load ${key}`)
     }
   }
+
   if (
     load.fill > 1 ||
     load.returnFill > 1 ||
@@ -60,12 +63,14 @@ export function assessCrateLoad(load: CrateLoad) {
   ) {
     throw new Error('Invalid crate observation')
   }
+
   const reserve = (payload: number) => {
     const mass = load.baseMass + payload
     const x =
       (load.baseMass * load.baseOffset + payload * load.payloadOffset) / mass
     const height =
       (load.baseMass * load.baseHeight + payload * load.payloadHeight) / mass
+
     return (
       load.track / 2 -
       Math.abs(x) -
@@ -74,8 +79,10 @@ export function assessCrateLoad(load: CrateLoad) {
       load.uncertainty
     )
   }
+
   const lateralReserve = reserve(load.payload)
   const projectedReserve = reserve(load.payload + load.nextFruit)
+
   if (
     ![load.baseMass + load.payload, lateralReserve, projectedReserve].every(
       Number.isFinite
@@ -83,39 +90,51 @@ export function assessCrateLoad(load: CrateLoad) {
   ) {
     throw new Error('Load arithmetic exceeds finite range')
   }
+
   const stop: string[] = []
   const exchange: string[] = []
+
   if (!load.latched) {
     stop.push('crate-unlatched')
   }
+
   if (!load.scaleTrusted) {
     stop.push('untrusted-scale')
   }
+
   if (load.payload > load.payloadLimit) {
     stop.push('overload')
   }
+
   if (lateralReserve <= 0) {
     stop.push('lateral-reserve')
   }
+
   if (
     load.payload >= load.payloadLimit ||
     load.payload + load.nextFruit > load.payloadLimit
   ) {
     exchange.push('payload-capacity')
   }
+
   if (load.fill >= load.returnFill) {
     exchange.push('fill-capacity')
   }
+
   if (projectedReserve <= 0) {
     exchange.push('projected-lateral-reserve')
   }
+
   let action: 'stop' | 'exchange' | 'continue-screening' = 'continue-screening'
+
   if (exchange.length) {
     action = 'exchange'
   }
+
   if (stop.length) {
     action = 'stop'
   }
+
   return {
     action,
     stop,

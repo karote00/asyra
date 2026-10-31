@@ -10,6 +10,7 @@ if (process.argv.slice(2).join(' ') === 'debug models --bundled') {
   )
   process.exit(0)
 }
+
 const recorded = JSON.parse(
   readFileSync(
     new URL(
@@ -19,17 +20,22 @@ const recorded = JSON.parse(
     'utf8'
   )
 )
+
 const send = (packet) => process.stdout.write(JSON.stringify(packet) + '\n')
+
 const pending = new Map()
 const namespaces = new Map()
 let sequence = 5000
+
 const call = (tool, args) =>
   new Promise((resolve, reject) => {
     const id = ++sequence
+
     pending.set(id, (result) => {
       if (!result?.contentItems?.[0]?.text) {
         return reject(Error('Missing tool reply'))
       }
+
       resolve({
         success: result.success,
         value: JSON.parse(result.contentItems[0].text)
@@ -48,6 +54,7 @@ const call = (tool, args) =>
       }
     })
   })
+
 async function run() {
   const anchor = await call('prepare_and_apply_design', {
     draft: {
@@ -63,6 +70,7 @@ async function run() {
     (r) => r.actionName === 'apply_prepared_design'
   ).result.compositionId
   const input = JSON.parse(JSON.stringify(recorded.input))
+
   input.inspection = 'defer'
   input.parts.forEach((part) => {
     part.parentId = root
@@ -75,17 +83,20 @@ async function run() {
   const before = await call('read_design_checks', checkSelection)
   const rejected = failure.value.parts?.[1]
   let repaired
+
   if (rejected?.draftId) {
     const children = input.parts[1].draft.children.flatMap((child) => {
       if (child.type !== 'projected-face') {
         return [child]
       }
+
       return child.vertices.slice(2).map((vertex, index) => ({
         ...child,
         key: `${child.key}-triangle-${index}`,
         vertices: [child.vertices[0], child.vertices[index + 1], vertex]
       }))
     })
+
     repaired = await call('prepare_and_apply_design', {
       parts: [
         {
@@ -100,29 +111,41 @@ async function run() {
       inspection: 'defer'
     })
   }
+
   const after = await call('read_design_checks', checkSelection)
+
   return { anchor, failure, before, repaired, after }
 }
+
 const lines = readline.createInterface({ input: process.stdin })
+
 lines.on('line', async (line) => {
   try {
     const packet = JSON.parse(line)
+
     if (pending.has(packet.id)) {
       const accept = pending.get(packet.id)
+
       pending.delete(packet.id)
       accept(packet.result)
+
       return
     }
+
     if (packet.id === undefined) {
       return
     }
+
     let result = {}
+
     if (packet.method === 'config/read') {
       result = { config: {} }
     }
+
     if (packet.method === 'account/read') {
       result = { account: { type: 'chatgpt', email: 'fixture@example.test' } }
     }
+
     if (packet.method === 'thread/start') {
       for (const group of packet.params.dynamicTools) {
         for (const tool of group.tools) {
@@ -130,6 +153,7 @@ lines.on('line', async (line) => {
         }
       }
     }
+
     if (packet.method === 'thread/start') {
       result = {
         thread: { id: 'fixture-thread' },
@@ -139,12 +163,15 @@ lines.on('line', async (line) => {
         runtimeWorkspaceRoots: []
       }
     }
+
     if (packet.method === 'turn/start') {
       result = { turn: { id: 'fixture-turn' } }
     }
+
     send({ id: packet.id, result })
     if (packet.method === 'turn/start') {
       const report = await run()
+
       send({
         method: 'item/completed',
         params: {

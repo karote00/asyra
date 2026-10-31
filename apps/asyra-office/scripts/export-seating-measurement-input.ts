@@ -11,6 +11,7 @@ const assets = {
   'lounge-coffee-table': catalogAsset('round-coffee-table'),
   'lounge-side-chair': catalogAsset('lounge-armchair')
 }
+
 mkdirSync('tmp/setup', { recursive: true })
 writeFileSync(
   'tmp/setup/seating-measurement-meshes.json',

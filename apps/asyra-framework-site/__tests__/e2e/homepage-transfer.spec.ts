@@ -7,6 +7,7 @@ for (const width of [390, 1440]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     const failures: string[] = []
+
     page.on('requestfailed', (request) => {
       if (request.failure()?.errorText !== 'net::ERR_ABORTED') {
         failures.push(request.url())
@@ -16,6 +17,7 @@ for (const width of [390, 1440]) {
     for (const chapter of await page.locator('[data-story-chapter]').all()) {
       await chapter.scrollIntoViewIfNeeded()
     }
+
     await page.locator('footer').scrollIntoViewIfNeeded()
     await page.locator('img').evaluateAll(async (images) => {
       await Promise.all(
@@ -26,8 +28,10 @@ for (const width of [390, 1440]) {
     const entries = await page.evaluate(() => {
       const navigation = performance.getEntriesByType('navigation')
       const resources = performance.getEntriesByType('resource')
+
       return [...navigation, ...resources].map((entry) => {
         const resource = entry as PerformanceResourceTiming
+
         return {
           url: resource.name,
           type: resource.initiatorType,
@@ -43,6 +47,7 @@ for (const width of [390, 1440]) {
     const illustrations = local.filter((entry) =>
       entry.url.includes('/illustrations/')
     )
+
     expect(illustrations.length).toBe(2)
     expect(
       illustrations.every((entry) => entry.url.includes('/spatial-story/'))
@@ -73,6 +78,7 @@ for (const width of [390, 1440]) {
       entries
     }
     const reportPath = testInfo.outputPath('homepage-transfer.json')
+
     await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n')
     await testInfo.attach('homepage-transfer', {
       path: testInfo.outputPath('homepage-transfer.json'),

@@ -26,6 +26,7 @@ describe('native editable text', () => {
         expect(Object.isFrozen(schema.enum)).toBe(true)
       }
     }
+
     for (const [key, values] of Object.entries({
       fontSize: [Number.MIN_VALUE, 4096],
       lineHeight: [Number.MIN_VALUE, 8192],
@@ -40,9 +41,11 @@ describe('native editable text', () => {
       const field = TEXT_PROPERTY_SCHEMA.fields.find(
         (field) => field.key === key
       )
+
       if (!field?.validate) {
         throw new Error(`Missing ${key} validator`)
       }
+
       for (const value of values) {
         expect(
           field.validate(value),
@@ -59,6 +62,7 @@ describe('native editable text', () => {
       id: 'text-property-test',
       type: TEXT_PROPERTY_TYPE
     })
+
     property.set('text' as never, 'Hello 世界\n<b>literal</b>' as never)
     property.set('fontSize' as never, 32 as never)
     property.set('textSizing' as never, 'auto-width' as never)
@@ -96,6 +100,7 @@ describe('native editable text', () => {
     ['text', 'x'.repeat(100_001)]
   ])('rejects invalid %s values through its canonical schema', (key, value) => {
     const field = TEXT_PROPERTY_SCHEMA.fields.find((field) => field.key === key)
+
     expect(field?.validate?.(value)).toBe(false)
   })
 
@@ -103,6 +108,7 @@ describe('native editable text', () => {
     const definition = TEXT_COMPONENT_DEFINITION.properties.find(
       (entry) => entry.name === TEXT_PROPERTY_TYPE
     )
+
     expect(definition?.alias).toEqual(Object.keys(DEFAULT_TEXT_DATA))
   })
 
@@ -116,6 +122,7 @@ describe('native editable text', () => {
 
   it('projects only visible fills with independent opacity and preserves layer order', () => {
     const graphics = new RenderGraphics()
+
     TEXT_RENDER_STRATEGY(graphics, {
       ...DEFAULT_TEXT_DATA,
       text: 'Painted',
@@ -132,6 +139,7 @@ describe('native editable text', () => {
     const operations = graphics
       .getDrawOperations()
       .filter((operation) => operation.type === 'text')
+
     expect(operations).toHaveLength(2)
     expect(operations.map((operation) => operation.paint)).toEqual([
       { color: 0xff0000, alpha: 0.25 },
@@ -152,6 +160,7 @@ describe('native editable text', () => {
 
   it('projects editable content and typography without outlined glyphs', () => {
     const graphics = new RenderGraphics()
+
     TEXT_RENDER_STRATEGY(graphics, {
       id: 'text-test',
       type: 'text',
@@ -182,6 +191,7 @@ describe('native editable text', () => {
 
 it('projects canonical text rotation into the render transform', () => {
   const graphics = new RenderGraphics()
+
   TEXT_RENDER_STRATEGY(graphics, {
     ...DEFAULT_TEXT_DATA,
     x: 10,
@@ -197,6 +207,7 @@ it('projects canonical text rotation into the render transform', () => {
 it('keeps imported fixed boxes and projects auto-width text without wrapping', () => {
   expect(DEFAULT_TEXT_DATA.textSizing).toBe('fixed')
   const graphics = new RenderGraphics()
+
   TEXT_RENDER_STRATEGY(graphics, {
     ...DEFAULT_TEXT_DATA,
     textSizing: 'auto-width',

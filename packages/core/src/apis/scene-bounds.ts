@@ -21,6 +21,7 @@ const getFiniteGeometry = (
   const y = element.computed.get('y') as ComputedAttrs['y']
   const width = element.computed.get('width') as ComputedAttrs['width']
   const height = element.computed.get('height') as ComputedAttrs['height']
+
   if (
     typeof x !== 'number' ||
     !Number.isFinite(x) ||
@@ -36,11 +37,14 @@ const getFiniteGeometry = (
 
   if (element.get('type') === 'oval') {
     const rotation = element.computed.get('rotation') ?? 0
+
     if (typeof rotation !== 'number' || !Number.isFinite(rotation)) {
       return null
     }
+
     return calculateEllipseBounds({ x, y, width, height, rotation })
   }
+
   return { x, y, width, height }
 }
 
@@ -49,6 +53,7 @@ const getFinitePosition = (
 ): Pick<ElementGeometry, 'x' | 'y'> | null => {
   const x = element.computed.get('x') as ComputedAttrs['x']
   const y = element.computed.get('y') as ComputedAttrs['y']
+
   if (
     typeof x !== 'number' ||
     !Number.isFinite(x) ||
@@ -57,6 +62,7 @@ const getFinitePosition = (
   ) {
     return null
   }
+
   return { x, y }
 }
 
@@ -67,6 +73,7 @@ const getWorldPosition = (
   workspaceId: string
 ): { x: number; y: number } | null => {
   const elementId = element.get('id')
+
   if (typeof elementId !== 'string') {
     return null
   }
@@ -87,11 +94,13 @@ const getWorldPosition = (
 
     visitedIds.add(parentId)
     const parent = elements.get(parentId)
+
     if (!parent || parent.get('type') === EntityTypes.WORKSPACE) {
       return null
     }
 
     const parentPosition = getFinitePosition(parent)
+
     if (!parentPosition) {
       return null
     }
@@ -114,6 +123,7 @@ export const getAllElementsWorldBounds = (
   const elements = sceneTree.getAllElements()
   const workspaceId = sceneTree.workspace
   const workspace = elements.get(workspaceId)
+
   if (
     !workspace ||
     workspace.get('type') !== EntityTypes.WORKSPACE ||
@@ -139,6 +149,7 @@ export const getAllElementsWorldBounds = (
       if (elementId !== workspaceId) {
         return null
       }
+
       continue
     }
 
@@ -150,12 +161,14 @@ export const getAllElementsWorldBounds = (
     const worldPosition = geometry
       ? getWorldPosition(element, geometry, elements, workspaceId)
       : null
+
     if (!geometry || !worldPosition) {
       return null
     }
 
     const oppositeX = worldPosition.x + geometry.width
     const oppositeY = worldPosition.y + geometry.height
+
     if (!Number.isFinite(oppositeX) || !Number.isFinite(oppositeY)) {
       return null
     }

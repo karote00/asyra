@@ -4,15 +4,20 @@ import { expect, test, type Page } from '@playwright/test'
 
 async function download(page: Page, name: string): Promise<Buffer> {
   const pending = page.waitForEvent('download')
+
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
+
   if (!stream) {
     throw new Error('Missing download stream')
   }
+
   const chunks: Buffer[] = []
+
   for await (const chunk of stream) {
     chunks.push(Buffer.from(chunk))
   }
+
   return Buffer.concat(chunks)
 }
 
@@ -22,6 +27,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   test.setTimeout(60000)
   const errors: string[] = [],
     external: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => {
     if (
@@ -46,12 +52,14 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
   const panel = library.getByRole('region', { name: 'Field observations' })
+
   await expect(
     panel.getByRole('button', { name: 'Add field observation', exact: true })
   ).toBeEnabled()
   const beforeReport = JSON.parse(
     (await download(page, 'Export JSON')).toString('utf8')
   )
+
   await panel
     .getByRole('button', { name: 'Add field observation', exact: true })
     .click()
@@ -71,6 +79,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     .screenshot({ path: info.outputPath('incomplete-observation.png') })
   const firstText =
     'Fixture offset measured: 25 mm. Operator note: <img src=x onerror=alert(1)> is untrusted text.'
+
   await panel.getByLabel('Observation text').fill(firstText)
   await panel.getByLabel('Observation text').press('Tab')
   await expect(panel.locator('.observation-note').first()).toContainText(
@@ -81,6 +90,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     '<script>Evidence text, never execute.</script>',
     'utf8'
   )
+
   await panel
     .getByLabel('Observation attachments', { exact: true })
     .setInputFiles([
@@ -90,6 +100,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   const expectedSources = [csv, opaque].map(
     (bytes) => `sha256:${createHash('sha256').update(bytes).digest('hex')}`
   )
+
   await expect(
     panel.getByLabel('Prepared observation attachments')
   ).toContainText(expectedSources[0])
@@ -109,6 +120,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   const initialDepth = Number(
     (await page.getByTestId('history-depth').innerText()).match(/\d+/)?.[0]
   )
+
   await panel
     .getByRole('button', { name: 'Apply attachments', exact: true })
     .click()
@@ -116,6 +128,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     `Undo steps: ${initialDepth + 1}`
   )
   const note = panel.locator('.observation-note').first()
+
   await expect(note).toContainText('revision 3')
   expect(await download(page, 'Download measurement.csv')).toEqual(csv)
   expect(await download(page, 'Download operator-note.txt')).toEqual(opaque)
@@ -136,6 +149,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   const bundle = JSON.parse(
     (await download(page, 'Export field observations')).toString('utf8')
   )
+
   expect(bundle.runId).toBe(beforeReport.run.result.runId)
   expect(bundle.snapshotId).toBe(beforeReport.run.snapshot.snapshotId)
   expect(
@@ -156,6 +170,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
       .click()
     await expect(note).toContainText(`revision ${revision}`)
   }
+
   page.once('dialog', (dialog) => dialog.dismiss())
   await note
     .getByRole('button', { name: 'Remove observation', exact: true })
@@ -187,11 +202,14 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   )
   const payload = await download(page, 'Export project'),
     project = JSON.parse(payload.toString('utf8'))
+
   expect(project.observationSources).toEqual(bundle.sources)
   expect(project.runs[0]).toEqual(beforeReport.run)
   const corrupt = structuredClone(project)
+
   corrupt.observationSources[0].base64 = `${corrupt.observationSources[0].base64.startsWith('A') ? 'B' : 'A'}${corrupt.observationSources[0].base64.slice(1)}`
   const depthBeforeOpen = await page.getByTestId('history-depth').innerText()
+
   await page
     .getByLabel('Portable project file', { exact: true })
     .setInputFiles({
@@ -254,6 +272,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   const finalBundle = JSON.parse(
     (await download(page, 'Export field observations')).toString('utf8')
   )
+
   expect(finalBundle.observations).toHaveLength(2)
   expect(finalBundle.observations[1].attachments).toEqual([])
   expect(finalBundle.sources).toEqual(bundle.sources)
@@ -301,11 +320,14 @@ test('pending attachments do not gate existing observation edits or their Undo a
   await expect(page.getByTestId('analysis-result')).toBeVisible({
     timeout: 20000
   })
+
   const openRuns = () =>
     page.getByRole('button', { name: 'Runs & compare', exact: true }).click()
+
   await openRuns()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
   const panel = library.getByRole('region', { name: 'Field observations' })
+
   await panel
     .getByRole('button', { name: 'Add field observation', exact: true })
     .click()
@@ -313,6 +335,7 @@ test('pending attachments do not gate existing observation edits or their Undo a
   await panel.getByLabel('Observation text').fill('Original measurement')
   await panel.getByLabel('Observation text').press('Tab')
   const note = panel.locator('.observation-note').first()
+
   await expect(note).toContainText('Original measurement')
   await panel
     .getByLabel('Observation attachments', { exact: true })
@@ -325,6 +348,7 @@ test('pending attachments do not gate existing observation edits or their Undo a
     panel.getByLabel('Prepared observation attachments')
   ).toContainText('pending.txt')
   const depth = await page.getByTestId('history-depth').innerText()
+
   await panel.getByLabel('Observation text').fill('Revised measurement')
   await panel.getByLabel('Observation text').press('Tab')
   await expect(note).toContainText('Revised measurement')

@@ -28,11 +28,13 @@ test('full local and CI execution share the complete command inventory and artif
   const plan = selectLocalValidation({ repositoryRoot, inputs, full: true })
   const output = path.join(root, 'evidence')
   const commands = localCheckCommands(plan, output, repositoryRoot)
+
   localValidation.writeLocalValidationEvidence(plan, commands, output)
   const evidence = JSON.parse(
     fs.readFileSync(path.join(output, 'scope-evidence.json'), 'utf8')
   )
   const ciPlan = readValidationPlan(evidence)
+
   assert.deepEqual(
     validationCheckCommands(ciPlan, output, repositoryRoot, evidence.identity),
     commands
@@ -42,6 +44,7 @@ test('full local and CI execution share the complete command inventory and artif
   assert.ok(commands.some(({ id }) => id === 'fieldscope-profiles'))
   assert.ok(commands.some(({ id }) => id === 'control-plane-tests'))
   const contracts = commands.find(({ id }) => id === 'control-plane-tests')
+
   for (const name of [
     'localization-runtime',
     'playwright-results',
@@ -53,16 +56,19 @@ test('full local and CI execution share the complete command inventory and artif
       )
     )
   }
+
   assert.equal(plan.e2eSuites.length, 4)
   assert.ok(plan.workspaceMatrix.length > 20)
   for (const workspace of plan.workspaceMatrix) {
     assert.equal(workspace.testSelection.mode, 'full')
     const command = commands.find(({ id }) => id === workspace.name)
+
     assert.equal(
       command.env.CI_SCOPE_EVIDENCE_FILE,
       path.join(output, 'scope-evidence.json')
     )
   }
+
   assert.throws(
     () =>
       readValidationPlan({
@@ -81,6 +87,7 @@ test('PR full mode is label-selected on push without adding a manual trigger', (
   const selections = [
     ...workflow.matchAll(/CI_SCOPE_FULL_VALIDATION: (.+)/g)
   ].map((match) => match[1])
+
   assert.equal(selections.length, 2)
   for (const selection of selections) {
     assert.match(
@@ -88,6 +95,7 @@ test('PR full mode is label-selected on push without adding a manual trigger', (
       /contains\(github.event.pull_request.labels\.\*\.name, 'ci:full'\)/
     )
   }
+
   assert.match(
     workflow,
     /types: \[opened, synchronize, reopened, ready_for_review\]/
@@ -111,8 +119,10 @@ test('catalog CLI executes admitted commands and rejects stale or unselected evi
   const { root, base } = fixture(t)
   const inputs = { changedPaths: [], baseRevision: null, headRevision: base }
   const plan = selectLocalValidation({ repositoryRoot, inputs, full: true })
+
   plan.inputs.baseRevision = base
   const output = path.join(root, 'evidence')
+
   localValidation.writeLocalValidationEvidence(
     plan,
     localCheckCommands(plan, output, repositoryRoot),
@@ -122,6 +132,7 @@ test('catalog CLI executes admitted commands and rejects stale or unselected evi
   const evidence = JSON.parse(fs.readFileSync(evidenceFile, 'utf8'))
   const bin = path.join(root, 'bin')
   const receipt = path.join(root, 'invocation.json')
+
   fs.mkdirSync(bin)
   fs.writeFileSync(
     path.join(bin, 'yarn'),
@@ -145,17 +156,21 @@ process.exit(Number(process.env.CHECK_EXIT || 0))
       ])
     )
   }
+
   const run = (id, overrides = {}) =>
     spawnSync(
       process.execPath,
       ['scripts/validation-checks.mjs', '--check', id],
       { cwd: repositoryRoot, env: { ...env, ...overrides }, encoding: 'utf8' }
     )
+
   const successful = run('dependencies')
+
   assert.equal(successful.status, 0, successful.stderr)
   assert.deepEqual(JSON.parse(fs.readFileSync(receipt)), ['deps:validate'])
   assert.notEqual(run('dependencies', { CHECK_EXIT: '17' }).status, 0)
   const workspace = plan.workspaceMatrix[0]
+
   fs.mkdirSync(path.join(root, 'scripts'))
   fs.mkdirSync(
     path.join(root, 'tools/flow-inspector/control-plane/__tests__'),
@@ -190,8 +205,10 @@ process.exit(Number(process.env.CHECK_EXIT || 0))
       encoding: 'utf8'
     }
   )
+
   assert.equal(workspaceRun.status, 0, workspaceRun.stderr)
   const forwarded = JSON.parse(fs.readFileSync(receipt))
+
   assert.equal(forwarded.CI_SCOPE_EVIDENCE_FILE, evidenceFile)
   assert.equal(
     forwarded.WORKSPACE_CHECK_RESULTS_DIRECTORY,
@@ -201,10 +218,12 @@ process.exit(Number(process.env.CHECK_EXIT || 0))
   assert.equal(forwarded.CI_SCOPE_HEAD, evidence.identity.head)
   fs.unlinkSync(receipt)
   const stale = run('dependencies', { CI_SCOPE_ATTEMPT: 'stale' })
+
   assert.notEqual(stale.status, 0)
   assert.match(stale.stderr, /expected execution identity/)
   assert.equal(fs.existsSync(receipt), false)
   const missing = run('not-an-admitted-check')
+
   assert.notEqual(missing.status, 0)
   assert.match(missing.stderr, /admitted validation check/)
   assert.equal(fs.existsSync(receipt), false)
@@ -212,6 +231,7 @@ process.exit(Number(process.env.CHECK_EXIT || 0))
     'not-selected'
   fs.writeFileSync(evidenceFile, JSON.stringify(evidence))
   const tampered = run('dependencies')
+
   assert.notEqual(tampered.status, 0)
   assert.match(tampered.stderr, /digest/)
   assert.equal(fs.existsSync(receipt), false)
@@ -219,17 +239,22 @@ process.exit(Number(process.env.CHECK_EXIT || 0))
 
 function fixture(t) {
   const parent = path.join(repositoryRoot, 'tmp/local-validation-fixtures')
+
   fs.mkdirSync(parent, { recursive: true })
   const root = fs.mkdtempSync(path.join(parent, 'git-'))
+
   t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+
   const git = (...args) =>
     execFileSync('git', args, {
       cwd: root,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim()
+
   const write = (name, content) =>
     fs.writeFileSync(path.join(root, name), content)
+
   git('init', '-q')
   git('config', 'user.name', 'Local validation fixture')
   git('config', 'user.email', 'fixture@example.invalid')
@@ -244,15 +269,19 @@ function fixture(t) {
   ]) {
     write(name, 'original')
   }
+
   git('add', '.')
   git('commit', '-qm', 'initial')
   const base = git('rev-parse', 'HEAD')
+
   git('update-ref', 'refs/remotes/origin/main', base)
+
   return { root, git, write, base }
 }
 
 test('local inputs union commit, index, working tree and untracked paths without ignoring staged reversals', (t) => {
   const { root, git, write, base } = fixture(t)
+
   write('committed.txt', 'committed')
   git('add', 'committed.txt')
   git('commit', '-qm', 'change')
@@ -266,6 +295,7 @@ test('local inputs union commit, index, working tree and untracked paths without
   write('new\nfile.txt', 'untracked')
   write('.env', 'secret not recorded')
   const result = collectLocalInputs({ repositoryRoot: root })
+
   assert.equal(result.baseRevision, base)
   assert.deepEqual(
     result.changedPaths,
@@ -293,14 +323,17 @@ test('local inputs union commit, index, working tree and untracked paths without
 
 test('local identity changes for working content and index content even when paths remain identical', (t) => {
   const { root, git, write, base } = fixture(t)
+
   write('staged.txt', 'one')
   git('add', 'staged.txt')
   write('staged.txt', 'working')
   const first = collectLocalInputs({ repositoryRoot: root, base })
+
   write('staged.txt', 'two')
   git('add', 'staged.txt')
   write('staged.txt', 'working')
   const second = collectLocalInputs({ repositoryRoot: root, base })
+
   assert.deepEqual(first.changedPaths, second.changedPaths)
   assert.notEqual(first.identity, second.identity)
   write('staged.txt', 'other working')
@@ -312,6 +345,7 @@ test('local identity changes for working content and index content even when pat
 
 test('invalid base fails and clean checkout has explicit empty inputs', (t) => {
   const { root, base } = fixture(t)
+
   assert.deepEqual(
     collectLocalInputs({ repositoryRoot: root, base }).changedPaths,
     []
@@ -324,14 +358,17 @@ test('invalid base fails and clean checkout has explicit empty inputs', (t) => {
 
 test('fingerprinting a symlink does not read its target', (t) => {
   const { root, base } = fixture(t)
+
   fs.symlinkSync('/nonexistent/private-file', path.join(root, 'linked'))
   const result = collectLocalInputs({ repositoryRoot: root, base })
+
   assert.equal(result.files[0].kind, 'symlink')
   assert.match(result.files[0].digest, /^[a-f0-9]{64}$/)
 })
 
 function workspaceFixture(t) {
   const repo = fixture(t)
+
   const addWorkspace = (directory, name, dependencies = {}) => {
     fs.mkdirSync(path.join(repo.root, directory, 'src'), { recursive: true })
     repo.write(
@@ -344,6 +381,7 @@ function workspaceFixture(t) {
     )
     repo.write(`${directory}/src/index.ts`, 'export const initial = 1')
   }
+
   addWorkspace('packages/example', '@fixture/example')
   addWorkspace('packages/consumer', '@fixture/consumer', {
     '@fixture/example': 'workspace:*'
@@ -356,11 +394,13 @@ function workspaceFixture(t) {
   })
   repo.git('add', '.')
   repo.git('commit', '-qm', 'workspaces')
+
   return { ...repo, base: repo.git('rev-parse', 'HEAD'), addWorkspace }
 }
 
 test('local selection reuses CI owner closure for packages, downstream packages, apps and tools', (t) => {
   const { root, base, write } = workspaceFixture(t)
+
   write('packages/example/src/index.ts', 'export const changed = 2')
   const inputs = collectLocalInputs({ repositoryRoot: root, base })
   const plan = selectLocalValidation({ repositoryRoot: root, inputs })
@@ -375,6 +415,7 @@ test('local selection reuses CI owner closure for packages, downstream packages,
     [],
     { repositoryRoot: root, baseRevision: base }
   )
+
   assert.deepEqual(plan.executionPlan, expected.relationshipMap.executionPlan)
   assert.deepEqual(plan.workspaceMatrix.map(({ name }) => name).sort(), [
     '@fixture/client',
@@ -392,11 +433,13 @@ test('local selection reuses CI owner closure for packages, downstream packages,
 
 test('new workspaces are automatically selected and unknown inputs remain unresolved', (t) => {
   const { root, base, addWorkspace, write } = workspaceFixture(t)
+
   addWorkspace('apps/new-client', '@fixture/new-client')
   let plan = selectLocalValidation({
     repositoryRoot: root,
     inputs: collectLocalInputs({ repositoryRoot: root, base })
   })
+
   assert.equal(
     plan.workspaceMatrix.some(({ name }) => name === '@fixture/new-client'),
     true
@@ -411,11 +454,13 @@ test('new workspaces are automatically selected and unknown inputs remain unreso
 
 test('documentation-only selection does not run application E2E', (t) => {
   const { root, base, write } = workspaceFixture(t)
+
   write('apps/client/README.md', '# Client')
   const plan = selectLocalValidation({
     repositoryRoot: root,
     inputs: collectLocalInputs({ repositoryRoot: root, base })
   })
+
   assert.deepEqual(plan.executionPlan.checks.e2e.selected, [])
   assert.equal(plan.workspaceMatrix.length, 0)
 })
@@ -427,11 +472,14 @@ test('full validation resolves declaration task records to executable task names
     inputs: collectLocalInputs({ repositoryRoot: root, base }),
     full: true
   })
+
   // This fixture has no control-plane owner source; test the declaration handoff.
   plan.executionPlan.checks.controlPlane.mode = 'not-selected'
   const commands = localCheckCommands(plan, path.join(root, 'tmp/result'), root)
+
   assert.equal(commands[0].id, 'security-audit')
   const declarations = commands.find(({ id }) => id === 'declarations')
+
   assert.ok(declarations)
   assert.ok(declarations.args.every((value) => typeof value === 'string'))
   for (const { task } of plan.executionPlan.checks.frameworkDeclarations
@@ -447,6 +495,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
     inputs: collectLocalInputs({ repositoryRoot: root, base }),
     full: true
   })
+
   plan.executionPlan.checks.controlPlane.mode = 'not-selected'
   const outputDirectory = path.join(root, 'tmp/result')
   const commands = localCheckCommands(plan, outputDirectory, root)
@@ -459,6 +508,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
 
   const bin = path.join(root, 'bin')
   const trace = path.join(root, 'commands.log')
+
   fs.mkdirSync(bin)
   fs.writeFileSync(
     path.join(bin, 'yarn'),
@@ -471,6 +521,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
     PATH: bin + path.delimiter + process.env.PATH,
     CHECK_TRACE: trace
   }
+
   const run = () =>
     spawnSync(shared.executable, shared.args, {
       cwd: repositoryRoot,
@@ -478,6 +529,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
       encoding: 'utf8',
       timeout: 10000
     })
+
   const result = run()
 
   assert.equal(result.status, 0, result.stderr)
@@ -487,6 +539,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
     'lint:naming'
   ])
   const report = JSON.parse(fs.readFileSync(shared.evidence.path, 'utf8'))
+
   assert.equal(report.identity.run, path.basename(outputDirectory))
   assert.equal(report.relationshipMapDigest, plan.relationshipMapDigest)
   assert.deepEqual(report.checks.lint.executedFiles, ['.'])
@@ -497,6 +550,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
   const evidence = JSON.parse(
     fs.readFileSync(env.CI_SCOPE_EVIDENCE_FILE, 'utf8')
   )
+
   evidence.identity.head = '0'.repeat(40)
   fs.writeFileSync(env.CI_SCOPE_EVIDENCE_FILE, JSON.stringify(evidence))
   fs.unlinkSync(trace)
@@ -511,6 +565,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
 
 test('local validation CLI writes evidence only on execution and completes shared checks', (t) => {
   const { root, git, write } = workspaceFixture(t)
+
   write('.gitignore', '.env\ntmp/\n')
   fs.mkdirSync(path.join(root, 'scripts'))
   write(
@@ -523,15 +578,18 @@ test('local validation CLI writes evidence only on execution and completes share
   git('add', '.')
   git('commit', '-qm', 'local runner fixture')
   const base = git('rev-parse', 'HEAD')
+
   write('apps/client/README.md', '# Client documentation')
   const bin = path.join(root, 'tmp/bin')
   const trace = path.join(root, 'tmp/commands.log')
+
   fs.mkdirSync(bin, { recursive: true })
   fs.writeFileSync(
     path.join(bin, 'yarn'),
     '#!/bin/sh\nprintf "%s\\n" "$*" >> "$CHECK_TRACE"\n',
     { mode: 0o700 }
   )
+
   const run = (args) =>
     spawnSync(
       process.execPath,
@@ -552,6 +610,7 @@ test('local validation CLI writes evidence only on execution and completes share
         timeout: 20000
       }
     )
+
   const preview = run([])
 
   assert.equal(preview.status, 0, preview.stderr)
@@ -564,6 +623,7 @@ test('local validation CLI writes evidence only on execution and completes share
     path.join(root, 'tmp/local-validation', directory, '1.log'),
     'utf8'
   )
+
   assert.equal(execution.status, 0, execution.stdout + execution.stderr + log)
   assert.match(execution.stdout, /Local validation passed/)
   const result = JSON.parse(
@@ -572,6 +632,7 @@ test('local validation CLI writes evidence only on execution and completes share
       'utf8'
     )
   )
+
   assert.equal(result.status, 'passed')
   assert.equal(result.sourceVerified, true)
   assert.equal(result.checks.find(({ id }) => id === 'shared').status, 'passed')
@@ -585,6 +646,7 @@ test('existing separately owned E2E groups declare local argv and result evidenc
       'utf8'
     )
   )
+
   for (const suite of policy.e2eSuites) {
     assert.ok(['yarn', 'node'].includes(suite.localCommand.executable))
     assert.ok(suite.localCommand.args.length > 0)
@@ -592,17 +654,20 @@ test('existing separately owned E2E groups declare local argv and result evidenc
     if (suite.localCommand.evidence === 'playwright') {
       assert.ok(suite.localCommand.args.includes('--max-failures=1'))
     }
+
     assert.equal(suite.localCommand.args.includes('scripts/run-e2e.sh'), false)
   }
 })
 
 test('selected security audit runs before local builds and shared checks', (t) => {
   const { root, git, write } = workspaceFixture(t)
+
   write('package.json', JSON.stringify({ private: true, scripts: {} }))
   write('yarn.lock', '__metadata:\n  version: 8\n')
   git('add', 'package.json', 'yarn.lock')
   git('commit', '-qm', 'root manifest')
   const base = git('rev-parse', 'HEAD')
+
   write(
     'yarn.lock',
     '__metadata:\n  version: 8\n# changed dependency resolution'
@@ -611,9 +676,11 @@ test('selected security audit runs before local builds and shared checks', (t) =
     repositoryRoot: root,
     inputs: collectLocalInputs({ repositoryRoot: root, base })
   })
+
   plan.executionPlan.checks.controlPlane.mode = 'not-selected'
   assert.equal(plan.executionPlan.checks.securityAudit.mode, 'full')
   const commands = localCheckCommands(plan, path.join(root, 'tmp/result'), root)
+
   assert.deepEqual(commands[0], {
     id: 'security-audit',
     executable: 'yarn',
@@ -626,13 +693,16 @@ test('selected security audit runs before local builds and shared checks', (t) =
 
 test('unselected security audit does not query the registry for documentation edits', (t) => {
   const { root, base, write } = workspaceFixture(t)
+
   write('apps/client/README.md', '# Client')
   const plan = selectLocalValidation({
     repositoryRoot: root,
     inputs: collectLocalInputs({ repositoryRoot: root, base })
   })
+
   assert.equal(plan.executionPlan.checks.securityAudit.mode, 'not-selected')
   const commands = localCheckCommands(plan, path.join(root, 'tmp/result'), root)
+
   assert.equal(
     commands.some(({ id }) => id === 'security-audit'),
     false
@@ -660,6 +730,7 @@ for (const paths of [
       repositoryRoot,
       inputs: { ...inputs, baseRevision: null }
     })
+
     assert.deepEqual(
       local.profileFiles,
       ci.relationshipMap.fieldscopeProfileFiles
@@ -668,6 +739,7 @@ for (const paths of [
       local,
       path.join(repositoryRoot, 'tmp/selection-test')
     ).find((c) => c.id === 'fieldscope-profiles')
+
     assert.ok(command)
     assert.deepEqual(
       command.args.slice(1),
@@ -688,6 +760,7 @@ test('local plan Flow admission uses the same repository test selection as CI', 
       headRevision: 'a'.repeat(40)
     }
   })
+
   assert.deepEqual(plan.unresolved, [])
   assert.deepEqual(
     plan.executionPlan.checks.repositoryScripts,
@@ -695,8 +768,10 @@ test('local plan Flow admission uses the same repository test selection as CI', 
   )
   const outputDirectory = path.join(root, 'tmp/flow-admission')
   const commands = localCheckCommands(plan, outputDirectory)
+
   localValidation.writeLocalValidationEvidence(plan, commands, outputDirectory)
   const shared = commands.find(({ id }) => id === 'shared')
+
   assert.ok(shared)
   assert.ok(
     JSON.parse(
@@ -721,6 +796,7 @@ test('local flow validation executes existing suites and stops before proof on c
       'utf8'
     )
   )
+
   assert.equal(
     Object.values(appManifest.scripts).some((script) =>
       script.includes('tools/flow-inspector/control-plane/')
@@ -728,21 +804,25 @@ test('local flow validation executes existing suites and stops before proof on c
     false
   )
   const command = manifest.scripts['test:design-execution-flow']
+
   assert.equal(typeof command, 'string', 'Missing local flow validation entry')
   fs.mkdirSync(path.join(repositoryRoot, 'tmp'), { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(repositoryRoot, 'tmp/execution-gate-')
   )
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   // Exercise the actual shell chain. Replace only external commands, not its control flow.
   for (const executable of ['yarn', 'node']) {
     const file = path.join(directory, executable)
+
     fs.writeFileSync(
       file,
       `#!/bin/sh\nprintf '%s\\n' '${executable}'" $*" >> "$GATE_TRACE"\ncase "$*" in *"$GATE_FAILURE"*) exit 23;; esac\nexit 0\n`
     )
     fs.chmodSync(file, 0o755)
   }
+
   const expected = [
     'yarn workspace @asyra/ai-agent-runtime build:ai-agent-runtime',
     'yarn workspace @asyra/ai-agent-runtime test:local',
@@ -751,6 +831,7 @@ test('local flow validation executes existing suites and stops before proof on c
     'yarn workspace @asyra/asyra-design test:server-response-harness',
     'node tools/flow-inspector/control-plane/cli.cjs --manifest apps/asyra-design/flow-contracts.json verify'
   ]
+
   for (const [failure, count] of [
     ['never-matches', 6],
     ['build:ai-agent-runtime', 1],
@@ -761,6 +842,7 @@ test('local flow validation executes existing suites and stops before proof on c
     ['verify', 6]
   ]) {
     const trace = path.join(directory, 'trace')
+
     fs.writeFileSync(trace, '')
     const result = spawnSync('/bin/sh', ['-c', command], {
       cwd: repositoryRoot,
@@ -773,6 +855,7 @@ test('local flow validation executes existing suites and stops before proof on c
         GATE_FAILURE: failure
       }
     })
+
     assert.equal(
       result.status,
       failure === 'never-matches' ? 0 : 23,

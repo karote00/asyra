@@ -18,12 +18,16 @@ it('keeps lazy observation source work zero for the unknown route lifetime', () 
     () => farm,
     () => scene
   )
+
   try {
     const demand = workspace.get()
+
     for (let index = 0; index < 100; index++) {
       expect(workspace.get()).toBe(demand)
     }
+
     const observation = workspace.prepareObservationSpace()
+
     expect(observation.status).toBe('unknown')
     expect(workspace.prepareObservationSpace()).toBe(observation)
     expect(

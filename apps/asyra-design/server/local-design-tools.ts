@@ -54,6 +54,7 @@ import {
 
 const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
+
 const size = { type: 'number', exclusiveMinimum: 0, maximum: limits.dimension }
 const coordinate = { type: 'number', minimum: 0, maximum: limits.dimension }
 const position = { ...coordinate, minimum: -limits.dimension }
@@ -104,11 +105,14 @@ const containerConditions = [
   },
   { properties: { type: { const: 'frame' } }, required: ['width', 'height'] }
 ]
+
 const describeArtifactBudget = (expandedNodeLimit: number) =>
   ` Source windows: ${limits.nodes} nodes/${limits.pathCommands} commands; indivisible primitives must fit. Artifact: ${expandedNodeLimit} expanded objects/${limits.expandedPathCommands} commands, depth ${limits.depth}, including root and nested containers. Windows/templates do not increase artifact capacity. Preserve hierarchy/layout/keys/relations/detail.`
+
 const describeDraftContract = (expandedNodeLimit: number) =>
   'Group: derived bounds, no size/fill/layout. Frame: size/fill, one-time row/column/grid layout. Nestable. Root key: unique, draft-local, generated if omitted; not a document ID.' +
   describeArtifactBudget(expandedNodeLimit)
+
 const draftSchema = {
   anyOf: containerConditions,
   type: 'object',
@@ -191,10 +195,12 @@ const nodeSchema = {
   description:
     'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Signed draft x/y offsets are allowed: Group normalization preserves workspace geometry; rotated oval origins may be negative while their extents remain inside the group. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields. Text/rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
 }
+
 // Field eligibility belongs to preparation, including native oval rotation.
 // Every selected type inherits the same exclusions before any geometry work.
 for (const branch of nodeSchema.anyOf) {
   const allowed = designNodeInputFields(branch.properties.type.const)
+
   Object.assign(
     branch.properties,
     Object.fromEntries(
@@ -204,6 +210,7 @@ for (const branch of nodeSchema.anyOf) {
     )
   )
 }
+
 const vectorPatternSchema = {
   type: 'object',
   additionalProperties: false,
@@ -425,6 +432,7 @@ export const createLocalDesignTools = (
   const enabled = actions.some(
     (a) => a.name === AiActionNames.APPLY_PREPARED_DESIGN
   )
+
   const resolveTargets = (value: unknown): string[] => {
     if (
       !record(value) ||
@@ -437,6 +445,7 @@ export const createLocalDesignTools = (
     ) {
       throw new DesignReferenceError()
     }
+
     if (value.targetSetId !== undefined) {
       if (
         typeof value.targetSetId !== 'string' ||
@@ -445,10 +454,13 @@ export const createLocalDesignTools = (
       ) {
         throw new DesignReferenceError()
       }
+
       return session.resolveTargetSet(value.artifactId, value.targetSetId)
     }
+
     const design = session.resolve(value.artifactId)
     let keys: string[]
+
     if (value.keys !== undefined) {
       if (
         !Array.isArray(value.keys) ||
@@ -460,6 +472,7 @@ export const createLocalDesignTools = (
       ) {
         throw new DesignReferenceError()
       }
+
       keys = value.keys as string[]
     } else {
       if (
@@ -468,18 +481,23 @@ export const createLocalDesignTools = (
       ) {
         throw new DesignReferenceError()
       }
+
       keys = session.selectKeys(
         value.artifactId,
         value.keyPrefix as string | undefined
       )
     }
+
     if (!keys.length) {
       throw new DesignReferenceError()
     }
+
     return [...new Set(keys.map((key) => design.keyToId[key]))]
   }
+
   const retainDraft = (draft: unknown) => {
     const draftId = session.retainRejectedDraft(draft)
+
     return draftId
       ? { draftId, retainedDraft: session.describeRejectedDraft(draftId) }
       : {
@@ -488,6 +506,7 @@ export const createLocalDesignTools = (
             'Rejected source exceeds retention limits; resend corrected source rather than using an unavailable draft ID.'
         }
   }
+
   const retainInputFailure = (
     draft: unknown,
     issues: readonly OperationInputIssue[],
@@ -515,6 +534,7 @@ export const createLocalDesignTools = (
         fieldIssues.map((issue) => issue.instancePath.slice('/draft'.length))
       )
     ]
+
     return {
       ...retained,
       ...(complete && retained.draftId && paths.length && paths.length <= 12
@@ -535,12 +555,14 @@ export const createLocalDesignTools = (
         : {})
     }
   }
+
   return {
     expandedNodeLimit,
     capacityOutputSchema,
     recoveryFields,
     checkResults: session.checkResults,
     resolveRecipe: session.recipe,
+
     rejectInput: (
       name: string,
       args: unknown,
@@ -554,7 +576,9 @@ export const createLocalDesignTools = (
       ) {
         return
       }
+
       const budget = inspectDesignBudget(args.draft, expandedNodeLimit)?.budget
+
       return {
         recovery: 'correct_input',
         ...retainInputFailure(
@@ -567,13 +591,16 @@ export const createLocalDesignTools = (
         ...(budget ? { budget } : {})
       }
     },
+
     resultIssue: (name: string, value: unknown): string | undefined => {
       if (!record(value)) {
         return 'Expected a structured preparation result.'
       }
+
       if (value.available === false || value.applicable === false) {
         return
       }
+
       if (name === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
         if (
           value.available !== true ||
@@ -582,6 +609,7 @@ export const createLocalDesignTools = (
         ) {
           return 'Target retention omitted its handles.'
         }
+
         for (const target of value.targets) {
           if (
             !record(target) ||
@@ -592,6 +620,7 @@ export const createLocalDesignTools = (
           ) {
             return 'Target retention returned an invalid handle.'
           }
+
           try {
             if (
               session.resolveTargetSet(target.artifactId, target.targetSetId)
@@ -604,6 +633,7 @@ export const createLocalDesignTools = (
           }
         }
       }
+
       if (name === AiDesignToolIds.PREPARE_MATERIAL_REVISION) {
         if (
           typeof value.materialRevisionId !== 'string' ||
@@ -611,18 +641,21 @@ export const createLocalDesignTools = (
         ) {
           return 'Material preparation requires an unapplied owned revision.'
         }
+
         try {
           session.materialRevision(value.materialRevisionId)
         } catch {
           return 'Material revision is unavailable.'
         }
       }
+
       if (name === AiDesignToolIds.PREPARE_DESIGN) {
         if (value.retainedDraft !== undefined) {
           const retained =
             typeof value.draftId === 'string'
               ? session.describeRejectedDraft(value.draftId)
               : undefined
+
           if (
             !retained?.partitions ||
             retained.partitions.length < 2 ||
@@ -630,6 +663,7 @@ export const createLocalDesignTools = (
           ) {
             return 'Partition plan is unavailable or not owned by this request.'
           }
+
           if (
             value.available !== true ||
             value.artifactId !== undefined ||
@@ -637,8 +671,10 @@ export const createLocalDesignTools = (
           ) {
             return 'Partition plan is not a compiled or applied artifact.'
           }
+
           return
         }
+
         if (
           value.available !== true ||
           typeof value.artifactId !== 'string' ||
@@ -650,12 +686,14 @@ export const createLocalDesignTools = (
         ) {
           return 'Prepared result requires artifactId, elementCount, applicable and findings.'
         }
+
         try {
           session.resolve(value.artifactId)
         } catch {
           return 'Prepared artifact identity is unavailable in this request.'
         }
       }
+
       if (
         name === AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS &&
         (!Array.isArray(value.releasedArtifactIds) ||
@@ -664,10 +702,12 @@ export const createLocalDesignTools = (
         return 'Release result requires released and missing artifact identities.'
       }
     },
+
     explainInputIssue: (name: string, args: unknown) =>
       enabled && name === AiDesignToolIds.PREPARE_DESIGN && record(args)
         ? inspectDesignBudget(args.draft, expandedNodeLimit)
         : undefined,
+
     definitions: enabled
       ? [
           ...(actions.some(
@@ -834,6 +874,7 @@ export const createLocalDesignTools = (
           }
         ]
       : [],
+
     modelActions: (
       available: AiProviderInput['actions']
     ): AiProviderInput['actions'] =>
@@ -852,6 +893,7 @@ export const createLocalDesignTools = (
               'Apply the owned materialRevisionId from prepare_material_revision to its original members. Geometry, placement and Fill binding must still match creation provenance. Produces local overrides only, without recreation or implicit visual approval.'
           }
         }
+
         if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
           return {
             ...action,
@@ -860,19 +902,24 @@ export const createLocalDesignTools = (
               'Apply the artifactId returned by prepare_design. The backend resolves native editable objects. Review the actual rendered result and use returned IDs for targeted corrections.'
           }
         }
+
         return action
       }),
+
     resolveTargets,
+
     resolveBatch: (value: unknown): AiActionBatch => {
       if (!record(value) || !Array.isArray(value.actions)) {
         throw new Error('Invalid action batch')
       }
+
       return {
         ...value,
         actions: value.actions.map((action) => {
           if (!record(action)) {
             throw new Error('Invalid action')
           }
+
           if (action.name === AiActionNames.APPLY_PREPARED_MATERIAL) {
             if (
               !record(action.arguments) ||
@@ -881,15 +928,20 @@ export const createLocalDesignTools = (
             ) {
               throw new DesignReferenceError()
             }
+
             const { rootId, updates } = session.materialRevision(
               action.arguments.materialRevisionId
             )
+
             return { ...action, arguments: { rootId, updates } }
           }
+
           if (action.name !== AiActionNames.APPLY_PREPARED_DESIGN) {
             return action
           }
+
           const args = action.arguments
+
           if (
             !enabled ||
             !record(args) ||
@@ -905,23 +957,29 @@ export const createLocalDesignTools = (
           ) {
             throw new DesignReferenceError()
           }
+
           if (session.isMaterialRevision(args.artifactId)) {
             throw new LocalToolInputError(
               'Material revisions cannot create geometry; use apply_prepared_material.'
             )
           }
+
           let design
+
           try {
             design = session.resolve(args.artifactId)
           } catch {
             throw new DesignReferenceError()
           }
+
           if (design.findings.some((f) => f.kind !== 'text-metrics-required')) {
             throw new Error(
               'Resolve preparation findings and unmet requirements before applying this design.'
             )
           }
+
           const materialElementIds = session.materialMembers(args.artifactId)
+
           return {
             ...action,
             arguments: {
@@ -936,6 +994,7 @@ export const createLocalDesignTools = (
         })
       } as unknown as AiActionBatch
     },
+
     call: async (
       name: string,
       args: unknown,
@@ -945,6 +1004,7 @@ export const createLocalDesignTools = (
       if (signal.aborted) {
         throw new Error('Design preparation cancelled')
       }
+
       if (enabled && name === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
         if (
           !record(args) ||
@@ -955,6 +1015,7 @@ export const createLocalDesignTools = (
         ) {
           throw new LocalToolInputError('Provide a bounded targets array.')
         }
+
         const selections = args.targets.map((target) => {
           if (
             !record(target) ||
@@ -963,13 +1024,16 @@ export const createLocalDesignTools = (
           ) {
             throw new DesignReferenceError()
           }
+
           return { artifactId: target.artifactId, ids: resolveTargets(target) }
         })
+
         return JSON.stringify({
           available: true,
           targets: session.retainTargetSets(selections)
         })
       }
+
       if (enabled && name === AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS) {
         if (
           !record(args) ||
@@ -983,12 +1047,15 @@ export const createLocalDesignTools = (
         ) {
           throw new Error('Provide artifactIds to release.')
         }
+
         return JSON.stringify(session.release(args.artifactIds as string[]))
       }
+
       if (enabled && name === AiDesignToolIds.PREPARE_MATERIAL_REVISION) {
         const definition = actions.some(
           (action) => action.name === AiActionNames.APPLY_PREPARED_MATERIAL
         )
+
         if (
           !definition ||
           !record(args) ||
@@ -1001,6 +1068,7 @@ export const createLocalDesignTools = (
             'Provide artifactId, field and definition for the available material consumer.'
           )
         }
+
         return JSON.stringify({
           available: true,
           ...(await session.reviseMaterial(
@@ -1011,9 +1079,11 @@ export const createLocalDesignTools = (
           ))
         })
       }
+
       if (!enabled || name !== AiDesignToolIds.PREPARE_DESIGN) {
         throw new Error('Design preparation is unavailable')
       }
+
       if (
         !record(args) ||
         Object.keys(args).some(
@@ -1029,7 +1099,9 @@ export const createLocalDesignTools = (
             'Provide one semantic draft or a rejected-draft repair. No canvas changes were made.'
         })
       }
+
       let draft: unknown
+
       try {
         draft =
           'repair' in args
@@ -1045,9 +1117,12 @@ export const createLocalDesignTools = (
         if (typeof args.materialSourceId === 'string') {
           draft = session.withMaterialSource(draft, args.materialSourceId)
         }
+
         const budgetIssue = inspectDesignBudget(draft, expandedNodeLimit)
+
         if (budgetIssue) {
           const retained = retainDraft(draft)
+
           if (
             capacityContinuation &&
             retained.retainedDraft?.partitions &&
@@ -1061,6 +1136,7 @@ export const createLocalDesignTools = (
                 'The main tool executes these retained-source parts in order. Preparation has not compiled geometry or changed the canvas.'
             })
           }
+
           return JSON.stringify({
             ...budgetIssue,
             settlement: 'not-started',
@@ -1072,10 +1148,12 @@ export const createLocalDesignTools = (
               : {})
           })
         }
+
         const inputIssues = operationInputIssues(
           { draft },
           effectivePreparationSchema
         )
+
         if (inputIssues) {
           return JSON.stringify({
             available: false,
@@ -1085,6 +1163,7 @@ export const createLocalDesignTools = (
             message: `${formatOperationInputIssues(inputIssues)}. Correct the listed fields; use the retained repair guide when provided. Geometry has not been compiled.`
           })
         }
+
         if (
           record(draft) &&
           Array.isArray(draft.children) &&
@@ -1106,6 +1185,7 @@ export const createLocalDesignTools = (
               'arguments.draft.projection: provide one shared camera (azimuth, elevation, scale, originX, originY); arguments.draft.layout: projected faces and patterns require absolute layout. Reuse the chosen viewpoint; no new reference search is needed.'
           })
         }
+
         return JSON.stringify({
           available: true,
           ...(await session.prepareAsync(
@@ -1137,6 +1217,7 @@ export const createLocalDesignTools = (
       } catch (error) {
         signal.throwIfAborted()
         const retained = draft === undefined ? undefined : retainDraft(draft)
+
         return JSON.stringify({
           available: false,
           settlement: 'not-started',

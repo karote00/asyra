@@ -78,10 +78,13 @@ const publication = (
           }
         : item
     const active = groupedBatches[groupedBatches.length - 1]
+
     if (active?.batchId === batchId) {
       active.deliveries.push(publicationDelivery)
+
       return
     }
+
     groupedBatches.push({
       batchId,
       channel,
@@ -298,6 +301,7 @@ const canonicalRemovalDeliveries = (
       orderedIds: removalIds
     }
   ]
+
   if (!includePropertyEvidence) {
     return sceneDeliveries
   }
@@ -313,12 +317,14 @@ const canonicalRemovalDeliveries = (
       },
       `remove-properties-${elementId}`
     )
+
     return {
       ...propertyDelivery,
       batchId: propsBatchId,
       orderedIds: [elementId]
     }
   })
+
   return [...sceneDeliveries, ...propertyDeliveries]
 }
 
@@ -327,6 +333,7 @@ const propertyUpdateDeliveries = (
   values: Readonly<Record<string, unknown>>
 ): readonly TestPublicationDelivery[] => {
   const batchId = `batch-update-${propertyId}`
+
   return Object.entries(values).map(([key, after]) => {
     const item = delivery(
       SharedDataChannelNames.PROPS,
@@ -341,6 +348,7 @@ const propertyUpdateDeliveries = (
       },
       `update-${propertyId}-${key}`
     )
+
     return { ...item, batchId }
   })
 }
@@ -477,24 +485,31 @@ const createHarness = (options: HarnessOptions = {}) => {
       slices: readonly (readonly CanonicalChange[])[]
     }) => {
       let replayMode: 'redo' | 'rollback' | 'undo' | null = null
+
       if (origin === 'undo' || origin === 'redo') {
         replayMode = origin
       } else if (origin === 'rollback-compensation') {
         replayMode = 'rollback'
       }
+
       const mutations = slices.map((changes): (() => void) => () => {
         if (replayMode) {
           runInTransactionReplayMode(replayMode, () =>
             applyCanonicalChanges(changes)
           )
+
           return
         }
+
         applyCanonicalChanges(changes)
       })
+
       if (mutations.length === 1) {
         runRemoteTransaction(mutations[0] as () => void)
+
         return
       }
+
       return runRemoteTransactionProgressively(mutations, () =>
         settleRemoteSlice()
       )
@@ -509,8 +524,10 @@ const createHarness = (options: HarnessOptions = {}) => {
     applyCanonicalChanges,
     applyRemoteCanonicalChangeSlices,
     decideRemotePublication,
+
     processPublication: (source: SharedPublication) =>
       processPublication(prepareDocumentPublication(source)),
+
     runRemoteTransaction,
     runRemoteTransactionProgressively,
     settleRemoteSlice
@@ -540,6 +557,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
             bootstrapTailItem(6, second, 'actor-b')
           ]
         },
+
         applyPublication: async (item) => {
           applied.push(item.publicationId)
         }
@@ -589,6 +607,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
         })
       ).rejects.toThrow(/bootstrap|publication frame/)
     }
+
     expect(applyPublication).not.toHaveBeenCalled()
   })
 
@@ -696,6 +715,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     'preserves %s relationship values through lifecycle conversion and durable reduction',
     (_name, after) => {
       const document = createFormalInitialDocument()
+
       Object.assign(document.props, {
         'target-fills': {
           id: 'target-fills',
@@ -762,10 +782,12 @@ describe('Asyra Design app-owned collaboration processing', () => {
         }
       ]
       const harness = createHarness()
+
       expect(harness.processPublication(publication(changes))).toBe(true)
       const canonical = harness.applyCanonicalChanges.mock
         .calls[0][0] as readonly CanonicalChange[]
       const reduced = applyCanonicalChangesToDocument(document, canonical)
+
       expect(reduced.props['target-fills']).toMatchObject({ fills: after })
       expect(reduced.props['existing-fill']).toEqual(
         before.props['existing-fill']
@@ -1024,6 +1046,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
 
     const changes = harness.applyCanonicalChanges.mock.calls[0]?.[0]
+
     expect(changes?.map(({ kind }) => kind)).toEqual([
       'element-creation',
       'element-creation',
@@ -1088,9 +1111,11 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const harness = createHarness()
     const groupCreation = canonicalContainerCreationDeliveries('group-a')
     const sceneCreation = groupCreation[1]
+
     if (!sceneCreation) {
       throw new Error('Expected Group Scene creation')
     }
+
     const hierarchy = {
       ...delivery(
         SharedDataChannelNames.SCENE_TREE,
@@ -1129,9 +1154,11 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const harness = createHarness()
     const removal = canonicalRemovalDeliveries(['group-a'], true)
     const sceneRemoval = removal[0]
+
     if (!sceneRemoval) {
       throw new Error('Expected Group Scene removal')
     }
+
     const hierarchy = {
       ...delivery(
         SharedDataChannelNames.SCENE_TREE,
@@ -1179,18 +1206,23 @@ describe('Asyra Design app-owned collaboration processing', () => {
     let sliceTopologyReads = 0
     const observedSlices = source.slices.map((slice) => {
       const sourceBatches = slice.batches
+
       return {
         ...slice,
+
         get batches() {
           sliceTopologyReads += 1
+
           return sourceBatches
         }
       }
     })
     const observedPublication: SharedPublication = {
       ...source,
+
       get slices() {
         publicationTopologyReads += 1
+
         return observedSlices
       }
     }
@@ -1239,9 +1271,11 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const scene = deliveries.find(
       ({ channel }) => channel === SharedDataChannelNames.SCENE_TREE
     )
+
     if (!scene) {
       throw new Error('Missing Scene fixture')
     }
+
     const payload = scene.payload as {
       entries: {
         data: { id: string; parentId: string }
@@ -1250,21 +1284,25 @@ describe('Asyra Design app-owned collaboration processing', () => {
       }[]
     }
     const [right, left] = payload.entries
+
     if (!right || !left) {
       throw new Error('Missing insertion entries')
     }
+
     right.index = 2
     left.parentId = 'other-parent'
     left.data.parentId = 'other-parent'
     left.index = 0
     const source = publication(deliveries, 'exact-insertion-evidence', 'undo')
     const decoded = decodeDocumentPublication(source)
+
     expect(decoded[0]).toMatchObject({
       kind: 'element-creation',
       entries: payload.entries
     })
     expect(decoded[0]).not.toHaveProperty('index')
     const harness = createHarness()
+
     expect(harness.processPublication(source)).toBe(true)
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith(decoded)
   })
@@ -1292,11 +1330,13 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'property-components'
     ]
     const decoded = decodeDocumentPublication(source)
+
     expect(decoded.map(({ kind }) => kind)).toEqual(expected)
     expect(decoded[1]).toMatchObject({
       propsSnapshot: { components: [{ id: 'position-group-a', x: 12, y: 24 }] }
     })
     const harness = createHarness()
+
     expect(harness.processPublication(source)).toBe(true)
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith(decoded)
   })
@@ -1315,10 +1355,12 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'invalid-restore-tail',
       'undo'
     )
+
     expect(() => decodeDocumentPublication(source)).toThrow(
       /unsupported canonical|invalid property-component/
     )
     const harness = createHarness()
+
     expect(() => harness.processPublication(source)).toThrow(
       /unsupported canonical|invalid property-component/
     )
@@ -1329,9 +1371,11 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const source = publication(restoreDeliveries(), 'restore-boundary', 'undo')
     const propertyBatch = source.slices[0]?.batches[0]
     const sceneBatch = source.slices[0]?.batches[1]
+
     if (!propertyBatch || !sceneBatch) {
       throw new Error('Missing restore batches')
     }
+
     const sceneOnly = publication(
       restoreDeliveries().filter(
         ({ channel }) => channel === SharedDataChannelNames.SCENE_TREE
@@ -1339,6 +1383,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'restore-shared-properties',
       'undo'
     )
+
     expect(decodeDocumentPublication(sceneOnly)).toMatchObject([
       { kind: 'subtree-restore', propsSnapshot: { components: [] } }
     ])
@@ -1350,6 +1395,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
         { sliceId: 'scene', orderedIds: [], batches: [sceneBatch] }
       ]
     }
+
     expect(decodeDocumentPublication(split)).toMatchObject([
       {
         kind: 'property-components',
@@ -1360,6 +1406,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       { kind: 'subtree-restore', propsSnapshot: { components: [] } }
     ])
     const harness = createHarness()
+
     expect(await harness.processPublication(split)).toBe(true)
     expect(harness.applyCanonicalChanges).toHaveBeenCalledTimes(2)
   })
@@ -1442,6 +1489,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     ).toBe(true)
 
     const canonicalChange = harness.applyCanonicalChanges.mock.calls[0]?.[0][0]
+
     expect(canonicalChange).toMatchObject({
       kind: 'subtree-removal',
       change: expect.objectContaining({ elementId: 'group-a' })
@@ -1472,10 +1520,12 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
     const [change] = harness.applyCanonicalChanges.mock.calls[0]?.[0] ?? []
+
     expect(change?.kind).toBe('element-removal')
     if (change?.kind !== 'element-removal') {
       throw new Error('Expected one canonical element-removal change')
     }
+
     expect(change.removals.map(({ data }) => data.id)).toEqual(
       expectedRemovalOrder
     )
@@ -1497,6 +1547,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
     const changes = harness.applyCanonicalChanges.mock.calls[0]?.[0]
+
     expect(changes?.[0]).toMatchObject({
       kind: 'element-removal',
       removals: [...elementIds].reverse().map((id) => ({ data: { id } }))
@@ -1512,6 +1563,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
 
   it('preserves property retirement barriers between adjacent Scene removals in one request', () => {
     const harness = createHarness()
+
     expect(
       harness.processPublication(
         publication(
@@ -1527,6 +1579,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
     const changes = harness.applyCanonicalChanges.mock.calls[0]?.[0]
+
     expect(changes?.map(({ kind }) => kind)).toEqual([
       'element-removal',
       'property-components',
@@ -1622,8 +1675,10 @@ describe('Asyra Design app-owned collaboration processing', () => {
             ? change.entries.map(({ data }) => data.id)
             : []
         )
+
         order.push(`apply:${elementIds.join(',')}`)
       },
+
       settleRemoteSlice: async () => {
         order.push('settle')
       }
@@ -1843,9 +1898,11 @@ describe('Asyra Design app-owned collaboration processing', () => {
         )
         const propertyBatch = source.slices[0]?.batches[0]
         const sceneBatch = source.slices[0]?.batches[1]
+
         if (!propertyBatch || !sceneBatch) {
           throw new Error('Expected property and Scene batches')
         }
+
         return {
           ...source,
           mode: 'progressive' as const,
@@ -1879,9 +1936,11 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'trusted-duplicate-artifact'
     )
     const firstSlice = duplicateSource.slices[0]
+
     if (!firstSlice) {
       throw new Error('Expected publication slice')
     }
+
     const duplicateHarness = createHarness()
 
     await expect(
@@ -1900,6 +1959,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(duplicateHarness.applyCanonicalChanges).toHaveBeenCalledTimes(2)
 
     const hierarchyHarness = createHarness()
+
     expect(
       hierarchyHarness.processPublication(
         publication(
@@ -1980,9 +2040,11 @@ const createMaterializationHarness = (
       const result = await execute(record, (candidate) => {
         next = candidate
       })
+
       if (next) {
         record = next
       }
+
       return result
     }
   }
@@ -1998,7 +2060,9 @@ const createMaterializationHarness = (
   return {
     apply,
     authorize,
+
     getRecord: () => record,
+
     service,
     transact
   }
@@ -2028,6 +2092,7 @@ const persistenceBatch = (
       requestId: `persistence-${item.publicationId}`,
       publication: options.raw ? item : prepareDocumentPublication(item)
     }).map((frame) => Buffer.from(frame).toString('base64'))
+
     return {
       documentId: options.documentId ?? 'document-a',
       sequence,
@@ -2040,6 +2105,7 @@ const persistenceBatch = (
 describe('Asyra Design backend document materialization', () => {
   it('prepares the real checkpoint maps once per durable batch and keeps exact retries free of work', async () => {
     const document = createFormalInitialDocument()
+
     document.props['position-a'] = {
       id: 'position-a',
       type: 'position' as never,
@@ -2059,23 +2125,28 @@ describe('Asyra Design backend document materialization', () => {
     }
     const service = createDocumentMaterializationService({
       authorize: async () => undefined,
+
       applyCanonicalChanges: (current, changes, observation) => {
         const next = applyCanonicalChangesToDocument(
           current,
           changes,
           observation
         )
+
         return { ...next, props: new Proxy(next.props, { ownKeys: propsKeys }) }
       },
+
       store: {
         transact: async (_id, execute) => {
           let next: typeof record | undefined
           const result = await execute(record, (value) => {
             next = value
           })
+
           if (next) {
             record = next
           }
+
           return result
         }
       }
@@ -2090,11 +2161,14 @@ describe('Asyra Design backend document materialization', () => {
       }))
     )
     const stages: string[] = []
+
     await service.materialize(batch, {
       span: (stage) => {
         stages.push(stage)
+
         return () => undefined
       },
+
       detail: () => undefined
     })
     expect(
@@ -2189,6 +2263,7 @@ describe('Asyra Design backend document materialization', () => {
 
   it('rejects a batch whose expected durable sequence conflicts with the stored checkpoint', async () => {
     const harness = createMaterializationHarness()
+
     await harness.service.materialize(
       persistenceBatch([
         {
@@ -2272,9 +2347,11 @@ describe('Asyra Design backend document materialization', () => {
             )
           : []
       )
+
       if (nextValues.includes(20)) {
         throw new Error('backend canonical apply failed')
       }
+
       return {
         appliedValues: [...document.appliedValues, ...nextValues]
       }

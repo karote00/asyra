@@ -39,6 +39,7 @@ const nestedParentDefinition = {
     key: 'children',
     childType: PropertyTypes.POSITION,
     mode: 'ids-or-objects' as const,
+
     toChildData: (item: Record<string, unknown>) => item
   }
 }
@@ -92,6 +93,7 @@ describe('props-manager subscribes', () => {
       before: 0,
       after: 10
     } as PropsChange
+
     propsManager.addChange(pendingChange)
 
     expect(propsManager.changes).toHaveLength(1)
@@ -138,15 +140,18 @@ describe('props-manager subscribes', () => {
     const createProperty = vi.spyOn(propsManager, 'createProperty')
     const addProperty = vi.spyOn(propsManager, 'addProperty')
     const addToMap = vi.spyOn(propsManager, 'addToMap')
+
     propsManager.commitChanges = (options) => {
       pendingChangeCounts.push(propsManager.changes.length)
       originalCommitChanges.call(propsManager, options)
     }
+
     const unsubscribe = subscribeToBrowserDragPhases((name) => {
       if (name.startsWith('props-manager:creation-')) {
         phaseNames.push(name)
       }
     })
+
     committedChanges.length = 0
 
     try {
@@ -276,6 +281,7 @@ describe('props-manager subscribes', () => {
         yUnit: Unit.PX
       }).save()
     ]
+
     publishEvent({
       type: EventTypes.ADD_PROPERTY,
       payload: {
@@ -330,6 +336,7 @@ describe('props-manager subscribes', () => {
   it.each([
     {
       label: 'duplicate ids',
+
       prepare: () => ({
         data: [
           {
@@ -349,6 +356,7 @@ describe('props-manager subscribes', () => {
             yUnit: Unit.PX
           }
         ] as PropertyComponentRawData[],
+
         assertUnchanged: () => {
           expect
             .soft(propsManager.getPropertyById('rejected-duplicate-property'))
@@ -358,6 +366,7 @@ describe('props-manager subscribes', () => {
     },
     {
       label: 'an active id',
+
       prepare: () => {
         const active = new PositionComponent({
           id: 'rejected-active-property',
@@ -367,9 +376,11 @@ describe('props-manager subscribes', () => {
           xUnit: Unit.PX,
           yUnit: Unit.PX
         })
+
         propsManager.addToMap(active)
         propsManager.cleanChanges()
         const before = active.save()
+
         return {
           data: [
             {
@@ -386,6 +397,7 @@ describe('props-manager subscribes', () => {
               yUnit: Unit.PX
             }
           ] as PropertyComponentRawData[],
+
           assertUnchanged: () => {
             expect
               .soft(propsManager.getPropertyById('rejected-active-property'))
@@ -400,6 +412,7 @@ describe('props-manager subscribes', () => {
     },
     {
       label: 'a tombstoned id',
+
       prepare: () => {
         const tombstone = new PositionComponent({
           id: 'rejected-tombstone-property',
@@ -409,9 +422,11 @@ describe('props-manager subscribes', () => {
           xUnit: Unit.PX,
           yUnit: Unit.PX
         })
+
         propsManager.addToMap(tombstone)
         propsManager.removeProperty(['rejected-tombstone-property'])
         propsManager.cleanChanges()
+
         return {
           data: [
             {
@@ -431,6 +446,7 @@ describe('props-manager subscribes', () => {
               yUnit: Unit.PX
             }
           ] as PropertyComponentRawData[],
+
           assertUnchanged: () => {
             expect
               .soft(
@@ -516,6 +532,7 @@ describe('props-manager subscribes', () => {
         )
       }
     })
+
     committedChanges.length = 0
 
     try {
@@ -597,6 +614,7 @@ describe('props-manager subscribes', () => {
     const RelationshipComponent = createPropertyComponentFromConfig(
       relationshipDefinition
     )
+
     registerPropertyComponent(
       relationshipType,
       RelationshipComponent,
@@ -625,6 +643,7 @@ describe('props-manager subscribes', () => {
     )
     const child = propsManager.getPropertyById('partial-nonempty-default-child')
     const parentChanges: unknown[] = []
+
     parent?.on((change) => parentChanges.push(change))
 
     child?.set('x' as never, 55 as never)
@@ -683,6 +702,7 @@ describe('props-manager subscribes', () => {
         yUnit: Unit.PX
       }
     ]
+
     committedChanges.length = 0
     const unsubscribe = subscribeToBrowserDragPhases((name) => {
       if (name.startsWith('props-manager:creation-')) {
@@ -776,6 +796,7 @@ describe('props-manager subscribes', () => {
     ]
     const originalCommitChanges = propsManager.commitChanges
     const pendingChangeCounts: number[] = []
+
     propsManager.commitChanges = (options) => {
       pendingChangeCounts.push(propsManager.changes.length)
       originalCommitChanges.call(propsManager, options)
@@ -803,6 +824,7 @@ describe('props-manager subscribes', () => {
       const parent = propsManager.getPropertyById('batch-parent')
       const child = propsManager.getPropertyById('batch-child-first')
       const parentChanges: unknown[] = []
+
       parent?.on((change) => parentChanges.push(change))
 
       child?.set('x' as never, 55 as never)
@@ -897,6 +919,7 @@ describe('props-manager subscribes', () => {
         )
       }
     })
+
     committedChanges.length = 0
 
     try {
@@ -921,6 +944,7 @@ describe('props-manager subscribes', () => {
       const parent = propsManager.getPropertyById('parent-first-parent')
       const child = propsManager.getPropertyById('parent-first-child')
       const parentChanges: unknown[] = []
+
       parent?.on((change) => parentChanges.push(change))
 
       child?.set('x' as never, 55 as never)
@@ -950,6 +974,7 @@ describe('props-manager subscribes', () => {
     const RelationshipComponent = createPropertyComponentFromConfig(
       relationshipDefinition
     )
+
     registerPropertyComponent(
       relationshipType,
       RelationshipComponent,
@@ -986,6 +1011,7 @@ describe('props-manager subscribes', () => {
     const parent = propsManager.getPropertyById('owned-relationship-parent')
     const child = propsManager.getPropertyById('owned-relationship-child')
     const parentChanges: unknown[] = []
+
     parent?.on((change) => parentChanges.push(change))
 
     child?.set('x' as never, 55 as never)
@@ -1013,6 +1039,7 @@ describe('props-manager subscribes', () => {
       relationshipDefinition
     )
     let observedParentDuringChildConstruction = false
+
     class ObservingPositionComponent extends PositionComponent {
       constructor(data: ConstructorParameters<typeof PositionComponent>[0]) {
         super(data)
@@ -1064,6 +1091,7 @@ describe('props-manager subscribes', () => {
     const parent = propsManager.getPropertyById('pending-relationship-parent')
     const child = propsManager.getPropertyById('pending-relationship-child')
     const parentChanges: unknown[] = []
+
     parent?.on((change) => parentChanges.push(change))
 
     child?.set('x' as never, 55 as never)
@@ -1090,6 +1118,7 @@ describe('props-manager subscribes', () => {
     const RelationshipComponent = createPropertyComponentFromConfig(
       relationshipDefinition
     )
+
     registerPropertyComponent(
       relationshipType,
       RelationshipComponent,
@@ -1130,6 +1159,7 @@ describe('props-manager subscribes', () => {
     const parent = propsManager.getPropertyById('multi-level-parent')
     const leaf = propsManager.getPropertyById('multi-level-leaf')
     const parentChanges: unknown[] = []
+
     parent?.on((change) => parentChanges.push(change))
 
     leaf?.set('value' as never, 55 as never)
@@ -1174,6 +1204,7 @@ describe('props-manager subscribes', () => {
 
   it('rolls back a fresh ADD_PROPERTY payload when commit fails', () => {
     const originalCommitChanges = propsManager.commitChanges
+
     propsManager.commitChanges = () => {
       throw new Error('property commit failed')
     }
@@ -1237,6 +1268,7 @@ describe('props-manager subscribes', () => {
     const parentChanges: unknown[] = []
     let child: ReturnType<typeof propsManager.getPropertyById>
     const originalCommitChanges = propsManager.commitChanges
+
     propsManager.commitChanges = () => {
       child = propsManager.getPropertyById('rollback-relationship-child')
       propsManager
@@ -1277,6 +1309,7 @@ describe('props-manager subscribes', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     })
+
     propsManager.addToMap(active)
     const replacement = new PositionComponent({
       id: 'active-replacement',
@@ -1325,6 +1358,7 @@ describe('props-manager subscribes', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     })
+
     propsManager.addToMap(tombstone)
     propsManager.removeProperty(['top-level-tombstone'])
     propsManager.cleanChanges()
@@ -1377,6 +1411,7 @@ describe('props-manager subscribes', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     })
+
     propsManager.addToMap(tombstone)
     propsManager.removeProperty(['nested-tombstone'])
     propsManager.cleanChanges()
@@ -1433,6 +1468,7 @@ describe('props-manager subscribes', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     })
+
     propsManager.addToMap(restored)
     propsManager.removeProperty(['group-position'])
     propsManager.cleanChanges()
@@ -1445,6 +1481,7 @@ describe('props-manager subscribes', () => {
         )
       }
     })
+
     committedChanges.length = 0
 
     try {
@@ -1505,6 +1542,7 @@ describe('props-manager subscribes', () => {
       type: NESTED_PARENT_TYPE,
       children: ['orphan-replay-child-a', 'orphan-replay-child-b']
     })
+
     ;[firstChild, secondChild, root].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -1517,6 +1555,7 @@ describe('props-manager subscribes', () => {
         )
       }
     })
+
     committedChanges.length = 0
 
     try {
@@ -1532,6 +1571,7 @@ describe('props-manager subscribes', () => {
       const removeEvidence = committedChanges.find(
         ({ action }) => action === PROPS_ACTIONS.REMOVE_PROPERTY
       ) as AddRemovePropertyChange
+
       expect(removeEvidence.data.map(({ id }) => id)).toEqual([
         'orphan-replay-root',
         'orphan-replay-child-a',
@@ -1562,6 +1602,7 @@ describe('props-manager subscribes', () => {
         relationshipChildIdsByOwnerId: Map<string, readonly string[]>
         relationshipOwnerIdsByChildId: Map<string, Set<string>>
       }
+
       expect(
         restoredIndexes.relationshipChildIdsByOwnerId.get('orphan-replay-root')
       ).toEqual(['orphan-replay-child-a', 'orphan-replay-child-b'])
@@ -1637,6 +1678,7 @@ describe('props-manager subscribes', () => {
       type: RETAINED_REPLAY_TYPE,
       children: ['retained-replay-root']
     })
+
     ;[retainedDescendant, retainedRoot, orphanRoot].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -1653,6 +1695,7 @@ describe('props-manager subscribes', () => {
       relationshipChildIdsByOwnerId: Map<string, readonly string[]>
       relationshipOwnerIdsByChildId: Map<string, Set<string>>
     }
+
     const expectRetainedGraphIdentity = () => {
       expect(propsManager.getPropertyById('retained-replay-root')).toBe(
         retainedRoot
@@ -1669,6 +1712,7 @@ describe('props-manager subscribes', () => {
         ) ?? [])
       ]).toEqual(['retained-replay-root'])
     }
+
     committedChanges.length = 0
 
     try {

@@ -135,6 +135,7 @@ it('removing the active canonical model removes its old visible projection', asy
   const runtime = {
     setFrame,
     setCamera: vi.fn(),
+
     getVisualAssets: () => new Map()
   } as unknown as SimRuntime
 
@@ -224,7 +225,9 @@ it('ignores retained pointer, wheel and reset-view input from a retired document
         camera: DEFAULT_CAMERA,
         onCamera,
         onSelect,
+
         isCurrent: () => current,
+
         getFitMeshes: () => []
       })
     )

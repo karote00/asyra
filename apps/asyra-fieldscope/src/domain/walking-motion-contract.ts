@@ -232,14 +232,19 @@ const admittedRequests = new WeakMap<
 const invalid = (): never => {
   throw new Error('Invalid walking motion request')
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
 const exact = (value: Record<string, unknown>, keys: readonly string[]) =>
   Object.keys(value).length === keys.length && keys.every((key) => key in value)
+
 const identity = (value: unknown) =>
   typeof value === 'string' && value.trim().length > 0
+
 const finitePoint = (value: unknown): value is Point3 =>
   Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)
+
 const frame = (value: unknown): value is WalkingRigidTransform =>
   record(value) &&
   exact(value, ['position', 'rotation']) &&
@@ -248,8 +253,10 @@ const frame = (value: unknown): value is WalkingRigidTransform =>
   value.rotation.length === 4 &&
   value.rotation.every(Number.isFinite) &&
   Math.abs(Math.hypot(...value.rotation) - 1) <= 1e-9
+
 const positiveInteger = (value: unknown) =>
   Number.isInteger(value) && Number(value) > 0
+
 const evidence = (value: unknown): value is WalkingEvidence =>
   record(value) &&
   identity(value.id) &&
@@ -258,15 +265,19 @@ const evidence = (value: unknown): value is WalkingEvidence =>
     : value.kind === 'synthetic' &&
       exact(value, ['kind', 'id', 'label']) &&
       identity(value.label))
+
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     for (const child of Object.values(value)) {
       freeze(child)
     }
+
     Object.freeze(value)
   }
+
   return value
 }
+
 function triangleShape(value: unknown) {
   if (
     !record(value) ||
@@ -288,8 +299,10 @@ function triangleShape(value: unknown) {
   ) {
     return false
   }
+
   return true
 }
+
 function jointState(value: unknown, source: WalkingRobotSource) {
   if (
     !record(value) ||
@@ -302,7 +315,9 @@ function jointState(value: unknown, source: WalkingRobotSource) {
   ) {
     return false
   }
+
   const armIds = new Set<string>()
+
   if (
     value.arms.length !== source.definition.arms.length ||
     !value.arms.every((entry) => {
@@ -319,14 +334,18 @@ function jointState(value: unknown, source: WalkingRobotSource) {
       ) {
         return false
       }
+
       const definition = source.definition.arms.find(
           ({ side, role }) => side === entry.side && role === entry.role
         ),
         id = `${String(entry.side)}-${String(entry.role)}`
+
       if (!definition || armIds.has(id)) {
         return false
       }
+
       armIds.add(id)
+
       return (
         ['rootYaw', 'shoulderPitch', 'elbowPitch', 'wristPitch'] as const
       ).every(
@@ -339,7 +358,9 @@ function jointState(value: unknown, source: WalkingRobotSource) {
   ) {
     return false
   }
+
   const legIds = new Set<string>()
+
   return (
     value.legs.length === source.definition.legs.length &&
     value.legs.every((entry) => {
@@ -349,15 +370,19 @@ function jointState(value: unknown, source: WalkingRobotSource) {
       ) {
         return false
       }
+
       const definition = source.definition.legs.find(
           ({ side, station }) =>
             side === entry.side && station === entry.station
         ),
         id = `${String(entry.side)}-${String(entry.station)}`
+
       if (!definition || legIds.has(id)) {
         return false
       }
+
       legIds.add(id)
+
       return (['abduction', 'hip', 'knee'] as const).every(
         (key) =>
           Number.isFinite(entry[key]) &&
@@ -367,6 +392,7 @@ function jointState(value: unknown, source: WalkingRobotSource) {
     })
   )
 }
+
 function relation(value: unknown): value is WalkingContactRelation {
   return (
     record(value) &&
@@ -377,6 +403,7 @@ function relation(value: unknown): value is WalkingContactRelation {
         evidence(value.evidence))
   )
 }
+
 function observation(value: unknown): value is WalkingTerrainObservation {
   return (
     record(value) &&
@@ -395,6 +422,7 @@ export function readWalkingMotionRequest(
 ): WalkingMotionRequest {
   if (record(raw) && admittedRequests.has(raw)) {
     const binding = admittedRequests.get(raw)
+
     if (
       binding?.source !== source ||
       (raw.format === WALKING_SOURCE_MOTION_REQUEST_FORMAT &&
@@ -402,17 +430,22 @@ export function readWalkingMotionRequest(
     ) {
       return invalid()
     }
+
     return raw as unknown as WalkingMotionRequest
   }
+
   if (record(raw) && raw.format === WALKING_SOURCE_MOTION_REQUEST_FORMAT) {
     return readSourceMotionRequest(raw, source, demand)
   }
+
   let value: unknown
+
   try {
     value = structuredClone(raw)
   } catch {
     return invalid()
   }
+
   if (
     !record(value) ||
     !exact(value, [
@@ -439,10 +472,13 @@ export function readWalkingMotionRequest(
   ) {
     return invalid()
   }
+
   const path = value.path,
     knots = value.path.knots
+
   for (let index = 0; index < knots.length; index++) {
     const knot = knots[index]
+
     if (
       !record(knot) ||
       !exact(knot, ['time', 'base', 'joints']) ||
@@ -459,6 +495,7 @@ export function readWalkingMotionRequest(
       return invalid()
     }
   }
+
   if (
     !record(value.evaluation) ||
     !exact(value.evaluation, ['from', 'until']) ||
@@ -470,7 +507,9 @@ export function readWalkingMotionRequest(
   ) {
     return invalid()
   }
+
   const knotTimes = new Set(knots.map(({ time }) => time))
+
   if (
     !record(value.stance) ||
     !exact(value.stance, ['id', 'phases']) ||
@@ -480,10 +519,13 @@ export function readWalkingMotionRequest(
   ) {
     return invalid()
   }
+
   const phases = value.stance.phases,
     chainIds = new Set(source.rig.legChains.map(({ id }) => id))
+
   for (let index = 0; index < phases.length; index++) {
     const phase = phases[index]
+
     if (
       !record(phase) ||
       !exact(phase, ['from', 'until', 'legs']) ||
@@ -501,7 +543,9 @@ export function readWalkingMotionRequest(
     ) {
       return invalid()
     }
+
     const seen = new Set<string>()
+
     for (const leg of phase.legs) {
       if (
         !record(leg) ||
@@ -517,9 +561,11 @@ export function readWalkingMotionRequest(
       ) {
         return invalid()
       }
+
       seen.add(leg.chainId as string)
     }
   }
+
   if (
     !record(value.gait) ||
     !exact(value.gait, ['id', 'provenance']) ||
@@ -534,6 +580,7 @@ export function readWalkingMotionRequest(
   ) {
     return invalid()
   }
+
   validateWalkingLoad(value.load, source)
   if (
     !record(value.terrain) ||
@@ -567,10 +614,12 @@ export function readWalkingMotionRequest(
   ) {
     return invalid()
   }
+
   const terrainRoute = value.terrain.route,
     terrainRegions = value.terrain.regions,
     contactAssessments = value.terrain.contactAssessments,
     regionIds = new Set<string>()
+
   for (const region of terrainRegions) {
     if (
       !record(region) ||
@@ -594,6 +643,7 @@ export function readWalkingMotionRequest(
     ) {
       return invalid()
     }
+
     if (
       (region.classification === 'soil' &&
         (region.binding.kind !== 'route-soil' ||
@@ -611,6 +661,7 @@ export function readWalkingMotionRequest(
     ) {
       return invalid()
     }
+
     if (
       region.keepOut.kind === 'none'
         ? !exact(region.keepOut, ['kind'])
@@ -628,8 +679,10 @@ export function readWalkingMotionRequest(
     ) {
       return invalid()
     }
+
     regionIds.add(region.id as string)
   }
+
   const footPatches = new Map(
       source.rig.legChains.map((chain) => [
         source.rig.contacts.feet.find(
@@ -639,6 +692,7 @@ export function readWalkingMotionRequest(
       ])
     ),
     assessments = new Map<string, WalkingContactAssessment>()
+
   for (const assessment of contactAssessments) {
     if (
       !record(assessment) ||
@@ -677,22 +731,26 @@ export function readWalkingMotionRequest(
     ) {
       return invalid()
     }
+
     assessments.set(
       assessment.id as string,
       assessment as unknown as WalkingContactAssessment
     )
   }
+
   for (const phase of phases) {
     for (const leg of phase.legs) {
       if (leg.state.kind !== 'support') {
         continue
       }
+
       const assessment = assessments.get(
           leg.state.contactAssessmentId as string
         ),
         patch = [...footPatches.entries()].find(
           ([, chainId]) => chainId === leg.chainId
         )?.[0]
+
       if (
         !assessment ||
         assessment.footPatchId !== patch ||
@@ -703,6 +761,7 @@ export function readWalkingMotionRequest(
       }
     }
   }
+
   if (
     !record(value.budget) ||
     !exact(value.budget, ['maxIntervals', 'maxEnvelopePairs']) ||
@@ -711,8 +770,11 @@ export function readWalkingMotionRequest(
   ) {
     return invalid()
   }
+
   const admitted = freeze(value) as unknown as WalkingMotionRequest
+
   admittedRequests.set(admitted, { source })
+
   return admitted
 }
 
@@ -723,6 +785,7 @@ function readSourceMotionRequest(
   demand: SceneDemand | undefined
 ): WalkingSourceMotionRequest {
   const snapshot = { ...raw }
+
   if (
     !demand ||
     snapshot.source !== source ||
@@ -757,6 +820,7 @@ function readSourceMotionRequest(
   ) {
     return invalid()
   }
+
   const budget = {
     maxIntervals: Number(snapshot.budget.maxIntervals),
     maxEnvelopePairs: Number(snapshot.budget.maxEnvelopePairs),
@@ -780,13 +844,16 @@ function readSourceMotionRequest(
     },
     source
   )
+
   if (base.format !== WALKING_MOTION_REQUEST_FORMAT) {
     return invalid()
   }
+
   const shapes = new Map<
     string,
     Extract<WalkingCarriedAttachment['shape'], { kind: 'triangles' }>
   >()
+
   const bind = (
     sourceId: string,
     shape: Extract<WalkingCarriedAttachment['shape'], { kind: 'triangles' }>
@@ -794,16 +861,20 @@ function readSourceMotionRequest(
     if (shapes.has(sourceId)) {
       return invalid()
     }
+
     shapes.set(sourceId, shape)
   }
+
   for (const region of base.terrain.regions) {
     bind(region.sourceId, region.shape)
   }
+
   if (base.load.crate.kind === 'attached') {
     for (const part of base.load.crate.sourceParts) {
       bind(part.sourceId, part.shape)
     }
   }
+
   if (base.load.carried.kind === 'attached') {
     for (const item of base.load.carried.items) {
       if (item.shape.kind === 'triangles') {
@@ -811,8 +882,10 @@ function readSourceMotionRequest(
       }
     }
   }
+
   const sourceIds = new Set<string>(),
     externalSources: WalkingExternalSourceRegions[] = []
+
   for (const candidate of structuredClone(snapshot.externalSources)) {
     if (
       !record(candidate) ||
@@ -822,11 +895,14 @@ function readSourceMotionRequest(
     ) {
       return invalid()
     }
+
     const sourceId = String(candidate.sourceId),
       shape = shapes.get(sourceId)
+
     if (!shape || sourceIds.has(sourceId)) {
       return invalid()
     }
+
     sourceIds.add(sourceId)
     externalSources.push(
       Object.freeze({
@@ -835,9 +911,11 @@ function readSourceMotionRequest(
       })
     )
   }
+
   if (sourceIds.size !== shapes.size) {
     return invalid()
   }
+
   const breaks = [
     ...new Set([
       base.evaluation.from,
@@ -856,11 +934,14 @@ function readSourceMotionRequest(
       ...demand.targets.right,
       ...demand.targets.unassigned
     ]
+
   for (const input of snapshot.targetContacts) {
     if (!record(input)) {
       return invalid()
     }
+
     const candidate = { ...input }
+
     if (
       !exact(candidate, ['from', 'until', 'purpose', 'robot', 'target']) ||
       !Number.isFinite(candidate.from) ||
@@ -873,12 +954,15 @@ function readSourceMotionRequest(
     ) {
       return invalid()
     }
+
     const from = Number(candidate.from),
       until = Number(candidate.until),
       index = breaks.indexOf(from)
+
     if (index < 0 || breaks[index + 1] !== until) {
       return invalid()
     }
+
     const robot = { ...candidate.robot },
       targetInput = { ...candidate.target }
     const part = source.parts.find((part) => part === robot.part)
@@ -889,6 +973,7 @@ function readSourceMotionRequest(
         purpose === 'support'
           ? source.rig.contacts.supportTools
           : source.rig.contacts.cuttingEdges
+
     if (
       !part ||
       !region ||
@@ -900,6 +985,7 @@ function readSourceMotionRequest(
     ) {
       return invalid()
     }
+
     if (
       contacts.some(
         (contact) =>
@@ -910,10 +996,12 @@ function readSourceMotionRequest(
     ) {
       return invalid()
     }
+
     const target = targets.find((target) => target === targetInput.target),
       partition = target?.partitions.find(
         (partition) => partition === targetInput.partition
       )
+
     if (
       !target ||
       !partition ||
@@ -922,13 +1010,17 @@ function readSourceMotionRequest(
     ) {
       return invalid()
     }
+
     const ranges: SourceTriangleRange[] = []
     let end = partition.partition.indexStart
+
     for (const rawRange of targetInput.ranges) {
       if (!record(rawRange)) {
         return invalid()
       }
+
       const inputRange = { ...rawRange }
+
       if (
         !exact(inputRange, ['indexStart', 'indexCount']) ||
         !Number.isSafeInteger(inputRange.indexStart) ||
@@ -936,8 +1028,10 @@ function readSourceMotionRequest(
       ) {
         return invalid()
       }
+
       const indexStart = Number(inputRange.indexStart),
         indexCount = Number(inputRange.indexCount)
+
       if (
         indexStart < end ||
         indexStart % 3 !== 0 ||
@@ -949,9 +1043,11 @@ function readSourceMotionRequest(
       ) {
         return invalid()
       }
+
       end = indexStart + indexCount
       ranges.push(Object.freeze({ indexStart, indexCount }))
     }
+
     contacts.push(
       Object.freeze({
         from,
@@ -966,6 +1062,7 @@ function readSourceMotionRequest(
       })
     )
   }
+
   const result: WalkingSourceMotionRequest = Object.freeze({
     ...base,
     format: WALKING_SOURCE_MOTION_REQUEST_FORMAT,
@@ -975,13 +1072,16 @@ function readSourceMotionRequest(
     externalSources: Object.freeze(externalSources),
     targetContacts: Object.freeze(contacts)
   })
+
   admittedRequests.set(result, { source, demand })
+
   return result
 }
 
 /** The input snapshot belongs to W3; terrain products subsequently admit detached copies. */
 export const WALKING_NONLINEAR_MOTION_REQUEST_FORMAT =
   'walking-motion-request/3' as const
+
 export interface WalkingNonlinearMotionRequest {
   readonly format: typeof WALKING_NONLINEAR_MOTION_REQUEST_FORMAT
   readonly requestId: string
@@ -1031,6 +1131,7 @@ export type WalkingNonlinearLoadCase = Omit<WalkingLoadCase, 'crate'> & {
         artifact: WalkingMountedCrate
       }>
 }
+
 export function isWalkingMountedCrateCurrent(
   load: WalkingNonlinearLoadCase,
   source: WalkingRobotSource,
@@ -1045,7 +1146,9 @@ export function isWalkingMountedCrateCurrent(
     )
   )
 }
+
 const admittedNonlinearRequests = new WeakSet<object>()
+
 function validateWalkingLoad(
   load: Record<string, unknown>,
   source: WalkingRobotSource,
@@ -1060,10 +1163,12 @@ function validateWalkingLoad(
   ) {
     return invalid()
   }
+
   const bodyIds = new Set(source.rig.bodies.map(({ id }) => id)),
     attachmentIds = new Set<string>()
   const crate = load.crate,
     carried = load.carried
+
   if (crate.kind === 'mounted' && mounted) {
     if (!exact(crate, ['kind', 'artifact']) || crate.artifact !== mounted) {
       return invalid()
@@ -1097,7 +1202,9 @@ function validateWalkingLoad(
     ) {
       return invalid()
     }
+
     const sourceIds = new Set<string>()
+
     for (const part of crate.sourceParts) {
       if (
         !record(part) ||
@@ -1110,10 +1217,12 @@ function validateWalkingLoad(
       ) {
         return invalid()
       }
+
       attachmentIds.add(part.id as string)
       sourceIds.add(part.sourceId as string)
     }
   }
+
   if (carried.kind === 'none') {
     if (!exact(carried, ['kind'])) {
       return invalid()
@@ -1126,6 +1235,7 @@ function validateWalkingLoad(
   ) {
     return invalid()
   }
+
   for (const attachment of carried.kind === 'attached'
     ? (carried.items as unknown[])
     : []) {
@@ -1156,9 +1266,11 @@ function validateWalkingLoad(
     ) {
       return invalid()
     }
+
     attachmentIds.add(attachment.id as string)
   }
 }
+
 /** No linear-knot surrogate: cycle issuance and terrain input provenance are explicit. */
 export function readWalkingNonlinearMotionRequest(
   raw: unknown,
@@ -1177,7 +1289,9 @@ export function readWalkingNonlinearMotionRequest(
   ) {
     return invalid()
   }
+
   const rawLoad = raw.load
+
   if (
     record(rawLoad) &&
     record(rawLoad.crate) &&
@@ -1188,9 +1302,11 @@ export function readWalkingNonlinearMotionRequest(
   ) {
     return invalid()
   }
+
   if (admittedNonlinearRequests.has(raw)) {
     return raw as unknown as WalkingNonlinearMotionRequest
   }
+
   if (
     !exact(raw, [
       'format',
@@ -1214,6 +1330,7 @@ export function readWalkingNonlinearMotionRequest(
   ) {
     return invalid()
   }
+
   const budgetKeys = [
     'maxPhaseNodes',
     'maxSubdivisions',
@@ -1224,6 +1341,7 @@ export function readWalkingNonlinearMotionRequest(
     'maxInputValues',
     'maxEnvelopePairs'
   ]
+
   if (
     !exact(raw.budget, budgetKeys) ||
     !Object.values(raw.budget).every(
@@ -1233,6 +1351,7 @@ export function readWalkingNonlinearMotionRequest(
   ) {
     return invalid()
   }
+
   let inputValues = 0
   const refs = new Set<object>([
     source,
@@ -1241,9 +1360,11 @@ export function readWalkingNonlinearMotionRequest(
     ...source.parts,
     ...source.rig.contacts.feet.map((c) => c.patch)
   ])
+
   if (mounted) {
     refs.add(mounted.crate)
   }
+
   const copy = (v: unknown): unknown => {
     if (
       ++inputValues >
@@ -1251,6 +1372,7 @@ export function readWalkingNonlinearMotionRequest(
     ) {
       return invalid()
     }
+
     if (
       typeof v === 'bigint' &&
       v.toString(2).length >
@@ -1258,21 +1380,28 @@ export function readWalkingNonlinearMotionRequest(
     ) {
       return invalid()
     }
+
     if (typeof v === 'number' && !Number.isFinite(v)) {
       return invalid()
     }
+
     if (v && typeof v === 'object' && refs.has(v)) {
       return v
     }
+
     if (Array.isArray(v)) {
       return Array.from(v, copy)
     }
+
     if (record(v)) {
       return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, copy(x)]))
     }
+
     return v
   }
+
   const value = copy(raw) as Record<string, unknown>
+
   if (
     !record(value.path) ||
     !exact(value.path, ['id', 'phases']) ||
@@ -1282,7 +1411,9 @@ export function readWalkingNonlinearMotionRequest(
   ) {
     return invalid()
   }
+
   let previous: number | undefined
+
   for (const [i, p] of value.path.phases.entries()) {
     if (
       !record(p) ||
@@ -1295,8 +1426,10 @@ export function readWalkingNonlinearMotionRequest(
     ) {
       return invalid()
     }
+
     previous = Number(p.until)
   }
+
   if (
     !record(value.gait) ||
     !exact(value.gait, ['id', 'provenance']) ||
@@ -1306,6 +1439,7 @@ export function readWalkingNonlinearMotionRequest(
   ) {
     return invalid()
   }
+
   validateWalkingLoad(value.load, source, mounted?.crate)
   if (
     !Array.isArray(value.targetContacts) ||
@@ -1316,13 +1450,17 @@ export function readWalkingNonlinearMotionRequest(
   ) {
     return invalid()
   }
+
   const events = ['initial-a', 'initial-b', 'handoff-b', 'final-a']
   const terrain = value.terrain
+
   if (!record(terrain) || !Array.isArray(terrain.regions)) {
     return invalid()
   }
+
   const terrainRegions = terrain.regions
   const shapes = new Map<string, number>()
+
   for (const r of terrainRegions) {
     if (
       !record(r) ||
@@ -1332,30 +1470,37 @@ export function readWalkingNonlinearMotionRequest(
     ) {
       return invalid()
     }
+
     shapes.set(
       String(r.sourceId),
       (r.shape as { indices: number[] }).indices.length
     )
   }
+
   const load = value.load as unknown as WalkingNonlinearLoadCase
+
   if (load.crate.kind === 'attached') {
     for (const p of load.crate.sourceParts) {
       if (shapes.has(p.sourceId)) {
         return invalid()
       }
+
       shapes.set(p.sourceId, p.shape.indices.length)
     }
   }
+
   if (load.carried.kind === 'attached') {
     for (const p of load.carried.items) {
       if (shapes.has(p.sourceId)) {
         return invalid()
       }
+
       if (p.shape.kind === 'triangles') {
         shapes.set(p.sourceId, p.shape.indices.length)
       }
     }
   }
+
   const seen = new Set<string>()
   const partitions = value.externalSources.map((p) => {
     if (
@@ -1368,7 +1513,9 @@ export function readWalkingNonlinearMotionRequest(
     ) {
       return invalid()
     }
+
     seen.add(String(p.sourceId))
+
     return Object.freeze({
       sourceId: String(p.sourceId),
       regions: readSourceRegions(
@@ -1377,12 +1524,15 @@ export function readWalkingNonlinearMotionRequest(
       )
     })
   })
+
   if (seen.size !== shapes.size) {
     return invalid()
   }
+
   // W3 issues each admitted event request once from its snapshot. The owned
   // placement producer consumes that exact admitted request without readmission.
   const admittedEvents = []
+
   for (const [i, event] of value.terrainEvents.entries()) {
     if (
       !record(event) ||
@@ -1391,6 +1541,7 @@ export function readWalkingNonlinearMotionRequest(
     ) {
       return invalid()
     }
+
     const placementRequest = readWalkingTerrainPlacementRequest(
       {
         format: 'walking-terrain-placement-request/1',
@@ -1410,6 +1561,7 @@ export function readWalkingNonlinearMotionRequest(
       },
       { source, demand }
     )
+
     inputValues += placementRequest.inputValues
     if (
       inputValues >
@@ -1417,14 +1569,18 @@ export function readWalkingNonlinearMotionRequest(
     ) {
       return invalid()
     }
+
     admittedEvents.push({ ...event, placementRequest })
   }
+
   const result = freeze({
     ...value,
     externalSources: partitions,
     terrainEvents: admittedEvents,
     inputValues
   }) as unknown as WalkingNonlinearMotionRequest
+
   admittedNonlinearRequests.add(result)
+
   return result
 }

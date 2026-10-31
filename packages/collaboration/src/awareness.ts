@@ -90,15 +90,19 @@ const readInboundDisconnect = (event: unknown): InertAwarenessDisconnect => {
       '[collaboration] awareness disconnect must be a record'
     )
   }
+
   const prototype = Object.getPrototypeOf(event)
+
   if (prototype !== Object.prototype && prototype !== null) {
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness disconnect must be a plain record'
     )
   }
+
   const candidate = event as Record<string, unknown>
   const descriptors = new Map<string, PropertyDescriptor>()
+
   for (const key of Reflect.ownKeys(candidate)) {
     if (typeof key !== 'string' || !inboundDisconnectFields.has(key)) {
       throw new AwarenessValidationError(
@@ -106,21 +110,26 @@ const readInboundDisconnect = (event: unknown): InertAwarenessDisconnect => {
         '[collaboration] awareness disconnect contains an unsupported field'
       )
     }
+
     const descriptor = Object.getOwnPropertyDescriptor(candidate, key)
+
     if (!descriptor?.enumerable || !('value' in descriptor)) {
       throw new AwarenessValidationError(
         'invalid-state',
         '[collaboration] awareness disconnect accessors are not supported'
       )
     }
+
     descriptors.set(key, descriptor)
   }
+
   if ([...inboundDisconnectFields].some((field) => !descriptors.has(field))) {
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness disconnect is missing a required field'
     )
   }
+
   return Object.freeze({
     actorId: descriptors.get('actorId')?.value,
     reason: descriptors.get('reason')?.value
@@ -134,15 +143,19 @@ const readInboundMessage = (message: unknown): InertAwarenessMessage => {
       '[collaboration] awareness message must be a record'
     )
   }
+
   const prototype = Object.getPrototypeOf(message)
+
   if (prototype !== Object.prototype && prototype !== null) {
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness message must be a plain record'
     )
   }
+
   const candidate = message as Record<string, unknown>
   const descriptors = new Map<string, PropertyDescriptor>()
+
   for (const key of Reflect.ownKeys(candidate)) {
     if (typeof key !== 'string' || !inboundMessageFields.has(key)) {
       throw new AwarenessValidationError(
@@ -150,21 +163,26 @@ const readInboundMessage = (message: unknown): InertAwarenessMessage => {
         '[collaboration] awareness message contains an unsupported field'
       )
     }
+
     const descriptor = Object.getOwnPropertyDescriptor(candidate, key)
+
     if (!descriptor?.enumerable || !('value' in descriptor)) {
       throw new AwarenessValidationError(
         'invalid-state',
         '[collaboration] awareness message accessors are not supported'
       )
     }
+
     descriptors.set(key, descriptor)
   }
+
   if ([...inboundMessageFields].some((field) => !descriptors.has(field))) {
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness message is missing a required field'
     )
   }
+
   return Object.freeze({
     actorId: descriptors.get('actorId')?.value,
     clock: descriptors.get('clock')?.value,
@@ -183,52 +201,66 @@ const cloneAwarenessValue = (
   ) {
     return value
   }
+
   if (typeof value === 'number') {
     if (Number.isFinite(value)) {
       return value
     }
+
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness numbers must be finite'
     )
   }
+
   if (typeof value !== 'object') {
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness contains an unsupported value'
     )
   }
+
   if (seen.has(value)) {
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness cannot contain circular values'
     )
   }
+
   seen.add(value)
 
   if (Array.isArray(value)) {
     const result: AwarenessValue[] = []
+
     for (let index = 0; index < value.length; index += 1) {
       const descriptor = Object.getOwnPropertyDescriptor(value, index)
+
       if (!descriptor || !('value' in descriptor)) {
         throw new AwarenessValidationError(
           'invalid-state',
           '[collaboration] awareness arrays must contain data values'
         )
       }
+
       result.push(cloneAwarenessValue(descriptor.value, seen))
     }
+
     seen.delete(value)
+
     return result
   }
+
   const prototype = Object.getPrototypeOf(value)
+
   if (prototype !== Object.prototype && prototype !== null) {
     throw new AwarenessValidationError(
       'invalid-state',
       '[collaboration] awareness objects must be plain records'
     )
   }
+
   const result: Record<string, AwarenessValue> = {}
+
   for (const key of Reflect.ownKeys(value)) {
     if (typeof key !== 'string') {
       throw new AwarenessValidationError(
@@ -236,16 +268,20 @@ const cloneAwarenessValue = (
         '[collaboration] awareness cannot contain symbol keys'
       )
     }
+
     const descriptor = Object.getOwnPropertyDescriptor(value, key)
+
     if (!descriptor?.enumerable) {
       continue
     }
+
     if (!('value' in descriptor)) {
       throw new AwarenessValidationError(
         'invalid-state',
         '[collaboration] awareness accessors are not supported'
       )
     }
+
     Object.defineProperty(result, key, {
       value: cloneAwarenessValue(descriptor.value, seen),
       enumerable: true,
@@ -253,7 +289,9 @@ const cloneAwarenessValue = (
       writable: true
     })
   }
+
   seen.delete(value)
+
   return result
 }
 
@@ -264,6 +302,7 @@ const requireActor = (actorId: unknown): string => {
       '[collaboration] awareness actorId is required'
     )
   }
+
   return actorId
 }
 
@@ -280,6 +319,7 @@ const cloneState = (
       '[collaboration] awareness heartbeatAt is runtime-owned'
     )
   }
+
   return deepFreeze(cloneAwarenessValue(input) as AwarenessState)
 }
 
@@ -295,12 +335,19 @@ const cloneSnapshot = (
 
 export class Awareness {
   readonly actorId: string
+
   private readonly timeoutMs: number
+
   private readonly now: () => number
+
   private clock = 0
+
   private disposed = false
+
   private readonly remote = new Map<string, RemoteAwarenessSnapshot>()
+
   private readonly remoteClocks = new Map<string, number>()
+
   private readonly subscribers = new Set<
     (event: AwarenessObservation) => void
   >()
@@ -329,7 +376,9 @@ export class Awareness {
       { ...selectedState, heartbeatAt: this.now() },
       true
     )
+
     this.clock += 1
+
     return deepFreeze({ actorId: this.actorId, clock: this.clock, state })
   }
 
@@ -337,6 +386,7 @@ export class Awareness {
     this.requireUsable()
     requireActor(this.actorId)
     this.clock += 1
+
     return Object.freeze({
       actorId: this.actorId,
       clock: this.clock,
@@ -348,6 +398,7 @@ export class Awareness {
     this.requireUsable()
     const candidate = readInboundMessage(message)
     const actorId = requireActor(candidate.actorId)
+
     if (
       typeof candidate.clock !== 'number' ||
       !Number.isSafeInteger(candidate.clock) ||
@@ -358,10 +409,13 @@ export class Awareness {
         '[collaboration] awareness clock must be a non-negative safe integer'
       )
     }
+
     const clock = candidate.clock
+
     if (actorId === this.actorId) {
       return false
     }
+
     if (clock <= (this.remoteClocks.get(actorId) ?? -1)) {
       return false
     }
@@ -369,8 +423,10 @@ export class Awareness {
     if (candidate.state === null) {
       this.remoteClocks.set(actorId, clock)
       this.remove(actorId, 'leave')
+
       return true
     }
+
     if (
       !candidate.state ||
       typeof candidate.state !== 'object' ||
@@ -381,15 +437,18 @@ export class Awareness {
         '[collaboration] awareness state must be a record or null'
       )
     }
+
     const snapshot = deepFreeze({
       actorId,
       clock,
       state: cloneState(candidate.state as Record<string, unknown>, true),
       lastSeenAt: this.now()
     })
+
     this.remoteClocks.set(actorId, clock)
     this.remote.set(actorId, snapshot)
     this.emit({ type: 'updated', snapshot })
+
     return true
   }
 
@@ -397,21 +456,26 @@ export class Awareness {
     this.requireUsable()
     const candidate = readInboundDisconnect(event)
     const actorId = requireActor(candidate.actorId)
+
     if (candidate.reason !== 'disconnect') {
       throw new AwarenessValidationError(
         'invalid-state',
         '[collaboration] awareness disconnect reason is invalid'
       )
     }
+
     this.remoteClocks.delete(actorId)
+
     return this.remove(actorId, 'disconnect')
   }
 
   clearRemote(reason: 'disconnect'): readonly string[] {
     this.requireUsable()
     const actorIds = [...this.remote.keys()]
+
     this.remoteClocks.clear()
     actorIds.forEach((actorId) => this.remove(actorId, reason))
+
     return Object.freeze(actorIds)
   }
 
@@ -421,18 +485,22 @@ export class Awareness {
     const expired = [...this.remote.values()]
       .filter((snapshot) => currentTime - snapshot.lastSeenAt >= this.timeoutMs)
       .map((snapshot) => snapshot.actorId)
+
     expired.forEach((actorId) => this.remove(actorId, 'timeout'))
+
     return Object.freeze(expired)
   }
 
   observe(subscriber: (event: AwarenessObservation) => void): () => void {
     this.requireUsable()
     this.subscribers.add(subscriber)
+
     return () => this.subscribers.delete(subscriber)
   }
 
   getRemote(actorId: string): RemoteAwarenessSnapshot | undefined {
     const snapshot = this.remote.get(actorId)
+
     return snapshot ? cloneSnapshot(snapshot) : undefined
   }
 
@@ -444,6 +512,7 @@ export class Awareness {
     if (this.disposed) {
       return
     }
+
     this.disposed = true
     this.remote.clear()
     this.remoteClocks.clear()
@@ -458,7 +527,9 @@ export class Awareness {
     if (!this.remote.delete(actorId)) {
       return false
     }
+
     this.emit({ type: 'removed', actorId, reason })
+
     return true
   }
 

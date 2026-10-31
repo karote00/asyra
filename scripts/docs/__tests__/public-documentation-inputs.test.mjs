@@ -31,6 +31,7 @@ test('documentation inputs derive the exact public release package facts', async
         'utf8'
       )
     )
+
     assert.equal(packageRecord.version, manifest.version)
     assert.equal(packageRecord.license, manifest.license)
     assert.ok(packageRecord.publicEntries.length > 0)
@@ -43,6 +44,7 @@ test('documentation inputs derive the exact public release package facts', async
 
 test('documentation inputs do not expose a repository example inventory', async () => {
   const inputs = await readApprovedDocumentationInputs({ repositoryRoot })
+
   assert.equal('examples' in inputs, false)
 })
 

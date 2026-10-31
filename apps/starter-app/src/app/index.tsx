@@ -10,6 +10,7 @@ import './styles.css'
 
 const Status = () => {
   const status = useStatus()
+
   return (
     <p
       className={'operation-feedback ' + status?.tone}
@@ -71,14 +72,17 @@ export const AppView = () => (
 export const StarterApp = () => {
   const [app, setApp] = useState<AppSession | null>(null)
   const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     let active = true
     let session: AppSession | undefined
+
     void waitForCore()
       .then(() => {
         if (!active) {
           return
         }
+
         session = initApp()
         setApp(session)
       })
@@ -87,6 +91,7 @@ export const StarterApp = () => {
           setError(cause instanceof Error ? cause.message : String(cause))
         }
       })
+
     return () => {
       active = false
       if (session) {
@@ -103,6 +108,7 @@ export const StarterApp = () => {
       </main>
     )
   }
+
   return (
     <AppContext.Provider value={app}>
       <AppView />

@@ -22,10 +22,12 @@ function request(): LaneRequest {
     }
   }
 }
+
 afterEach(() => vi.restoreAllMocks())
 describe('M1 straight-lane feasibility', () => {
   it('screens internal soil between existing root rows, without claiming safety', () => {
     const result = assessHarvestLane(request())
+
     expect(result.status).toBe('screened')
     expect(result.usableWidth).toBeCloseTo(1)
     expect(result.requiredWidth).toBeCloseTo(0.65)
@@ -33,6 +35,7 @@ describe('M1 straight-lane feasibility', () => {
   })
   it('blocks the water channel even for a very narrow vehicle', () => {
     const input = request()
+
     input.lane = { kind: 'strip', bay: 0, strip: 1 }
     input.vehicle.width = 0.1
     expect(assessHarvestLane(input).blocked).toContain('water-channel')
@@ -41,14 +44,17 @@ describe('M1 straight-lane feasibility', () => {
     'accounts for center columns on shared passage %s',
     (side) => {
       const input = request()
+
       input.lane = { kind: 'shared', boundary: 1, side }
       const result = assessHarvestLane(input)
+
       expect(result.usableWidth).toBeCloseTo(0.312)
       expect(result.blocked).toContain('insufficient-width')
     }
   )
   it('keeps unknown ground and entrance/headland measurements unverified', () => {
     const input = request()
+
     input.survey = {
       ground: 'unknown',
       entranceWidth: null,
@@ -57,6 +63,7 @@ describe('M1 straight-lane feasibility', () => {
       rearHeadland: null
     }
     const result = assessHarvestLane(input)
+
     expect(result.status).toBe('unverified')
     expect(result.unverified).toEqual([
       'unknown-entrance',
@@ -66,12 +73,14 @@ describe('M1 straight-lane feasibility', () => {
   })
   it('prioritizes blocking evidence over missing evidence', () => {
     const input = request()
+
     input.survey.ground = 'soft'
     input.survey.entranceWidth = null
     expect(assessHarvestLane(input).status).toBe('blocked')
   })
   it('does not treat the plant setbacks as adequate headlands', () => {
     const input = request()
+
     input.survey.frontHeadland = 0
     input.survey.rearHeadland = 0
     expect(assessHarvestLane(input).blocked).toEqual([
@@ -81,6 +90,7 @@ describe('M1 straight-lane feasibility', () => {
   })
   it('checks entry and crossbeam heights as well as lane width', () => {
     const input = request()
+
     input.vehicle.height = 3.1
     input.survey.entranceWidth = 0.5
     expect(assessHarvestLane(input).blocked).toEqual([
@@ -91,6 +101,7 @@ describe('M1 straight-lane feasibility', () => {
   })
   it('admits exact width but rejects a larger swept width', () => {
     const input = request()
+
     input.vehicle.width = 0.9
     expect(assessHarvestLane(input).status).toBe('screened')
     input.vehicle.width += 0.001
@@ -103,6 +114,7 @@ describe('M1 straight-lane feasibility', () => {
     const input = request()
     const before = structuredClone(input)
     const first = assessHarvestLane(input)
+
     expect(input).toEqual(before)
     expect(layout).toHaveBeenCalledTimes(2)
     expect(rows).toHaveBeenCalledTimes(1)
@@ -118,11 +130,13 @@ describe('M1 straight-lane feasibility', () => {
   })
   it.each([NaN, Infinity, -1])('rejects invalid dimensions %s', (value) => {
     const input = request()
+
     input.vehicle.width = value
     expect(() => assessHarvestLane(input)).toThrow()
   })
   it('rejects invalid lane, interval and incomplete survey input', () => {
     const input = request()
+
     input.lane = { kind: 'strip', bay: 4, strip: 2 }
     expect(() => assessHarvestLane(input)).toThrow()
     input.lane = { kind: 'strip', bay: 0, strip: 2 }

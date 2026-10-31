@@ -56,9 +56,12 @@ export function WorkspaceApp({
     if (initialHash !== undefined) {
       return
     }
+
     const updateLocation = () => setBrowserLocation(readBrowserLocation())
+
     window.addEventListener('hashchange', updateLocation)
     window.addEventListener('popstate', updateLocation)
+
     return () => {
       window.removeEventListener('hashchange', updateLocation)
       window.removeEventListener('popstate', updateLocation)
@@ -69,7 +72,9 @@ export function WorkspaceApp({
     if (routingMode !== 'path' || route.kind === 'error') {
       return
     }
+
     const href = route.kind === 'selected' ? `/${route.entry.slug}` : '/'
+
     if (window.location.pathname + window.location.hash !== href) {
       window.history.replaceState(null, '', href)
       setBrowserLocation(readBrowserLocation())
@@ -80,14 +85,17 @@ export function WorkspaceApp({
     if (window.innerWidth <= 900) {
       setCatalogVisible(false)
     }
+
     if (routingMode === 'path') {
       const href = entry ? `/${entry.slug}` : '/'
+
       if (window.location.pathname + window.location.hash !== href) {
         window.history.pushState(null, '', href)
       }
     } else {
       window.location.hash = entry ? workspaceHash(entry.id) : ''
     }
+
     setBrowserLocation(readBrowserLocation())
   }
 
@@ -100,11 +108,13 @@ export function WorkspaceApp({
   const toggleGroup = (group: InspectorGroup) => {
     setCollapsedGroups((current) => {
       const next = new Set(current)
+
       if (next.has(group)) {
         next.delete(group)
       } else {
         next.add(group)
       }
+
       return next
     })
   }
@@ -153,6 +163,7 @@ export function WorkspaceApp({
               (entry) => entry.group === group
             )
             const collapsed = collapsedGroups.has(group)
+
             return (
               <section
                 className="group"

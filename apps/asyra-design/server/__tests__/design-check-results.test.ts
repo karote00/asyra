@@ -9,6 +9,7 @@ import { operationInputIssue } from '../operation-input-schema'
 describe('retained design check results', () => {
   it('accumulates passes while returning only unresolved work by default', () => {
     const store = createDesignCheckResults()
+
     store.record({
       id: 'units',
       origin: 'tool',
@@ -38,6 +39,7 @@ describe('retained design check results', () => {
 
   it('reopens dependent passes transitively and preserves unrelated evidence', () => {
     const store = createDesignCheckResults()
+
     store.record({
       id: 'wall',
       origin: 'tool',
@@ -77,6 +79,7 @@ describe('retained design check results', () => {
 
   it('never lets another author overwrite a tool failure and detaches returned data', () => {
     const store = createDesignCheckResults()
+
     store.record({
       id: 'join',
       origin: 'tool',
@@ -94,6 +97,7 @@ describe('retained design check results', () => {
       })
     ).toThrow(/origin/)
     const result = store.read()
+
     result.items[0].evidence = 'Changed externally'
     expect(store.read().items[0].evidence).toBe('Gap')
     store.invalidate(undefined, 'Unknown external change')
@@ -103,6 +107,7 @@ describe('retained design check results', () => {
 
 it('reads unresolved work without scanning accumulated passes and rejects dependency cycles', () => {
   const store = createDesignCheckResults()
+
   for (let index = 0; index < 2000; index++) {
     store.record({
       id: `part-${index}`,
@@ -112,6 +117,7 @@ it('reads unresolved work without scanning accumulated passes and rejects depend
       dependencies: { [`part:${index}`]: '1' }
     })
   }
+
   store.record({
     id: 'pending',
     origin: 'main-agent',
@@ -142,6 +148,7 @@ it('reads unresolved work without scanning accumulated passes and rejects depend
 
 it('invalidates dependency-free results too when the change scope is unknown', () => {
   const store = createDesignCheckResults()
+
   store.record({
     id: 'overall',
     origin: 'main-agent',
@@ -158,6 +165,7 @@ it('invalidates dependency-free results too when the change scope is unknown', (
 
 it('declares and validates the exact retained result delivery contract', () => {
   const store = createDesignCheckResults()
+
   store.record({
     id: 'geometry',
     origin: 'tool',
@@ -166,6 +174,7 @@ it('declares and validates the exact retained result delivery contract', () => {
     dependencies: { recipe: '1' }
   })
   const reply = store.read({ includePassed: true })
+
   expect(operationInputIssue(reply, designCheckResultsSchema)).toBeUndefined()
   expect(
     operationInputIssue(
@@ -189,6 +198,7 @@ it('records redesign provenance and invalidates only real dependent results', ()
     evidence: 'Original design',
     dependencies: { 'inspection:old': '1' }
   }
+
   store.record(original)
   store.record({
     id: 'relation',
@@ -211,8 +221,10 @@ it('records redesign provenance and invalidates only real dependent results', ()
     dependencies: { 'inspection:new': '2' },
     supersedes: { revision: 1, reason: 'Replacement geometry' }
   }
+
   expect(store.record(replacement)).toBe(2)
   const result = store.read({ includePassed: true })
+
   expect(operationInputIssue(result, designCheckResultsSchema)).toBeUndefined()
   expect(result.items.find((item) => item.id === 'relation')?.status).toBe(
     'stale'
@@ -224,6 +236,7 @@ it('records redesign provenance and invalidates only real dependent results', ()
 
 it('consolidates compiler corrections into the same source obligation without losing unrelated results', () => {
   const store = createDesignCheckResults()
+
   store.recordPreparedSource({
     artifactId: 'bad',
     recipeRevision: 'r1',
@@ -238,6 +251,7 @@ it('consolidates compiler corrections into the same source obligation without lo
     includePassed: true,
     ids: ['prepared:other:data']
   }).items[0]
+
   store.recordPreparedSource({
     artifactId: 'fixed',
     recipeRevision: 'r3',
@@ -269,6 +283,7 @@ it('consolidates compiler corrections into the same source obligation without lo
     store.read({ includePassed: true, ids: ['prepared:other:data'] }).items[0]
   ).toEqual(other)
   const all = store.read({ includePassed: true })
+
   store.recordPreparedSource({
     artifactId: 'fixed',
     recipeRevision: 'r3',
@@ -301,6 +316,7 @@ it('consolidates compiler corrections into the same source obligation without lo
 
 it('rejects adoption of a superseded source before disturbing either lineage', () => {
   const store = createDesignCheckResults()
+
   store.recordPreparedSource({
     artifactId: 'a',
     recipeRevision: 'a',
@@ -318,6 +334,7 @@ it('rejects adoption of a superseded source before disturbing either lineage', (
     findings: []
   })
   const before = store.read({ includePassed: true })
+
   expect(() =>
     store.recordPreparedSource({
       artifactId: 'a',
@@ -338,6 +355,7 @@ it('retires a removed tool target, preserves dependent obligations and never reu
     evidence: 'Measured',
     dependencies: { 'measurement:removed': 'stamp' }
   })
+
   store.record({
     id: 'visual',
     origin: 'main-agent',
@@ -365,6 +383,7 @@ it('retires a removed tool target, preserves dependent obligations and never reu
 
 it('selects transitive check dependencies without enumerating unrelated result payloads', () => {
   const store = createDesignCheckResults()
+
   const record = (id: string, dependencies: Record<string, string> = {}) =>
     store.record({
       id,
@@ -373,12 +392,14 @@ it('selects transitive check dependencies without enumerating unrelated result p
       evidence: id,
       dependencies
     })
+
   record('root')
   record('middle', { 'check:root': '1' })
   record('leaf', { 'check:middle': '1' })
   for (let index = 0; index < 100; index++) {
     record(`other-${index}`)
   }
+
   expect(store.dependencyIds(['leaf'])).toEqual(['leaf', 'middle', 'root'])
   expect(store.dependencyIds(['missing'])).toEqual(['missing'])
 })
@@ -386,6 +407,7 @@ it('selects transitive check dependencies without enumerating unrelated result p
 it('summarizes large retained failures without retransmitting their evidence', () => {
   const store = createDesignCheckResults()
   const ids = Array.from({ length: 5000 }, (_, index) => `measurement:${index}`)
+
   for (const id of ids) {
     store.record({
       id,
@@ -395,7 +417,9 @@ it('summarizes large retained failures without retransmitting their evidence', (
       dependencies: { [id]: 'unknown' }
     })
   }
+
   const summary = store.summary(ids)
+
   expect(summary).toEqual({
     countsScope: 'selected-checks',
     counts: { pass: 0, fail: 0, unverified: 5000, stale: 0 },
@@ -406,6 +430,7 @@ it('summarizes large retained failures without retransmitting their evidence', (
   if (!summary.firstPendingId) {
     throw new Error('Missing pending check identity')
   }
+
   expect(store.read({ ids: [summary.firstPendingId] }).items[0].evidence).toBe(
     'retained detail '.repeat(100)
   )
@@ -420,9 +445,11 @@ it('discards only untouched declaration placeholders and validates the whole rem
     evidence: 'Await judgment',
     dependencies: { 'criterion:one': '1' }
   }
+
   store.record(declaration)
   store.record({ ...declaration, id: 'observed', scope: ['image'] })
   const before = store.read({ includePassed: true })
+
   expect(() => store.discardDeclarations(['declared', 'observed'])).toThrow(
     /declaration/
   )
@@ -466,6 +493,7 @@ it('admits a complete detached mechanical selection and rejects mixed ownership'
     findings: []
   }
   const revision = store.record(value, descriptor)
+
   store.record({ ...value, id: 'visual', origin: 'main-agent' })
   expect(() =>
     store.select([
@@ -481,6 +509,7 @@ it('admits a complete detached mechanical selection and rejects mixed ownership'
   ).toThrow(/unique/)
   expect(() => store.select([])).toThrow(/nonempty/)
   const selected = store.select([{ checkId: 'part', revision }])
+
   expect(selected[0]).toMatchObject({ recheck: descriptor })
   descriptor.elementId = 'changed'
   expect(store.select([{ checkId: 'part', revision }])[0]).toMatchObject({
@@ -497,6 +526,7 @@ it('admits a complete detached mechanical selection and rejects mixed ownership'
 
 it('delivers bounded summaries and revision-bound complete details without cloning pending rows', () => {
   const store = createDesignCheckResults()
+
   for (let i = 0; i < 137; i++) {
     store.record({
       id: `check-${i}`,
@@ -506,8 +536,10 @@ it('delivers bounded summaries and revision-bound complete details without cloni
       dependencies: { geometry: '1' }
     })
   }
+
   const clone = vi.spyOn(globalThis, 'structuredClone')
   const summary = store.deliver()
+
   expect(clone).not.toHaveBeenCalled()
   clone.mockRestore()
   expect(summary).toMatchObject({
@@ -519,6 +551,7 @@ it('delivers bounded summaries and revision-bound complete details without cloni
   expect(JSON.stringify(summary).length).toBeLessThan(300)
   const found: string[] = []
   let offset = 0
+
   do {
     const page = store.deliver({
       view: 'details',
@@ -526,16 +559,20 @@ it('delivers bounded summaries and revision-bound complete details without cloni
       offset,
       revision: summary.revision
     })
+
     if (!page.items) {
       throw new Error('Detail page omitted items')
     }
+
     expect(page.items.length).toBeLessThanOrEqual(40)
     for (const item of page.items) {
       found.push(item.id)
       expect(item.evidence).toHaveLength(3000)
     }
+
     offset = page.nextOffset ?? 0
   } while (offset)
+
   expect(new Set(found).size).toBe(137)
   expect(store.deliver().revision).toBe(summary.revision)
   store.invalidate(['geometry'], 'Changed geometry')
@@ -543,6 +580,7 @@ it('delivers bounded summaries and revision-bound complete details without cloni
     store.deliver({ view: 'details', offset: 40, revision: summary.revision })
   ).toThrow('revision')
   const current = store.deliver().revision
+
   store.invalidate(['geometry'], 'Changed geometry')
   expect(store.deliver().revision).toBe(current)
   expect(store.firstPending('tool')).toEqual({ id: 'check-0', status: 'stale' })
@@ -560,6 +598,7 @@ it('delivers bounded summaries and revision-bound complete details without cloni
 
 it('labels selected counts separately from request counts without rescanning evidence', () => {
   const store = createDesignCheckResults()
+
   store.record({
     id: 'geometry',
     origin: 'tool',
@@ -595,6 +634,7 @@ it('labels selected counts separately from request counts without rescanning evi
 
 it('selects result origin before cloning while retaining full and exact reads', () => {
   const store = createDesignCheckResults()
+
   for (const [id, origin, status] of [
     ['mechanical', 'tool', 'fail'],
     ['visual-pass', 'main-agent', 'pass'],
@@ -608,10 +648,13 @@ it('selects result origin before cloning while retaining full and exact reads', 
       dependencies: { source: '1' }
     })
   }
+
   const clone = vi.spyOn(globalThis, 'structuredClone')
+
   try {
     const selection = { includePassed: true, origin: 'main-agent' as const }
     const result = store.read(selection)
+
     expect(result.items.map((item) => item.id)).toEqual([
       'visual-pass',
       'visual-fail'
@@ -622,6 +665,7 @@ it('selects result origin before cloning while retaining full and exact reads', 
     result.items[0].dependencies.source = 'external'
     expect(store.read(selection).items[0].dependencies.source).toBe('1')
     const pending = store.read({ origin: 'main-agent' })
+
     expect(pending.items.map((item) => item.id)).toEqual(['visual-fail'])
     expect(pending.countsScope).toBe('selected-checks')
     expect(pending.counts).toEqual({

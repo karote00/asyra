@@ -11,6 +11,7 @@ export class MeshMaterialResources {
   acquire(material: RenderEngineMeshMaterial) {
     const key = JSON.stringify(material)
     let entry = this.entries.get(key)
+
     if (!entry) {
       const encoded = encodeMeshMaterialBytes(material)
       const source = new BufferImageSource({
@@ -23,19 +24,24 @@ export class MeshMaterialResources {
         scaleMode: 'nearest',
         autoGenerateMipmaps: false
       })
+
       meshMaterialSources.add(source)
       entry = { texture: new Texture({ source }), users: 0 }
       this.entries.set(key, entry)
     }
+
     entry.users++
+
     return { key, texture: entry.texture }
   }
 
   release(key: string): void {
     const entry = this.entries.get(key)
+
     if (!entry) {
       return
     }
+
     if (--entry.users === 0) {
       entry.texture.destroy(true)
       this.entries.delete(key)

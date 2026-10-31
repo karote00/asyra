@@ -25,12 +25,15 @@ function migrateTypes(value: unknown, names: ReadonlyMap<string, string>) {
   if (!isPlainRecord(value)) {
     return value
   }
+
   return Object.fromEntries(
     Object.entries(value).map(([id, entry]) => {
       if (!isPlainRecord(entry) || typeof entry.type !== 'string') {
         return [id, entry]
       }
+
       const type = names.get(entry.type)
+
       return [id, type ? { ...entry, type } : entry]
     })
   )
@@ -41,6 +44,7 @@ export function migrateProjectDocument(value: unknown): unknown {
   if (!isPlainRecord(value) || value.version !== '1.0.0') {
     return value
   }
+
   return {
     ...value,
     props: migrateTypes(value.props, propertyTypes),

@@ -83,6 +83,7 @@ export const storyArtwork = Object.freeze({
   thinker: { src: 'thinker-shapes.webp', width: 1000, height: 667 },
   gallery: { src: 'closing-atelier.webp', width: 1100, height: 550 }
 })
+
 // Every plane belongs to the same mounted scene. Pose: x/y/z, Euler x/y/z,
 // uniform scale, opacity. Authored stops are prepared once per module lifetime.
 const pose = (x = 0, y = 0, z = 0, scale = 1, opacity = 1, rx = 0, rz = 0) => [
@@ -95,6 +96,7 @@ const pose = (x = 0, y = 0, z = 0, scale = 1, opacity = 1, rx = 0, rz = 0) => [
   scale,
   opacity
 ]
+
 const initialLayers = {
   thinker: pose(-30, 30, -120),
   notebook: pose(110, 155, 20, 0.65, 0, 28, -12),
@@ -250,6 +252,7 @@ const stops = authoredStops.map((stop) => {
   inheritedLayers = { ...inheritedLayers, ...stop.layers }
   inheritedCamera = stop.camera || inheritedCamera
   inheritedEffects = { ...inheritedEffects, ...stop.effects }
+
   return {
     at: stop.at,
     layers: inheritedLayers,
@@ -258,9 +261,12 @@ const stops = authoredStops.map((stop) => {
   }
 })
 export const storyLayerIds = Object.freeze(Object.keys(initialLayers))
+
 export const clampProgress = (value) =>
   Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0
+
 const mix = (a, b, t) => a.map((value, index) => value + (b[index] - value) * t)
+
 export function getStoryFrame(chapter, value, reducedMotion = false) {
   const index = Number.isFinite(chapter)
     ? Math.max(0, Math.min(5, Math.floor(chapter)))
@@ -268,12 +274,15 @@ export function getStoryFrame(chapter, value, reducedMotion = false) {
   const progress = reducedMotion ? 1 : clampProgress(value)
   const time = index + progress
   let segment = 0
+
   while (segment < stops.length - 2 && stops[segment + 1].at <= time) {
     segment++
   }
+
   const a = stops[segment]
   const b = stops[segment + 1]
   const t = clampProgress((time - a.at) / (b.at - a.at))
+
   return {
     chapter: index,
     progress,
@@ -290,48 +299,60 @@ export function getStoryFrame(chapter, value, reducedMotion = false) {
     )
   }
 }
+
 export function layerTransform([x, y, z, rx, ry, rz, scale]) {
   return `translate3d(${x.toFixed(3)}px, ${y.toFixed(3)}px, ${z.toFixed(3)}px) rotateX(${rx.toFixed(3)}deg) rotateY(${ry.toFixed(3)}deg) rotateZ(${rz.toFixed(3)}deg) scale(${scale.toFixed(5)}) translate(-50%, -50%)`
 }
+
 export function cameraTransform([x, y, z, rx, ry, rz]) {
   return `translate3d(${x}px, ${y}px, ${z}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`
 }
+
 export function createScrollDriver({ requestFrame, cancelFrame, render }) {
   let lastChapter = -1
   let lastProgress = -1
   let queued = null
   let pending = null
   let disposed = false
+
   const tick = () => {
     pending = null
     if (disposed || !queued) {
       return
     }
+
     const [chapter, progress] = queued
+
     queued = null
     render(getStoryFrame(chapter, progress))
     lastChapter = chapter
     lastProgress = progress
   }
+
   return {
     update(chapter, value) {
       if (disposed) {
         return
       }
+
       const p = clampProgress(value)
+
       if (lastChapter === chapter && lastProgress === p && !queued) {
         return
       }
+
       queued = [chapter, p]
       if (pending === null) {
         pending = requestFrame(tick)
       }
     },
+
     dispose() {
       disposed = true
       if (pending !== null) {
         cancelFrame(pending)
       }
+
       queued = null
     }
   }

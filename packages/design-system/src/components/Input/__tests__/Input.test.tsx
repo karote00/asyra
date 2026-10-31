@@ -5,6 +5,7 @@ afterEach(cleanup)
 describe('Input step controls', () => {
   it('steps from the current draft and commits once per click', () => {
     const commit = vi.fn()
+
     render(
       <Input
         aria-label="Size"
@@ -33,6 +34,7 @@ describe('Input step controls', () => {
         onChange={vi.fn()}
       />
     )
+
     expect(
       (
         screen.getByRole('button', {

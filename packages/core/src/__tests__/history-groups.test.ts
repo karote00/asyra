@@ -21,6 +21,7 @@ const create = (factory: Factory) =>
     systemContext: {} as never,
     render: {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1
     } as never
   })
@@ -37,6 +38,7 @@ describe('Core history group facade', () => {
     const factory = new Factory()
     const core = create(factory)
     const other = create(new Factory())
+
     expect(core.isTransactionBoundaryIdle()).toBe(true)
     factory.startTransaction()
     expect(core.isTransactionBoundaryIdle()).toBe(false)
@@ -44,6 +46,7 @@ describe('Core history group facade', () => {
     factory.endTransaction()
     expect(core.isTransactionBoundaryIdle()).toBe(true)
     const group = core.startHistoryGroup()
+
     expect(core.isTransactionBoundaryIdle()).toBe(true)
     core.updateHistoryGroup(group, () =>
       expect(core.isTransactionBoundaryIdle()).toBe(false)
@@ -57,11 +60,14 @@ describe('Core history group facade', () => {
     const core = create(factory)
     const other = create(new Factory())
     const workspaceId = core.getCurrentWorkspaceId()
+
     if (!workspaceId) {
       throw new Error('Missing workspace')
     }
+
     const originalName = core.getElementData(workspaceId)?.name
     const group = core.startHistoryGroup()
+
     core.updateHistoryGroup(group, () =>
       core.updateElementData(workspaceId, { name: 'First' })
     )
@@ -86,15 +92,19 @@ describe('Core history group facade', () => {
     const factory = new Factory()
     const core = create(factory)
     const id = core.getCurrentWorkspaceId()
+
     if (!id) {
       throw new Error('Missing workspace')
     }
+
     const original = core.getElementData(id)?.name
+
     runWithTransactionOwner(factory.getTransactionOwner(), () =>
       runTransaction(() => core.updateElementData(id, { name: 'User' }))
     )
     expect(core.getUndoHistoryDepth()).toBe(1)
     const group = core.startHistoryGroup()
+
     core.updateHistoryGroup(group, () =>
       core.updateElementData(id, { name: 'Producer' })
     )
@@ -117,10 +127,13 @@ describe('Core history group facade', () => {
       const factory = new Factory()
       const core = create(factory)
       const id = core.getCurrentWorkspaceId()
+
       if (!id) {
         throw new Error('Missing workspace')
       }
+
       const original = core.getElementData(id)?.name
+
       runWithTransactionOwner(factory.getTransactionOwner(), () =>
         runTransaction(() => {
           core.updateElementData(id, { name: 'First' })
@@ -128,6 +141,7 @@ describe('Core history group facade', () => {
         })
       )
       const group = core.startHistoryGroup()
+
       core.updateHistoryGroup(group, () =>
         core.updateElementData(id, { name: 'Producer' })
       )
@@ -136,16 +150,21 @@ describe('Core history group facade', () => {
         (event, mode) => {
           const change = (event as UpdateElementDataEvent).payload.changes[0]
           const fails = mode === 'undo' && change.after === original
+
           if (fails && failurePoint === 'before') {
             throw new Error('Replay failure')
           }
+
           const applied = applyEventToSynchronousOwners(event)
+
           if (fails) {
             throw new Error('Replay failure')
           }
+
           return applied
         }
       )
+
       try {
         expect(() => factory.undo()).toThrow()
         expect(core.getElementData(id)?.name).toBe('Producer')
@@ -161,6 +180,7 @@ describe('Core history group facade', () => {
     const factory = new Factory()
     const core = create(factory)
     const group = core.startHistoryGroup()
+
     factory.resetRuntime()
     expect(() => core.updateHistoryGroup(group, () => undefined)).toThrow(
       /retired/

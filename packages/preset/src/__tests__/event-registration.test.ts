@@ -10,6 +10,7 @@ describe('Preset Event Registration', () => {
     const dispose = registerEvents({ registerEvent, unregisterEvent } as never)
 
     const registeredEvents = registerEvent.mock.calls.map(([event]) => event)
+
     expect(registeredEvents).toEqual(Object.values(PresetEventDefinitions))
 
     dispose()

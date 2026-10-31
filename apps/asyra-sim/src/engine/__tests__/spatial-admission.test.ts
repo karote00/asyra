@@ -18,13 +18,17 @@ const input = (): SpatialDescriptor => ({
   wireframe: false,
   selectable: true
 })
+
 it('admits isolated immutable geometry once and reuses it through pose and appearance updates', () => {
   const source = input()
   const accepted = readSpatialDescriptor(source)
+
   if (accepted.kind !== 'mesh' || accepted.shape.kind !== 'triangles') {
     throw new Error('Expected triangles')
   }
+
   const before = structuredClone(accepted)
+
   expect(Object.isFrozen(accepted)).toBe(true)
   expect(Object.isFrozen(accepted.shape.positions)).toBe(true)
   for (let i = 0; i < 60; i++) {
@@ -33,18 +37,22 @@ it('admits isolated immutable geometry once and reuses it through pose and appea
       position: [i, 0, 0],
       color: i
     })
+
     expect(next.kind === 'mesh' && next.shape).toBe(accepted.shape)
     expect(next.position).toEqual([i, 0, 0])
   }
+
   expect(readSpatialDescriptor(accepted)).toBe(accepted)
   expect(accepted).toEqual(before)
   if (source.kind === 'mesh' && source.shape.kind === 'triangles') {
     ;(source.shape.positions as number[])[0] = 999
   }
+
   expect(accepted.shape.positions[0]).toBe(0)
 })
 it('does not trust caller freezing and still rejects invalid geometry and changed poses', () => {
   const source = input()
+
   expect(() =>
     readSpatialDescriptor(
       Object.freeze({
@@ -58,6 +66,7 @@ it('does not trust caller freezing and still rejects invalid geometry and change
     )
   ).toThrow()
   const accepted = readSpatialDescriptor(source)
+
   expect(() =>
     readSpatialDescriptor({ ...accepted, position: [NaN, 0, 0] })
   ).toThrow()
@@ -69,6 +78,7 @@ it('validates the detached values it will retain rather than earlier accessor re
   const shape = {
     kind: 'triangles',
     indices: [0, 1, 2],
+
     get positions() {
       return ++reads === 1
         ? [0, 0, 0, 1, 0, 0, 0, 1, 0]
@@ -76,6 +86,7 @@ it('validates the detached values it will retain rather than earlier accessor re
     }
   }
   const accepted = readSpatialDescriptor({ ...input(), shape })
+
   expect(
     accepted.kind === 'mesh' &&
       accepted.shape.kind === 'triangles' &&
@@ -87,9 +98,11 @@ it('validates the detached values it will retain rather than earlier accessor re
 it('keeps the rigid-part whitelist while sharing neutral admission receipts', async () => {
   const neutral = await import('@asyra/preset/spatial-contract')
   const source = input()
+
   if (source.kind !== 'mesh') {
     throw new Error('Expected mesh')
   }
+
   const accepted = readSpatialDescriptor({
     ...source,
     shape: { ...source.shape, colors: [NaN], uvs: [NaN] },
@@ -99,9 +112,11 @@ it('keeps the rigid-part whitelist while sharing neutral admission receipts', as
     roughness: NaN,
     metalness: NaN
   })
+
   if (accepted.kind !== 'mesh') {
     throw new Error('Expected mesh')
   }
+
   expect(accepted).not.toHaveProperty('instances')
   expect(accepted).not.toHaveProperty('surface')
   expect(accepted.shape).not.toHaveProperty('colors')

@@ -13,6 +13,7 @@ describe('Selection runtime reset', () => {
   it('retires channels and state without producing selection changes', () => {
     const manager = new SelectionManager(),
       selection = channel()
+
     manager.register('custom', selection)
     selection.select(['old'])
     manager.resetRuntime()
@@ -22,6 +23,7 @@ describe('Selection runtime reset', () => {
     expect(selection.changes).toEqual([])
     manager.resetRuntime()
     const next = channel()
+
     manager.register('custom', next)
     selection.select(['late-old'])
     expect([...next.getSelectedIds()]).toEqual([])
@@ -32,11 +34,13 @@ describe('Selection runtime reset', () => {
     const manager = new SelectionManager(),
       first = channel(),
       second = channel()
+
     manager.register('first', first)
     manager.register('second', second)
     first.dispose = () => {
       throw new Error('selection cleanup failed')
     }
+
     second.dispose = vi.fn()
     expect(() => manager.resetRuntime()).toThrow('selection cleanup failed')
     expect(second.dispose).toHaveBeenCalledOnce()
@@ -48,6 +52,7 @@ describe('Selection runtime reset', () => {
     const manager = new SelectionManager(),
       other = new SelectionManager(),
       retained = channel()
+
     other.register('custom', retained)
     retained.select(['retained'])
     manager.resetRuntime()

@@ -56,17 +56,20 @@ const canonicalElementEntriesFromDelivery = (
 ): readonly AddRemoveElementEntry[] | null => {
   const scalarEvent =
     direction === 'add' ? EventTypes.ADD_ELEMENT : EventTypes.REMOVE_ELEMENT
+
   if (delivery.eventName === scalarEvent) {
     const { data, parentId, index } = delivery.payload as {
       readonly data: ElementRawData
       readonly parentId: string
       readonly index: number
     }
+
     return [{ data, parentId, index }]
   }
 
   const batchEvent =
     direction === 'add' ? EventTypes.ADD_ELEMENTS : EventTypes.REMOVE_ELEMENTS
+
   if (delivery.eventName === batchEvent) {
     return (
       delivery.payload as {
@@ -74,6 +77,7 @@ const canonicalElementEntriesFromDelivery = (
       }
     ).entries
   }
+
   return null
 }
 
@@ -100,12 +104,14 @@ const sceneDeliveryFamily = (delivery: SharedPublicationDelivery): string => {
   ) {
     return EventTypes.ADD_ELEMENTS
   }
+
   if (
     delivery.eventName === EventTypes.REMOVE_ELEMENT ||
     delivery.eventName === EventTypes.REMOVE_ELEMENTS
   ) {
     return EventTypes.REMOVE_ELEMENTS
   }
+
   return delivery.eventName
 }
 
@@ -115,19 +121,24 @@ const splitSceneOperationRuns = (
   if (batch.channel !== SharedDataChannelNames.SCENE_TREE) {
     return [batch]
   }
+
   const runs: SharedPublicationDelivery[][] = []
   let previousFamily: string | undefined
+
   for (const delivery of batch.deliveries) {
     const family = sceneDeliveryFamily(delivery)
+
     if (
       family !== previousFamily ||
       delivery.eventName === EventTypes.CHANGE_SUBTREE
     ) {
       runs.push([])
     }
+
     runs[runs.length - 1].push(delivery)
     previousFamily = family
   }
+
   return runs.map((deliveries) =>
     Object.freeze({ ...batch, deliveries: Object.freeze(deliveries) })
   )
@@ -147,6 +158,7 @@ export const organizeRemotePublication = (
     SharedPublicationSlice,
     readonly SharedPublicationBatch[]
   >()
+
   if (slices.length === 0) {
     throw new Error(
       '[collaboration] publication delivery order does not match batch evidence'
@@ -155,6 +167,7 @@ export const organizeRemotePublication = (
 
   for (const slice of slices) {
     const sliceBatches = slice.batches.flatMap(splitSceneOperationRuns)
+
     batchesBySlice.set(slice, sliceBatches)
     if (sliceBatches.length === 0) {
       throw new Error(
@@ -164,11 +177,13 @@ export const organizeRemotePublication = (
 
     for (const batch of sliceBatches) {
       const batchDeliveries = batch.deliveries
+
       if (batchDeliveries.length === 0) {
         throw new Error(
           '[collaboration] publication contains invalid direct batch evidence'
         )
       }
+
       sliceByBatch.set(batch, slice)
       batches.push(batch)
 
@@ -186,6 +201,7 @@ export const organizeRemotePublication = (
       '[collaboration] publication delivery order does not match batch evidence'
     )
   }
+
   return Object.freeze({
     sourceSlices: slices,
     batches: Object.freeze(batches),
@@ -200,14 +216,18 @@ const orderTrustedElementEntries = (
   batch: SharedPublicationBatch
 ): readonly AddRemoveElementEntry[] => {
   const orderedIds = batch.deliveries.flatMap(({ orderedIds: ids }) => ids)
+
   if (orderedIds.length === 0) {
     return entries
   }
+
   const entriesById = new Map(entries.map((entry) => [entry.data.id, entry]))
   const orderedEntries = orderedIds.flatMap((orderedId) => {
     const entry = entriesById.get(orderedId)
+
     return entry ? [entry] : []
   })
+
   return orderedEntries.length > 0 ? orderedEntries : entries
 }
 
@@ -217,12 +237,15 @@ const classifyPropertyComponentBatch = (
   if (batch.channel !== SharedDataChannelNames.PROPS) {
     return null
   }
+
   const changes: CanonicalChange[] = []
   let updates = new Map<string, Record<string, unknown>>()
+
   const flush = (): void => {
     if (updates.size === 0) {
       return
     }
+
     changes.push({
       kind: 'property-components',
       updates: [...updates].map(([propertyId, values]) => ({
@@ -232,8 +255,10 @@ const classifyPropertyComponentBatch = (
     })
     updates = new Map()
   }
+
   for (const delivery of batch.deliveries) {
     const addition = delivery.eventName === EventTypes.ADD_PROPERTY
+
     if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {
       flush()
       changes.push(
@@ -252,17 +277,20 @@ const classifyPropertyComponentBatch = (
       )
       continue
     }
+
     if (delivery.eventName !== EventTypes.UPDATE_PROPERTY) {
       throw new Error(
         '[collaboration] invalid property-component batch evidence'
       )
     }
+
     const payload = delivery.payload as {
       id: string
       key: string
       layer?: PropertyLayerEdit['layer']
       after: unknown
     }
+
     if (payload.layer !== undefined) {
       flush()
       changes.push({
@@ -284,11 +312,14 @@ const classifyPropertyComponentBatch = (
       })
     } else {
       const values = updates.get(payload.id) ?? {}
+
       values[payload.key] = payload.after
       updates.set(payload.id, values)
     }
   }
+
   flush()
+
   return changes
 }
 
@@ -302,9 +333,11 @@ const classifyElementDataBatch = (
   ) {
     return null
   }
+
   if (batch.channel !== SharedDataChannelNames.SCENE_TREE) {
     throw new Error('[collaboration] invalid element-data batch evidence')
   }
+
   return Object.freeze(
     batch.deliveries.map(({ payload }) => payload as UpdateElementDataChange)
   )
@@ -329,9 +362,11 @@ const classifyHierarchyMoveBatch = (
   ) {
     return null
   }
+
   if (batch.channel !== SharedDataChannelNames.SCENE_TREE) {
     throw new Error('[collaboration] invalid hierarchy-move batch evidence')
   }
+
   return Object.freeze(batch.deliveries.map(hierarchyMoveFromDelivery))
 }
 
@@ -344,6 +379,7 @@ const classifySubtreeRemovalBatch = (
 }> | null => {
   const sceneBatch = batches[startBatchIndex]
   const sceneDelivery = sceneBatch?.deliveries[0]
+
   if (
     !sceneBatch ||
     sceneBatch.channel !== SharedDataChannelNames.SCENE_TREE ||
@@ -353,10 +389,13 @@ const classifySubtreeRemovalBatch = (
   ) {
     return null
   }
+
   if (sceneBatch.deliveries.length !== 1) {
     throw new Error('[collaboration] invalid subtree removal Scene evidence')
   }
+
   const payload = sceneDelivery.payload as SubtreeChange
+
   return Object.freeze({
     change: Object.freeze({
       action: payload.action,
@@ -380,6 +419,7 @@ const classifyCanonicalCreationBatch = (
   const { batches, sliceByBatch } = organization
   const propertyBatch = batches[startBatchIndex]
   const sceneBatch = batches[startBatchIndex + 1]
+
   if (
     !propertyBatch ||
     !sceneBatch ||
@@ -391,9 +431,11 @@ const classifyCanonicalCreationBatch = (
   }
 
   const propertyDeliveries = propertyBatch.deliveries
+
   if (!isAddPropertyDelivery(propertyDeliveries[0])) {
     return null
   }
+
   const properties = propertyDeliveries.flatMap(
     ({ payload }) =>
       (
@@ -412,26 +454,33 @@ const classifyCanonicalCreationBatch = (
 
   for (const delivery of sceneBatch.deliveries) {
     const entries = canonicalElementEntriesFromDelivery(delivery, 'add')
+
     if (entries) {
       if (hierarchyMoveObserved) {
         return null
       }
+
       sourceEntries.push(...entries)
       continue
     }
+
     if (delivery.eventName !== EventTypes.MOVE_ELEMENTS) {
       return null
     }
+
     hierarchyMoveObserved = true
     hierarchyMoves.push(hierarchyMoveFromDelivery(delivery))
   }
+
   const entries = orderTrustedElementEntries(sourceEntries, sceneBatch)
+
   for (const entry of entries) {
     const elementData = entry.data as unknown as {
       readonly props: Readonly<Record<string, string>>
     }
 
     const propertyOwnerIds = Object.values(elementData.props)
+
     observedPropertyOwnerCount += propertyOwnerIds.length
   }
 
@@ -446,9 +495,11 @@ const classifyCanonicalCreationBatch = (
       properties: Object.freeze(properties)
     })
   ]
+
   if (hierarchyMoves.length > 0) {
     changes.push(...hierarchyMoves)
   }
+
   return Object.freeze({
     changes: Object.freeze(changes),
     consumedBatchCount: 2
@@ -464,6 +515,7 @@ const classifyCanonicalRemovalBatch = (
 }> | null => {
   const { batches } = organization
   const sceneBatch = batches[startBatchIndex]
+
   if (!sceneBatch || sceneBatch.channel !== SharedDataChannelNames.SCENE_TREE) {
     return null
   }
@@ -475,18 +527,23 @@ const classifyCanonicalRemovalBatch = (
     { kind: 'hierarchy-moves' }
   >[] = []
   let removalObserved = false
+
   for (const delivery of sceneBatch.deliveries) {
     const entries = canonicalElementEntriesFromDelivery(delivery, 'remove')
+
     if (entries) {
       removalObserved = true
       sourceEntries.push(...entries)
       continue
     }
+
     if (removalObserved || delivery.eventName !== EventTypes.MOVE_ELEMENTS) {
       return null
     }
+
     hierarchyMoves.push(hierarchyMoveFromDelivery(delivery))
   }
+
   for (const entry of orderTrustedElementEntries(sourceEntries, sceneBatch)) {
     removals.push(
       Object.freeze({
@@ -502,15 +559,18 @@ const classifyCanonicalRemovalBatch = (
   }
 
   const changes: CanonicalChange[] = []
+
   if (hierarchyMoves.length > 0) {
     changes.push(...hierarchyMoves)
   }
+
   changes.push(
     Object.freeze({
       kind: 'element-removal',
       removals: Object.freeze(removals)
     })
   )
+
   return Object.freeze({
     changes: Object.freeze(changes),
     consumedBatchCount: 1
@@ -522,6 +582,7 @@ const appendRemoteCanonicalChange = (
   change: CanonicalChange
 ): void => {
   const previous = changes.at(-1)
+
   if (
     previous?.kind === 'element-removal' &&
     change.kind === 'element-removal' &&
@@ -536,8 +597,10 @@ const appendRemoteCanonicalChange = (
       kind: 'element-removal',
       removals: Object.freeze([...previous.removals, ...change.removals])
     })
+
     return
   }
+
   changes.push(change)
 }
 
@@ -550,8 +613,10 @@ const classifySubtreeRestoreBatch = (
   const sourceSlice = first && sliceByBatch.get(first)
   const components: PropertyComponentRawData[] = []
   let index = startBatchIndex
+
   while (batches[index]?.channel === SharedDataChannelNames.PROPS) {
     const batch = batches[index]
+
     if (
       !batch ||
       sliceByBatch.get(batch) !== sourceSlice ||
@@ -559,16 +624,21 @@ const classifySubtreeRestoreBatch = (
     ) {
       return null
     }
+
     for (const delivery of batch.deliveries) {
       if (!isAddPropertyDelivery(delivery)) {
         return null
       }
+
       components.push(...delivery.payload.data)
     }
+
     index += 1
   }
+
   const scene = batches[index]
   const delivery = scene?.deliveries[0]
+
   if (
     !scene ||
     scene.channel !== SharedDataChannelNames.SCENE_TREE ||
@@ -580,7 +650,9 @@ const classifySubtreeRestoreBatch = (
   ) {
     return null
   }
+
   const payload = delivery.payload as SubtreeChange
+
   return Object.freeze({
     change: Object.freeze({
       kind: 'subtree-restore',
@@ -602,20 +674,26 @@ const createRemoteApplySteps = (
   const changes: CanonicalChange[] = []
   const { batches } = organization
   let batchIndex = 0
+
   while (batchIndex < batches.length) {
     const restore = classifySubtreeRestoreBatch(organization, batchIndex)
+
     if (restore) {
       changes.push(restore.change)
       batchIndex += restore.consumedBatchCount
       continue
     }
+
     const creation = classifyCanonicalCreationBatch(organization, batchIndex)
+
     if (creation) {
       changes.push(...creation.changes)
       batchIndex += creation.consumedBatchCount
       continue
     }
+
     const removal = classifyCanonicalRemovalBatch(organization, batchIndex)
+
     if (removal) {
       removal.changes.forEach((change) =>
         appendRemoteCanonicalChange(changes, change)
@@ -623,13 +701,16 @@ const createRemoteApplySteps = (
       batchIndex += removal.consumedBatchCount
       continue
     }
+
     const batch = batches[batchIndex] as SharedPublicationBatch
     const propertyComponents = classifyPropertyComponentBatch(batch)
+
     if (propertyComponents) {
       changes.push(...propertyComponents)
       batchIndex += 1
       continue
     }
+
     if (
       batch.channel === SharedDataChannelNames.SCENE_TREE &&
       batch.deliveries.every(
@@ -642,13 +723,16 @@ const createRemoteApplySteps = (
         changes: batch.deliveries.map(({ payload }) => {
           const { action, eventName, id, changes } =
             payload as UpdateElementPropertyBindingsChange
+
           return { action, eventName, id, changes }
         })
       })
       batchIndex += 1
       continue
     }
+
     const elementDataChanges = classifyElementDataBatch(batch)
+
     if (elementDataChanges) {
       changes.push(
         Object.freeze({
@@ -659,13 +743,17 @@ const createRemoteApplySteps = (
       batchIndex += 1
       continue
     }
+
     const hierarchyMoves = classifyHierarchyMoveBatch(batch)
+
     if (hierarchyMoves) {
       changes.push(...hierarchyMoves)
       batchIndex += 1
       continue
     }
+
     const subtreeRemoval = classifySubtreeRemovalBatch(batches, batchIndex)
+
     if (subtreeRemoval) {
       changes.push(
         Object.freeze({
@@ -676,10 +764,12 @@ const createRemoteApplySteps = (
       batchIndex += subtreeRemoval.consumedBatchCount
       continue
     }
+
     throw new Error(
       `[collaboration] unsupported canonical publication batch evidence at batch ${batchIndex} ${batch.channel}/${batch.deliveries.map(({ eventName }) => eventName).join(',')}`
     )
   }
+
   return Object.freeze(changes)
 }
 
@@ -697,7 +787,9 @@ export const organizeSourceSlice = (
     SharedPublicationSlice,
     readonly SharedPublicationBatch[]
   >([[slice, batches]])
+
   batches.forEach((batch) => sliceByBatch.set(batch, slice))
+
   return Object.freeze({
     sourceSlices: Object.freeze([slice]),
     batches: Object.freeze(batches),
@@ -717,6 +809,7 @@ export const decodeDocumentPublication = (
   publication: SharedPublication
 ): readonly CanonicalChange[] => {
   const organization = organizeRemotePublication(publication)
+
   return Object.freeze(
     organization.sourceSlices.flatMap((slice) =>
       canonicalChangesFromOrganizedPublication(
@@ -736,9 +829,11 @@ export interface ApplyDocumentSessionBootstrapTailOptions {
 const decodeBase64PublicationFrame = (encoded: string): Uint8Array => {
   const binary = globalThis.atob(encoded)
   const bytes = new Uint8Array(binary.length)
+
   for (let index = 0; index < binary.length; index += 1) {
     bytes[index] = binary.charCodeAt(index)
   }
+
   return bytes
 }
 
@@ -747,6 +842,7 @@ export const applyDocumentSessionBootstrapTail = async ({
   applyPublication
 }: ApplyDocumentSessionBootstrapTailOptions): Promise<number> => {
   const { durableSequence, headSequence, pendingTail } = bootstrap
+
   if (
     !Number.isSafeInteger(durableSequence) ||
     durableSequence < 0 ||
@@ -769,6 +865,7 @@ export const applyDocumentSessionBootstrapTail = async ({
       const decoded = decodePublicationFramePublication(
         encodedPublicationFrames.map(decodeBase64PublicationFrame)
       ).publication
+
       if (
         sequence !== durableSequence + index + 1 ||
         !isNonBlankString(fromActorId) ||
@@ -779,7 +876,9 @@ export const applyDocumentSessionBootstrapTail = async ({
           '[collaboration] document bootstrap tail is gapped or duplicated'
         )
       }
+
       publicationIds.add(publicationId)
+
       return decoded
     }
   )
@@ -787,5 +886,6 @@ export const applyDocumentSessionBootstrapTail = async ({
   for (const publication of decodedPublications) {
     await applyPublication(publication)
   }
+
   return headSequence
 }

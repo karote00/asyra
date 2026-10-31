@@ -41,6 +41,7 @@ describe('property registration lifecycle', () => {
 
   it('rejects unregister before partial cleanup when an active instance uses the type', () => {
     const manager = new PropsManager()
+
     registerDefault()
     manager.addToMap(new CustomComponent({ id: 'active-property', type: TYPE }))
 
@@ -57,6 +58,7 @@ describe('property registration lifecycle', () => {
 
   it('treats deleted instances retained for replay as active usage', () => {
     const manager = new PropsManager()
+
     registerDefault()
     manager.addToDeletedMap(
       new CustomComponent({ id: 'deleted-property', type: TYPE })
@@ -75,6 +77,7 @@ describe('property registration lifecycle', () => {
 
   it('returns a structured missing result without mutating other registrations', () => {
     const manager = new PropsManager()
+
     registerDefault()
 
     expect(
@@ -92,6 +95,7 @@ describe('property registration lifecycle', () => {
 
   it('removes schema and runtime constructor together when no instance uses the type', () => {
     const manager = new PropsManager()
+
     registerDefault()
 
     expect(unregisterPropertyRegistration(TYPE, manager)).toEqual({
@@ -106,6 +110,7 @@ describe('property registration lifecycle', () => {
 
   it('removes only the requested schema registration for target-owned cleanup', () => {
     const manager = new PropsManager()
+
     registerDefault()
 
     expect(unregisterPropertyRegistration(TYPE, manager, 'schema')).toEqual({
@@ -120,6 +125,7 @@ describe('property registration lifecycle', () => {
 
   it('removes only the requested runtime registration for target-owned cleanup', () => {
     const manager = new PropsManager()
+
     registerDefault()
 
     expect(unregisterPropertyRegistration(TYPE, manager, 'runtime')).toEqual({
@@ -136,6 +142,7 @@ describe('property registration lifecycle', () => {
     'guards %s cleanup before changing either registry while the type is in use',
     (scope) => {
       const manager = new PropsManager()
+
       registerDefault()
       manager.addToMap(
         new CustomComponent({ id: `${scope}-active-property`, type: TYPE })
@@ -158,6 +165,7 @@ describe('property registration lifecycle', () => {
   it('allows a clean custom redefinition after unregister', () => {
     class RedefinedComponent extends CustomComponent {}
     const manager = new PropsManager()
+
     registerDefault()
 
     expect(unregisterPropertyRegistration(TYPE, manager).ok).toBe(true)

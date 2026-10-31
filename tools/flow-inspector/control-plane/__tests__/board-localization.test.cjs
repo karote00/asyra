@@ -11,6 +11,7 @@ const { startServer } = require('../server.cjs')
 function assertAppFailures(fault) {
   assert.equal(fault.result.code, 1, fault.result.output)
   const failures = fault.record.cases.filter((item) => item.status === 'failed')
+
   assert.equal(failures.length, 2, fault.result.output)
   assert.equal(
     fault.record.cases.filter((item) => item.status === 'passed').length,
@@ -26,10 +27,13 @@ function assertAppFailures(fault) {
 
 async function openBoard(t, fixture) {
   const temporary = path.join(fixture.directory, 'browser')
+
   fs.mkdirSync(temporary)
   const previous = process.env.TMPDIR
+
   process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
   let browser, server
+
   t.after(async () => {
     await browser?.close()
     await server?.close()
@@ -57,6 +61,7 @@ async function openBoard(t, fixture) {
       'Chrome socket path exceeds the Linux limit'
     )
   }
+
   // The proof store stays within its owning repository.
   browser = await chromium.launch({
     channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
@@ -65,6 +70,7 @@ async function openBoard(t, fixture) {
   const page = await browser.newPage({
     viewport: { width: 1800, height: 1200 }
   })
+
   return { page, server }
 }
 
@@ -74,13 +80,17 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutate('app')
     const fault = await fixture.run('app')
+
     assertAppFailures(fault)
     const errors = []
+
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto(server.origin + '/history-shortcut')
     const frame = page
+
     await expect(frame.locator('#test-result-failures button')).toHaveCount(2)
     await frame.locator('#test-result-failures button').first().click()
     await expect(
@@ -92,6 +102,7 @@ test(
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
+
     await expect(frame.locator('#test-result-detail')).toContainText(
       machine.cases[0].failures[0]
     )
@@ -113,6 +124,7 @@ test(
     })
     fixture.restore()
     const recovered = await fixture.run('app')
+
     assert.equal(recovered.result.code, 0)
     await expect(frame.locator('#test-result-failures button')).toHaveCount(0, {
       timeout: 10000
@@ -132,11 +144,14 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutate('app')
     const fault = await fixture.run('app')
+
     assertAppFailures(fault)
     fixture.restore()
     const recovered = await fixture.run('app')
+
     assert.equal(recovered.result.code, 0, recovered.result.output)
     let delayed
     const received = new Promise((resolve) => {
@@ -146,6 +161,7 @@ test(
     const held = new Promise((resolve) => {
       release = resolve
     })
+
     await page.route(
       '**/api/test-results/' + fault.record.id,
       async (route) => {
@@ -157,12 +173,14 @@ test(
     t.after(() => release())
     await page.goto(server.origin + '/history-shortcut')
     const frame = page
+
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     await received
     const aborted = page.waitForEvent('requestfailed', (r) =>
       r.url().endsWith('/api/test-results/' + fault.record.id)
     )
+
     await frame.locator('#test-result-history').selectOption('')
     release()
     await aborted
@@ -175,10 +193,12 @@ test(
     await page.reload()
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     let requests = 0
+
     await page.route('**/api/test-results/' + fault.record.id, (route) => {
       if (++requests === 1) {
         return route.fulfill({ status: 503, body: 'temporary outage' })
       }
+
       return route.continue()
     })
     await frame.locator('#test-result-history').selectOption(fault.record.id)
@@ -195,23 +215,29 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutate('app')
     const fault = await fixture.run('app')
+
     assertAppFailures(fault)
     fixture.restore()
     const recovered = await fixture.run('app')
+
     assert.equal(recovered.result.code, 0, recovered.result.output)
     await page.goto(server.origin + '/transaction-atomicity')
     const frame = page
+
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     const crossTarget = frame
       .locator('#test-result-failures a')
       .filter({ hasText: 'Open Select and await history replay' })
       .first()
+
     await expect(crossTarget).toBeVisible()
     const href = await crossTarget.getAttribute('href')
     let reads = 0
+
     await page.route(
       '**/api/test-results/' + fault.record.id,
       async (route) => {
@@ -219,6 +245,7 @@ test(
         if (reads === 1) {
           return route.fulfill({ status: 503, body: 'temporary outage' })
         }
+
         return route.continue()
       }
     )
@@ -245,27 +272,33 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.addAssertionFailures()
     const fault = await fixture.run('app')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
     const failures = machine.cases.filter((item) => item.status === 'failed')
+
     assert.equal(failures.length, 2)
     await page.goto(server.origin + '/history-shortcut')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(2)
     for (const [index, item] of failures.entries()) {
       await buttons.nth(index).click()
       const errors = frame.locator('#test-result-detail .test-result-assertion')
+
       await expect(errors).toHaveCount(4)
       for (const [errorIndex, error] of item.failureDetails.entries()) {
         for (const key of ['message', 'stack', 'expected', 'actual', 'diff']) {
           if (!Object.hasOwn(error, key) || key === 'diff') {
             continue
           }
+
           // Compare textContent exactly; assertion whitespace is evidence.
           assert.equal(
             await errors
@@ -276,10 +309,12 @@ test(
           )
         }
       }
+
       const renderedDiff = await errors
         .first()
         .locator('[data-failure-field="diff"]')
         .textContent()
+
       assert.equal(renderedDiff.includes('\u001b'), false)
       assert.ok(renderedDiff.includes('-   ' + [9999, 8888][index]))
       assert.ok(renderedDiff.includes('+   57'))
@@ -287,6 +322,7 @@ test(
       await expect(errors.nth(3)).toContainText('Actual - empty string')
       await expect(errors.locator('img')).toHaveCount(0)
     }
+
     await page.setViewportSize({ width: 850, height: 1100 })
     await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
     await frame
@@ -313,13 +349,16 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.addHookAssertionFailure()
     const fault = await fixture.run('app')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.equal(fault.record.executionFailureDetails.length, 1)
     await page.goto(server.origin + '/history-shortcut')
     const frame = page
     const execution = frame.locator('#test-result-execution-details')
+
     await expect(execution).toContainText(fault.record.id)
     await expect(
       execution.locator('[data-failure-field="expected"]')
@@ -343,12 +382,15 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutateReplay('replay-order')
     const fault = await fixture.run('history')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
+
     assert.equal(failures.length, 8)
     assert.equal(
       failures.filter((item) => item.resolution === 'mapped').length,
@@ -357,6 +399,7 @@ test(
     await page.goto(server.origin + '/history-replay')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(8)
     await buttons.first().click()
     await expect(
@@ -364,10 +407,12 @@ test(
     ).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(3)
     const details = frame.locator('#test-result-detail')
+
     await expect(details).toContainText('packages/factory/src/data-transact.ts')
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
+
     assert.deepEqual(machine, fault.record)
     assert.equal(
       await details.locator('[data-failure-field="expected"]').textContent(),
@@ -392,6 +437,7 @@ test(
     })
     fixture.restore()
     const recovery = await fixture.run('history')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
@@ -409,6 +455,7 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     for (const scenario of [
       'omit-registered-tools',
       'misclassify-combined-tool',
@@ -416,7 +463,9 @@ test(
     ]) {
       fixture.mutateExecution(scenario)
     }
+
     const fault = await fixture.run('execution')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
@@ -434,6 +483,7 @@ test(
           .flatMap((scenario) => scenario.expectedFailedCaseIds)
       )
     ].sort()
+
     assert.deepEqual(
       failures
         .flatMap((item) => item.locations.map((location) => location.caseId))
@@ -443,9 +493,11 @@ test(
     await page.goto(server.origin + '/ai-execution-flow')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(3)
     const details = frame.locator('#test-result-detail')
+
     for (const [index, item] of failures.entries()) {
       await buttons.nth(index).click()
       await expect(
@@ -456,11 +508,14 @@ test(
       for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
       }
+
       await expect(details).toContainText(item.failures[0])
     }
+
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
+
     assert.deepEqual(machine, fault.record)
     await page.screenshot({
       path: path.join(fixture.directory, 'execution-desktop.png'),
@@ -475,6 +530,7 @@ test(
     })
     fixture.restore()
     const recovery = await fixture.run('execution')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
@@ -492,16 +548,20 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutateViewport()
     const fault = await fixture.run('viewport')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
+
     assert.equal(failures.length, 1)
     await page.goto(server.origin + '/render-engine-boundary')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
     await expect(
@@ -509,9 +569,11 @@ test(
     ).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const details = frame.locator('#test-result-detail')
+
     for (const file of failures[0].locations[0].implementationPaths) {
       await expect(details).toContainText(file)
     }
+
     await expect(details).toContainText(failures[0].failures[0])
     await expect(details).toContainText(
       'Contract: docs/ai/framework/plans/completed/render-engine-boundary-plan.md'
@@ -520,6 +582,7 @@ test(
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
+
     assert.deepEqual(machine, fault.record)
     for (const field of ['expected', 'actual']) {
       assert.equal(
@@ -529,6 +592,7 @@ test(
         failures[0].failureDetails[0][field]
       )
     }
+
     await page.screenshot({
       path: path.join(fixture.directory, 'viewport-desktop.png'),
       fullPage: true
@@ -542,6 +606,7 @@ test(
     })
     fixture.restore()
     const recovery = await fixture.run('viewport')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
@@ -559,6 +624,7 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     for (const scenario of [
       'allow-control-plane',
       'copy-registration-receipt',
@@ -567,7 +633,9 @@ test(
     ]) {
       fixture.mutateRecipe(scenario)
     }
+
     const fault = await fixture.run('recipe')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
@@ -586,6 +654,7 @@ test(
           .flatMap((scenario) => scenario.expectedFailedCaseIds)
       )
     ].sort()
+
     assert.deepEqual(
       failures
         .flatMap((item) => item.locations.map((location) => location.caseId))
@@ -595,9 +664,11 @@ test(
     await page.goto(server.origin + '/reusable-tool-composition')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(4)
     const details = frame.locator('#test-result-detail')
+
     for (const [index, item] of failures.entries()) {
       await buttons.nth(index).click()
       await expect(
@@ -608,15 +679,18 @@ test(
       for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
       }
+
       await expect(details).toContainText(item.failures[0])
       await expect(details).toContainText(item.locations[0].specPath)
       for (const ref of item.locations[0].specRefs) {
         await expect(details).toContainText(ref)
       }
     }
+
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
+
     assert.deepEqual(machine, fault.record)
     await page.screenshot({
       path: path.join(fixture.directory, 'recipe-desktop.png'),
@@ -631,6 +705,7 @@ test(
     })
     fixture.restore()
     const recovery = await fixture.run('recipe')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
@@ -648,25 +723,31 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutatePixi()
     fixture.mutateViewport()
     const engine = await fixture.run('pixi')
     const adapter = await fixture.run('viewport')
+
     for (const fault of [engine, adapter]) {
       assert.equal(fault.result.code, 1, fault.result.output)
     }
+
     await page.goto(server.origin + '/render-engine-boundary')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
     const details = frame.locator('#test-result-detail')
+
     await expect(buttons).toHaveCount(2)
     await expect(frame.locator('.observation-failed')).toHaveCount(2)
     for (const fault of [engine, adapter]) {
       const failed = fault.record.cases.filter(
         (item) => item.status === 'failed'
       )
+
       assert.equal(failed.length, 1)
       const item = failed[0]
+
       await buttons.filter({ hasText: item.testName }).click()
       await expect(
         frame.locator(
@@ -676,16 +757,20 @@ test(
       for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
       }
+
       await expect(details).toContainText(item.locations[0].specPath)
       for (const ref of item.locations[0].specRefs) {
         await expect(details).toContainText(ref)
       }
+
       await expect(details).toContainText(item.failures[0])
       const machine = await (
         await fetch(server.origin + '/api/test-results/' + fault.record.id)
       ).json()
+
       assert.deepEqual(machine, fault.record)
     }
+
     await buttons
       .filter({
         hasText: engine.record.cases.find((item) => item.status === 'failed')
@@ -705,6 +790,7 @@ test(
     })
     fixture.restorePixi()
     const partial = await fixture.run('pixi')
+
     assert.equal(partial.result.code, 0, partial.result.output)
     await expect(buttons).toHaveCount(1)
     await expect(
@@ -717,6 +803,7 @@ test(
     ).toHaveCount(1)
     fixture.restore()
     const recovery = await fixture.run('viewport')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
@@ -739,16 +826,20 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutateVector()
     const fault = await fixture.run('vector')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
+
     assert.equal(failures.length, 1)
     await page.goto(server.origin + '/render-delta-update')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
     await expect(
@@ -756,9 +847,11 @@ test(
     ).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const details = frame.locator('#test-result-detail')
+
     for (const file of failures[0].locations[0].implementationPaths) {
       await expect(details).toContainText(file)
     }
+
     await expect(details).toContainText(failures[0].failures[0])
     await expect(details).toContainText(
       'Contract: docs/ai/framework/packages/preset.md'
@@ -766,6 +859,7 @@ test(
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
+
     assert.deepEqual(machine, fault.record)
     for (const field of ['expected', 'actual']) {
       assert.equal(
@@ -775,6 +869,7 @@ test(
         failures[0].failureDetails[0][field]
       )
     }
+
     await page.screenshot({
       path: path.join(fixture.directory, 'vector-desktop.png'),
       fullPage: true
@@ -790,6 +885,7 @@ test(
       '--testNamePattern',
       'keeps radial gradients'
     ])
+
     assert.equal(sibling.result.code, 0, sibling.result.output)
     await expect(buttons).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
@@ -797,6 +893,7 @@ test(
     await expect(details).toContainText(failures[0].failures[0])
     fixture.restore()
     const recovery = await fixture.run('vector')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
@@ -817,23 +914,29 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutateVector()
     const material = await fixture.run('vector')
+
     assert.equal(material.result.code, 1, material.result.output)
     fixture.restore()
     fixture.mutateCoverage()
     const fault = await fixture.run('coverage')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
+
     assert.equal(failures.length, 3)
     await page.goto(server.origin + '/render-delta-update')
     const frame = page
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(4)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const details = frame.locator('#test-result-detail')
+
     for (const item of failures) {
       await frame
         .getByRole('button', { name: item.testName + ' - mapped', exact: true })
@@ -857,6 +960,7 @@ test(
         )
       }
     }
+
     assert.deepEqual(
       await (
         await fetch(server.origin + '/api/test-results/' + fault.record.id)
@@ -878,10 +982,12 @@ test(
       '--testNamePattern',
       'preserves declared nonzero coverage'
     ])
+
     assert.equal(partial.result.code, 0, partial.result.output)
     await expect(buttons).toHaveCount(4)
     fixture.restore()
     const coverage = await fixture.run('coverage')
+
     assert.equal(coverage.result.code, 0, coverage.result.output)
     await expect(buttons).toHaveCount(1)
     await expect(buttons.first()).toContainText(
@@ -889,6 +995,7 @@ test(
     )
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const complete = await fixture.run('vector')
+
     assert.equal(complete.result.code, 0, complete.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
@@ -927,6 +1034,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       const { playwrightFixture } = require('./playwright-results-fixture.cjs')
       const { observationDirectory } = require('../localization.cjs')
       const fixture = await playwrightFixture(t)
+
       if (secondCaseId) {
         fixture.faultOperation(
           caseId,
@@ -941,22 +1049,28 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       } else {
         fixture.fault()
       }
+
       const fault = await fixture.run([caseId])
+
       assert.equal(fault.result.code, 1, fault.result.output)
       assert.equal(fault.record.cases[0].resolution, 'mapped')
       assert.equal(fault.record.cases[0].locations[0].caseId, caseId)
       if (secondCaseId) {
         const independent = await fixture.run([secondCaseId])
+
         assert.equal(independent.result.code, 1, independent.result.output)
         assert.equal(
           independent.record.cases[0].locations[0].stepId,
           'edit-fills'
         )
       }
+
       const previous = process.env.TMPDIR
+
       process.env.TMPDIR =
         process.env.RUNNER_TEMP || path.join(fixture.repository, 'browser')
       let server, browser
+
       t.after(async () => {
         await browser?.close()
         await server?.close()
@@ -981,9 +1095,11 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
         viewport: { width: 1800, height: 1200 }
       })
       const errors = []
+
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto(server.origin + '/' + targetId)
       const frame = page
+
       await expect(frame.locator('#test-result-failures button')).toHaveCount(
         secondCaseId ? 2 : 1
       )
@@ -999,9 +1115,11 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       const machine = await (
         await fetch(server.origin + '/api/test-results/' + fault.record.id)
       ).json()
+
       assert.deepEqual(machine, fault.record)
       const { main } = require('../cli.cjs')
       const cliOutput = []
+
       assert.equal(
         await main(['--url', server.origin, 'test-results', fault.record.id], {
           write: (value) => cliOutput.push(value)
@@ -1027,6 +1145,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
         fullPage: true
       })
       const attempts = frame.locator('#test-result-detail details')
+
       await attempts.locator('summary').click()
       await attempts.scrollIntoViewIfNeeded()
       await expect(attempts.locator('pre')).toBeVisible()
@@ -1046,6 +1165,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       })
       fixture.restore()
       const recovery = await fixture.run([caseId])
+
       assert.equal(recovery.result.code, 0, recovery.result.output)
       if (secondCaseId) {
         await expect(frame.locator('#test-result-failures button')).toHaveCount(
@@ -1058,8 +1178,10 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
           frame.locator('[data-step-id="move-elements"].observation-failed')
         ).toHaveCount(0)
         const remaining = await fixture.run([secondCaseId])
+
         assert.equal(remaining.result.code, 0, remaining.result.output)
       }
+
       await expect(frame.locator('#test-result-failures button')).toHaveCount(0)
       await expect(frame.locator('.observation-failed')).toHaveCount(0)
       await frame.locator('#test-result-history').selectOption(fault.record.id)
@@ -1081,11 +1203,14 @@ test(
     const { main } = require('../cli.cjs')
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutate('factory')
     const fault = await fixture.run('factory')
     const failed = fault.record.cases.find((item) => item.status === 'failed')
+
     assert.ok(failed)
     const errors = []
+
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto(
       server.origin +
@@ -1094,10 +1219,12 @@ test(
     )
     const frame = page
     const panel = frame.locator('#node-interactions')
+
     await expect(panel).toBeVisible()
     const input = panel.getByLabel('Add investigation note')
     const note =
       '<img src=x onerror="window.noteExecuted=true"> Owner investigation'
+
     await input.fill(note)
     await page.waitForTimeout(1800)
     await expect(input).toHaveValue(note)
@@ -1106,6 +1233,7 @@ test(
     await expect(panel.locator('article')).toContainText(note)
     assert.equal(await panel.locator('img').count(), 0)
     const messages = []
+
     assert.equal(
       await main(
         ['--url', server.origin, 'node-context', fault.record.id, failed.id],
@@ -1114,6 +1242,7 @@ test(
       0
     )
     const context = JSON.parse(messages[0])
+
     assert.equal(context.comments[0].text, note)
     assert.equal(context.comments[0].actor, 'local-developer')
     fixture.restore()
@@ -1148,6 +1277,7 @@ test(
     const original = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()
+
     assert.equal(
       original.cases.find((item) => item.id === failed.id).status,
       'failed'
@@ -1167,13 +1297,16 @@ test(
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
     fixture.mutate('factory')
     const fault = await fixture.run('factory')
     const failed = fault.record.cases.find((item) => item.status === 'failed')
+
     await page.goto(
       server.origin + '/transaction-atomicity?observation=' + failed.id
     )
     const panel = page.locator('#node-interactions')
+
     await expect(panel).toContainText('Reference: available')
     let releaseOld,
       readCount = 0
@@ -1181,10 +1314,12 @@ test(
     const oldRead = new Promise((resolve) => {
       resolveOld = resolve
     })
+
     await page.route('**/api/node-context/**', async (route) => {
       readCount++
       if (readCount === 1) {
         const response = await route.fetch()
+
         releaseOld = () => route.fulfill({ response })
         resolveOld()
       } else if (readCount === 2) {
@@ -1196,6 +1331,7 @@ test(
     })
     await oldRead
     const note = 'Latest saved investigation note'
+
     await panel.getByLabel('Add investigation note').fill(note)
     await panel.getByRole('button', { name: 'Save note', exact: true }).click()
     await expect(panel.locator('article')).toContainText(note)
@@ -1211,8 +1347,10 @@ test(
 test('node status uses one border through selection, hover and keyboard focus', async (t) => {
   const fixture = localizationFixture()
   const { page, server } = await openBoard(t, fixture)
+
   await page.goto(server.origin + '/history-shortcut')
   const card = page.locator('.step-card').first()
+
   await expect(card).toBeVisible()
   for (const [status, color] of [
     ['observation-failed', 'rgb(248, 113, 113)'],
@@ -1232,12 +1370,14 @@ test('node status uses one border through selection, hover and keyboard focus', 
       await card.focus()
       const style = await card.evaluate((node) => {
         const style = getComputedStyle(node)
+
         return {
           color: style.borderTopColor,
           outline: style.outlineStyle,
           shadow: style.boxShadow
         }
       })
+
       assert.deepEqual(
         style,
         { color, outline: 'none', shadow: 'none' },
@@ -1245,6 +1385,7 @@ test('node status uses one border through selection, hover and keyboard focus', 
       )
     }
   }
+
   await card.evaluate((node) => {
     node.className = 'step-card is-selected'
   })
@@ -1268,11 +1409,13 @@ test('Board separates current evidence problems from historical warnings and lin
     'apps/asyra-design/undo-redo-flow-contracts.json'
   )
   const command = { cwd: '.', argv: ['yarn', 'test'] }
+
   const observe = (status, errors = []) => {
     const context = beginObservation(fixture.repository, {
       manifestPaths: [contract.manifestPath],
       command
     })
+
     return completeObservation(
       fixture.repository,
       context,
@@ -1294,9 +1437,12 @@ test('Board separates current evidence problems from historical warnings and lin
       { errors }
     )
   }
+
   const failed = observe('failed', ['old warning <script>'])
+
   await page.goto(server.origin + '/history-shortcut')
   const frame = page
+
   await expect(frame.locator('#test-result-current-problems')).toContainText(
     'old warning <script>'
   )
@@ -1304,6 +1450,7 @@ test('Board separates current evidence problems from historical warnings and lin
     name: 'Open investigation summary',
     exact: true
   })
+
   await expect(link).toHaveAttribute(
     'href',
     '/api/node-context/' + failed.id + '/0/summary'
@@ -1311,11 +1458,13 @@ test('Board separates current evidence problems from historical warnings and lin
   const summary = await (
     await fetch(server.origin + (await link.getAttribute('href')))
   ).json()
+
   assert.equal(summary.errors[0].message, 'original failure')
   assert.equal(summary.node.stepId, 'select-history-replay')
   await frame.locator('#test-result-failures button').click()
   await expect(frame.locator('.observation-failed')).toHaveCount(1)
   const recovered = observe('passed')
+
   await expect(frame.locator('#test-result-notice')).toContainText(
     '0 failed tests',
     { timeout: 10000 }
@@ -1326,6 +1475,7 @@ test('Board separates current evidence problems from historical warnings and lin
   await expect(frame.locator('#test-result-detail')).toBeEmpty()
   await expect(frame.locator('.observation-failed')).toHaveCount(0)
   const history = frame.locator('#test-result-historical-warnings')
+
   await expect(history).not.toHaveAttribute('open', '')
   await history.locator('summary').click()
   await expect(history).toContainText('old warning <script>')
@@ -1337,6 +1487,7 @@ test('Board separates current evidence problems from historical warnings and lin
       server.origin + '/api/node-context/' + recovered.id + '/0/summary'
     )
   ).json()
+
   assert.equal(recoverySummary.warnings.items[0].status, 'history')
   assert.equal(recoverySummary.warnings.items[0].supersededBy, recovered.id)
   assert.equal(await history.locator('script').count(), 0)
@@ -1361,6 +1512,7 @@ test('Board separates current evidence problems from historical warnings and lin
     'old warning <script>'
   )
   const corruptName = require('node:crypto').randomUUID() + '.json'
+
   fs.writeFileSync(
     path.join(
       fixture.repository,
@@ -1373,6 +1525,7 @@ test('Board separates current evidence problems from historical warnings and lin
     name: 'Current observation storage problems',
     exact: true
   })
+
   await expect(storageProblems).toContainText(corruptName, { timeout: 10000 })
   await expect(
     frame.locator('#test-result-current-problems')

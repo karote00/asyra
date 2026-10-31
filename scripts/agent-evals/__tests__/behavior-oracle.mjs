@@ -6,10 +6,12 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const [caseId, workspace] = process.argv.slice(2)
+
 const load = (file) => import(pathToFileURL(path.join(workspace, file)).href)
 
 if (caseId === 'bugfix-range') {
   const { contains } = await load('src/range.mjs')
+
   for (const [min, max] of [
     [1, 3],
     [-4, 2],
@@ -22,6 +24,7 @@ if (caseId === 'bugfix-range') {
 } else if (caseId === 'feature-ownership') {
   const { createItem } = await load('src/model.mjs')
   const { displayName } = await load('src/view.mjs')
+
   for (const name of [
     'Example',
     'User / Name',
@@ -29,6 +32,7 @@ if (caseId === 'bugfix-range') {
     '  spaced  '
   ]) {
     const item = Object.freeze(createItem(name))
+
     assert.equal(item.name, name)
     assert.equal(displayName(item), name)
     assert.equal(displayName(item, ''), name)
@@ -37,9 +41,11 @@ if (caseId === 'bugfix-range') {
   }
 } else if (caseId === 'docs-routing') {
   const doc = readFileSync(path.join(workspace, 'docs/delivery.md'), 'utf8')
+
   assert.ok(doc.trim().length > 0, 'Documentation must not be empty')
   // Wording, authority, and preserved semantics are reviewer-owned criteria.
 } else {
   throw new Error(`Unknown case: ${caseId}`)
 }
+
 console.log('Behavior oracle passed')

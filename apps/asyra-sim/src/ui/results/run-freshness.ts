@@ -48,10 +48,12 @@ export function isPresentedRunStale(
   reader?: ExperimentInputReader
 ): boolean {
   const { snapshot } = run
+
   if (draft.trajectoryInput || draft.exclusionsInput !== undefined) {
     if (!reader) {
       return true
     }
+
     try {
       draft = definitionToDraft(
         reader.resolve(

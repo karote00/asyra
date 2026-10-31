@@ -1,6 +1,36 @@
 # Code Readability Rule Migration
 
-Status: ACTIVE - inventory for rule 1; no rule adopted yet.
+Status: Rules 1-4 enforced; structural rules 5-8 remain deferred.
+
+## Current spacing task
+
+The user explicitly authorizes enabling and autofixing rules 2, 3 and 4
+together with `yarn lint --fix`, superseding the earlier manual-only restriction
+for these layout rules. Reuse the reviewed draft rule module and tests, reconcile
+current lint configuration, and preserve generated templates and frozen historical
+sources. Add ESLint Stylistic as previously authorized. Verify fixer convergence,
+comment ownership, overload adjacency, source token preservation and the complete
+local development validation inventory. Generated documentation follows its
+canonical generator; do not regenerate deferred app templates. Other structural
+rules remain deferred. Report completion only after the required gates pass.
+
+The user subsequently directed this whitespace-only task to stop the full local
+validation and push directly. This supersedes the complete local inventory gate
+for this delivery. Rules 2-4 are enabled together; 2,197 existing code files were
+compared against the pre-migration source. All tokens match except the intentional
+ESLint configuration change, and all comment sequences match. Generated templates
+and frozen historical sources are unchanged. The canonical documentation generator
+updated source fingerprints; the root README example was synchronized after its
+existing exact-source regression identified missing blank lines.
+
+Seventy-five readability/template tests passed. Full lint passed with zero errors
+and 110 existing warnings. The complete validation run passed its first ten checks
+(security, dependencies, graph, declarations, shared scripts/builds, AI runtime,
+Design, Fieldscope, documentation site and Office) before cancellation during
+Sim at the user's request. Remaining checks are not claimed as passed. Evidence:
+`tmp/readability/spacing-*` and local run
+`f8e5b914-85dc-4cdf-9941-b1d01fabbbff`. The authorized push triggers ordinary PR CI;
+do not manually dispatch or monitor CI.
 
 ## Task contract
 

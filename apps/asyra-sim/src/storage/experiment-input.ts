@@ -16,16 +16,19 @@ import {
 /** One runtime owns the current document/edit pair; no historical input cache. */
 export class ExperimentInputReader {
   private closed = false
+
   private sources: {
     text: string
     csv: ReturnType<typeof prepareTrajectoryCsv>
   }[] = []
+
   private results: {
     text: string
     kind: string
     signature: string
     result: TrajectoryImportPreview
   }[] = []
+
   private exclusions: {
     text: string
     value?: ReturnType<typeof parseExclusions>
@@ -39,6 +42,7 @@ export class ExperimentInputReader {
     if (this.closed) {
       throw new Error('Experiment input reader is closed')
     }
+
     const signature = JSON.stringify([
       input.mapping,
       workcell.bodies
@@ -56,10 +60,13 @@ export class ExperimentInputReader {
         entry.kind === input.kind &&
         entry.signature === signature
     )
+
     if (found) {
       return found.result
     }
+
     let result: TrajectoryImportPreview
+
     if (!validTrajectoryInput(input)) {
       result = {
         value: null,
@@ -83,10 +90,12 @@ export class ExperimentInputReader {
     } else {
       result = previewTrajectoryJson(input.text, workcell)
     }
+
     this.results = [
       { text: input.text, kind: input.kind, signature, result },
       ...this.results
     ].slice(0, 2)
+
     return result
   }
 
@@ -94,11 +103,14 @@ export class ExperimentInputReader {
     if (this.closed) {
       throw new Error('Experiment input reader is closed')
     }
+
     let source = this.sources.find((entry) => entry.text === text)
+
     if (!source) {
       source = { text, csv: prepareTrajectoryCsv(text) }
       this.sources = [source, ...this.sources].slice(0, 2)
     }
+
     return source.csv
   }
 
@@ -106,6 +118,7 @@ export class ExperimentInputReader {
     if (this.closed) {
       throw new Error('Experiment input reader is closed')
     }
+
     if (this.exclusions?.text !== text) {
       try {
         this.exclusions = { text, value: parseExclusions(text) }
@@ -116,12 +129,15 @@ export class ExperimentInputReader {
         }
       }
     }
+
     if (this.exclusions.error) {
       throw this.exclusions.error
     }
+
     if (!this.exclusions.value) {
       throw new Error('Missing exclusion result')
     }
+
     return this.exclusions.value
   }
 
@@ -132,30 +148,38 @@ export class ExperimentInputReader {
     if (this.closed) {
       throw new Error('Experiment input reader is closed')
     }
+
     const { trajectoryInput, exclusionsInput, ...resolved } = definition
+
     if (trajectoryInput) {
       const result = this.previewTrajectory(trajectoryInput, workcell)
+
       if (!result.value) {
         throw new Error(
           result.diagnostics.map((item) => item.message).join('\n')
         )
       }
+
       resolved.trajectory = result.value.trajectory
       resolved.sourceUnits = result.value.sourceUnits
     }
+
     if (exclusionsInput !== undefined) {
       resolved.scope = {
         ...resolved.scope,
         excludedPairs: this.readExclusions(exclusionsInput)
       }
     }
+
     const intervalError = trajectoryIntervalError(
       resolved.interval,
       resolved.trajectory
     )
+
     if (intervalError) {
       throw new Error(intervalError)
     }
+
     return resolved
   }
 

@@ -13,6 +13,7 @@ import { readSpatialDescriptor } from '../spatial-contract.js'
 it('registers only on explicit request, rejects duplicate installation and cleans ordinary Core relations', () => {
   expect(core.getPropertySchema(SPATIAL_MESH_PROPERTY)).toBeUndefined()
   const dispose = registerSpatialMesh(core)
+
   expect(core.getPropertySchema(SPATIAL_MESH_PROPERTY)).toBeDefined()
   expect(
     core.getRegistration({ kind: 'component', key: SPATIAL_MESH_COMPONENT })
@@ -30,6 +31,7 @@ it('registers only on explicit request, rejects duplicate installation and clean
 })
 it('rolls back completed registrations after a strategy failure without retaining partial definitions', () => {
   const register = core.registerRenderStrategy
+
   core.registerRenderStrategy = vi.fn(() => {
     throw new Error('Rejected strategy')
   })
@@ -38,6 +40,7 @@ it('rolls back completed registrations after a strategy failure without retainin
   } finally {
     core.registerRenderStrategy = register
   }
+
   expect(core.getPropertySchema(SPATIAL_MESH_PROPERTY)).toBeUndefined()
   expect(
     core.getRegistration({ kind: 'component', key: SPATIAL_MESH_COMPONENT })
@@ -55,12 +58,15 @@ it('validates descriptor/visibility schema and retains one derived mesh with exp
       wireframe: false,
       selectable: true
     })
+
   if (descriptor.kind !== 'mesh') {
     throw new Error('Expected mesh')
   }
+
   const data = { id: 'entity', descriptor, visible: true } as Parameters<
     typeof SPATIAL_MESH_RENDER_STRATEGY
   >[1]
+
   expect(SPATIAL_MESH_SCHEMA.fields[0].validate?.(descriptor)).toBe(true)
   expect(
     SPATIAL_MESH_SCHEMA.fields[0].validate?.({
@@ -70,15 +76,18 @@ it('validates descriptor/visibility schema and retains one derived mesh with exp
   ).toBe(false)
   SPATIAL_MESH_RENDER_STRATEGY(graphic, data)
   const mesh = graphic.children[0]
+
   expect(mesh).toBeInstanceOf(RenderMesh)
   expect(mesh.projectionIdentity).toEqual({
     visualId: 'entity',
     elementId: 'entity'
   })
   const update = vi.spyOn(mesh as RenderMesh, 'update')
+
   for (let i = 0; i < 5; i++) {
     SPATIAL_MESH_RENDER_STRATEGY(graphic, { ...data, visible: false })
   }
+
   expect(graphic.children).toHaveLength(1)
   expect(graphic.visible).toBe(false)
   expect(update).not.toHaveBeenCalled()
@@ -92,16 +101,20 @@ it('validates descriptor/visibility schema and retains one derived mesh with exp
 
 it('rejects invalid runtime property writes and restores defaults on invalid load', () => {
   const cleanup = registerSpatialMesh(core)
+
   try {
     const Constructor = core.getPropertyComponent(SPATIAL_MESH_PROPERTY)
+
     if (!Constructor) {
       throw new Error('Missing property component')
     }
+
     const instance = new Constructor({
       id: 'spatial-prop',
       type: SPATIAL_MESH_PROPERTY
     })
     const before = instance.get('descriptor')
+
     instance.set('descriptor', { ...(before as object), scale: [0, 1, 1] })
     expect(instance.get('descriptor')).toEqual(before)
     instance.load({
@@ -119,15 +132,18 @@ it('rejects invalid runtime property writes and restores defaults on invalid loa
 
 it('hands successful definition cleanup to the ordinary Core lifetime', async () => {
   const { getPropertyComponent } = await import('@asyra/core')
+
   registerSpatialMesh(core)
   expect(getPropertyComponent(SPATIAL_MESH_PROPERTY)).toBeDefined()
   core.setRenderEngineProvider(() => {
     const engine = new RecordingRenderEngine({ name: 'spatial-model-lifetime' })
     const initialize = engine.initialize.bind(engine)
+
     engine.initialize = (options) => ({
       ...initialize(options),
       surface: document.createElement('canvas')
     })
+
     return engine
   })
   core.load({
@@ -139,8 +155,10 @@ it('hands successful definition cleanup to the ordinary Core lifetime', async ()
   const id = runTransaction(() =>
     core.createElement({ type: SPATIAL_MESH_COMPONENT, name: 'Mesh test' })
   )
+
   expect(core.getElementData(id)?.type).toBe(SPATIAL_MESH_COMPONENT)
   const saved = await core.save()
+
   expect(saved.sceneTree.elements[id].type).toBe(SPATIAL_MESH_COMPONENT)
   await core.resetRuntime()
   expect(getPropertyComponent(SPATIAL_MESH_PROPERTY)).toBeUndefined()

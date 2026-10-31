@@ -25,6 +25,7 @@ const asset: VisualAsset = {
   ],
   bounds: { min: [0, 0, 0], max: [1, 1, 0] }
 }
+
 const body = (id: string, parentId: string | null): Body => ({
   id,
   parentId,
@@ -36,6 +37,7 @@ const body = (id: string, parentId: string | null): Body => ({
   joint: { kind: 'fixed', axis: [0, 0, 1], value: 0, min: 0, max: 0 },
   colliders: []
 })
+
 const model = (): Workcell => ({
   version: 1,
   robotRootId: 'base',
@@ -70,6 +72,7 @@ const model = (): Workcell => ({
     }
   ]
 })
+
 const view = { camera: DEFAULT_CAMERA, grid: false, selectedId: null }
 const resources = new Map([[assetId, asset]])
 
@@ -90,6 +93,7 @@ it('tints the complete original source without replacing or simplifying its geom
 
 it('colors every original material section by its own body without leaking another body color', () => {
   const workcell = model()
+
   workcell.bodies = [...workcell.bodies, { ...workcell.bodies[1], id: 'part' }]
   const multiMaterial = {
     ...asset,
@@ -124,6 +128,7 @@ it('retains complete placed triangles across pose/appearance frames and replaces
   const workcell = model(),
     project = prepareWorkcellProjection(workcell, resources)
   const initial = project(view).meshes[0].descriptor.shape
+
   for (const angle of [0, 0.3, 1.2]) {
     const options = {
       ...view,
@@ -132,15 +137,20 @@ it('retains complete placed triangles across pose/appearance frames and replaces
       wireframe: true
     }
     const frame = project(options)
+
     expect(frame).toEqual(createWorkcellFrame(workcell, options, resources))
     expect(frame.meshes[0].descriptor.shape).toBe(initial)
   }
+
   const binding = workcell.bodies[1].visuals?.[0]
+
   if (!binding) {
     throw new Error('Missing original binding')
   }
+
   binding.scale = [4, 3, 2]
   const replacement = prepareWorkcellProjection(workcell, resources)(view)
+
   expect(replacement.meshes[0].descriptor.shape).not.toEqual(initial)
   expect(project(view).meshes[0].descriptor.shape).toBe(initial)
 })
@@ -159,10 +169,12 @@ it.each([0, Math.PI / 2, -Math.PI / 4])(
     const visual = frame.meshes.find(
       (mesh) => mesh.descriptor.shape.kind === 'triangles'
     )
+
     expect(visual).toBeDefined()
     if (!visual || visual.descriptor.shape.kind !== 'triangles') {
       throw new Error('Missing visual projection')
     }
+
     expect(visual.elementId).toBe('tool')
     expect(visual.descriptor.shape.positions).toEqual([
       0, 0, 0, 2, 0, 0, 0, 3, 0
@@ -175,6 +187,7 @@ it.each([0, Math.PI / 2, -Math.PI / 4])(
       [[0, 3, 0] as const, 0, 0]
     ] as const) {
       const world = transformPoint(visual.descriptor, point)
+
       expect(world[0]).toBeCloseTo(
         1 + x * Math.cos(angle) - y * Math.sin(angle),
         12
@@ -184,16 +197,20 @@ it.each([0, Math.PI / 2, -Math.PI / 4])(
         12
       )
     }
+
     const proxy = frame.meshes.find(
       (mesh) => mesh.descriptor.shape.kind === 'sphere'
     )
+
     expect(proxy).toBeUndefined()
     const resolved = resolvePartWorkcell(workcell, resources).bodies[1]
       .colliders[0].geometry
+
     expect(resolved.kind).toBe('mesh')
     if (resolved.kind !== 'mesh') {
       throw new Error('Missing resolved original part')
     }
+
     expect(visual.descriptor.shape.positions).toEqual(resolved.positions)
     expect(visual.descriptor.shape.indices).toEqual(resolved.indices)
     expect(workcell).toEqual(before)
@@ -204,6 +221,7 @@ it.each([0, Math.PI / 2, -Math.PI / 4])(
 it('keeps visual/proxy display controls transient and inherits hidden ancestry', () => {
   const workcell = model(),
     before = structuredClone(workcell)
+
   expect(
     createWorkcellFrame(workcell, { ...view, visuals: false }, resources).meshes
   ).toHaveLength(0)
@@ -233,13 +251,17 @@ it('keeps visual/proxy display controls transient and inherits hidden ancestry',
 it('does not synthesize colliders for a visual-only body and preserves independent instance identities', () => {
   const workcell = model(),
     tool = workcell.bodies[1]
+
   tool.colliders = []
   const binding = tool.visuals?.[0]
+
   if (!binding) {
     throw new Error('Missing test binding')
   }
+
   tool.visuals = [binding, { ...binding, id: 'second', scale: [1, 1, 1] }]
   const frame = createWorkcellFrame(workcell, view, resources)
+
   expect(frame.meshes).toHaveLength(2)
   expect(new Set(frame.meshes.map((mesh) => mesh.id)).size).toBe(2)
   expect(

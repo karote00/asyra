@@ -15,6 +15,7 @@ test('retained candidates reproduce both App update fixtures without changing ac
   const first = 'fixtures/app-update-text-consumer'
   const subsequent = 'fixtures/app-update-text-subsequent'
   const output = path.join(repositoryRoot, 'tmp/app-update-fixture-validation')
+
   fs.mkdirSync(output, { recursive: true })
   const files = execFileSync('git', ['ls-files', '-z', first, subsequent], {
     cwd: repositoryRoot,
@@ -22,7 +23,9 @@ test('retained candidates reproduce both App update fixtures without changing ac
   })
     .split('\0')
     .filter(Boolean)
+
   assert.ok(files.length > 0)
+
   const snapshot = () =>
     files.map((file) => [
       file,
@@ -30,11 +33,14 @@ test('retained candidates reproduce both App update fixtures without changing ac
         .update(fs.readFileSync(path.join(repositoryRoot, file)))
         .digest('hex')
     ])
+
   const original = snapshot()
+
   const run = (name, executable, args) => {
     const log = path.join(output, `${name}.log`)
     const fd = fs.openSync(log, 'w')
     let result
+
     try {
       result = spawnSync(executable, args, {
         cwd: repositoryRoot,
@@ -48,6 +54,7 @@ test('retained candidates reproduce both App update fixtures without changing ac
     } finally {
       fs.closeSync(fd)
     }
+
     assert.equal(
       result.status,
       0,
@@ -58,6 +65,7 @@ test('retained candidates reproduce both App update fixtures without changing ac
 
   run('handoff', 'python3', [`${subsequent}/tools/test-handoff.py`])
   const artifacts = path.join(repositoryRoot, subsequent, 'artifacts')
+
   fs.mkdirSync(artifacts, { recursive: true })
   run('restore-candidates', 'tar', [
     '-xzf',
@@ -79,6 +87,7 @@ test('retained candidates reproduce both App update fixtures without changing ac
       run(`${name}-${command}`, 'yarn', ['--cwd', fixture, command])
     }
   }
+
   run('artifact-contract', 'python3', [`${subsequent}/tools/test-artifacts.py`])
   assert.deepEqual(snapshot(), original)
 })
@@ -93,6 +102,7 @@ test('cross-version delivery preserves evidence and reproduces the integrated co
       timeout: 30_000
     }
   )
+
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
   const fixture = 'fixtures/app-update-text-cross-version'
   const output = path.join(
@@ -100,11 +110,14 @@ test('cross-version delivery preserves evidence and reproduces the integrated co
     'tmp/app-update-cross-version-validation'
   )
   const temporary = path.join(output, 'tmp')
+
   fs.mkdirSync(temporary, { recursive: true })
+
   const run = (name, command, args) => {
     const log = path.join(output, `${name}.log`)
     const fd = fs.openSync(log, 'w')
     let replay
+
     try {
       replay = spawnSync(command, args, {
         cwd: repositoryRoot,
@@ -119,6 +132,7 @@ test('cross-version delivery preserves evidence and reproduces the integrated co
     } finally {
       fs.closeSync(fd)
     }
+
     assert.equal(
       replay.status,
       0,
@@ -126,7 +140,9 @@ test('cross-version delivery preserves evidence and reproduces the integrated co
     )
     t.diagnostic(`${name} passed; ${log}`)
   }
+
   const artifacts = path.join(repositoryRoot, fixture, 'artifacts')
+
   fs.mkdirSync(artifacts, { recursive: true })
   run('restore-candidates', 'tar', [
     '-xzf',
@@ -140,5 +156,6 @@ test('cross-version delivery preserves evidence and reproduces the integrated co
   for (const command of ['test', 'typecheck', 'lint', 'build']) {
     run(command, 'yarn', ['--cwd', fixture, command])
   }
+
   run('evidence-after-replay', 'python3', [`${fixture}/tools/test-delivery.py`])
 })

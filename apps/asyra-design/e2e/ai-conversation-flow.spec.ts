@@ -68,6 +68,7 @@ for (const count of [16, 320, 1280]) {
       },
       `owner-profile-${count}`
     )
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -92,14 +93,17 @@ for (const count of [16, 320, 1280]) {
     await page.goto(createTestDocumentIdentity('aiPerformance=profile').url)
     await waitForAppReady(page)
     const depth = await getUndoHistoryDepth(page)
+
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await page.evaluate(async () => {
       const profile = (
         await import('../src/testing/runtime-access')
       ).getActiveAiDrawingPerformanceProfile()
+
       if (!profile) {
         throw new Error('Missing App performance owner')
       }
+
       profile.reset()
     })
     await page
@@ -115,9 +119,11 @@ for (const count of [16, 320, 1280]) {
       const profile = (
         await import('../src/testing/runtime-access')
       ).getActiveAiDrawingPerformanceProfile()
+
       if (!profile) {
         throw new Error('Missing App performance owner')
       }
+
       return {
         snapshot: profile.snapshot(),
         canonical: profile
@@ -132,6 +138,7 @@ for (const count of [16, 320, 1280]) {
       }
     })
     const profilePath = testInfo.outputPath('prepared-owner-profile.json')
+
     await writeFile(profilePath, JSON.stringify(result))
     await testInfo.attach('prepared-owner-profile.json', {
       path: profilePath,
@@ -144,10 +151,12 @@ for (const count of [16, 320, 1280]) {
     expect(
       result.canonical.filter((element) => element.type === 'vector')
     ).toHaveLength(count)
+
     const totalCounter = (name: string) =>
       result.snapshot.counters
         .filter((counter) => counter.name === name)
         .reduce((total, counter) => total + counter.value, 0)
+
     expect(totalCounter('computed-mirror-seed')).toBe(count + 1)
     expect(totalCounter('render-projection-outcome-applied')).toBe(count + 1)
     // Complete flat identities are still delivered; prior rows are not decoded
@@ -160,6 +169,7 @@ for (const count of [16, 320, 1280]) {
       totalCounter('ui-context-flattened-identity-output')
     ).toBeGreaterThanOrEqual(count + 1)
     const names = new Set(result.snapshot.phases.map((phase) => phase.name))
+
     expect(names.has('scene-tree:element-batch:materialize')).toBe(true)
     expect(names.has('scene-tree:element-batch:commit-scene')).toBe(true)
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
@@ -171,6 +181,7 @@ test('retains drawing after a failed refinement with one undo and redo', async (
   page
 }, testInfo) => {
   const prepared = drawing('retained-progress')
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
@@ -178,6 +189,7 @@ test('retains drawing after a failed refinement with one undo and redo', async (
     if (route.request().headers()['x-ai-batch-receipt']) {
       return route.fulfill({ json: { accepted: true } })
     }
+
     return route.fulfill({
       contentType: 'application/x-ndjson',
       body: [
@@ -223,22 +235,27 @@ test('retains drawing after a failed refinement with one undo and redo', async (
         const data = await (
           await import('../src/testing/runtime-access')
         ).core.save()
+
         return Boolean(data.sceneTree.elements[data.sceneTree.workspace])
       })
     )
     .toBe(true)
+
   const attachDocument = async (name: string) => {
     const document = await page.evaluate(async () =>
       (await import('../src/testing/runtime-access')).core.save()
     )
+
     await testInfo.attach(name, {
       body: JSON.stringify(document),
       contentType: 'application/json'
     })
   }
+
   await attachDocument('before-drawing.json')
   const before = await getCoreDocumentDigest(page)
   const depth = await getUndoHistoryDepth(page)
+
   await page.getByRole('button', { name: 'Open Agent' }).click()
   await page.getByLabel('Message Agent').fill('Draw and refine')
   await page.getByRole('button', { name: 'Send', exact: true }).click()
@@ -253,6 +270,7 @@ test('retains drawing after a failed refinement with one undo and redo', async (
     page.getByRole('button', { name: 'Try again', exact: true })
   ).toHaveCount(0)
   const after = await getCoreDocumentDigest(page)
+
   expect(after).not.toEqual(before)
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
   await expect(page.getByLabel('Current AI history action')).toHaveCount(0)
@@ -271,11 +289,13 @@ for (const width of [360, 1280]) {
   }, testInfo) => {
     await page.setViewportSize({ width: 1280, height: 720 })
     let providerRequests = 0
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'unconfigured' } })
     )
     await page.route('**/api/ai/action-batch', (route) => {
       providerRequests++
+
       return route.abort()
     })
     await page.goto(createTestDocumentIdentity().url)
@@ -283,6 +303,7 @@ for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 720 })
     await page.getByRole('button', { name: 'Open Agent' }).click()
     const notice = page.getByRole('note', { name: 'Your AI subscription' })
+
     await expect(notice).toBeVisible()
     await expect(notice).toContainText(
       'Local AI uses your own subscription and counts toward its usage limits.'
@@ -292,9 +313,11 @@ for (const width of [360, 1280]) {
       page.getByRole('button', { name: 'Send', exact: true })
     ).toBeInViewport()
     const bounds = await notice.boundingBox()
+
     if (!bounds) {
       throw new Error('Subscription notice has no visible bounds')
     }
+
     expect(bounds.x).toBeGreaterThanOrEqual(0)
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
     await page.getByTestId('ai-agent-panel').screenshot({
@@ -323,9 +346,11 @@ test('canvas click restores shortcuts while the Agent stays open and preserves c
   await page.keyboard.press('v')
   await page.keyboard.press('ControlOrMeta+i')
   const composer = page.getByLabel('Message Agent')
+
   await expect(composer).toBeFocused()
   await composer.fill('Keep this draft')
   const canvas = page.getByTestId('canvas-render-container').locator('canvas')
+
   await canvas.click({ position: { x: 500, y: 350 } })
   await expect(page.getByTestId('canvas-host')).toBeFocused()
   for (const [key, tool] of [
@@ -336,6 +361,7 @@ test('canvas click restores shortcuts while the Agent stays open and preserves c
     await page.keyboard.press(key)
     await expect.poll(() => getActiveTool(page)).toBe(tool)
   }
+
   await expect(page.getByTestId('ai-agent-panel')).toBeVisible()
   await expect(composer).toHaveValue('Keep this draft')
   await composer.click()
@@ -354,11 +380,13 @@ test('text answers keep the original reference only on its message and typing ne
   page
 }, testInfo) => {
   const requests: { metadata: { imageAttachments?: unknown[] } }[] = []
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
   await page.route('**/api/ai/action-batch', (route) => {
     requests.push(route.request().postDataJSON())
+
     return route.fulfill({
       json: {
         batchId: `question-${requests.length}`,
@@ -377,12 +405,14 @@ test('text answers keep the original reference only on its message and typing ne
   await waitForAppReady(page)
   await page.getByRole('button', { name: 'Open Agent' }).click()
   const composer = page.getByLabel('Message Agent')
+
   await composer.click()
   for (const key of ['r', 'o', 'p', 'v', 'Backspace', 'Space']) {
     await page.keyboard.press(key)
     expect(await getActiveTool(page)).toBe('select')
     await expect(composer).toBeFocused()
   }
+
   await page
     .getByLabel('Choose images')
     .setInputFiles('e2e/fixtures/local-vector-reference.png')
@@ -394,6 +424,7 @@ test('text answers keep the original reference only on its message and typing ne
   expect(
     await page.getByLabel('Operational progress').evaluate((list) => {
       const question = document.querySelector('[aria-label="Question"]')
+
       return Boolean(
         question &&
         list.compareDocumentPosition(question) &
@@ -405,6 +436,7 @@ test('text answers keep the original reference only on its message and typing ne
     .getByTestId('ai-agent-message')
     .first()
     .locator('details')
+
   await firstActivity.locator('summary').click()
   await expect(firstActivity.getByRole('list')).toContainText(
     'Reviewing the drawing'
@@ -412,6 +444,7 @@ test('text answers keep the original reference only on its message and typing ne
   const priorActivity = await firstActivity
     .getByRole('listitem')
     .allTextContents()
+
   expect(priorActivity).toContain('Reviewing the drawing')
   await composer.fill('Yes, keep the dimensions')
   await page.getByRole('button', { name: 'Send', exact: true }).click()
@@ -432,6 +465,7 @@ test('text answers keep the original reference only on its message and typing ne
     .getByTestId('ai-agent-message')
     .last()
     .locator('details')
+
   await nextActivity.locator('summary').click()
   await expect(nextActivity.getByRole('list')).toBeVisible()
   expect(requests[1].metadata.imageAttachments).toEqual(
@@ -486,6 +520,7 @@ for (const width of [360, 1280]) {
     const failedRequest = new Promise<void>((resolve) => {
       release = resolve
     })
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -498,9 +533,12 @@ for (const width of [360, 1280]) {
           headers: { 'x-ai-error-code': 'ACTION_BATCH_MODEL_TIMEOUT' },
           json: { code: 'ACTION_BATCH_MODEL_TIMEOUT' }
         })
+
         return
       }
+
       const replacing = requests.length > 2
+
       await route.fulfill({
         json: {
           batchId: `revision-${requests.length}`,
@@ -539,14 +577,17 @@ for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     const before = await getCoreDocumentDigest(page)
     const depth = await getUndoHistoryDepth(page)
+
     await page
       .getByLabel('Choose images')
       .setInputFiles('e2e/fixtures/local-vector-reference.png')
     const intent =
       'Use VTracer on this reference and replace the previous drawing'
+
     await page.getByLabel('Message Agent').fill(intent)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     const message = page.getByTestId('ai-agent-message').last()
+
     await expect(message).toHaveAttribute('data-outcome', 'active')
     await page.getByLabel('Message Agent').fill('r')
     expect(await getActiveTool(page)).toBe('select')
@@ -566,9 +607,11 @@ for (const width of [360, 1280]) {
     ).toHaveCount(0)
     const bounds = await message.getByLabel('Your message').boundingBox()
     const panelBounds = await page.getByTestId('ai-agent-panel').boundingBox()
+
     if (!bounds || !panelBounds) {
       throw new Error('Visible message and panel bounds are required')
     }
+
     expect(bounds.x + bounds.width).toBeGreaterThan(
       panelBounds.x + panelBounds.width - 25
     )
@@ -588,6 +631,7 @@ for (const width of [360, 1280]) {
     const explanation = message
       .getByLabel('Agent response')
       .locator(':scope > p')
+
     await expect(explanation).toContainText('timed out')
     await expect(explanation).not.toContainText(intent)
     expect(await getCoreDocumentDigest(page)).toEqual(before)
@@ -620,11 +664,14 @@ for (const width of [360, 1280]) {
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const ids = await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
+
       if (!core) {
         throw new Error('App runtime is required')
       }
+
       return [...core.deps.sceneTree.getAllElements().keys()]
     })
+
     expect(ids).toContain(replacement.groupDescriptor.id)
     expect(ids).not.toContain(initial.groupDescriptor.id)
     await page
@@ -657,6 +704,7 @@ for (const scenario of [
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -677,6 +725,7 @@ for (const scenario of [
           }
         })
       }
+
       expect(route.request().postDataJSON().metadata.replyTo.intent).toBe(
         scenario.intent
       )
@@ -697,6 +746,7 @@ for (const scenario of [
     expect(requests).toBe(1)
     await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
     const before = await getCoreDocumentDigest(page)
+
     await page.getByLabel('Message Agent').fill(scenario.answer)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect.poll(() => requests).toBe(2)
@@ -722,6 +772,7 @@ test('incomplete replacement preserves the original and partial output never off
     skipped: [{ reason: 'duplicate-role', role: 'omitted-detail' }]
   }
   let requests = 0
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
@@ -732,6 +783,7 @@ test('incomplete replacement preserves the original and partial output never off
       requests === 1
         ? initial
         : { ...drawing('partial-result'), skipped: incomplete.skipped }
+
     return route.fulfill({
       json: {
         batchId: `rollback-${requests}`,
@@ -756,10 +808,12 @@ test('incomplete replacement preserves the original and partial output never off
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
   await page.getByRole('button', { name: 'Open Agent' }).click()
+
   const send = async (text: string) => {
     await page.getByLabel('Message Agent').fill(text)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
   }
+
   await send('Draw the original')
   await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
     'data-outcome',
@@ -767,6 +821,7 @@ test('incomplete replacement preserves the original and partial output never off
   )
   const before = await getCoreDocumentDigest(page)
   const depth = await getUndoHistoryDepth(page)
+
   await send('Replace the original')
   await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
     'data-outcome',
@@ -774,6 +829,7 @@ test('incomplete replacement preserves the original and partial output never off
   )
   await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
   const retained = await getCoreDocumentDigest(page)
+
   expect(retained).not.toEqual(before)
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
@@ -809,6 +865,7 @@ for (const width of [360, 1280]) {
   }, testInfo) => {
     const prepared = drawing('multi-step')
     const receipts: unknown[] = []
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -816,8 +873,10 @@ for (const width of [360, 1280]) {
       if (route.request().headers()['x-ai-batch-receipt']) {
         receipts.push(route.request().postDataJSON())
         await route.fulfill({ json: { accepted: true } })
+
         return
       }
+
       const first = {
         batchId: 'insert-first',
         actions: [
@@ -855,6 +914,7 @@ for (const width of [360, 1280]) {
           }
         ]
       }
+
       await route.fulfill({
         contentType: 'application/x-ndjson',
         body: [
@@ -886,6 +946,7 @@ for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     const before = await getCoreDocumentDigest(page)
     const depth = await getUndoHistoryDepth(page)
+
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await page
       .getByLabel('Message Agent')
@@ -915,6 +976,7 @@ for (const width of [360, 1280]) {
     )
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const after = await getCoreDocumentDigest(page)
+
     expect(after).not.toEqual(before)
     await page.screenshot({
       path: testInfo.outputPath('multi-step-capability.png')
@@ -946,11 +1008,14 @@ for (const width of [360, 1280]) {
       response = outgoing
       connected?.()
     })
+
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const address = server.address()
+
     if (!address || typeof address === 'string') {
       throw new Error('Missing fixture address')
     }
+
     try {
       await page.route('**/api/ai/status', (route) =>
         route.fulfill({ json: { state: 'ready' } })
@@ -972,11 +1037,13 @@ for (const width of [360, 1280]) {
       if (!response) {
         throw new Error('Missing stream')
       }
+
       await page.getByLabel('Work history').click()
       const status = page.getByRole('status', { name: 'Current activity' })
       const current = page
         .getByLabel('Operational progress')
         .locator('[aria-current="step"]')
+
       await expect(
         page.getByLabel('Design context', { exact: true })
       ).toHaveCount(0)
@@ -1184,9 +1251,11 @@ for (const width of [360, 1280]) {
         .first()
       const originalRow = await firstRow.elementHandle()
       const originalText = await firstRow.textContent()
+
       if (!originalRow || originalText === null) {
         throw new Error('Missing original Activity row')
       }
+
       // Compare content-space position while longer concrete history follows scrolling.
       const originalOffset = await firstRow.evaluate(
         (row) =>
@@ -1195,6 +1264,7 @@ for (const width of [360, 1280]) {
           (row.closest('[aria-label="Conversation messages"]')?.scrollTop ?? 0)
       )
       let activitySequence = 0
+
       for (const event of events) {
         response.write(
           JSON.stringify({
@@ -1213,6 +1283,7 @@ for (const width of [360, 1280]) {
           }) + '\n'
         )
         const workMessage = event.expected ?? event.message
+
         await expect(status.locator(':scope > span')).toHaveText([
           ...(workMessage ? [workMessage] : []),
           ...(event.label
@@ -1228,12 +1299,14 @@ for (const width of [360, 1280]) {
             path: testInfo.outputPath('automatic-library-save.png')
           })
         }
+
         if (event.callId === 'provider-gap') {
           await expect(status).not.toContainText('Updating the canvas')
           await page.getByTestId('ai-agent-panel').screenshot({
             path: testInfo.outputPath('completed-call-purpose.png')
           })
         }
+
         await expect(current).toHaveCount(1)
         await expect(current).toHaveText(
           (event.expected ?? event.message) || event.label
@@ -1253,6 +1326,7 @@ for (const width of [360, 1280]) {
           page.getByText('Running a tool', { exact: true })
         ).toHaveCount(0)
       }
+
       await expect(page.getByLabel('Operational progress')).toContainText(
         '正在調整屋頂顏色'
       )
@@ -1271,6 +1345,7 @@ for (const width of [360, 1280]) {
                 rows[i].getBoundingClientRect().bottom
             )
         )
+
       expect(Math.max(...rowGaps) - Math.min(...rowGaps)).toBeLessThan(1)
       await expect(current).toContainText('正在隱藏右下角的標記。')
       await page
@@ -1278,11 +1353,13 @@ for (const width of [360, 1280]) {
         .screenshot({ path: testInfo.outputPath('current-activity.png') })
       const feed = page.getByRole('region', { name: 'Conversation messages' })
       const jump = page.getByRole('button', { name: 'Jump to latest' })
+
       const remainingScroll = () =>
         feed.evaluate(
           (element) =>
             element.scrollHeight - element.scrollTop - element.clientHeight
         )
+
       const sendActivity = async (message: string) => {
         response?.write(
           JSON.stringify({
@@ -1301,11 +1378,13 @@ for (const width of [360, 1280]) {
         )
         await expect(current).toContainText(message)
       }
+
       // Each operation adds one operation row and two contextual label/message rows.
       const stableRows = await page
         .getByLabel('Operational progress')
         .locator('li')
         .count()
+
       for (const [tool, label] of [
         ['read_design_context', 'Reading the design'],
         ['inspect_drawing', 'Reviewing the drawing'],
@@ -1339,9 +1418,11 @@ for (const width of [360, 1280]) {
           }
         }
       }
+
       await expect(
         page.getByLabel('Operational progress').locator('li')
       ).toHaveCount(stableRows + 9)
+
       // Real stream/controller/panel: unrelated siblings must not borrow one
       // another's purpose or leave an execution label after both settle.
       const parallel = (
@@ -1373,6 +1454,7 @@ for (const width of [360, 1280]) {
           }) + '\n'
         )
       }
+
       parallel('parallel-review', 'review_drawing', 'Inspect the crown')
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
       await expect(status.locator(':scope > span')).toHaveText([
@@ -1394,6 +1476,7 @@ for (const width of [360, 1280]) {
         'Partially completed operation (2)'
       ])
       const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
+
       await sendActivity(longDescription)
       await expect(status.locator(':scope > span')).toHaveText([
         longDescription,
@@ -1409,6 +1492,7 @@ for (const width of [360, 1280]) {
         height: element.getBoundingClientRect().height,
         lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight)
       }))
+
       expect(dimensions.height).toBeLessThanOrEqual(
         dimensions.lineHeight * 3 + 1
       )
@@ -1423,6 +1507,7 @@ for (const width of [360, 1280]) {
         await expect.poll(remainingScroll).toBeLessThanOrEqual(1)
         await expect(jump).toHaveCount(0)
       }
+
       expect(
         await feed.evaluate((element) => element.scrollTop)
       ).toBeGreaterThan(0)
@@ -1435,6 +1520,7 @@ for (const width of [360, 1280]) {
       const readingPosition = await feed.evaluate(
         (element) => element.scrollTop
       )
+
       await sendActivity('Continue while reading history')
       expect(await feed.evaluate((element) => element.scrollTop)).toBe(
         readingPosition
@@ -1457,6 +1543,7 @@ for (const width of [360, 1280]) {
         .getByLabel('Operational progress')
         .locator('li')
         .count()
+
       for (let index = 0; index < 24; index++) {
         response.write(
           JSON.stringify({
@@ -1466,6 +1553,7 @@ for (const width of [360, 1280]) {
           }) + '\n'
         )
       }
+
       await expect(
         page.getByLabel('Operational progress').locator('li')
       ).toHaveCount(rowsBeforeLoop)
@@ -1543,6 +1631,7 @@ for (const width of [360, 1280]) {
       )
       await expect(status).toHaveCount(0)
       const completionTime = page.getByLabel('Completed at')
+
       await expect(completionTime).toBeVisible()
       await expect(completionTime).toHaveText(/\d{1,2}:\d{2}/)
       await expect(completionTime.locator('svg')).toHaveCount(0)
@@ -1559,6 +1648,7 @@ for (const width of [360, 1280]) {
             )
             .map((element) => getComputedStyle(element).fontSize)
         )
+
       expect([...new Set(fontSizes)]).toEqual(['12px'])
 
       await expect(page.getByLabel('Completed at')).toHaveAttribute(
@@ -1591,9 +1681,11 @@ for (const width of [360, 1280]) {
         exact: true
       })
       const textBounds = await resultText.boundingBox()
+
       if (!textBounds) {
         throw new Error('Missing result text')
       }
+
       await page.mouse.move(
         textBounds.x + 1,
         textBounds.y + textBounds.height / 2
@@ -1657,11 +1749,13 @@ for (const width of [360, 1280]) {
   }, testInfo) => {
     await page.setViewportSize({ width: 1280, height: 720 })
     let requests = 0
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
     await page.route('**/api/ai/action-batch', (route) => {
       requests++
+
       return route.fulfill({
         json: {
           batchId: 'navigation-result',
@@ -1690,17 +1784,21 @@ for (const width of [360, 1280]) {
     })
     const create = header.getByRole('button', { name: 'New conversation' })
     const close = header.getByRole('button', { name: 'Close Agent panel' })
+
     await expect(header.locator('select')).toHaveCount(0)
     await expect(
       header.getByRole('button', { name: 'Saved tools', exact: true })
     ).toBeVisible()
     const positions = []
+
     for (const button of [toggle, create, close]) {
       await expect(button).toHaveText('')
       const bounds = await button.boundingBox()
+
       if (!bounds) {
         throw new Error('Missing navigation icon')
       }
+
       expect(bounds.width).toBe(24)
       expect(bounds.height).toBe(24)
       positions.push(bounds.x)
@@ -1709,9 +1807,11 @@ for (const width of [360, 1280]) {
         '0 0 24 24'
       )
     }
+
     expect(positions[1] - positions[0]).toBe(32)
     expect(positions[2]).toBeGreaterThan(positions[1] + 24)
     const composer = page.getByLabel('Message Agent')
+
     await composer.fill('First design')
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
@@ -1724,6 +1824,7 @@ for (const width of [360, 1280]) {
     await composer.fill('Unsent second draft')
     await toggle.click()
     const history = page.getByRole('region', { name: 'Conversation history' })
+
     await expect(history).toBeVisible()
     await expect(
       history.getByRole('button', { name: 'First design', exact: true })
@@ -1772,9 +1873,11 @@ test('panel text selection supports native copy after canvas focus', async ({
     .click({ position: { x: 300, y: 250 } })
   const title = page.getByText('Your AI subscription', { exact: true })
   const bounds = await title.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing panel text')
   }
+
   await page.mouse.move(bounds.x + 1, bounds.y + bounds.height / 2)
   await page.mouse.down()
   await page.mouse.move(
@@ -1784,6 +1887,7 @@ test('panel text selection supports native copy after canvas focus', async ({
   )
   await page.mouse.up()
   const selected = await page.evaluate(() => window.getSelection()?.toString())
+
   expect(selected).toBe('Your AI subscription')
   await page.evaluate(() => navigator.clipboard.writeText('before-panel-copy'))
   await page.keyboard.press('ControlOrMeta+c')
@@ -1791,6 +1895,7 @@ test('panel text selection supports native copy after canvas focus', async ({
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe(selected)
   const composer = page.getByLabel('Message Agent')
+
   await composer.fill('Copy composer text')
   await composer.press('ControlOrMeta+a')
   await composer.press('ControlOrMeta+c')
@@ -1812,6 +1917,7 @@ test('trackpad pinch zooms while ordinary wheel pans before and during AI work',
   const pending = new Promise<void>((resolve) => {
     finish = resolve
   })
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
@@ -1837,12 +1943,15 @@ test('trackpad pinch zooms while ordinary wheel pans before and during AI work',
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
   const canvas = page.getByTestId('canvas-render-container').locator('canvas')
+
   await page.keyboard.press('r')
   await canvas.click({ position: { x: 500, y: 350 } })
   await page.keyboard.press('v')
   const zoom = page.getByTestId('zoom-level')
+
   const exercise = async () => {
     const before = Number(await zoom.getAttribute('data-value'))
+
     await canvas.dispatchEvent('wheel', {
       ctrlKey: true,
       deltaY: -10,
@@ -1860,6 +1969,7 @@ test('trackpad pinch zooms while ordinary wheel pans before and during AI work',
         'viewportPosition'
       )
     )
+
     await canvas.dispatchEvent('wheel', {
       deltaY: 20,
       clientX: 450,
@@ -1889,6 +1999,7 @@ test('trackpad pinch zooms while ordinary wheel pans before and during AI work',
       .poll(async () => Number(await zoom.getAttribute('data-value')))
       .toBeLessThan(Number(enlarged))
   }
+
   try {
     await exercise()
     await page.getByRole('button', { name: 'Open Agent' }).click()
@@ -1903,15 +2014,18 @@ test('trackpad pinch zooms while ordinary wheel pans before and during AI work',
     await canvas.click({ position: { x: 300, y: 200 } })
     await expect(page.getByLabel('Message Agent')).not.toBeFocused()
     const beforeFit = await zoom.getAttribute('data-value')
+
     await page.keyboard.press('Meta+1')
     await expect(zoom).not.toHaveAttribute('data-value', beforeFit ?? '')
     const fitted = await zoom.getAttribute('data-value')
+
     await exercise()
     await page.keyboard.press('Control+1')
     await expect(zoom).toHaveAttribute('data-value', fitted ?? '')
   } finally {
     finish?.()
   }
+
   await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
     'data-outcome',
     'no-change'
@@ -1946,6 +2060,7 @@ for (const width of [360, 1280]) {
     const second = drawing('revision-two')
     const third = drawing('revision-three')
     let requests = 0
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -1958,15 +2073,18 @@ for (const width of [360, 1280]) {
         second.groupDescriptor.id,
         third.groupDescriptor.id
       ][requests - 1]
+
       if (requests > 1) {
         expect(request.metadata.aiTargets.compositionId).toBe(previous)
       }
+
       let action = {
         id: 'draw',
         name: 'apply_prepared_design',
         arguments: { design: deliverPreparedDesign(initial) } as unknown,
         summary: 'Create the design'
       }
+
       if (requests > 1) {
         action = {
           id: 'revise',
@@ -1978,19 +2096,23 @@ for (const width of [360, 1280]) {
           summary: 'Revise the drawing'
         }
       }
+
       return route.fulfill({
         json: { batchId: `revision-${requests}`, actions: [action] }
       })
     })
     const documentIdentity = createTestDocumentIdentity()
+
     await page.goto(documentIdentity.url)
     await waitForAppReady(page)
     await page.evaluate(async () => {
       const { startDocumentPublicationCapture } =
         await import('../src/testing/runtime-access')
+
       startDocumentPublicationCapture('frame-revisions')
     })
     await page.setViewportSize({ width, height: 800 })
+
     const assertDurable = async (
       expected: Awaited<ReturnType<typeof getCoreDocumentDigest>>,
       stage: string
@@ -1998,6 +2120,7 @@ for (const width of [360, 1280]) {
       const publications = await page.evaluate(async () => {
         const { readTestCapture, readDocumentPublicationDecodeFailures } =
           await import('../src/testing/runtime-access')
+
         return {
           publications: readTestCapture('frame-revisions'),
           decodeFailures:
@@ -2005,6 +2128,7 @@ for (const width of [360, 1280]) {
         }
       })
       const evidencePath = testInfo.outputPath(`frame-${stage}.json`)
+
       await writeFile(evidencePath, JSON.stringify(publications))
       await testInfo.attach(`frame-${stage}`, {
         path: evidencePath,
@@ -2021,6 +2145,7 @@ for (const width of [360, 1280]) {
         })
         .toEqual(expected)
     }
+
     await page.evaluate(async () => {
       const { core, testRuntimeState } =
         await import('../src/testing/runtime-access')
@@ -2028,6 +2153,7 @@ for (const width of [360, 1280]) {
       const { subscribeToUndo, subscribeToRedo } =
         await import('../src/testing/runtime-access')
       const events: unknown[] = []
+
       const append = (kind: string, detail?: unknown) =>
         events.push({
           kind,
@@ -2036,7 +2162,9 @@ for (const width of [360, 1280]) {
           undoDepth: core.deps.factory.transact.undoStack.length,
           redoDepth: core.deps.factory.transact.redoStack.length
         })
+
       testRuntimeState.set('frame-history-events', events)
+
       const keydown = (event: KeyboardEvent) =>
         append('keydown', {
           code: event.code,
@@ -2046,23 +2174,28 @@ for (const width of [360, 1280]) {
           repeat: event.repeat,
           target: (event.target as Element | null)?.tagName
         })
+
       document.addEventListener('keydown', keydown, true)
       const subscriptions = [
         subscribeToUndo(() => append('undo-replay-completed')),
         subscribeToRedo(() => append('redo-replay-completed'))
       ]
       const original = historyApis.undo
+
       historyApis.undo = async (options) => {
         append('undo-enter')
         const gated = testRuntimeState.get<boolean>('frame-history-arm')
+
         testRuntimeState.set('frame-history-arm', false)
         let waited = false
+
         try {
           await original(
             gated
               ? {
                   ...options,
                   maxItemsPerSlice: 1,
+
                   yieldToHost: async () => {
                     if (!waited) {
                       waited = true
@@ -2071,6 +2204,7 @@ for (const width of [360, 1280]) {
                         testRuntimeState.set('frame-history-release', resolve)
                       )
                     }
+
                     await options?.yieldToHost?.()
                   }
                 }
@@ -2082,6 +2216,7 @@ for (const width of [360, 1280]) {
           throw error
         }
       }
+
       testRuntimeState.set('frame-history-dispose', () => {
         testRuntimeState.get<() => void>('frame-history-release')?.()
         historyApis.undo = original
@@ -2091,6 +2226,7 @@ for (const width of [360, 1280]) {
     })
     const snapshots = [await getCoreDocumentDigest(page)]
     const depth = await getUndoHistoryDepth(page)
+
     try {
       await page.getByRole('button', { name: 'Open Agent' }).click()
       for (let i = 1; i <= 3; i++) {
@@ -2104,11 +2240,13 @@ for (const width of [360, 1280]) {
         snapshots.push(await getCoreDocumentDigest(page))
         await assertDurable(snapshots[i], `edit-${i}`)
       }
+
       await page
         .getByLabel('Message Agent')
         .fill('Revise a target that has gone away')
       await page.getByRole('button', { name: 'Send', exact: true }).click()
       const failed = page.getByTestId('ai-agent-message').last()
+
       await expect(failed).toHaveAttribute('data-outcome', 'failed')
       await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
       await expect(failed).toContainText(
@@ -2117,6 +2255,7 @@ for (const width of [360, 1280]) {
       const explanation = failed.getByText(
         /The original drawing is missing or is not an editable composition/
       )
+
       await expect(explanation).toBeInViewport()
       await failed.getByLabel('Work history').click()
       await expect(
@@ -2142,6 +2281,7 @@ for (const width of [360, 1280]) {
             ).testRuntimeState.set('frame-history-arm', true)
           )
         }
+
         await undo(page)
         if (width === 360 && i === 0) {
           const events = await page.evaluate(async () =>
@@ -2149,6 +2289,7 @@ for (const width of [360, 1280]) {
               await import('../src/testing/runtime-access')
             ).testRuntimeState.get<{ kind: string }[]>('frame-history-events')
           )
+
           expect(
             events?.filter((event) => event.kind === 'undo-yield-held')
           ).toHaveLength(1)
@@ -2162,6 +2303,7 @@ for (const width of [360, 1280]) {
             ).testRuntimeState.get<() => void>('frame-history-release')?.()
           )
         }
+
         await expect
           .poll(() => getCoreDocumentDigest(page), {
             message: `Undo ${i} must settle to the exact preceding document`
@@ -2170,6 +2312,7 @@ for (const width of [360, 1280]) {
         await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + i)
         await assertDurable(snapshots[i], `undo-${i}`)
       }
+
       for (let i = 1; i <= 3; i++) {
         await redo(page)
         await expect
@@ -2180,11 +2323,13 @@ for (const width of [360, 1280]) {
         await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + i)
         await assertDurable(snapshots[i], `redo-${i}`)
       }
+
       expect(requests).toBe(4)
     } finally {
       try {
         const evidence = await page.evaluate(async () => {
           const runtime = await import('../src/testing/runtime-access')
+
           try {
             return {
               events: runtime.testRuntimeState.get('frame-history-events'),
@@ -2199,6 +2344,7 @@ for (const width of [360, 1280]) {
           }
         })
         const evidencePath = testInfo.outputPath('frame-history-lifecycle.json')
+
         await writeFile(evidencePath, JSON.stringify(evidence))
         await testInfo.attach('frame-history-lifecycle', {
           path: evidencePath,
@@ -2212,6 +2358,7 @@ for (const width of [360, 1280]) {
         })
       }
     }
+
     // Restore the canvas-ready viewport used at initial bootstrap.
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.reload()
@@ -2252,11 +2399,14 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
       }) + '\n'
     )
   })
+
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const address = server.address()
+
   if (!address || typeof address === 'string') {
     throw new Error('Missing stream address')
   }
+
   try {
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
@@ -2264,8 +2414,10 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
     await page.route('**/api/ai/action-batch', (route) => {
       if (route.request().headers()['x-ai-batch-receipt']) {
         receipts.push(route.request().postDataJSON())
+
         return route.fulfill({ json: { accepted: true } })
       }
+
       return route.continue({
         url: `http://127.0.0.1:${address.port}/api/ai/action-batch`
       })
@@ -2274,20 +2426,25 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
     await waitForAppReady(page)
     const before = await getCoreDocumentDigest(page)
     const depth = await getUndoHistoryDepth(page)
+
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await page.getByLabel('Message Agent').fill('Draw two stages')
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect.poll(() => receipts.length).toBe(1)
     const message = page.getByTestId('ai-agent-message')
+
     await expect(message).toHaveAttribute('data-outcome', 'active')
     expect(await getUndoHistoryDepth(page)).toBe(depth)
     const snapshot = await page.evaluate(async (id) => {
       const { core } = await import('../src/testing/runtime-access')
+
       return core.captureElementSnapshot(id, 1024)
     }, prepared.groupDescriptor.id)
+
     expect(snapshot.width).toBeGreaterThan(0)
     expect(snapshot.height).toBeGreaterThan(0)
     const first = await getCoreDocumentDigest(page)
+
     expect(first).not.toEqual(before)
     await page.getByTestId('toolbar').click({ position: { x: 5, y: 5 } })
     await page.keyboard.press('Meta+1')
@@ -2300,6 +2457,7 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
     if (!stream) {
       throw new Error('Missing stream')
     }
+
     stream.write(
       JSON.stringify({
         type: 'batch',
@@ -2330,6 +2488,7 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
     )
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const after = await getCoreDocumentDigest(page)
+
     expect(after).not.toEqual(first)
     await page.screenshot({ path: testInfo.outputPath('stopped-drawing.png') })
     await page.getByRole('button', { name: 'Close Agent panel' }).click()
@@ -2350,18 +2509,22 @@ for (const direction of ['undo', 'redo'] as const) {
       page
     }, testInfo) => {
       const documentIdentity = createTestDocumentIdentity()
+
       await page.goto(documentIdentity.url)
       await waitForAppReady(page)
       const empty = await getCoreDocumentDigest(page)
       const initialDepth = await getUndoHistoryDepth(page)
+
       await createRectangle(page)
       const drawn = await getCoreDocumentDigest(page)
+
       await expect.poll(() => getUndoHistoryDepth(page)).toBe(initialDepth + 1)
       if (direction === 'redo') {
         await undo(page)
         await expect.poll(() => getUndoHistoryDepth(page)).toBe(initialDepth)
         expect(await getCoreDocumentDigest(page)).toEqual(empty)
       }
+
       await page.evaluate(
         async ({ direction, fail }) => {
           const { core, historyApis, testRuntimeState } =
@@ -2370,24 +2533,30 @@ for (const direction of ['undo', 'redo'] as const) {
           const calls: string[] = [],
             inputs: string[] = []
           let first = true
+
           const listener = () => {
             inputs.push('history')
           }
+
           core.deps.inputSystem.on('input.shortcut.undoredo', listener)
           for (const name of ['undo', 'redo'] as const) {
             historyApis[name] = async (options) => {
               calls.push(name)
               const gated = name === direction && first
+
               if (gated) {
                 first = false
               }
+
               let held = false
+
               try {
                 await original[name](
                   gated
                     ? {
                         ...options,
                         maxItemsPerSlice: 1,
+
                         yieldToHost: async () => {
                           if (!held) {
                             held = true
@@ -2407,6 +2576,7 @@ for (const direction of ['undo', 'redo'] as const) {
                               )
                             }
                           }
+
                           await options?.yieldToHost?.()
                         }
                       }
@@ -2418,6 +2588,7 @@ for (const direction of ['undo', 'redo'] as const) {
               }
             }
           }
+
           testRuntimeState.set('history-admission-calls', calls)
           testRuntimeState.set('history-admission-inputs', inputs)
           testRuntimeState.set('history-admission-dispose', () => {
@@ -2448,6 +2619,7 @@ for (const direction of ['undo', 'redo'] as const) {
           await page.evaluate(async () => {
             const { testRuntimeState } =
               await import('../src/testing/runtime-access')
+
             return {
               calls: testRuntimeState.get('history-admission-calls'),
               inputs: testRuntimeState.get('history-admission-inputs')
@@ -2471,6 +2643,7 @@ for (const direction of ['undo', 'redo'] as const) {
         const expected = (direction === 'undo') !== fail ? empty : drawn
         const expectedDepth =
           expected === empty ? initialDepth : initialDepth + 1
+
         await expect.poll(() => getUndoHistoryDepth(page)).toBe(expectedDepth)
         expect(await getCoreDocumentDigest(page)).toEqual(expected)
         if (fail) {
@@ -2482,10 +2655,13 @@ for (const direction of ['undo', 'redo'] as const) {
             )
           ).toContain('Controlled history slice failure')
         }
+
         // A new command after either success or compensation must work normally.
         const next = expected === empty ? 'redo' : 'undo'
+
         await (next === 'undo' ? undo(page) : redo(page))
         const final = next === 'undo' ? empty : drawn
+
         await expect
           .poll(() => getUndoHistoryDepth(page))
           .toBe(next === 'undo' ? initialDepth : initialDepth + 1)

@@ -87,15 +87,18 @@ const ensurePopupRoot = () => {
   }
 
   const existing = document.getElementById(POPUP_ROOT_ID)
+
   if (existing) {
     return existing
   }
 
   const root = document.createElement('div')
+
   root.id = POPUP_ROOT_ID
   root.style.position = 'relative'
   root.style.zIndex = '999'
   document.body.appendChild(root)
+
   return root
 }
 
@@ -155,6 +158,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   useEffect(() => {
     const lastEmitted = lastEmittedRef.current
+
     if (
       lastEmitted &&
       normalizeColorToken(lastEmitted.color) === normalizeColorToken(color) &&
@@ -165,15 +169,20 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
     lastEmittedRef.current = null
     const next = createHsvaColor(color, opacity)
+
     setHsva(next)
     hsvaRef.current = next
 
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
+
     if (!currentDef) {
       setDraftValues([])
+
       return
     }
+
     const baseValues = currentDef.toValues(next)
+
     if (showAlpha && colorFormat !== 'css') {
       setDraftValues([...baseValues, String(Math.round(next.a * 100))])
     } else {
@@ -214,6 +223,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
     const handlePointerDownOutside = (event: PointerEvent) => {
       const target = event.target as Node
+
       if (shouldIgnoreOutsidePointerDownRef.current?.(target)) {
         return
       }
@@ -236,12 +246,14 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   useLayoutEffect(() => {
     if (!isOpen) {
       setPanelPosition(null)
+
       return
     }
 
     const updatePanelPosition = () => {
       const triggerRect = triggerRef.current?.getBoundingClientRect()
       const panelRect = panelRef.current?.getBoundingClientRect()
+
       if (!triggerRect || !panelRect) {
         return
       }
@@ -294,12 +306,15 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
     const rgba = hsvaToRgba(next)
     const hsla = hsvaToHsla(next)
     const nextColor = formatColor(rgba, hsla, colorFormat)
+
     setHsva(next)
     hsvaRef.current = next
 
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
+
     if (currentDef) {
       const baseValues = currentDef.toValues(next)
+
       if (showAlpha && colorFormat !== 'css') {
         setDraftValues([...baseValues, String(Math.round(next.a * 100))])
       } else {
@@ -319,6 +334,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const updateFromSaturation = (position: { x: number; y: number }) => {
     const rect = saturationRef.current?.getBoundingClientRect()
+
     if (!rect) {
       return
     }
@@ -328,11 +344,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       s: clampUnit((position.x - rect.left) / rect.width),
       v: clampUnit(1 - (position.y - rect.top) / rect.height)
     }
+
     emitChange(next)
   }
 
   const updateFromHue = (position: { x: number }) => {
     const rect = hueRef.current?.getBoundingClientRect()
+
     if (!rect) {
       return
     }
@@ -346,11 +364,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       ...hsvaRef.current,
       h: relativeX * 360
     }
+
     emitChange(next)
   }
 
   const updateFromAlpha = (position: { x: number }) => {
     const rect = alphaRef.current?.getBoundingClientRect()
+
     if (!rect) {
       return
     }
@@ -364,6 +384,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       ...hsvaRef.current,
       a: relativeX
     }
+
     emitChange(next)
   }
 
@@ -373,11 +394,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   ) => {
     if (target === 'saturation') {
       updateFromSaturation(position)
+
       return
     }
 
     if (target === 'hue') {
       updateFromHue(position)
+
       return
     }
 
@@ -405,6 +428,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
     const handlePointerMove = (pointerEvent: PointerEvent) => {
       const currentTarget = dragTargetRef.current
+
       if (!currentTarget) {
         return
       }
@@ -440,6 +464,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       const eyeDropper = new window.EyeDropper()
       const result = await eyeDropper.open()
       const parsed = parseColor(result.sRGBHex)
+
       if (parsed) {
         emitChange({
           ...rgbaToHsva(parsed),
@@ -453,6 +478,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const handleInputChange = (value: string, index: number) => {
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
+
     if (!currentDef) {
       return
     }
@@ -476,6 +502,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const handleInputBlur = (index: number) => {
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
+
     if (!currentDef) {
       return
     }
@@ -486,11 +513,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       index === draftValues.length - 1
     ) {
       const parsed = Number.parseFloat(draftValues[index])
+
       if (Number.isFinite(parsed)) {
         emitChange({ ...hsvaRef.current, a: clampUnit(parsed / 100) })
       } else {
         syncDraftsFromHsva(hsvaRef.current)
       }
+
       return
     }
 
@@ -500,6 +529,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
         : draftValues
 
     const nextHsva = currentDef.fromValues(colorPart, hsvaRef.current)
+
     if (nextHsva) {
       emitChange(nextHsva)
     } else {
@@ -509,11 +539,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const syncDraftsFromHsva = (current: HSVAColor) => {
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
+
     if (!currentDef) {
       return
     }
 
     const base = currentDef.toValues(current)
+
     if (showAlpha && colorFormat !== 'css') {
       setDraftValues([...base, String(Math.round(current.a * 100))])
     } else {

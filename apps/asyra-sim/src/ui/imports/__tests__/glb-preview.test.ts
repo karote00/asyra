@@ -41,7 +41,9 @@ function render(model = workcell, active = true) {
       candidateId: 'candidate',
       workcell: model,
       onPreview,
+
       isCurrent: () => true,
+
       active
     })
   )
@@ -86,7 +88,9 @@ beforeEach(async () => {
         candidateId: 'candidate',
         workcell,
         onPreview,
+
         isCurrent: () => true,
+
         active: true
       })
     )
@@ -357,8 +361,11 @@ it('releases the file picker immediately on cancellation and ignores late file b
 it('exposes source preparation and acceptance progress and reveals the prepared source', async () => {
   const scroll = vi.fn()
   const original = HTMLElement.prototype.scrollIntoView
+
   HTMLElement.prototype.scrollIntoView = scroll
+
   let finish: (value: PreparedVisualImport) => void = () => undefined
+
   prepare.mockImplementationOnce(
     () =>
       new Promise<PreparedVisualImport>((resolve) => {
@@ -375,7 +382,9 @@ it('exposes source preparation and acceptance progress and reveals the prepared 
     'Original part source review'
   )
   expect(scroll).toHaveBeenCalledTimes(1)
+
   let complete: () => void = () => undefined
+
   retain.mockImplementationOnce(
     () =>
       new Promise<void>((resolve) => {

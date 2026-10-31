@@ -6,8 +6,11 @@ it('mounted crate consumer retains all original inventory in bounded canonical a
   const f = mountedConsumerFixture()
   const owner = new WalkingMotionOwner({
     getCurrentSceneDemand: () => f.demand,
+
     getCurrentWalkingRobotSource: () => f.source,
+
     getCurrentWalkingCycle: () => f.current,
+
     getCurrentMountedCrate: () => f.mounted
   })
   const raw = {
@@ -16,12 +19,15 @@ it('mounted crate consumer retains all original inventory in bounded canonical a
     budget: { ...f.raw.budget, maxExactPredicates: 1000 }
   }
   const result = owner.prepare(raw)
+
   if (!('format' in result)) {
     throw new Error('Missing nonlinear admission')
   }
+
   const entries = result.sourceRelations.inventory.filter(
     (e) => e.mountedCrate === f.crate
   )
+
   expect(entries.map((e) => e.mountedPart)).toEqual(f.crate.geometry.parts)
   expect(entries.map((e) => e.region)).toEqual(
     f.crate.geometry.parts.flatMap((p) => p.regions)
@@ -34,6 +40,7 @@ it('mounted crate consumer retains all original inventory in bounded canonical a
   expect(result.sourceRelations.coverage.unvisited).toBeGreaterThan(0)
   expect(owner.read()).toBe(result)
   const preparations = owner.work.preparations
+
   expect(owner.prepare(result.request)).toBe(result)
   expect(owner.work.preparations).toBe(preparations)
   f.mountOwner.clear()

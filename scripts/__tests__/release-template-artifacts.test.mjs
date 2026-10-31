@@ -5,9 +5,13 @@ import path from 'node:path'
 import test from 'node:test'
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..')
+
 const read = (file) => readFileSync(path.join(repositoryRoot, file), 'utf8')
+
 const templateRoot = 'create-app/asyra-design/template'
+
 const readTemplate = (file) => read(`${templateRoot}/${file}`)
+
 const templateExists = (file) =>
   existsSync(path.join(repositoryRoot, templateRoot, file))
 
@@ -38,6 +42,7 @@ test('generated apps have no retired provider dependency', () => {
     ) {
       continue
     }
+
     assert.doesNotMatch(file, /vercel/i)
     if (
       /\.(?:[cm]?js|tsx?|json|ya?ml|md)$|(?:^|\/)\.env\.example$|\.gitignore$/.test(
@@ -132,6 +137,7 @@ test('Asyra Design release template retains only active drawing fixtures', () =>
 
 test('Asyra Design keeps the large CRDT fixture out of the generated template', () => {
   const config = JSON.parse(read('release-configs/asyra-design.json'))
+
   for (const file of [
     'samples/crdt-7076',
     'test-data/ai-drawing',
@@ -152,7 +158,9 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
   ]) {
     assert.equal(templateExists(file), false, file)
   }
+
   const manifest = JSON.parse(readTemplate('package.json'))
+
   for (const argument of Object.values(config.removeScriptArguments).flat()) {
     assert.doesNotMatch(
       Object.values(manifest.scripts).join('\n'),
@@ -207,6 +215,7 @@ test('packed create-app inventory excludes repository-only generated state', () 
   assert.equal(result.status, 0, result.stderr || result.stdout)
   const [pack] = JSON.parse(result.stdout)
   const paths = pack.files.map(({ path: file }) => file)
+
   for (const file of [
     'README.md',
     'LICENSE',
@@ -215,6 +224,7 @@ test('packed create-app inventory excludes repository-only generated state', () 
   ]) {
     assert.ok(paths.includes(file))
   }
+
   for (const segment of [
     '.turbo/',
     'coverage/',
@@ -249,7 +259,9 @@ test('generated template manifest is standalone on the supported release runtime
       assert.match(version, /^\d+\.\d+\.\d+$/u, name)
     }
   }
+
   const environment = readTemplate('.env.example')
+
   assert.match(environment, /^APP_URL=http:\/\/localhost:3000$/m)
   assert.match(environment, /^COLLABORATION_WS_HOST=127\.0\.0\.1$/m)
   assert.match(environment, /^COLLABORATION_WS_PORT=4101$/m)
@@ -276,6 +288,7 @@ test('generated template documents its verified standalone commands and opt-ins'
   ]) {
     assert.match(generated, new RegExp(command.replace(' ', String.raw`\s+`)))
   }
+
   assert.match(generated, /Preset/)
   assert.match(generated, /migration/i)
   assert.match(generated, /Group/)

@@ -30,16 +30,20 @@ function validateExecutionPlan(plan) {
   ) {
     throw new Error('CI execution plan is missing or malformed')
   }
+
   if (plan.unknownRelations.length) {
     throw new Error('CI execution plan contains unknown relationships')
   }
+
   const lint = plan.checks.lint
+
   if (
     !['full', 'files', 'not-selected'].includes(lint.mode) ||
     !Array.isArray(lint.inputs)
   ) {
     throw new Error('CI lint selection is missing or malformed')
   }
+
   if (
     !scriptSelection.validRepositoryScriptSelection(
       plan.checks.repositoryScripts,
@@ -48,8 +52,10 @@ function validateExecutionPlan(plan) {
   ) {
     throw new Error('CI repository script selection is missing or malformed')
   }
+
   for (const name of ['naming']) {
     const selection = plan.checks[name]
+
     if (
       !['full', 'not-selected'].includes(selection.mode) ||
       !Array.isArray(selection.inputs)
@@ -57,12 +63,14 @@ function validateExecutionPlan(plan) {
       throw new Error(`CI ${name} selection is missing or malformed`)
     }
   }
+
   if (
     plan.checks.repositoryScripts.command !== 'test:scripts' ||
     plan.checks.naming.command !== 'lint:naming'
   ) {
     throw new Error('CI script selection names an unsupported command')
   }
+
   return plan
 }
 
@@ -70,22 +78,29 @@ async function resolveLintFiles(selection, repositoryRoot, eslint) {
   if (selection.mode === 'full') {
     return ['.']
   }
+
   if (selection.mode === 'not-selected') {
     return []
   }
+
   const selected = []
+
   for (const relativePath of selection.inputs) {
     const absolutePath = path.resolve(repositoryRoot, relativePath)
+
     if (!fs.existsSync(absolutePath)) {
       continue
     }
+
     if (await eslint.isPathIgnored(absolutePath)) {
       continue
     }
+
     if (await eslint.calculateConfigForFile(absolutePath)) {
       selected.push(absolutePath)
     }
   }
+
   return [...new Set(selected)].sort()
 }
 
@@ -104,30 +119,38 @@ function runRepositoryScripts(selection, execute = execFileSync) {
   ) {
     throw new Error('CI repository script selection is missing or malformed')
   }
+
   if (selection.mode === 'files') {
     const parallel = selection.tests.filter(
       (file) => !serialBuildTests.has(file)
     )
     const serial = selection.tests.filter((file) => serialBuildTests.has(file))
+
     if (parallel.length) {
       execute(process.execPath, ['--test', ...parallel], { stdio: 'inherit' })
     }
+
     if (serial.length) {
       execute(process.execPath, ['--test', '--test-concurrency=1', ...serial], {
         stdio: 'inherit'
       })
     }
+
     return { status: 'passed', executedTests: selection.tests }
   }
+
   execute('yarn', [selection.command], { stdio: 'inherit' })
+
   return { status: 'passed' }
 }
 
 async function executeSelectedChecks(plan, runners) {
   validateExecutionPlan(plan)
   const checks = {}
+
   for (const name of checkNames) {
     const selection = plan.checks[name]
+
     if (selection.mode === 'not-selected') {
       checks[name] = {
         status: 'not-selected',
@@ -137,8 +160,10 @@ async function executeSelectedChecks(plan, runners) {
       }
       continue
     }
+
     try {
       const outcome = await runners[name](selection)
+
       checks[name] = {
         status: outcome?.status ?? 'passed',
         mode: selection.mode,
@@ -154,6 +179,7 @@ async function executeSelectedChecks(plan, runners) {
       }
     }
   }
+
   return {
     version: 1,
     identity: runners.identity ?? {},
@@ -176,6 +202,7 @@ async function main() {
     attempt: process.env.CI_SCOPE_ATTEMPT ?? ''
   }
   const relationshipMapDigest = process.env.CI_RELATIONSHIP_MAP_DIGEST ?? ''
+
   if (
     Object.values(identity).some((value) => !value) ||
     !/^[a-f0-9]{64}$/.test(relationshipMapDigest)
@@ -186,6 +213,7 @@ async function main() {
   const evidence = JSON.parse(
     fs.readFileSync(process.env.CI_SCOPE_EVIDENCE_FILE, 'utf8')
   )
+
   if (
     evidence.version !== 2 ||
     evidence.relationshipMapDigest !== relationshipMapDigest ||
@@ -197,23 +225,30 @@ async function main() {
       'CI scope evidence does not match the expected execution identity'
     )
   }
+
   const plan = evidence.executionPlan
 
   const result = await executeSelectedChecks(plan, {
     identity,
     relationshipMapDigest,
+
     lint: () => runYarnScript('lint'),
+
     repositoryScripts: (selection) => runRepositoryScripts(selection),
+
     naming: (selection) => runYarnScript(selection.command)
   })
+
   result.identity = identity
   result.relationshipMapDigest = relationshipMapDigest
   const serialized = JSON.stringify(result)
+
   if (process.env.CI_CHECK_RESULTS_FILE) {
     fs.writeFileSync(process.env.CI_CHECK_RESULTS_FILE, `${serialized}\n`)
   } else if (process.env.GITHUB_OUTPUT) {
     fs.appendFileSync(process.env.GITHUB_OUTPUT, `result=${serialized}\n`)
   }
+
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(
       process.env.GITHUB_STEP_SUMMARY,
@@ -230,6 +265,7 @@ async function main() {
       ].join('\n')
     )
   }
+
   console.log(serialized)
   if (Object.values(result.checks).some(({ status }) => status === 'failed')) {
     process.exitCode = 1

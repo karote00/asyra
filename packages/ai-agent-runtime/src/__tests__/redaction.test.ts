@@ -56,9 +56,12 @@ describe('AI runtime redaction', () => {
     const getter = vi.fn(() => 'secret')
     const value: Record<string, unknown> = {
       bigint: BigInt(1),
+
       callback: () => undefined,
+
       number: Number.NaN
     }
+
     Object.defineProperty(value, 'accessor', {
       enumerable: true,
       get: getter

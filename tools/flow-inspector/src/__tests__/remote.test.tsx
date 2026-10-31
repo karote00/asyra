@@ -8,9 +8,12 @@ afterEach(() => {
 
 describe('React service subscriptions', () => {
   it('shares task reads until their authoritative summary changes', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: async () => ({ id: 'task' }) })
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+
+      json: async () => ({ id: 'task' })
+    })
+
     vi.stubGlobal('fetch', fetch)
     const { result, rerender, unmount } = renderHook(
       ({ revision, identity }) => [
@@ -43,12 +46,15 @@ describe('React service subscriptions', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: false,
+
         json: async () => ({ error: 'Unavailable' })
       })
       .mockResolvedValue({
         ok: true,
+
         json: async () => ({ value: 'recovered' })
       })
+
     vi.stubGlobal('fetch', fetch)
     const { result, unmount } = renderHook(() =>
       useRemote('/api/evidence', 0, true)
@@ -64,10 +70,14 @@ describe('React service subscriptions', () => {
   })
 
   it('stops polling when the authoritative owner reports idle', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: async () => ({ active: false }) })
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+
+      json: async () => ({ active: false })
+    })
+
     const active = (value: { active: boolean }) => value.active
+
     vi.stubGlobal('fetch', fetch)
     const { result, unmount } = renderHook(() =>
       useRemote('/api/state', 0, active)
@@ -89,19 +99,29 @@ describe('React service subscriptions', () => {
             complete = resolve
           })
       )
-      .mockResolvedValue({ ok: true, json: async () => ({ id: 'current' }) })
+      .mockResolvedValue({
+        ok: true,
+
+        json: async () => ({ id: 'current' })
+      })
+
     vi.stubGlobal('fetch', fetch)
     const { result, rerender, unmount } = renderHook(
       ({ route }) => useRemote(route),
       { initialProps: { route: '/api/old' } }
     )
     const oldSignal = fetch.mock.calls[0][1].signal as AbortSignal
+
     rerender({ route: '/api/current' })
 
     await waitFor(() => expect(result.current.value).toEqual({ id: 'current' }))
     expect(oldSignal.aborted).toBe(true)
     await act(async () => {
-      complete?.({ ok: true, json: async () => ({ id: 'old' }) })
+      complete?.({
+        ok: true,
+
+        json: async () => ({ id: 'old' })
+      })
     })
     expect(result.current.value).toEqual({ id: 'current' })
     unmount()

@@ -10,6 +10,7 @@ test('work room reference review exposes shelf inventory and the thin divider ca
     'Requires hardware WebGL.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await page
@@ -23,6 +24,7 @@ test('work room reference review exposes shelf inventory and the thin divider ca
     })
     .click()
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
+
   const settle = () =>
     page.evaluate(
       () =>
@@ -30,12 +32,15 @@ test('work room reference review exposes shelf inventory and the thin divider ca
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
     )
+
   await settle()
   await canvas.screenshot({ path: info.outputPath('work-room.png') })
   const bounds = await canvas.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing work-room canvas')
   }
+
   await page.screenshot({
     path: info.outputPath('work-shelves.png'),
     clip: {
@@ -53,6 +58,7 @@ test('work room reference review exposes shelf inventory and the thin divider ca
   for (let i = 0; i < 2; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
   }
+
   await settle()
   await canvas.screenshot({ path: info.outputPath('work-divider-detail.png') })
   await info.attach('review-state', {
@@ -81,6 +87,7 @@ test('work floor plant exposes square cavity and upright and arching broad leave
     'Requires hardware WebGL.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await page
@@ -95,11 +102,14 @@ test('work floor plant exposes square cavity and upright and arching broad leave
     .click()
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const bounds = await canvas.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing live scene bounds')
   }
+
   const x = bounds.x + bounds.width / 2,
     y = bounds.y + bounds.height / 2
+
   await page.mouse.move(x, y)
   await page.mouse.down()
   await page.mouse.move(x - 80, y + 150, { steps: 8 })
@@ -122,6 +132,7 @@ test('work floor plant exposes square cavity and upright and arching broad leave
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
   }
+
   await page.evaluate(
     () =>
       new Promise<void>((resolve) =>
@@ -163,6 +174,7 @@ test('five shelf plants show the selected botanical designs and preserved colors
     'Requires hardware WebGL.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await page
@@ -184,9 +196,11 @@ test('five shelf plants show the selected botanical designs and preserved colors
   )
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const bounds = await canvas.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing live canvas')
   }
+
   await canvas.screenshot({ path: info.outputPath('shelf-context.png') })
   await page.screenshot({
     path: info.outputPath('five-shelf-plants.png'),
@@ -204,6 +218,7 @@ test('five shelf plants show the selected botanical designs and preserved colors
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
   }
+
   await page.evaluate(
     () =>
       new Promise<void>((resolve) =>
@@ -213,6 +228,7 @@ test('five shelf plants show the selected botanical designs and preserved colors
   await canvas.screenshot({ path: info.outputPath('shelf-detail.png') })
   const x = bounds.x + bounds.width / 2,
     y = bounds.y + bounds.height / 2
+
   await page.mouse.move(x, y)
   await page.mouse.down()
   await page.mouse.move(x, y - 40, { steps: 8 })

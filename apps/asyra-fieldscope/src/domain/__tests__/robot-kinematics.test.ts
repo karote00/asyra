@@ -30,6 +30,7 @@ it('isolates caller-owned material regions even when the part and shape are froz
   )
   const rig = prepareRobotRig(DEFAULT_ROBOT, input)
   const before = digest(rig.parts[0].source.regions)
+
   regions[0].kind = 'sheet'
   regions.push({ ...regions[0], id: 'caller-added' })
   expect(digest(rig.parts[0].source.regions)).toBe(before)
@@ -40,7 +41,9 @@ it('preserves exact parked structure and materials plus the render handoff', () 
   expect(
     definitions.map((definition) => {
       const source = createRobotModel(definition)
+
       expect(digest(createRobotModel(definition))).toBe(digest(source))
+
       return {
         definition: [
           definition.width,
@@ -75,10 +78,12 @@ it('keeps zero-joint rigid transforms and every original source part exact', asy
     REST_JOINTS,
     transformRobotPoint
   } = await import('../robot-kinematics')
+
   for (const definition of definitions) {
     const source = createRobotModel(definition)
     const rig = prepareRobotRig(definition, source)
     const pose = evaluateRobotPose(rig, REST_JOINTS)
+
     expect(new Set(rig.parts.map((part) => part.source.id)).size).toBe(
       source.length
     )
@@ -97,9 +102,11 @@ it('keeps zero-joint rigid transforms and every original source part exact', asy
           number,
           number
         ]
+
         expect(transformRobotPoint(part.transform, point)).toEqual(point)
       }
     }
+
     expect(pose.tool.position).toEqual([
       0,
       definition.height * 0.515,
@@ -126,8 +133,10 @@ it('moves only the owned rigid chain and preserves link lengths and tool orienta
     elbow: -0.5,
     wrist: 0.3
   })
+
   const distance = (a: readonly number[], b: readonly number[]) =>
     Math.hypot(...a.map((value, index) => value - b[index]))
+
   expect(distance(pose.frames.shoulder, pose.frames.elbow)).toBeCloseTo(
     distance(rest.frames.shoulder, rest.frames.elbow),
     12
@@ -144,15 +153,18 @@ it('moves only the owned rigid chain and preserves link lengths and tool orienta
     'crate-bottom'
   ]) {
     const part = pose.parts.find((item) => item.source.id === id)
+
     expect(part?.transform).toEqual({
       position: [0, 0, 0],
       rotation: [0, 0, 0, 1]
     })
   }
+
   expect(
     pose.parts.find((part) => part.source.id === 'lift-carriage')?.transform
   ).toEqual({ position: [0, 0.1, 0], rotation: [0, 0, 0, 1] })
   const yawed = evaluateRobotPose(rig, { ...REST_JOINTS, yaw: Math.PI / 2 })
+
   expect(yawed.tool.closing).toEqual([
     expect.closeTo(0, 12),
     0,
@@ -160,9 +172,11 @@ it('moves only the owned rigid chain and preserves link lengths and tool orienta
   ])
   expect(yawed.tool.approach).toEqual([0, -1, 0])
   const wrist = pose.parts.find((part) => part.source.id === 'tool-guard')
+
   if (!wrist) {
     throw new Error('Missing tool source')
   }
+
   expect(pose.tool.position).toEqual(
     transformRobotPoint(wrist.transform, rig.tool.position)
   )
@@ -176,6 +190,7 @@ it('admits exact approved bounds and rejects nonfinite joints or an incomplete l
     ROBOT_JOINT_LIMITS
   } = await import('../robot-kinematics')
   const rig = prepareRobotRig(DEFAULT_ROBOT, createRobotModel(DEFAULT_ROBOT))
+
   expect(rig.speeds).toEqual({
     lift: 0.02,
     yaw: Math.PI / 18,
@@ -196,9 +211,11 @@ it('admits exact approved bounds and rejects nonfinite joints or an incomplete l
       ).toThrow()
     }
   }
+
   const short = { ...DEFAULT_ROBOT, height: 0.6 }
   const source = createRobotModel(short)
   const original = digest(source)
+
   expect(() => prepareRobotRig(short, source)).toThrow('lift')
   expect(digest(source)).toBe(original)
   expect(evaluateRobotPose(rig, REST_JOINTS).joints).toEqual(REST_JOINTS)
@@ -210,6 +227,7 @@ it('detaches mutable source buffers once and reuses their admitted identity acro
   const raw = createRobotModel(DEFAULT_ROBOT)
   const rig = prepareRobotRig(DEFAULT_ROBOT, raw)
   const before = digest(rig.parts)
+
   ;(raw[0].shape.positions as number[])[0] += 100
   raw[0].color = 0
   expect(digest(rig.parts)).toBe(before)
@@ -228,6 +246,7 @@ it('rotates each pitch around its source pivot and leaves upstream bodies fixed'
   } = await import('../robot-kinematics')
   const rig = prepareRobotRig(DEFAULT_ROBOT, createRobotModel(DEFAULT_ROBOT))
   const angle = 0.4
+
   for (const [joint, pivot, upstream] of [
     ['shoulder', rig.frames.shoulder, 'shoulder'],
     ['elbow', rig.frames.elbow, 'upper-arm'],
@@ -236,6 +255,7 @@ it('rotates each pitch around its source pivot and leaves upstream bodies fixed'
     const pose = evaluateRobotPose(rig, { ...REST_JOINTS, [joint]: angle })
     const y = rig.tool.position[1] - pivot[1],
       z = rig.tool.position[2] - pivot[2]
+
     expect(pose.tool.position[0]).toBeCloseTo(rig.tool.position[0], 12)
     expect(pose.tool.position[1]).toBeCloseTo(
       pivot[1] + y * Math.cos(angle) - z * Math.sin(angle),
@@ -246,9 +266,11 @@ it('rotates each pitch around its source pivot and leaves upstream bodies fixed'
       12
     )
     const upstreamPart = pose.parts.find((part) => part.source.id === upstream)
+
     if (!upstreamPart) {
       throw new Error('Missing upstream source')
     }
+
     expect(
       transformRobotPoint(upstreamPart.transform, rig.tool.position)
     ).toEqual(rig.tool.position)
@@ -259,17 +281,22 @@ it('rotates each pitch around its source pivot and leaves upstream bodies fixed'
 function poseBits(value: unknown): string {
   if (typeof value === 'number') {
     const bytes = new DataView(new ArrayBuffer(8))
+
     bytes.setFloat64(0, value)
+
     return bytes.getBigUint64(0).toString(16).padStart(16, '0')
   }
+
   if (Array.isArray(value)) {
     return `[${value.map(poseBits).join(',')}]`
   }
+
   if (value && typeof value === 'object') {
     return `{${Object.entries(value)
       .map(([key, entry]) => `${key}:${poseBits(entry)}`)
       .join(',')}}`
   }
+
   return JSON.stringify(value)
 }
 
@@ -289,10 +316,12 @@ it('preserves pre-extraction Float64 pose outputs including signed zero and ever
       bounds.map((value) => ({ ...REST_JOINTS, [key]: value }))
     )
   ]
+
   expect(poseBits(-0)).not.toBe(poseBits(0))
   expect(
     definitions.map((definition) => {
       const rig = prepareRobotRig(definition, createRobotModel(definition))
+
       return cases.map((joints) => {
         // Historical model only; preserve the original snapshot key and values.
         const domains = Object.fromEntries(
@@ -316,6 +345,7 @@ it('preserves pre-extraction Float64 pose outputs including signed zero and ever
           frames: pose.frames,
           tool: pose.tool
         }
+
         return createHash('sha256').update(poseBits(numeric)).digest('hex')
       })
     })
@@ -324,17 +354,25 @@ it('preserves pre-extraction Float64 pose outputs including signed zero and ever
 
 const scalarAlgebra: KinematicAlgebra<number> = {
   literal: (value) => value,
+
   range: (lower, upper) => {
     if (!Object.is(lower, upper)) {
       throw new Error('Singleton number domains only')
     }
+
     return lower
   },
+
   add: (a, b) => a + b,
+
   subtract: (a, b) => a - b,
+
   multiply: (a, b) => a * b,
+
   divide: (a, b) => a / b,
+
   sin: (value) => evaluatePolynomialTrig('sin', value).value,
+
   cos: (value) => evaluatePolynomialTrig('cos', value).value
 }
 
@@ -354,14 +392,17 @@ it('shares the canonical FK chain with singleton number algebra and original sou
       bounds.map((value) => ({ ...REST_JOINTS, [key]: value }))
     )
   ]
+
   for (const definition of definitions) {
     const rig = prepareRobotRig(definition, createRobotModel(definition))
+
     for (const joints of cases) {
       const domains = Object.fromEntries(
         Object.entries(joints).map(([key, value]) => [key, [value, value]])
       ) as unknown as JointDomains
       const actual = evaluateRobotDomains(rig, domains, scalarAlgebra)
       const expected = evaluateRobotPose(rig, joints)
+
       expect(
         poseBits({
           parts: actual.parts.map((p) => p.transform),
@@ -382,16 +423,19 @@ it('shares the canonical FK chain with singleton number algebra and original sou
         const peer = actual.parts.find(
           (candidate) => candidate.body === part.body
         )
+
         expect(part.transform).toBe(peer?.transform)
       })
       expect(Object.isFrozen(actual.parts)).toBe(true)
       expect(Object.isFrozen(actual.domains)).toBe(true)
     }
+
     const first = evaluateRobotPose(rig, REST_JOINTS)
     const second = evaluateRobotPose(
       rig,
       Object.assign({ ...REST_JOINTS }, { extra: 1 })
     )
+
     expect(second.joints).toHaveProperty('extra', 1)
     expect(first.parts.find((part) => part.body === 'fixed')?.transform).toBe(
       second.parts.find((part) => part.body === 'fixed')?.transform
@@ -419,6 +463,7 @@ it('validates a single detached numeric domain snapshot before any algebra callb
   const algebra = Object.fromEntries(
     Object.keys(scalarAlgebra).map((key) => [key, callback])
   ) as unknown as KinematicAlgebra<number>
+
   for (const invalid of [
     null,
     { ...domains, extra: [0, 0] },
@@ -435,14 +480,18 @@ it('validates a single detached numeric domain snapshot before any algebra callb
     ).toThrow()
     expect(callback).not.toHaveBeenCalled()
   }
+
   let reads = 0
   const getter = {
     ...domains,
+
     get yaw() {
       reads++
+
       return reads === 1 ? [NaN, 0] : [0, 0]
     }
   }
+
   expect(() =>
     evaluateRobotDomains(rig, getter as unknown as JointDomains, algebra)
   ).toThrow()
@@ -450,8 +499,10 @@ it('validates a single detached numeric domain snapshot before any algebra callb
   expect(callback).not.toHaveBeenCalled()
   const mutating = {
     ...scalarAlgebra,
+
     range: (lower: number, upper: number) => {
       domains.yaw[0] = 1
+
       return scalarAlgebra.range(lower, upper)
     }
   }
@@ -460,6 +511,7 @@ it('validates a single detached numeric domain snapshot before any algebra callb
     domains as unknown as JointDomains,
     mutating
   )
+
   expect(result.domains.yaw).toEqual([0, 0])
   expect(Object.isFrozen(domains)).toBe(false)
 })
@@ -480,29 +532,43 @@ it('freezes only C-owned containers and does not publish after a scalar callback
     wrist: [0, 0]
   } as JointDomains
   const scalars: { value: number }[] = []
+
   const box = (value: number) => {
     const scalar = { value }
+
     scalars.push(scalar)
+
     return scalar
   }
+
   const algebra: KinematicAlgebra<{ value: number }> = {
     literal: box,
+
     range: (lower, upper) => box(scalarAlgebra.range(lower, upper)),
+
     add: (a, b) => box(a.value + b.value),
+
     subtract: (a, b) => box(a.value - b.value),
+
     multiply: (a, b) => box(a.value * b.value),
+
     divide: (a, b) => box(a.value / b.value),
+
     sin: (a) => box(Math.sin(a.value)),
+
     cos: (a) => box(Math.cos(a.value))
   }
   const result = evaluateRobotDomains(rig, domains, algebra)
+
   expect(Object.isFrozen(result)).toBe(true)
   expect(Object.isFrozen(result.tool.position)).toBe(true)
   expect(scalars.every((scalar) => !Object.isFrozen(scalar))).toBe(true)
   const before = poseBits(evaluateRobotPose(rig, REST_JOINTS).tool)
+
   expect(() =>
     evaluateRobotDomains(rig, domains, {
       ...algebra,
+
       sin: () => {
         throw new Error('algebra stopped')
       }
@@ -524,13 +590,17 @@ it('passes complete approved domains once without generating source geometry or 
   // This test adapter records numeric domains; it is not an interval proof.
   const algebra = {
     ...scalarAlgebra,
+
     range: (lower: number, upper: number) => {
       ranges.push([lower, upper])
+
       return lower
     }
   }
+
   try {
     const first = kinematics.evaluateRobotDomains(rig, rig.limits, algebra)
+
     expect(ranges).toEqual(Object.values(rig.limits))
     expect(first).not.toHaveProperty('clear')
     expect(first).not.toHaveProperty('trajectory')
@@ -556,26 +626,32 @@ it('prepares final raw-quaternion affine coefficients matching installed Three w
     )
   ]
   let associationDifferences = 0
+
   for (const definition of definitions) {
     const rig = k.prepareRobotRig(definition, createRobotModel(definition))
+
     for (const joints of cases) {
       const result = k.evaluateRobotAffinePose(rig, joints)
       const original = k.evaluateRobotPose(rig, joints)
+
       const pointOutput = (pose: typeof original) => ({
         joints: pose.joints,
         frames: pose.frames,
         tool: pose.tool,
         transforms: pose.parts.map((part) => part.transform)
       })
+
       expect(poseBits(pointOutput(result.pose))).toBe(
         poseBits(pointOutput(original))
       )
       const transforms = new Set(
         result.pose.parts.map((part) => part.transform)
       )
+
       expect(result.work).toEqual({ fk: 1, matrices: transforms.size })
       result.parts.forEach((part, index) => {
         const source = result.pose.parts[index]
+
         expect(part.source).toBe(source.source)
         expect(part.transform).toBe(source.transform)
         expect(part.affine.position).toBe(source.transform.position)
@@ -590,6 +666,7 @@ it('prepares final raw-quaternion affine coefficients matching installed Three w
           new Vector3(1, 1, 1)
         )
         const e = matrix.elements
+
         expect(poseBits(part.affine.matrix)).toBe(
           poseBits([
             [e[0], e[4], e[8]],
@@ -623,6 +700,7 @@ it('prepares final raw-quaternion affine coefficients matching installed Three w
             const expected = new Vector3(...point)
               .applyMatrix4(matrix)
               .toArray()
+
             expect(poseBits(applied)).toBe(poseBits(expected))
             if (
               poseBits(applied) !==
@@ -635,6 +713,7 @@ it('prepares final raw-quaternion affine coefficients matching installed Three w
       })
     }
   }
+
   expect(associationDifferences).toBeGreaterThan(0)
 })
 
@@ -649,6 +728,7 @@ it('evaluates point FK once and reuses completed affine frames without regenerat
     models.createRobotModel(DEFAULT_ROBOT)
   )
   const generation = vi.spyOn(models, 'createRobotModel')
+
   sine.mockClear()
   cosine.mockClear()
   try {
@@ -659,6 +739,7 @@ it('evaluates point FK once and reuses completed affine frames without regenerat
       elbow: 0.5,
       wrist: -0.2
     })
+
     expect(sine).not.toHaveBeenCalled()
     expect(cosine).not.toHaveBeenCalled()
     expect(generation).not.toHaveBeenCalled()
@@ -690,6 +771,7 @@ it('documents why a nonunit algebraic quaternion product is not an affine joint-
   const chained = new Matrix4()
     .compose(origin, a, scale)
     .multiply(new Matrix4().compose(origin, b, scale))
+
   expect(a.lengthSq()).not.toBe(1)
   expect(b.lengthSq()).not.toBe(1)
   expect(poseBits(final.elements)).not.toBe(poseBits(chained.elements))

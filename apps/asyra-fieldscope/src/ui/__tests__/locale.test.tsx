@@ -28,12 +28,15 @@ it('provides complete bilingual copy with matching interpolation parameters', ()
     expect(zhTW[key].trim(), key).not.toBe('')
     expect(en[key].trim(), key).not.toBe('')
     expect(en[key], key).not.toMatch(/\p{Script=Han}/u)
+
     const tokens = (value: string) =>
       [...value.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort()
+
     expect(tokens(en[key]), key).toEqual(tokens(zhTW[key]))
     const parameters = Object.fromEntries(
       tokens(en[key]).map((token) => [token, 3.25])
     )
+
     expect(translate('en', key, parameters)).not.toMatch(/\{\w+\}/)
     expect(translate('zh-TW', key, parameters)).not.toMatch(/\{\w+\}/)
   }
@@ -41,11 +44,13 @@ it('provides complete bilingual copy with matching interpolation parameters', ()
 
 it('translates structured validation in either language without changing its bounds', () => {
   let error: unknown
+
   try {
     validateConfiguration({ ...DEFAULT_CONFIGURATION, length: 1 })
   } catch (caught) {
     error = caught
   }
+
   expect(error).toBeInstanceOf(ConfigurationError)
   expect(error).toMatchObject({
     code: 'range',
@@ -83,8 +88,10 @@ for (const saved of [null, 'en', 'zh-CN', 'bogus']) {
     if (saved) {
       localStorage.setItem(LOCALE_STORAGE_KEY, saved)
     }
+
     const host = document.createElement('div')
     const root = createRoot(host)
+
     try {
       await act(async () =>
         root.render(
@@ -116,6 +123,7 @@ it('switches language when browser storage is unavailable', async () => {
   })
   const host = document.createElement('div')
   const root = createRoot(host)
+
   try {
     await act(async () =>
       root.render(
@@ -125,9 +133,11 @@ it('switches language when browser storage is unavailable', async () => {
       )
     )
     const select = host.querySelector('select')
+
     if (!select) {
       throw new Error('Missing language selector')
     }
+
     expect(select.value).toBe('zh-TW')
     await act(async () => {
       select.value = 'en'

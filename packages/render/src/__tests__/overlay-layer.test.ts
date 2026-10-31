@@ -26,6 +26,7 @@ describe('overlay layer', () => {
 
     const registration = createOverlayLayerRegistration({
       name: 'test-overlay',
+
       update: (canvas) => {
         canvas.bezierCurve(
           { x: 0, y: 0 },

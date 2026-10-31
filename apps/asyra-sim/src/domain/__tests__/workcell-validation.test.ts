@@ -15,6 +15,7 @@ const parameters = {
   colliders: [],
   color: 0
 }
+
 describe('shared body/load validation', () => {
   const visual = (id = 'reference') => ({
     version: 1,
@@ -23,9 +24,11 @@ describe('shared body/load validation', () => {
     pose: IDENTITY_POSE,
     scale: [1, 1, 1]
   })
+
   it('does not let visual placement or scale alter body kinematics or colliders', () => {
     const original = createSyntheticExample().workcell
     const attached = structuredClone(original)
+
     attached.bodies[1].visuals = [
       {
         version: 1,
@@ -43,6 +46,7 @@ describe('shared body/load validation', () => {
   })
   it('validates optional visual metadata without creating colliders', () => {
     const body = { ...parameters, visuals: [visual()] }
+
     expect(validBodyParameters(body)).toBe(true)
     expect(body.colliders).toEqual([])
     expect(validBodyParameters({ ...parameters, visuals: [] })).toBe(true)
@@ -62,9 +66,11 @@ describe('shared body/load validation', () => {
         false
       )
     }
+
     for (const visuals of [null, {}, [visual(), visual()]]) {
       expect(validBodyParameters({ ...parameters, visuals })).toBe(false)
     }
+
     expect(
       validBodyParameters({
         ...parameters,
@@ -74,6 +80,7 @@ describe('shared body/load validation', () => {
   })
   it('enforces body and workcell visual-reference limits without truncation', () => {
     const visuals = Array.from({ length: 16 }, (_, i) => visual(`v${i}`))
+
     expect(validBodyParameters({ ...parameters, visuals })).toBe(true)
     expect(
       validBodyParameters({
@@ -90,6 +97,7 @@ describe('shared body/load validation', () => {
       visuals
     }))
     const workcell = { version: 1, robotRootId: null, bodies }
+
     expect(() => validateWorkcell(workcell)).not.toThrow()
     expect(() =>
       validateWorkcell({
@@ -98,12 +106,14 @@ describe('shared body/load validation', () => {
       })
     ).toThrow('visual')
   })
+
   const colliders = (count: number) =>
     Array.from({ length: count }, (_, index) => ({
       id: `shape-${index}`,
       geometry: { kind: 'sphere', radius: 0.1 },
       pose: IDENTITY_POSE
     }))
+
   it('enforces the sixteen-collider body limit without dropping geometry', () => {
     expect(
       validBodyParameters({ ...parameters, colliders: colliders(16) })
@@ -122,6 +132,7 @@ describe('shared body/load validation', () => {
       colliders: colliders(16)
     }))
     const workcell = { version: 1, robotRootId: null, bodies }
+
     expect(() => validateWorkcell(workcell)).not.toThrow()
     expect(() =>
       validateWorkcell({
@@ -161,9 +172,11 @@ describe('shared body/load validation', () => {
     ]) {
       expect(() => validateWorkcell(value)).toThrow()
     }
+
     for (const id of ['__proto__', 'constructor', 'prototype', '', false]) {
       expect(validIdentifier(id)).toBe(false)
     }
+
     for (const value of [
       null,
       { ...parameters, colliders: [null] },

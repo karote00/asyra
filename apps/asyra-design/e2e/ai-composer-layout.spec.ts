@@ -16,6 +16,7 @@ for (const width of [360, 1280]) {
       await page.getByRole('button', { name: 'Open Agent' }).click()
       const form = page.getByRole('form', { name: 'Agent message form' })
       const status = form.getByRole('status')
+
       await expect(status).toContainText(
         state === 'ready' ? 'Local AI connected' : 'Local AI unavailable'
       )
@@ -23,6 +24,7 @@ for (const width of [360, 1280]) {
         page.getByRole('button', { name: 'Check AI connection' })
       ).toHaveCount(state === 'ready' ? 0 : 1)
       const input = page.getByLabel('Message Agent')
+
       await input.fill('Draw a blue circle')
       const add = page.getByRole('button', { name: 'Add image' })
       const send = page.getByRole('button', { name: 'Send', exact: true })
@@ -32,9 +34,11 @@ for (const width of [360, 1280]) {
         add.boundingBox(),
         send.boundingBox()
       ])
+
       if (!formBox || !inputBox || !addBox || !sendBox) {
         throw new Error('Composer bounds unavailable')
       }
+
       expect(Math.abs(addBox.y - sendBox.y)).toBeLessThanOrEqual(1)
       expect(Math.abs(addBox.height - sendBox.height)).toBeLessThanOrEqual(1)
       expect(sendBox.x + sendBox.width).toBeLessThanOrEqual(
@@ -61,6 +65,7 @@ for (const width of [360, 1280]) {
       intent: string
       metadata: { replyTo?: { intent: string } }
     }[] = []
+
     await page.route('**/api/ai/action-batch', async (route) => {
       requests.push(route.request().postDataJSON())
       await route.fulfill({
@@ -85,12 +90,14 @@ for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 800 })
     await page.getByRole('button', { name: 'Open Agent' }).click()
     const intent = 'Draw a 240x240 blue circle'
+
     await page.getByLabel('Message Agent').fill(intent)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect(page.getByText('Waiting for your answer')).toBeVisible()
     await expect(page.getByText('Completed', { exact: true })).toHaveCount(0)
     await expect(page.getByText(/7,111|27,471|295,794/)).toHaveCount(0)
     const choice = page.getByRole('button', { name: 'Choose Balanced detail' })
+
     await expect(choice).toBeEnabled()
     await page
       .getByRole('complementary', { name: 'Agent conversation' })

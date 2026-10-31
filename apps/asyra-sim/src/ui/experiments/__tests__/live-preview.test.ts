@@ -31,20 +31,27 @@ it.each(['checking', 'ready'] as const)(
     if (status === 'checking') {
       sample.complete = false
     }
+
     sample.diagnosticId = 22
 
     let state: LiveState = { status: 'idle', sample: null, error: null }
+
     let notify: () => void = () => undefined
+
     let signal: AbortSignal | undefined
     const api = {
       subscribe: (listener: () => void) => {
         notify = listener
+
         return () => {
           notify = () => undefined
         }
       },
+
       getState: () => state,
+
       recordPreviewPublication: vi.fn(),
+
       open: (
         _input: unknown,
         _time: number,
@@ -54,6 +61,7 @@ it.each(['checking', 'ready'] as const)(
           signal = options.signal
           signal.addEventListener('abort', () => resolve(), { once: true })
         }),
+
       sample: vi.fn()
     } as unknown as SimRuntime['features']['live']
     const publish = vi.fn<(value: PlaybackView) => void>()
@@ -78,6 +86,7 @@ it.each(['checking', 'ready'] as const)(
     expect(publish.mock.lastCall?.[0].feedback?.checkedTime).toBe(3.2)
     if (status === 'ready') {
       const feedback = publish.mock.lastCall?.[0].feedback
+
       expect(api.recordPreviewPublication).toHaveBeenCalledWith(
         22,
         3.37,
@@ -86,6 +95,7 @@ it.each(['checking', 'ready'] as const)(
         feedback?.issues.map((issue) => issue.pairId)
       )
     }
+
     expect(
       playbackHighlight(publish.mock.lastCall?.[0] ?? null)?.colors.size
     ).toBe(2)
@@ -121,19 +131,25 @@ it('presents the same cached sample again after seeking without stale checking f
     runOfficialClearanceMethod(sampleSnapshot(input, 0))
   )
   let state: LiveState = { status: 'idle', sample: null, error: null }
+
   let notify: () => void = () => undefined
+
   const deliver = () => {
     state = { status: 'ready', sample, error: null }
     notify()
   }
+
   const api = {
     subscribe: (listener: () => void) => {
       notify = listener
+
       return () => {
         notify = () => undefined
       }
     },
+
     getState: () => state,
+
     open: (_input: unknown, _time: number, options: { signal: AbortSignal }) =>
       new Promise<void>((resolve) => {
         options.signal.addEventListener('abort', () => resolve(), {
@@ -141,6 +157,7 @@ it('presents the same cached sample again after seeking without stale checking f
         })
         deliver()
       }),
+
     sample: deliver
   } as unknown as SimRuntime['features']['live']
   const publish = vi.fn<(value: PlaybackView) => void>()
@@ -152,7 +169,11 @@ it('presents the same cached sample again after seeking without stale checking f
     api,
     publish
   )
-  const options = { discontinuity: true, onCollision: () => false }
+  const options = {
+    discontinuity: true,
+
+    onCollision: () => false
+  }
 
   preview.sample(0, options)
   await Promise.resolve()
@@ -181,6 +202,7 @@ it('shows only an exact interval witness during a pending seek', async () => {
       runOfficialClearanceMethod(sampleSnapshot(input, 2))
     )
   )
+
   Object.assign(intervalSample.pairs[0].evidence.leaves[0], {
     state: 'finding',
     penetration: true,
@@ -192,21 +214,27 @@ it('shows only an exact interval witness during a pending seek', async () => {
   })
 
   let state: LiveState = { status: 'idle', sample: null, error: null }
+
   let notify: () => void = () => undefined
+
   const api = {
     subscribe: (listener: () => void) => {
       notify = listener
+
       return () => {
         notify = () => undefined
       }
     },
+
     getState: () => state,
+
     open: (_input: unknown, _time: number, options: { signal: AbortSignal }) =>
       new Promise<void>((resolve) => {
         options.signal.addEventListener('abort', () => resolve(), {
           once: true
         })
       }),
+
     sample: vi.fn()
   } as unknown as SimRuntime['features']['live']
   const publish = vi.fn<(value: PlaybackView) => void>()
@@ -250,20 +278,26 @@ it('does not coalesce a crossed trajectory keyframe when animation jumps ahead o
     runOfficialClearanceMethod(sampleSnapshot(input, 0))
   )
   let state: LiveState = { status: 'idle', sample: null, error: null }
+
   let notify: () => void = () => undefined
+
   const request = vi.fn()
   const api = {
     subscribe: (listener: () => void) => {
       notify = listener
+
       return () => undefined
     },
+
     getState: () => state,
+
     open: (_input: unknown, _time: number, options: { signal: AbortSignal }) =>
       new Promise<void>((resolve) => {
         options.signal.addEventListener('abort', () => resolve(), {
           once: true
         })
       }),
+
     sample: request
   } as unknown as SimRuntime['features']['live']
   const preview = new LivePreview(

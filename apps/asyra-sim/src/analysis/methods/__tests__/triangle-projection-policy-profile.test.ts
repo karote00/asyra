@@ -14,9 +14,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (pair) =>
           pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
       )
+
       if (!pair) {
         throw new Error('Missing exact measured pair')
       }
+
       const query = {
         workcell: snapshot.workcell,
         trajectory: snapshot.trajectory,
@@ -32,6 +34,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         ...snapshot.method.settings,
         maxIntervals: snapshot.budget.maxIntervals
       }
+
       const run = () => {
         vi.restoreAllMocks()
         const counts = useTriangleProjectionControl(false)
@@ -43,6 +46,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         expect(evidence.coverage).toBe('complete')
         expect(counts.triangleCalls).toBe(0)
         expect(counts.nodeAxes).toBeGreaterThan(0)
@@ -50,6 +54,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         expect(counts.convexCalls).toBeGreaterThan(0)
         expect(counts.convexCalls).toBeLessThanOrEqual(1742)
         expect(context.work).toBeLessThanOrEqual(37737)
+
         return {
           work: context.work,
           milliseconds: performance.now() - started,
@@ -57,7 +62,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           evidence
         }
       }
+
       const rows = [run(), run(), run()]
+
       expect(rows[1].evidence).toEqual(rows[0].evidence)
       expect(rows[2].evidence).toEqual(rows[0].evidence)
       // Current cold CPU is measured under the original 20-second test guard.

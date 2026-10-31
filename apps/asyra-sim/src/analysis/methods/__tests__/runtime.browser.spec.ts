@@ -36,16 +36,19 @@ test('Chromium original-triangle predicates distinguish containment from diagona
     } as const
     const containment = query.distance(part, inside, 0, 1e-6, 48)
     const clearance = query.distance(part, outside, 0.02, 1e-6, 48)
+
     return {
       containment,
       clearance,
       intervalLower: query.lowerOver(part, outside, 0.02, clearance)
     }
   })
+
   expect(evidence.containment.penetration).toBe(true)
   expect(evidence.containment.upper).toBe(0)
   // The closest original edge point is (0.5, 0.5, 0), not its enclosing box.
   const exact = Math.hypot(0.4, 0.4) - 0.1
+
   expect(evidence.clearance.lower).toBeLessThanOrEqual(exact)
   expect(evidence.clearance.upper).toBeGreaterThanOrEqual(exact)
   expect(evidence.intervalLower).toBeGreaterThan(0.02)
@@ -76,6 +79,7 @@ test('Chromium encloses the analytical 3 m gap for every supported shape pair', 
         { kind: 'capsule', radius: 1, length: 2 }
       ] as const
     const output = []
+
     for (let a = 0; a < geometries.length; a++) {
       for (let b = a; b < geometries.length; b++) {
         const start = performance.now(),
@@ -95,6 +99,7 @@ test('Chromium encloses the analytical 3 m gap for every supported shape pair', 
               })
             }
           )
+
         output.push({
           pair: `${geometries[a].kind}/${geometries[b].kind}`,
           evidence,
@@ -102,8 +107,10 @@ test('Chromium encloses the analytical 3 m gap for every supported shape pair', 
         })
       }
     }
+
     return output
   })
+
   expect(results).toHaveLength(6)
   for (const { evidence } of results) {
     expect(evidence.lower).toBeLessThanOrEqual(3)
@@ -111,6 +118,7 @@ test('Chromium encloses the analytical 3 m gap for every supported shape pair', 
     expect(evidence.upper - evidence.lower).toBeLessThan(1e-6)
     expect(evidence.penetration).toBe(false)
   }
+
   await testInfo.attach('static-method-runtime', {
     contentType: 'application/json',
     body: JSON.stringify(results)
@@ -176,6 +184,7 @@ test('Chromium retains a continuous-time crossing between separated endpoints', 
         { time: 1, joints: { moving: 3 } }
       ]
     } as const
+
     domain.validateWorkcell(workcell)
     domain.validateTrajectory(workcell, trajectory)
     const start = performance.now()
@@ -195,8 +204,10 @@ test('Chromium retains a continuous-time crossing between separated endpoints', 
         maxIterations: 64
       }
     )
+
     return { evidence, elapsedMs: performance.now() - start }
   })
+
   expect(result.evidence.coverage).toBe('complete')
   expect(
     result.evidence.leaves.some(

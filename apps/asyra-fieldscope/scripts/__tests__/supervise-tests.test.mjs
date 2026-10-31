@@ -74,28 +74,35 @@ function run(
     ],
     { cwd: app, encoding: 'utf8', timeout: 10000 }
   )
+
   assert.equal(result.error, undefined)
   assert.equal(result.status, 0, result.stderr)
+
   return JSON.parse(result.stdout)
 }
 
 function parseLinuxProcessState(status) {
   const commandEnd = status.lastIndexOf(')')
+
   if (commandEnd < 0) {
     throw new Error('Malformed Linux process status')
   }
+
   const [state, ...remaining] = status
     .slice(commandEnd + 1)
     .trim()
     .split(/\s+/)
+
   if (!state || state.length !== 1 || remaining.length === 0) {
     throw new Error('Malformed Linux process status')
   }
+
   return state
 }
 
 async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
   const deadline = Date.now() + timeoutMs
+
   while (Date.now() < deadline) {
     try {
       process.kill(pid, 0)
@@ -103,8 +110,10 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
       if (error.code === 'ESRCH') {
         return
       }
+
       assert.fail(`PID liveness check did not prove exit: ${error.code}`)
     }
+
     if (process.platform === 'linux') {
       try {
         if (
@@ -117,11 +126,14 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
         if (error.code === 'ENOENT') {
           return
         }
+
         assert.fail(`Linux PID state could not be verified: ${error.message}`)
       }
     }
+
     await delay(10)
   }
+
   assert.fail(`Descendant PID ${pid} remained live after owned cleanup`)
 }
 
@@ -130,6 +142,7 @@ test.after(() => rmSync(artifacts, { recursive: true, force: true }))
 
 test('records bounded artifacts and exact process accounting for normal and failed exits', () => {
   const normal = run('normal')
+
   assert.equal(normal.outcome, 'passed')
   assert.equal(normal.completion, 'filtered-selection-complete')
   assert.equal(normal.exitCode, 0)
@@ -147,6 +160,7 @@ test('records bounded artifacts and exact process accounting for normal and fail
   assert.match(readFileSync(normal.logPath, 'utf8'), /complete/)
 
   const failed = run('failed')
+
   assert.equal(failed.outcome, 'failed')
   assert.equal(failed.exitCode, 7)
   assert.equal(failed.completion, 'incomplete')
@@ -160,9 +174,11 @@ test('profile completion never reports ordinary full-suite coverage', () => {
   ]) {
     const selected = { kind: 'profile-suite', coverage, files: [], title: null }
     const result = run('normal', 1000, 4096, selected)
+
     assert.equal(result.completion, completion)
     assert.equal(result.selection.coverage, coverage)
     const stopped = run('busy', 250, 4096, selected)
+
     assert.equal(stopped.outcome, 'hard-stop')
     assert.equal(stopped.completion, 'incomplete')
     assert.equal(stopped.reaped, true)
@@ -172,6 +188,7 @@ test('profile completion never reports ordinary full-suite coverage', () => {
 
 test('stops a synchronous child outside its blocked event loop', () => {
   const result = run('busy', 250)
+
   assert.equal(result.outcome, 'hard-stop')
   assert.equal(result.reaped, true)
   assert.equal(result.unknownTail, true)
@@ -181,12 +198,14 @@ test('stops a synchronous child outside its blocked event loop', () => {
 test('stops descendants in the owned process group', async () => {
   const result = run('descendant', 250)
   const pid = Number(result.consoleTail.match(/descendant:(\d+)/)?.[1])
+
   assert.ok(pid > 0)
   await waitForProcessExitOrLinuxZombie(pid)
 })
 
 test('bounds captured output and rejects malformed Linux process status', () => {
   const result = run('output', 1000, 128)
+
   assert.equal(result.outcome, 'output-limit')
   assert.equal(result.unknownTail, true)
   assert.ok(readFileSync(result.logPath).byteLength <= 128)
@@ -228,8 +247,10 @@ print(json.dumps({'full': full, 'selected': selected, 'title': title,
     encoding: 'utf8',
     timeout: 5000
   })
+
   assert.equal(result.status, 0, result.stderr)
   const selection = JSON.parse(result.stdout)
+
   assert.equal(selection.full.coverage, 'full')
   assert.equal(selection.full.kind, 'ordinary-suite')
   assert.equal(selection.selected.coverage, 'filtered')
@@ -249,6 +270,7 @@ print(json.dumps({'full': full, 'selected': selected, 'title': title,
       encoding: 'utf8',
       timeout: 5000
     })
+
     assert.notEqual(rejected.status, 0, flag)
   }
 })
@@ -288,8 +310,10 @@ print(json.dumps({'full': full, 'selected': selected, 'title': title,
     encoding: 'utf8',
     timeout: 5000
   })
+
   assert.equal(result.status, 0, result.stderr)
   const selection = JSON.parse(result.stdout)
+
   assert.equal(selection.full.kind, 'profile-suite')
   assert.equal(selection.full.coverage, 'profiles')
   assert.equal(selection.selected.kind, 'selected-profile-files')
@@ -312,10 +336,12 @@ print(json.dumps({'full': full, 'selected': selected, 'title': title,
     path.join(app, 'vitest.profile.config.ts'),
     'utf8'
   )
+
   assert.match(profileConfig, /setupFiles:[\s\S]*vitest\.setup\.ts/)
   const scripts = JSON.parse(
     readFileSync(path.join(app, 'package.json'), 'utf8')
   ).scripts
+
   assert.equal(
     scripts['test:profiles'],
     'node --test scripts/__tests__/supervise-tests.test.mjs scripts/__tests__/run-profile-groups.test.mjs && python3 scripts/run-profile-groups.py'
@@ -324,8 +350,10 @@ print(json.dumps({'full': full, 'selected': selected, 'title': title,
 
 test('resolves only the Asyra FieldScope checkout installation and rejects an arbitrary ancestor', (t) => {
   const unknown = mkdtempSync(path.join(artifacts, 'unknown-owner-'))
+
   t.after(() => rmSync(unknown, { recursive: true, force: true }))
   const nested = path.join(unknown, 'nested/app')
+
   mkdirSync(path.join(unknown, 'node_modules/vitest'), { recursive: true })
   mkdirSync(nested, { recursive: true })
   writeFileSync(
@@ -361,8 +389,10 @@ print(json.dumps({'root': str(root), 'vitest': str(vitest),
     encoding: 'utf8',
     timeout: 5000
   })
+
   assert.equal(result.status, 0, result.stderr)
   const resolved = JSON.parse(result.stdout)
+
   assert.equal(resolved.root, path.resolve(app, '../..'))
   assert.equal(
     resolved.vitest,

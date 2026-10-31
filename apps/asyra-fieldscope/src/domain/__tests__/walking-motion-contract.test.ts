@@ -14,6 +14,7 @@ type Mutable<T> = T extends readonly (infer Item)[]
   : T extends object
     ? { -readonly [Key in keyof T]: Mutable<T[Key]> }
     : T
+
 const syntheticEvidence = (id: string) => ({
   kind: 'synthetic' as const,
   id,
@@ -131,6 +132,7 @@ function fixture() {
     },
     budget: { maxIntervals: 64, maxEnvelopePairs: 10000 }
   }
+
   return { source, request }
 }
 
@@ -138,6 +140,7 @@ describe('walking motion request admission', () => {
   it('admits one exact complete detached and immutable request', () => {
     const { source, request } = fixture()
     const admitted = readWalkingMotionRequest(request, source)
+
     expect(admitted.format).toBe('walking-motion-request/1')
     expect(admitted.path.intent).toBe('straight')
     expect(admitted.path.knots).toHaveLength(2)
@@ -156,48 +159,61 @@ describe('walking motion request admission', () => {
   it('rejects malformed path, stance, terrain, load and budgets', () => {
     const baseline = () => {
       const { source, request } = fixture()
+
       return {
         source,
         request: structuredClone(request) as Mutable<typeof request>
       }
     }
+
     const invalid: ReturnType<typeof baseline>[] = []
     const badFormat = baseline()
+
     ;(badFormat.request as { format: string }).format =
       'walking-motion-request/2'
     invalid.push(badFormat)
     const extra = baseline()
+
     ;(extra.request as typeof extra.request & { surprise?: boolean }).surprise =
       true
     invalid.push(extra)
     const duplicateTime = baseline()
+
     duplicateTime.request.path.knots[1].time = 0
     invalid.push(duplicateTime)
     const missingJoint = baseline()
+
     missingJoint.request.path.knots[0].joints.legs.pop()
     invalid.push(missingJoint)
     const offBoundary = baseline()
+
     offBoundary.request.stance.phases[0].until = 0.5
     invalid.push(offBoundary)
     const duplicateLeg = baseline()
+
     duplicateLeg.request.stance.phases[0].legs[1].chainId =
       duplicateLeg.request.stance.phases[0].legs[0].chainId
     invalid.push(duplicateLeg)
     const wrongPatch = baseline()
+
     wrongPatch.request.terrain.contactAssessments[0].footPatchId = 'other-foot'
     invalid.push(wrongPatch)
     const wrongPath = baseline()
+
     wrongPath.request.terrain.contactAssessments[0].pathId = 'other-path'
     invalid.push(wrongPath)
     const negativeBudget = baseline()
+
     negativeBudget.request.budget.maxIntervals = 0
     invalid.push(negativeBudget)
     const emptyCarried = baseline()
+
     Object.assign(emptyCarried.request.load, {
       carried: { kind: 'attached', items: [] }
     })
     invalid.push(emptyCarried)
     const badRoute = baseline()
+
     badRoute.request.terrain.route.bay = -1
     invalid.push(badRoute)
     for (const value of invalid) {
@@ -209,10 +225,13 @@ describe('walking motion request admission', () => {
 
   it('requires crate coverage independently of the canonical empty tray', () => {
     const { source, request } = fixture()
+
     expect(source.parts.some((part) => part.id.includes('tray'))).toBe(true)
     const admitted = readWalkingMotionRequest(request, source)
+
     expect(admitted.load.crate).toEqual({ kind: 'unknown' })
     const missing = structuredClone(request)
+
     Reflect.deleteProperty(missing.load, 'crate')
     expect(() => readWalkingMotionRequest(missing, source)).toThrow()
     expect(() =>
@@ -249,6 +268,7 @@ describe('walking motion request admission', () => {
       massIdentity: 'crate-mass'
     }
     const attached = { ...request, load: { ...request.load, crate } }
+
     expect(readWalkingMotionRequest(attached, source).load.crate).toEqual(crate)
     for (const replacement of [
       { ...crate, sourceParts: [] },
@@ -272,6 +292,7 @@ describe('walking motion request admission', () => {
 
   it('does not reuse admission against a different definition joint range', () => {
     const { source, request } = fixture()
+
     request.path.knots[0].joints = {
       ...request.path.knots[0].joints,
       carriage: 1.5
@@ -280,6 +301,7 @@ describe('walking motion request admission', () => {
     const identicalSource = new WalkingRobotSourceOwner().prepare(
       source.definition
     )
+
     expect(() => readWalkingMotionRequest(admitted, identicalSource)).toThrow()
     const definition = structuredClone(
       createSyntheticWalkingRobotDefinition({ definitionId: 'narrow-lift' })
@@ -291,6 +313,7 @@ describe('walking motion request admission', () => {
     const nextSource = new WalkingRobotSourceOwner().prepare(
       readWalkingRobotDefinition(narrowed)
     )
+
     expect(() => readWalkingMotionRequest(admitted, nextSource)).toThrow()
     expect(readWalkingMotionRequest(admitted, source)).toBe(admitted)
   })
@@ -310,6 +333,7 @@ describe('walking motion request admission', () => {
       ...request,
       load: { ...request.load, carried: { kind: 'attached', items: [item] } }
     }
+
     expect(readWalkingMotionRequest(carried, source).load.carried).toEqual(
       carried.load.carried
     )

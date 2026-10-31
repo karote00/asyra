@@ -20,6 +20,7 @@ export function addLoungeFurnishings(c: OfficeComposer, top: number) {
     OFFICE_SEATING.find((i) => i.id === 'lounge-coffee-table'),
     'lounge table'
   )
+
   addRug(c, 'lounge-rug', [2.05, 1.7, 0.012], [1.58, -1.01, floor], 0x89848b)
   add('lounge-table-mug', 'ceramic-mug', mug(), [
     table.position[0] - 0.22,
@@ -44,6 +45,7 @@ export function addLoungeFurnishings(c: OfficeComposer, top: number) {
   const x = west + 0.16,
     y = -1.73,
     consoleTop = floor + 0.43
+
   block(
     'lounge-console-top',
     [0.28, 0.67, 0.025],
@@ -72,6 +74,7 @@ export function addLoungeFurnishings(c: OfficeComposer, top: number) {
       )
     }
   }
+
   plant('lounge-console-plant', [x, y + 0.13, consoleTop], 0.9)
   plant('lounge-console-lower-plant', [x, y - 0.17, floor + 0.149], 0.65)
   addPrint(c, 'lounge-side-print', '', [0.57, 0.4], [west + 0.017, y, 0.91], 90)
@@ -112,6 +115,7 @@ export function addLoungeFurnishings(c: OfficeComposer, top: number) {
       0.002
     )
   }
+
   labels.push({
     text: 'Same\nCurious\nBraver\nTogether',
     kind: 'lettering',
@@ -126,6 +130,7 @@ export function addLoungeFurnishings(c: OfficeComposer, top: number) {
   const lampX = west + 0.22,
     lampY = rear - 0.025,
     lampZ = 1.24
+
   add(
     'lounge-sconce',
     'wall-sconce',

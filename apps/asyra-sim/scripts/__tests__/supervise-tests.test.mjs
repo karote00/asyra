@@ -44,6 +44,7 @@ if (mode === 'heartbeat' || mode === 'progress') {
   if(mode === 'failed') process.exitCode=1;
 }
 `
+
 function run(mode, hard = 3000, idle = 1000) {
   const result = spawnSync(
     'python3',
@@ -58,26 +59,35 @@ function run(mode, hard = 3000, idle = 1000) {
     ],
     { encoding: 'utf8', timeout: 10000 }
   )
+
   assert.equal(result.error, undefined)
   assert.ok(result.stdout.trim(), result.stderr)
+
   return { status: result.status, ...JSON.parse(result.stdout) }
 }
+
 function parseLinuxProcessState(status) {
   const commandEnd = status.lastIndexOf(')')
+
   if (commandEnd < 0) {
     throw new Error('Malformed Linux process status')
   }
+
   const [state, ...remaining] = status
     .slice(commandEnd + 1)
     .trim()
     .split(/\s+/)
+
   if (!state || state.length !== 1 || remaining.length === 0) {
     throw new Error('Malformed Linux process status')
   }
+
   return state
 }
+
 async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
   const deadline = Date.now() + timeoutMs
+
   while (Date.now() < deadline) {
     try {
       process.kill(pid, 0)
@@ -85,13 +95,16 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
       if (error.code === 'ESRCH') {
         return
       }
+
       assert.fail(`PID liveness check did not prove exit: ${error.code}`)
     }
+
     if (process.platform === 'linux') {
       try {
         const state = parseLinuxProcessState(
           readFileSync(`/proc/${pid}/stat`, 'utf8')
         )
+
         if (state === 'Z') {
           return
         }
@@ -99,13 +112,17 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
         if (error.code === 'ENOENT') {
           return
         }
+
         assert.fail(`Linux PID state could not be verified: ${error.message}`)
       }
     }
+
     await delay(10)
   }
+
   assert.fail(`Descendant PID ${pid} remained live after owned cleanup`)
 }
+
 test('Linux process status parsing preserves a zombie after a parenthesized command name', () => {
   assert.equal(
     parseLinuxProcessState('4321 (worker name (phase)) Z 1 2 3'),
@@ -115,6 +132,7 @@ test('Linux process status parsing preserves a zombie after a parenthesized comm
 })
 test('normal assertion completion and exit are both required', () => {
   const result = run('normal')
+
   assert.equal(result.status, 0)
   assert.equal(result.outcome, 'passed')
   assert.equal(result.unknownTail, false)
@@ -125,6 +143,7 @@ test('normal assertion completion and exit are both required', () => {
 })
 test('a blocked event loop is stopped outside the child', () => {
   const result = run('busy')
+
   assert.equal(result.outcome, 'no-progress')
   assert.equal(result.unknownTail, true)
   assert.equal(result.workInterpretation, 'lower-bound')
@@ -138,6 +157,7 @@ test('even continuously advancing paid work cannot renew the hard deadline', () 
 })
 test('a truncated receipt cannot replace the last complete lower bound', () => {
   const result = run('truncated')
+
   assert.equal(result.lastReceipt.work, 0)
   assert.ok(result.discardedTailBytes > 0)
   assert.equal(result.unknownTail, true)
@@ -148,6 +168,7 @@ test('a late final result cannot convert timeout to success', () => {
 test('the owned descendant has exited or is a Linux zombie after cleanup', async () => {
   const result = run('descendant')
   const pid = result.lastReceipt.descendantPid
+
   assert.ok(pid > 0)
   await waitForProcessExitOrLinuxZombie(pid)
 })
@@ -166,8 +187,10 @@ print(json.dumps([owner.phase_commands(['vitest','run'], args, False)
     encoding: 'utf8',
     timeout: 5000
   })
+
   assert.equal(result.status, 0, result.stderr)
   const [normal, limited, selected] = JSON.parse(result.stdout)
+
   for (const phases of [normal, limited]) {
     assert.equal(phases.length, 4)
     assert.equal(phases[0][2], 0)
@@ -181,17 +204,21 @@ print(json.dumps([owner.phase_commands(['vitest','run'], args, False)
       [3, 'witnessed-zero-source-work']
     ]) {
       const path = phases[index][1].find((arg) => arg.includes(file))
+
       assert.ok(path)
       const excluded = phases[0][1].indexOf(path)
+
       assert.ok(excluded > 0)
       assert.equal(phases[0][1][excluded - 1], '--exclude')
     }
+
     assert.equal(
       phases[1][1].filter((arg) => arg.includes('fresh-witness-source-work'))
         .length,
       1
     )
   }
+
   assert.equal(selected.length, 1)
   assert.ok(selected[0][1].includes('some.test.ts'))
 })
@@ -219,8 +246,10 @@ print(json.dumps(dict(phases=phases, rejected=rejected)))
     encoding: 'utf8',
     timeout: 5000
   })
+
   assert.equal(result.status, 0, result.stderr)
   const { phases, rejected } = JSON.parse(result.stdout)
+
   assert.deepEqual(rejected, [true, true])
   assert.deepEqual(
     phases.map((phase) => phase[2]),
@@ -229,6 +258,7 @@ print(json.dumps(dict(phases=phases, rejected=rejected)))
   for (const phase of phases) {
     assert.ok(phase[1].includes('--maxWorkers=1'))
   }
+
   assert.ok(phases[0][1].includes('some.test.ts'))
   assert.equal(
     phases[0][1].filter((arg) => arg.includes('source-work')).length,
@@ -242,9 +272,12 @@ test('runtime ownership accepts explicit monorepo and standalone installations b
   const parent = fileURLToPath(
     new URL('../../.artifacts/consumer-tests/', import.meta.url)
   )
+
   mkdirSync(parent, { recursive: true })
   const directory = mkdtempSync(path.join(parent, 'supervisor-roots-'))
+
   t.after(() => rmSync(directory, { recursive: true }))
+
   const manifest = (name, extra = {}) =>
     JSON.stringify({
       name,
@@ -252,7 +285,9 @@ test('runtime ownership accepts explicit monorepo and standalone installations b
       packageManager: 'yarn@4.3.1',
       ...extra
     })
+
   const standalone = path.join(directory, 'standalone')
+
   mkdirSync(path.join(standalone, 'node_modules/vitest'), { recursive: true })
   writeFileSync(
     path.join(standalone, 'package.json'),
@@ -262,6 +297,7 @@ test('runtime ownership accepts explicit monorepo and standalone installations b
 
   const repository = path.join(directory, 'repository')
   const repositoryApp = path.join(repository, 'apps/asyra-sim')
+
   mkdirSync(path.join(repository, 'node_modules/vitest'), { recursive: true })
   mkdirSync(path.join(repositoryApp, 'node_modules/vitest'), {
     recursive: true
@@ -279,6 +315,7 @@ test('runtime ownership accepts explicit monorepo and standalone installations b
 
   const unknownRoot = path.join(directory, 'unknown')
   const unknownApp = path.join(unknownRoot, 'nested/app')
+
   mkdirSync(path.join(unknownRoot, 'node_modules/vitest'), { recursive: true })
   mkdirSync(unknownApp, { recursive: true })
   writeFileSync(path.join(unknownRoot, 'package.json'), manifest('unrelated'))
@@ -308,10 +345,12 @@ print(json.dumps(results))
     ['-c', code, supervisor, standalone, repositoryApp, unknownApp],
     { encoding: 'utf8', timeout: 5000 }
   )
+
   assert.equal(result.status, 0, result.stderr)
   const [standaloneResult, repositoryResult, unknownResult] = JSON.parse(
     result.stdout
   )
+
   assert.deepEqual(standaloneResult, [
     standalone,
     path.join(standalone, 'node_modules/vitest/vitest.mjs'),
@@ -329,11 +368,14 @@ test('fresh CI records the original job deadline before install while execution 
   const parent = fileURLToPath(
     new URL('../../.artifacts/consumer-tests/', import.meta.url)
   )
+
   mkdirSync(parent, { recursive: true })
   const repository = mkdtempSync(path.join(parent, 'fresh-ci-'))
+
   t.after(() => rmSync(repository, { recursive: true }))
   const app = path.join(repository, 'apps/asyra-sim')
   const script = path.join(app, 'scripts/supervise-tests.py')
+
   mkdirSync(path.dirname(script), { recursive: true })
   writeFileSync(
     path.join(repository, 'package.json'),
@@ -365,6 +407,7 @@ test('fresh CI records the original job deadline before install while execution 
     env: environment,
     timeout: 5000
   })
+
   assert.equal(initialized.status, 0, initialized.stderr)
   assert.deepEqual(
     JSON.parse(
@@ -381,6 +424,7 @@ test('fresh CI records the original job deadline before install while execution 
     env: { ...environment, CI: '' },
     timeout: 5000
   })
+
   assert.notEqual(execution.status, 0)
   assert.match(execution.stderr, /Missing owned Vitest installation/)
 })

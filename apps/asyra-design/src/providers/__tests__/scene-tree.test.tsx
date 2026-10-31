@@ -6,14 +6,18 @@ const mocks = vi.hoisted(() => {
   const createSubject = <T,>(initialValue: T) => {
     let value = initialValue
     const subscribers = new Set<() => void>()
+
     return {
       getValue: () => value,
+
       next: (nextValue: T) => {
         value = nextValue
         subscribers.forEach((subscriber) => subscriber())
       },
+
       subscribe: (subscriber: () => void) => {
         subscribers.add(subscriber)
+
         return {
           unsubscribe: () => subscribers.delete(subscriber)
         }
@@ -61,6 +65,7 @@ import {
 const ProjectionProbe = () => {
   const flattenedIds = useFlattenedIdsData()
   const elementDataMap = useElementDataMap()
+
   return (
     <output data-testid="projection">
       {flattenedIds.join(',')}|{Object.keys(elementDataMap).join(',')}
@@ -76,7 +81,9 @@ const ElementProbe = ({
   renderCounts: Map<string, number>
 }) => {
   const elementData = useElementData(elementId)
+
   renderCounts.set(elementId, (renderCounts.get(elementId) ?? 0) + 1)
+
   return (
     <output data-testid={`element-${elementId}`}>
       {String(elementData.name ?? '')}
@@ -129,6 +136,7 @@ describe('Scene Tree canonical UI projection hooks', () => {
       parentId: 'workspace',
       type: 'element'
     }
+
     mocks.elementDataMap.next({
       'element-a': elementA,
       'element-b': elementB

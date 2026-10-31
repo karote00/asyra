@@ -110,18 +110,21 @@ export const assertStarterWrapper = (
       'Saved document is not an object.'
     )
   }
+
   if (value.appDocumentVersion !== STARTER_DOCUMENT_VERSION) {
     throw new StarterDomainError(
       'wrapper-version',
       `Saved document version must be ${STARTER_DOCUMENT_VERSION}.`
     )
   }
+
   if (typeof value.savedAt !== 'string' || value.savedAt.length === 0) {
     throw new StarterDomainError(
       'wrapper-saved-at',
       'Saved document is missing its savedAt timestamp.'
     )
   }
+
   if (!isCoreDocument(value.core)) {
     throw new StarterDomainError(
       'wrapper-core',
@@ -137,6 +140,7 @@ export const assertStarterDomainData = (
   itemField?: ItemFieldExtension
 ): void => {
   const props = core.props
+
   if (!isRecord(props)) {
     throw new StarterDomainError(
       'core-props',
@@ -155,14 +159,17 @@ export const assertStarterDomainData = (
         `Item property "${propertyId}" is missing a valid title.`
       )
     }
+
     if (!isItemStatus(rawProperty.status)) {
       throw new StarterDomainError(
         'item-status',
         `Item property "${propertyId}" has an invalid status.`
       )
     }
+
     const hasOffsetX = Object.hasOwn(rawProperty, 'offsetX')
     const hasOffsetY = Object.hasOwn(rawProperty, 'offsetY')
+
     if (
       hasOffsetX !== hasOffsetY ||
       (hasOffsetX &&
@@ -174,6 +181,7 @@ export const assertStarterDomainData = (
         `Item property "${propertyId}" has an invalid position.`
       )
     }
+
     if (
       itemField &&
       Object.hasOwn(rawProperty, itemField.key) &&
@@ -189,6 +197,7 @@ export const parseStarterDocumentWrapper = (
   itemField?: ItemFieldExtension
 ): StarterDocumentWrapper => {
   let parsed: unknown
+
   try {
     parsed = JSON.parse(serialized)
   } catch (error) {
@@ -199,6 +208,7 @@ export const parseStarterDocumentWrapper = (
   }
 
   const wrapper = assertStarterWrapper(parsed)
+
   assertStarterDomainData(wrapper.core, itemField)
   if (itemField) {
     Object.values(wrapper.core.props).forEach((rawProperty) => {
@@ -211,6 +221,7 @@ export const parseStarterDocumentWrapper = (
       }
     })
   }
+
   return wrapper
 }
 

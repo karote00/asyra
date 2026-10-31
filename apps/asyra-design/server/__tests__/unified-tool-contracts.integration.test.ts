@@ -26,12 +26,15 @@ const preparation = () => {
   const definition = owner.definitions.find(
     (entry) => entry.name === 'prepare_design'
   )
+
   if (!definition) {
     throw new Error('Missing preparation definition')
   }
+
   return {
     owner,
     definition,
+
     call: async (input: unknown) =>
       JSON.parse(
         (
@@ -53,9 +56,11 @@ it('declares every supported native field from the preparation owner', () => {
   const node = schema.$defs.node.anyOf.find((entry) =>
     Array.isArray((entry.properties.type as { enum?: unknown[] })?.enum)
   )
+
   if (!node) {
     throw new Error('Missing native node schema')
   }
+
   for (const type of DesignNodeTypes) {
     for (const field of designNodeInputFields(type)) {
       expect(Object.hasOwn(node.properties, field), `${type}.${field}`).toBe(
@@ -67,8 +72,10 @@ it('declares every supported native field from the preparation owner', () => {
 
 it('prepares the saved brief without treating omitted advisory checks as a drawing prerequisite', async () => {
   const run = preparation()
+
   expect(saved.output.message).toContain('brief.checks')
   const reply = await run.call({ draft: saved.input.draft })
+
   expect(reply).toMatchObject({
     available: true,
     applicable: true,
@@ -92,6 +99,7 @@ it.each([
         [field as string]: value
       }
     }
+
     expect(
       operationInputIssue({ draft }, run.definition.inputSchema)
     ).toBeDefined()
@@ -114,6 +122,7 @@ it('declares native oval rotation and rejects fields belonging to other node kin
     rotation: 30
   }
   const draft = { type: 'group', name: 'Shape', children: [oval] }
+
   expect(
     operationInputIssue({ draft }, run.definition.inputSchema)
   ).toBeUndefined()
@@ -141,6 +150,7 @@ it('declares native oval rotation and rejects fields belonging to other node kin
     const input = JSON.parse(
       JSON.stringify({ draft: { ...draft, children: [node] } })
     )
+
     expect(operationInputIssue(input, run.definition.inputSchema)).toBeDefined()
     expect(await run.call(input)).toMatchObject({
       stage: 'admission',
@@ -160,6 +170,7 @@ it('corrects a missing declared field through the delivered retained repair with
     ]
   }
   const failed = await run.call({ draft })
+
   expect(failed).toMatchObject({
     available: false,
     settlement: 'not-started',
@@ -174,6 +185,7 @@ it('corrects a missing declared field through the delivered retained repair with
     }
   })
   const retry = structuredClone(failed.repairGuide.arguments)
+
   retry.repair.replacements[0].value = 100
   expect(retry).not.toHaveProperty('draft')
   expect(await run.call(retry)).toMatchObject({
@@ -191,6 +203,7 @@ it('corrects a missing declared field through the delivered retained repair with
     const rejected = await run.call({
       repair: { draftId: failed.draftId, replacements: [{ path, value: 1 }] }
     })
+
     expect(rejected).toMatchObject({
       available: false,
       settlement: 'not-started'
@@ -222,6 +235,7 @@ it('preserves the main invocation and workflow context in admission recovery', a
       )
     ).text
   )
+
   expect(reply.repairGuide).toMatchObject({
     tool: 'prepare_and_apply_design',
     arguments: {
@@ -247,6 +261,7 @@ it('delivers a standard executable schema instead of a separate parameter langua
     not: { required: ['first', 'second'] }
   }
   const delivered = workflowUsageParameters(schema)
+
   expect(typeof delivered).toBe('object')
   for (const input of [
     { first: 'a' },
@@ -259,6 +274,7 @@ it('delivers a standard executable schema instead of a separate parameter langua
       Boolean(operationInputIssue(input, schema))
     )
   }
+
   expect(schema.properties.first).toBe(value)
 })
 
@@ -272,6 +288,7 @@ it('factors repeated scalar constraints using actual reference cost without weak
     )
   }
   const result = workflowUsageParameters(schema)
+
   expect(Buffer.byteLength(JSON.stringify(result))).toBeLessThan(
     Buffer.byteLength(JSON.stringify(schema)) * 0.85
   )
@@ -303,23 +320,30 @@ it('shares repeated parents without retaining more costly child indirections', (
   const delivered = workflowUsageParameters(schema)
   const definitions = delivered.$defs as Record<string, unknown>
   const references = new Map<string, number>()
+
   const walk = (value: unknown) => {
     if (Array.isArray(value)) {
       return value.forEach(walk)
     }
+
     if (!value || typeof value !== 'object') {
       return
     }
+
     const object = value as Record<string, unknown>
+
     if (typeof object.$ref === 'string') {
       references.set(object.$ref, (references.get(object.$ref) ?? 0) + 1)
     }
+
     Object.values(object).forEach(walk)
   }
+
   walk(delivered)
   for (const name of Object.keys(definitions)) {
     expect(references.get('#/$defs/' + name), name).toBeGreaterThan(1)
   }
+
   for (const input of [
     { point0: { coordinate: 1 } },
     { point3: { coordinate: 10001 } },
@@ -341,6 +365,7 @@ it('keeps root conditions isolated from child-only field exclusions', () => {
     }
   }
   const root = schema.properties.draft
+
   for (const condition of root.anyOf) {
     for (const field of Object.keys(condition.properties)) {
       expect(Object.hasOwn(root.properties, field), field).toBe(true)
@@ -352,6 +377,7 @@ it('advertises fully validated missing-field repair through the actual preparati
   const schema = preparation().definition.inputSchema as {
     properties: { repair: { description: string } }
   }
+
   expect(schema.properties.repair.description).toContain(
     'missing allowed fields'
   )
@@ -383,6 +409,7 @@ it('preserves each face mode identity limits and geometry admission', async () =
     origin: { x: 0, y: 0, z: 0 },
     axes: [{ count: 2, step: { x: 12, y: 0, z: 0 } }]
   }
+
   for (const [child, allowed] of [
     [{ ...geometry, type: 'projected-face', key: 'a'.repeat(160) }, true],
     [{ ...geometry, type: 'projected-face', key: 'a'.repeat(161) }, false],
@@ -419,11 +446,13 @@ it('preserves each face mode identity limits and geometry admission', async () =
         children: [child]
       }
     }
+
     expect(
       !operationInputIssue(input, run.definition.inputSchema),
       JSON.stringify(child)
     ).toBe(allowed)
     const reply = await run.call(input)
+
     expect(reply.available, JSON.stringify(reply)).toBe(allowed)
     if (!allowed) {
       expect(reply.toolOutcome.settlement).toBe('not-started')
@@ -437,9 +466,11 @@ it.each(['single', 'parts', 'parts-failure'])(
   'executes the delivered %s missing-field correction through the real main dispatcher and rejects foreign retained corrections without replay',
   async (mode) => {
     const hadWindow = 'window' in globalThis
+
     if (!hadWindow) {
       vi.stubGlobal('window', {})
     }
+
     const { default: core } = await import('../../src/contexts')
     const { applyPreset, PresetProfiles, PresetDefaults } =
       await import('@asyra/preset')
@@ -449,6 +480,7 @@ it.each(['single', 'parts', 'parts-failure'])(
     const { observeAiAction } = await import('../../src/ai/runtime-input')
     const { createAiTransactionRunner } =
       await import('../../src/ai/transaction')
+
     if (!corePresetApplied) {
       applyPreset(core, {
         profile: PresetProfiles.CUSTOM,
@@ -461,6 +493,7 @@ it.each(['single', 'parts', 'parts-failure'])(
       })
       corePresetApplied = true
     }
+
     const initial = {
       version: '1.0.0',
       props: {},
@@ -480,6 +513,7 @@ it.each(['single', 'parts', 'parts-failure'])(
         }
       }
     }
+
     await core.load(initial)
     factory.transact.reset()
     const action = observeAiAction(
@@ -502,12 +536,15 @@ it.each(['single', 'parts', 'parts-failure'])(
           confirmationHandler: { confirm: async () => true },
           transactionRunner: createAiTransactionRunner()
         })
+
         try {
           const receipt = await runtime.run({
             intent: 'Create corrected frame',
             signal
           })
+
           expect(receipt.status, JSON.stringify(receipt)).toBe('executed')
+
           return { context: {}, actionResults: receipt.actionResults ?? [] }
         } finally {
           await runtime.dispose()
@@ -515,10 +552,12 @@ it.each(['single', 'parts', 'parts-failure'])(
       }
     )
     const main = createLocalDesignWorkflow(designs, operations)
+
     const call = async (input: unknown) =>
       JSON.parse(
         (await invokeLocalTool(main, main.definitions[0], input, signal)).text
       )
+
     try {
       const draft = {
         type: 'frame',
@@ -536,9 +575,11 @@ it.each(['single', 'parts', 'parts-failure'])(
           }
         ]
       }
+
       if (mode === 'parts-failure') {
         draft.children.push({ ...draft.children[0] })
       }
+
       const request =
         mode === 'single'
           ? {
@@ -560,6 +601,7 @@ it.each(['single', 'parts', 'parts-failure'])(
               message: 'Create corrected frame'
             }
       const rejected = await call(request)
+
       expect(rejected.toolOutcome).toMatchObject({
         status: 'failed',
         settlement: 'not-started'
@@ -568,6 +610,7 @@ it.each(['single', 'parts', 'parts-failure'])(
       expect(await core.save()).toEqual(initial)
       expect(rejected.repairGuide, JSON.stringify(rejected)).toBeDefined()
       const correction = structuredClone(rejected.repairGuide.arguments)
+
       if (mode === 'single') {
         correction.repair.replacements[0].value = 100
       } else {
@@ -587,12 +630,14 @@ it.each(['single', 'parts', 'parts-failure'])(
         ).toBe(true)
         correction.parts[1].repair.replacements[0].value = 100
       }
+
       expect(correction).not.toHaveProperty('draft')
       expect(correction).toMatchObject({
         inspection: 'defer',
         message: 'Create corrected frame'
       })
       let reply = await call(correction)
+
       if (mode === 'parts-failure') {
         expect(reply.toolOutcome).toMatchObject({
           status: 'partial',
@@ -601,8 +646,10 @@ it.each(['single', 'parts', 'parts-failure'])(
         expect(dispatches).toBe(1)
         const prefix = await core.save()
         const outerId = prefix.sceneTree.elements.workspace.children[0]
+
         expect(reply.recoveryInvocation, JSON.stringify(reply)).toBeDefined()
         const recovery = structuredClone(reply.recoveryInvocation.arguments)
+
         expect(recovery.parts).toHaveLength(1)
         expect(recovery.parts[0]).toMatchObject({
           key: 'inner',
@@ -618,19 +665,23 @@ it.each(['single', 'parts', 'parts-failure'])(
           (await core.save()).sceneTree.elements.workspace.children
         ).toEqual([outerId])
       }
+
       const receipt = mode === 'single' ? reply : reply.parts.at(-1)
+
       expect(receipt, JSON.stringify(reply)).toHaveProperty('actionResults')
       expect(receipt.actionResults[0].result).toMatchObject({
         status: 'complete',
         appliedElementCount: mode === 'parts-failure' ? 3 : 2
       })
       const expectedDispatches = mode === 'single' ? 1 : 2
+
       expect(dispatches).toBe(expectedDispatches)
       const saved = await core.save()
       const outer =
         saved.sceneTree.elements[saved.sceneTree.elements.workspace.children[0]]
       const root =
         mode === 'single' ? outer : saved.sceneTree.elements[outer.children[0]]
+
       expect(root).toMatchObject({
         type: 'frame',
         name: 'Frame',
@@ -646,10 +697,12 @@ it.each(['single', 'parts', 'parts-failure'])(
       for (let index = 0; index < expectedDispatches; index++) {
         await factory.undo()
       }
+
       expect(await core.save()).toEqual(initial)
       for (let index = 0; index < expectedDispatches; index++) {
         await factory.redo()
       }
+
       expect(await core.save()).toEqual(saved)
       await core.load(saved)
       expect(await core.save()).toEqual(saved)
@@ -674,6 +727,7 @@ it.each(['single', 'parts', 'parts-failure'])(
           )
         ).text
       )
+
       expect(foreign.toolOutcome).toMatchObject({
         status: 'failed',
         settlement: 'not-started'
@@ -704,14 +758,17 @@ it('retains inline gradients and both reference forms in the canonical composed 
       { position: 1, color: '#abcdef', opacity: 1 }
     ]
   }
+
   for (const value of ['#123456', gradient]) {
     expect(operationInputIssue(value, designFillSchema)).toBeUndefined()
     expect(operationInputIssue(value, designInlineFillSchema)).toBeUndefined()
   }
+
   for (const value of [{ shared: 'paint' }, { template: 'paint' }]) {
     expect(operationInputIssue(value, designFillSchema)).toBeUndefined()
     expect(operationInputIssue(value, designInlineFillSchema)).toBeDefined()
   }
+
   for (const value of [
     { shared: 'paint', template: 'paint' },
     { shared: '' },
@@ -734,15 +791,18 @@ it.each(['capacity', 'outer-field', 'parent-order'])(
     })
     const operations = createLocalOperationTools(actions, designs, execute)
     const main = createLocalDesignWorkflow(designs, operations)
+
     if (failure === 'capacity') {
       const { DesignPreparationLimits } =
         await import('../../src/ai/prepared-design')
+
       for (let i = 0; i < DesignPreparationLimits.retainedDrafts; i++) {
         designs.rejectInput('prepare_design', {
           draft: { type: 'group', name: 'Retained' }
         })
       }
     }
+
     const input = {
       parts: [
         { key: 'first', draft: { type: 'group', name: 'Kept' } },
@@ -764,6 +824,7 @@ it.each(['capacity', 'outer-field', 'parent-order'])(
         )
       ).text
     )
+
     expect(reply.toolOutcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
@@ -772,6 +833,7 @@ it.each(['capacity', 'outer-field', 'parent-order'])(
     if (failure === 'capacity') {
       expect(reply.rejectedParts[0].retention).toBe('unavailable')
     }
+
     expect(execute).not.toHaveBeenCalled()
   }
 )
@@ -780,6 +842,7 @@ it('keeps the canonical and delivered recursive contracts executable at the owne
   const { DesignPreparationLimits } =
     await import('../../src/ai/prepared-design')
   const { prepareDesign } = await import('../design-preparation')
+
   for (const depth of [
     1,
     DesignPreparationLimits.depth - 2,
@@ -793,6 +856,7 @@ it('keeps the canonical and delivered recursive contracts executable at the owne
       width: 10,
       height: 10
     }
+
     for (let index = 0; index < depth; index++) {
       draft = {
         type: 'group',
@@ -801,7 +865,9 @@ it('keeps the canonical and delivered recursive contracts executable at the owne
         children: [draft]
       }
     }
+
     const run = preparation()
+
     // The owner counts the root and the leaf, not only container edges.
     if (depth === DesignPreparationLimits.depth) {
       expect(() => prepareDesign(draft)).toThrow(
@@ -813,8 +879,10 @@ it('keeps the canonical and delivered recursive contracts executable at the owne
       })
       continue
     }
+
     const direct = prepareDesign(draft)
     const delivered = workflowUsageParameters(run.definition.inputSchema)
+
     expect(
       operationInputIssue({ draft }, run.definition.inputSchema),
       `canonical depth ${depth}`
@@ -824,6 +892,7 @@ it('keeps the canonical and delivered recursive contracts executable at the owne
       `delivered depth ${depth}`
     ).toBeUndefined()
     const reply = await run.call({ draft })
+
     expect(reply, JSON.stringify(reply)).toMatchObject({
       available: true,
       elementCount: direct.entries.length
@@ -885,6 +954,7 @@ it.each([
         )
       ).text
     )
+
     expect(reply.toolOutcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
@@ -892,18 +962,22 @@ it.each([
     expect(reply.message).toEqual(expect.any(String))
     expect(reply.repairGuide).toBeUndefined()
     const retained = route === 'single' ? reply : reply.rejectedParts[0]
+
     expect(retained.draftId).toEqual(expect.any(String))
     if (route === 'parts' && failure === 'outer') {
       // A part-local preparation correction stays valid; it cannot authorize
       // replaying the invalid main envelope or applying document changes.
       const corrected = structuredClone(retained.repairGuide.arguments)
+
       corrected.repair.replacements[0].value = 20
       const definition = designs.definitions.find(
         (entry) => entry.name === retained.repairGuide.tool
       )
+
       if (!definition) {
         throw new Error('Missing preparation recovery owner')
       }
+
       const prepared = JSON.parse(
         (
           await invokeLocalTool(
@@ -914,10 +988,12 @@ it.each([
           )
         ).text
       )
+
       expect(prepared).toMatchObject({ available: true, applicable: true })
     } else {
       expect(retained.repairGuide).toBeUndefined()
     }
+
     expect(execute).not.toHaveBeenCalled()
     expect(draft).toEqual(before)
   }
@@ -951,14 +1027,17 @@ it.each(['definition', 'property'])(
     }
     const before = JSON.stringify(schema)
     const delivered = workflowUsageParameters(schema)
+
     for (const value of ['ok', '', 'too-long-value', 4]) {
       const input = { holder: { value: 'ok' }, copy0: { value: 'ok' }, value }
       const expected = operationInputIssue(input, schema)
+
       expect(
         operationInputIssue(input, delivered),
         `${location}: ${JSON.stringify(value)}`
       ).toBe(expected)
     }
+
     expect(JSON.stringify(schema)).toBe(before)
     expect(Buffer.byteLength(JSON.stringify(delivered))).toBeLessThan(
       Buffer.byteLength(JSON.stringify(schema))
@@ -982,6 +1061,7 @@ it('omits only default open-object keywords while retaining closed nested constr
     required: ['closed']
   }
   const compact = workflowUsageParameters(canonical)
+
   expect(JSON.stringify(compact)).not.toContain('"additionalProperties":true')
   for (const value of [
     { closed: { count: 0 }, extra: true },
@@ -1017,6 +1097,7 @@ it('compacts repeated result alternatives without changing constraints or addres
     ]
   }
   const compact = workflowUsageParameters(schema)
+
   expect(Buffer.byteLength(JSON.stringify(compact))).toBeLessThan(
     Buffer.byteLength(
       JSON.stringify(workflowUsageParameters({ anyOf: [complete, failed] }))
@@ -1034,8 +1115,10 @@ it('compacts repeated result alternatives without changing constraints or addres
       Boolean(operationInputIssue(value, schema))
     )
   }
+
   // Identical oneOf branches intentionally reject a value matching twice.
   const exclusive = { oneOf: [complete, complete] }
+
   expect(
     operationInputIssue({ count: 0 }, workflowUsageParameters(exclusive))
   ).toBeDefined()
@@ -1045,11 +1128,13 @@ it('compacts repeated result alternatives without changing constraints or addres
     $ref: '#/$defs/branches/anyOf/1/anyOf/0'
   }
   const retained = workflowUsageParameters(addressed)
+
   expect(operationInputIssue({ count: 0 }, retained)).toBeUndefined()
   expect(operationInputIssue({ code: 'FAILED' }, retained)).toBeDefined()
   const annotated = {
     anyOf: [{ anyOf: [complete], description: 'Keep this decision guidance.' }]
   }
+
   expect(JSON.stringify(workflowUsageParameters(annotated))).toContain(
     'Keep this decision guidance.'
   )
@@ -1080,10 +1165,12 @@ it('declares common host outcome constraints once across open result alternative
     outputSchema: schema
   }).outputSchema
   let annotations = 0
+
   const visit = (value: unknown): void => {
     if (!value || typeof value !== 'object') {
       return
     }
+
     if (
       'properties' in value &&
       value.properties &&
@@ -1092,8 +1179,10 @@ it('declares common host outcome constraints once across open result alternative
     ) {
       annotations++
     }
+
     Object.values(value).forEach(visit)
   }
+
   visit(projected)
   expect(annotations).toBe(1)
   for (const value of [
@@ -1119,6 +1208,7 @@ it('declares common host outcome constraints once across open result alternative
       )
     ).toBeDefined()
   }
+
   expect(
     operationInputIssue(
       {
@@ -1139,6 +1229,7 @@ it('preserves closed forbidden fields, singleton constraints and indexed referen
     oneOf: [{ required: ['value'] }]
   }
   const compact = workflowUsageParameters(schema)
+
   expect(JSON.stringify(compact).length).toBeLessThanOrEqual(
     JSON.stringify(schema).length
   )
@@ -1154,12 +1245,14 @@ it('preserves closed forbidden fields, singleton constraints and indexed referen
       Boolean(operationInputIssue(value, schema))
     )
   }
+
   const contradiction = {
     type: 'object',
     additionalProperties: false,
     properties: { blocked: false },
     required: ['blocked']
   }
+
   expect(
     operationInputIssue({}, workflowUsageParameters(contradiction))
   ).toBeDefined()
@@ -1170,6 +1263,7 @@ it('preserves closed forbidden fields, singleton constraints and indexed referen
     $defs: { choice: { oneOf: [{ const: 'value' }] } },
     $ref: '#/$defs/choice/oneOf/0'
   }
+
   expect(
     operationInputIssue('value', workflowUsageParameters(indexed))
   ).toBeUndefined()
@@ -1197,6 +1291,7 @@ it('shares identical union context while retaining independent alternatives and 
     ]
   }
   const compact = workflowUsageParameters(schema)
+
   expect(JSON.stringify(compact).length).toBeLessThan(
     JSON.stringify(schema).length
   )
@@ -1222,24 +1317,30 @@ it.each(['draft', 'capture'] as const)(
     const instructions = 'Use the actual route.'
     const prose =
       'Acknowledgement is not visual approval; retain "partial" results.'
+
     for (const fragmented of [false, true]) {
       const size = (value: unknown) => {
         const text = JSON.stringify(value)
+
         return Buffer.byteLength(fragmented ? JSON.stringify(text) : text)
       }
+
       const before = { instructions, results: prose }
       const after = { instructions: instructions + ' ' + prose, results }
+
       expect(cost[fragmented ? 'fragmented' : 'plain']).toBe(
         fragmented
           ? Buffer.byteLength(JSON.stringify(JSON.stringify(results))) - 2
           : Buffer.byteLength(JSON.stringify(results))
       )
       const budget = completeUsageBudget(size(before), reference, fragmented)
+
       expect(size(after)).toBeLessThanOrEqual(budget)
       const expanded = {
         ...after,
         results: { ...results, description: 'Unnecessary repeated context.' }
       }
+
       expect(size(expanded)).toBeGreaterThan(budget)
       expect(completeUsageBudget(size(before), reference, fragmented)).toBe(
         budget
@@ -1276,6 +1377,7 @@ it('scopes only declared result alternatives and keeps shared references, indepe
     { operation: 'record' },
     'outputSchema'
   )
+
   expect(operationInputIssue({ record: 1 }, selected)).toBeUndefined()
   expect(operationInputIssue({ record: -1 }, selected)).toBeDefined()
   expect(operationInputIssue({ capture: 1 }, selected)).toBeDefined()
@@ -1295,6 +1397,7 @@ it('scopes only declared result alternatives and keeps shared references, indepe
     { operation: 'record' },
     'partialOutputSchema'
   )
+
   expect(operationInputIssue({ failure: true }, scopedPartial)).toBeUndefined()
   expect(operationInputIssue({ capture: 1 }, scopedPartial)).toBeDefined()
   expect(

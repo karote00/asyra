@@ -9,6 +9,7 @@ export function pantryCanister(color?: number, lidColor?: number): AssetPart[] {
     specification.modules.find((m) => m.moduleId === 'pantry-canister'),
     'pantry canister'
   )
+
   return recipe.components.map((component) => {
     const profile = requiredSpecValue(component.profile, component.partId)
     const material =
@@ -16,12 +17,15 @@ export function pantryCanister(color?: number, lidColor?: number): AssetPart[] {
         component.material as keyof typeof specification.materials
       ]
     let appearanceColor = Number.parseInt(material.baseColorSRGB.slice(1), 16)
+
     if (component.partId === 'body' && color !== undefined) {
       appearanceColor = color
     }
+
     if (component.partId === 'lid' && lidColor !== undefined) {
       appearanceColor = lidColor
     }
+
     const result = part(
       component.partId,
       lathe(profile, specification.revolution.angularIntervals),
@@ -30,7 +34,9 @@ export function pantryCanister(color?: number, lidColor?: number): AssetPart[] {
         ? 'wood'
         : 'ceramic'
     )
+
     result.distant = { mesh: lathe(profile, 24), maxError: 0.0004 }
+
     return result
   })
 }

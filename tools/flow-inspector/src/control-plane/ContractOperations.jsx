@@ -31,8 +31,10 @@ export function ContractOperations({
     'work-status': 'not-started',
     'contract-relation-kind': 'none'
   })
+
   const setField = (id, value) =>
     setFields((current) => ({ ...current, [id]: value }))
+
   const field = { fields, setField }
   const mapping = state.mapping
   const selectedMapping = mapping.reviews.find(

@@ -11,6 +11,7 @@ export interface ModelLoadIssue {
   path: string
   message: string
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 
@@ -25,11 +26,13 @@ export function loadCanonicalDocument(
   data: unknown
 ): readonly ModelLoadIssue[] {
   const issues: ModelLoadIssue[] = []
+
   if (record(data) && record(data.props)) {
     for (const [id, property] of Object.entries(data.props)) {
       if (!record(property)) {
         continue
       }
+
       if (
         property.type === PropertyTypes.BODY &&
         !validBodyProperty(property[PropertyFields.BODY])
@@ -40,6 +43,7 @@ export function loadCanonicalDocument(
             'Analysis geometry or joint parameters required schema recovery; confirm or correct the repaired model before analysis.'
         })
       }
+
       if (
         property.type === PropertyTypes.CANDIDATE &&
         !validCandidateParameters(property[PropertyFields.CANDIDATE])
@@ -50,6 +54,7 @@ export function loadCanonicalDocument(
             'Candidate parameters required schema recovery; confirm or correct the repaired model before analysis.'
         })
       }
+
       if (
         property.type === PropertyTypes.EXPERIMENT &&
         !validExperimentDefinition(property[PropertyFields.EXPERIMENT])
@@ -60,6 +65,7 @@ export function loadCanonicalDocument(
             'Experiment inputs required schema recovery; confirm or correct the definition before analysis.'
         })
       }
+
       if (
         property.type === PropertyTypes.RUN_REFERENCE &&
         (!validRunReference(property[PropertyFields.RUN_REFERENCE]) ||
@@ -73,15 +79,18 @@ export function loadCanonicalDocument(
       }
     }
   }
+
   const unsubscribe = core.registerLoadDiagnosticsHook((diagnostics) => {
     issues.push(
       ...diagnostics.map((item) => ({ path: item.path, message: item.message }))
     )
   })
+
   try {
     core.load(data)
   } finally {
     unsubscribe()
   }
+
   return Object.freeze(issues.map((issue) => Object.freeze(issue)))
 }

@@ -135,6 +135,7 @@ export function TargetPanel({
     Boolean(state.tasks.activeId)
   )
   const target = targetResult.value
+
   function setField(id, value) {
     setFields((current) => ({ ...current, [id]: value }))
 
@@ -149,6 +150,7 @@ export function TargetPanel({
       }))
     }
   }
+
   const targetRevision =
     target?.targetRevision ??
     fields['target-revision'] ??

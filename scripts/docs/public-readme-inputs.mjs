@@ -27,8 +27,10 @@ const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
   }
+
   Object.freeze(value)
   Object.values(value).forEach(freeze)
+
   return value
 }
 
@@ -50,9 +52,11 @@ export const readApprovedReadmeInputs = async ({ repositoryRoot }) => {
 
   const packages = documentation.packages.map((packageRecord) => {
     const guide = packageGuides.get(packageRecord.name)
+
     if (!guide) {
       throw new Error(`Missing public README guide for ${packageRecord.name}`)
     }
+
     return {
       directory: packageRecord.directory,
       guide: {
@@ -70,6 +74,7 @@ export const readApprovedReadmeInputs = async ({ repositoryRoot }) => {
 
   const releaseConfigPath = path.join(root, 'release-configs/asyra-design.json')
   const releaseConfig = readJson(releaseConfigPath)
+
   if (releaseConfig.dest !== 'create-app/asyra-design/template') {
     throw new Error('Asyra Design generated output contract changed')
   }
@@ -82,6 +87,7 @@ export const readApprovedReadmeInputs = async ({ repositoryRoot }) => {
     })),
     ...EXPECTED_SPECIAL_SURFACES
   ]
+
   surfaces.forEach((surface) => {
     if (!fs.existsSync(path.join(root, surface.path))) {
       throw new Error(`Missing public README surface: ${surface.path}`)

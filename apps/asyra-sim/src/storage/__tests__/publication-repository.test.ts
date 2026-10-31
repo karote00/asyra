@@ -49,6 +49,7 @@ it('preserves exact property retirement before subsequent restore instead of dro
     }))
   }
   const original = structuredClone(publication)
+
   expect(canonicalPublicationSlices(publication)).toEqual([
     [{ kind: 'property-components', updates: [], removals: properties }]
   ])
@@ -58,9 +59,11 @@ it('preserves exact property retirement before subsequent restore instead of dro
 it('atomically appends each publication, rejects duplicate and stale writes, and checkpoints the acknowledged tail', async () => {
   const factory = new IDBFactory()
   const repository = new IndexedProjectRepository(factory, 'journal')
+
   try {
     await repository.write(project, null)
     const first = journalFixture()
+
     await repository.append({ ...project, revision: 'b' }, 'a', first)
     await expect(
       repository.append({ ...project, revision: 'c' }, 'b', first)
@@ -70,6 +73,7 @@ it('atomically appends each publication, rejects duplicate and stale writes, and
       repository.append({ ...project, revision: 'c' }, 'a', journalFixture())
     ).rejects.toThrow('another tab')
     const cancelled = new AbortController()
+
     cancelled.abort()
     await expect(
       repository.append(
@@ -85,6 +89,7 @@ it('atomically appends each publication, rejects duplicate and stale writes, and
       null
     )
     const saved = await repository.read(project.id)
+
     expect(saved.journal).toEqual([first])
     expect(saved.name).toBe('Renamed')
     expect(restoreJournal(snapshot, saved.journal ?? []).replay).toHaveLength(1)
@@ -100,6 +105,7 @@ it.each(['missing', 'chain'])(
   async (damage) => {
     const factory = new IDBFactory()
     const repository = new IndexedProjectRepository(factory, 'damaged')
+
     await repository.write(project, null)
     await repository.append(
       { ...project, revision: 'b' },
@@ -108,23 +114,28 @@ it.each(['missing', 'chain'])(
     )
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = factory.open('damaged')
+
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
+
     try {
       await new Promise<void>((resolve, reject) => {
         const tx = database.transaction('publications', 'readwrite')
         const store = tx.objectStore('publications')
+
         if (damage === 'missing') {
           store.delete([project.id, 1])
         } else {
           const request = store.get([project.id, 1])
+
           request.onsuccess = () =>
             store.put({ ...request.result, previousRevision: 'wrong' }, [
               project.id,
               1
             ])
         }
+
         tx.oncomplete = () => resolve()
         tx.onabort = () => reject(tx.error)
       })
@@ -140,11 +151,13 @@ it.each(['missing', 'chain'])(
 
 it('rejects duplicate publications and unsupported origins during recovery', () => {
   const entry = journalFixture()
+
   expect(() => restoreJournal(snapshot, [entry, entry])).toThrow('Duplicate')
   const invalid = {
     ...entry,
     publication: { ...entry.publication, origin: 'untrusted' }
   }
+
   expect(() => restoreJournal(snapshot, [invalid as typeof entry])).toThrow(
     'policy'
   )
@@ -192,14 +205,17 @@ it('reopens exact reverse-ordered sparse creation entries without changing their
       ]
     }
   }
+
   try {
     await repository.write(project, null)
     await repository.append({ ...project, revision: 'b' }, 'a', creation)
     const stored = await repository.read(project.id)
     const restored = restoreJournal(snapshot, stored.journal ?? [])
+
     if (!restored.replay) {
       throw new Error('Expected persisted canonical replay')
     }
+
     expect(restored.replay[0].slices).toEqual([
       [
         {

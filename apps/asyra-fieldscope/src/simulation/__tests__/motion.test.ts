@@ -23,6 +23,7 @@ function setup(height = DEFAULT_ROBOT.height) {
     strips: [{ id: 'soil', kind: 'soil' as const, width: 6.3 }]
   }
   const scene = site.prepareScene(farm, [])
+
   robot.update(assessRobotDesign({ ...DEFAULT_ROBOT, height }, farm))
   const receipt = Object.freeze({
     revision: 1,
@@ -32,10 +33,12 @@ function setup(height = DEFAULT_ROBOT.height) {
   })
   const geometry = new QueryGeometry({
     isCurrentReceipt: (value) => value === receipt,
+
     isCurrentScene: site.isCurrentScene.bind(site),
     isCurrentRobot: robot.isCurrentSource.bind(robot),
     isCurrentDock: robot.isCurrentDockSource.bind(robot)
   })
+
   return {
     site,
     robot,
@@ -44,6 +47,7 @@ function setup(height = DEFAULT_ROBOT.height) {
     motion: new JointSegments(geometry)
   }
 }
+
 const input = (): JointSegmentInput => ({
   source: 'synthetic',
   assumption: 'Declared joint-space segment',
@@ -52,10 +56,13 @@ const input = (): JointSegmentInput => ({
   start: { ...REST_JOINTS },
   end: { ...REST_JOINTS }
 })
+
 const nextUp = (value: number) => {
   const data = new DataView(new ArrayBuffer(8))
+
   data.setFloat64(0, value)
   data.setBigUint64(0, data.getBigUint64(0) + 1n)
+
   return data.getFloat64(0)
 }
 
@@ -63,15 +70,19 @@ it('admits exact rig speed boundaries for all five joints without physical movem
   const f = setup(),
     segment = input(),
     rig = f.source.receipt.robot.rig
+
   if (!rig) {
     throw new Error('Missing fixture rig')
   }
+
   segment.end = { ...rig.speeds }
   const result = f.motion.assess(f.source, segment)
+
   expect(result.status).toBe('admissible')
   for (const key of Object.keys(rig.limits) as (keyof RobotJoints)[]) {
     expect(result.checks[key]).toEqual({ limits: 'within', speed: 'within' })
   }
+
   expect(result.source).toBe(f.source)
   expect(result.work).toEqual({ joints: 5, exactComparisons: 5 })
   expect(result).not.toHaveProperty('clearance')
@@ -84,17 +95,23 @@ it('admits exact rig speed boundaries for all five joints without physical movem
 it('rejects just-over speeds and preserves exact full-stroke arithmetic beyond rounded products', () => {
   const f = setup(),
     rig = f.source.receipt.robot.rig
+
   if (!rig) {
     throw new Error('Missing rig')
   }
+
   for (const key of Object.keys(rig.speeds) as (keyof RobotJoints)[]) {
     const segment = input()
+
     segment.end[key] = nextUp(rig.speeds[key])
     const result = f.motion.assess(f.source, segment)
+
     expect(result.status).toBe('invalid')
     expect(result.checks[key].speed).toBe('outside')
   }
+
   const segment = input()
+
   segment.start.lift = -0.1
   segment.end.lift = 0.1
   segment.until = 10
@@ -110,11 +127,14 @@ it('rejects just-over speeds and preserves exact full-stroke arithmetic beyond r
 it('uses original closed joint limits and never wraps an out-of-range angle', () => {
   const f = setup(),
     rig = f.source.receipt.robot.rig
+
   if (!rig) {
     throw new Error('Missing rig')
   }
+
   for (const key of Object.keys(rig.limits) as (keyof RobotJoints)[]) {
     const segment = input()
+
     segment.start[key] = rig.limits[key][0]
     segment.end[key] = rig.limits[key][1]
     segment.until = 1000
@@ -124,7 +144,9 @@ it('uses original closed joint limits and never wraps an out-of-range angle', ()
       'outside'
     )
   }
+
   const segment = input()
+
   segment.end.yaw = Math.PI * 2
   segment.until = 1000
   expect(f.motion.assess(f.source, segment).checks.yaw.limits).toBe('outside')
@@ -133,6 +155,7 @@ it('uses original closed joint limits and never wraps an out-of-range angle', ()
 it('preserves finite huge and subnormal durations without overflow or underflow admission', () => {
   const f = setup(),
     segment = input()
+
   segment.until = Number.MIN_VALUE
   expect(f.motion.assess(f.source, segment).status).toBe('admissible')
   segment.end.lift = Number.MIN_VALUE
@@ -144,16 +167,21 @@ it('preserves finite huge and subnormal durations without overflow or underflow 
 
 it('validates one detached exact schema before returning candidate evidence', () => {
   const f = setup()
+
   for (const value of [NaN, Infinity, -Infinity]) {
     const segment = input()
+
     segment.end.yaw = value
     expect(() => f.motion.assess(f.source, segment)).toThrow()
   }
+
   for (const value of [0, -1, NaN, Infinity]) {
     const segment = input()
+
     segment.until = value
     expect(() => f.motion.assess(f.source, segment)).toThrow()
   }
+
   for (const start of [
     { lift: 0 },
     { ...REST_JOINTS, extra: 0 },
@@ -163,10 +191,13 @@ it('validates one detached exact schema before returning candidate evidence', ()
       f.motion.assess(f.source, { ...input(), start } as JointSegmentInput)
     ).toThrow()
   }
+
   const segment = input()
   let reads = 0
+
   Object.defineProperty(segment, 'until', {
     enumerable: true,
+
     get: () => (++reads === 1 ? 1 : NaN)
   })
   expect(f.motion.assess(f.source, segment).status).toBe('admissible')
@@ -180,6 +211,7 @@ it('uses current issued sources and performs no FK, query or geometry preparatio
     crop = vi.spyOn(crops, 'createCropModels'),
     prepare = vi.spyOn(f.geometry, 'prepare'),
     query = vi.spyOn(SurfaceQueries.prototype, 'sweep')
+
   try {
     f.motion.assess(f.source, input())
     expect(fk).not.toHaveBeenCalled()
@@ -189,10 +221,13 @@ it('uses current issued sources and performs no FK, query or geometry preparatio
     expect(query).not.toHaveBeenCalled()
     expect(() => f.motion.assess({ ...f.source }, input())).toThrow()
     const stale = input()
+
     Object.defineProperty(stale, 'until', {
       enumerable: true,
+
       get: () => {
         f.site.clear()
+
         return 1
       }
     })
@@ -217,9 +252,12 @@ const windowFor = (queryFrom = 0, queryUntil = 1) => ({
   validFrom: 0,
   validUntil: 2
 })
+
 type Rational = readonly [bigint, bigint]
+
 function exact(value: number): Rational {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   const bits = view.getBigUint64(0),
     power = Number((bits >> 52n) & 2047n)
@@ -227,16 +265,21 @@ function exact(value: number): Rational {
     ((bits & ((1n << 52n) - 1n)) | (power ? 1n << 52n : 0n)) *
     (bits >> 63n ? -1n : 1n)
   const shift = power ? power - 1075 : -1074
+
   return shift < 0
     ? [integer, 1n << BigInt(-shift)]
     : [integer << BigInt(shift), 1n]
 }
+
 const radd = (a: Rational, b: Rational): Rational => [
   a[0] * b[1] + b[0] * a[1],
   a[1] * b[1]
 ]
+
 const rsub = (a: Rational, b: Rational): Rational => radd(a, [-b[0], b[1]])
+
 const rmul = (a: Rational, b: Rational): Rational => [a[0] * b[0], a[1] * b[1]]
+
 function expectedAt(
   segment: JointSegmentInput,
   time: number,
@@ -250,29 +293,40 @@ function expectedAt(
     rmul(exact(segment.end[key]), rsub(t, first))
   )
   const duration = rsub(last, first)
+
   return [numerator[0] * duration[1], numerator[1] * duration[0]]
 }
+
 function adjacent(value: number, up: boolean) {
   if (value === 0) {
     return up ? Number.MIN_VALUE : -Number.MIN_VALUE
   }
+
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   view.setBigUint64(0, view.getBigUint64(0) + (value > 0 === up ? 1n : -1n))
+
   return view.getFloat64(0)
 }
+
 function nearest(value: number, expected: Rational) {
   const distance = (point: number) => {
     const delta = rsub(exact(point), expected)
+
     return [delta[0] < 0n ? -delta[0] : delta[0], delta[1]] as const
   }
+
   const here = distance(value)
+
   for (const other of [adjacent(value, false), adjacent(value, true)]) {
     const there = distance(other),
       comparison = here[0] * there[1] - there[0] * here[1]
+
     expect(comparison <= 0n).toBe(true)
     if (comparison === 0n) {
       const view = new DataView(new ArrayBuffer(8))
+
       view.setFloat64(0, value)
       expect(view.getBigUint64(0) & 1n).toBe(0n)
     }
@@ -282,6 +336,7 @@ function nearest(value: number, expected: Rational) {
 it('encloses exact point-time extrema for forward reverse constant and rounded midpoint ties', () => {
   const f = setup(),
     segment = input()
+
   segment.start = {
     lift: -0.01,
     yaw: 0.1,
@@ -302,6 +357,7 @@ it('encloses exact point-time extrema for forward reverse constant and rounded m
     [0.5, 0.5]
   ]) {
     const result = f.motion.enclose(f.source, segment, windowFor(a, b))
+
     for (const key of Object.keys(segment.start) as (keyof RobotJoints)[]) {
       nearest(result.start[key], expectedAt(segment, a, key))
       nearest(result.end[key], expectedAt(segment, b, key))
@@ -312,23 +368,29 @@ it('encloses exact point-time extrema for forward reverse constant and rounded m
       for (const time of [a, (a + b) / 2, b]) {
         const point = f.motion.enclose(f.source, segment, windowFor(time, time))
           .start[key]
+
         nearest(point, expectedAt(segment, time, key))
         expect(point).toBeGreaterThanOrEqual(result.domains[key][0])
         expect(point).toBeLessThanOrEqual(result.domains[key][1])
       }
     }
+
     expect(result.work.pointEvaluations).toBe(a === b ? 1 : 2)
     if (a === b) {
       expect(result.start).toBe(result.end)
     }
+
     if (a === 0) {
       expect(Object.is(result.start.elbow, -0)).toBe(true)
     }
+
     if (b === 1) {
       expect(Object.is(result.end.elbow, 0)).toBe(true)
     }
+
     expect(result.work.conversions).toBeLessThanOrEqual(10)
   }
+
   expect(
     f.motion.enclose(f.source, segment, windowFor(0.5, 0.5)).start.shoulder
   ).toBe(0.125)
@@ -342,12 +404,14 @@ it('encloses exact point-time extrema for forward reverse constant and rounded m
 
 it('encloses subnormal and extreme finite time without rounded-duration or endpoint clamps', () => {
   const f = setup()
+
   for (const [from, until] of [
     [0, Number.MIN_VALUE],
     [1e300, nextUp(nextUp(1e300))],
     [0, 1e300]
   ]) {
     const segment = input()
+
     segment.from = from
     segment.until = until
     segment.start.yaw =
@@ -363,10 +427,13 @@ it('encloses subnormal and extreme finite time without rounded-duration or endpo
       validUntil: nextUp(until)
     }
     const result = f.motion.enclose(f.source, segment, request)
+
     nearest(result.start.yaw, expectedAt(segment, time, 'yaw'))
     expect(result.work.maxBigIntBits).toBeLessThanOrEqual(24000)
   }
+
   const segment = input()
+
   segment.start.lift = -0.1
   segment.end.lift = 0.1
   segment.until = 10
@@ -390,6 +457,7 @@ it('encloses subnormal and extreme finite time without rounded-duration or endpo
 it('rejects incomplete validity invalid windows and caller-forged admissibility', () => {
   const f = setup(),
     segment = input()
+
   for (const request of [
     windowFor(0, 2),
     windowFor(0.7, 0.2),
@@ -401,6 +469,7 @@ it('rejects incomplete validity invalid windows and caller-forged admissibility'
   ]) {
     expect(() => f.motion.enclose(f.source, segment, request)).toThrow()
   }
+
   expect(() =>
     f.motion.enclose(
       f.source,
@@ -409,6 +478,7 @@ it('rejects incomplete validity invalid windows and caller-forged admissibility'
     )
   ).toThrow()
   const forged = f.motion.assess(f.source, segment)
+
   expect(() =>
     f.motion.enclose(
       f.source,
@@ -424,17 +494,22 @@ it('uses one detached admission and window snapshot with current-source checks a
     request = windowFor(0.2, 0.8)
   let segmentReads = 0,
     windowReads = 0
+
   Object.defineProperty(segment, 'until', {
     enumerable: true,
+
     get: () => {
       segmentReads++
+
       return 1
     }
   })
   Object.defineProperty(request, 'queryFrom', {
     enumerable: true,
+
     get: () => {
       windowReads++
+
       return 0.2
     }
   })
@@ -443,8 +518,10 @@ it('uses one detached admission and window snapshot with current-source checks a
     interval = vi.spyOn(kinematics, 'evaluateRobotIntervalPose'),
     model = vi.spyOn(models, 'createRobotModel'),
     prepare = vi.spyOn(f.geometry, 'prepare')
+
   try {
     const result = f.motion.enclose(f.source, segment, request)
+
     expect(assess).toHaveBeenCalledTimes(1)
     expect(segmentReads).toBe(1)
     expect(windowReads).toBe(1)
@@ -464,10 +541,13 @@ it('uses one detached admission and window snapshot with current-source checks a
       f.motion.enclose({ ...f.source }, input(), windowFor())
     ).toThrow()
     const stale = windowFor()
+
     Object.defineProperty(stale, 'queryFrom', {
       enumerable: true,
+
       get: () => {
         f.site.clear()
+
         return 0
       }
     })
@@ -486,8 +566,10 @@ it('profiles fixed normal and extreme point-domain requests within existing exac
   const f = setup(),
     all = performance.now(),
     report = []
+
   for (const kind of ['normal', 'extreme'] as const) {
     const segment = input()
+
     segment.until = kind === 'normal' ? 100 : 1e300
     segment.start.yaw = -0.5
     segment.end.yaw = 0.5
@@ -497,10 +579,12 @@ it('profiles fixed normal and extreme point-domain requests within existing exac
     let points = 0,
       conversions = 0,
       maxBigIntBits = 0
+
     for (let index = 0; index < 100; index++) {
       if (performance.now() - start > 1000 || performance.now() - all > 10000) {
         throw new Error('Point-domain profile guard exceeded')
       }
+
       const a = segment.until * (index / 200),
         b = segment.until * ((index + 1) / 200)
       const result = f.motion.enclose(f.source, segment, {
@@ -509,19 +593,23 @@ it('profiles fixed normal and extreme point-domain requests within existing exac
         validFrom: 0,
         validUntil: nextUp(segment.until)
       })
+
       points += result.work.pointEvaluations
       conversions += result.work.conversions
       maxBigIntBits = Math.max(maxBigIntBits, result.work.maxBigIntBits)
       expect(result.work.pointEvaluations).toBeLessThanOrEqual(2)
       expect(result.work.conversions).toBeLessThanOrEqual(10)
     }
+
     const milliseconds = performance.now() - start
+
     expect(milliseconds).toBeLessThanOrEqual(1000)
     expect(performance.now() - all).toBeLessThanOrEqual(10000)
     expect(conversions).toBeLessThanOrEqual(1000)
     expect(maxBigIntBits).toBeLessThanOrEqual(24000)
     report.push({ kind, points, conversions, maxBigIntBits, milliseconds })
   }
+
   console.info('point-domain profile', JSON.stringify(report))
 })
 
@@ -529,10 +617,13 @@ it('counts actual shared conversions and rejects retirement during exact point w
   const f = setup(),
     segment = input(),
     original = arithmetic.roundFraction
+
   segment.end.yaw = 0.1
   const convert = vi.spyOn(arithmetic, 'roundFraction')
+
   try {
     const result = f.motion.enclose(f.source, segment, windowFor(0.25, 0.75))
+
     expect(result.work.conversions).toBe(convert.mock.calls.length)
     expect(convert).toHaveBeenCalledTimes(10)
     convert.mockClear()
@@ -540,7 +631,9 @@ it('counts actual shared conversions and rejects retirement during exact point w
     expect(convert).not.toHaveBeenCalled()
     convert.mockImplementation((...args) => {
       const value = original(...args)
+
       f.site.clear()
+
       return value
     })
     expect(() =>

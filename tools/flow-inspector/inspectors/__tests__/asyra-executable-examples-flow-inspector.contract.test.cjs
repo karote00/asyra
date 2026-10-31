@@ -18,14 +18,17 @@ test('retired executable-example contract is explicitly superseded', () => {
 
 test('all eleven retired subjects resolve maintained advanced guides', () => {
   const entries = Object.entries(data.guideMappings)
+
   assert.equal(entries.length, 11)
   for (const [retiredId, guideIds] of entries) {
     assert.ok(retiredId.length > 0)
     assert.ok(guideIds.length > 0, retiredId)
     for (const guideId of guideIds) {
       const guidePath = path.join(repoRoot, 'docs/public', `${guideId}.md`)
+
       assert.ok(fs.existsSync(guidePath), `${retiredId}:${guideId}`)
       const guide = fs.readFileSync(guidePath, 'utf8')
+
       for (const heading of [
         '## Where this runs',
         '## (?:Implementation|Maintained implementation paths)',

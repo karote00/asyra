@@ -10,7 +10,9 @@ import { queryOriginalPartPair } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
 
 const ops = kinematics.poseOperations(kinematics.intervalAlgebra)
+
 const copyInterval = (v: Interval): Interval => Object.freeze([v[0], v[1]])
+
 const copyShape = (shape: ConvexShape): ConvexShape =>
   Object.freeze({
     geometry: shape.geometry,
@@ -23,12 +25,14 @@ const copyShape = (shape: ConvexShape): ConvexShape =>
       ) as ConvexShape['pose']['rotation']
     })
   })
+
 interface Packet {
   shapes: readonly [ConvexShape, ConvexShape]
   a: DistanceEvidence['witnessA']
   b: DistanceEvidence['witnessB']
   upper: number
 }
+
 function transport(
   packet: Packet,
   a: ConvexShape,
@@ -42,18 +46,25 @@ function transport(
   ) {
     throw new Error('Changed ordered geometry')
   }
+
   tick()
   const la = localPoint(packet.shapes[0].pose, packet.a)
+
   tick()
   const lb = localPoint(packet.shapes[1].pose, packet.b)
+
   tick()
   const wa = ops.add(a.pose.position, ops.rotate(a.pose.rotation, la))
+
   tick()
   const wb = ops.add(b.pose.position, ops.rotate(b.pose.rotation, lb))
+
   tick()
   const upper = ops.norm(ops.sub(wa, wb))[1]
+
   return { a: wa, b: wb, upper }
 }
+
 afterEach(() => vi.restoreAllMocks())
 it.each([1 / 8, 1 / 16])(
   'retains exact source points when nonwarning upper %s transports below threshold',
@@ -62,10 +73,12 @@ it.each([1 / 8, 1 / 16])(
       kind: 'box' as const,
       size: [1 / 4, 1 / 4, 1 / 4] as const
     }
+
     const shape = (x: number): ConvexShape => ({
       geometry,
       pose: ops.fromPose({ ...IDENTITY_POSE, position: [x, 0, 0] })
     })
+
     const a = shape(0),
       oldB = shape(1 / 4 + gap),
       nextB = shape(9 / 32)
@@ -87,6 +100,7 @@ it.each([1 / 8, 1 / 16])(
     const result = transport(packet, a, nextB, () => {
       work++
     })
+
     expect(packet.upper).toBeGreaterThanOrEqual(1 / 16)
     expect(work).toBe(6)
     expect(result.a[0][0]).toBeLessThanOrEqual(1 / 8)
@@ -107,20 +121,25 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const pair = snapshot.pairs.find(
         (p) => p.a.bodyId === 'example:joint-2' && p.b.bodyId === 'obstacle-11'
       )
+
       if (!pair) {
         throw new Error('Missing original pair')
       }
+
       const threshold = snapshot.rule.minimumClearance
       const context = new OriginalMeshQuery()
       const overhead = { capture: 0, publication: 0, transport: 0 }
+
       const charge = (kind: keyof typeof overhead) => {
         const before = context.work
+
         try {
           context.chargeSourceWitness()
         } finally {
           overhead[kind] += context.work - before
         }
       }
+
       interface Root {
         node: object
         segment: number
@@ -151,19 +170,24 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         discarded = 0
       const rows: Row[] = []
       const interpolate = kinematics.interpolateSegment
+
       vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
         (...args) => {
           if (!Array.isArray(args[2])) {
             throw new Error('Expected interval input')
           }
+
           span = [args[2][0], args[2][1]]
+
           return interpolate(...args)
         }
       )
       const lower = context.lowerOver.bind(context)
+
       context.lowerOver = (...args) => {
         const actual = span && [...span]
         const value = lower(...args)
+
         if (
           root &&
           actual?.[0] === root.start &&
@@ -172,11 +196,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         ) {
           root.clear = true
         }
+
         return value
       }
+
       const solve = convex.convexDistance
+
       vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
         const value = solve(...args)
+
         if (active) {
           active.convex++
           if (
@@ -186,6 +214,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             active.firstWarningWork = context.work - targetBefore
           }
         }
+
         return value
       })
       const initial = context as unknown as {
@@ -197,8 +226,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       )
       const witness = initial.witness.bind(context)
       let points: DistanceEvidence['witnessA'][] = []
+
       initial.witness = (...args) => {
         const value = witness(...args)
+
         if (active) {
           points.push(value)
           if (
@@ -208,15 +239,20 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             active.firstWarningWork = context.work - targetBefore
           }
         }
+
         return value
       }
+
       const make = context.createStaticSampler.bind(context)
+
       context.createStaticSampler = (settings) => {
         const sample = make(settings)
+
         const observe: typeof sample = (a, b, origin, source) => {
           let row: Row | undefined
           const first =
             origin.originalRoot === true && origin.time === origin.start
+
           if (first) {
             if (root?.packet) {
               if (
@@ -231,6 +267,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 const moved = transport(root.packet, a, b, () =>
                   charge('transport')
                 )
+
                 expect(Number.isFinite(moved.upper)).toBe(true)
                 row = {
                   segment: root.segment,
@@ -248,6 +285,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 discarded++
               }
             }
+
             root = {
               node: origin.node,
               segment: origin.segment,
@@ -261,18 +299,22 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           } else if (root && origin.node !== root.node) {
             root.child = true
           }
+
           const before = context.work
           const result = sample(a, b, origin, source)
+
           if (row) {
             row.targetWork = context.work - before
             row.targetUpper = result?.evidence.upper
             row.targetPenetration = result?.evidence.penetration
             active = undefined
           }
+
           if (root && origin.node === root.node && result) {
             root.penetration ||= result.evidence.penetration
             root.finding ||= result.evidence.upper < threshold
             const e = result.evidence
+
             if (
               first &&
               !result.exhausted &&
@@ -289,12 +331,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 if (shape.geometry.kind !== 'mesh') {
                   throw new Error('Expected full mesh')
                 }
+
                 expect(
                   Object.isFrozen(shape.geometry) &&
                     Object.isFrozen(shape.geometry.positions) &&
                     Object.isFrozen(shape.geometry.indices)
                 ).toBe(true)
               }
+
               expect(
                 [
                   ...e.witnessA,
@@ -323,12 +367,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               }
             }
           }
+
           return result
         }
+
         observe.publishBoundary = sample.publishBoundary
+
         return observe
       }
+
       let result: ReturnType<typeof queryOriginalPartPair>
+
       try {
         result = queryOriginalPartPair(
           {
@@ -353,10 +402,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           Reflect.deleteProperty(initial, 'witness')
         }
       }
+
       if (root?.packet) {
         discarded++
       }
+
       const additional = Object.values(overhead).reduce((a, b) => a + b, 0)
+
       expect(result.coverage).toBe('complete')
       expect(result.evaluations).toBe(95)
       expect(result.leaves).toHaveLength(90)
@@ -371,16 +423,19 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             leaf.start === frames[row.segment].time &&
             leaf.end === frames[row.segment + 1].time
         )
+
         expect(leaf).toBeDefined()
         expect(leaf?.state === 'clear' || leaf?.state === 'finding').toBe(true)
         expect(leaf?.penetration).toBe(false)
         expect(row.target).toBe(row.segment - 1)
       }
+
       const warnings = rows.filter((row) => row.upper < threshold)
       const potential = warnings.reduce(
         (sum, row) => sum + (row.firstWarningWork ?? row.targetWork),
         0
       )
+
       // eslint-disable-next-line no-console -- fixed-prefix passive opportunity, not savings or production output
       console.info(
         JSON.stringify({

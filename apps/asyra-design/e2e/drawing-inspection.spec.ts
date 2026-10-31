@@ -33,6 +33,7 @@ test('large composition overview covers every corner while native regions preser
       fill
     }))
   })
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
@@ -64,6 +65,7 @@ test('large composition overview covers every corner while native regions preser
   const depth = await getUndoHistoryDepth(page)
   const captures = await page.evaluate(async (id) => {
     const { inspectionApis } = await import('../src/common-apis/inspection')
+
     return {
       overview: inspectionApis.inspect(id),
       detail: inspectionApis.inspect(id, {
@@ -75,6 +77,7 @@ test('large composition overview covers every corner while native regions preser
       oversized: inspectionApis.inspect(id, undefined, 'detail')
     }
   }, design.entries[0].descriptor.id)
+
   expect(captures.overview).toMatchObject({
     available: true,
     partial: false,
@@ -89,6 +92,7 @@ test('large composition overview covers every corner while native regions preser
   if (!captures.overview.image || !captures.detail.image) {
     throw new Error('Missing capture')
   }
+
   expect(captures.overview.image.width).toBe(1024)
   expect(captures.overview.image.height).toBe(512)
   expect(captures.detail.image.width).toBe(1000)
@@ -106,12 +110,15 @@ test('large composition overview covers every corner while native regions preser
     [0, 0, 255],
     [255, 0, 255]
   ]
+
   for (let index = 0; index < 4; index++) {
     const x = index % 2 ? 1000 : 24
     const y = index >= 2 ? 488 : 24
     const offset = (y * info.width + x) * info.channels
+
     expect([...data.subarray(offset, offset + 3)]).toEqual(expected[index])
   }
+
   await writeFile(testInfo.outputPath('large-overview.png'), png)
   await writeFile(
     testInfo.outputPath('native-region.png'),
@@ -125,6 +132,7 @@ test('workspace overview preserves independent roots, visual order and read-only
   page
 }, testInfo) => {
   const document = createTestDocumentIdentity()
+
   await page.goto(document.url)
   await waitForAppReady(page)
   await expect
@@ -132,6 +140,7 @@ test('workspace overview preserves independent roots, visual order and read-only
       page.evaluate(async () => {
         const { getActiveCollaborationHandle } =
           await import('../src/testing/runtime-access')
+
         return getActiveCollaborationHandle()?.getStatus()
       })
     )
@@ -139,8 +148,10 @@ test('workspace overview preserves independent roots, visual order and read-only
   const ids = await page.evaluate(async () => {
     const { core, startDocumentPublicationCapture } =
       await import('../src/testing/runtime-access')
+
     startDocumentPublicationCapture('workspace-overview-publications')
     const { transactionApis, fillApis } = await import('../src/common-apis')
+
     return transactionApis.runTransaction(() => {
       const roots = core.createElementsInParent(
         [
@@ -160,14 +171,17 @@ test('workspace overview preserves independent roots, visual order and read-only
         core.getCurrentWorkspaceId()
       )
       const colors = ['#ffffff', '#ff0000', '#0000ff', '#00ff00', '#ffff00']
+
       roots.forEach((id, index) =>
         fillApis.updateFillsAtIndex([id], 0, { color: colors[index] })
       )
+
       return roots
     })
   })
   const before = await getCoreDocumentDigest(page)
   const depth = await getUndoHistoryDepth(page)
+
   try {
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
@@ -176,12 +190,14 @@ test('workspace overview preserves independent roots, visual order and read-only
     const runtime = await page.evaluate(async () => {
       const { core, getActiveCollaborationHandle, readTestCapture } =
         await import('../src/testing/runtime-access')
+
       return {
         document: await core.save(),
         session: getActiveCollaborationHandle()?.getSessionState(),
         publications: readTestCapture('workspace-overview-publications')
       }
     })
+
     await testInfo.attach('workspace-overview-persistence', {
       body: JSON.stringify({
         runtime,
@@ -191,6 +207,7 @@ test('workspace overview preserves independent roots, visual order and read-only
     })
     throw error
   }
+
   const captured = await page.evaluate(async (ids) => {
     const {
       core,
@@ -206,8 +223,10 @@ test('workspace overview preserves independent roots, visual order and read-only
       await import('../src/common-apis')
     const workspace = core.getCurrentWorkspaceId()
     const owner = createInspectionEvidence()
+
     const capture = (id: string) =>
       owner.capture(() => inspectionApis.inspect(id), { elementId: id })
+
     startSharedPublicationCapture('workspace-inspection-shared')
     startDocumentPublicationCapture('workspace-inspection-document')
     const overview = await capture(workspace)
@@ -217,6 +236,7 @@ test('workspace overview preserves independent roots, visual order and read-only
       document: readTestCapture('workspace-inspection-document').length,
       undo: core.deps.factory.transact.undoStack.length
     }
+
     selectionApis.selectElements([ids[2]])
     viewportApis.zoomToCenter(0.75, 300, 200)
     viewportApis.panTo(-200, 80)
@@ -242,6 +262,7 @@ test('workspace overview preserves independent roots, visual order and read-only
         overviewIds: [workspace]
       })
     }
+
     transactionApis.runTransaction(() =>
       fillApis.updateFillsAtIndex([ids[2]], 0, { color: '#00ffff' })
     )
@@ -251,8 +272,10 @@ test('workspace overview preserves independent roots, visual order and read-only
     }
     // Restore the exact document through the existing history owner, not a rewrite.
     const { historyApis } = await import('../src/common-apis')
+
     await historyApis.undo()
     const structural = []
+
     for (const change of [
       () =>
         core.createElementInParent(
@@ -269,13 +292,16 @@ test('workspace overview preserves independent roots, visual order and read-only
     ]) {
       const whole = await capture(workspace)
       const independent = await capture(ids[1])
+
       transactionApis.runTransaction(change)
       const after = {
         overview: owner.isCurrent(whole.evidence),
         local: owner.isCurrent(independent.evidence)
       }
+
       await historyApis.undo()
       const restored = await capture(workspace)
+
       await historyApis.redo()
       structural.push({
         ...after,
@@ -283,7 +309,9 @@ test('workspace overview preserves independent roots, visual order and read-only
       })
       await historyApis.undo()
     }
+
     owner.dispose()
+
     return {
       overview,
       selected,
@@ -294,6 +322,7 @@ test('workspace overview preserves independent roots, visual order and read-only
       selectedHistory
     }
   }, ids)
+
   expect(captured.overview).toMatchObject({
     available: true,
     settlement: 'completed',
@@ -329,12 +358,14 @@ test('workspace overview preserves independent roots, visual order and read-only
     width: number
     height: number
   }
+
   expect(captured.selected.image?.dataUrl).toEqual(image.dataUrl)
   expect(image).toMatchObject({ width: 1024, height: 512 })
   const png = Buffer.from(image.dataUrl.split(',')[1], 'base64')
   const { data, info } = await sharp(png)
     .raw()
     .toBuffer({ resolveWithObject: true })
+
   for (const [x, y, color] of [
     [50, 100, [255, 0, 0]],
     [150, 100, [0, 0, 255]],
@@ -345,8 +376,10 @@ test('workspace overview preserves independent roots, visual order and read-only
   ] as const) {
     const offset =
       (Math.floor(y * 2.56) * info.width + Math.floor(x * 2.56)) * info.channels
+
     expect([...data.subarray(offset, offset + 3)]).toEqual(color)
   }
+
   await writeFile(testInfo.outputPath('workspace-overview.png'), png)
   expect(await getCoreDocumentDigest(page)).toEqual(before)
   expect(await getUndoHistoryDepth(page)).toBe(captured.selectedHistory.undo)
@@ -354,12 +387,16 @@ test('workspace overview preserves independent roots, visual order and read-only
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
     const handle = getActiveCollaborationHandle()
+
     if (!handle) {
       throw new Error('Missing document persistence owner')
     }
+
     await handle.confirmPersistence(new AbortController().signal)
+
     return core.save()
   })
+
   await expect
     .poll(() => getPersistedDocumentDigest(document.fileId))
     .toEqual(before)
@@ -368,6 +405,7 @@ test('workspace overview preserves independent roots, visual order and read-only
   const loaded = await page.evaluate(async () =>
     (await import('../src/testing/runtime-access')).core.save()
   )
+
   await testInfo.attach('workspace-capture-reload', {
     body: JSON.stringify({ saved, loaded }),
     contentType: 'application/json'
@@ -376,7 +414,9 @@ test('workspace overview preserves independent roots, visual order and read-only
   const reloaded = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
     const { inspectionApis } = await import('../src/common-apis/inspection')
+
     return inspectionApis.inspect(core.getCurrentWorkspaceId())
   })
+
   expect(reloaded.image?.dataUrl).toEqual(image.dataUrl)
 })

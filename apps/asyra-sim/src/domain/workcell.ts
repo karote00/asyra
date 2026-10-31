@@ -88,11 +88,14 @@ export const VISUAL_BINDING_PROFILE = Object.freeze({
 
 const finiteVector = (v: unknown, n: number): v is number[] =>
   Array.isArray(v) && v.length === n && v.every(Number.isFinite)
+
 export function validPose(pose: unknown): pose is Pose {
   if (!pose || typeof pose !== 'object') {
     return false
   }
+
   const p = pose as Pose
+
   return (
     finiteVector(p.position, 3) &&
     p.position.every((v) => Math.abs(v) <= GEOMETRY_PROFILE.maxOffset) &&
@@ -100,21 +103,27 @@ export function validPose(pose: unknown): pose is Pose {
     Math.abs(Math.hypot(...p.rotation) - 1) < 1e-8
   )
 }
+
 export function validGeometry(geometry: unknown): geometry is Geometry {
   if (!geometry || typeof geometry !== 'object') {
     return false
   }
+
   const g = geometry as Geometry
+
   if (g.kind === 'mesh') {
     return validMeshGeometry(g)
   }
+
   const size = (n: number) =>
     Number.isFinite(n) &&
     n >= GEOMETRY_PROFILE.minDimension &&
     n <= GEOMETRY_PROFILE.maxDimension
+
   if (g.kind === 'sphere') {
     return size(g.radius)
   }
+
   if (g.kind === 'capsule') {
     return (
       size(g.radius) &&
@@ -123,15 +132,19 @@ export function validGeometry(geometry: unknown): geometry is Geometry {
       g.length <= GEOMETRY_PROFILE.maxDimension
     )
   }
+
   if (g.kind === 'box') {
     return finiteVector(g.size, 3) && g.size.every(size)
   }
+
   return false
 }
+
 export const validIdentifier = (value: unknown): value is string =>
   typeof value === 'string' &&
   /^[a-zA-Z0-9_.:-]{1,96}$/.test(value) &&
   !['__proto__', 'prototype', 'constructor'].includes(value)
+
 export const validAssetId = (value: unknown): value is string =>
   typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
 
@@ -161,11 +174,14 @@ export function validVisualBindings(
     new Set(value.map((binding) => binding.id)).size === value.length
   )
 }
+
 export function validJoint(input: unknown): input is Joint {
   if (!input || typeof input !== 'object') {
     return false
   }
+
   const joint = input as Joint
+
   if (
     !['fixed', 'revolute', 'prismatic'].includes(joint.kind) ||
     !finiteVector(joint.axis, 3) ||
@@ -177,6 +193,7 @@ export function validJoint(input: unknown): input is Joint {
   ) {
     return false
   }
+
   if (
     joint.kind === 'revolute' &&
     Math.max(Math.abs(joint.min), Math.abs(joint.max)) >
@@ -184,6 +201,7 @@ export function validJoint(input: unknown): input is Joint {
   ) {
     return false
   }
+
   if (
     joint.kind === 'prismatic' &&
     Math.max(Math.abs(joint.min), Math.abs(joint.max)) >
@@ -191,13 +209,17 @@ export function validJoint(input: unknown): input is Joint {
   ) {
     return false
   }
+
   return true
 }
+
 export function validBodyParameters(input: unknown): input is BodyParameters {
   if (!input || typeof input !== 'object') {
     return false
   }
+
   const body = input as BodyParameters
+
   if (
     !['robot', 'link', 'tool', 'workpiece', 'fixture', 'group'].includes(
       body.role
@@ -213,7 +235,9 @@ export function validBodyParameters(input: unknown): input is BodyParameters {
   ) {
     return false
   }
+
   const ids = new Set<string>()
+
   for (const collider of body.colliders) {
     if (
       !collider ||
@@ -224,21 +248,27 @@ export function validBodyParameters(input: unknown): input is BodyParameters {
     ) {
       return false
     }
+
     ids.add(collider.id)
   }
+
   if (
     body.colliders.some((collider) => collider.geometry.kind === 'mesh') &&
     (!body.visuals?.length || !hasResolvedParts(body))
   ) {
     return false
   }
+
   return true
 }
+
 export function validateWorkcell(input: unknown): asserts input is Workcell {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid workcell data')
   }
+
   const workcell = input as Workcell
+
   if (
     workcell.version !== 1 ||
     !Array.isArray(workcell.bodies) ||
@@ -246,10 +276,12 @@ export function validateWorkcell(input: unknown): asserts input is Workcell {
   ) {
     throw new Error('Unsupported workcell version or body count')
   }
+
   let vertexCount = 0,
     indexCount = 0
   let colliderCount = 0,
     visualCount = 0
+
   for (const body of workcell.bodies) {
     if (
       !body ||
@@ -262,6 +294,7 @@ export function validateWorkcell(input: unknown): asserts input is Workcell {
     ) {
       throw new Error('Invalid body or joint data')
     }
+
     colliderCount += body.colliders.length
     for (const collider of body.colliders) {
       if (collider.geometry.kind === 'mesh') {
@@ -277,65 +310,84 @@ export function validateWorkcell(input: unknown): asserts input is Workcell {
         }
       }
     }
+
     visualCount += body.visuals?.length ?? 0
     if (visualCount > VISUAL_BINDING_PROFILE.maxPerWorkcell) {
       throw new Error(
         'Workcell exceeds the aggregate visual binding limit of 256'
       )
     }
+
     if (colliderCount > GEOMETRY_PROFILE.maxColliders) {
       throw new Error('Workcell exceeds the aggregate collider limit of 256')
     }
   }
+
   const bodies = new Map(workcell.bodies.map((b) => [b.id, b]))
+
   if (bodies.size !== workcell.bodies.length) {
     throw new Error('Duplicate body identity')
   }
+
   if (workcell.robotRootId !== null && !bodies.has(workcell.robotRootId)) {
     throw new Error('Missing robot root')
   }
+
   const actuated: Body[] = []
+
   for (const body of workcell.bodies) {
     if (body.joint.kind !== 'fixed') {
       actuated.push(body)
     }
+
     const visited = new Set([body.id])
     let parentId = body.parentId
+
     while (parentId !== null) {
       if (visited.has(parentId)) {
         throw new Error('Workcell hierarchy cycle')
       }
+
       visited.add(parentId)
       const parent = bodies.get(parentId)
+
       if (!parent) {
         throw new Error(`Missing parent ${parentId}`)
       }
+
       parentId = parent.parentId
     }
   }
+
   if (actuated.length > GEOMETRY_PROFILE.maxJoints) {
     throw new Error('Too many actuated joints')
   }
+
   const ancestors = (body: Body): Set<string> => {
     const ids = new Set<string>()
     let current: Body | undefined = body
+
     while (current) {
       ids.add(current.id)
       current =
         current.parentId === null ? undefined : bodies.get(current.parentId)
     }
+
     return ids
   }
+
   for (const a of actuated) {
     if (!workcell.robotRootId || !ancestors(a).has(workcell.robotRootId)) {
       throw new Error('Every moving joint must belong to the selected robot')
     }
+
     for (const b of actuated) {
       if (!ancestors(a).has(b.id) && !ancestors(b).has(a.id)) {
         throw new Error('Only one serial moving chain is supported')
       }
     }
   }
+
   if (
     workcell.robotRootId &&
     bodies.get(workcell.robotRootId)?.joint.kind !== 'fixed'
@@ -358,8 +410,10 @@ export function validateTrajectory(
       `Trajectory must contain 1 to ${GEOMETRY_PROFILE.maxKeyframes} keyframes`
     )
   }
+
   const joints = workcell.bodies.filter((b) => b.joint.kind !== 'fixed')
   let previous = -Infinity
+
   for (const frame of trajectory.keyframes) {
     if (
       !Number.isFinite(frame.time) ||
@@ -371,6 +425,7 @@ export function validateTrajectory(
         'Keyframe times must be finite and strictly increasing within the supported envelope'
       )
     }
+
     if (
       !hasExactOwnKeys(
         frame.joints,
@@ -379,8 +434,10 @@ export function validateTrajectory(
     ) {
       throw new Error('Every actuated joint must have an explicit value')
     }
+
     for (const body of joints) {
       const value = frame.joints[body.id]
+
       if (
         !Number.isFinite(value) ||
         value < body.joint.min ||
@@ -389,6 +446,7 @@ export function validateTrajectory(
         throw new Error(`Missing or out-of-limit joint ${body.id}`)
       }
     }
+
     previous = frame.time
   }
 }
@@ -400,6 +458,7 @@ export function jointValuesAt(
   const frames = trajectory.keyframes,
     first = frames[0],
     last = frames.at(-1)
+
   if (
     !first ||
     !last ||
@@ -409,10 +468,13 @@ export function jointValuesAt(
   ) {
     throw new Error('Trajectory does not cover the requested time')
   }
+
   if (frames.length === 1 || time === last.time) {
     return { ...last.joints }
   }
+
   const upper = frames.findIndex((frame) => frame.time > time)
+
   return interpolateSegment(trajectory, upper - 1, time, numberAlgebra)
 }
 
@@ -422,6 +484,7 @@ export function forwardKinematics(
 ): ReadonlyMap<string, Pose> {
   for (const body of workcell.bodies) {
     const value = values[body.id] ?? body.joint.value
+
     if (
       !Number.isFinite(value) ||
       value < body.joint.min ||
@@ -430,5 +493,6 @@ export function forwardKinematics(
       throw new Error('Joint value outside its limits')
     }
   }
+
   return evaluateKinematics(workcell, values, numberAlgebra)
 }

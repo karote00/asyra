@@ -41,34 +41,42 @@ function setup(t, options = {}) {
   const directory = path.join(root, 'tmp/node-service')
   const serviceOptions = { directory, ...options }
   let service = createService(root, serviceOptions)
+
   t.after(async () => {
     await service.close()
     fixture.restore()
   })
+
   return {
     fixture,
     root,
     directory,
     record,
     selection: { runId: record.id, caseId: record.cases[0].id },
+
     get service() {
       return service
     },
+
     async restart() {
       await service.close()
       service = createService(root, serviceOptions)
     }
   }
 }
+
 async function settled(service, selection) {
   for (let i = 0; i < 200; i++) {
     const value = service.nodeContext(selection.runId, selection.caseId)
       .actions[0]
+
     if (value.status !== 'running') {
       return value
     }
+
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
+
   throw new Error('Action did not settle')
 }
 
@@ -79,6 +87,7 @@ test('node actions deny before effects and retain append-only attribution, dupli
     requestId: randomUUID(),
     text: '<img src=x onerror=alert(1)> investigation note'
   }
+
   for (const method of [
     'addNodeComment',
     'previewNodeRerun',
@@ -89,6 +98,7 @@ test('node actions deny before effects and retain append-only attribution, dupli
       /not authorized/
     )
   }
+
   assert.equal(
     fs.existsSync(path.join(f.directory, 'node-interactions.json')),
     false
@@ -99,12 +109,14 @@ test('node actions deny before effects and retain append-only attribution, dupli
       /1-2000/
     )
   }
+
   assert.throws(
     () =>
       f.service.previewNodeRerun({ ...f.selection, argv: ['sh'] }, LOCAL_ACTOR),
     /Invalid/
   )
   const saved = f.service.addNodeComment(request, LOCAL_ACTOR)
+
   assert.equal(saved.actor, LOCAL_ACTOR.id)
   assert.equal(saved.node.stepId, f.record.cases[0].locations[0].stepId)
   assert.deepEqual(f.service.addNodeComment(request, LOCAL_ACTOR), saved)
@@ -129,6 +141,7 @@ test('node actions deny before effects and retain append-only attribution, dupli
     )
   )
   const historical = f.service.nodeContext(request.runId, request.caseId)
+
   assert.match(historical.reference, /unavailable/)
   assert.deepEqual(historical.comments[0], saved)
   assert.throws(
@@ -143,15 +156,18 @@ test('rerun preview pins exact selection, rejects drift and allows a fresh sourc
     nodeInteractionOptions: {
       execute: async () => {
         calls++
+
         return { code: 1, reason: 'test runner unavailable', output: '' }
       }
     }
   })
   const preview = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
+
   assert.equal(preview.command.runner, 'vitest')
   assert.equal(preview.test.name, f.record.cases[0].testName)
   assert.ok(!JSON.stringify(preview.command).includes('untrusted'))
   const source = path.join(f.root, 'packages/factory/src/value-clone.ts')
+
   fs.chmodSync(source, 0o600)
   fs.appendFileSync(source, '\n// Source changed after preview.\n')
   const request = {
@@ -159,12 +175,15 @@ test('rerun preview pins exact selection, rejects drift and allows a fresh sourc
     requestId: randomUUID(),
     previewDigest: preview.previewDigest
   }
+
   assert.throws(() => f.service.startNodeRerun(request, LOCAL_ACTOR), /stale/)
   assert.equal(calls, 0)
   const fresh = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
+
   assert.notEqual(fresh.sourceDigest, preview.sourceDigest)
   request.previewDigest = fresh.previewDigest
   const first = f.service.startNodeRerun(request, LOCAL_ACTOR)
+
   assert.equal(f.service.startNodeRerun(request, LOCAL_ACTOR).id, first.id)
   assert.throws(
     () =>
@@ -176,6 +195,7 @@ test('rerun preview pins exact selection, rejects drift and allows a fresh sourc
   )
   assert.throws(() => f.service.start({}, LOCAL_ACTOR), /running/)
   const action = await settled(f.service, f.selection)
+
   assert.equal(calls, 1)
   assert.equal(action.observedStatus, 'unavailable')
   assert.ok(action.issues.length)
@@ -191,6 +211,7 @@ test(
   async (t) => {
     const f = setup(t)
     const preview = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
+
     f.service.startNodeRerun(
       {
         ...f.selection,
@@ -200,9 +221,11 @@ test(
       LOCAL_ACTOR
     )
     const action = await settled(f.service, f.selection)
+
     assert.equal(action.observedStatus, 'passed', JSON.stringify(action))
     const result = f.service.testResult(action.resultRunId)
     const executed = result.cases.filter((item) => item.status !== 'skipped')
+
     assert.equal(executed.length, 1)
     assert.equal(executed[0].testName, preview.test.name)
     assert.equal(executed[0].resolution, 'mapped')
@@ -216,11 +239,13 @@ test('unwritable interaction storage prevents comment acknowledgement and rerun 
     nodeInteractionOptions: {
       execute: async () => {
         calls++
+
         return {}
       }
     }
   })
   const preview = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
+
   fs.mkdirSync(path.join(f.directory, 'node-interactions.json'))
   assert.throws(() =>
     f.service.addNodeComment(
@@ -252,6 +277,7 @@ test('cancel and shutdown settle owned execution and never restart a duplicate r
           if (signal.aborted) {
             return resolve({ code: null, reason: 'cancelled', output: '' })
           }
+
           signal.addEventListener(
             'abort',
             () => resolve({ code: null, reason: 'cancelled', output: '' }),
@@ -266,12 +292,15 @@ test('cancel and shutdown settle owned execution and never restart a duplicate r
     requestId: randomUUID(),
     previewDigest: preview.previewDigest
   }
+
   f.service.startNodeRerun(request, LOCAL_ACTOR)
   await new Promise((resolve) => setImmediate(resolve))
   const result = await f.service.cancelNodeRerun(request.requestId, LOCAL_ACTOR)
+
   assert.equal(result.status, 'cancelled')
   assert.equal(result.observedStatus, 'unavailable')
   const next = { ...request, requestId: randomUUID() }
+
   f.service.startNodeRerun(next, LOCAL_ACTOR)
   await f.restart()
   assert.equal(f.service.startNodeRerun(next, LOCAL_ACTOR).status, 'cancelled')
@@ -280,16 +309,19 @@ test('cancel and shutdown settle owned execution and never restart a duplicate r
 
 test('changed mapping preserves notes, rejects rerun and never silently relocates context', async (t) => {
   const f = setup(t)
+
   f.service.addNodeComment(
     { ...f.selection, requestId: randomUUID(), text: 'Original owner note' },
     LOCAL_ACTOR
   )
   const file = path.join(f.root, 'packages/factory/flow-contracts.json')
   const manifest = JSON.parse(fs.readFileSync(file, 'utf8'))
+
   manifest.flows[0].title += ' changed'
   fs.chmodSync(file, 0o600)
   fs.writeFileSync(file, JSON.stringify(manifest))
   const context = f.service.nodeContext(f.selection.runId, f.selection.caseId)
+
   assert.match(context.reference, /Mapping changed/)
   assert.equal(
     context.comments[0].node.title,
@@ -338,6 +370,7 @@ test('Playwright selection pins the complete producer scope and binds participan
     root,
     'tmp/flow-inspector/stage-c-test-' + randomUUID()
   )
+
   fs.mkdirSync(directory, { recursive: true })
   const observations = localization.createObservationReader(
     localization.observationDirectory(root)
@@ -346,10 +379,13 @@ test('Playwright selection pins the complete producer scope and binds participan
   const owner = createNodeInteractions(root, {
     directory,
     observations,
+
     requireIdle() {
       /* The isolated owner has no other service execution. */
     },
+
     ErrorType: ActionError,
+
     execute: async (options) => {
       received = options
       newObservation = JSON.parse(
@@ -358,9 +394,11 @@ test('Playwright selection pins the complete producer scope and binds participan
           'utf8'
         )
       ).id
+
       return { code: 1, reason: 'simulated runner failure', output: '' }
     }
   })
+
   t.after(async () => {
     await owner.close()
     fs.rmSync(directory, { recursive: true, force: true })
@@ -373,6 +411,7 @@ test('Playwright selection pins the complete producer scope and binds participan
   })
   const selection = { runId: record.id, caseId: record.cases[0].id }
   const preview = owner.preview(selection)
+
   assert.equal(preview.command.runner, 'playwright')
   assert.match(
     preview.command.args[preview.command.args.indexOf('--grep') + 1],
@@ -389,11 +428,14 @@ test('Playwright selection pins the complete producer scope and binds participan
   while (owner.isActive()) {
     await new Promise((resolve) => setTimeout(resolve, 10))
   }
+
   assert.ok(received)
   assert.equal(received.env.FLOW_OBSERVATION_ID, newObservation)
   const config = received.args[received.args.indexOf('--config') + 1]
+
   assert.match(fs.readFileSync(config, 'utf8'), /reuseExistingServer: false/)
   const result = owner.context(selection.runId, selection.caseId).actions[0]
+
   assert.notEqual(result.observedStatus, 'passed')
 })
 
@@ -401,10 +443,13 @@ test('context reads never capture source and corrupt retained interactions remai
   const f = setup(t)
   const original = localization.sourceFingerprint
   let captures = 0
+
   localization.sourceFingerprint = (...args) => {
     captures++
+
     return original(...args)
   }
+
   t.after(() => {
     localization.sourceFingerprint = original
   })
@@ -413,10 +458,12 @@ test('context reads never capture source and corrupt retained interactions remai
     requestId: randomUUID(),
     text: 'retained context'
   }
+
   f.service.addNodeComment(request, LOCAL_ACTOR)
   for (let index = 0; index < 5; index++) {
     f.service.nodeContext(request.runId, request.caseId)
   }
+
   assert.equal(captures, 0)
   f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
   assert.equal(captures, 1)
@@ -442,13 +489,18 @@ test(
     const { createNodeInteractions } = require('../node-interactions.cjs')
     const { ActionError } = require('../service.cjs')
     const { runProcess } = require('../runner.cjs')
+
     const freePort = async () => {
       const server = net.createServer()
+
       await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
       const port = server.address().port
+
       await new Promise((resolve) => server.close(resolve))
+
       return port
     }
+
     const root = path.resolve(__dirname, '../../../..')
     const manifest =
       'apps/asyra-design/playwright-collaboration-flow-contracts.json'
@@ -481,6 +533,7 @@ test(
       root,
       'tmp/flow-inspector/node-playwright-' + randomUUID()
     )
+
     fs.mkdirSync(directory, { recursive: true })
     const [app, backend, collaboration] = await Promise.all([
       freePort(),
@@ -493,10 +546,13 @@ test(
     const owner = createNodeInteractions(root, {
       directory,
       observations: reader,
+
       requireIdle() {
         /* The isolated owner has no other service execution. */
       },
+
       ErrorType: ActionError,
+
       execute: (options) =>
         runProcess({
           ...options,
@@ -516,6 +572,7 @@ test(
         })
     })
     let action
+
     t.after(async () => {
       await owner.close()
       for (const id of [record.id, action?.resultRunId].filter(Boolean)) {
@@ -527,6 +584,7 @@ test(
     })
     const selection = { runId: record.id, caseId: record.cases[0].id }
     const preview = owner.preview(selection)
+
     owner.start(
       {
         ...selection,
@@ -536,9 +594,11 @@ test(
       LOCAL_ACTOR.id
     )
     const deadline = Date.now() + 190000
+
     while (owner.isActive() && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
+
     action = owner.context(selection.runId, selection.caseId).actions[0]
     fs.writeFileSync(
       path.join(directory, 'action-result.json'),
@@ -556,6 +616,7 @@ test(
       })
     )
     const result = reader.get(action.resultRunId)
+
     assert.equal(result.cases.length, 1)
     assert.equal(result.cases[0].testName, candidate.testName)
     assert.equal(result.cases[0].resolution, 'mapped')
@@ -569,11 +630,13 @@ test('source change between confirmation and runner handoff never executes', asy
     nodeInteractionOptions: {
       execute: async () => {
         calls++
+
         return { code: 0, output: '' }
       }
     }
   })
   const preview = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
+
   f.service.startNodeRerun(
     {
       ...f.selection,
@@ -583,9 +646,11 @@ test('source change between confirmation and runner handoff never executes', asy
     LOCAL_ACTOR
   )
   const file = path.join(f.root, 'packages/factory/src/value-clone.ts')
+
   fs.chmodSync(file, 0o600)
   fs.appendFileSync(file, '\n// Changed before handoff.\n')
   const action = await settled(f.service, f.selection)
+
   assert.equal(calls, 0)
   assert.match(action.error, /source.*changed/i)
 })
@@ -595,15 +660,19 @@ test('HTTP capability and CLI mutations share retained node context without exec
   const { main } = require('../cli.cjs')
   const net = require('node:net')
   const f = setup(t)
+
   await f.service.close()
   const listener = net.createServer()
+
   await new Promise((resolve) => listener.listen(0, '127.0.0.1', resolve))
   const port = listener.address().port
+
   await new Promise((resolve) => listener.close(resolve))
   const server = await startServer(f.root, {
     url: 'http://127.0.0.1:' + port,
     serviceOptions: { directory: f.directory }
   })
+
   t.after(() => server.close())
   const request = {
     ...f.selection,
@@ -615,27 +684,36 @@ test('HTTP capability and CLI mutations share retained node context without exec
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(request)
   })
+
   assert.equal(denied.status, 403)
   assert.equal(
     fs.existsSync(path.join(f.directory, 'node-interactions.json')),
     false
   )
   const requestPath = path.join(f.root, 'tmp/comment.json')
+
   fs.writeFileSync(requestPath, JSON.stringify(request))
   const messages = []
+
   assert.equal(
     await main(['--url', server.origin, 'node-comment', 'tmp/comment.json'], {
       repositoryRoot: f.root,
+
       write: (value) => messages.push(value)
     }),
     0
   )
   const comment = JSON.parse(messages.pop())
+
   assert.equal(comment.text, request.text)
   assert.equal(
     await main(
       ['--url', server.origin, 'node-context', request.runId, request.caseId],
-      { repositoryRoot: f.root, write: (value) => messages.push(value) }
+      {
+        repositoryRoot: f.root,
+
+        write: (value) => messages.push(value)
+      }
     ),
     0
   )
@@ -651,6 +729,7 @@ test('HTTP capability and CLI mutations share retained node context without exec
     ],
     {
       repositoryRoot: f.root,
+
       write: (value) => messages.push(value)
     }
   )
@@ -658,6 +737,7 @@ test('HTTP capability and CLI mutations share retained node context without exec
   const response = await fetch(
     server.origin + '/api/node-context/' + request.runId + '/0/summary'
   )
+
   assert.deepEqual(await response.json(), summary)
   assert.equal(summary.test.status, 'failed')
   assert.equal(summary.comments, undefined)
@@ -665,6 +745,7 @@ test('HTTP capability and CLI mutations share retained node context without exec
   fs.writeFileSync(requestPath, JSON.stringify(f.selection))
   await main(['--url', server.origin, 'node-preview', 'tmp/comment.json'], {
     repositoryRoot: f.root,
+
     write: (value) => messages.push(value)
   })
   assert.equal(JSON.parse(messages.pop()).test.name, f.record.cases[0].testName)
@@ -678,6 +759,7 @@ test('HTTP capability and CLI mutations share retained node context without exec
     },
     body: JSON.stringify({ ...request, requestId: randomUUID() })
   })
+
   assert.equal(foreign.status, 403)
 })
 
@@ -713,6 +795,7 @@ test(
       root,
       'tmp/flow-inspector/node-app-' + randomUUID()
     )
+
     fs.mkdirSync(directory, { recursive: true })
     const reader = localization.createObservationReader(
       localization.observationDirectory(root)
@@ -720,12 +803,15 @@ test(
     const owner = createNodeInteractions(root, {
       directory,
       observations: reader,
+
       requireIdle() {
         /* No other owner is active. */
       },
+
       ErrorType: ActionError
     })
     let action
+
     t.after(async () => {
       await owner.close()
       for (const id of [record.id, action?.resultRunId].filter(Boolean)) {
@@ -737,6 +823,7 @@ test(
     })
     const selection = { runId: record.id, caseId: record.cases[0].id }
     const preview = owner.preview(selection)
+
     owner.start(
       {
         ...selection,
@@ -746,12 +833,15 @@ test(
       LOCAL_ACTOR.id
     )
     const deadline = Date.now() + 20000
+
     while (owner.isActive() && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 50))
     }
+
     action = owner.context(selection.runId, selection.caseId).actions[0]
     assert.equal(action.observedStatus, 'passed', JSON.stringify(action))
     const result = reader.get(action.resultRunId)
+
     assert.equal(
       result.cases.filter((item) => item.status === 'passed').length,
       1
@@ -765,6 +855,7 @@ test('caller mutation cannot retarget a confirmed asynchronous rerun', async (t)
     nodeInteractionOptions: {
       execute: async () => {
         calls++
+
         return { code: 1, reason: 'retained failure', output: '' }
       }
     }
@@ -777,10 +868,12 @@ test('caller mutation cannot retarget a confirmed asynchronous rerun', async (t)
   }
   const id = request.requestId
   const value = f.service.startNodeRerun(request, LOCAL_ACTOR)
+
   request.runId = randomUUID()
   value.id = randomUUID()
   value.command.args.length = 0
   const result = await settled(f.service, f.selection)
+
   assert.equal(result.id, id)
   assert.equal(calls, 1)
   assert.equal(result.observedStatus, 'unavailable')
@@ -794,10 +887,12 @@ test('completion storage errors stay visible and interrupted history cannot redi
       execute: async () => {
         calls++
         fs.chmodSync(directory, 0o500)
+
         return { code: 1, reason: 'execution failure', output: '' }
       }
     }
   })
+
   directory = f.directory
   t.after(() => fs.chmodSync(directory, 0o700))
   const preview = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
@@ -806,8 +901,10 @@ test('completion storage errors stay visible and interrupted history cannot redi
     requestId: randomUUID(),
     previewDigest: preview.previewDigest
   }
+
   f.service.startNodeRerun(request, LOCAL_ACTOR)
   const action = await settled(f.service, f.selection)
+
   assert.equal(action.status, 'failed')
   assert.match(action.error, /Unable to retain action result/)
   fs.chmodSync(directory, 0o700)
@@ -823,6 +920,7 @@ test('restart refuses new execution while an interrupted runner may still be ali
   const f = setup(t)
   const preview = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
   const id = randomUUID()
+
   fs.writeFileSync(
     path.join(f.directory, 'node-interactions.json'),
     JSON.stringify({
@@ -843,6 +941,7 @@ test('restart refuses new execution while an interrupted runner may still be ali
   await f.restart()
   const action = f.service.nodeContext(f.selection.runId, f.selection.caseId)
     .actions[0]
+
   assert.equal(action.status, 'interrupted')
   assert.throws(
     () =>
@@ -861,6 +960,7 @@ test('restart refuses new execution while an interrupted runner may still be ali
 
 test('node interaction implementation belongs to the action owner only', () => {
   const inspector = require('../../inspectors/flow-inspector-core-proof-flow-inspector.data.cjs')
+
   for (const file of [
     'tools/flow-inspector/control-plane/node-interactions.cjs',
     'tools/flow-inspector/control-plane/__tests__/node-interactions.test.cjs'
@@ -880,6 +980,7 @@ test('equivalent preview request field orders confirm the same selected rerun', 
     nodeInteractionOptions: {
       execute: async () => {
         calls++
+
         return { code: 1, reason: 'test runner unavailable', output: '' }
       }
     }
@@ -887,12 +988,14 @@ test('equivalent preview request field orders confirm the same selected rerun', 
   const reordered = { caseId: f.selection.caseId, runId: f.selection.runId }
   const preview = f.service.previewNodeRerun(reordered, LOCAL_ACTOR)
   const canonical = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
+
   assert.equal(preview.previewDigest, canonical.previewDigest)
   const request = {
     ...reordered,
     requestId: randomUUID(),
     previewDigest: preview.previewDigest
   }
+
   f.service.startNodeRerun(request, LOCAL_ACTOR)
   await settled(f.service, f.selection)
   assert.equal(calls, 1)
@@ -915,6 +1018,7 @@ test('investigation summary contains one bounded read-only repair entry and pres
     f.selection.caseId,
     true
   )
+
   assert.equal(value.format, 1)
   assert.equal(value.test.status, 'failed')
   assert.equal(value.currentness.status, 'current')
@@ -929,6 +1033,7 @@ test('investigation summary contains one bounded read-only repair entry and pres
   for (const key of ['source', 'comments', 'actions', 'originalReport']) {
     assert.equal(Object.hasOwn(value, key), false)
   }
+
   assert.equal(executions, 0)
   fs.unlinkSync(
     path.join(localization.observationDirectory(f.root), f.record.id + '.json')
@@ -938,6 +1043,7 @@ test('investigation summary contains one bounded read-only repair entry and pres
     f.selection.caseId,
     true
   )
+
   assert.equal(missing.node, null)
   assert.equal(missing.test, null)
   assert.equal(missing.currentness.status, 'unavailable')
@@ -951,6 +1057,7 @@ test('summary bounds original evidence and reports recovery, unresolved and chan
     manifestPaths: [contract.manifestPath],
     command: { cwd: '.', argv: ['x'.repeat(15000)] }
   })
+
   input.startedAt = new Date(
     Date.parse(f.record.startedAt) + 1000
   ).toISOString()
@@ -976,6 +1083,7 @@ test('summary bounds original evidence and reports recovery, unresolved and chan
   }
   const record = localization.completeObservation(f.root, input, output)
   const result = f.service.nodeContext(record.id, record.cases[0].id, true)
+
   assert.equal(result.errors.length, 3)
   assert.equal(result.errors[0].message.length, 2000)
   assert.ok(result.node, 'long errors do not displace the investigation entry')
@@ -988,18 +1096,23 @@ test('summary bounds original evidence and reports recovery, unresolved and chan
     5000
   )
   const unresolved = f.service.nodeContext(record.id, record.cases[1].id, true)
+
   assert.equal(unresolved.errors[0].message, 'unknown test')
   assert.equal(unresolved.node, null)
   assert.equal(unresolved.rerun.previewAvailable, false)
   const old = f.service.nodeContext(f.record.id, f.record.cases[0].id, true)
+
   assert.equal(old.currentness.status, 'superseded')
   assert.equal(old.currentness.latest[0].runId, record.id)
   const manifest = path.join(f.root, contract.manifestPath)
+
   fs.chmodSync(manifest, 0o600)
   const data = JSON.parse(fs.readFileSync(manifest, 'utf8'))
+
   data.title += ' changed'
   fs.writeFileSync(manifest, JSON.stringify(data))
   const changed = f.service.nodeContext(record.id, record.cases[0].id, true)
+
   assert.equal(changed.node, null)
   assert.equal(changed.rerun.previewAvailable, false)
   assert.ok(changed.reference !== 'available')
@@ -1012,19 +1125,25 @@ test('compact summary computes warning context once per request', async (t) => {
   )
   const original = reader.warningContext
   let calls = 0
+
   reader.warningContext = (...args) => {
     calls++
+
     return original(...args)
   }
+
   const owner = require('../node-interactions.cjs').createNodeInteractions(
     f.root,
     {
       directory: f.directory,
       observations: reader,
+
       requireIdle: () => undefined,
+
       ErrorType: Error
     }
   )
+
   owner.context(f.selection.runId, f.selection.caseId, true)
   assert.equal(calls, 1)
   await owner.close()

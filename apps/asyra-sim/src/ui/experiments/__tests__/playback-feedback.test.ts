@@ -198,6 +198,7 @@ it('keeps the last checked parts highlighted until newer evidence supersedes it 
   if (!view.feedback) {
     throw new Error('Missing fixture feedback')
   }
+
   expect(
     playbackHighlight({
       ...view,

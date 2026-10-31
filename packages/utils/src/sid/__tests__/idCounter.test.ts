@@ -17,6 +17,7 @@ describe('idCounter', () => {
       IDTypes.GROUP,
       IDTypes.ELEMENT
     ])
+
     expect(first).toEqual([
       'el-document-client-1',
       'gp-document-client-1',
@@ -24,6 +25,7 @@ describe('idCounter', () => {
     ])
     expect(Object.isFrozen(first)).toBe(true)
     const before = { ...idCounter.counter }
+
     expect(() =>
       idCounter.allocate([IDTypes.ELEMENT, 'not-registered'])
     ).toThrow()
@@ -42,6 +44,7 @@ describe('idCounter', () => {
   it('rejects exhausted and ambiguous allocations without consuming any prefix', () => {
     idCounter.update(IDTypes.ELEMENT, `el-${Number.MAX_SAFE_INTEGER - 1}`)
     const before = { ...idCounter.counter }
+
     expect(() =>
       idCounter.allocate([IDTypes.GROUP, IDTypes.ELEMENT, IDTypes.ELEMENT])
     ).toThrow('exhausted')
@@ -49,6 +52,7 @@ describe('idCounter', () => {
     idCounter.registerType('alias-a', 'same')
     idCounter.registerType('alias-b', 'same')
     const aliases = { ...idCounter.counter }
+
     expect(() => idCounter.allocate(['alias-a', 'alias-b'])).toThrow(
       'ambiguous'
     )
@@ -68,10 +72,12 @@ describe('idCounter', () => {
           )
         )
       )
+
       expect(new Set(results.flat()).size).toBe(24)
       expect(results[0]).toEqual(['shape-1', 'el-1'])
       expect(results[results.length - 1]).toEqual(['shape-12', 'el-12'])
       const before = { ...idCounter.counter }
+
       expect(() => idCounter.allocate(null as never)).toThrow()
       expect(() => idCounter.allocate([IDTypes.ELEMENT, 1] as never)).toThrow()
       expect(idCounter.counter).toEqual(before)
@@ -93,6 +99,7 @@ describe('idCounter', () => {
       const currentId = idCounter.current(type)
 
       const expectResult = `${type}${CODE_SPLIT}${FIRST_ID}`
+
       expect(currentId).toBe(expectResult)
     })
 
@@ -112,6 +119,7 @@ describe('idCounter', () => {
       const newId = idCounter.increase()
 
       const expectResult = addOne(currentId)
+
       expect(newId).toBe(expectResult)
     })
 
@@ -123,6 +131,7 @@ describe('idCounter', () => {
 
       const next = addOne(currentId.split(CODE_SPLIT)[1])
       const expectResult = `${type}${CODE_SPLIT}${next}`
+
       expect(newId).toBe(expectResult)
     })
 
@@ -133,11 +142,13 @@ describe('idCounter', () => {
 
       // First call initializes to 0 and increments to 1
       const expectResult = `${type}${CODE_SPLIT}${addOne(FIRST_ID)}`
+
       expect(newId).toBe(expectResult)
 
       // Second call should increment to 2
       const secondId = idCounter.increase(type)
       const expectSecond = `${type}${CODE_SPLIT}${addOne(addOne(FIRST_ID))}`
+
       expect(secondId).toBe(expectSecond)
     })
 
@@ -150,6 +161,7 @@ describe('idCounter', () => {
       expect(idCounter.current(type)).toBe(testId)
 
       const newId = idCounter.increase(type)
+
       expect(newId).toBe(`${type}${CODE_SPLIT}11`)
     })
 
@@ -223,6 +235,7 @@ describe('idCounter', () => {
   describe('register/unregister type', () => {
     it('should unregister a registered custom type', () => {
       const type = 'CUSTOM_TEST_TYPE'
+
       idCounter.registerType(type, type)
       expect(idCounter.hasType(type)).toBe(true)
 

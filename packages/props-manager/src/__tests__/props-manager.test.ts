@@ -80,6 +80,7 @@ const captureUpdateTransactionEvents = () => {
       events.push(event as UpdateTransactionEvent)
     }
   })
+
   // ReplaySubject replays last event on subscribe; reset to current test scope.
   events.length = 0
 
@@ -87,6 +88,7 @@ const captureUpdateTransactionEvents = () => {
 }
 
 const isUnit = (value: unknown) => value === Unit.PX || value === Unit.PERCENT
+
 const isFiniteNumber = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value)
 
@@ -188,6 +190,7 @@ const registerRecursivePropertyType = (type: string) => {
     }
   }
   const Component = createPropertyComponentFromConfig(definition)
+
   registerPropertyComponent(type, Component, undefined, definition)
   registerPropertySchema({
     type,
@@ -205,6 +208,7 @@ const registerRecursivePropertyType = (type: string) => {
       }
     ]
   })
+
   return Component
 }
 
@@ -290,6 +294,7 @@ describe('PropsManager', () => {
         yUnit: Unit.PX
       }
     }
+
     propsManager.load(dataToLoad)
 
     const savedData = propsManager.save()
@@ -359,6 +364,7 @@ describe('PropsManager', () => {
       type: PropertyTypes.CUSTOM,
       nestedValue
     } as Partial<PropertyComponentInstanceDataTypes>)
+
     propsManager.addToMap(component)
 
     propsManager.removeProperty(['pp-detached'])
@@ -368,6 +374,7 @@ describe('PropsManager', () => {
         data: Record<string, unknown>[]
       }
     ).data[0]
+
     expect(evidence).toEqual({
       id: 'pp-detached',
       type: PropertyTypes.CUSTOM,
@@ -426,6 +433,7 @@ describe('PropsManager', () => {
       yUnit: Unit.PX
     }
     const p1Component = createProperty(p1Data) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(p1Component)
 
     propsManager.removeFromMap('pp-1')
@@ -460,6 +468,7 @@ describe('PropsManager', () => {
       yUnit: Unit.PX
     }
     const p1Component = createProperty(p1Data) as PropertyComponentInstanceTypes
+
     propsManager.addToDeletedMap(p1Component)
 
     propsManager.removeFromDeletedMap('pp-1')
@@ -517,7 +526,9 @@ describe('PropsManager', () => {
         widthUnit: Unit.PX,
         heightUnit: Unit.PX
       })
+
       propsManager.addProperty([position, dimension])
+
       return [position, dimension] as const
     }).result
 
@@ -556,6 +567,7 @@ describe('PropsManager', () => {
           id: 'duplicate-batch-property',
           type: PropertyTypes.POSITION
         })
+
         propsManager.addProperty([first])
         propsManager.createProperty({
           id: 'duplicate-batch-property',
@@ -573,6 +585,7 @@ describe('PropsManager', () => {
       id: 'active-owner-property',
       type: PropertyTypes.POSITION
     })
+
     propsManager.addProperty([active])
     propsManager.cleanChanges()
 
@@ -602,6 +615,7 @@ describe('PropsManager', () => {
       ['prepared-parent', 'prepared-parent']
     )
     const redundantActiveLookupCount = getPropertyById.mock.calls.length
+
     getPropertyById.mockRestore()
     const createProperty = vi.spyOn(propsManager, 'createProperty')
     const addProperty = vi.spyOn(propsManager, 'addProperty')
@@ -616,6 +630,7 @@ describe('PropsManager', () => {
       addToMap: addToMap.mock.calls.length,
       createProperty: createProperty.mock.calls.length
     }
+
     createProperty.mockRestore()
     addProperty.mockRestore()
     addToMap.mockRestore()
@@ -650,6 +665,7 @@ describe('PropsManager', () => {
       x: 1,
       y: 2
     })
+
     propsManager.addProperty([unrelated])
     propsManager.cleanChanges()
     const prepared = propsManager.preflightOrdinaryPropertyCreationBatch([
@@ -684,10 +700,13 @@ describe('PropsManager', () => {
           y: 24
         })
         const save = property.save.bind(property)
+
         property.save = () => {
           createdSaveCount += 1
+
           return save()
         }
+
         propsManager.addProperty([property])
       }, prepared)
     } finally {
@@ -733,6 +752,7 @@ describe('PropsManager', () => {
         source,
         source.map(({ id }) => id)
       )
+
       propsManager
         .runInPropertyCreationBatch(() =>
           propsManager.applyPropertyCreationBatch(prepared)
@@ -792,9 +812,12 @@ describe('PropsManager', () => {
           type: PropertyTypes.DIMENSION
         })
         const propertyIds = propsManager.addProperty([position, dimension])
+
         activeIdsDuringMaterialization.push(Object.keys(propsManager.save()))
+
         return propertyIds
       })
+
       return owners
     }, prepared)
 
@@ -839,6 +862,7 @@ describe('PropsManager', () => {
       childType: PropertyTypes.POSITION,
       mode: 'ids-or-objects' as const,
       collection: 'array-or-record' as const,
+
       toChildData: (
         item: Record<string, unknown>,
         childId?: string
@@ -868,14 +892,18 @@ describe('PropsManager', () => {
       load(data: PropertyComponentRawData): void {
         this.data.id = typeof data.id === 'string' ? data.id : this.data.id
         const value = (data as Record<string, unknown>).children
+
         if (Array.isArray(value)) {
           this.data.children = value.filter(
             (childId): childId is string => typeof childId === 'string'
           )
+
           return
         }
+
         if (!value || typeof value !== 'object') {
           this.data.children = []
+
           return
         }
 
@@ -888,15 +916,19 @@ describe('PropsManager', () => {
             ) {
               throw new Error(`Invalid child "${childId}"`)
             }
+
             const child = this.propertyComponentAccessor.createComponent({
               id: childId,
               type: PropertyTypes.POSITION,
               ...childData
             })
+
             if (!child) {
               throw new Error(`Cannot create child "${childId}"`)
             }
+
             this.propertyComponentAccessor.addToMap(child)
+
             return childId
           }
         )
@@ -928,6 +960,7 @@ describe('PropsManager', () => {
         definition: undefined,
         canonicalRelation: typeof relation
       ) => void
+
     registerWithCanonicalRelation(
       parentType,
       RecordMapParentComponent,
@@ -948,6 +981,7 @@ describe('PropsManager', () => {
 
     const invalidManager = new PropsManager()
     const invalidRegisterMany = vi.spyOn(invalidManager, 'registerMany')
+
     expect(() =>
       invalidManager.preflightOrdinaryPropertyCreationBatch([
         {
@@ -981,8 +1015,10 @@ describe('PropsManager', () => {
       'record-map-child-a': {
         x: 10,
         y: 20,
+
         get ignoredMetadata() {
           ignoredMetadataReadCount += 1
+
           return { trace: 'preflight-snapshot-only' }
         }
       },
@@ -1003,12 +1039,14 @@ describe('PropsManager', () => {
         }
       }
     ])
+
     expect(ignoredMetadataReadCount).toBe(0)
     const receipt = validManager.runInPropertyCreationBatch(() => {
       const parent = validManager.createProperty({
         id: 'record-map-parent',
         type: parentType
       } as Partial<PropertyComponentRawData>)
+
       return validManager.addProperty([parent])
     }, prepared)
 
@@ -1049,10 +1087,12 @@ describe('PropsManager', () => {
         key: 'children',
         childType,
         mode: 'ids-or-objects' as const,
+
         toChildData: (item: Record<string, unknown>) => item
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -1082,6 +1122,7 @@ describe('PropsManager', () => {
           }
         }
       ])
+
       propsManager.runInPropertyCreationBatch(() => {
         materializationAttempts += 1
       }, prepared)
@@ -1107,6 +1148,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(
       parentType,
       ParentComponent,
@@ -1119,6 +1161,7 @@ describe('PropsManager', () => {
         if (property === 'map') {
           mapReads += 1
         }
+
         return Reflect.get(target, property, receiver)
       }
     })
@@ -1154,6 +1197,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(
       parentType,
       ParentComponent,
@@ -1189,6 +1233,7 @@ describe('PropsManager', () => {
         type: parentType,
         children: ['ordinary-prepared-root-child']
       })
+
       return propsManager.addProperty([child, parent])
     }, prepared)
 
@@ -1221,6 +1266,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(
       parentType,
       ParentComponent,
@@ -1246,6 +1292,7 @@ describe('PropsManager', () => {
           }
         }
       ])
+
       propsManager.runInPropertyCreationBatch(() => {
         materializationAttempts += 1
       }, prepared)
@@ -1283,6 +1330,7 @@ describe('PropsManager', () => {
         x: 10,
         y: 20
       })
+
       return propsManager.addProperty([property])
     }, matchingPrepared)
 
@@ -1323,6 +1371,7 @@ describe('PropsManager', () => {
         x: 10,
         y: 20
       })
+
       return propsManager.addProperty([property])
     }, prepared)
     const replacementId = receipt.result[PropertyTypes.POSITION]
@@ -1359,6 +1408,7 @@ describe('PropsManager', () => {
       persistKeys: [],
       valueKeys: []
     })
+
     class RelationshipRegistrationMutator extends MutatorBase {
       constructor(data: Partial<PropertyComponentRawData>) {
         super(data)
@@ -1410,6 +1460,7 @@ describe('PropsManager', () => {
         type: relationshipType,
         children: []
       })
+
       propsManager.addProperty([mutator, relationship])
     }, prepared)
 
@@ -1435,6 +1486,7 @@ describe('PropsManager', () => {
       x: 1,
       y: 2
     })
+
     propsManager.addProperty([active])
     propsManager.cleanChanges()
     const ordinaryBatchOwner = propsManager as PropsManager & {
@@ -1490,10 +1542,12 @@ describe('PropsManager', () => {
         key: 'paints',
         childType,
         mode: 'ids-or-objects' as const,
+
         toChildData: (item: Record<string, unknown>) => ({
           ...childDefaults,
           ...item
         }),
+
         toValue: (
           child: { get: (key: string) => unknown },
           childId: string
@@ -1505,20 +1559,25 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertySchema({
       type: childType,
       fields: [
         {
           key: 'color',
           kind: 'string',
+
           validate: (value) => typeof value === 'string' && value.length > 0,
+
           defaultValue: childDefaults.color
         },
         {
           key: 'opacity',
           kind: 'number',
+
           validate: (value) =>
             typeof value === 'number' && value >= 0 && value <= 1,
+
           defaultValue: childDefaults.opacity
         }
       ]
@@ -1529,9 +1588,11 @@ describe('PropsManager', () => {
         {
           key: 'paints',
           kind: 'array',
+
           validate: (value) =>
             Array.isArray(value) &&
             value.every((item) => typeof item === 'string'),
+
           defaultValue: []
         }
       ]
@@ -1549,6 +1610,7 @@ describe('PropsManager', () => {
       color: '#111111',
       opacity: 1
     })
+
     propsManager.addProperty([activeChild])
     propsManager.cleanChanges()
     const definitions: readonly PropertyDefinition[] = [
@@ -1644,6 +1706,7 @@ describe('PropsManager', () => {
         [child, parent],
         ['profiled-property-parent']
       )
+
       propsManager
         .runInPropertyCreationBatch(() =>
           propsManager.applyPropertyCreationBatch(preparedCreation)
@@ -1653,6 +1716,7 @@ describe('PropsManager', () => {
         [parent, child],
         ['profiled-property-parent']
       )
+
       propsManager.runInActivePropertyBatch(preparedActive, () => undefined)
     } finally {
       unsubscribe()
@@ -1706,6 +1770,7 @@ describe('PropsManager', () => {
         [child, parent],
         ['observer-safe-property-parent']
       )
+
       propsManager
         .runInPropertyCreationBatch(() =>
           propsManager.applyPropertyCreationBatch(preparedCreation)
@@ -1715,6 +1780,7 @@ describe('PropsManager', () => {
         [parent, child],
         ['observer-safe-property-parent']
       )
+
       expect(
         propsManager.runInActivePropertyBatch(
           preparedActive,
@@ -1766,6 +1832,7 @@ describe('PropsManager', () => {
         ...child,
         id: 'rejected-profile-active'
       })
+
       propsManager.addProperty([active])
       propsManager.cleanChanges()
       expect(() =>
@@ -1798,6 +1865,7 @@ describe('PropsManager', () => {
         [child],
         ['unprofiled-property-child']
       )
+
       propsManager
         .runInPropertyCreationBatch(() =>
           propsManager.applyPropertyCreationBatch(preparedCreation)
@@ -1807,6 +1875,7 @@ describe('PropsManager', () => {
         [child],
         ['unprofiled-property-child']
       )
+
       propsManager.runInActivePropertyBatch(preparedActive, () => undefined)
 
       expect(performanceNow).not.toHaveBeenCalled()
@@ -1843,6 +1912,7 @@ describe('PropsManager', () => {
       [child, parent],
       ['graph-parent']
     )
+
     expect(() => propsManager.applyPropertyCreationBatch(prepared)).toThrow(
       /active property creation batch/i
     )
@@ -1862,8 +1932,10 @@ describe('PropsManager', () => {
         mode: 'ids' as const
       }
     }
+
     propertyComponentRegistry.unregister(PropertyTypes.CUSTOM)
     const DeclarativeParent = createPropertyComponentFromConfig(definition)
+
     registerPropertyComponent(
       PropertyTypes.CUSTOM,
       DeclarativeParent,
@@ -1884,6 +1956,7 @@ describe('PropsManager', () => {
       [parent, child],
       ['registry-drift-parent']
     )
+
     propertyComponentRegistry.unregister(PropertyTypes.CUSTOM)
     registerPropertyComponent(
       PropertyTypes.CUSTOM,
@@ -1917,8 +1990,10 @@ describe('PropsManager', () => {
         mode: 'ids' as const
       }
     }
+
     propertyComponentRegistry.unregister(PropertyTypes.CUSTOM)
     const DeclarativeParent = createPropertyComponentFromConfig(definition)
+
     registerPropertyComponent(
       PropertyTypes.CUSTOM,
       DeclarativeParent,
@@ -1951,6 +2026,7 @@ describe('PropsManager', () => {
         key: 'otherChildren'
       }
     }
+
     propertyComponentRegistry.unregister(PropertyTypes.CUSTOM)
     registerPropertyComponent(
       PropertyTypes.CUSTOM,
@@ -1987,8 +2063,10 @@ describe('PropsManager', () => {
         mode: 'ids' as const
       }
     }
+
     propertyComponentRegistry.unregister(PropertyTypes.CUSTOM)
     const DeclarativeParent = createPropertyComponentFromConfig(definition)
+
     registerPropertyComponent(
       PropertyTypes.CUSTOM,
       DeclarativeParent,
@@ -2019,6 +2097,7 @@ describe('PropsManager', () => {
         key: 'otherChildren'
       }
     }
+
     propertyComponentRegistry.unregister(PropertyTypes.CUSTOM)
     registerPropertyComponent(
       PropertyTypes.CUSTOM,
@@ -2060,9 +2139,11 @@ describe('PropsManager', () => {
         source.map(({ id }) => id)
       )
       const schema = propertySchemaRegistry.get(PropertyTypes.POSITION)
+
       if (!schema) {
         throw new Error('Expected the registered position schema')
       }
+
       if (drift === 'mutated') {
         schema.fields[0].defaultValue = 99
       } else {
@@ -2076,6 +2157,7 @@ describe('PropsManager', () => {
           })
         }
       }
+
       const construction = vi.spyOn(PositionComponent.prototype, 'load')
 
       expect(() =>
@@ -2093,6 +2175,7 @@ describe('PropsManager', () => {
 
   it('rejects a schema added after a schema-free creation preflight', () => {
     const schemaFreeType = 'schema-free-creation'
+
     class SchemaFreeComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2108,6 +2191,7 @@ describe('PropsManager', () => {
       source,
       source.map(({ id }) => id)
     )
+
     registerPropertySchema({
       type: schemaFreeType,
       fields: [
@@ -2134,6 +2218,7 @@ describe('PropsManager', () => {
 
   it('keeps a schema-free prepared valid when unrelated active schemas are cleared', () => {
     const schemaFreeType = 'schema-free-unrelated-clear'
+
     class SchemaFreeComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2178,6 +2263,7 @@ describe('PropsManager', () => {
         this.data.type = targetType
       }
     }
+
     class ReplacementTargetComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2185,6 +2271,7 @@ describe('PropsManager', () => {
         replacementConstructions += 1
       }
     }
+
     class RegistryMutatorComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2219,17 +2306,21 @@ describe('PropsManager', () => {
     const driftType = 'creation-schema-drift'
     const restoreType = 'creation-schema-restore'
     const currentSchema = propertySchemaRegistry.get(PropertyTypes.POSITION)
+
     if (!currentSchema) {
       throw new Error('Expected the registered position schema')
     }
+
     const registeredSchema: PropertySchema = currentSchema
     const originalSchema: PropertySchema = registeredSchema
     const registeredXField = originalSchema.fields.find(
       ({ key }) => key === 'x'
     )
+
     if (!registeredXField) {
       throw new Error('Expected the registered position x field')
     }
+
     const liveXField = registeredXField
     const originalXField = {
       kind: liveXField.kind,
@@ -2246,6 +2337,7 @@ describe('PropsManager', () => {
         liveXField.validate = (value: unknown) => typeof value === 'string'
       }
     }
+
     class SchemaRestoreComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2269,6 +2361,7 @@ describe('PropsManager', () => {
       },
       { id: 'creation-schema-restore', type: restoreType }
     ] as PropertyComponentRawData[]
+
     expect(() =>
       propsManager.preflightPropertyCreationBatch(
         source,
@@ -2292,6 +2385,7 @@ describe('PropsManager', () => {
         this.data.type = targetType
       }
     }
+
     class ReplacementTargetComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2299,6 +2393,7 @@ describe('PropsManager', () => {
         replacementConstructions += 1
       }
     }
+
     class ComponentDriftComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2307,6 +2402,7 @@ describe('PropsManager', () => {
         registerPropertyComponent(targetType, ReplacementTargetComponent)
       }
     }
+
     class ComponentRestoreComponent extends CustomComponent {
       constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
         super(data)
@@ -2342,9 +2438,11 @@ describe('PropsManager', () => {
   it('restores existing active properties with the batch-start schema after failure', () => {
     const mutatorType = 'creation-active-schema-mutator'
     const currentSchema = propertySchemaRegistry.get(PropertyTypes.POSITION)
+
     if (!currentSchema) {
       throw new Error('Expected the registered position schema')
     }
+
     const registeredSchema: PropertySchema = currentSchema
     const active = propsManager.createProperty({
       id: 'creation-active-schema-position',
@@ -2354,6 +2452,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     })
+
     propsManager.addProperty([active])
     propsManager.cleanChanges()
     const before = active.save()
@@ -2371,6 +2470,7 @@ describe('PropsManager', () => {
                   ...field,
                   kind: 'string',
                   defaultValue: '',
+
                   validate: (value: unknown) => typeof value === 'string'
                 }
               : { ...field }
@@ -2424,11 +2524,13 @@ describe('PropsManager', () => {
           key: 'value',
           kind: 'number',
           defaultValue: 0,
+
           validate: () => {
             validationCount += 1
             if (validationCount === 2) {
               schema.fields[0].defaultValue = 99
             }
+
             return true
           }
         }
@@ -2446,6 +2548,7 @@ describe('PropsManager', () => {
       }
     }
     const RelationshipComponent = createPropertyComponentFromConfig(definition)
+
     registerPropertySchema(schema)
     registerPropertyComponent(
       relationshipType,
@@ -2496,6 +2599,7 @@ describe('PropsManager', () => {
       }
     }
     const ConfiguredComponent = createPropertyComponentFromConfig(definition)
+
     registerPropertyComponent(relationshipType, ConfiguredComponent)
 
     expect(() =>
@@ -2523,6 +2627,7 @@ describe('PropsManager', () => {
         y: 24
       }).save()
     )
+
     propsManager.addProperty([child])
     const parent = propsManager.createProperty(
       new CustomComponent({
@@ -2530,6 +2635,7 @@ describe('PropsManager', () => {
         children: ['active-graph-child']
       } as unknown as Partial<PropertyComponentInstanceDataTypes>).save()
     )
+
     propsManager.addProperty([parent])
     propsManager.cleanChanges()
     const source = [parent.save(), child.save()]
@@ -2542,6 +2648,7 @@ describe('PropsManager', () => {
     expect(
       propsManager.runInActivePropertyBatch(prepared, () => {
         propsManager.addProperty([parent])
+
         return ['active-graph-parent']
       })
     ).toEqual(['active-graph-parent'])
@@ -2562,6 +2669,7 @@ describe('PropsManager', () => {
         y: 24
       }).save()
     )
+
     propsManager.addProperty([child])
     const parent = propsManager.createProperty(
       new CustomComponent({
@@ -2569,6 +2677,7 @@ describe('PropsManager', () => {
         children: ['fused-active-child']
       } as unknown as Partial<PropertyComponentInstanceDataTypes>).save()
     )
+
     propsManager.addProperty([parent])
     propsManager.cleanChanges()
     const source = [parent.save(), child.save()]
@@ -2589,6 +2698,7 @@ describe('PropsManager', () => {
         ['fused-active-parent'],
         () => {
           propsManager.addProperty([parent])
+
           return ['fused-active-parent']
         }
       )
@@ -2597,6 +2707,7 @@ describe('PropsManager', () => {
       child: childSave.mock.calls.length,
       parent: parentSave.mock.calls.length
     }
+
     childSave.mockRestore()
     parentSave.mockRestore()
 
@@ -2618,12 +2729,14 @@ describe('PropsManager', () => {
         y: 10
       }).save()
     )
+
     propsManager.addProperty([active])
     propsManager.cleanChanges()
     const prepared = propsManager.preflightActivePropertyBatch(
       [active.save()],
       ['active-two-step-gap']
     )
+
     active.load({
       ...active.save(),
       x: 99
@@ -2646,6 +2759,7 @@ describe('PropsManager', () => {
         y: 2
       }).save()
     )
+
     propsManager.addProperty([child])
     const parent = propsManager.createProperty(
       new CustomComponent({
@@ -2653,6 +2767,7 @@ describe('PropsManager', () => {
         children: ['active-source-extra-child']
       } as unknown as Partial<PropertyComponentInstanceDataTypes>).save()
     )
+
     propsManager.addProperty([parent])
     const extra = propsManager.createProperty(
       new PositionComponent({
@@ -2661,6 +2776,7 @@ describe('PropsManager', () => {
         y: 4
       }).save()
     )
+
     propsManager.addProperty([extra])
     propsManager.cleanChanges()
     const before = propsManager.save()
@@ -2673,6 +2789,7 @@ describe('PropsManager', () => {
     expect(
       propsManager.runInActivePropertyBatch(prepared, () => {
         propsManager.addProperty([parent])
+
         return ['active-source-extra-parent']
       })
     ).toEqual(['active-source-extra-parent'])
@@ -2696,6 +2813,7 @@ describe('PropsManager', () => {
         y: 2
       }).save()
     )
+
     propsManager.addProperty([child])
     const parent = propsManager.createProperty(
       new CustomComponent({
@@ -2703,6 +2821,7 @@ describe('PropsManager', () => {
         children: ['active-validation-child']
       } as unknown as Partial<PropertyComponentInstanceDataTypes>).save()
     )
+
     propsManager.addProperty([parent])
     const staleExtra = propsManager.createProperty(
       new PositionComponent({
@@ -2711,6 +2830,7 @@ describe('PropsManager', () => {
         y: 4
       }).save()
     )
+
     propsManager.addProperty([staleExtra])
     const malformedParent = propsManager.createProperty(
       new CustomComponent({
@@ -2718,11 +2838,13 @@ describe('PropsManager', () => {
         children: ['missing-active-child']
       } as unknown as Partial<PropertyComponentInstanceDataTypes>).save()
     )
+
     propsManager.addProperty([malformedParent])
     const wrongTypeChild = propsManager.createProperty({
       id: 'active-validation-wrong-type',
       type: PropertyTypes.DIMENSION
     })
+
     propsManager.addProperty([wrongTypeChild])
     const wrongTypeParent = propsManager.createProperty(
       new CustomComponent({
@@ -2730,6 +2852,7 @@ describe('PropsManager', () => {
         children: ['active-validation-wrong-type']
       } as unknown as Partial<PropertyComponentInstanceDataTypes>).save()
     )
+
     propsManager.addProperty([wrongTypeParent])
     propsManager.cleanChanges()
     const before = propsManager.save()
@@ -2793,6 +2916,7 @@ describe('PropsManager', () => {
         y: 10
       }).save()
     )
+
     propsManager.addProperty([active])
     propsManager.cleanChanges()
     const before = propsManager.save()
@@ -2813,6 +2937,7 @@ describe('PropsManager', () => {
       [active.save()],
       ['active-reuse-guard']
     )
+
     expect(() =>
       propsManager.runInActivePropertyBatch(preparedCreation, () => {
         propsManager.createProperty({
@@ -2836,6 +2961,7 @@ describe('PropsManager', () => {
         y: 14
       }).save()
     )
+
     propsManager.addProperty([relationChild])
     const relationParent = propsManager.createProperty(
       new CustomComponent({
@@ -2843,6 +2969,7 @@ describe('PropsManager', () => {
         children: ['active-reuse-omitted-child']
       } as unknown as Partial<PropertyComponentInstanceDataTypes>).save()
     )
+
     propsManager.addProperty([relationParent])
     propsManager.cleanChanges()
     const before = propsManager.save()
@@ -2919,6 +3046,7 @@ describe('PropsManager', () => {
       yUnit: Unit.PX
     }
     const p1Component = createProperty(p1Data) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(p1Component)
     const p2Data = {
       id: 'pp-2',
@@ -2929,6 +3057,7 @@ describe('PropsManager', () => {
       yUnit: Unit.PX
     }
     const p2Component = createProperty(p2Data) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(p2Component)
 
     propsManager.removeProperty(['pp-1', 'pp-2'])
@@ -2960,6 +3089,7 @@ describe('PropsManager', () => {
         componentId: 'custom-restore'
       }
     ]
+
     const preflight = (
       manager: PropsManager,
       components: readonly unknown[],
@@ -2978,6 +3108,7 @@ describe('PropsManager', () => {
           }
         }
       ).preflightRestoreProperties({ components }, relations)
+
     const apply = (
       manager: PropsManager,
       prepared: ReturnType<typeof preflight>
@@ -3024,8 +3155,10 @@ describe('PropsManager', () => {
         type: PropertyTypes.CUSTOM,
         children: []
       } as Partial<PropertyComponentInstanceDataTypes>)
+
       propsManager.addToMap(component)
       const exactData = component.save()
+
       propsManager.removeProperty(['custom-restore'])
       propsManager.cleanChanges()
       const before = propsManager.save()
@@ -3043,6 +3176,7 @@ describe('PropsManager', () => {
         type: PropertyTypes.CUSTOM,
         children: []
       }
+
       const expectRejected = (
         manager: PropsManager,
         components: readonly unknown[],
@@ -3050,6 +3184,7 @@ describe('PropsManager', () => {
         relations: readonly unknown[] = ownerRelations
       ) => {
         const before = manager.save()
+
         expect(() => preflight(manager, components, relations)).toThrow(pattern)
         expect(manager.save()).toEqual(before)
       }
@@ -3068,6 +3203,7 @@ describe('PropsManager', () => {
       expectRejected(propsManager, [exact], /missing owner relation/i, [])
 
       const activeManager = new PropsManager()
+
       activeManager.addToMap(
         new CustomComponent(
           exact as Partial<PropertyComponentInstanceDataTypes>
@@ -3081,6 +3217,7 @@ describe('PropsManager', () => {
         ...exact,
         nested: { value: 1 }
       } as Partial<PropertyComponentInstanceDataTypes>)
+
       tombstoneManager.addToMap(tombstone)
       tombstoneManager.removeProperty(['custom-restore'])
       tombstoneManager.cleanChanges()
@@ -3118,8 +3255,10 @@ describe('PropsManager', () => {
         children: [],
         nested: { value: 42 }
       } as Partial<PropertyComponentInstanceDataTypes>)
+
       propsManager.addToMap(tombstone)
       const exact = tombstone.save()
+
       propsManager.removeProperty(['custom-restore'])
       propsManager.cleanChanges()
       const prepared = preflight(propsManager, [exact])
@@ -3134,6 +3273,7 @@ describe('PropsManager', () => {
 
     it('constructs every materialization candidate before canonical map mutation', () => {
       const throwingType = 'throwing-restore-property'
+
       class ThrowingRestoreComponent extends CustomComponent {
         constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
           super(data)
@@ -3181,6 +3321,7 @@ describe('PropsManager', () => {
 
     it('rolls back the current restore component and its relationship index when apply-time load fails', () => {
       const throwingType = 'apply-throwing-restore-property'
+
       class ApplyThrowingRestoreComponent extends CustomComponent {
         constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
           super(data)
@@ -3200,6 +3341,7 @@ describe('PropsManager', () => {
           mode: 'ids' as const
         }
       }
+
       registerPropertyComponent(
         throwingType,
         ApplyThrowingRestoreComponent,
@@ -3255,6 +3397,7 @@ describe('PropsManager', () => {
 
     it('constructs materialized components with the issuing manager accessor', () => {
       const probeType = 'restore-accessor-probe'
+
       class RestoreAccessorProbe extends CustomComponent {
         constructor(data: Partial<PropertyComponentInstanceDataTypes>) {
           super(data)
@@ -3262,6 +3405,7 @@ describe('PropsManager', () => {
           const sharedPosition = getPropertyComponentAccessor().getPropertyById(
             'shared-position'
           ) as unknown as { get: (key: string) => unknown } | undefined
+
           ;(this.data as unknown as Record<string, unknown>).resolvedX =
             sharedPosition?.get('x')
         }
@@ -3284,6 +3428,7 @@ describe('PropsManager', () => {
       propsManager.cleanChanges()
 
       const otherManager = new PropsManager()
+
       otherManager.addToMap(
         new PositionComponent({
           id: 'shared-position',
@@ -3336,6 +3481,7 @@ describe('PropsManager', () => {
     const positionComponent = createProperty(
       positionData
     ) as PropertyComponentInstanceTypes
+
     vi.spyOn(positionComponent, 'set')
 
     propsManager.addToMap(positionComponent)
@@ -3361,6 +3507,7 @@ describe('PropsManager', () => {
     const positionComponent = createProperty(
       positionData
     ) as PropertyComponentInstanceTypes
+
     vi.spyOn(positionComponent, 'set')
 
     propsManager.addToMap(positionComponent)
@@ -3384,6 +3531,7 @@ describe('PropsManager', () => {
         alias: ['x', 'y']
       }
     ]
+
     definitions.forEach((definition) =>
       elementPropertyRegistry.register(definition, ownerElementType)
     )
@@ -3514,6 +3662,7 @@ describe('PropsManager', () => {
         childType,
         mode: 'ids-or-objects' as const,
         collection: 'array-or-record' as const,
+
         toChildData: (item: Record<string, unknown>) => ({
           id: item.id ?? '',
           value: item.value
@@ -3521,6 +3670,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -3556,6 +3706,7 @@ describe('PropsManager', () => {
         defaultValue: []
       }
     ]
+
     definitions.forEach((definition) =>
       elementPropertyRegistry.register(definition, ownerElementType)
     )
@@ -3579,12 +3730,14 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     propsManager.applyPreparedPropertyMutationBatch(prepared)
 
     const root = propsManager.getPropertyById('detached-placeholder-root')
     const childIds = (
       root?.save() as unknown as Record<string, unknown> | undefined
     )?.records as string[] | undefined
+
     expect(childIds).toEqual([
       expect.stringMatching(/^.+$/),
       'detached-explicit-child'
@@ -3615,6 +3768,7 @@ describe('PropsManager', () => {
         alias: ['x', 'y']
       }
     ]
+
     definitions.forEach((definition) =>
       elementPropertyRegistry.register(definition, ownerElementType)
     )
@@ -3665,6 +3819,7 @@ describe('PropsManager', () => {
       }
     ]
     const exactPropertyName = 'detached-mixed-exact'
+
     definitions.forEach((definition) =>
       elementPropertyRegistry.register(definition, ownerElementType)
     )
@@ -3696,6 +3851,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -3742,6 +3898,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: ['detached-mixed-child-id']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[activePosition, activeChild, activeParent].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -3890,6 +4047,7 @@ describe('PropsManager', () => {
       persistKeys: ['value'],
       valueKeys: ['value']
     })
+
     class SharedRootComponent extends SharedRootBase {
       constructor(data: Partial<PropertyComponentRawData>) {
         super(data)
@@ -4010,8 +4168,10 @@ describe('PropsManager', () => {
       type: PropertyTypes.CUSTOM,
       children: []
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(component)
     const exact = component.save()
+
     propsManager.cleanChanges()
     propsManager.removeProperty([component.get('id')])
     propsManager.cleanChanges()
@@ -4056,6 +4216,7 @@ describe('PropsManager', () => {
   it('reuses one active exact root for a new Scene-owned relation without property evidence', () => {
     const ownerElementType = 'detached-active-shared-root-element'
     const ownerPropertyName = PropertyTypes.POSITION
+
     elementPropertyRegistry.register(
       {
         name: ownerPropertyName,
@@ -4071,6 +4232,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(active)
     propsManager.cleanChanges()
     const before = active.save()
@@ -4126,6 +4288,7 @@ describe('PropsManager', () => {
       persistKeys: ['value'],
       valueKeys: ['value']
     })
+
     registerPropertyComponent(propertyType, SharedRootComponent)
     registerPropertySchema({
       type: propertyType,
@@ -4143,12 +4306,14 @@ describe('PropsManager', () => {
       type: propertyType,
       defaultValue: 99
     }
+
     elementPropertyRegistry.register(definition, ownerElementType)
     const active = createProperty({
       id: 'ordinary-active-shared-root-id',
       type: propertyType,
       value: 42
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(active)
     propsManager.cleanChanges()
     const before = active.save()
@@ -4217,6 +4382,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(
       parentType,
       ParentComponent,
@@ -4239,6 +4405,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: [child.get('id')]
     })
+
     propsManager.addToMap(child)
     propsManager.addToMap(firstRoot)
     propsManager.addToMap(secondRoot)
@@ -4265,6 +4432,7 @@ describe('PropsManager', () => {
   it('rejects stale, missing, wrong-type, or later-invalid active exact root reuse without a prefix', () => {
     const ownerElementType = 'detached-active-reuse-guard-element'
     const ownerPropertyName = PropertyTypes.POSITION
+
     elementPropertyRegistry.register(
       {
         name: ownerPropertyName,
@@ -4296,11 +4464,13 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     })
+
     wrongConstructor.data.type = PropertyTypes.POSITION
     propsManager.addToMap(active)
     propsManager.addToMap(wrongType)
     propsManager.addToMap(wrongConstructor)
     propsManager.cleanChanges()
+
     const relation = (
       ownerElementId: string,
       componentId: string
@@ -4310,6 +4480,7 @@ describe('PropsManager', () => {
       ownerPropertyName,
       componentId
     })
+
     const exactReuse = (
       ownerElementId: string,
       componentId: string
@@ -4318,6 +4489,7 @@ describe('PropsManager', () => {
       ownerRelations: [relation(ownerElementId, componentId)],
       components: []
     })
+
     const { events, subscription } = captureUpdateTransactionEvents()
 
     expect(() =>
@@ -4383,6 +4555,7 @@ describe('PropsManager', () => {
         exactReuse('detached-active-reuse-stale-owner', active.get('id'))
       ]
     })
+
     active.load({
       ...active.save(),
       x: 99
@@ -4399,6 +4572,7 @@ describe('PropsManager', () => {
 
   it('rejects partial, unowned, duplicate, and wrong-type exact property graphs', () => {
     const ownerElementType = 'detached-exact-element'
+
     elementPropertyRegistry.register(
       {
         name: PropertyTypes.CUSTOM,
@@ -4418,6 +4592,7 @@ describe('PropsManager', () => {
         mode: 'ids' as const
       }
     }
+
     registerPropertyComponent(
       cycleType,
       createPropertyComponentFromConfig(cycleDefinition),
@@ -4551,6 +4726,7 @@ describe('PropsManager', () => {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION
     }
+
     elementPropertyRegistry.register(definition, ownerElementType)
 
     expect(() =>
@@ -4603,6 +4779,7 @@ describe('PropsManager', () => {
       type: propertyType,
       persistKeys: []
     })
+
     class FailingSaveComponent extends FailingBase {
       save(): PropertyComponentRawData {
         saveCount += 1
@@ -4671,6 +4848,7 @@ describe('PropsManager', () => {
       valueKeys: ['x', 'y'],
       unitKeys: ['xUnit', 'yUnit']
     })
+
     class TrackedPositionComponent extends TrackedBase {
       constructor(data: Partial<PropertyComponentRawData>) {
         super(data)
@@ -4771,6 +4949,7 @@ describe('PropsManager', () => {
       valueKeys: ['persisted']
     }
     const Component = createPropertyComponentFromConfig(definition)
+
     registerPropertyComponent(propertyType, Component, undefined, definition)
     registerPropertySchema({
       type: propertyType,
@@ -4791,6 +4970,7 @@ describe('PropsManager', () => {
       name: propertyName,
       type: propertyType
     }
+
     elementPropertyRegistry.register(propertyDefinition, ownerElementType)
 
     const prepared = propsManager.preparePropertyMutationBatch({
@@ -4838,6 +5018,7 @@ describe('PropsManager', () => {
         mode: 'ids' as const
       }
     }
+
     registerPropertyComponent(
       childType,
       createPropertyComponentFromConfig(childDefinition),
@@ -4878,6 +5059,7 @@ describe('PropsManager', () => {
       name: 'node',
       type: childType
     }
+
     elementPropertyRegistry.register(parentOwnerDefinition, ownerElementType)
     elementPropertyRegistry.register(childOwnerDefinition, ownerElementType)
 
@@ -4945,6 +5127,7 @@ describe('PropsManager', () => {
         mode: 'ids-or-objects' as const
       }
     }
+
     registerPropertyComponent(
       childType,
       createPropertyComponentFromConfig(childConfig),
@@ -4985,6 +5168,7 @@ describe('PropsManager', () => {
       name: 'node',
       type: childType
     }
+
     elementPropertyRegistry.register(parentDefinition, ownerElementType)
     elementPropertyRegistry.register(childDefinition, ownerElementType)
     const previousPropsId = idCounter.current(IDTypes.PROPS)
@@ -5051,6 +5235,7 @@ describe('PropsManager', () => {
       type: outerPropertyType,
       persistKeys: []
     })
+
     class ReentrantOuterComponent extends OuterBase {
       constructor(data: Partial<PropertyComponentRawData>) {
         super(data)
@@ -5061,6 +5246,7 @@ describe('PropsManager', () => {
       type: nestedPropertyType,
       persistKeys: []
     })
+
     registerPropertyComponent(outerPropertyType, ReentrantOuterComponent)
     registerPropertyComponent(nestedPropertyType, NestedComponent)
     registerPropertySchema({
@@ -5158,6 +5344,7 @@ describe('PropsManager', () => {
       type: propertyType,
       persistKeys: []
     })
+
     class LaterConstructorFailureComponent extends ComponentBase {
       constructor(data: Partial<PropertyComponentRawData>) {
         super(data)
@@ -5243,6 +5430,7 @@ describe('PropsManager', () => {
       type: propertyType,
       persistKeys: []
     })
+
     class CleanupComponent extends CleanupBase {
       dispose(): void {
         disposedIds.push(this.get('id') as string)
@@ -5289,6 +5477,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     disposedIds.length = 0
     throwOnDispose = true
 
@@ -5319,7 +5508,9 @@ describe('PropsManager', () => {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION
     }
+
     elementPropertyRegistry.register(definition, ownerElementType)
+
     const prepare = (ownerElementId: string, propertyId: string) =>
       propsManager.preparePropertyMutationBatch({
         operations: [
@@ -5335,6 +5526,7 @@ describe('PropsManager', () => {
           }
         ]
       })
+
     const collidingPrepared = prepare(
       'detached-colliding-owner',
       'detached-colliding-position'
@@ -5351,6 +5543,7 @@ describe('PropsManager', () => {
       id: 'detached-unrelated-position',
       type: PropertyTypes.POSITION
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(collision)
     propsManager.addToMap(unrelated)
 
@@ -5377,6 +5570,7 @@ describe('PropsManager', () => {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION
     }
+
     elementPropertyRegistry.register(definition, ownerElementType)
     const prepared = propsManager.preparePropertyMutationBatch({
       operations: [
@@ -5412,6 +5606,7 @@ describe('PropsManager', () => {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION
     }
+
     elementPropertyRegistry.register(definition, ownerElementType)
     const active = createProperty({
       id: 'detached-active-reuse-position',
@@ -5421,6 +5616,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(active)
     const prepared = propsManager.preparePropertyMutationBatch({
       operations: [
@@ -5436,6 +5632,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     active.load({
       ...active.save(),
       x: 99
@@ -5468,6 +5665,7 @@ describe('PropsManager', () => {
         collection: 'array-or-record' as const
       }
     }
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -5511,6 +5709,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[child, target, peer].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -5555,6 +5754,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(replacement)
     propsManager.cleanChanges()
     const exchangeablePrepared = propsManager.preparePropertyMutationBatch({
@@ -5567,6 +5767,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     propsManager.updateProperties({
       operations: [
         {
@@ -5618,6 +5819,7 @@ describe('PropsManager', () => {
         collection: 'array-or-record' as const
       }
     }
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -5656,6 +5858,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: [child.get('id')]
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[child, parent].forEach((component) => propsManager.addToMap(component))
     propsManager.cleanChanges()
     propsManager.updateProperties({
@@ -5718,6 +5921,7 @@ describe('PropsManager', () => {
         mode: 'ids' as const
       }
     }
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -5750,8 +5954,10 @@ describe('PropsManager', () => {
       id: 'detached-created-edge-child-id',
       type: childType
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(child)
     propsManager.cleanChanges()
+
     const prepare = (suffix: string) =>
       propsManager.preparePropertyMutationBatch({
         operations: [
@@ -5775,6 +5981,7 @@ describe('PropsManager', () => {
           }
         ]
       })
+
     const firstPrepared = prepare('a')
     const secondPrepared = prepare('b')
 
@@ -5802,7 +6009,9 @@ describe('PropsManager', () => {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION
     }
+
     elementPropertyRegistry.register(definition, ownerElementType)
+
     const prepare = (ownerElementId: string, propertyId: string) =>
       propsManager.preparePropertyMutationBatch({
         operations: [
@@ -5818,6 +6027,7 @@ describe('PropsManager', () => {
           }
         ]
       })
+
     const rejectedPrepared = prepare(
       'detached-rejected-owner',
       'detached-rejected-position'
@@ -5872,6 +6082,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(first)
     propsManager.addToMap(second)
     const before = propsManager.save()
@@ -5917,6 +6128,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(first)
     propsManager.addToMap(second)
     const requests = [
@@ -5936,9 +6148,11 @@ describe('PropsManager', () => {
       options: { undoable: false }
     })
     const firstRequest = requests[0]
+
     if (!firstRequest) {
       throw new Error('Expected the first property mutation request')
     }
+
     firstRequest.values.x = 999
     const { events, subscription } = captureUpdateTransactionEvents()
 
@@ -6026,6 +6240,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     sourceManager.addToMap(position)
     const prepared = sourceManager.preparePropertyMutationBatch({
       operations: [
@@ -6062,6 +6277,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(first)
     propsManager.addToMap(second)
     const updateTransactionBatch = vi.fn()
@@ -6094,6 +6310,7 @@ describe('PropsManager', () => {
     expect(updateTransactionBatch).toHaveBeenCalledTimes(1)
     const ownerBatch = updateTransactionBatch.mock.calls[0]?.[0] as
       readonly UpdateTransactionEvent[] | undefined
+
     expect(ownerBatch).toHaveLength(2)
     expect(ownerBatch?.map(({ eventName }) => eventName)).toEqual([
       ReactiveEventsModule.EventTypes.UPDATE_PROPERTY,
@@ -6118,6 +6335,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     const updateTransactionBatch = vi.fn()
 
@@ -6149,6 +6367,7 @@ describe('PropsManager', () => {
 
     const ownerBatch = updateTransactionBatch.mock.calls[0]?.[0] as
       readonly UpdateTransactionEvent[] | undefined
+
     expect(ownerBatch).toHaveLength(1)
     expect(ownerBatch?.[0]?.payload).toMatchObject({
       id: 'staged-history-position',
@@ -6195,6 +6414,7 @@ describe('PropsManager', () => {
 
   it('hands stable existing record fields to Factory as a replace-latest History candidate', () => {
     const type = 'replace-latest-record'
+
     registerRecursivePropertyType(type)
     const child = createProperty({
       id: 'replace-latest-record-child',
@@ -6208,6 +6428,7 @@ describe('PropsManager', () => {
       children: [child.get('id')],
       value: 0
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(child)
     propsManager.addToMap(parent)
     propsManager.cleanChanges()
@@ -6244,6 +6465,7 @@ describe('PropsManager', () => {
 
     const ownerBatch = updateTransactionBatch.mock.calls[0]?.[0] as
       readonly UpdateTransactionEvent[] | undefined
+
     expect(ownerBatch).toHaveLength(1)
     expect(ownerBatch?.[0]?.payload).toMatchObject({
       id: child.get('id'),
@@ -6276,6 +6498,7 @@ describe('PropsManager', () => {
 
   it('passes record lifecycle History options to Factory without deciding replace-latest support', () => {
     const type = 'replace-latest-record-lifecycle'
+
     registerRecursivePropertyType(type)
     const child = createProperty({
       id: 'replace-latest-lifecycle-child',
@@ -6289,6 +6512,7 @@ describe('PropsManager', () => {
       children: [child.get('id')],
       value: 0
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(child)
     propsManager.addToMap(parent)
     propsManager.cleanChanges()
@@ -6325,6 +6549,7 @@ describe('PropsManager', () => {
 
     const ownerBatch = updateTransactionBatch.mock.calls[0]?.[0] as
       readonly UpdateTransactionEvent[] | undefined
+
     expect(ownerBatch?.length).toBeGreaterThan(0)
     expect(
       ownerBatch?.every(
@@ -6353,9 +6578,11 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(touched)
     propsManager.addToMap(unrelated)
     const unrelatedSave = vi.fn(unrelated.save.bind(unrelated))
+
     unrelated.save = unrelatedSave
 
     propsManager.updateProperties({
@@ -6389,6 +6616,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(pending)
     propsManager.addToMap(applied)
     propsManager.updatePropsData('pending-position', 'x', 5)
@@ -6439,6 +6667,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
 
     expect(() =>
@@ -6485,6 +6714,7 @@ describe('PropsManager', () => {
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
     const relationType = 'legacy-owner-record'
+
     registerRecursivePropertyType(relationType)
     const record = createProperty({
       id: 'legacy-owner-record-root',
@@ -6492,6 +6722,7 @@ describe('PropsManager', () => {
       children: [],
       value: 1
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     propsManager.addToMap(record)
     propsManager.cleanChanges()
@@ -6544,6 +6775,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(first)
     propsManager.addToMap(second)
     propsManager.cleanChanges()
@@ -6586,6 +6818,7 @@ describe('PropsManager', () => {
       id: 'missing-retained-set-root',
       type: PropertyTypes.POSITION
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(root)
     propsManager.cleanChanges()
 
@@ -6606,6 +6839,7 @@ describe('PropsManager', () => {
 
   it('stops exact orphan traversal at an explicitly retained nested shared root', () => {
     const type = 'explicit-retained-nested-root'
+
     registerRecursivePropertyType(type)
     const grandchild = createProperty({
       id: 'explicit-retained-grandchild',
@@ -6622,6 +6856,7 @@ describe('PropsManager', () => {
       type,
       children: ['explicit-retained-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[grandchild, retainedRoot, orphanRoot].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -6679,6 +6914,7 @@ describe('PropsManager', () => {
       id: 'invalid-retained-active',
       type: PropertyTypes.POSITION
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(orphan)
     propsManager.addToMap(retained)
     propsManager.cleanChanges()
@@ -6729,6 +6965,7 @@ describe('PropsManager', () => {
 
   it('detaches retained-root input from caller mutation', () => {
     const type = 'detached-retained-root-input'
+
     registerRecursivePropertyType(type)
     const retainedRoot = createProperty({
       id: 'detached-retained-root',
@@ -6740,6 +6977,7 @@ describe('PropsManager', () => {
       type,
       children: ['detached-retained-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(retainedRoot)
     propsManager.addToMap(orphanRoot)
     propsManager.cleanChanges()
@@ -6754,6 +6992,7 @@ describe('PropsManager', () => {
         }
       ]
     } as PropertyMutationBatchRequest)
+
     orphanRootPropertyIds[0] = 'caller-mutated-orphan'
     retainedRootPropertyIds[0] = 'caller-mutated-retained'
 
@@ -6771,6 +7010,7 @@ describe('PropsManager', () => {
 
   it('rejects retained-root identity drift before apply mutates an orphan', () => {
     const type = 'stale-retained-root-identity'
+
     registerRecursivePropertyType(type)
     const retainedRoot = createProperty({
       id: 'stale-retained-root',
@@ -6782,6 +7022,7 @@ describe('PropsManager', () => {
       type,
       children: ['stale-retained-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(retainedRoot)
     propsManager.addToMap(orphanRoot)
     propsManager.cleanChanges()
@@ -6799,6 +7040,7 @@ describe('PropsManager', () => {
       type,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager._components.set('stale-retained-root', replacement)
 
     expect(() =>
@@ -6815,6 +7057,7 @@ describe('PropsManager', () => {
 
   it('removes two orphan roots without traversing their shared retained root', () => {
     const type = 'shared-retained-root-boundary'
+
     registerRecursivePropertyType(type)
     const grandchild = createProperty({
       id: 'shared-retained-grandchild',
@@ -6836,6 +7079,7 @@ describe('PropsManager', () => {
       type,
       children: ['shared-retained-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[grandchild, retainedRoot, firstOrphan, secondOrphan].forEach(
       (component) => propsManager.addToMap(component)
     )
@@ -6867,6 +7111,7 @@ describe('PropsManager', () => {
 
   it('does not traverse a retained subtree cycle while removing its orphan owner', () => {
     const type = 'retained-subtree-cycle-boundary'
+
     registerRecursivePropertyType(type)
     const retainedRoot = createProperty({
       id: 'retained-cycle-root',
@@ -6883,6 +7128,7 @@ describe('PropsManager', () => {
       type,
       children: ['retained-cycle-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[retainedRoot, retainedChild, orphanRoot].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -6913,6 +7159,7 @@ describe('PropsManager', () => {
 
   it('uses retained-root identity without snapshotting or staling on data-only changes', () => {
     const type = 'retained-root-identity-only-read'
+
     registerRecursivePropertyType(type)
     const retainedRoot = createProperty({
       id: 'identity-only-retained-root',
@@ -6925,6 +7172,7 @@ describe('PropsManager', () => {
       type,
       children: ['identity-only-retained-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(retainedRoot)
     propsManager.addToMap(orphanRoot)
     propsManager.cleanChanges()
@@ -6968,6 +7216,7 @@ describe('PropsManager', () => {
 
   it('reads a retained external property parent without snapshotting or staling its data-only changes', () => {
     const type = 'retained-external-parent-identity-read'
+
     registerRecursivePropertyType(type)
     const orphanRoot = createProperty({
       id: 'retained-parent-orphan-root',
@@ -6980,6 +7229,7 @@ describe('PropsManager', () => {
       children: ['retained-parent-orphan-root'],
       value: 1
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(orphanRoot)
     propsManager.addToMap(retainedParent)
     propsManager.cleanChanges()
@@ -7023,6 +7273,7 @@ describe('PropsManager', () => {
 
   it('rejects retained external parent relationship data drift before apply', () => {
     const type = 'retained-external-parent-relation-drift'
+
     registerRecursivePropertyType(type)
     const orphanRoot = createProperty({
       id: 'relation-drift-orphan-root',
@@ -7034,6 +7285,7 @@ describe('PropsManager', () => {
       type,
       children: ['relation-drift-orphan-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(orphanRoot)
     propsManager.addToMap(retainedParent)
     propsManager.cleanChanges()
@@ -7046,6 +7298,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     retainedParent.load({
       id: 'relation-drift-retained-parent',
       type,
@@ -7066,6 +7319,7 @@ describe('PropsManager', () => {
 
   it('rejects retained external parent relationship index drift before apply', () => {
     const type = 'retained-external-parent-index-drift'
+
     registerRecursivePropertyType(type)
     const orphanRoot = createProperty({
       id: 'index-drift-orphan-root',
@@ -7077,6 +7331,7 @@ describe('PropsManager', () => {
       type,
       children: ['index-drift-orphan-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(orphanRoot)
     propsManager.addToMap(retainedParent)
     propsManager.cleanChanges()
@@ -7089,6 +7344,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     ;(
       propsManager as unknown as {
         relationshipChildIdsByOwnerId: Map<string, readonly string[]>
@@ -7109,6 +7365,7 @@ describe('PropsManager', () => {
 
   it('rejects a retained-root removal before apply mutates an orphan', () => {
     const type = 'removed-retained-root-identity'
+
     registerRecursivePropertyType(type)
     const retainedRoot = createProperty({
       id: 'removed-retained-root',
@@ -7120,6 +7377,7 @@ describe('PropsManager', () => {
       type,
       children: ['removed-retained-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(retainedRoot)
     propsManager.addToMap(orphanRoot)
     propsManager.cleanChanges()
@@ -7132,6 +7390,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     propsManager._components.delete('removed-retained-root')
 
     expect(() =>
@@ -7145,6 +7404,7 @@ describe('PropsManager', () => {
 
   it('removes two orphan roots and their shared descendant exactly once', () => {
     const type = 'exact-orphan-shared-graph'
+
     registerRecursivePropertyType(type)
     const shared = createProperty({
       id: 'exact-orphan-shared-child',
@@ -7164,6 +7424,7 @@ describe('PropsManager', () => {
       children: ['exact-orphan-shared-child'],
       value: 2
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[shared, firstRoot, secondRoot].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -7195,6 +7456,7 @@ describe('PropsManager', () => {
     const removed = (result.evidence[0] as AddRemovePropertyChange).data.map(
       ({ id }) => id
     )
+
     expect(removed).toEqual([
       'exact-orphan-shared-root-a',
       'exact-orphan-shared-root-b',
@@ -7205,6 +7467,7 @@ describe('PropsManager', () => {
 
   it('retains an exact orphan root graph while a property owner still references it', () => {
     const type = 'exact-orphan-retained-graph'
+
     registerRecursivePropertyType(type)
     const leaf = createProperty({
       id: 'exact-orphan-retained-leaf',
@@ -7221,6 +7484,7 @@ describe('PropsManager', () => {
       type,
       children: ['exact-orphan-retained-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[leaf, root, propertyOwner].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -7247,6 +7511,7 @@ describe('PropsManager', () => {
 
   it('rejects an exact orphan prepared when an affected forward edge is missing from the reverse index', () => {
     const type = 'exact-orphan-inconsistent-external-owner'
+
     registerRecursivePropertyType(type)
     const leaf = createProperty({
       id: 'inconsistent-external-leaf',
@@ -7263,6 +7528,7 @@ describe('PropsManager', () => {
       type,
       children: ['inconsistent-external-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[leaf, root, externalOwner].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -7272,6 +7538,7 @@ describe('PropsManager', () => {
         relationshipOwnerIdsByChildId: Map<string, Set<string>>
       }
     ).relationshipOwnerIdsByChildId
+
     reverseIndex
       .get('inconsistent-external-root')
       ?.delete('inconsistent-external-owner')
@@ -7295,6 +7562,7 @@ describe('PropsManager', () => {
 
   it('propagates exact graph closure through a node visited first by a non-exact mutation', () => {
     const type = 'exact-orphan-upgraded-graph-closure'
+
     registerRecursivePropertyType(type)
     const grandchild = createProperty({
       id: 'upgraded-closure-grandchild',
@@ -7316,6 +7584,7 @@ describe('PropsManager', () => {
       type,
       children: ['upgraded-closure-grandchild']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[grandchild, descendant, root, externalOwner].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -7325,6 +7594,7 @@ describe('PropsManager', () => {
         relationshipOwnerIdsByChildId: Map<string, Set<string>>
       }
     ).relationshipOwnerIdsByChildId
+
     reverseIndex
       .get('upgraded-closure-grandchild')
       ?.delete('upgraded-closure-external-owner')
@@ -7354,6 +7624,7 @@ describe('PropsManager', () => {
 
   it('ignores an unrelated graph inconsistency while removing an exact orphan graph', () => {
     const type = 'exact-orphan-unrelated-inconsistency'
+
     registerRecursivePropertyType(type)
     const orphanLeaf = createProperty({
       id: 'unrelated-inconsistency-orphan-leaf',
@@ -7375,6 +7646,7 @@ describe('PropsManager', () => {
       type,
       children: ['unrelated-inconsistency-child']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[orphanLeaf, orphanRoot, unrelatedChild, unrelatedOwner].forEach(
       (component) => propsManager.addToMap(component)
     )
@@ -7384,6 +7656,7 @@ describe('PropsManager', () => {
         relationshipOwnerIdsByChildId: Map<string, Set<string>>
       }
     ).relationshipOwnerIdsByChildId
+
     reverseIndex
       .get('unrelated-inconsistency-child')
       ?.delete('unrelated-inconsistency-owner')
@@ -7416,6 +7689,7 @@ describe('PropsManager', () => {
 
   it('rejects duplicate, missing, cyclic, and created-and-removed orphan roots during preflight', () => {
     const type = 'exact-orphan-invalid-graph'
+
     registerRecursivePropertyType(type)
     const first = createProperty({
       id: 'exact-orphan-cycle-a',
@@ -7427,6 +7701,7 @@ describe('PropsManager', () => {
       type,
       children: ['exact-orphan-cycle-a']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(first)
     propsManager.addToMap(second)
     propsManager.cleanChanges()
@@ -7477,6 +7752,7 @@ describe('PropsManager', () => {
       type,
       children: ['exact-orphan-wrong-type-child']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(wrongTypeChild)
     propsManager.addToMap(wrongTypeRoot)
     expect(() =>
@@ -7518,6 +7794,7 @@ describe('PropsManager', () => {
         }
       ]
     } satisfies PropertyMutationBatchRequest
+
     expect(() =>
       propsManager.preparePropertyMutationBatch(createdAndRemovedRequest)
     ).toThrow(/duplicate root/i)
@@ -7526,6 +7803,7 @@ describe('PropsManager', () => {
 
   it('rejects exact orphan apply after forward or reverse relation drift', () => {
     const type = 'exact-orphan-stale-graph'
+
     registerRecursivePropertyType(type)
     const leaf = createProperty({
       id: 'exact-orphan-stale-leaf',
@@ -7537,6 +7815,7 @@ describe('PropsManager', () => {
       type,
       children: ['exact-orphan-stale-leaf']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(leaf)
     propsManager.addToMap(root)
     propsManager.cleanChanges()
@@ -7549,6 +7828,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     root.load({
       id: 'exact-orphan-stale-root',
       type,
@@ -7581,6 +7861,7 @@ describe('PropsManager', () => {
       type,
       children: ['exact-orphan-stale-root']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(retainingOwner)
 
     expect(() =>
@@ -7599,6 +7880,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(root)
     propsManager.cleanChanges()
     const orphanRootPropertyIds = ['isolated-exact-orphan-root']
@@ -7611,6 +7893,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     orphanRootPropertyIds[0] = 'caller-mutated-root'
 
     const result = propsManager.applyPreparedPropertyMutationBatch(prepared)
@@ -7634,6 +7917,7 @@ describe('PropsManager', () => {
 
   it('restores exact orphan identities after an unaccepted transaction handoff', () => {
     const type = 'exact-orphan-rollback-graph'
+
     registerRecursivePropertyType(type)
     const child = createProperty({
       id: 'exact-orphan-rollback-child',
@@ -7645,6 +7929,7 @@ describe('PropsManager', () => {
       type,
       children: ['exact-orphan-rollback-child']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(child)
     propsManager.addToMap(root)
     propsManager.cleanChanges()
@@ -7707,6 +7992,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(root)
     propsManager.cleanChanges()
     const rejection = Object.assign(new Error('orphan handoff accepted'), {
@@ -7755,6 +8041,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     const prepared = propsManager.preparePropertyMutationBatch({
       operations: [
@@ -7765,6 +8052,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     propertySchemaRegistry.unregister(PropertyTypes.POSITION)
     registerPropertySchema({
       type: PropertyTypes.POSITION,
@@ -7820,6 +8108,7 @@ describe('PropsManager', () => {
       xUnit: Unit.PX,
       yUnit: Unit.PX
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(first)
     propsManager.addToMap(second)
     const before = propsManager.save()
@@ -7838,10 +8127,12 @@ describe('PropsManager', () => {
       ]
     })
     const originalLoad = second.load.bind(second)
+
     second.load = vi.fn((data: PropertyComponentRawData) => {
       if ((data as unknown as Record<string, unknown>).y === 20) {
         throw new Error('injected apply failure')
       }
+
       originalLoad(data)
     })
     const { events, subscription } = captureUpdateTransactionEvents()
@@ -7874,12 +8165,14 @@ describe('PropsManager', () => {
         childType,
         mode: 'ids-or-objects' as const,
         collection: 'array-or-record' as const,
+
         toChildData: (item: Record<string, unknown>) => ({
           value: item.value
         })
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -7943,6 +8236,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: ['mutation-child-shared']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[childA, sharedChild, retainedChild, firstParent, secondParent].forEach(
       (component) => propsManager.addToMap(component)
     )
@@ -8109,6 +8403,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -8157,6 +8452,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: ['owner-split-old-child-b']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[oldChildA, oldChildB, parentA, parentB].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -8204,6 +8500,7 @@ describe('PropsManager', () => {
       ({ payload }) =>
         (payload as PropsChange).action === PROPS_ACTIONS.REMOVE_PROPERTY
     )
+
     expect(addEvent?.canonicalEvidence).toEqual({
       orderedIds: ['owner-split-parent-a', 'owner-split-parent-b'],
       sharedRecords: [
@@ -8270,6 +8567,7 @@ describe('PropsManager', () => {
     }
     const NodeComponent = createPropertyComponentFromConfig(nodeDefinition)
     const RootComponent = createPropertyComponentFromConfig(rootDefinition)
+
     registerPropertyComponent(
       nodeType,
       NodeComponent,
@@ -8304,6 +8602,7 @@ describe('PropsManager', () => {
       type: rootType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(rootA)
     propsManager.addToMap(rootB)
     propsManager.cleanChanges()
@@ -8336,6 +8635,7 @@ describe('PropsManager', () => {
       ({ payload }) =>
         (payload as PropsChange).action === PROPS_ACTIONS.ADD_PROPERTY
     )
+
     expect(addEvent?.canonicalEvidence).toEqual({
       orderedIds: ['shared-created-root-a', 'shared-created-root-b'],
       sharedRecords: [
@@ -8366,6 +8666,7 @@ describe('PropsManager', () => {
       persistKeys: ['value'],
       valueKeys: ['value']
     })
+
     class TrackedChild extends ChildBase {
       dispose(): void {
         disposedIds.push(this.get('id'))
@@ -8384,6 +8685,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, TrackedChild)
     registerPropertyComponent(
       parentType,
@@ -8425,6 +8727,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: [oldChildId]
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(oldChild)
     propsManager.addToMap(parent)
     propsManager.cleanChanges()
@@ -8441,6 +8744,7 @@ describe('PropsManager', () => {
         }
       ]
     })
+
     return {
       disposedIds,
       newChildId,
@@ -8556,6 +8860,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -8599,6 +8904,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: ['rollback-record-shared-child']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[child, firstParent, secondParent].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -8670,10 +8976,12 @@ describe('PropsManager', () => {
         childType,
         mode: 'ids-or-objects' as const,
         collection: 'array-or-record' as const,
+
         toChildData: (item: Record<string, unknown>) => item
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent, undefined, {
       type: childType,
       defaults: {
@@ -8707,6 +9015,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(parent)
 
     const result = propsManager.updateProperties({
@@ -8797,10 +9106,12 @@ describe('PropsManager', () => {
         childType,
         mode: 'ids-or-objects' as const,
         collection: 'array-or-record' as const,
+
         toChildData: (item: Record<string, unknown>) => item
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -8824,6 +9135,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(parent)
     const registerMany = vi.spyOn(propsManager, 'registerMany')
 
@@ -8857,6 +9169,7 @@ describe('PropsManager', () => {
       persistKeys: ['value'],
       valueKeys: ['value']
     })
+
     class ActiveReadingChild extends ChildBase {
       constructor(data: Partial<PropertyComponentRawData>) {
         super(data)
@@ -8880,6 +9193,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ActiveReadingChild)
     registerPropertyComponent(
       parentType,
@@ -8921,9 +9235,11 @@ describe('PropsManager', () => {
       type: parentType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(activePosition)
     propsManager.addToMap(parent)
     const activeSave = vi.fn(activePosition.save.bind(activePosition))
+
     ;(
       activePosition as PropertyComponentInstanceTypes & {
         save: typeof activeSave
@@ -8984,6 +9300,7 @@ describe('PropsManager', () => {
       persistKeys: ['value'],
       valueKeys: ['value']
     })
+
     class RegistrationDriftingChild extends ChildBase {
       constructor(data: Partial<PropertyComponentRawData>) {
         super(data)
@@ -9004,6 +9321,7 @@ describe('PropsManager', () => {
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, RegistrationDriftingChild)
     registerPropertyComponent(
       parentType,
@@ -9037,6 +9355,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(parent)
     const before = propsManager.save()
     const registerMany = vi.spyOn(propsManager, 'registerMany')
@@ -9092,6 +9411,7 @@ describe('PropsManager', () => {
     }
     const RelationComponent =
       createPropertyComponentFromConfig(relationDefinition)
+
     registerPropertyComponent(
       relationType,
       RelationComponent,
@@ -9118,6 +9438,7 @@ describe('PropsManager', () => {
       type: relationType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(first)
     propsManager.addToMap(second)
     const before = propsManager.save()
@@ -9159,6 +9480,7 @@ describe('PropsManager', () => {
     }
     const RelationComponent =
       createPropertyComponentFromConfig(relationDefinition)
+
     registerPropertyComponent(
       relationType,
       RelationComponent,
@@ -9190,6 +9512,7 @@ describe('PropsManager', () => {
       type: relationType,
       children: ['ordered-orphan-leaf', 'ordered-orphan-owner']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[leaf, owner, root].forEach((component) =>
       propsManager.addToMap(component)
     )
@@ -9237,6 +9560,7 @@ describe('PropsManager', () => {
     }
     const RelationComponent =
       createPropertyComponentFromConfig(relationDefinition)
+
     registerPropertyComponent(
       relationType,
       RelationComponent,
@@ -9273,10 +9597,12 @@ describe('PropsManager', () => {
       type: relationType,
       children: ['sparse-relationship-unrelated-child']
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     ;[affectedChild, affectedOwner, unrelatedChild, unrelatedOwner].forEach(
       (component) => propsManager.addToMap(component)
     )
     const unrelatedSave = vi.fn(unrelatedOwner.save.bind(unrelatedOwner))
+
     unrelatedOwner.save = unrelatedSave
 
     propsManager.updateProperties({
@@ -9317,12 +9643,14 @@ describe('PropsManager', () => {
         childType,
         mode: 'ids-or-objects' as const,
         collection: 'array-or-record' as const,
+
         toChildData: (item: Record<string, unknown>) => ({
           value: item.value
         })
       }
     }
     const ParentComponent = createPropertyComponentFromConfig(parentDefinition)
+
     registerPropertyComponent(childType, ChildComponent)
     registerPropertyComponent(
       parentType,
@@ -9354,6 +9682,7 @@ describe('PropsManager', () => {
       type: parentType,
       children: []
     } as Partial<PropertyComponentRawData>) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     propsManager.addToMap(parent)
     const before = propsManager.save()
@@ -9406,6 +9735,7 @@ describe('PropsManager', () => {
       eventName: ReactiveEventsModule.EventTypes.REMOVE_PROPERTY,
       data: []
     }
+
     propsManager.addChange(change1)
     propsManager.addChange(change2)
 
@@ -9441,6 +9771,7 @@ describe('PropsManager', () => {
       undoAction: PROPS_ACTIONS.REMOVE_PROPERTY,
       data: []
     } as AddRemovePropertyChange
+
     propsManager.addChange(change)
     const prepare = (
       propsManager as PropsManager & {
@@ -9618,6 +9949,7 @@ describe('PropsManager', () => {
       after: 2,
       options: { undoable: false }
     }
+
     propsManager.addChange(change)
 
     propsManager.commitChanges()
@@ -9653,6 +9985,7 @@ describe('PropsManager', () => {
     }) as PropertyComponentInstanceTypes
     const unchangedSave = vi.fn(unchanged.save.bind(unchanged))
     const updatedSave = vi.fn(updated.save.bind(updated))
+
     unchanged.save = unchangedSave
     updated.save = updatedSave
     propsManager.addToMap(unchanged)
@@ -9678,6 +10011,7 @@ describe('PropsManager', () => {
     })
 
     const { events, subscription } = captureUpdateTransactionEvents()
+
     propsManager.commitChanges()
 
     expect(unchangedSave).toHaveBeenCalledTimes(1)
@@ -9722,6 +10056,7 @@ describe('PropsManager', () => {
       type: PropertyTypes.CUSTOM,
       children: ['pp-position']
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     propsManager.addToMap(related)
     propsManager.addChangeForAddProperty(position)
@@ -9753,6 +10088,7 @@ describe('PropsManager', () => {
     })
 
     const { events, subscription } = captureUpdateTransactionEvents()
+
     propsManager.commitChanges()
 
     expect(events).toEqual([
@@ -9788,6 +10124,7 @@ describe('PropsManager', () => {
       id: 'pp-option-dimension',
       type: PropertyTypes.DIMENSION
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     propsManager.addToMap(dimension)
     propsManager.addChangeForAddProperty(position)
@@ -9795,6 +10132,7 @@ describe('PropsManager', () => {
     propsManager.changes[1].options = { undoable: false }
 
     const { events, subscription } = captureUpdateTransactionEvents()
+
     propsManager.commitChanges()
 
     expect(events).toHaveLength(2)
@@ -9818,6 +10156,7 @@ describe('PropsManager', () => {
       type: PropertyTypes.POSITION,
       x: 0
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     propsManager.addChangeForAddProperty(position)
     position.load({
@@ -9835,6 +10174,7 @@ describe('PropsManager', () => {
     })
 
     const { events, subscription } = captureUpdateTransactionEvents()
+
     propsManager.commitChanges()
 
     expect(events).toHaveLength(1)
@@ -9865,6 +10205,7 @@ describe('PropsManager', () => {
       type: PropertyTypes.POSITION,
       x: 12
     }) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(position)
     propsManager.addChange({
       action: PROPS_ACTIONS.UPDATE_PROPERTY,
@@ -9877,6 +10218,7 @@ describe('PropsManager', () => {
     propsManager.addChangeForAddProperty(position)
 
     const { events, subscription } = captureUpdateTransactionEvents()
+
     propsManager.commitChanges()
 
     expect(events.map(({ eventName }) => eventName)).toEqual([
@@ -9898,6 +10240,7 @@ describe('PropsManager', () => {
     const positionComponent = createProperty(
       positionData
     ) as PropertyComponentInstanceTypes
+
     propsManager.addToMap(positionComponent)
 
     propsManager.updatePropsData(
@@ -9909,6 +10252,7 @@ describe('PropsManager', () => {
     const position = positionComponent as unknown as {
       get: (key: string) => unknown
     }
+
     expect(position.get('x')).toBe(10)
   })
 
@@ -9925,6 +10269,7 @@ describe('PropsManager', () => {
     const position = positionComponent as unknown as {
       get: (key: string) => unknown
     }
+
     expect(position.get('x')).toBe(0)
     expect(position.get('y')).toBe(0)
     expect(position.get('xUnit')).toBe(Unit.PX)

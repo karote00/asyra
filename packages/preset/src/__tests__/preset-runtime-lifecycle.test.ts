@@ -7,10 +7,14 @@ const createCore = () => {
   const registerRuntimeCleanup = vi.fn(
     (_key: string, _cleanup: () => void) => () => undefined
   )
+
   return {
     isCompositionOpen: () => true,
+
     hasRenderEngineProvider: () => false,
+
     getPresetDependencies: () => ({}),
+
     setRenderEngineProvider: vi.fn(() => () => undefined),
     registerRuntimeCleanup
   }
@@ -24,6 +28,7 @@ describe('Successful Preset runtime lifecycle handoff', () => {
   it('retains successful cleanup without adding a lifecycle handle to the apply result', () => {
     const core = createCore(),
       calls: string[] = []
+
     vi.spyOn(defaults, 'installPresetDefaults').mockImplementation(
       ({ registerCleanup }) => {
         registerCleanup('first', () => {
@@ -32,17 +37,20 @@ describe('Successful Preset runtime lifecycle handoff', () => {
         registerCleanup('second', () => {
           calls.push('second')
         })
+
         return []
       }
     )
     const result = applyPreset(core as never, {
       profile: PresetProfiles.CUSTOM
     })
+
     expect(result).not.toHaveProperty('dispose')
     expect(Object.isFrozen(result)).toBe(true)
     expect(core.registerRuntimeCleanup).toHaveBeenCalledOnce()
     expect(calls).toEqual([])
     const dispose = core.registerRuntimeCleanup.mock.calls[0][1]
+
     dispose()
     dispose()
     expect(calls).toEqual(['second', 'first'])
@@ -55,23 +63,27 @@ describe('Successful Preset runtime lifecycle handoff', () => {
     const core = createCore(),
       cause = new Error('resource failed'),
       successful = vi.fn()
+
     vi.spyOn(defaults, 'installPresetDefaults').mockImplementation(
       ({ registerCleanup }) => {
         registerCleanup('successful', successful)
         registerCleanup('failed', () => {
           throw cause
         })
+
         return []
       }
     )
     applyPreset(core as never, { profile: PresetProfiles.CUSTOM })
     expect(core.registerRuntimeCleanup).toHaveBeenCalledOnce()
     let failure: unknown
+
     try {
       core.registerRuntimeCleanup.mock.calls[0][1]()
     } catch (error) {
       failure = error
     }
+
     expect(successful).toHaveBeenCalledOnce()
     expect(failure).toMatchObject({
       code: 'CLEANUP_FAILED',
@@ -85,9 +97,11 @@ describe('Successful Preset runtime lifecycle handoff', () => {
     const core = createCore(),
       cleanup = vi.fn(),
       cause = new Error('handoff failed')
+
     vi.spyOn(defaults, 'installPresetDefaults').mockImplementation(
       ({ registerCleanup }) => {
         registerCleanup('resource', cleanup)
+
         return []
       }
     )

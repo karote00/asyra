@@ -131,6 +131,7 @@
     failureOwnerStepId: 'execute',
     cacheDimensions: []
   }
+
   const artifact = (id, owner, consumers) => ({
     id,
     title: id.slice(9),
@@ -140,6 +141,7 @@
     description:
       'Detached local validation contract; no product state or remote authority.'
   })
+
   const data = {
     schema: { id: 'flow-inspector', version: 2 },
     target: {
@@ -191,12 +193,14 @@
     invariants: [],
     acceptanceContracts: []
   }
+
   const freeze = (value) => {
     if (value && typeof value === 'object') {
       Object.values(value).forEach(freeze)
       Object.freeze(value)
     }
   }
+
   freeze(data)
   globalThis.FLOW_INSPECTOR_DATA = data
   if (typeof module !== 'undefined') {module.exports = data}

@@ -27,16 +27,20 @@ test('native IndexedDB atomically saves, reopens, and rejects cross-tab revision
       savedAt: '2026-09-04T00:00:00.000Z',
       payload
     }
+
     try {
       await a.write(original, null)
       const first = await b.read('project')
+
       await a.write({ ...original, name: 'Newer', revision: 'b' }, 'a')
       let conflict = ''
+
       try {
         await b.write({ ...original, name: 'Stale', revision: 'c' }, 'a')
       } catch (error) {
         conflict = String(error)
       }
+
       return {
         first,
         current: await b.read('project'),
@@ -48,11 +52,13 @@ test('native IndexedDB atomically saves, reopens, and rejects cross-tab revision
       b.close()
       await new Promise<void>((resolve, reject) => {
         const request = indexedDB.deleteDatabase(name)
+
         request.onsuccess = () => resolve()
         request.onerror = () => reject(request.error)
       })
     }
   })
+
   expect(result.first.name).toBe('Example')
   expect(JSON.parse(result.first.payload).loadIssues).toHaveLength(1)
   expect(result.current.name).toBe('Newer')
@@ -73,10 +79,12 @@ test('request success followed by native transaction abort never acknowledges a 
     const name = `sim-abort-test-${crypto.randomUUID()}`
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(name)
+
       request.onupgradeneeded = () => request.result.createObjectStore('values')
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
+
     try {
       const tx = database.transaction('values', 'readwrite')
       let requestSucceeded = false,
@@ -85,28 +93,34 @@ test('request success followed by native transaction abort never acknowledges a 
       const completion = transactionCompletion(tx).then(
         () => {
           settled = true
+
           return 'saved'
         },
         (error) => {
           settled = true
+
           return error.name as string
         }
       )
       const request = tx.objectStore('values').put('new', 'key')
+
       request.onsuccess = () => {
         requestSucceeded = true
         settledAtRequest = settled
         tx.abort()
       }
+
       const outcome = await completion
       const value = await new Promise((resolve, reject) => {
         const read = database
           .transaction('values')
           .objectStore('values')
           .get('key')
+
         read.onsuccess = () => resolve(read.result)
         read.onerror = () => reject(read.error)
       })
+
       return {
         requestSucceeded,
         settledAtRequest,
@@ -118,6 +132,7 @@ test('request success followed by native transaction abort never acknowledges a 
       indexedDB.deleteDatabase(name)
     }
   })
+
   expect(result).toEqual({
     requestSucceeded: true,
     settledAtRequest: false,
@@ -137,6 +152,7 @@ test('missing or corrupt saved documents reject and closed or cancelled storage 
     const name = `sim-corrupt-test-${crypto.randomUUID()}`
     const repository = new IndexedProjectRepository(indexedDB, name)
     const errors: string[] = []
+
     const capture = async (operation: () => Promise<unknown>) => {
       try {
         await operation()
@@ -145,14 +161,18 @@ test('missing or corrupt saved documents reject and closed or cancelled storage 
         errors.push(String(error))
       }
     }
+
     await capture(() => repository.read('missing'))
     const database = await new Promise<IDBDatabase>((resolve) => {
       const request = indexedDB.open(name)
+
       request.onsuccess = () => resolve(request.result)
     })
+
     try {
       await new Promise<void>((resolve, reject) => {
         const tx = database.transaction(['projects', 'documents'], 'readwrite')
+
         tx.objectStore('projects').put({
           id: 'bad',
           name: 'Bad',
@@ -167,8 +187,10 @@ test('missing or corrupt saved documents reject and closed or cancelled storage 
       repository.close()
       await capture(() => repository.list())
       const controller = new AbortController()
+
       controller.abort()
       const second = new IndexedProjectRepository(indexedDB, name)
+
       await capture(() => second.list(controller.signal))
       second.close()
     } finally {
@@ -176,8 +198,10 @@ test('missing or corrupt saved documents reject and closed or cancelled storage 
       database.close()
       indexedDB.deleteDatabase(name)
     }
+
     return errors
   })
+
   expect(result[0]).toContain('not found')
   expect(result[1]).toContain('SyntaxError')
   expect(result[2]).toContain('closed')

@@ -39,6 +39,7 @@ export const DEPLOYMENT_APPS = Object.freeze([
 
 async function inspectFiles(directory) {
   const files = []
+
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     assert.ok(!entry.isSymbolicLink(), 'Deployment cannot contain symlinks')
     assert.ok(
@@ -48,6 +49,7 @@ async function inspectFiles(directory) {
       `Forbidden deployment file: ${entry.name}`
     )
     const file = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       files.push(...(await inspectFiles(file)))
     } else {
@@ -58,6 +60,7 @@ async function inspectFiles(directory) {
       files.push(file)
     }
   }
+
   return files
 }
 
@@ -68,13 +71,16 @@ export async function prepareApps({
   assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'Expected a full Git commit SHA')
   for (const app of DEPLOYMENT_APPS) {
     const source = path.join(root, app.output)
+
     await stat(path.join(source, 'index.html'))
     const files = await inspectFiles(source)
+
     assert.ok(
       files.length + 3 <= 1000,
       'Artifact exceeds dashboard upload file limit'
     )
     const destination = path.join(root, 'tmp/cloudflare-apps', app.id)
+
     await rm(destination, { recursive: true, force: true })
     await mkdir(destination, { recursive: true })
     await cp(source, destination, { recursive: true })
@@ -82,6 +88,7 @@ export async function prepareApps({
       path.join(root, app.root, 'public/_headers'),
       'utf8'
     )
+
     parseGlobalHeaders(headers)
     await writeFile(path.join(destination, '_headers'), headers)
     // These Apps use root/query navigation. A real 404 prevents missing API or
@@ -108,6 +115,7 @@ export async function ensureProject(
   } = {}
 ) {
   const app = DEPLOYMENT_APPS.find((entry) => entry.id === id)
+
   assert.ok(app, 'Unknown deployment App')
   assert.match(accountId ?? '', /^[a-f0-9]{32}$/, 'Invalid account ID')
   assert.ok(token, 'Missing Pages token')
@@ -118,9 +126,11 @@ export async function ensureProject(
   }
   const options = { headers, redirect: 'error' }
   let response = await request(`${endpoint}/${app.project}`, options)
+
   if (response.status === 404) {
     const { cloudflareGuidance } =
       await import('./cloudflare-release-guidance.mjs')
+
     await cloudflareGuidance('check', id, {
       root,
       request: guidanceRequest,
@@ -133,8 +143,10 @@ export async function ensureProject(
       body: JSON.stringify({ name: app.project, production_branch: 'main' })
     })
   }
+
   assert.ok(response.ok, `Pages project request failed (${response.status})`)
   const data = await response.json()
+
   assert.equal(data.success, true, 'Pages project request was unsuccessful')
   assert.equal(data.result.name, app.project)
   assert.equal(data.result.production_branch, 'main')
@@ -150,6 +162,7 @@ export async function waitForDeploymentVersion(
 ) {
   for (let attempt = 0; attempt < attempts; attempt++) {
     let response
+
     try {
       response = await request(`${origin}/deployment-version.json`, {
         cache: 'no-store',
@@ -159,8 +172,10 @@ export async function waitForDeploymentVersion(
     } catch {
       // DNS and transport can lag the first successful Pages upload.
     }
+
     if (response?.status === 200) {
       const version = await response.json()
+
       assert.equal(version.app, id, 'Unexpected deployed App')
       if (version.sourceSha === sha) {
         return
@@ -172,25 +187,31 @@ export async function waitForDeploymentVersion(
       )
       await response.body?.cancel()
     }
+
     if (attempt + 1 < attempts) {
       await wait(2000)
     }
   }
+
   throw new Error(`Production ${id} did not become ready at revision ${sha}`)
 }
 
 export async function verifyDeployment(id, sha = process.env.SOURCE_SHA) {
   const app = DEPLOYMENT_APPS.find((entry) => entry.id === id)
+
   assert.ok(app, 'Unknown deployment App')
   assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'Expected a full Git commit SHA')
   const origin = `https://${app.project}.pages.dev`
+
   await waitForDeploymentVersion(origin, id, sha)
   const response = await fetch(origin)
+
   assert.equal(response.status, 200)
   const html = await response.text()
   const assets = [...html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css))"/g)].map(
     (match) => new URL(match[1], `${origin}/`).href
   )
+
   assert.ok(
     assets.some((url) => url.endsWith('.js')),
     'Missing production script'
@@ -198,18 +219,22 @@ export async function verifyDeployment(id, sha = process.env.SOURCE_SHA) {
   for (const asset of assets) {
     assert.equal((await fetch(asset)).status, 200, asset)
   }
+
   for (const missing of ['/api/ai/action-batch', '/missing-worker.js']) {
     assert.equal((await fetch(`${origin}${missing}`)).status, 404, missing)
   }
+
   const headers = parseGlobalHeaders(
     await readFile(
       new URL(`../${app.root}/public/_headers`, import.meta.url),
       'utf8'
     )
   )
+
   for (const [key, value] of Object.entries(headers)) {
     assert.equal(response.headers.get(key), value, key)
   }
+
   console.log(`Production verified: ${id} at ${origin} (${sha})`)
 }
 
@@ -218,6 +243,7 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const mode = process.argv[2]
+
   assert.ok(
     ['prepare', 'ensure-project', 'verify'].includes(mode),
     'Expected prepare, ensure-project or verify'

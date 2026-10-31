@@ -10,10 +10,12 @@ import { INTERIOR_REVIEW_STAGE } from './office-interior'
 let ownerCore = core,
   active = false
 const FRAME_REVISION = 'reference-scene.frame-revision'
+
 export async function startReferenceScene(host: HTMLElement) {
   if (active) {
     throw new Error('Scene already active')
   }
+
   active = true
   const owner = ownerCore
   let stopped = false,
@@ -23,10 +25,12 @@ export async function startReferenceScene(host: HTMLElement) {
     layer: SpatialLayer | undefined,
     controller: ReturnType<typeof createSceneController> | undefined,
     cleanup: Promise<void> | undefined
+
   const dispose = () => {
     if (cleanup) {
       return cleanup
     }
+
     stopped = true
     stopKeyboard?.()
     observer?.disconnect()
@@ -35,6 +39,7 @@ export async function startReferenceScene(host: HTMLElement) {
       owner.unregisterRenderLayer(layer.registration.name)
       layer.dispose()
     }
+
     cleanup = owner
       .resetRuntime()
       .then((next) => {
@@ -43,8 +48,10 @@ export async function startReferenceScene(host: HTMLElement) {
       .finally(() => {
         active = false
       })
+
     return cleanup
   }
+
   try {
     applyPreset(owner, {
       profile: PresetProfiles['3D'],
@@ -75,16 +82,19 @@ export async function startReferenceScene(host: HTMLElement) {
       }
     })
     owner.registerRenderLayer(layer.registration)
+
     const size = () => ({
       width: Math.max(1, host.clientWidth),
       height: Math.max(1, host.clientHeight)
     })
+
     const scene = createReferenceScene(INTERIOR_REVIEW_STAGE),
       artwork = await prepareArtwork(scene.labels),
       meshes = [
         ...buildSpatialMeshes(scene, createSurfaces()),
         ...labelMeshes(scene.labels, artwork)
       ]
+
     layer.submit({
       camera: overviewCamera(size().width / size().height),
       meshes
@@ -106,6 +116,7 @@ export async function startReferenceScene(host: HTMLElement) {
         }
       }
     )
+
     owner.load({
       version: '1.0.0',
       props: {},
@@ -113,15 +124,19 @@ export async function startReferenceScene(host: HTMLElement) {
     })
     await owner.start(host, { ...size(), backgroundColor: 0xc9c5b5 })
     const browser = host.ownerDocument.defaultView
+
     if (!browser) {
       throw new Error('Scene host requires a browser window')
     }
+
     stopKeyboard = bindCameraKeyboard(browser, api.move, owner)
     observer = new ResizeObserver(() => {
       if (stopped) {
         return
       }
+
       const next = size()
+
       owner.resizeRenderer(next.width, next.height)
       controller?.resize(next.width / next.height)
     })
@@ -135,6 +150,7 @@ export async function startReferenceScene(host: HTMLElement) {
           : 0),
       0
     )
+
     return {
       ...api,
       getSnapshot: controller.getSnapshot,
@@ -151,4 +167,5 @@ export async function startReferenceScene(host: HTMLElement) {
     throw e
   }
 }
+
 export type SceneRuntime = Awaited<ReturnType<typeof startReferenceScene>>

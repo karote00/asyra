@@ -13,30 +13,38 @@ export const getAvailableFontFamilies = (
   owner: Document
 ): readonly string[] => {
   let catalog = catalogs.get(owner)
+
   if (!catalog) {
     catalog = { values: null }
     catalogs.set(owner, catalog)
     const entry = catalog
+
     owner.fonts?.addEventListener('loadingdone', () => {
       entry.values = null
     })
   }
+
   if (catalog.values) {
     return catalog.values
   }
+
   const context = owner.createElement('canvas').getContext('2d')
   const values: string[] = [...GENERIC_FONT_FAMILIES]
+
   if (context) {
     const sample = 'mmmmmmmmmmlliWW0123456789'
     const baselines = ['monospace', 'serif']
     const widths = baselines.map((base) => {
       context.font = `72px ${base}`
+
       return context.measureText(sample).width
     })
+
     for (const family of LOCAL_FONT_CANDIDATES) {
       if (
         baselines.some((base, index) => {
           context.font = `72px "${family}", ${base}`
+
           return context.measureText(sample).width !== widths[index]
         })
       ) {
@@ -44,6 +52,8 @@ export const getAvailableFontFamilies = (
       }
     }
   }
+
   catalog.values = values
+
   return values
 }

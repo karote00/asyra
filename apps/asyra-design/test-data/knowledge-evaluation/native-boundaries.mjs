@@ -7,7 +7,9 @@ import process from 'node:process'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
+
 const digest = (value) => createHash('sha256').update(value).digest('hex')
+
 const identity = (body, name) =>
   body.match(
     new RegExp(`\\b${name}="?([a-zA-Z0-9_-]{1,180})(?:["\\s}:]|$)`)
@@ -28,6 +30,7 @@ export function collectNativeBoundaries({
   ) {
     throw new Error('Invalid native diagnostic identity or window')
   }
+
   const base = {
     threadId,
     startMs,
@@ -37,16 +40,20 @@ export function collectNativeBoundaries({
     argumentProgress: 'unavailable',
     waitCause: null
   }
+
   const unavailable = (reason) => ({
     ...base,
     status: 'unavailable',
     reason,
     boundaries: []
   })
+
   let database
+
   try {
     // Optional evidence must not make older runtimes unable to load the runner.
     const { DatabaseSync } = require('node:sqlite')
+
     database = new DatabaseSync(databasePath, { readOnly: true })
     database.exec(
       'PRAGMA query_only=ON; PRAGMA temp_store=MEMORY; PRAGMA busy_timeout=1000'
@@ -64,22 +71,27 @@ export function collectNativeBoundaries({
       )
       .map((row) => row.process_uuid)
       .filter(Boolean)
+
     if (!processId) {
       if (processes.length !== 1) {
         return unavailable(
           processes.length ? 'ambiguous-process' : 'missing-process'
         )
       }
+
       processId = processes[0]
     }
+
     if (!processes.includes(processId)) {
       return unavailable('missing-process')
     }
+
     const boundaries = []
     const rows =
       database.prepare(`SELECT id, ts, ts_nanos, target, feedback_log_body FROM logs
       WHERE thread_id = ? AND process_uuid = ? AND ts >= ? AND ts <= ?
       AND target = 'codex_core::stream_events_utils' ORDER BY ts, ts_nanos, id`)
+
     for (const row of rows.iterate(
       threadId,
       processId,
@@ -87,22 +99,30 @@ export function collectNativeBoundaries({
       Math.floor(endMs / 1000)
     )) {
       const atMs = row.ts * 1000 + row.ts_nanos / 1000000
+
       if (!Number.isFinite(atMs) || atMs < startMs || atMs > endMs) {
         continue
       }
+
       const body = row.feedback_log_body
+
       if (typeof body !== 'string') {
         continue
       }
+
       const turnId = identity(body, 'turn(?:_id|\\.id)')
+
       if (!turnId) {
         continue
       }
+
       let event
+
       if (row.target === 'codex_core::stream_events_utils') {
         const itemId = body.match(
           /Output item item_type="function_call" item_id="([a-zA-Z0-9_-]{1,180})"/
         )?.[1]
+
         if (
           itemId &&
           body.includes('try_run_sampling_request') &&
@@ -119,11 +139,13 @@ export function collectNativeBoundaries({
           const tool = body.match(
             /handle_output_item_done: ToolCall: ([a-zA-Z0-9_.-]{1,160})\b/
           )?.[1]
+
           if (tool) {
             event = { stage: 'native-tool-dispatched', tool }
           }
         }
       }
+
       if (event) {
         boundaries.push({
           ...event,
@@ -137,6 +159,7 @@ export function collectNativeBoundaries({
         })
       }
     }
+
     return {
       ...base,
       processId,
@@ -174,14 +197,17 @@ export function captureNativeBoundaries(run, directory, options = {}) {
             return [JSON.parse(line)]
           } catch {
             malformedLines++
+
             return []
           }
         })
+
       return { first: rows[0], rows, malformedLines }
     })
     .filter((record) => record.first?.provider === 'local-codex')
   const reachable = new Set(run.sourceRequestIds)
   let changed = true
+
   while (changed) {
     changed = false
     for (const { first } of records) {
@@ -194,6 +220,7 @@ export function captureNativeBoundaries(run, directory, options = {}) {
       }
     }
   }
+
   const streams = records
     .filter(({ first }) => reachable.has(first.sourceRequestId))
     .map(({ first, rows, malformedLines }) => {
@@ -208,6 +235,7 @@ export function captureNativeBoundaries(run, directory, options = {}) {
       const diagnostics = threads.map((threadId) =>
         collectNativeBoundaries({ databasePath, threadId, startMs, endMs })
       )
+
       return {
         requestId: first.requestId,
         sourceRequestId: first.sourceRequestId,
@@ -227,7 +255,9 @@ export function captureNativeBoundaries(run, directory, options = {}) {
     )
   )
   const filename = 'native-boundaries.json'
+
   fs.writeFileSync(path.join(directory, filename), bytes, { flag: 'wx' })
+
   return {
     path: filename,
     sha256: digest(bytes),

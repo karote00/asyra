@@ -9,9 +9,13 @@ export interface PresetApplyErrorDetails {
 
 export class PresetApplyError extends Error {
   readonly code: PresetApplyErrorCode
+
   readonly cause?: unknown
+
   readonly defaultId?: PresetDefaultId
+
   readonly completedCleanup: readonly string[]
+
   readonly pendingCleanup: readonly string[]
 
   constructor(

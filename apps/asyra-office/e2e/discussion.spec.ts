@@ -15,6 +15,7 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
     'Requires hardware WebGL.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('console', (message) => {
     if (
@@ -44,18 +45,24 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const graphics = await canvas.evaluate((node) => {
     const gl = (node as HTMLCanvasElement).getContext('webgl2')
+
     if (!gl || gl.isContextLost()) {
       throw new Error('Missing WebGL2 context')
     }
+
     const extension = gl.getExtension('WEBGL_debug_renderer_info')
+
     if (!extension) {
       throw new Error('Cannot verify GPU')
     }
+
     return String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL))
   })
+
   expect(graphics).not.toMatch(
     /swiftshader|llvmpipe|softpipe|software rasterizer/i
   )
+
   const settle = () =>
     page.evaluate(
       () =>
@@ -63,14 +70,17 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
     )
+
   await settle()
   await canvas.screenshot({
     path: info.outputPath('discussion-source-angle.png')
   })
   const bounds = await canvas.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing canvas bounds')
   }
+
   // Native live-browser crop keeps the poster readable without enlarging pixels.
   await page.screenshot({
     path: info.outputPath('discussion-poster-detail.png'),
@@ -83,6 +93,7 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
   })
   const x = bounds.x + bounds.width / 2,
     y = bounds.y + bounds.height / 2
+
   await page.mouse.move(x, y)
   await page.mouse.down()
   await page.mouse.move(x + 80, y + 240, { steps: 12 })
@@ -122,6 +133,7 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
   }
+
   await settle()
   await canvas.screenshot({
     path: info.outputPath('discussion-tableware-detail.png')
@@ -139,6 +151,7 @@ test('discussion reference review exposes wall artwork, tabletop and low storage
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
   }
+
   await settle()
   await canvas.screenshot({
     path: info.outputPath('discussion-tableware-microscope.png')
@@ -193,6 +206,7 @@ test('discussion conifer microscope retains production geometry across views', a
       )
     })
   }
+
   await expect(page.getByRole('alert')).toHaveCount(0)
   await info.attach('review-state', {
     body: JSON.stringify({
@@ -216,6 +230,7 @@ test('iced Americano microscope shows the same production transparent regions', 
     'Requires hardware WebGL.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('console', (message) => {
     if (
@@ -238,6 +253,7 @@ test('iced Americano microscope shows the same production transparent regions', 
           opticalDrawProbe: { enabled: boolean; draws: unknown[] }
         }
       ).opticalDrawProbe
+
       probe.enabled = enabled
       probe.draws = []
     }, view === 'Top')
@@ -265,6 +281,7 @@ test('iced Americano microscope shows the same production transparent regions', 
       // The top camera projects the open centre of the liquid to the canvas centre.
       // Source tests separately establish its upward winding and ice clearance.
       const path = info.outputPath('optical-gpu-uniforms.json')
+
       await writeFile(path, JSON.stringify({ draws, pixel }, null, 2))
       await info.attach('optical-gpu-uniforms', {
         path,
@@ -283,12 +300,14 @@ test('iced Americano microscope shows the same production transparent regions', 
         )
       ).toBe(true)
     }
+
     await page.getByLabel('Asset 3D viewport').screenshot({
       path: info.outputPath(
         'coffee-' + view.toLowerCase().replace(' ', '-') + '.png'
       )
     })
   }
+
   expect(errors).toEqual([])
   await info.attach('review-state', {
     body: JSON.stringify({
@@ -311,21 +330,28 @@ test('sugar ceramic surfaces remain smooth around the spoon notch and leaning li
     'Requires hardware WebGL.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (e) => errors.push(e.message))
   await page.goto('/?review=sugar-jar')
   const viewport = page.getByLabel('Asset 3D viewport')
+
   await viewport.locator('canvas').waitFor()
   const renderer = await viewport.locator('canvas').evaluate((node) => {
     const gl = (node as HTMLCanvasElement).getContext('webgl2')
+
     if (!gl || gl.isContextLost()) {
       throw new Error('Missing WebGL')
     }
+
     const debug = gl.getExtension('WEBGL_debug_renderer_info')
+
     if (!debug) {
       throw new Error('Missing renderer information')
     }
+
     return String(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL))
   })
+
   expect(renderer).not.toMatch(/swiftshader|llvmpipe|softpipe/i)
   for (const view of ['Front', 'Right', 'Top', 'Three-quarter', 'Cap detail']) {
     await page.getByRole('button', { name: view, exact: true }).click()
@@ -341,6 +367,7 @@ test('sugar ceramic surfaces remain smooth around the spoon notch and leaning li
       )
     })
   }
+
   expect(errors).toEqual([])
   await info.attach('review-state', {
     body: JSON.stringify({

@@ -47,6 +47,7 @@ export const useAppContextMenuSession = (
         ...invocation,
         viewport: getViewport()
       }
+
       sessionRef.current = nextSession
       setSession(nextSession)
     },
@@ -55,6 +56,7 @@ export const useAppContextMenuSession = (
 
   const dismiss = useCallback((reason: AppContextMenuSessionDismissReason) => {
     const currentSession = sessionRef.current
+
     if (!currentSession) {
       return
     }

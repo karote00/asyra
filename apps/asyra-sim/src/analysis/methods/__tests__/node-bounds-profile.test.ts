@@ -18,6 +18,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
   'node-bounds-profile.test',
   () => {
     const ops = poseOperations(intervalAlgebra)
+
     afterEach(() => vi.restoreAllMocks())
 
     it.each([
@@ -33,9 +34,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (pair) =>
             pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === target
         )
+
         if (!pair) {
           throw new Error('Missing measured pair')
         }
+
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -75,6 +78,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             throw new MeshWorkLimit('Candidate combined work exhausted')
           }
         })
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (mesh, checkpoint, hierarchy, checkExecution) =>
             build(
@@ -90,21 +94,28 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
             const result = worldBounds(bounds, pose)
+
             metadata.set(result, { bounds, pose })
+
             return result
           }
         )
         vi.spyOn(meshIndex, 'boundsGap').mockImplementation((a, b) => {
           const current = gap(a, b)
+
           if (current > settings.threshold) {
             return current
           }
+
           const left = metadata.get(a),
             right = metadata.get(b)
+
           if (!left || !right) {
             return current
           }
+
           const projectionStart = performance.now()
+
           try {
             for (const source of [left, right]) {
               for (const axis of [
@@ -116,13 +127,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 if (context.work + counts.axisChecks > 500000) {
                   throw new MeshWorkLimit('Candidate projection work exhausted')
                 }
+
                 const direction = ops
                   .rotate(source.pose.rotation, ops.vector(axis))
                   .map(imid) as unknown as Vec3
                 const norm = ops.norm(ops.vector(direction))
+
                 if (norm[0] <= 0) {
                   continue
                 }
+
                 const pa = projection(left.bounds, left.pose, direction)
                 const pb = projection(right.bounds, right.pose, direction)
                 const candidate = Math.max(
@@ -130,12 +144,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   idiv(isub(interval(pb[0]), interval(pa[1])), norm)[0],
                   idiv(isub(interval(pa[0]), interval(pb[1])), norm)[0]
                 )
+
                 if (candidate > settings.threshold) {
                   counts.addedRejections++
+
                   return candidate
                 }
               }
             }
+
             return current
           } finally {
             counts.projectionMs += performance.now() - projectionStart
@@ -149,6 +166,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- formal test-owned feasibility adapter, not shipped execution
         console.info(
           JSON.stringify({

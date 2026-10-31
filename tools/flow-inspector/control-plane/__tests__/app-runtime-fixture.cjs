@@ -17,6 +17,7 @@ function appRuntimeFixture(root, directory) {
   const validatorFile = 'apps/asyra-design/src/ai/design-fill.ts'
   const constantsFile = 'packages/utils/src/propsManager/fills.ts'
   const stepOrder = { schedule: 1, metadata: 2, validate: 3 }
+
   const step = (id, ownerPackage, file, inputs, outputs) => ({
     id,
     order: stepOrder[id],
@@ -34,6 +35,7 @@ function appRuntimeFixture(root, directory) {
     specRefs: ['#app-source-proof'],
     failureOwnerStepId: id
   })
+
   const architecture = {
     schema: { id: 'flow-inspector', version: 2 },
     target: {
@@ -191,8 +193,10 @@ function appRuntimeFixture(root, directory) {
       }
     ]
   }
+
   const relativeImport = (file) =>
     JSON.stringify(path.relative(directory, path.join(root, file)))
+
   const tests = `import { describe, expect, it } from 'vitest';
 import { createLocalToolScheduler } from ${relativeImport(schedulerFile)};
 import { isDesignGradient } from ${relativeImport(validatorFile)};
@@ -234,8 +238,10 @@ export default {
  }}],
  test: { environment:'node',include:[resolve(root,${JSON.stringify(files.testFile)})],fileParallelism:false }
 };`
+
   const write = (file, content) =>
     fs.writeFileSync(path.join(root, file), content)
+
   write(files.manifestPath, JSON.stringify(manifest))
   write(
     files.architecturePath,
@@ -247,6 +253,7 @@ export default {
   )
   write(files.testFile, tests)
   write(files.configFile, configuration)
+
   return loadContract(root, undefined, files.manifestPath)
 }
 

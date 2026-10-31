@@ -38,6 +38,7 @@ test.describe('Tool Switching', () => {
 
     // Verify Select tool is active
     const initialTool = await getActiveTool(page)
+
     expect(initialTool).toBe('select')
 
     // Press R to switch to Rectangle tool
@@ -46,6 +47,7 @@ test.describe('Tool Switching', () => {
 
     // Verify Rectangle tool is now active
     const newTool = await getActiveTool(page)
+
     expect(newTool).toBe('rectangle')
   })
 
@@ -63,6 +65,7 @@ test.describe('Tool Switching', () => {
 
     // Verify Rectangle tool is active
     const initialTool = await getActiveTool(page)
+
     expect(initialTool).toBe('rectangle')
 
     // Press V to switch to Select tool
@@ -71,6 +74,7 @@ test.describe('Tool Switching', () => {
 
     // Verify Select tool is now active
     const newTool = await getActiveTool(page)
+
     expect(newTool).toBe('select')
   })
 
@@ -90,6 +94,7 @@ test.describe('Tool Switching', () => {
 
     // Verify Rectangle tool is now active
     const newTool = await getActiveTool(page)
+
     expect(newTool).toBe('rectangle')
   })
 
@@ -106,6 +111,7 @@ test.describe('Tool Switching', () => {
 
     // Verify Select tool is now active
     const newTool = await getActiveTool(page)
+
     expect(newTool).toBe('select')
   })
 })

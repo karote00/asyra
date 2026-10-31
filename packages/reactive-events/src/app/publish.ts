@@ -74,16 +74,19 @@ const getTransactionBoundaryState = (
   }
 
   let state = ownerBoundaryStates.get(owner)
+
   if (!state) {
     state = createTransactionBoundaryState()
     ownerBoundaryStates.set(owner, state)
   }
+
   return state
 }
 
 export const startTransaction = () => {
   const owner = getTransactionOwner()
   const state = getTransactionBoundaryState(owner)
+
   if (state.depth === 0) {
     state.rollbackOnly = false
     state.rollbackOnlyFailure = undefined
@@ -95,6 +98,7 @@ export const startTransaction = () => {
       type: EventTypes.START_TRANSACTION
     })
   }
+
   state.depth += 1
 }
 
@@ -108,6 +112,7 @@ const cloneTransactionValue = <T>(
 
   const source = value as object
   const existing = seen.get(source)
+
   if (existing) {
     return existing as T
   }
@@ -115,17 +120,22 @@ const cloneTransactionValue = <T>(
   const clone: object = Array.isArray(value)
     ? []
     : Object.create(Object.getPrototypeOf(value))
+
   seen.set(source, clone)
   Reflect.ownKeys(source).forEach((key) => {
     if (Array.isArray(source) && key === 'length') {
       return
     }
+
     const descriptor = Object.getOwnPropertyDescriptor(source, key)
+
     if (!descriptor) {
       return
     }
+
     const snapshot =
       'value' in descriptor ? descriptor.value : Reflect.get(source, key)
+
     Object.defineProperty(clone, key, {
       value: cloneTransactionValue(snapshot, seen),
       enumerable: descriptor.enumerable,
@@ -182,9 +192,11 @@ export const issueDetachedTransactionOwnerBatch = <
       `event ${eventIndex} options`
     )
     const evidence = event.canonicalEvidence
+
     if (!evidence) {
       return
     }
+
     assertFrozenTransactionOwnerValue(
       evidence,
       `event ${eventIndex} canonical evidence`
@@ -196,6 +208,7 @@ export const issueDetachedTransactionOwnerBatch = <
     if (!evidence.sharedRecords) {
       return
     }
+
     assertFrozenTransactionOwnerValue(
       evidence.sharedRecords,
       `event ${eventIndex} shared records`
@@ -217,6 +230,7 @@ export const issueDetachedTransactionOwnerBatch = <
   })
 
   detachedTransactionValues.add(events)
+
   return events
 }
 
@@ -229,15 +243,18 @@ const deepFreezeTransactionValue = <T>(
   }
 
   const object = value as object
+
   if (seen.has(object)) {
     return value
   }
+
   seen.add(object)
   Reflect.ownKeys(object).forEach((key) => {
     deepFreezeTransactionValue(Reflect.get(object, key), seen)
   })
   Object.freeze(value)
   detachedTransactionValues.add(object)
+
   return value
 }
 
@@ -257,13 +274,17 @@ export const updateTransactionBatch = (
 
   const detachedEvents = detachTransactionEvents(events)
   const owner = getTransactionOwner()
+
   owner?.updateTransactionBatch(detachedEvents)
   const state = getTransactionBoundaryState(owner)
+
   if (state.depth > 0) {
     publishAppliedEventBatch(detachedEvents)
     state.pendingObserverEvents.push(...detachedEvents)
+
     return
   }
+
   publishEventsToObservers(detachedEvents)
 }
 
@@ -279,11 +300,13 @@ export const publishLocalProjectionEvents = (
   options?: LocalProjectionOptions
 ): void => {
   const state = getTransactionBoundaryState(getTransactionOwner())
+
   if (state.depth > 0) {
     publishAppliedEventBatch(events)
     state.pendingObserverEvents.push(...events)
     if (options) {
       const pending = state.pendingProjectionEvents.get(options.scope) ?? []
+
       pending.push(...events)
       if (options.immediate) {
         state.pendingProjectionEvents.delete(options.scope)
@@ -305,6 +328,7 @@ export const updateTransaction = (event: UpdateTransactionEvent) => {
 export const endTransaction = (options: EndTransactionOptions = {}) => {
   const owner = getTransactionOwner()
   const state = getTransactionBoundaryState(owner)
+
   if (state.depth <= 0) {
     return
   }
@@ -326,6 +350,7 @@ export const endTransaction = (options: EndTransactionOptions = {}) => {
         (event) => !state.deliveredProjectionEvents.has(event)
       )
     )
+
     state.rollbackOnly = false
     state.rollbackOnlyFailure = undefined
     state.pendingObserverEvents = []
@@ -334,6 +359,7 @@ export const endTransaction = (options: EndTransactionOptions = {}) => {
 
     let ownerFailed = false
     let ownerError: unknown
+
     try {
       owner?.endTransaction(payload)
     } catch (error) {
@@ -347,11 +373,13 @@ export const endTransaction = (options: EndTransactionOptions = {}) => {
       ) {
         publishCommittedEventsToObservers(pendingObserverEvents)
       }
+
       publishEvent({
         type: EventTypes.END_TRANSACTION,
         payload
       })
     }
+
     if (ownerFailed) {
       throw ownerError
     }
@@ -391,10 +419,12 @@ export function runTransaction<T>(
   startTransaction()
   try {
     const result = callback()
+
     if (isPromiseLike(result)) {
       return result.then(
         (value) => {
           endTransaction()
+
           return value
         },
         (error: unknown) => {
@@ -403,7 +433,9 @@ export function runTransaction<T>(
         }
       )
     }
+
     endTransaction()
+
     return result
   } catch (error) {
     rollbackTransaction(toTransactionFailure(error, options.failureKind))
@@ -453,17 +485,21 @@ const runHistoryWithRenderPolicy = async (
   options: CooperativeRenderOptions
 ): Promise<void> => {
   const owner = getTransactionOwner()
+
   if (resolveCooperativeRenderMode(options) === 'atomic') {
     owner?.[direction]()
   } else if (owner) {
     const progressiveReplay =
       direction === 'undo' ? owner.undoProgressively : owner.redoProgressively
+
     if (!progressiveReplay) {
       throw new Error(
         `The registered TransactionOwner does not support progressive ${direction}.`
       )
     }
+
     const maxItemsPerSlice = resolveCooperativeRenderMaxItemsPerSlice(options)
+
     await runTransaction(() =>
       progressiveReplay.call(
         owner,
@@ -497,6 +533,7 @@ export const renderPointerHover = (payload: string | RenderPointerPayload) => {
           elementId: payload
         }
       : payload
+
   publishEvent({
     type: EventTypes.POINTER_HOVER,
     payload: resolved
@@ -513,6 +550,7 @@ export const renderPointerLeave = (payload: string | RenderPointerPayload) => {
           elementId: payload
         }
       : payload
+
   publishEvent({
     type: EventTypes.POINTER_LEAVE,
     payload: resolved

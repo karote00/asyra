@@ -22,6 +22,7 @@ import {
 
 const type = 'test-material-layer'
 const collectionType = 'test-material-collection'
+
 const source = () => ({
   id: 'source',
   type,
@@ -29,11 +30,13 @@ const source = () => ({
   opacity: 0.8,
   sharedSource: true
 })
+
 const binding = (id: string, overrides: Record<string, unknown> = {}) => ({
   id,
   type,
   inheritance: { sourceId: 'source', overrides, childBindings: {} }
 })
+
 const register = () => {
   elementPropertyRegistry.register({ name: 'material', type }, 'test-owner')
   elementPropertyRegistry.register(
@@ -48,6 +51,7 @@ const register = () => {
     persistKeys: ['color', 'opacity'],
     valueKeys: ['color', 'opacity']
   }
+
   registerPropertyComponent(
     type,
     createPropertyComponentFromConfig(definition),
@@ -61,6 +65,7 @@ const register = () => {
         key: 'color',
         kind: 'string',
         defaultValue: '#000000',
+
         validate: (value) =>
           typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)
       },
@@ -68,6 +73,7 @@ const register = () => {
         key: 'opacity',
         kind: 'number',
         defaultValue: 1,
+
         validate: (value) =>
           typeof value === 'number' &&
           Number.isFinite(value) &&
@@ -88,6 +94,7 @@ const register = () => {
       collection: 'array-or-record' as const
     }
   }
+
   registerPropertyComponent(
     collectionType,
     createPropertyComponentFromConfig(collection),
@@ -105,6 +112,7 @@ describe('canonical property inheritance', () => {
 
   it('resolves two bindings against one source without flattening canonical state', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       a: binding('a', { opacity: 0 }),
@@ -135,6 +143,7 @@ describe('canonical property inheritance', () => {
       opacity: 0.4
     })
     const restored = new PropsManager()
+
     restored.load(manager.save())
     restored.updatePropertyById('source', 'color', '#334455')
     expect(restored.getPropertyById('a')?.getValue()).toEqual({
@@ -149,8 +158,10 @@ describe('canonical property inheritance', () => {
 
   it('rejects a missing or recursive source before replacing a usable document', () => {
     const manager = new PropsManager()
+
     manager.load({ source: source() })
     const before = manager.save()
+
     expect(() => manager.load({ a: binding('a') })).toThrow(/source/i)
     expect(manager.save()).toEqual(before)
     expect(() =>
@@ -176,6 +187,7 @@ describe('canonical property inheritance', () => {
         childBindings: { source: 'a' }
       }
     }
+
     manager.load({
       source: source(),
       other: { ...source(), id: 'other', color: '#445566' },
@@ -196,6 +208,7 @@ describe('canonical property inheritance', () => {
       expect.arrayContaining(['source', 'root', 'a', 'local'])
     )
     const restored = new PropsManager()
+
     restored.load(manager.save())
     expect(restored.getPropertyById('local')?.get('children' as never)).toEqual(
       ['other', 'a']
@@ -204,7 +217,9 @@ describe('canonical property inheritance', () => {
   })
   it('records equal-valued override presence and resets only that local field', () => {
     const manager = new PropsManager()
+
     manager.load({ source: source(), a: binding('a'), b: binding('b') })
+
     const apply = (state: unknown) =>
       manager.applyPreparedPropertyMutationBatch(
         manager.preparePropertyMutationBatch({
@@ -217,7 +232,9 @@ describe('canonical property inheritance', () => {
           ]
         })
       )
+
     const first = apply({ present: true, value: 0.8 })
+
     expect(first.evidence).toEqual([
       expect.objectContaining({
         id: 'a',
@@ -233,6 +250,7 @@ describe('canonical property inheritance', () => {
     expect(manager.getPropertyById('a')?.get('opacity' as never)).toBe(0.8)
     expect(manager.getPropertyById('b')?.get('opacity' as never)).toBe(0.3)
     const reset = apply({ present: false })
+
     expect(reset.evidence).toEqual([
       expect.objectContaining({
         before: { present: true, value: 0.8 },
@@ -245,8 +263,10 @@ describe('canonical property inheritance', () => {
 
   it('rejects invalid layers and source retirement without changing either consumer', () => {
     const manager = new PropsManager()
+
     manager.load({ source: source(), a: binding('a'), b: binding('b') })
     const before = manager.save()
+
     for (const change of [
       {
         layer: 'overrides',
@@ -273,6 +293,7 @@ describe('canonical property inheritance', () => {
       ).toThrow()
       expect(manager.save()).toEqual(before)
     }
+
     expect(() =>
       manager.preparePropertyMutationBatch({
         operations: [
@@ -295,6 +316,7 @@ describe('canonical property inheritance', () => {
 
   it('rejects direct field replacement on inherited data instead of flattening it', () => {
     const manager = new PropsManager()
+
     manager.load({ source: source(), a: binding('a') })
     expect(() =>
       manager.updateProperties({
@@ -307,6 +329,7 @@ describe('canonical property inheritance', () => {
   })
   it('creates a source-backed collection and child through the existing exact batch owner', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       root: {
@@ -352,12 +375,14 @@ describe('canonical property inheritance', () => {
     })
     const saved = manager.save()
     const restored = new PropsManager()
+
     restored.load(saved)
     expect(restored.save()).toEqual(saved)
   })
 
   it('does not remove the shared source when the last inherited binding is removed', () => {
     const manager = new PropsManager()
+
     manager.load({ source: source(), a: binding('a') })
     manager.updateProperties({
       operations: [
@@ -374,14 +399,17 @@ describe('canonical property inheritance', () => {
 
   it('rejects removal of a source still used by a binding without partially removing any record', () => {
     const manager = new PropsManager()
+
     manager.load({ source: source(), a: binding('a') })
     const before = manager.save()
+
     expect(() => manager.removeProperty(['source'])).toThrow(/source|inherit/i)
     expect(manager.save()).toEqual(before)
   })
 
   it('rejects source membership removal under a local child override and keeps other consumers', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       root: {
@@ -402,6 +430,7 @@ describe('canonical property inheritance', () => {
       }
     })
     const before = manager.save()
+
     expect(() =>
       manager.updateProperties({
         operations: [
@@ -414,6 +443,7 @@ describe('canonical property inheritance', () => {
 
   it('rejects direct mutations that would sever a dependent child override', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       root: {
@@ -434,6 +464,7 @@ describe('canonical property inheritance', () => {
       }
     })
     const before = manager.save()
+
     expect(() =>
       manager.getPropertyById('root')?.set('children' as never, [] as never)
     ).toThrow(/child binding/i)
@@ -472,6 +503,7 @@ describe('canonical property inheritance', () => {
       })
     )
     const change = result.evidence[0] as UpdatePropertyChange
+
     runInTransactionReplayMode('undo', () =>
       publishEvent({
         type: EventTypes.UPDATE_PROPERTY,
@@ -486,6 +518,7 @@ describe('canonical property inheritance', () => {
       binding('a', { color: '#abcdef', opacity: 0.2 })
     )
     const restored = new PropsManager()
+
     restored.load(propsManager.save())
     expect(restored.getPropertyById('a')?.getValue()).toEqual({
       color: '#abcdef',
@@ -506,6 +539,7 @@ describe('canonical property inheritance', () => {
       valueKeys: ['children'],
       children: { key: 'children', childType: recursive, mode: 'ids' as const }
     }
+
     registerPropertyComponent(
       recursive,
       createPropertyComponentFromConfig(config),
@@ -517,8 +551,10 @@ describe('canonical property inheritance', () => {
       fields: [{ key: 'children', kind: 'array', defaultValue: [] }]
     })
     const manager = new PropsManager()
+
     manager.load({ source: source() })
     const before = manager.save()
+
     expect(() =>
       manager.load({
         root: {
@@ -539,6 +575,7 @@ describe('canonical property inheritance', () => {
 
   it('rejects stale source preparation and performs no writes to unrelated properties', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       a: binding('a'),
@@ -559,6 +596,7 @@ describe('canonical property inheritance', () => {
         }
       ]
     })
+
     manager.updatePropertyById('source', 'opacity', 0.4)
     manager.cleanChanges()
     expect(() => manager.applyPreparedPropertyMutationBatch(prepared)).toThrow(
@@ -570,6 +608,7 @@ describe('canonical property inheritance', () => {
 
   it('admits remote creation and exact restore of the same sparse collection graph', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       root: {
@@ -598,6 +637,7 @@ describe('canonical property inheritance', () => {
     const creation = manager.runInPropertyCreationBatch(() =>
       manager.applyPropertyCreationBatch(prepared)
     )
+
     creation.complete()
     manager.cleanChanges()
     expect(manager.save().local).toEqual(components[1])
@@ -611,6 +651,7 @@ describe('canonical property inheritance', () => {
         componentId: 'local'
       }
     ])
+
     manager.applyRestoreProperties(restore)
     manager.cleanChanges()
     expect(manager.getPropertyById('local')?.get('children' as never)).toEqual([
@@ -622,6 +663,7 @@ describe('canonical property inheritance', () => {
 
   it('rolls back every local layer when a later component apply fails and permits a fresh retry', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       a: binding('a'),
@@ -630,18 +672,23 @@ describe('canonical property inheritance', () => {
     })
     const before = manager.save()
     const b = manager.getPropertyById('b')
+
     if (!b) {
       throw new Error('Missing test binding')
     }
+
     const load = b.load.bind(b)
     let fail = true
+
     b.load = (data) => {
       if (fail && data.inheritance?.overrides.opacity === 0.3) {
         fail = false
         throw new Error('component apply failed')
       }
+
       return load(data)
     }
+
     const request = {
       operations: [
         {
@@ -668,6 +715,7 @@ describe('canonical property inheritance', () => {
         }
       ]
     }
+
     expect(() =>
       manager.applyPreparedPropertyMutationBatch(
         manager.preparePropertyMutationBatch(request)
@@ -676,13 +724,17 @@ describe('canonical property inheritance', () => {
     expect(manager.save()).toEqual(before)
     expect(manager.changes).toEqual([])
     const unrelated = manager.getPropertyById('unrelated')
+
     if (!unrelated) {
       throw new Error('Missing unrelated test property')
     }
+
     const originalSave = unrelated.save.bind(unrelated)
+
     unrelated.save = () => {
       throw new Error('unrelated property was inspected')
     }
+
     manager.applyPreparedPropertyMutationBatch(
       manager.preparePropertyMutationBatch(request)
     )
@@ -695,6 +747,7 @@ describe('canonical property inheritance', () => {
   it('publishes source promotion before the new binding so the exact delta stream replays', () => {
     const manager = new PropsManager()
     const independent = { id: 'source', type, color: '#112233', opacity: 0.8 }
+
     manager.load({ source: independent })
     const result = manager.applyPreparedPropertyMutationBatch(
       manager.preparePropertyMutationBatch({
@@ -725,6 +778,7 @@ describe('canonical property inheritance', () => {
         ]
       })
     )
+
     expect(result.evidence[0]).toMatchObject({
       id: 'source',
       layer: 'sharedSource'
@@ -733,10 +787,12 @@ describe('canonical property inheritance', () => {
     for (const change of result.evidence) {
       publishEvent({ type: change.eventName, payload: change } as never)
     }
+
     expect(propsManager.save()).toEqual(manager.save())
   })
   it('removes an inherited slot after explicit child detachment without deleting its shared source', () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       root: {
@@ -762,6 +818,7 @@ describe('canonical property inheritance', () => {
         { kind: 'values', propertyId: 'root', values: { children: [] } }
       ]
     })
+
     expect(manager.getPropertyById('local')?.get('children' as never)).toEqual(
       []
     )
@@ -780,6 +837,7 @@ describe('canonical property inheritance', () => {
     for (const change of result.evidence) {
       publishEvent({ type: change.eventName, payload: change } as never)
     }
+
     expect(propsManager.save()).toEqual(manager.save())
   })
 })
@@ -797,8 +855,10 @@ describe('Owner-local property intentions', () => {
     sharedRoot: componentId === 'root',
     path: [{ key: 'children', childId: 'source' }]
   })
+
   const setup = () => {
     const manager = new PropsManager()
+
     manager.load({
       source: source(),
       other: { id: 'other', type, color: '#ffffff', opacity: 1 },
@@ -809,6 +869,7 @@ describe('Owner-local property intentions', () => {
         sharedSource: true
       }
     })
+
     return manager
   }
 
@@ -818,11 +879,13 @@ describe('Owner-local property intentions', () => {
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } },
       { kind: 'override', target: target('b'), values: { opacity: 0.6 } }
     ])
+
     expect(manager.save().root).not.toHaveProperty('inheritance')
     expect(prepared.rootBindings).toHaveLength(2)
     manager.applyPreparedPropertyMutationBatch(prepared.properties)
     const a = target('a', prepared.rootBindings[0].after)
     const b = target('b', prepared.rootBindings[1].after)
+
     expect(
       manager.readPropertyTargets([a, b]).map((item) => item.effective.opacity)
     ).toEqual([0.2, 0.6])
@@ -844,6 +907,7 @@ describe('Owner-local property intentions', () => {
     const reset = manager.preparePropertyIntentBatch([
       { kind: 'reset', target: a, keys: ['opacity'] }
     ])
+
     manager.applyPreparedPropertyMutationBatch(reset.properties)
     expect(manager.readPropertyTargets([a])[0]).toMatchObject({
       effective: { opacity: 0.9 },
@@ -869,9 +933,11 @@ describe('Owner-local property intentions', () => {
     const prepared = manager.preparePropertyIntentBatch([
       { kind: 'detach', target: target('a') }
     ])
+
     manager.applyPreparedPropertyMutationBatch(prepared.properties)
     const a = target('a', prepared.rootBindings[0].after)
     const read = manager.readPropertyTargets([a])[0]
+
     expect(read.mode).toBe('independent')
     expect(read.propertyId).not.toBe('source')
     manager.updateProperties({
@@ -888,6 +954,7 @@ describe('Owner-local property intentions', () => {
   it('rejects a later invalid path or conflicting local write before creating any prefix', () => {
     const manager = setup()
     const before = manager.save()
+
     expect(() =>
       manager.preparePropertyIntentBatch([
         { kind: 'override', target: target('a'), values: { opacity: 0.2 } },
@@ -916,11 +983,13 @@ describe('Owner-local property intentions', () => {
     const prepared = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(prepared.properties)
     const a = {
       ...target('a', prepared.rootBindings[0].after),
       expectedPropertyId: read.propertyId
     }
+
     expect(() =>
       manager.preparePropertyIntentBatch([
         { kind: 'override', target: a, values: { opacity: 0.5 } }
@@ -930,6 +999,7 @@ describe('Owner-local property intentions', () => {
   it('reports logical child slots separately from effective bindings after override and re-share', () => {
     const manager = setup()
     const root = { ...target('a'), path: [] }
+
     expect(manager.readPropertyTargets([root])[0].children).toEqual([
       { key: 'children', childId: 'source', propertyId: 'source' },
       { key: 'children', childId: 'other', propertyId: 'other' }
@@ -937,6 +1007,7 @@ describe('Owner-local property intentions', () => {
     const prepared = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(prepared.properties)
     const updatedRoot = {
       ...target('a', prepared.rootBindings[0].after),
@@ -945,6 +1016,7 @@ describe('Owner-local property intentions', () => {
     const local = manager.readPropertyTargets([
       target('a', prepared.rootBindings[0].after)
     ])[0]
+
     expect(manager.readPropertyTargets([updatedRoot])[0].children[0]).toEqual({
       key: 'children',
       childId: 'source',
@@ -966,8 +1038,10 @@ describe('Owner-local property intentions', () => {
         sourceId: 'other'
       }
     ])
+
     manager.applyPreparedPropertyMutationBatch(share.properties)
     const view = manager.readPropertyTargets([updatedRoot])[0]
+
     expect(view.children[0].childId).toBe('source')
     expect(
       manager.readPropertyTargets([
@@ -986,12 +1060,14 @@ describe('Owner-local property intentions', () => {
     const first = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(first.properties)
     const a = target('a', first.rootBindings[0].after)
     const other = { ...a, path: [{ key: 'children', childId: 'other' }] }
     const next = manager.preparePropertyIntentBatch([
       { kind: 'override', target: other, values: { color: '#ff0000' } }
     ])
+
     expect(next.rootBindings).toEqual([])
     manager.applyPreparedPropertyMutationBatch(next.properties)
     expect(
@@ -1004,6 +1080,7 @@ describe('Owner-local property intentions', () => {
     const detach = manager.preparePropertyIntentBatch([
       { kind: 'detach', target: other }
     ])
+
     manager.applyPreparedPropertyMutationBatch(detach.properties)
     expect(manager.readPropertyTargets([other])[0].mode).toBe('independent')
     expect(manager.getPropertyById(oldChildId)).toBeUndefined()
@@ -1014,6 +1091,7 @@ describe('Owner-local property intentions', () => {
   it('rejects conflicting identity and field intentions rather than leaking unowned allocations', () => {
     const manager = setup()
     const before = manager.save()
+
     expect(() =>
       manager.preparePropertyIntentBatch([
         { kind: 'override', target: target('a'), values: { opacity: 0.2 } },
@@ -1028,6 +1106,7 @@ describe('Owner-local property intentions', () => {
     const empty = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: {} }
     ])
+
     expect(empty.rootBindings).toEqual([])
     manager.applyPreparedPropertyMutationBatch(empty.properties)
     expect(manager.save()).toEqual(before)
@@ -1048,9 +1127,11 @@ describe('Owner-local property intentions', () => {
     const prepared = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(prepared.properties)
     const a = target('a', prepared.rootBindings[0].after)
     const local = manager.readPropertyTargets([a])[0]
+
     expect(() =>
       manager.prepareSharedPropertySourceBatch([
         { propertyId: local.propertyId, values: { opacity: 0.9 } }
@@ -1059,6 +1140,7 @@ describe('Owner-local property intentions', () => {
     const sourceEdit = manager.prepareSharedPropertySourceBatch([
       { propertyId: 'source', values: { opacity: 0.9, color: '#aabbcc' } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(sourceEdit)
     expect(manager.readPropertyTargets([a])[0].effective).toMatchObject({
       opacity: 0.2,
@@ -1073,6 +1155,7 @@ describe('Owner-local property intentions', () => {
     const first = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(first.properties)
     const shared = {
       ...target('a', first.rootBindings[0].after),
@@ -1081,6 +1164,7 @@ describe('Owner-local property intentions', () => {
     const reset = manager.preparePropertyIntentBatch([
       { kind: 'reset', target: shared, keys: ['opacity'] }
     ])
+
     manager.applyPreparedPropertyMutationBatch(reset.properties)
     expect(reset.rootBindings).toHaveLength(1)
     const local = {
@@ -1088,6 +1172,7 @@ describe('Owner-local property intentions', () => {
       root: { ...shared.root, componentId: reset.rootBindings[0].after },
       sharedRoot: false
     }
+
     expect(manager.readPropertyTargets([local])[0].effective.opacity).toBe(0.8)
     expect(manager.readPropertyTargets([shared])[0].effective.opacity).toBe(0.2)
   })
@@ -1097,12 +1182,14 @@ describe('Owner-local property intentions', () => {
     const detached = manager.preparePropertyIntentBatch([
       { kind: 'detach', target: target('a') }
     ])
+
     manager.applyPreparedPropertyMutationBatch(detached.properties)
     const local = target('a', detached.rootBindings[0].after)
     const before = manager.readPropertyTargets([local])[0]
     const edit = manager.preparePropertyIntentBatch([
       { kind: 'override', target: local, values: { opacity: 0.3 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(edit.properties)
     expect(manager.readPropertyTargets([local])[0]).toMatchObject({
       propertyId: before.propertyId,
@@ -1116,9 +1203,11 @@ describe('Owner-local property intentions', () => {
     const first = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(first.properties)
     const local = target('a', first.rootBindings[0].after)
     const before = manager.readPropertyTargets([local, target('b')])
+
     expect(() =>
       manager.preparePropertyIntentBatch([
         { kind: 'share', target: local, sourceId: 'other' }
@@ -1128,10 +1217,12 @@ describe('Owner-local property intentions', () => {
     const reset = manager.preparePropertyIntentBatch([
       { kind: 'reset', target: local, keys: ['opacity'] }
     ])
+
     manager.applyPreparedPropertyMutationBatch(reset.properties)
     const share = manager.preparePropertyIntentBatch([
       { kind: 'share', target: local, sourceId: 'other' }
     ])
+
     manager.applyPreparedPropertyMutationBatch(share.properties)
     expect(manager.readPropertyTargets([local])[0]).toMatchObject({
       sourceId: 'other',
@@ -1146,8 +1237,10 @@ describe('Owner-local property intentions', () => {
     const share = manager.preparePropertyIntentBatch([
       { kind: 'share', target: target('a'), sourceId: 'other' }
     ])
+
     manager.applyPreparedPropertyMutationBatch(share.properties)
     const local = target('a', share.rootBindings[0].after)
+
     expect(manager.readPropertyTargets([local])[0]).toMatchObject({
       mode: 'source-backed',
       sourceId: 'other',
@@ -1171,6 +1264,7 @@ describe('Owner-local property intentions', () => {
     const first = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(first.properties)
     const local = {
       ...target('a', first.rootBindings[0].after),
@@ -1185,11 +1279,13 @@ describe('Owner-local property intentions', () => {
         set: { added: { opacity: 0.5 } }
       }
     ])
+
     manager.applyPreparedPropertyMutationBatch(next.properties)
     expect(
       manager.readPropertyTargets([local])[0].effective.children
     ).toContain('added')
     const reloaded = new PropsManager()
+
     reloaded.load(manager.save())
     expect(reloaded.save()).toEqual(manager.save())
   })
@@ -1197,17 +1293,20 @@ describe('Owner-local property intentions', () => {
   it('preserves canonical record creation, exact retirement and resurrection identities', () => {
     const manager = setup()
     const records = [binding('canonical-local', { opacity: 0.4 })]
+
     const create = () =>
       manager.preparePropertyMutationBatch({
         operations: [
           { kind: 'create-exact-property-records', components: records }
         ]
       })
+
     manager.applyPreparedPropertyMutationBatch(create())
     expect(manager.getPropertyById('canonical-local')?.save()).toEqual(
       records[0]
     )
     const before = manager.save()
+
     expect(() =>
       manager.preparePropertyMutationBatch({
         operations: [
@@ -1235,10 +1334,12 @@ describe('Owner-local property intentions', () => {
     const first = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(first.properties)
     const local = target('a', first.rootBindings[0].after)
     const child = manager.readPropertyTargets([local])[0].propertyId
     const raw = manager.getPropertyById(child)?.save()
+
     manager.applyPreparedPropertyMutationBatch(
       manager.preparePropertyMutationBatch({
         operations: [
@@ -1259,6 +1360,7 @@ describe('Owner-local property intentions', () => {
     )
     expect(manager.getPropertyById(child)?.save()).toEqual(raw)
     const before = manager.save()
+
     expect(() =>
       manager.preparePropertyMutationBatch({
         operations: [
@@ -1305,6 +1407,7 @@ describe('Owner-local property intentions', () => {
       }
     ]
     const before = manager.save()
+
     expect(() =>
       manager.preparePropertyMutationBatch({
         operations: [
@@ -1360,12 +1463,14 @@ describe('Owner-local property intentions', () => {
         remove: ['other']
       }
     ])
+
     manager.applyPreparedPropertyMutationBatch(patch.properties)
     const localRoot = {
       ...rootTarget,
       root: { ...rootTarget.root, componentId: patch.rootBindings[0].after },
       sharedRoot: false
     }
+
     expect(
       manager.readPropertyTargets([localRoot])[0].effective.children
     ).toHaveLength(2)
@@ -1373,6 +1478,7 @@ describe('Owner-local property intentions', () => {
       ...localRoot,
       path: [{ key: 'children', childId: 'source' }]
     }
+
     expect(manager.readPropertyTargets([child])[0].effective.opacity).toBe(0.2)
     expect(
       manager.readPropertyTargets([target('b')])[0].effective.opacity
@@ -1387,6 +1493,7 @@ describe('Owner-local property intentions', () => {
         remove: ['added']
       }
     ])
+
     manager.applyPreparedPropertyMutationBatch(next.properties)
     expect(manager.readPropertyTargets([child])[0].effective.opacity).toBe(0.4)
     expect(
@@ -1403,6 +1510,7 @@ describe('Owner-local property intentions', () => {
         }
       }
     ])
+
     manager.applyPreparedPropertyMutationBatch(replacement.properties)
     expect(manager.readPropertyTargets([child])[0].effective.opacity).toBe(0.4)
     const clear = manager.preparePropertyIntentBatch([
@@ -1413,6 +1521,7 @@ describe('Owner-local property intentions', () => {
         remove: [actualId]
       }
     ])
+
     manager.applyPreparedPropertyMutationBatch(clear.properties)
     expect(
       manager.readPropertyTargets([localRoot])[0].effective.children
@@ -1420,11 +1529,13 @@ describe('Owner-local property intentions', () => {
     const reset = manager.preparePropertyIntentBatch([
       { kind: 'reset', target: localRoot, keys: ['children'] }
     ])
+
     manager.applyPreparedPropertyMutationBatch(reset.properties)
     expect(
       manager.readPropertyTargets([localRoot])[0].effective.children
     ).toEqual(['source', 'other'])
     const reloaded = new PropsManager()
+
     reloaded.load(manager.save())
     expect(reloaded.save()).toEqual(manager.save())
   })
@@ -1434,6 +1545,7 @@ describe('Owner-local property intentions', () => {
     const local = manager.preparePropertyIntentBatch([
       { kind: 'override', target: target('a'), values: { opacity: 0.2 } }
     ])
+
     manager.applyPreparedPropertyMutationBatch(local.properties)
     const oldRootId = local.rootBindings[0].after
     const rootTarget = { ...target('a', oldRootId), path: [] }
@@ -1451,6 +1563,7 @@ describe('Owner-local property intentions', () => {
         }
       ]
     })
+
     manager.applyPreparedPropertyMutationBatch(detach.properties)
     manager.applyPreparedPropertyMutationBatch(cleanup)
     expect(manager.getPropertyById(oldRootId)).toBeUndefined()
@@ -1460,15 +1573,18 @@ describe('Owner-local property intentions', () => {
         root: { ...rootTarget.root, componentId: detach.rootBindings[0].after }
       }
     ])[0]
+
     expect(newRoot.mode).toBe('independent')
     expect(newRoot.effective.children).toHaveLength(2)
     const reloaded = new PropsManager()
+
     reloaded.load(manager.save())
     expect(reloaded.save()).toEqual(manager.save())
   })
 
   it('keeps field masks and child links distinct in replace-latest history evidence', () => {
     const manager = new PropsManager()
+
     manager.load({
       children: { ...source(), id: 'children' },
       local: {
@@ -1493,12 +1609,17 @@ describe('Owner-local property intentions', () => {
       }
     })
     const events: UpdateTransactionEvent[] = []
+
     runWithTransactionOwner(
       {
         startTransaction: () => undefined,
+
         endTransaction: () => undefined,
+
         undo: () => undefined,
+
         redo: () => undefined,
+
         updateTransactionBatch: (batch) => {
           events.push(...batch)
         }

@@ -8,14 +8,18 @@ const identities = [
     validation: { width: 100, height: 200 }
   }
 ]
+
 const setup = () => {
   const owner = createReferenceDecisions()
+
   owner.setRequirements({
     detail: { requiredUnits: ['entrance', 'crown'] },
     view: {}
   })
+
   return owner
 }
+
 const use = (id = 'entrance') => ({
   id,
   criterionId: 'detail',
@@ -24,20 +28,24 @@ const use = (id = 'entrance') => ({
   region: { x: 10, y: 20, width: 30, height: 40 },
   limitations: []
 })
+
 const decision = (uses = [use()]) => ({
   referenceId: identities[0].referenceId,
   status: 'accepted',
   reason: 'The primary agent assessed this exact area.',
   uses
 })
+
 const update = (owner: ReturnType<typeof setup>, value: unknown = decision()) =>
   owner.update(() => identities, {
     requirementRevision: 1,
     referenceDecisions: [value]
   })
+
 describe('explicit reference uses', () => {
   it('rejects recorded criterion-only acceptance without altering retained state', () => {
     const owner = setup()
+
     expect(() =>
       update(owner, {
         referenceId: identities[0].referenceId,
@@ -51,10 +59,12 @@ describe('explicit reference uses', () => {
   })
   it('issues exact request-bound use receipts and preserves independent revisions', () => {
     const owner = setup()
+
     update(owner, decision([use(), use('crown')]))
     const [entry] = owner.snapshot()
     const entrance = entry.uses[0].receipt
     const crown = entry.uses[1].receipt
+
     expect(
       owner.resolve(entrance, 'visual', {
         criterionId: 'detail',
@@ -78,17 +88,20 @@ describe('explicit reference uses', () => {
     expect(() => owner.resolve(entrance, 'visual')).toThrow()
     expect(owner.resolve(crown, 'visual').receipt).toEqual(crown)
     const other = setup()
+
     update(other, decision([use(), use('crown')]))
     expect(() => other.resolve(crown, 'visual')).toThrow()
   })
   it('preserves use revisions when explanation or declaration order changes', () => {
     const owner = setup()
+
     update(owner, decision([use(), use('crown')]))
     const receipts = owner.snapshot()[0].uses.map((item) => item.receipt)
     const changed = update(owner, {
       ...decision([use('crown'), use()]),
       reason: 'Clarified primary-agent explanation only'
     })
+
     expect(changed.changedDependencies).toEqual([])
     for (const receipt of receipts) {
       expect(owner.resolve(receipt, 'visual').receipt).toEqual(receipt)
@@ -96,8 +109,10 @@ describe('explicit reference uses', () => {
   })
   it('validates every declaration atomically and allows explicit whole image', () => {
     const owner = setup()
+
     update(owner)
     const before = owner.snapshot()
+
     expect(() =>
       update(
         owner,
@@ -127,13 +142,16 @@ describe('explicit reference uses', () => {
   })
   it('retires rejected uses without losing bytes and rejects stale requirement receipts', () => {
     const owner = setup()
+
     update(owner)
     const receipt = owner.snapshot()[0].uses[0].receipt
+
     update(owner, { ...decision([]), status: 'rejected' })
     expect(() => owner.resolve(receipt, 'visual')).toThrow()
     expect(owner.snapshot()[0].referenceId).toBe(identities[0].referenceId)
     update(owner)
     const current = owner.snapshot()[0].uses[0].receipt
+
     owner.setRequirements({ detail: { requiredUnits: ['entrance'] } })
     expect(() => owner.resolve(current, 'visual')).toThrow()
   })
@@ -148,8 +166,10 @@ describe('reference use downstream integration', () => {
     const results = createDesignCheckResults()
     const review = createLocalDesignReview({
       results,
+
       validateReferences: () => identities
     })
+
     review.record({
       phase: 'plan',
       method: 'Review exact parts',
@@ -170,24 +190,31 @@ describe('reference use downstream integration', () => {
         }
       }
     })
+
     const select = (uses = [use(), use('crown')]) =>
       review.selectReferences([1], {
         requirementRevision: 1,
         referenceDecisions: [decision(uses)]
       })
+
     const receipts = () =>
       review
         .correctionContext()
         .referenceDecisions[0].uses.map((item) => item.receipt)
+
     select()
+
     return { review, results, select, receipts }
   }
+
   it('preserves exact reference uses in scope recovery and rejects later source changes', () => {
     const { review, select, receipts } = setupReview()
     const first = review.inspect('entrance', true, true)?.inspectionId
+
     if (!first) {
       throw new Error('Expected retained first inspection')
     }
+
     const selection = {
       criterionId: 'detail',
       unitId: 'entrance',
@@ -195,6 +222,7 @@ describe('reference use downstream integration', () => {
       referenceUses: [receipts()[0]]
     }
     const bound = review.bindReview('visual', [selection])
+
     review.recordBoundReview({
       ...bound,
       final: false,
@@ -210,19 +238,23 @@ describe('reference use downstream integration', () => {
       width: 10,
       height: 10
     })?.inspectionId
+
     if (!second) {
       throw new Error('Expected retained second inspection')
     }
+
     const requested = [{ ...selection, inspectionIds: [second] }]
     const saved = structuredClone(requested)
     const before = review.readChecks({ includePassed: true })
     const recovery = JSON.parse(
       JSON.stringify(review.judgmentHandoff([second], 'visual', requested))
     )
+
     expect(requested).toEqual(saved)
     expect(review.readChecks({ includePassed: true })).toEqual(before)
     expect(recovery.next.arguments.bindChecks[0]).toMatchObject(saved[0])
     const retry = recovery.next.arguments.bindChecks
+
     retry[0].supersedes.reason = 'Review the newly requested local scope'
     expect(review.bindReview('visual', retry).checks[0].referenceUses).toEqual(
       selection.referenceUses
@@ -232,6 +264,7 @@ describe('reference use downstream integration', () => {
       use('crown')
     ])
     const rejected = review.judgmentHandoff([second], 'visual', retry)
+
     expect(rejected).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
@@ -257,9 +290,11 @@ describe('reference use downstream integration', () => {
       width: 20,
       height: 20
     })?.inspectionId
+
     if (!whole || !entrance || !crown) {
       throw new Error('Fixture capture unavailable')
     }
+
     const bound = review.bindReview('visual', [
       { criterionId: 'view', inspectionIds: [whole] },
       {
@@ -284,6 +319,7 @@ describe('reference use downstream integration', () => {
         evidence: 'Observed exact source correspondence'
       }))
     }
+
     expect(review.recordBoundReview(submit)).toMatchObject({ accepted: true })
     const independent = review
       .readChecks({ includePassed: true })
@@ -296,6 +332,7 @@ describe('reference use downstream integration', () => {
         referenceUses: [receipts()[0]]
       }
     ])
+
     select([
       { ...use(), region: { x: 11, y: 20, width: 30, height: 40 } },
       use('crown')
@@ -326,6 +363,7 @@ describe('reference use downstream integration', () => {
         referenceUses: [receipts()[0]]
       }
     ])
+
     expect(
       review.recordBoundReview({
         ...repaired,
@@ -345,6 +383,7 @@ describe('reference use downstream integration', () => {
   })
   it('retains an independent unit when a shared fact changes only its entrance use binding', () => {
     const { review } = setupReview()
+
     const select = (width = 30) =>
       review.selectReferences([1], {
         requirementRevision: 1,
@@ -359,11 +398,14 @@ describe('reference use downstream integration', () => {
           ])
         ]
       })
+
     select()
+
     const receipts = () =>
       review
         .correctionContext()
         .referenceDecisions[0].uses.map((item) => item.receipt)
+
     const fact = {
       id: 'facade',
       statement: 'Observed source facade',
@@ -372,6 +414,7 @@ describe('reference use downstream integration', () => {
       verification: 'Primary agent observed the image',
       dependencies: [{ key: 'source-facade', version: '1' }]
     }
+
     const binding = (
       unitId: string,
       receipt: ReturnType<typeof receipts>[number]
@@ -382,6 +425,7 @@ describe('reference use downstream integration', () => {
       elementIds: [unitId],
       referenceUses: [receipt]
     })
+
     review.record({
       phase: 'facts',
       facts: [fact],
@@ -390,18 +434,24 @@ describe('reference use downstream integration', () => {
         binding('crown', receipts()[1])
       ]
     })
+
     const capture = (id: string, overview = false) => {
       const image = review.inspect(id, true, overview)
+
       if (!image) {
         throw new Error('Missing fixture capture')
       }
+
       return image.inspectionId
     }
+
     const whole = capture('tower', true),
       entrance = capture('entrance'),
       crown = capture('crown')
+
     const pass = (selections: Parameters<typeof review.bindReview>[1]) => {
       const bound = review.bindReview('visual', selections)
+
       return review.recordBoundReview({
         ...bound,
         final: true,
@@ -412,6 +462,7 @@ describe('reference use downstream integration', () => {
         }))
       })
     }
+
     pass([
       { criterionId: 'view', inspectionIds: [whole] },
       { criterionId: 'detail', unitId: 'entrance', inspectionIds: [entrance] },
@@ -420,6 +471,7 @@ describe('reference use downstream integration', () => {
     const before = review
       .readChecks({ includePassed: true })
       .items.find((item) => item.unitId === 'crown')
+
     select(31)
     expect(
       review
@@ -446,11 +498,13 @@ describe('reference use downstream integration', () => {
   })
   it('keeps preparation independent of unrelated uses and refuses changed use at apply admission', async () => {
     const { review, results } = setupReview()
+
     const sourceUse = (id: string, unitId: string) => ({
       ...use(unitId),
       id,
       purpose: 'preparation'
     })
+
     const select = (width = 30) =>
       review.selectReferences([1], {
         requirementRevision: 1,
@@ -464,18 +518,22 @@ describe('reference use downstream integration', () => {
           ])
         ]
       })
+
     select()
     const receipts = review
       .correctionContext()
       .referenceDecisions[0].uses.map((item) => item.receipt)
     const owner = createPreparedDesignReview({
       results,
+
       resolveRecipe: () => ({
         recipe: { type: 'rect', width: 10, height: 20 },
         findings: [],
         elementCount: 1
       }),
+
       context: (uses) => review.preparationContext(uses),
+
       resolveAttachment: async () => ({
         workspaceId: 'workspace',
         parentId: 'workspace',
@@ -486,9 +544,11 @@ describe('reference use downstream integration', () => {
         ],
         evidence: { sessionId: 'source-use', revision: 1 }
       }),
+
       attachmentCurrent: async () => true
     })
     const signal = new AbortController().signal
+
     await owner.review(
       { artifactId: 'entry', referenceUses: [receipts[0]] },
       signal
@@ -516,6 +576,7 @@ import sharp from 'sharp'
 import { createLocalImageCheck } from '../local-image-check'
 it('revalidates an explicit reference use after native pixel work without publishing a late pass', async () => {
   const references = setup()
+
   update(references, {
     ...decision(),
     uses: [{ ...use(), purpose: 'pixel-comparison', region: 'whole' }]
@@ -531,6 +592,7 @@ it('revalidates an explicit reference use after native pixel work without publis
   let validations = 0
   const owner = createLocalImageCheck({
     results,
+
     inspection: () => ({
       target: 'entrance',
       dataUrl,
@@ -538,17 +600,22 @@ it('revalidates an explicit reference use after native pixel work without publis
       background: '#ffffff',
       region: { x: 0, y: 0, width: 2, height: 2 }
     }),
+
     validate: async () => {
       if (++validations === 2) {
         update(references, { ...decision([]), status: 'rejected' })
       }
+
       return true
     },
+
     reference: (_index, use) => {
       references.resolve(use, 'pixel-comparison')
+
       return { referenceId: receipt.referenceId, dataUrl }
     }
   })
+
   await expect(
     owner.call(
       {
@@ -568,6 +635,7 @@ it('revalidates an explicit reference use after native pixel work without publis
 
 it('rejects all three recorded broad source decisions before any consumer can use them', () => {
   const owner = setup()
+
   for (const decision of recordedReferences.input.referenceDecisions) {
     expect(() =>
       owner.update(

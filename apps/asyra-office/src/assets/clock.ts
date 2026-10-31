@@ -3,18 +3,21 @@ import { append, box, emptyMesh, lathe, type Mesh } from './geometry'
 import { part, type AssetPart } from './catalog'
 import { roundedTaper } from './rounded-turning'
 import { requiredSpecValue } from './specification'
+
 export function wallClock(): AssetPart[] {
   const source = requiredSpecValue(
     specification.modules.find((m) => m.moduleId === 'wall-clock'),
     'wall-clock'
   )
   const pieces: AssetPart[] = []
+
   const add = (id: string, mesh: Mesh, material: string) => {
     const palette = specification.materials as Record<
       string,
       { baseColorSRGB: string; roughness: number }
     >
     const mat = requiredSpecValue(palette[material], material)
+
     pieces.push(
       part(
         id,
@@ -25,10 +28,12 @@ export function wallClock(): AssetPart[] {
       )
     )
   }
+
   for (const c of source.components) {
     if (!('yMin' in c) || !('material' in c)) {
       throw new Error('Non-clock component in clock source')
     }
+
     if (c.primitive === 'cylinder') {
       const radius = requiredSpecValue(c.radius, 'clock radius'),
         min = requiredSpecValue(c.yMin, 'clock yMin'),
@@ -42,6 +47,7 @@ export function wallClock(): AssetPart[] {
           64
         ),
         placed = emptyMesh()
+
       append(placed, mesh, [0, 0, 0], [90, 0, 0])
       add(c.partId, placed, c.material)
     } else if (c.primitive === 'annular-cylinder') {
@@ -64,6 +70,7 @@ export function wallClock(): AssetPart[] {
           96
         ),
         placed = emptyMesh()
+
       append(placed, ring, [0, 0, 0], [90, 0, 0])
       add(c.partId, placed, c.material)
     } else if (c.primitive === 'radial-array-of-capsules') {
@@ -83,14 +90,17 @@ export function wallClock(): AssetPart[] {
             0.001
           ),
           placed = emptyMesh()
+
         append(placed, mesh, [0, 0, 0], [0, 0, (-angle * 180) / Math.PI])
         for (let j = 0; j < placed.positions.length; j += 3) {
           const x = placed.positions[j],
             z = placed.positions[j + 1]
+
           placed.positions[j] = x + r * Math.sin(angle)
           placed.positions[j + 1] = -0.044 + placed.positions[j + 2]
           placed.positions[j + 2] = z + r * Math.cos(angle)
         }
+
         add(`index-${i}`, placed, c.material)
       }
     } else if (c.primitive === 'extruded-planar-polygon') {
@@ -98,6 +108,7 @@ export function wallClock(): AssetPart[] {
         n = vertices.length,
         angle = (requiredSpecValue(c.angle, 'hand angle') * Math.PI) / 180,
         mesh = emptyMesh()
+
       for (const y of [
         requiredSpecValue(c.yMin, 'hand front'),
         requiredSpecValue(c.yMax, 'hand back')
@@ -111,17 +122,22 @@ export function wallClock(): AssetPart[] {
           mesh.uvs.push(0, 0)
         }
       }
+
       for (let i = 1; i < n - 1; i++) {
         mesh.indices.push(0, i, i + 1, n, n + i + 1, n + i)
       }
+
       for (let i = 0; i < n; i++) {
         const j = (i + 1) % n
+
         mesh.indices.push(i, i + n, j + n, i, j + n, j)
       }
+
       add(c.partId, mesh, c.material)
     } else {
       throw new Error(`Unsupported clock part ${c.partId}`)
     }
   }
+
   return pieces
 }

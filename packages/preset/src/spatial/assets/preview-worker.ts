@@ -27,7 +27,9 @@ function validateAsset(input: unknown): asserts input is VisualAsset {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid GLB worker result')
   }
+
   const asset = input as VisualAsset
+
   if (
     asset.format !== 'restricted-glb-v0' ||
     !asset.source ||
@@ -47,8 +49,10 @@ function validateAsset(input: unknown): asserts input is VisualAsset {
   ) {
     throw new Error('Invalid GLB worker result')
   }
+
   let vertices = 0,
     indices = 0
+
   for (const mesh of asset.meshes) {
     if (
       !mesh ||
@@ -77,9 +81,11 @@ function validateAsset(input: unknown): asserts input is VisualAsset {
     ) {
       throw new Error('Invalid GLB worker result')
     }
+
     vertices += mesh.positions.length / 3
     indices += mesh.indices.length
   }
+
   if (vertices > GLB_LIMITS.vertices || indices > GLB_LIMITS.indices) {
     throw new Error('Invalid GLB worker result')
   }
@@ -89,16 +95,20 @@ function deepFreeze<T>(input: T, seen = new WeakSet<object>()): T {
   if (!input || typeof input !== 'object' || seen.has(input)) {
     return input
   }
+
   seen.add(input)
   for (const value of Object.values(input)) {
     deepFreeze(value, seen)
   }
+
   return Object.freeze(input)
 }
 
 export class RestrictedGlbPreviewWorker {
   private nextId = 1
+
   private closed = false
+
   private readonly jobs = new Set<ActiveJob>()
 
   constructor(private readonly createWorker: WorkerFactory) {}
@@ -107,23 +117,33 @@ export class RestrictedGlbPreviewWorker {
     if (this.closed) {
       return Promise.reject(new Error('GLB preview worker is closed'))
     }
+
     if (signal?.aborted) {
       return Promise.reject(abortError())
     }
+
     if (input.byteLength < 1 || input.byteLength > GLB_LIMITS.bytes) {
       return Promise.reject(new Error('GLB input byte limit exceeded'))
     }
+
     const startedAt = Date.now()
     const bytes = new Uint8Array(input),
       id = this.nextId++,
       worker = this.createWorker()
+
     return new Promise<VisualAsset>((resolve, reject) => {
       let settled = false
-      const job: ActiveJob = { worker, reject: (error) => settle(error) }
+      const job: ActiveJob = {
+        worker,
+
+        reject: (error) => settle(error)
+      }
+
       const settle = (error?: Error, asset?: VisualAsset) => {
         if (settled) {
           return
         }
+
         settled = true
         clearTimeout(deadline)
         signal?.removeEventListener('abort', abort)
@@ -140,21 +160,29 @@ export class RestrictedGlbPreviewWorker {
           reject(new Error('GLB preview returned no asset'))
         }
       }
+
       const abort = () => settle(abortError())
+
       const expire = () =>
         settle(new Error('GLB import exceeded its five-second deadline'))
+
       worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
         if (settled) {
           return
         }
+
         if (Date.now() - startedAt >= GLB_LIMITS.deadlineMs) {
           expire()
+
           return
         }
+
         const response = event.data
+
         if (!response || response.id !== id) {
           return
         }
+
         if (!response.ok) {
           settle(
             new Error(
@@ -163,11 +191,14 @@ export class RestrictedGlbPreviewWorker {
                 : 'GLB preview worker failed'
             )
           )
+
           return
         }
+
         try {
           validateAsset(response.asset)
           const asset = deepFreeze(structuredClone(response.asset))
+
           if (Date.now() - startedAt >= GLB_LIMITS.deadlineMs) {
             expire()
           } else {
@@ -181,6 +212,7 @@ export class RestrictedGlbPreviewWorker {
           )
         }
       }
+
       worker.onerror = (event) =>
         settle(new Error(event.message || 'GLB preview worker crashed'))
       worker.onmessageerror = () =>
@@ -191,6 +223,7 @@ export class RestrictedGlbPreviewWorker {
         expire,
         Math.max(0, GLB_LIMITS.deadlineMs - (Date.now() - startedAt))
       )
+
       try {
         worker.postMessage({ id, bytes: bytes.buffer }, [bytes.buffer])
       } catch (error) {
@@ -205,6 +238,7 @@ export class RestrictedGlbPreviewWorker {
     if (this.closed) {
       return
     }
+
     this.closed = true
     for (const job of [...this.jobs]) {
       job.reject(abortError())

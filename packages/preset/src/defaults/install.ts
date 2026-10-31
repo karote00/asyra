@@ -38,6 +38,7 @@ const presetDefaultModules: PresetDefaultModule[] = [
   { id: PresetDefaults.VIEWPORT, install: installViewportDefault },
   { id: PresetDefaults.UI_CONTEXT, install: installUIContextDefault }
 ]
+
 presetDefaultModules.forEach(Object.freeze)
 
 export const PRESET_DEFAULT_MODULES: readonly PresetDefaultModule[] =
@@ -69,6 +70,7 @@ export const installPresetDefaults = ({
     if (!requested.has(module.id)) {
       return
     }
+
     registerCleanup(
       `default:${module.id}:owned-state`,
       createOwnedStateCleanup(core)

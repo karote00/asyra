@@ -17,11 +17,14 @@ const record = (sequence: number, event = 'ai_request_trace') => ({
 
 it('resumes persisted evidence after collector restart without duplicating the prefix', async () => {
   const root = resolve('tmp')
+
   await mkdir(root, { recursive: true })
   const directory = await mkdtemp(join(root, 'record-restart-'))
   let collector = createFileRecordCollector({ directory })
+
   try {
     const prefix = [record(0, 'ai_request_started'), record(1)]
+
     expect(await collector.accept(prefix)).toMatchObject({
       complete: false,
       acknowledgedSequence: 1
@@ -46,6 +49,7 @@ it('resumes persisted evidence after collector restart without duplicating the p
       .trim()
       .split('\n')
       .map((line) => JSON.parse(line))
+
     expect(lines).toEqual([...prefix, record(2, 'ai_request_usage')])
     await expect(
       collector.accept([{ ...record(1), changed: true }])
@@ -58,12 +62,15 @@ it('resumes persisted evidence after collector restart without duplicating the p
 
 it('rejects an unterminated persisted record instead of appending corrupt JSON', async () => {
   const root = resolve('tmp')
+
   await mkdir(root, { recursive: true })
   const directory = await mkdtemp(join(root, 'record-truncated-'))
   const path = join(directory, 'persisted-request.jsonl')
   const prefix = JSON.stringify(record(0, 'ai_request_started'))
+
   await writeFile(path, prefix)
   const collector = createFileRecordCollector({ directory })
+
   try {
     await expect(collector.accept([record(1)])).rejects.toThrow('Unterminated')
     expect(await readFile(path, 'utf8')).toBe(prefix)
@@ -75,10 +82,12 @@ it('rejects an unterminated persisted record instead of appending corrupt JSON',
 
 it('streams long durable recordings and verifies old retries without a total-record ceiling', async () => {
   const root = resolve('tmp')
+
   await mkdir(root, { recursive: true })
   const directory = await mkdtemp(join(root, 'record-long-'))
   const path = join(directory, 'persisted-request.jsonl')
   const count = 50_010
+
   await writeFile(
     path,
     Array.from({ length: count }, (_, sequence) =>
@@ -88,6 +97,7 @@ it('streams long durable recordings and verifies old retries without a total-rec
     ).join('\n') + '\n'
   )
   let collector = createFileRecordCollector({ directory })
+
   try {
     expect(
       await collector.accept([record(0, 'ai_request_started'), record(1)])
@@ -127,20 +137,25 @@ it('uses durable evidence only outside its bounded recent digest window', async 
   )
   const collector = createRecordCollector({
     readPersistedHashes,
+
     createSink: () => ({
       write: (item) => {
         persisted.set(item.sequence, item)
       },
+
       checkpoint: async () => ({ status: 'saved', path: null }),
+
       flush: async () => ({ status: 'saved', path: null })
     })
   })
+
   try {
     for (let sequence = 0; sequence <= recordDigestWindowSize; sequence++) {
       await collector.accept([
         record(sequence, sequence ? 'ai_request_trace' : 'ai_request_started')
       ])
     }
+
     await collector.accept([record(recordDigestWindowSize)])
     expect(readPersistedHashes).not.toHaveBeenCalled()
     await collector.accept([record(0, 'ai_request_started')])

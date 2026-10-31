@@ -21,9 +21,11 @@ const performanceProfile = performanceProfileRequested
     })
   : null
 const disposeRuntimeDiagnosticService = installRuntimeDiagnosticService()
+
 window.addEventListener('pagehide', disposeRuntimeDiagnosticService, {
   once: true
 })
+
 const bootstrapApp = async (): Promise<void> => {
   await startAppRuntime({
     render: (initialization) => {
@@ -41,6 +43,7 @@ const bootstrapApp = async (): Promise<void> => {
       const root = ReactDOM.createRoot(
         document.getElementById('root') as HTMLElement
       )
+
       root.render(
         <React.StrictMode>
           <DataContexts />

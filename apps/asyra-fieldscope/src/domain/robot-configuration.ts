@@ -81,6 +81,7 @@ export const DEFAULT_ROBOT: Readonly<RobotConfiguration> = {
     rearHeadland: null
   }
 }
+
 export class RobotConfigurationError extends Error {}
 export type RobotNumber = {
   [K in keyof RobotConfiguration]: RobotConfiguration[K] extends number
@@ -109,29 +110,37 @@ export function validateRobot(
   const fail = () => {
     throw new RobotConfigurationError('Invalid robot design input')
   }
+
   if (!input || typeof input !== 'object') {
     return fail()
   }
+
   for (const key of Object.keys(
     DEFAULT_ROBOT
   ) as (keyof RobotConfiguration)[]) {
     if (typeof DEFAULT_ROBOT[key] !== 'number') {
       continue
     }
+
     const value = input[key]
+
     if (typeof value !== 'number' || !Number.isFinite(value)) {
       return fail()
     }
+
     if (key !== 'dockX' && key !== 'dockZ' && value < 0) {
       return fail()
     }
+
     if (positive.includes(key as RobotNumber) && value <= 0) {
       return fail()
     }
+
     if (fractions.includes(key as RobotNumber) && value > 1) {
       return fail()
     }
   }
+
   // Admitted design envelope, not a hardware capability claim.
   if (
     input.width < 0.35 ||
@@ -144,16 +153,20 @@ export function validateRobot(
   ) {
     return fail()
   }
+
   if (
     !['cucumber', 'tomato'].includes(input.tool) ||
     !['left', 'right', 'both'].includes(input.scanSide)
   ) {
     return fail()
   }
+
   const lane = input.lane
+
   if (!lane || !['strip', 'shared'].includes(lane.kind)) {
     return fail()
   }
+
   if (lane.kind === 'strip') {
     if (
       !Number.isInteger(lane.bay) ||
@@ -172,10 +185,13 @@ export function validateRobot(
   ) {
     return fail()
   }
+
   const survey = input.survey
+
   if (!survey || !['unknown', 'prepared', 'soft'].includes(survey.ground)) {
     return fail()
   }
+
   for (const key of [
     'entranceWidth',
     'entranceHeight',
@@ -191,6 +207,7 @@ export function validateRobot(
       return fail()
     }
   }
+
   return Object.freeze({
     ...input,
     lane: Object.freeze({ ...lane }),
@@ -203,14 +220,17 @@ export function assessRobotDesign(
   farm: FarmConfiguration
 ) {
   let resolved: PatrolLane | null
+
   if (settings.lane.kind === 'strip') {
     const stripId = settings.lane.stripId
     const strip = farm.strips.findIndex((item) => item.id === stripId)
+
     resolved =
       strip < 0 ? null : { kind: 'strip', bay: settings.lane.bay, strip }
   } else {
     resolved = settings.lane
   }
+
   const lane =
     settings.end > farm.length || !resolved
       ? null
@@ -234,6 +254,7 @@ export function assessRobotDesign(
     returnPathAdmitted: false,
     dockAvailable: false
   })
+
   return {
     settings,
     route: lane && resolved ? Object.freeze({ ...resolved }) : null,
@@ -242,4 +263,5 @@ export function assessRobotDesign(
     exchangeRequired: settings.payload >= settings.payloadLimit
   }
 }
+
 export type RobotSnapshot = ReturnType<typeof assessRobotDesign>

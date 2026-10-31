@@ -16,14 +16,18 @@ import {
 } from '../domain/farm-configuration'
 
 export const ConfigurationRuntime = createContext<FarmRuntime | null>(null)
+
 const noopSubscribe = () => () => undefined
+
 export function useFarmConfiguration() {
   const runtime = useContext(ConfigurationRuntime)
+
   return useSyncExternalStore(
     runtime?.subscribeConfiguration ?? noopSubscribe,
     runtime?.getConfiguration ?? (() => DEFAULT_CONFIGURATION)
   )
 }
+
 function StripActionIcon({ kind }: { kind: 'up' | 'down' | 'remove' }) {
   return (
     <svg
@@ -80,10 +84,12 @@ export function MeasurementInput({
   const { t } = useTranslation()
   const [text, setText] = useState(String(value))
   const editing = useRef(false)
+
   useEffect(() => {
     editing.current = false
     setText(String(value))
   }, [value])
+
   return (
     <span className="measurement-field h-7 w-24 shrink-0">
       <input
@@ -112,12 +118,15 @@ export function MeasurementInput({
             event.preventDefault()
             event.stopPropagation()
             void onHistory(event.shiftKey)
+
             return
           }
+
           if (event.key === 'Enter') {
             event.preventDefault()
             event.currentTarget.blur()
           }
+
           if (event.key === 'Escape') {
             event.currentTarget.value = String(value)
             setText(String(value))
@@ -127,13 +136,17 @@ export function MeasurementInput({
         onBlur={(event) => {
           editing.current = false
           const next = event.currentTarget.value
+
           if (next === '') {
             setText(String(value))
+
             return
           }
+
           if (Number(next) === value) {
             return
           }
+
           void onCommit(Number(next)).then((accepted) => {
             if (!accepted) {
               setText(String(value))
@@ -158,32 +171,43 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
   // Resolve patches against canonical state when their turn runs, including blur
   // immediately followed by another field or strip action.
   const queue = useRef<Promise<unknown>>(Promise.resolve())
+
   const act = (action: () => Promise<unknown>): Promise<boolean> => {
     const result = queue.current.then(async () => {
       setError(null)
       try {
         await action()
+
         return true
       } catch (e) {
         setError(e)
+
         return false
       }
     })
+
     queue.current = result
+
     return result
   }
+
   const replay = (redo: boolean) => act(redo ? runtime.redo : runtime.undo)
+
   const update = (patch: (current: FarmConfiguration) => FarmConfiguration) =>
     act(() => runtime.setConfiguration(patch(runtime.getConfiguration())))
+
   const reorder = (index: number, delta: number) =>
     update((current) => {
       const strips = [...current.strips]
+
       ;[strips[index], strips[index + delta]] = [
         strips[index + delta],
         strips[index]
       ]
+
       return { ...current, strips }
     })
+
   return (
     <section className="bg-[#fafbf7] p-3" aria-label={t('editor.heading')}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -277,6 +301,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
               value={strip.kind}
               onChange={(event) => {
                 const kind = event.target.value as 'soil' | 'drain'
+
                 void update((current) => ({
                   ...current,
                   strips: current.strips.map((item, j) =>

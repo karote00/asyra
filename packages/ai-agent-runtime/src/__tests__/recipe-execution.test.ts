@@ -9,6 +9,7 @@ import {
 import type { AiInvocationContext } from '../invocation.js'
 
 const number = { type: 'number' }
+
 const success = (value: unknown): AiRecipeExecutionResult => ({
   value,
   status: 'success',
@@ -16,6 +17,7 @@ const success = (value: unknown): AiRecipeExecutionResult => ({
   calls: [],
   issues: []
 })
+
 const setup = (
   execute?: (call: AiInvocationContext) => Promise<AiRecipeExecutionResult>,
   maxSteps = 20
@@ -26,8 +28,10 @@ const setup = (
     execute ??
     (async (call) => {
       writes.push(call.input)
+
       return success(call.input)
     })
+
   registry.register({
     name: 'set',
     description: 'Set the current value.',
@@ -38,12 +42,15 @@ const setup = (
     resources: ['value'],
     composition: 'allowed',
     lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' },
+
     execute: async (input) => input
   })
+
   const validate = (value: unknown, schema: unknown) =>
     (schema as { type: string }).type === 'number' && typeof value !== 'number'
       ? 'Expected number'
       : undefined
+
   const library = createAiToolLibrary({
     registry,
     validate,
@@ -55,6 +62,7 @@ const setup = (
       bytes: 8000,
       issues: 8
     },
+
     createExecutor: () => async (input) => input
   })
   const events: string[] = []
@@ -71,11 +79,13 @@ const setup = (
     execute: host,
     leases,
     maxSteps,
+
     observe: (event) => {
       events.push(`${event.call.name}:${event.phase}`)
       observations.push(event)
     }
   })
+
   const register = (name: string, tools: string[]) => {
     const result = library.submit({
       requestId: 'author',
@@ -98,8 +108,10 @@ const setup = (
         output: { kind: 'step', step: `s${tools.length - 1}`, path: '' }
       }
     })
+
     expect(result.ok).toBe(true)
   }
+
   return {
     registry,
     library,
@@ -120,9 +132,11 @@ describe('pinned recipe invocation', () => {
       busy = true
       await Promise.resolve()
       busy = false
+
       return success(call.input)
     })
     const { register, runner, events } = setup(host)
+
     register('inner', ['set', 'set'])
     register('outer', ['inner', 'set'])
     const result = await runner.invoke({
@@ -130,6 +144,7 @@ describe('pinned recipe invocation', () => {
       requestId: 'author',
       input: 5
     })
+
     expect(result).toMatchObject({
       status: 'success',
       settlement: 'completed',
@@ -149,12 +164,14 @@ describe('pinned recipe invocation', () => {
   it('validates actual results and stops successors after malformed output', async () => {
     const host = vi.fn(async () => success('wrong'))
     const { register, runner } = setup(host)
+
     register('chain', ['set', 'set'])
     const result = await runner.invoke({
       name: 'chain',
       requestId: 'author',
       input: 5
     })
+
     expect(result.status).not.toBe('success')
     expect(result.settlement).toBe('partial')
     expect(result.issues.join(' ')).toContain('Expected number')
@@ -170,12 +187,14 @@ describe('pinned recipe invocation', () => {
         settlement: 'unknown' as const
       }))
       const { register, runner } = setup(host)
+
       register('chain', ['set', 'set'])
       const result = await runner.invoke({
         name: 'chain',
         requestId: 'author',
         input: 5
       })
+
       expect(result.status).not.toBe('success')
       expect(result.settlement).toBe('unknown')
       expect(host).toHaveBeenCalledOnce()
@@ -186,9 +205,11 @@ describe('pinned recipe invocation', () => {
     const controller = new AbortController()
     const host = vi.fn(async () => {
       controller.abort()
+
       return success(2)
     })
     const { register, runner } = setup(host)
+
     register('chain', ['set', 'set'])
     const result = await runner.invoke({
       name: 'chain',
@@ -196,6 +217,7 @@ describe('pinned recipe invocation', () => {
       input: 5,
       signal: controller.signal
     })
+
     expect(result.status).not.toBe('success')
     expect(result.settlement).toBe('partial')
     expect(host).toHaveBeenCalledOnce()
@@ -203,8 +225,10 @@ describe('pinned recipe invocation', () => {
 
   it('retains child values for their caller before releasing local leases', async () => {
     const { register, runner, leases } = setup()
+
     register('chain', ['set', 'set'])
     const order: string[] = []
+
     leases.retain.mockImplementation(async () => {
       order.push('retain')
     })
@@ -216,6 +240,7 @@ describe('pinned recipe invocation', () => {
       requestId: 'author',
       input: 5
     })
+
     expect(result.status).toBe('success')
     expect(order).toEqual([
       'retain',
@@ -241,8 +266,10 @@ describe('pinned recipe invocation', () => {
         first = false
         registry.remove('set', 1)
       }
+
       return success(call.input)
     })
+
     register('chain', ['set', 'set'])
     expect(
       (await runner.invoke({ name: 'chain', requestId: 'author', input: 5 }))
@@ -257,6 +284,7 @@ describe('pinned recipe invocation', () => {
   it('does not expose a private candidate or dispatch invalid arguments', async () => {
     const host = vi.fn(async (call) => success(call.input))
     const { register, runner } = setup(host)
+
     register('chain', ['set'])
     expect(
       (await runner.invoke({ name: 'chain', requestId: 'other', input: 5 }))
@@ -276,6 +304,7 @@ describe('pinned recipe invocation', () => {
 
   it('keeps product settlement when cleanup fails and records incompleteness', async () => {
     const { register, runner, leases } = setup()
+
     register('chain', ['set'])
     leases.release.mockRejectedValue(new Error('release unavailable'))
     const result = await runner.invoke({
@@ -283,6 +312,7 @@ describe('pinned recipe invocation', () => {
       requestId: 'author',
       input: 5
     })
+
     expect(result.settlement).not.toBe('not-started')
     expect(result.issues.join(' ')).toContain('release unavailable')
   })
@@ -290,6 +320,7 @@ describe('pinned recipe invocation', () => {
 
 it('reports completion only after output retention and cleanup, including already-aborted call identity', async () => {
   const { runner, register, events, leases } = setup()
+
   register('chain', ['set'])
   leases.release.mockImplementation(async () => {
     expect(events[events.length - 1]).not.toBe('chain:completed')
@@ -299,6 +330,7 @@ it('reports completion only after output retention and cleanup, including alread
       .status
   ).toBe('success')
   const controller = new AbortController()
+
   controller.abort()
   const result = await runner.invoke({
     name: 'chain',
@@ -306,6 +338,7 @@ it('reports completion only after output retention and cleanup, including alread
     input: 3,
     signal: controller.signal
   })
+
   expect(result.calls[0].callId).not.toBe('')
   expect(result.settlement).toBe('not-started')
 })
@@ -317,13 +350,16 @@ it('keeps exported and borrowed handles alive while releasing only local ownersh
     ['request:author', new Set(['borrowed'])],
     ['sibling', new Set(['shared'])]
   ])
+
   const live = (handle: string) =>
     [...owners.values()].some((values) => values.has(handle))
+
   let lease = 0
   const leases = {
     open: async ({ callId }: { callId: string }) => {
       owners.set(callId, new Set())
     },
+
     retain: async ({
       requestId,
       fromCallId,
@@ -336,15 +372,19 @@ it('keeps exported and borrowed handles alive while releasing only local ownersh
       value: unknown
     }) => {
       const handle = String(value)
+
       expect(live(handle)).toBe(true)
       expect(owners.has(fromCallId)).toBe(true)
       const caller = toCallId ?? `request:${requestId}`
+
       owners.get(caller)?.add(handle)
     },
+
     release: async ({ callId }: { callId: string }) => {
       owners.delete(callId)
     }
   }
+
   registry.register({
     name: 'resolve',
     description: 'Create a fresh retained handle.',
@@ -359,10 +399,13 @@ it('keeps exported and borrowed handles alive while releasing only local ownersh
       retry: 'never',
       output: 'request-artifact'
     },
+
     execute: async (input) => input
   })
+
   const validate = (value: unknown) =>
     typeof value === 'string' ? undefined : 'Expected handle'
+
   const library = createAiToolLibrary({
     registry,
     validate,
@@ -374,8 +417,10 @@ it('keeps exported and borrowed handles alive while releasing only local ownersh
       bytes: 8000,
       issues: 8
     },
+
     createExecutor: () => async (input) => input
   })
+
   expect(
     library.submit({
       requestId: 'author',
@@ -411,10 +456,13 @@ it('keeps exported and borrowed handles alive while releasing only local ownersh
     validate,
     leases,
     maxSteps: 10,
+
     execute: async (call) => {
       expect(live(String(call.input))).toBe(true)
       const handle = `created-${++lease}`
+
       owners.get(call.callId)?.add(handle)
+
       return success(handle)
     }
   })
@@ -423,6 +471,7 @@ it('keeps exported and borrowed handles alive while releasing only local ownersh
     requestId: 'author',
     input: 'borrowed'
   })
+
   expect(result).toMatchObject({ status: 'success', value: 'created-2' })
   expect(live('created-1')).toBe(false)
   expect(live('created-2')).toBe(true)
@@ -436,6 +485,7 @@ it('keeps exported and borrowed handles alive while releasing only local ownersh
 
 it('cleans an allocated call scope when opening fails before product dispatch', async () => {
   const host = setup()
+
   host.leases.open.mockImplementation(async () => {
     throw new Error('Partial scope initialization')
   })
@@ -448,12 +498,14 @@ it('cleans an allocated call scope when opening fails before product dispatch', 
 
 it('hands the pinned schemas to host reference ownership before cleanup', async () => {
   const host = setup()
+
   host.register('chain', ['set', 'set'])
   const result = await host.runner.invoke({
     name: 'chain',
     requestId: 'author',
     input: 5
   })
+
   expect(result.status).toBe('success')
   expect(host.leases.open).toHaveBeenCalledWith(
     expect.objectContaining({ input: 5, inputSchema: number })
@@ -475,6 +527,7 @@ it('uses the declared partial schema when retaining useful partial references', 
     type: 'object',
     properties: { handle: { type: 'string', 'x-runtime-value': 'request' } }
   }
+
   host.registry.register({
     name: 'partial',
     description: 'Return partial progress.',
@@ -486,6 +539,7 @@ it('uses the declared partial schema when retaining useful partial references', 
     resources: ['document'],
     composition: 'allowed',
     lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' },
+
     execute: async () => 0
   })
   const result = await host.runner.invoke({
@@ -493,6 +547,7 @@ it('uses the declared partial schema when retaining useful partial references', 
     requestId: 'author',
     input: 5
   })
+
   expect(result.status).toBe('partial')
   expect(host.leases.retain).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -516,6 +571,7 @@ it.each(['failed', 'unknown'] as const)(
       type: 'string',
       'x-runtime-value': 'request'
     }
+
     host.registry.register({
       name: 'recoverable',
       description: 'Return a repair handle.',
@@ -531,6 +587,7 @@ it.each(['failed', 'unknown'] as const)(
         retry: 'never',
         output: 'request-artifact'
       },
+
       execute: async () => 0
     })
     const result = await host.runner.invoke({
@@ -538,6 +595,7 @@ it.each(['failed', 'unknown'] as const)(
       requestId: 'author',
       input: 5
     })
+
     expect(result).toMatchObject({
       status,
       settlement: 'unknown',
@@ -554,12 +612,14 @@ it.each(['failed', 'unknown'] as const)(
 
 it('observes exact recipe steps and pinned revisions for repeated nested leaf calls', async () => {
   const host = setup()
+
   host.register('inner', ['set', 'set'])
   host.register('outer', ['inner', 'set'])
   await host.runner.invoke({ name: 'outer', requestId: 'author', input: 5 })
   const starts = (
     host.observations as { phase: string; call: { name: string } }[]
   ).filter((event) => event.phase === 'started' && event.call.name === 'set')
+
   expect(starts).toMatchObject([
     { revision: 1, recipeStep: { name: 'inner', revision: 1, id: 's0' } },
     { revision: 1, recipeStep: { name: 'inner', revision: 1, id: 's1' } },
@@ -581,13 +641,16 @@ it('exports validated stopped child values through every ancestor without runnin
         }
   )
   const base = host.registry.get('set')
+
   if (!base) {
     throw new Error('Missing registered fixture operation')
   }
+
   host.registry.register({
     ...base,
     name: 'repairable',
     recoveryOutputSchema: number,
+
     execute: async () => 0
   })
   host.register('inner', ['set', 'repairable', 'set'])
@@ -597,6 +660,7 @@ it('exports validated stopped child values through every ancestor without runnin
     requestId: 'author',
     input: 5
   })
+
   expect(calls).toBe(2)
   expect(result).toMatchObject({
     status: 'failed',
@@ -629,18 +693,22 @@ describe('bounded repair execution', () => {
         checks++
         const value = Number(call.input)
         let status = value <= 0 ? 'pass' : 'repairable'
+
         if (mode === 'decision') {
           status = 'decision-required'
         }
+
         return success({
           status: mode === 'malformed' ? 'done' : status,
           progress: `remaining:${value}`
         })
       }
+
       if (call.name === 'repair') {
         if (mode === 'cancel') {
           controller.abort()
         }
+
         if (mode === 'partial' || mode === 'unknown') {
           return {
             ...success(Number(call.input) - 1),
@@ -648,20 +716,26 @@ describe('bounded repair execution', () => {
             settlement: mode
           }
         }
+
         if (mode === 'stuck') {
           return success(call.input)
         }
+
         if (mode === 'cycle') {
           return success(3 - Number(call.input))
         }
+
         return success(Number(call.input) - 1)
       }
+
       return success(call.input)
     }, maxSteps)
     const common = host.registry.get('set')
+
     if (!common) {
       throw new Error('Missing scalar tool')
     }
+
     host.registry.register({ ...common, name: 'repair' })
     host.registry.register({
       ...common,
@@ -719,6 +793,7 @@ describe('bounded repair execution', () => {
       },
       output: { kind: 'step', step: 'verified', path: '/state' }
     }
+
     expect(
       host.library.submit({
         requestId: 'author',
@@ -726,6 +801,7 @@ describe('bounded repair execution', () => {
         proposal
       }).ok
     ).toBe(true)
+
     // The ordinary fixture host validates scalar shapes. Runtime must additionally
     // enforce the owner verification discriminant even with a permissive validator.
     const run = (input: number) =>
@@ -735,12 +811,22 @@ describe('bounded repair execution', () => {
         requestId: 'author',
         signal: controller.signal
       })
-    return { ...host, calls, run, proposal, controller, checks: () => checks }
+
+    return {
+      ...host,
+      calls,
+      run,
+      proposal,
+      controller,
+
+      checks: () => checks
+    }
   }
 
   it('checks before repair and completes several rounds without replaying initial work', async () => {
     const host = fixture()
     const result = await host.run(2)
+
     expect(result).toMatchObject({
       status: 'success',
       settlement: 'completed',
@@ -764,12 +850,14 @@ describe('bounded repair execution', () => {
   })
   it('rejects nested worst-case expansion before initial writes even if input would pass', async () => {
     const host = fixture('normal', 10)
+
     host.register('outer', ['bounded', 'bounded'])
     const result = await host.runner.invoke({
       name: 'outer',
       requestId: 'author',
       input: 0
     })
+
     expect(result).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
@@ -781,20 +869,24 @@ describe('bounded repair execution', () => {
   it('pins changed checker dependencies before any mutation', async () => {
     const host = fixture()
     const check = host.registry.get('check')
+
     if (!check) {
       throw new Error('Missing checker')
     }
+
     host.registry.remove('check', 1)
     host.registry.register({
       ...check,
       description: 'Changed check semantics.'
     })
     const result = await host.run(0)
+
     expect(result.status).toBe('failed')
     expect(host.calls).toEqual([])
   })
   it('does not dispatch repairs for an already passing state', async () => {
     const host = fixture()
+
     expect(await host.run(0)).toMatchObject({ status: 'success', value: 0 })
     expect(host.calls).toEqual(['set', 'check'])
   })
@@ -809,6 +901,7 @@ describe('bounded repair execution', () => {
     async (mode, reason, repairs) => {
       const host = fixture(String(mode))
       const result = await host.run(mode === 'cycle' ? 2 : 8)
+
       expect(result.status).toBe('failed')
       expect(result.value).toBeUndefined()
       expect(result.issues.join(' ')).toContain(reason)
@@ -829,6 +922,7 @@ describe('bounded repair execution', () => {
     async (mode) => {
       const host = fixture(mode)
       const result = await host.run(2)
+
       expect(result.status).not.toBe('success')
       expect(host.calls).toEqual(['set', 'check', 'repair'])
       expect(host.leases.release).toHaveBeenCalledTimes(
@@ -845,9 +939,11 @@ it('never exports a malformed own recovery when normalizing a thrown failure', a
     settlement: 'unknown'
   }))
   const primitive = host.registry.get('set')
+
   if (!primitive) {
     throw new Error('Missing scalar tool')
   }
+
   host.registry.register({
     ...primitive,
     name: 'recoverable',
@@ -858,6 +954,7 @@ it('never exports a malformed own recovery when normalizing a thrown failure', a
     requestId: 'author',
     input: 2
   })
+
   expect(result.status).toBe('unknown')
   expect(result.value).toBeUndefined()
   expect(host.leases.retain).not.toHaveBeenCalled()
@@ -871,8 +968,10 @@ it('does not advertise stopped resources whose transfer to the caller failed', a
     if (count === 2) {
       throw new Error('Leaf unavailable')
     }
+
     return success(call.input)
   })
+
   host.register('transfer-failure', ['set', 'set'])
   host.leases.retain.mockImplementation(async ({ toCallId }) => {
     if (toCallId === undefined) {
@@ -884,6 +983,7 @@ it('does not advertise stopped resources whose transfer to the caller failed', a
     requestId: 'author',
     input: 4
   })
+
   expect(result.status).not.toBe('success')
   expect(result.issues.join(' ')).toContain('Caller retention failed')
   expect(result.recovery ?? []).toEqual([])

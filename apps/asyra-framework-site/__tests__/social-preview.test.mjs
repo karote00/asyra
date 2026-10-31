@@ -14,6 +14,7 @@ const imagePath = '/brand/asyra-foundation-green-v1.jpg'
 test('social previews publish the approved green infrastructure artwork', async () => {
   const published = await readFile(path.join(siteRoot, 'public', imagePath))
   const metadata = await sharp(published).metadata()
+
   assert.equal(metadata.format, 'jpeg')
   assert.equal(metadata.width, 1733)
   assert.equal(metadata.height, 907)
@@ -22,6 +23,7 @@ test('social previews publish the approved green infrastructure artwork', async 
 
 test('root metadata includes large Open Graph and Twitter preview images', async () => {
   const layout = await readFile(path.join(siteRoot, 'app/layout.tsx'), 'utf8')
+
   assert.ok(layout.includes(imagePath))
   assert.match(layout, /openGraph:\s*\{\s*images: \[socialImage\]/u)
   assert.match(layout, /twitter:\s*\{\s*images: \[socialImage\]/u)
@@ -40,10 +42,13 @@ test(
     const response = await fetch(process.env.SITE_URL, {
       headers: { 'User-Agent': 'LinkedInBot/1.0' }
     })
+
     assert.equal(response.status, 200)
     const html = await response.text()
     const head = html.match(/<head>([\s\S]*?)<\/head>/u)?.[1]
+
     assert.ok(head, 'metadata must be available without executing JavaScript')
+
     const meta = (key) =>
       [...head.matchAll(/<meta\s+[^>]*>/gu)]
         .find(
@@ -51,7 +56,9 @@ test(
             tag.includes(`property="${key}"`) || tag.includes(`name="${key}"`)
         )?.[0]
         .match(/content="([^"]*)"/u)?.[1]
+
     const imageUrl = new URL(meta('og:image'))
+
     assert.equal(imageUrl.protocol, 'https:')
     assert.equal(imageUrl.pathname, imagePath)
     assert.equal(meta('og:image:width'), '1733')
@@ -63,6 +70,7 @@ test(
     const imageResponse = await fetch(
       new URL(imageUrl.pathname, process.env.SITE_URL)
     )
+
     assert.equal(imageResponse.status, 200)
     assert.match(imageResponse.headers.get('content-type'), /image\/jpeg/u)
     assert.deepEqual(

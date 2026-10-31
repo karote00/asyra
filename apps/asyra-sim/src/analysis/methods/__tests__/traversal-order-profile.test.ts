@@ -28,9 +28,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing measured pair')
         }
+
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -57,11 +59,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             throw new MeshWorkLimit('Combined order diagnostic work exhausted')
           }
         })
+
         const copy = (node: MeshNode): MeshNode => {
           reordering++
           if (context.work + reordering > 500000) {
             throw new MeshWorkLimit('Order preparation exhausted')
           }
+
           return {
             ...node,
             triangles: [...node.triangles].reverse(),
@@ -70,11 +74,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               : undefined
           }
         }
+
         const offsets = (node: MeshNode): number[] =>
           node.children
             ? node.children.flatMap(offsets)
             : node.triangles.map((triangle) => triangle.offset)
+
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (geometry, checkpoint, hierarchy, checkExecution) => {
             const index = build(
@@ -87,11 +94,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               checkExecution
             )
             const root = copy(index.root)
+
             expect(offsets(root).sort((a, b) => a - b)).toEqual(
               offsets(index.root).sort((a, b) => a - b)
             )
             // Bounds, component identities and representatives remain the same objects.
             expect(root.bounds).toBe(index.root.bounds)
+
             return { ...index, root }
           }
         )
@@ -101,6 +110,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- traversal order is a diagnostic control, not a production strategy
         console.info(
           JSON.stringify({

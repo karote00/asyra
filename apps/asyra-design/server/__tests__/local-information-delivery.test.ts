@@ -12,6 +12,7 @@ it('reassembles escaped multibyte JSON without dropping a byte', () => {
   let args: Record<string, unknown> = { names: ['tool'] },
     text = '',
     offset = 0
+
   for (let i = 0; i < 50; i++) {
     const output = deliverInformation(
       raw,
@@ -19,10 +20,12 @@ it('reassembles escaped multibyte JSON without dropping a byte', () => {
       args,
       'request'
     )
+
     expect(Buffer.byteLength(output)).toBeLessThanOrEqual(
       informationDeliveryBytes
     )
     const p = JSON.parse(output).contentDelivery
+
     expect(p.startByte).toBe(offset)
     text += p.text
     offset = p.endByte
@@ -30,8 +33,10 @@ it('reassembles escaped multibyte JSON without dropping a byte', () => {
       expect(offset).toBe(Buffer.byteLength(raw))
       break
     }
+
     args = p.next.arguments
   }
+
   expect(text).toBe(raw)
 })
 
@@ -40,6 +45,7 @@ it('rejects changed source, cross-query, cross-request and invalid continuations
   const next = JSON.parse(
     deliverInformation(raw, 'read_knowledge', { ids: ['one'] }, 'request')
   ).contentDelivery.next.arguments
+
   expect(() =>
     deliverInformation(raw + ' ', 'read_knowledge', next, 'request')
   ).toThrow(/stale/)
@@ -64,6 +70,7 @@ it('rejects changed source, cross-query, cross-request and invalid continuations
       )
     ).toThrow()
   }
+
   expect(deliverInformation(raw, 'read_knowledge', next, 'request')).toBe(
     deliverInformation(raw, 'read_knowledge', next, 'request')
   )

@@ -25,6 +25,7 @@ async function createSphereStudy(
     await page.getByLabel('Shape 1 type').selectOption('sphere')
     await expect(page.getByLabel('Shape 1 radius (m)')).toHaveValue('0.1')
   }
+
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByLabel('Experiment name').fill('Formal sphere study')
   await showSetup(page, true)
@@ -76,6 +77,7 @@ for (const [outcome, distance, threshold, coverage, label, verdict] of [
       .click()
     await viewResults(page)
     const result = page.getByTestId('analysis-result')
+
     await expect(result.getByLabel('User verdict')).toHaveText(verdict)
     await expect(
       result
@@ -93,11 +95,13 @@ for (const [outcome, distance, threshold, coverage, label, verdict] of [
       'Saved to this project'
     )
     const pair = result.locator('.evidence-pair')
+
     await pair.locator('summary').click()
     await expect(pair).toContainText(label)
     await expect(pair).toContainText('Witness time: 0 s')
     const retainedText = await result.innerText()
     const history = await page.getByTestId('history-depth').innerText()
+
     await pair
       .getByRole('button', { name: 'Replay witness', exact: true })
       .click()
@@ -132,6 +136,7 @@ for (const [outcome, distance, threshold, coverage, label, verdict] of [
         path: info.outputPath('clearance-dark-narrow-detail.png')
       })
     }
+
     expect(await result.innerText()).toBe(retainedText)
     await expect(page.getByTestId('history-depth')).toHaveText(history)
     await info.attach('review-state.json', {
@@ -172,6 +177,7 @@ test('ordinary original-part timeout is retained without success and permits ano
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await viewResults(page)
   const result = page.getByTestId('analysis-result')
+
   await expect(result).toContainText('timed-out')
   await expect(result).toContainText('partial')
   await expect(result.getByLabel('User verdict')).not.toHaveText('meets')

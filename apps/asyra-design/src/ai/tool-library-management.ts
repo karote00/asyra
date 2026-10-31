@@ -8,6 +8,7 @@ export const ToolLibraryManagement = Object.freeze({
   endpoint: '/api/ai/tool-library',
   requestBytes: 4096
 })
+
 export type ToolLibraryInventory = Awaited<
   ReturnType<ReturnType<typeof createAiToolStoreManagement>['list']>
 >
@@ -19,12 +20,16 @@ export type ToolLibraryRequest =
       revision: number
       expectedVersion: string
     }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
+
 const text = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
+
 const availability = (value: unknown) =>
   ['candidate', 'eligible', 'suspended', 'retired'].includes(value as string)
+
 export const isToolLibraryRequest = (
   value: unknown
 ): value is ToolLibraryRequest =>
@@ -38,6 +43,7 @@ export const isToolLibraryRequest = (
       text(value.expectedVersion) &&
       Number.isSafeInteger(value.revision) &&
       (value.revision as number) > 0)
+
 const summary = (value: unknown): value is AiStoredToolSummary =>
   record(value) &&
   text(value.name) &&
@@ -46,6 +52,7 @@ const summary = (value: unknown): value is AiStoredToolSummary =>
   (value.revision as number) > 0 &&
   text(value.version) &&
   availability(value.availability)
+
 const post = async (
   input: ToolLibraryRequest,
   signal: AbortSignal
@@ -57,6 +64,7 @@ const post = async (
     signal
   })
   const value: unknown = await response.json()
+
   if (!response.ok) {
     throw new Error(
       record(value) && text(value.issue)
@@ -64,12 +72,15 @@ const post = async (
         : 'Saved tools are unavailable. Refresh to retry.'
     )
   }
+
   return value
 }
+
 export const readToolLibrary = async (
   signal: AbortSignal
 ): Promise<ToolLibraryInventory> => {
   const value = await post({ operation: 'list' }, signal)
+
   if (
     !record(value) ||
     !Array.isArray(value.entries) ||
@@ -83,13 +94,16 @@ export const readToolLibrary = async (
   ) {
     throw new Error('Saved tool inventory was invalid. Refresh to retry.')
   }
+
   return value as unknown as ToolLibraryInventory
 }
+
 export const updateToolLibrary = async (
   input: Exclude<ToolLibraryRequest, { operation: 'list' }>,
   signal: AbortSignal
 ): Promise<void> => {
   const value = await post(input, signal)
+
   if (
     !record(value) ||
     value.status !== 'saved' ||

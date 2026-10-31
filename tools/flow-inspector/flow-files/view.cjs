@@ -2,6 +2,7 @@ function architectureFor(doc) {
   if (doc.definition.architecture) {
     return doc.definition.architecture
   }
+
   const steps = doc.definition.nodes.map((node, index) => ({
     id: node.id,
     order: index + 1,
@@ -32,6 +33,7 @@ function architectureFor(doc) {
         producedArtifacts: []
       }))
   )
+
   return {
     schema: { id: 'flow-inspector', version: 2 },
     target: {
@@ -64,4 +66,5 @@ function architectureFor(doc) {
     acceptanceContracts: []
   }
 }
+
 module.exports = { architectureFor }

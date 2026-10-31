@@ -16,6 +16,7 @@ const base: HarvestObservations = {
   fruitAndStemVerified: true,
   load: 'continue-screening'
 }
+
 describe('M1 hazard priority', () => {
   it('protects people before instability and saving a full crate', () => {
     expect(
@@ -51,6 +52,7 @@ describe('M1 hazard priority', () => {
     [{ energy: 'hold' }, 'await-observation']
   ] as const)('inhibits travel and cutting for %j', (change, action) => {
     const result = adviseHarvestAction({ ...base, ...change })
+
     expect(result.action).toBe(action)
     expect(result.stopTravel).toBe(true)
     expect(result.inhibitCutting).toBe(true)
@@ -61,6 +63,7 @@ describe('M1 hazard priority', () => {
       load: 'exchange',
       fruitAndStemVerified: false
     })
+
     expect(result.action).toBe('return-to-dock')
     expect(result.requireReturnAdmission).toBe(true)
     expect(result.inhibitCutting).toBe(true)

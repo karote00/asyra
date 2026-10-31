@@ -54,6 +54,7 @@ const speeds = Object.freeze({
   elbow: Math.PI / 18,
   wrist: Math.PI / 18
 })
+
 export interface RobotRig {
   readonly parts: readonly {
     readonly source: Readonly<RobotPart>
@@ -72,10 +73,12 @@ export interface RobotRig {
 
 const point = (x: number, y: number, z: number): Point3 =>
   Object.freeze([x, y, z] as [number, number, number])
+
 const identity: RigidTransform = Object.freeze({
   position: point(0, 0, 0),
   rotation: Object.freeze([0, 0, 0, 1] as const)
 })
+
 export type JointDomains = Readonly<
   Record<keyof RobotJoints, readonly [number, number]>
 >
@@ -96,16 +99,25 @@ interface Transform<T> {
 }
 const numberAlgebra: KinematicAlgebra<number> = {
   literal: (value) => value,
+
   range: (lower) => lower,
+
   add: (a, b) => a + b,
+
   subtract: (a, b) => a - b,
+
   multiply: (a, b) => a * b,
+
   divide: (a, b) => a / b,
+
   sin: (value) => evaluatePolynomialTrig('sin', value).value,
+
   cos: (value) => evaluatePolynomialTrig('cos', value).value
 }
+
 const vector = <T>(x: T, y: T, z: T): Vector<T> =>
   Object.freeze([x, y, z] as const)
+
 function operations<T>(algebra: KinematicAlgebra<T>) {
   const {
     literal: n,
@@ -114,29 +126,36 @@ function operations<T>(algebra: KinematicAlgebra<T>) {
     multiply: mul,
     divide: div
   } = algebra
+
   const fromPoint = (p: Point3) => vector(n(p[0]), n(p[1]), n(p[2]))
+
   function rotate(rotation: Transform<T>['rotation'], p: Vector<T>): Vector<T> {
     const [x, y, z, w] = rotation
     const tx = mul(n(2), sub(mul(y, p[2]), mul(z, p[1]))),
       ty = mul(n(2), sub(mul(z, p[0]), mul(x, p[2]))),
       tz = mul(n(2), sub(mul(x, p[1]), mul(y, p[0])))
+
     return vector(
       sub(add(add(p[0], mul(w, tx)), mul(y, tz)), mul(z, ty)),
       sub(add(add(p[1], mul(w, ty)), mul(z, tx)), mul(x, tz)),
       sub(add(add(p[2], mul(w, tz)), mul(x, ty)), mul(y, tx))
     )
   }
+
   function transform(a: Transform<T>, value: Vector<T>): Vector<T> {
     const p = rotate(a.rotation, value)
+
     return vector(
       add(p[0], a.position[0]),
       add(p[1], a.position[1]),
       add(p[2], a.position[2])
     )
   }
+
   function compose(a: Transform<T>, b: Transform<T>): Transform<T> {
     const [x, y, z, w] = a.rotation,
       [u, v, s, t] = b.rotation
+
     return Object.freeze({
       position: transform(a, b.position),
       rotation: Object.freeze([
@@ -147,6 +166,7 @@ function operations<T>(algebra: KinematicAlgebra<T>) {
       ] as const)
     })
   }
+
   function about(pivot: Vector<T>, axis: 'x' | 'y', angle: T): Transform<T> {
     const sine = algebra.sin(div(angle, n(2)))
     const rotation = Object.freeze([
@@ -156,6 +176,7 @@ function operations<T>(algebra: KinematicAlgebra<T>) {
       algebra.cos(div(angle, n(2)))
     ] as const)
     const rotated = rotate(rotation, pivot)
+
     return Object.freeze({
       rotation,
       position: vector(
@@ -165,28 +186,36 @@ function operations<T>(algebra: KinematicAlgebra<T>) {
       )
     })
   }
+
   return { fromPoint, rotate, transform, compose, about }
 }
+
 const numericOperations = operations(numberAlgebra)
+
 export function transformRobotPoint(
   transform: RigidTransform,
   value: Point3
 ): Point3 {
   return numericOperations.transform(transform, value)
 }
+
 function bodyFor(id: string): RobotBody {
   if (id === 'lift-carriage') {
     return 'lift'
   }
+
   if (id === 'shoulder') {
     return 'yaw'
   }
+
   if (id === 'upper-arm') {
     return 'shoulder'
   }
+
   if (id === 'elbow' || id === 'forearm') {
     return 'elbow'
   }
+
   if (
     id === 'wrist' ||
     id === 'tool-guard' ||
@@ -195,11 +224,14 @@ function bodyFor(id: string): RobotBody {
   ) {
     return 'wrist'
   }
+
   return 'fixed'
 }
+
 function admitPart(part: RobotPart): Readonly<RobotPart> {
   const shape = part.shape
   const regions = readSourceRegions(part.regions, shape.indices.length)
+
   // Admitted projection shapes are already immutable; direct domain callers
   // receive detached buffers, so their edits cannot change the prepared rig.
   if (
@@ -213,6 +245,7 @@ function admitPart(part: RobotPart): Readonly<RobotPart> {
   ) {
     return part
   }
+
   return Object.freeze({
     ...part,
     regions,
@@ -225,12 +258,15 @@ function admitPart(part: RobotPart): Readonly<RobotPart> {
     })
   })
 }
+
 export class UnsupportedRobotRigError extends Error {}
+
 export function prepareRobotRig(
   definition: RobotDefinition,
   parts: readonly RobotPart[]
 ): RobotRig {
   const { width, length, height, tool } = definition
+
   if (
     ![width, length, height].every(
       (value) => Number.isFinite(value) && value > 0
@@ -239,17 +275,22 @@ export function prepareRobotRig(
   ) {
     throw new Error('Invalid robot definition')
   }
+
   const r = Math.min(length * 0.13, height * 0.12)
+
   if (
     height * 0.67 - 0.1 - 0.06 < r + 0.2 ||
     height * 0.67 + 0.1 + 0.06 > height - 0.045
   ) {
     throw new UnsupportedRobotRigError('Unsupported lift stroke')
   }
+
   const frames = robotRestFrames(definition)
+
   Object.values(frames).forEach(Object.freeze)
   Object.freeze(frames)
   const ids = new Set(parts.map((part) => part.id))
+
   if (
     ids.size !== parts.length ||
     ![
@@ -266,6 +307,7 @@ export function prepareRobotRig(
   ) {
     throw new Error('Incomplete robot source')
   }
+
   return Object.freeze({
     parts: Object.freeze(
       parts.map((part) =>
@@ -283,13 +325,16 @@ export function prepareRobotRig(
     })
   })
 }
+
 export function evaluateRobotPose(rig: RobotRig, input: RobotJoints) {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid robot joints')
   }
+
   for (const key of Object.keys(ROBOT_JOINT_LIMITS) as (keyof RobotJoints)[]) {
     const value = input[key],
       [min, max] = ROBOT_JOINT_LIMITS[key]
+
     if (
       typeof value !== 'number' ||
       !Number.isFinite(value) ||
@@ -299,7 +344,9 @@ export function evaluateRobotPose(rig: RobotRig, input: RobotJoints) {
       throw new Error(`Invalid robot joint: ${key}`)
     }
   }
+
   const joints = Object.freeze({ ...input })
+
   return Object.freeze({
     joints,
     ...evaluateChain(rig, joints, numberAlgebra, identity)
@@ -326,6 +373,7 @@ function evaluateChain<T>(
   const elbow = compose(shoulder, about(elbowPivot, 'x', joints.elbow))
   const wrist = compose(elbow, about(wristPivot, 'x', joints.wrist))
   const transforms = { fixed: rest, lift, yaw, shoulder, elbow, wrist }
+
   return Object.freeze({
     parts: Object.freeze(
       rig.parts.map((part) =>
@@ -353,6 +401,7 @@ export function evaluateRobotDomains<T>(
 ) {
   const domains = structuredClone(input)
   const keys = Object.keys(ROBOT_JOINT_LIMITS) as (keyof RobotJoints)[]
+
   if (
     !domains ||
     typeof domains !== 'object' ||
@@ -360,9 +409,11 @@ export function evaluateRobotDomains<T>(
   ) {
     throw new Error('Invalid robot joint domains')
   }
+
   for (const key of keys) {
     const domain = domains[key],
       [min, max] = rig.limits[key]
+
     if (
       !Object.hasOwn(domains, key) ||
       !Array.isArray(domain) ||
@@ -378,6 +429,7 @@ export function evaluateRobotDomains<T>(
       throw new Error(`Invalid robot joint domain: ${key}`)
     }
   }
+
   // Freeze only detached numeric domains and C-owned containers, not scalar T.
   keys.forEach((key) => Object.freeze(domains[key]))
   Object.freeze(domains)
@@ -397,6 +449,7 @@ export function evaluateRobotDomains<T>(
       algebra.literal(1)
     ] as const)
   })
+
   return Object.freeze({
     domains,
     ...evaluateChain(rig, joints, algebra, rest)
@@ -424,6 +477,7 @@ function affineFrame<T>(
   const wx = mul(w, x2),
     wy = mul(w, y2),
     wz = mul(w, z2)
+
   return Object.freeze({
     matrix: Object.freeze([
       vector(
@@ -457,13 +511,16 @@ export function evaluateRobotAffinePose(rig: RobotRig, input: RobotJoints) {
   const parts = Object.freeze(
     pose.parts.map((part) => {
       let affine = frames.get(part.transform)
+
       if (!affine) {
         affine = affineFrame(part.transform, work, numberAlgebra)
         frames.set(part.transform, affine)
       }
+
       return Object.freeze({ ...part, affine })
     })
   )
+
   return Object.freeze({
     pose,
     parts,
@@ -482,30 +539,41 @@ export function evaluateRobotIntervalPose(rig: RobotRig, input: JointDomains) {
     terms: 0,
     maxBigIntBits: 0
   }
+
   const binary = (operation: typeof add) => (a: Interval, b: Interval) => {
     work.scalarOperations++
+
     return Object.freeze(operation(a, b))
   }
+
   const trig = (kind: 'sin' | 'cos', value: Interval) => {
     work.trigCalls++
     const result = boundPolynomialTrig(kind, value)
+
     work.polynomialEvaluations += result.work.evaluations
     work.terms += result.work.terms
     work.maxBigIntBits = Math.max(work.maxBigIntBits, result.work.maxBigIntBits)
+
     return result.bounds
   }
+
   const algebra: KinematicAlgebra<Interval> = {
     range: (low, high) => Object.freeze({ low, high }),
+
     literal: (value) => Object.freeze(interval(value)),
+
     add: binary(add),
     subtract: binary(subtract),
     multiply: binary(multiply),
     divide: binary(divide),
+
     sin: (value) => trig('sin', value),
+
     cos: (value) => trig('cos', value)
   }
   // This entry performs all domain admission before invoking the algebra.
   const pose = evaluateRobotDomains(rig, input, algebra)
+
   work.fk++
   const frames = new Map<
     Transform<Interval>,
@@ -514,12 +582,15 @@ export function evaluateRobotIntervalPose(rig: RobotRig, input: JointDomains) {
   const parts = Object.freeze(
     pose.parts.map((part) => {
       let affine = frames.get(part.transform)
+
       if (!affine) {
         affine = affineFrame(part.transform, work, algebra)
         frames.set(part.transform, affine)
       }
+
       return Object.freeze({ ...part, affine })
     })
   )
+
   return Object.freeze({ rig, pose, parts, work: Object.freeze(work) })
 }

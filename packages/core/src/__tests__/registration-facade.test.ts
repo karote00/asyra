@@ -38,12 +38,14 @@ const createCoreForTest = () => {
     props,
     render: {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1
     } as never,
     sceneTree: {} as never,
     selection: {} as never,
     systemContext: {} as never
   })
+
   return { core, props, sharedChannels }
 }
 
@@ -72,6 +74,7 @@ describe('Core registration facade', () => {
 
   it('preserves duplicate feature registration failure', () => {
     const { core } = createCoreForTest()
+
     core.defineFeature(FEATURE_NAME, undefined, { api: {} })
 
     expect(() =>
@@ -85,6 +88,7 @@ describe('Core registration facade', () => {
       type: PROPERTY_TYPE,
       defaults: { value: 0 }
     })
+
     core.registerPropertySchema({
       type: PROPERTY_TYPE,
       fields: [{ key: 'value', kind: 'number', defaultValue: 0 }]
@@ -102,6 +106,7 @@ describe('Core registration facade', () => {
       type: PROPERTY_TYPE,
       defaults: { value: 0 }
     })
+
     core.registerPropertySchema({
       type: PROPERTY_TYPE,
       fields: [{ key: 'value', kind: 'number', defaultValue: 0 }]
@@ -145,6 +150,7 @@ describe('Core registration facade', () => {
       type: PROPERTY_TYPE,
       defaults: { value: 0 }
     })
+
     core.registerPropertySchema({
       type: PROPERTY_TYPE,
       fields: [{ key: 'value', kind: 'number', defaultValue: 0 }]
@@ -203,7 +209,9 @@ describe('Core registration facade', () => {
       props: new PropsManager(),
       render: {
         getViewportPosition: () => ({ x: 0, y: 0 }),
+
         getViewportScale: () => 1,
+
         registerLayer
       } as never,
       sceneTree: {} as never,
@@ -216,6 +224,7 @@ describe('Core registration facade', () => {
       name: 'diagnostic-layer',
       layer: {},
       shouldUpdate,
+
       update: () => true
     })
 

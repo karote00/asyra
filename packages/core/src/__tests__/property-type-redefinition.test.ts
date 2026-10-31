@@ -42,15 +42,18 @@ const createCoreForTest = () => {
     props,
     render: {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1
     } as never,
     sceneTree: new SceneTree(),
     selection: {} as never,
     systemContext: {} as never
   })
+
   core.setupInputSystem = vi.fn()
   core.initFeatureSystem = vi.fn()
   core.renderIsReady = vi.fn()
+
   return { core, props }
 }
 
@@ -68,6 +71,7 @@ const cleanup = () => {
 const fieldsToDefaults = (fields: readonly PropertyFieldSchema[]) =>
   fields.reduce<Record<string, unknown>>((defaults, field) => {
     defaults[field.key] = field.defaultValue
+
     return defaults
   }, {})
 
@@ -89,11 +93,13 @@ const defineDeclarativeType = (
   }
 ) => {
   const owner = options.owner ?? PRESET_OWNER
+
   core.registerPropertySchema(
     { type: options.type, fields: options.fields },
     undefined,
     { owner }
   )
+
   return core.definePropertyComponent({
     type: options.type,
     defaults: fieldsToDefaults(options.fields),
@@ -125,6 +131,7 @@ const leavePropertyTargetPending = (core: Core, propertyType: string) => {
   const graph = (core as unknown as { registrationGraph: RegistrationGraph })
     .registrationGraph
   const source = { kind: 'test-detach-owner', key: propertyType }
+
   graph.registerNode({
     ref: source,
     handlers: {
@@ -147,7 +154,9 @@ const leavePropertyTargetPending = (core: Core, propertyType: string) => {
 
 const setSuccessfulRenderer = (core: Core) => {
   const init = vi.fn(async () => ({ canvas: null, instance: null }))
+
   core.setRenderer({ name: 'test-renderer', init } as never)
+
   return init
 }
 
@@ -156,6 +165,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('returns detached definitions without changing owner or relations', () => {
     const { core } = createCoreForTest()
+
     defineDeclarativeType(core, {
       type: STYLE,
       fields: [{ key: 'tone', kind: 'string', defaultValue: 'warm' }]
@@ -168,6 +178,7 @@ describe('Core declarative property type redefinition', () => {
       dynamicReservedKeys: string[]
       fields: { defaultValue: unknown }[]
     }
+
     mutable.dynamicReservedKeys.push('changed')
     mutable.fields[0].defaultValue = 'cold'
 
@@ -186,6 +197,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('atomically redefines through Props, transfers app ownership, and preserves relations', () => {
     const { core } = createCoreForTest()
+
     defineDeclarativeType(core, {
       type: CHILD,
       fields: [{ key: 'value', kind: 'number', defaultValue: 0 }]
@@ -231,6 +243,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('keeps definition, owner, and relations unchanged for updater and identity failures', () => {
     const { core } = createCoreForTest()
+
     defineDeclarativeType(core, {
       type: STYLE,
       fields: [{ key: 'tone', kind: 'string', defaultValue: 'warm' }]
@@ -265,6 +278,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('blocks nested composition mutation until owner transfer completes', () => {
     const { core } = createCoreForTest()
+
     defineDeclarativeType(core, {
       type: STYLE,
       fields: [{ key: 'tone', kind: 'string', defaultValue: 'warm' }]
@@ -276,6 +290,7 @@ describe('Core declarative property type redefinition', () => {
       () =>
         core.redefinePropertyType(STYLE, (current) => {
           core.unregisterPropertyType(STYLE)
+
           return current
         }),
       'UNREGISTER_FAILED'
@@ -299,6 +314,7 @@ describe('Core declarative property type redefinition', () => {
         fields: [{ key: 'tone', kind: 'string', defaultValue: 'warm' }]
       })
       const property = new Constructor({ id: 'style-in-use', type: STYLE })
+
       if (replay) {
         props.addToDeletedMap(property)
       } else {
@@ -322,6 +338,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('rejects missing, pending, and closed composition before updater execution', async () => {
     const { core } = createCoreForTest()
+
     expectRelationError(
       () => core.redefinePropertyType('missing-type', (current) => current),
       'REGISTRATION_NOT_FOUND'
@@ -333,6 +350,7 @@ describe('Core declarative property type redefinition', () => {
     })
     leavePropertyTargetPending(core, STYLE)
     const pendingUpdater = vi.fn((current) => current)
+
     expectRelationError(
       () => core.redefinePropertyType(STYLE, pendingUpdater),
       'UNREGISTER_FAILED'
@@ -340,6 +358,7 @@ describe('Core declarative property type redefinition', () => {
     expect(pendingUpdater).not.toHaveBeenCalled()
 
     const failure = new Error('renderer failed')
+
     core.setRenderer({
       name: 'failing-renderer',
       init: vi.fn(async () => Promise.reject(failure))
@@ -359,6 +378,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('blocks startup when a redefinition leaves a stale fixed component alias', async () => {
     const { core } = createCoreForTest()
+
     defineDeclarativeType(core, {
       type: STYLE,
       fields: [{ key: 'legacy', kind: 'number', defaultValue: 1 }]
@@ -383,6 +403,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('rejects a redefinition that would leave a stale property-child key before registry mutation', () => {
     const { core } = createCoreForTest()
+
     defineDeclarativeType(core, {
       type: CHILD,
       fields: [{ key: 'value', kind: 'number', defaultValue: 0 }]
@@ -414,6 +435,7 @@ describe('Core declarative property type redefinition', () => {
 
   it('allows an explicitly permitted dynamic component alias after redefinition', async () => {
     const { core } = createCoreForTest()
+
     defineDeclarativeType(core, {
       type: STYLE,
       fields: [{ key: 'seed', kind: 'number', defaultValue: 1 }],

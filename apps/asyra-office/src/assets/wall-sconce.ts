@@ -13,9 +13,11 @@ export function wallSconce() {
     spec.components.find((c) => c.partId === 'shade'),
     'shade'
   )
+
   if (!('profileRZ' in shadePart)) {
     throw new Error('Missing shade profile')
   }
+
   const shade = requiredSpecValue(shadePart.profileRZ, 'shade profile')
   const path: Vec[] = bezier(
     [
@@ -26,18 +28,24 @@ export function wallSconce() {
     ],
     24
   )
+
   for (let i = 1; i <= 48; i++) {
     const t = (i * Math.PI) / 48
+
     path.push([0, -0.1 + 0.06 * Math.cos(t), 0.185 + 0.06 * Math.sin(t)])
   }
+
   path.push([0, -0.16, 0.145])
   const plate = cylinder(0.05, 0.012, 0.05, 48)
+
   for (let i = 0; i < plate.positions.length; i += 3) {
     const y = plate.positions[i + 1],
       z = plate.positions[i + 2]
+
     plate.positions[i + 1] = -z - 0.006
     plate.positions[i + 2] = y + 0.14
   }
+
   const pieces = [
     part('wall-plate', plate, 0x70543a, 'metal'),
     part('arm', tube(path, 0.005, 16), 0x70543a, 'metal'),
@@ -65,5 +73,6 @@ export function wallSconce() {
       [0, -0.16, 0.0825]
     )
   ]
+
   return pieces
 }

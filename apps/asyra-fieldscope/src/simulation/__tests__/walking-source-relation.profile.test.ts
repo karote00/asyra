@@ -58,6 +58,7 @@ describe('selected-chain source relations', () => {
     const required =
       motion.parts.reduce((n, p) => n + p.part.regions.length, 0) *
       motion.fixed.parts.reduce((n, p) => n + p.part.regions.length, 0)
+
     expect(result.coverage.required).toBe(required)
     expect(
       result.coverage.strictBounds +
@@ -100,6 +101,7 @@ describe('selected-chain source relations', () => {
       })
     )
     const work = relations.work
+
     expect(relations.read(current, motion)).toBe(result)
     expect(relations.work).toEqual(work)
     expect(relations.prepare(current, result.request)).toBe(result)
@@ -119,6 +121,7 @@ describe('selected-chain source relations', () => {
       ...result.request,
       motion: nextMotion
     })
+
     expect(reused.status).toBe('clear')
     expect(reused.coverage).toEqual(fresh.coverage)
     expect(reused.work.evaluator.regionPreparations).toBe(0)
@@ -141,6 +144,7 @@ describe('selected-chain source relations', () => {
       ...result.request,
       budget: { ...result.request.budget, maxExactPredicates: 1 }
     })
+
     expect(exhausted.status).toBe('unknown')
     expect(exhausted.coverage.unvisited).toBe(required)
     expect(
@@ -156,6 +160,7 @@ describe('selected-chain source relations', () => {
     ).toBeUndefined()
     const replacement = cycleFixture({ sourceProfile: 'solid-articulation/2' })
     const replacementCycle = owner.prepare(replacement.source, replacement.raw)
+
     expect(relations.read(current, motion)).toBeUndefined()
     const replacementMotion = owner.prepareSelectedChainMotion(
       replacementCycle,
@@ -169,6 +174,7 @@ describe('selected-chain source relations', () => {
       { owner, cycle: replacementCycle },
       { ...result.request, motion: replacementMotion }
     )
+
     expect(replaced.status).toBe('clear')
     expect(replaced.work.evaluator.sourceCertificationReuses).toBe(0)
     expect(replaced.work.evaluator.regionPreparations).toBe(
@@ -189,6 +195,7 @@ describe('current whole walking source relations', () => {
     id: 'source-relation-functional',
     label: 'Source relation - synthetic functional evidence'
   } as const
+
   beforeAll(() => {
     source = new WalkingRobotSourceOwner().prepare(
       createSyntheticWalkingRobotDefinition({
@@ -202,6 +209,7 @@ describe('current whole walking source relations', () => {
     const soleHeights = pose.frames.contacts.feet.map(
       (contact) => contact.position[1]
     )
+
     expect(soleHeights.every((value) => value === soleHeights[0])).toBe(true)
     groundingOffset = -soleHeights[0]
     const frames = new Map(
@@ -209,11 +217,14 @@ describe('current whole walking source relations', () => {
     )
     const min = [Infinity, Infinity, Infinity],
       max = [-Infinity, -Infinity, -Infinity]
+
     for (const part of source.parts) {
       const body = frames.get(part.bodyId)
+
       if (!body) {
         throw new Error('Missing actual source body')
       }
+
       for (const point of walkingSourcePointBounds(part.shape, [
         part.localFrame,
         body
@@ -224,6 +235,7 @@ describe('current whole walking source relations', () => {
         }
       }
     }
+
     robotExtent = max.map((value, axis) => value - min[axis])
     const farm = validateConfiguration(DEFAULT_CONFIGURATION),
       geometry = new SiteGeometry()
@@ -231,14 +243,18 @@ describe('current whole walking source relations', () => {
     const soil = farm.strips
       .filter((strip) => strip.kind === 'soil')
       .sort((a, b) => b.width - a.width)[0]
+
     if (!soil) {
       throw new Error('Missing current soil strip')
     }
+
     const routeLength = robotExtent[2] + robotExtent[2] / 2
     const routeFrom = (farm.length - routeLength) / 2
+
     if (routeFrom < 0 || soil.width < robotExtent[0]) {
       throw new Error('Current source does not fit the chosen route envelope')
     }
+
     demand = prepareSceneDemand(
       farm,
       scene,
@@ -257,11 +273,13 @@ describe('current whole walking source relations', () => {
       })
     )
   }, 30000)
+
   const request = (
     preset: 'stowed' | 'leftWorking' | 'rightWorking',
     displacement = 0
   ) => {
     const route = demand.freePassage.route
+
     if (
       !route ||
       !demand.route ||
@@ -269,6 +287,7 @@ describe('current whole walking source relations', () => {
     ) {
       throw new Error('Missing actual W1 route')
     }
+
     const center = route.min.map((value, axis) => (value + route.max[axis]) / 2)
     const usableLength = route.max[2] - route.min[2] - robotExtent[2]
     const travel =
@@ -378,11 +397,14 @@ describe('current whole walking source relations', () => {
       }
     }
     const admitted = readWalkingMotionRequest(raw, source, demand)
+
     if (admitted.format !== 'walking-motion-request/2') {
       throw new Error('Missing current source request')
     }
+
     return admitted
   }
+
   it.each(['evaluation', 'load'] as const)(
     'rejects stale interval provenance with the same path and different %s',
     (component) => {
@@ -392,6 +414,7 @@ describe('current whole walking source relations', () => {
           ? { ...input, evaluation: { from: 0, until: 0.5 } }
           : { ...input, load: { ...input.load, id: 'another-load' } }
       const intervals = prepareWalkingMotionIntervals(source, foreign)
+
       expect(intervals.path).toBe(input.path)
       expect(() =>
         prepareWalkingSourceRelations(source, demand, input, intervals)
@@ -408,6 +431,7 @@ describe('current whole walking source relations', () => {
         input,
         prepareWalkingMotionIntervals(source, input)
       )
+
       expect(result.request).toBe(input)
       expect(result.source).toBe(source)
       expect(result.demand).toBe(demand)
@@ -429,6 +453,7 @@ describe('current whole walking source relations', () => {
             segment.coverage.unvisited
         )
       }
+
       expect(result.work.regionPreparations).toBeLessThanOrEqual(
         source.parts.reduce((sum, part) => sum + part.regions.length, 0) +
           demand.freePassage.exclusions.filter((item) => item.kind === 'source')
@@ -448,12 +473,15 @@ describe('current whole walking source relations', () => {
     let currentDemand: typeof demand | undefined = demand
     const owner = new WalkingMotionOwner({
       getCurrentWalkingRobotSource: () => source,
+
       getCurrentSceneDemand: () => currentDemand
     })
     const admitted = owner.prepare(input)
+
     expect(admitted.sourceRelations?.request).toBe(input)
     expect(admitted.sourceRelations?.status).toBe('unknown')
     const work = admitted.sourceRelations?.work
+
     expect(owner.prepare(input)).toBe(admitted)
     expect(owner.read()).toBe(admitted)
     expect(admitted.sourceRelations?.work).toBe(work)
@@ -503,9 +531,11 @@ describe('current whole walking source relations', () => {
         source,
         demand
       )
+
       if (input.format !== 'walking-motion-request/2') {
         throw new Error('Missing source request')
       }
+
       const intervals = prepareWalkingMotionIntervals(source, input)
       const result = prepareWalkingSourceRelations(
         source,
@@ -513,11 +543,14 @@ describe('current whole walking source relations', () => {
         input,
         intervals
       )
+
       expect(result.reasons).toContain('support-contact-motion-unproved')
       const route = demand.freePassage.route
+
       if (!route) {
         throw new Error('Missing source route')
       }
+
       for (const envelope of intervals.segments[0].envelopes) {
         for (const axis of [0, 2]) {
           expect(envelope.bounds.min[axis]).toBeGreaterThanOrEqual(
@@ -526,6 +559,7 @@ describe('current whole walking source relations', () => {
           expect(envelope.bounds.max[axis]).toBeLessThanOrEqual(route.max[axis])
         }
       }
+
       expect(result.status).not.toBe('clear')
       expect(result.segments[0].self.blocked).toBe(0)
       expect(result.segments[0].self.unknown).toBe(0)
@@ -558,15 +592,18 @@ describe('current whole walking source relations', () => {
       source,
       demand
     )
+
     if (input.format !== 'walking-motion-request/2') {
       throw new Error('Missing source request')
     }
+
     const result = prepareWalkingSourceRelations(
       source,
       demand,
       input,
       prepareWalkingMotionIntervals(source, input)
     )
+
     expect(result.segments).toHaveLength(2)
     expect(result.segments[1].coverage.required).toBe(
       result.segments[1].coverage.unvisited
@@ -584,9 +621,11 @@ describe('current whole walking source relations', () => {
       source,
       demand
     )
+
     if (input.format !== 'walking-motion-request/2') {
       throw new Error('Missing source request')
     }
+
     const intervals = prepareWalkingMotionIntervals(source, input)
     const result = prepareWalkingSourceRelations(
       source,
@@ -599,22 +638,27 @@ describe('current whole walking source relations', () => {
       ...demand.targets.right,
       ...demand.targets.unassigned
     ].reduce((sum, target) => sum + target.partitions.length, 0)
+
     expect(result.work.targetPartitionVisits).toBe(partitions)
     const sourceExclusions = demand.freePassage.exclusions.filter(
       (item) => item.kind === 'source'
     ).length
+
     expect(result.work.sourceExclusionBindings).toBe(sourceExclusions)
     const moving = source.parts.reduce(
       (sum, part) => sum + part.regions.length,
       0
     )
+
     expect(result.segments[0].environment.candidate).toBe(
       moving * (sourceExclusions + 1)
     )
     const route = demand.freePassage.route
+
     if (!route) {
       throw new Error('Missing current route')
     }
+
     for (const envelope of intervals.segments[0].envelopes) {
       for (const axis of [0, 2]) {
         expect(envelope.bounds.min[axis]).toBeGreaterThanOrEqual(

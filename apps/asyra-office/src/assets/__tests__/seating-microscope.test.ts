@@ -7,13 +7,16 @@ it('retains a broad tea-chair crown across the central half-width of the approve
     teaChair().find((p) => p.id === 'shell'),
     'shell'
   ).mesh.positions
+
   for (const sign of [-1, 1]) {
     const heights: number[] = []
+
     for (let i = 0; i < positions.length; i += 3) {
       if (Math.abs(positions[i] - sign * 0.12) < 0.003) {
         heights.push(positions[i + 2])
       }
     }
+
     expect(Math.max(...heights)).toBeGreaterThan(0.64)
   }
 })
@@ -28,6 +31,7 @@ it('keeps both prepared armchair panels closed at both detail levels and tied to
     specification.modules.find((m) => m.moduleId === 'lounge-armchair'),
     'armchair'
   ).components.filter((c) => c.primitive === 'upholstered-profile-panel')
+
   expect(
     createHash('sha256').update(JSON.stringify(components)).digest('hex')
   ).toBe(prepared.sourceSha256)
@@ -40,16 +44,20 @@ it('keeps both prepared armchair panels closed at both detail levels and tied to
     )
     for (const mesh of [panel.mesh, panel.distant.mesh]) {
       const edges = new Map<string, number>()
+
       for (let i = 0; i < mesh.indices.length; i += 3) {
         const tri = mesh.indices.slice(i, i + 3)
+
         expect(new Set(tri).size).toBe(3)
         for (let k = 0; k < 3; k++) {
           const a = tri[k],
             b = tri[(k + 1) % 3],
             key = a < b ? `${a}:${b}` : `${b}:${a}`
+
           edges.set(key, (edges.get(key) ?? 0) + 1)
         }
       }
+
       expect([...edges.values()].every((n) => n === 2)).toBe(true)
       expect(mesh.positions.every(Number.isFinite)).toBe(true)
     }
@@ -59,6 +67,7 @@ it('keeps both prepared armchair panels closed at both detail levels and tied to
 it('keeps the complete armchair below twenty thousand master triangles', async () => {
   const { catalogAsset } = await import('../catalog')
   const parts = catalogAsset('lounge-armchair')
+
   expect(
     parts.reduce((total, p) => total + p.mesh.indices.length / 3, 0)
   ).toBeLessThanOrEqual(20000)

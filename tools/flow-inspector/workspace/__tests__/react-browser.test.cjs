@@ -20,22 +20,28 @@ test(
         .find((line) => line.startsWith('FLOW_PROOF_URL='))
         ?.slice('FLOW_PROOF_URL='.length)
         .trim()
+
     assert.ok(configured, 'FLOW_PROOF_URL must identify the live review origin')
     const output = path.join(root, 'tmp/readability/react-browser')
+
     fs.mkdirSync(output, { recursive: true })
     const server = await startServer(root, { url: configured })
+
     t.after(() => server.close())
     const browser = await chromium.launch({
       headless: true,
       channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
       env: { ...process.env, TMPDIR: output }
     })
+
     t.after(() => browser.close())
     const page = await browser.newPage({
       viewport: { width: 1440, height: 1000 }
     })
+
     page.setDefaultTimeout(5000)
     const errors = []
+
     page.on('pageerror', (error) => {
       errors.push(error.message)
       fs.writeFileSync(
@@ -60,11 +66,13 @@ test(
     assert.ok((await page.locator('[data-route-id]').count()) > 0)
     await page.getByRole('button', { name: 'Fit all', exact: true }).click()
     const viewport = page.getByRole('region', { name: 'Inspector flow' })
+
     assert.ok(Number(await viewport.getAttribute('data-zoom-scale')) > 0)
     await page.locator('[data-step-id]').nth(1).click()
     const selected = await page
       .locator('[data-step-id][aria-pressed="true"]')
       .getAttribute('data-step-id')
+
     await page.getByRole('searchbox').fill('core')
     assert.equal(
       await page

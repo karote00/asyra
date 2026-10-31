@@ -29,25 +29,31 @@ const frame: SpatialFrame = {
     }
   ]
 }
+
 describe('Spatial projection owner', () => {
   afterEach(() => vi.restoreAllMocks())
   it('coalesces camera bursts without resubmitting meshes and preserves a pending model update', () => {
     const invalidate = vi.fn(),
       layer = new SpatialLayer(invalidate)
+
     layer.submit(frame)
     layer.registration.update?.()
     const update = vi.spyOn(RenderMesh.prototype, 'update')
+
     invalidate.mockClear()
     for (let i = 1; i <= 60; i++) {
       layer.submitCamera({ ...frame.camera, position: [i, 0, 5] })
     }
+
     expect(invalidate).toHaveBeenCalledTimes(1)
     layer.registration.update?.()
     expect(update).not.toHaveBeenCalled()
     const container = layer.registration.layer
+
     if (!(container instanceof RenderContainer)) {
       throw new Error('Missing spatial container')
     }
+
     expect(
       container.children[0].getEngineProperties()[SPATIAL_PROPERTY]
     ).toMatchObject({ position: [60, 0, 5] })
@@ -88,6 +94,7 @@ describe('Spatial projection owner', () => {
   it('retains a pending complete frame and invalidates only accepted submissions', () => {
     const invalidate = vi.fn(),
       layer = new SpatialLayer(invalidate)
+
     layer.submit(frame)
     expect(layer.registration.shouldUpdate?.()).toBe(true)
     expect(layer.registration.update?.()).toBe(true)
@@ -106,6 +113,7 @@ describe('Spatial projection owner', () => {
 it('rejects non-string visual identities before replacing accepted pending output', () => {
   const invalidate = vi.fn(),
     layer = new SpatialLayer(invalidate)
+
   layer.submit(frame)
   expect(() =>
     layer.submit({

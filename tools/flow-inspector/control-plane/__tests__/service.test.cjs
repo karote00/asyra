@@ -13,13 +13,16 @@ const { startServer } = require('../server.cjs')
 const { main: runCli } = require('../cli.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/service-tests')
+
 const directory = () => {
   fs.mkdirSync(parent, { recursive: true })
+
   return fs.mkdtempSync(path.join(parent, 'store-'))
 }
 
 test('service selection and restart retain the chosen product and reject another product store', async (t) => {
   const dir = directory()
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const manifestPath = path.relative(
     root,
@@ -28,11 +31,13 @@ test('service selection and restart retain the chosen product and reject another
   const definition = structuredClone(
     require('../../../../packages/factory/flow-contracts.json')
   )
+
   definition.manifestPath = manifestPath
   definition.flows[0].title = 'Selected product flow'
   fs.writeFileSync(path.join(root, manifestPath), JSON.stringify(definition))
   const options = { manifestPath, directory: path.join(dir, 'records') }
   let service = createService(root, options)
+
   try {
     assert.equal(service.state().contract.manifestPath, manifestPath)
     assert.equal(
@@ -42,14 +47,17 @@ test('service selection and restart retain the chosen product and reject another
   } finally {
     await service.close()
   }
+
   service = createService(root, options)
   try {
     assert.equal(service.state().contract.manifestPath, manifestPath)
     const review = service.prepareMapping({}, LOCAL_ACTOR)
+
     assert.ok(review)
   } finally {
     await service.close()
   }
+
   assert.throws(
     () => createService(root, { directory: options.directory }),
     /product|manifest/
@@ -62,9 +70,12 @@ test('denied and invalid actions have zero capture and execution effects', async
   let executions = 0
   const service = createService(root, {
     directory: dir,
+
     capture: () => captures++,
+
     runner: () => executions++
   })
+
   try {
     assert.throws(
       () => service.start({}, { id: 'viewer', capabilities: [] }),
@@ -78,6 +89,7 @@ test('denied and invalid actions have zero capture and execution effects', async
     ]) {
       assert.throws(() => service.start(input, LOCAL_ACTOR))
     }
+
     assert.equal(captures, 0)
     assert.equal(executions, 0)
     assert.deepEqual(service.state().runs, [])
@@ -90,14 +102,18 @@ test('denied and invalid actions have zero capture and execution effects', async
 test('real baseline, precise cross-flow regression, and recovery retain separate attempts', async () => {
   const dir = directory()
   const service = createService(root, { directory: dir })
+
   try {
     const baselineId = service.start({}, LOCAL_ACTOR)
+
     assert.throws(() => service.start({}, LOCAL_ACTOR), /already running/)
     const baseline = await service.wait(baselineId)
+
     assert.equal(baseline.evidence.status, 'passed', JSON.stringify(baseline))
     const negative = await service.wait(
       service.start({ scenario: 'inverse-regression' }, LOCAL_ACTOR)
     )
+
     assert.equal(negative.evidence.flows[0].status, 'passed')
     assert.equal(negative.evidence.flows[1].status, 'failed')
     assert.deepEqual(
@@ -115,6 +131,7 @@ test('real baseline, precise cross-flow regression, and recovery retain separate
     )
     assert.deepEqual(negative.evidence.issues, [])
     const recovered = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.equal(recovered.evidence.status, 'passed')
     assert.equal(baseline.snapshot.digest, recovered.snapshot.digest)
     assert.notEqual(baseline.id, recovered.id)
@@ -131,6 +148,7 @@ test('cancellation settles before a subsequent attempt is admitted', async () =>
   let starts = 0
   const service = createService(root, {
     directory: dir,
+
     runner: async ({ signal }) => {
       starts++
       if (!signal.aborted) {
@@ -138,13 +156,17 @@ test('cancellation settles before a subsequent attempt is admitted', async () =>
           signal.addEventListener('abort', resolve, { once: true })
         )
       }
+
       return { code: null, reason: 'cancelled', report: null, output: '' }
     }
   })
+
   try {
     const id = service.start({}, LOCAL_ACTOR)
+
     await Promise.resolve()
     const record = await service.cancel(id, LOCAL_ACTOR)
+
     assert.equal(record.phase, 'cancelled')
     assert.equal(service.state().activeRunId, null)
     assert.equal(starts, 1)
@@ -158,13 +180,16 @@ test('cancellation settles before a subsequent attempt is admitted', async () =>
 test('historical evidence keeps its identity without certifying a different current contract', async () => {
   const dir = directory()
   let service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.equal(service.get(record.id).matchesCurrentContract, true)
     await service.close()
     const recordPath = path.join(dir, record.id, 'record.json')
     // A fixture representing a valid retained result from an older contract.
     const historical = JSON.parse(fs.readFileSync(recordPath))
+
     delete historical.sourceContract
     historical.snapshot.contractDigest = '0'.repeat(64)
     historical.contractDigest = historical.snapshot.contractDigest
@@ -173,6 +198,7 @@ test('historical evidence keeps its identity without certifying a different curr
     fs.writeFileSync(recordPath, JSON.stringify(historical))
     service = createService(root, { directory: dir })
     const retained = service.get(record.id)
+
     assert.equal(retained.matchesCurrentContract, false)
     assert.equal(retained.evidence.status, 'passed')
     assert.equal(retained.snapshot.digest, record.snapshot.digest)
@@ -181,6 +207,7 @@ test('historical evidence keeps its identity without certifying a different curr
     // A truncated result must not become a smaller, apparently passing proof
     // merely because its counters were also truncated.
     const incomplete = structuredClone(record)
+
     incomplete.evidence.cases.pop()
     incomplete.evidence.expectedCount--
     incomplete.evidence.passedCount--
@@ -191,6 +218,7 @@ test('historical evidence keeps its identity without certifying a different curr
     )
     for (const invalidRunner of [{ code: 1 }, { reason: 'cancelled' }]) {
       const invalid = structuredClone(record)
+
       Object.assign(invalid.runner, invalidRunner)
       fs.writeFileSync(recordPath, JSON.stringify(invalid))
       assert.throws(
@@ -208,10 +236,13 @@ test('request replay executes once across restart and polling never revalidates 
   const dir = directory()
   let service = createService(root, { directory: dir })
   const requestId = randomUUID()
+
   try {
     const id = service.start({ requestId }, LOCAL_ACTOR)
+
     assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
     const record = await service.wait(id)
+
     assert.equal(record.evidence.status, 'passed')
     assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
     assert.equal(service.state().runs.length, 1)
@@ -227,10 +258,12 @@ test('request replay executes once across restart and polling never revalidates 
     service = createService(root, { directory: dir })
     const validate = t.mock.method(evidenceOwner, 'validateStoredEvidence')
     const read = t.mock.method(fs, 'readFileSync')
+
     for (let i = 0; i < 25; i++) {
       assert.equal(service.get(id).evidence.status, 'passed')
       service.state()
     }
+
     assert.equal(validate.mock.callCount(), 0)
     assert.equal(read.mock.callCount(), 0)
     assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
@@ -244,11 +277,14 @@ test('request replay executes once across restart and polling never revalidates 
 test('admission detaches caller-owned flow selection before asynchronous execution', async () => {
   const dir = directory()
   const service = createService(root, { directory: dir })
+
   try {
     const flowIds = ['deferred-publication']
     const id = service.start({ flowIds }, LOCAL_ACTOR)
+
     flowIds.push('immediate-cancellation')
     const record = await service.wait(id)
+
     assert.equal(record.evidence?.status, 'passed', JSON.stringify(record))
     assert.equal(record.evidence.expectedCount, 3)
     assert.deepEqual(record.runner.identity.flowIds, ['deferred-publication'])
@@ -265,14 +301,17 @@ test('runtime source admission uses captured files once and reloads one server-o
   const runtimeOnly = t.mock.method(sourceOwner, 'validateRuntimeSource')
   const assess = t.mock.method(evidenceOwner, 'assessEvidence')
   const read = t.mock.method(fs, 'readFileSync')
+
   const manifestReads = () =>
     read.mock.calls.filter((call) =>
       String(call.arguments[0]).endsWith('/source-manifest.json')
     ).length
+
   try {
     const requestId = randomUUID()
     const id = service.start({ requestId }, LOCAL_ACTOR)
     const record = await service.wait(id)
+
     assert.equal(record.evidence.status, 'passed')
     assert.equal(
       validate.mock.callCount(),
@@ -281,6 +320,7 @@ test('runtime source admission uses captured files once and reloads one server-o
     )
     assert.equal(manifestReads(), 0, 'live admission reuses captured files')
     const admission = assess.mock.calls[0].arguments[5]
+
     assert.equal(admission.attemptId, id)
     assert.equal(admission.repository, fs.realpathSync(root))
     assert.equal(admission.head, record.snapshot.head)
@@ -316,6 +356,7 @@ test('runtime source admission uses captured files once and reloads one server-o
       assert.equal(service.get(id).evidence.status, 'passed')
       assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
     }
+
     assert.equal(validate.mock.callCount(), 2)
     assert.equal(
       runtimeOnly.mock.callCount(),
@@ -335,25 +376,36 @@ test('invalid live runtime source is rejected before runner dispatch and cannot 
   let runs = 0
   const service = createService(root, {
     directory: dir,
+
     capture: (...args) => {
       const snapshot = sourceOwner.captureSource(...args)
+
       if (invalid === 'null') {
         return { ...snapshot, runtimeSource: null }
       }
+
       if (invalid === 'missing-runtime') {
         const incomplete = { ...snapshot }
+
         delete incomplete.runtimeSource
+
         return incomplete
       }
+
       if (invalid === 'missing-files') {
         const incomplete = { ...snapshot }
+
         delete incomplete.files
+
         return incomplete
       }
+
       return snapshot
     },
+
     runner: async () => {
       runs++
+
       return {
         code: null,
         reason: 'containment-unavailable',
@@ -362,13 +414,16 @@ test('invalid live runtime source is rejected before runner dispatch and cannot 
       }
     }
   })
+
   try {
     const rejected = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.equal(rejected.phase, 'error')
     assert.equal(runs, 0)
     assert.match(rejected.error, /runtime/i)
     invalid = 'missing-files'
     const incomplete = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.equal(
       runs,
       0,
@@ -377,10 +432,12 @@ test('invalid live runtime source is rejected before runner dispatch and cannot 
     assert.match(incomplete.error, /manifest/i)
     invalid = 'missing-runtime'
     const missingRuntime = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.equal(runs, 0)
     assert.equal(missingRuntime.phase, 'error')
     invalid = false
     const next = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.notEqual(next.id, rejected.id)
     assert.equal(runs, 1)
     assert.equal(next.phase, 'error')
@@ -393,19 +450,23 @@ test('invalid live runtime source is rejected before runner dispatch and cannot 
 test('retained runtime source admission rejects corrupt or unsafe manifests and recovers without residual ownership', async (t) => {
   const dir = directory()
   let service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.equal(record.evidence.status, 'passed')
     await service.close()
     const manifest = path.join(dir, record.id, 'source-manifest.json')
     const bytes = fs.readFileSync(manifest)
     const recordFile = path.join(dir, record.id, 'record.json')
     const recordBytes = fs.readFileSync(recordFile)
+
     const restore = () => {
       fs.rmSync(manifest, { force: true })
       fs.writeFileSync(manifest, bytes)
       fs.writeFileSync(recordFile, recordBytes)
     }
+
     for (const [name, corrupt] of [
       ['missing manifest', () => fs.rmSync(manifest)],
       [
@@ -433,6 +494,7 @@ test('retained runtime source admission rejects corrupt or unsafe manifests and 
         'present null runtime identity',
         () => {
           const value = JSON.parse(recordBytes)
+
           value.snapshot.runtimeSource = null
           fs.writeFileSync(recordFile, JSON.stringify(value))
         }
@@ -441,6 +503,7 @@ test('retained runtime source admission rejects corrupt or unsafe manifests and 
         'unsupported runtime format',
         () => {
           const value = JSON.parse(recordBytes)
+
           value.snapshot.runtimeSource.format = 2
           fs.writeFileSync(recordFile, JSON.stringify(value))
         }
@@ -462,10 +525,13 @@ test('retained runtime source admission rejects corrupt or unsafe manifests and 
       assert.equal(service.get(record.id).evidence.status, 'passed')
       await service.close()
     }
+
     const forged = JSON.parse(recordBytes)
+
     forged.snapshot.manifestPath = '../../caller-selected-manifest.json'
     fs.writeFileSync(recordFile, JSON.stringify(forged))
     const read = t.mock.method(fs, 'readFileSync')
+
     service = createService(root, { directory: dir })
     assert.equal(service.get(record.id).evidence.status, 'passed')
     assert.equal(
@@ -488,11 +554,14 @@ test('retained runtime source admission rejects corrupt or unsafe manifests and 
 test('historical absence of runtime source never triggers new manifest reads or runtime admission', async (t) => {
   const dir = directory()
   let service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
     await service.close()
     const file = path.join(dir, record.id, 'record.json')
     const historical = JSON.parse(fs.readFileSync(file))
+
     delete historical.sourceContract
     delete historical.snapshot.runtimeSource
     delete historical.snapshot.runtimeAuthority
@@ -508,6 +577,7 @@ test('historical absence of runtime source never triggers new manifest reads or 
     fs.rmSync(path.join(dir, record.id, 'source-manifest.json'))
     const validate = t.mock.method(sourceOwner, 'validateRuntimeSource')
     const read = t.mock.method(fs, 'readFileSync')
+
     service = createService(root, { directory: dir })
     assert.equal(service.get(record.id).evidence.status, 'passed')
     assert.equal(
@@ -530,11 +600,14 @@ test('historical absence of runtime source never triggers new manifest reads or 
 test('combined source admission rejects conflicting new authority and keeps absent historical authority runtime-only', async (t) => {
   const dir = directory()
   let service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
     await service.close()
     const file = path.join(dir, record.id, 'record.json')
     const original = JSON.parse(fs.readFileSync(file))
+
     assert.ok(Object.hasOwn(original, 'sourceContract'))
     for (const corrupt of [
       (value) => {
@@ -557,6 +630,7 @@ test('combined source admission rejects conflicting new authority and keeps abse
       }
     ]) {
       const changed = structuredClone(original)
+
       corrupt(changed)
       fs.writeFileSync(file, JSON.stringify(changed))
       assert.throws(
@@ -564,7 +638,9 @@ test('combined source admission rejects conflicting new authority and keeps abse
         /contract|source|configuration|provenance/i
       )
     }
+
     const historical = structuredClone(original)
+
     delete historical.sourceContract
     delete historical.snapshot.runtimeAuthority
     delete historical.runner.identity.runtimeAuthorityFormat
@@ -577,6 +653,7 @@ test('combined source admission rejects conflicting new authority and keeps abse
     fs.writeFileSync(file, JSON.stringify(historical))
     const combined = t.mock.method(sourceOwner, 'validateSourceSnapshot')
     const stored = t.mock.method(evidenceOwner, 'validateStoredEvidence')
+
     service = createService(root, { directory: dir })
     assert.equal(service.get(record.id).evidence.status, 'passed')
     assert.equal(combined.mock.callCount(), 0)
@@ -594,12 +671,15 @@ test('failure before capture produces no authority and remains readable after re
   const dir = directory()
   let service = createService(root, {
     directory: dir,
+
     capture() {
       throw new Error('capture failed before snapshot')
     }
   })
+
   try {
     const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
     assert.equal(record.phase, 'error')
     assert.ok(Object.hasOwn(record, 'sourceContract'))
     assert.equal(Object.hasOwn(record, 'snapshot'), false)
@@ -609,6 +689,7 @@ test('failure before capture produces no authority and remains readable after re
     await service.close()
     const file = path.join(dir, record.id, 'record.json')
     const interrupted = JSON.parse(fs.readFileSync(file))
+
     interrupted.phase = 'running'
     delete interrupted.finishedAt
     fs.writeFileSync(file, JSON.stringify(interrupted))
@@ -630,6 +711,7 @@ function referenceFixture() {
     contract
   )
   const repository = snapshot.sourceRoot
+
   return { dir, contract, repository, runs: path.join(repository, 'runs') }
 }
 
@@ -637,13 +719,16 @@ test('source-aware version preparation binds retained bytes and exact current ba
   const f = referenceFixture()
   let service = createService(f.repository, { directory: f.runs })
   const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+
   try {
     const record = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(record.evidence.status, 'passed')
     const file = path.join(f.repository, f.contract.testFile)
     const original = fs.readFileSync(file)
+
     fs.chmodSync(file, 0o644)
     fs.writeFileSync(
       file,
@@ -653,6 +738,7 @@ test('source-aware version preparation binds retained bytes and exact current ba
       { attemptId: record.id },
       LOCAL_ACTOR
     )
+
     assert.equal(
       review.candidate.verificationSource.sourceDigest,
       record.snapshot.digest
@@ -663,6 +749,7 @@ test('source-aware version preparation binds retained bytes and exact current ba
     )
     assert.equal(verify.mock.callCount(), 1)
     const read = t.mock.method(fs, 'readFileSync')
+
     for (let i = 0; i < 10; i++) {
       assert.equal(
         service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR).id,
@@ -670,6 +757,7 @@ test('source-aware version preparation binds retained bytes and exact current ba
       )
       service.state()
     }
+
     assert.equal(read.mock.callCount(), 0)
     read.mock.restore()
     fs.writeFileSync(file, original)
@@ -682,6 +770,7 @@ test('source-aware version preparation binds retained bytes and exact current ba
       LOCAL_ACTOR
     )
     const next = service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR)
+
     assert.notEqual(next.id, review.id)
     assert.equal(next.baseRevision, 2)
     assert.equal(verify.mock.callCount(), 1)
@@ -693,6 +782,7 @@ test('source-aware version preparation binds retained bytes and exact current ba
       'multiple retained version/review references to one attempt read bytes once on restart'
     )
     const resumedRead = t.mock.method(fs, 'readFileSync')
+
     assert.equal(
       service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR).id,
       next.id
@@ -708,6 +798,7 @@ test('source-aware version preparation binds retained bytes and exact current ba
 test('unavailable retained reference bytes preserve history but cannot authorize a new-base review', async () => {
   const f = referenceFixture()
   let service = createService(f.repository, { directory: f.runs })
+
   try {
     const record = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -716,6 +807,7 @@ test('unavailable retained reference bytes preserve history but cannot authorize
       { attemptId: record.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: review.id,
@@ -743,13 +835,16 @@ test('unavailable retained reference bytes preserve history but cannot authorize
 test('historical candidate preparation remains standalone without a verification reference', async (t) => {
   const dir = directory()
   let service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     await service.close()
     const file = path.join(dir, record.id, 'record.json')
     const historical = JSON.parse(fs.readFileSync(file))
+
     delete historical.sourceContract
     delete historical.snapshot.runtimeAuthority
     delete historical.runner.identity.runtimeAuthorityFormat
@@ -760,11 +855,13 @@ test('historical candidate preparation remains standalone without a verification
     delete historical.evidence.contractScopeDigest
     fs.writeFileSync(file, JSON.stringify(historical))
     const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+
     service = createService(root, { directory: dir })
     const review = service.prepareEvolution(
       { attemptId: record.id },
       LOCAL_ACTOR
     )
+
     assert.equal(Object.hasOwn(review.candidate, 'verificationSource'), false)
     assert.equal(verify.mock.callCount(), 0)
   } finally {
@@ -776,6 +873,7 @@ test('historical candidate preparation remains standalone without a verification
 test('source-aware attempts with an older no-reference review prepare a new authoritative candidate without rewriting history', async (t) => {
   const dir = directory()
   let service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -784,10 +882,12 @@ test('source-aware attempts with an older no-reference review prepare a new auth
       { attemptId: record.id },
       LOCAL_ACTOR
     )
+
     await service.close()
     const file = path.join(dir, 'mapping.json')
     const mapping = JSON.parse(fs.readFileSync(file))
     const candidate = structuredClone(current.candidate)
+
     delete candidate.verificationSource
     const legacy = {
       ...require('../evolution.cjs').compareVersion(
@@ -798,21 +898,26 @@ test('source-aware attempts with an older no-reference review prepare a new auth
       attemptId: record.id,
       status: 'pending'
     }
+
     mapping.evolution.reviews = [legacy]
     fs.writeFileSync(file, JSON.stringify(mapping))
     const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+
     service = createService(root, { directory: dir })
     assert.equal(verify.mock.callCount(), 0)
     const upgraded = service.prepareEvolution(
       { attemptId: record.id },
       LOCAL_ACTOR
     )
+
     assert.ok(upgraded.candidate.verificationSource)
     assert.notEqual(upgraded.id, legacy.id)
     assert.equal(verify.mock.callCount(), 1)
     const saved = JSON.parse(fs.readFileSync(file))
+
     assert.deepEqual(saved.evolution.reviews[0], legacy)
     const read = t.mock.method(fs, 'readFileSync')
+
     assert.equal(
       service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR).id,
       upgraded.id
@@ -827,6 +932,7 @@ test('source-aware attempts with an older no-reference review prepare a new auth
 function pinnedTargetRequest(service, review, requestId = randomUUID()) {
   const contract = service.contract()
   const flow = contract.flows[0]
+
   return {
     action: 'create',
     requestId,
@@ -850,6 +956,7 @@ function pinnedTargetRequest(service, review, requestId = randomUUID()) {
 test('service supplies exact old-base reviewed pairs and separates historical targets from current byte availability', async (t) => {
   const f = referenceFixture()
   let service = createService(f.repository, { directory: f.runs })
+
   try {
     const record = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -861,6 +968,7 @@ test('service supplies exact old-base reviewed pairs and separates historical ta
     const publicReview = service
       .state()
       .evolution.reviews.find((item) => item.id === review.id)
+
     assert.equal(publicReview.candidateDigest, review.candidateDigest)
     assert.equal(
       publicReview.candidateContractDigest,
@@ -876,6 +984,7 @@ test('service supplies exact old-base reviewed pairs and separates historical ta
     )
     const request = pinnedTargetRequest(service, review)
     const created = service.decideTarget(request, LOCAL_ACTOR)
+
     assert.deepEqual(service.getTarget(created.id).targetVerification, {
       reviewId: review.id,
       candidateDigest: review.candidateDigest
@@ -884,15 +993,18 @@ test('service supplies exact old-base reviewed pairs and separates historical ta
     fs.rmSync(path.join(f.runs, record.id, 'source', f.contract.configFile))
     const compare = t.mock.method(require('../evolution.cjs'), 'compareVersion')
     const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+
     service = createService(f.repository, { directory: f.runs })
     assert.equal(compare.mock.callCount(), 1)
     assert.equal(verify.mock.callCount(), 1)
     const read = t.mock.method(fs, 'readFileSync')
+
     for (let i = 0; i < 10; i++) {
       assert.deepEqual(service.decideTarget(request, LOCAL_ACTOR), created)
       service.getTarget(created.id)
       service.targets()
     }
+
     assert.equal(read.mock.callCount(), 0)
     assert.equal(compare.mock.callCount(), 1)
     assert.equal(verify.mock.callCount(), 1)
@@ -911,6 +1023,7 @@ test('service supplies exact old-base reviewed pairs and separates historical ta
 test('service re-admits every retained version-review owner field and preserves exact rejected historical pins', async () => {
   const dir = directory()
   let service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -923,6 +1036,7 @@ test('service re-admits every retained version-review owner field and preserves 
       pinnedTargetRequest(service, review),
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: review.id,
@@ -940,6 +1054,7 @@ test('service re-admits every retained version-review owner field and preserves 
     await service.close()
     const file = path.join(dir, 'mapping.json')
     const original = JSON.parse(fs.readFileSync(file))
+
     for (const mutate of [
       (value) => {
         value.candidateDigest = '0'.repeat(64)
@@ -961,6 +1076,7 @@ test('service re-admits every retained version-review owner field and preserves 
       }
     ]) {
       const changed = structuredClone(original)
+
       mutate(changed.evolution.reviews[0])
       fs.writeFileSync(file, JSON.stringify(changed))
       assert.throws(
@@ -968,6 +1084,7 @@ test('service re-admits every retained version-review owner field and preserves 
         /review|relation|attempt|version/i
       )
     }
+
     fs.writeFileSync(file, JSON.stringify(original))
     service = createService(root, { directory: dir })
     assert.equal(
@@ -983,6 +1100,7 @@ test('service re-admits every retained version-review owner field and preserves 
 test('target review admission is detached from the candidate returned to a direct preparation caller', async () => {
   const dir = directory()
   const service = createService(root, { directory: dir })
+
   try {
     const record = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -992,11 +1110,13 @@ test('target review admission is detached from the candidate returned to a direc
       LOCAL_ACTOR
     )
     const digest = review.candidateDigest
+
     review.candidate.verificationSource = null
     const created = service.decideTarget(
       pinnedTargetRequest(service, review),
       LOCAL_ACTOR
     )
+
     assert.equal(
       service.getTarget(created.id).targetVerification.candidateDigest,
       digest
@@ -1010,10 +1130,12 @@ test('target review admission is detached from the candidate returned to a direc
 test('service pins exact accepted history independently of legacy mapping revision and later same-contract configuration versions', async () => {
   const f = referenceFixture()
   let service = createService(f.repository, { directory: f.runs })
+
   try {
     await service.close()
     const mappingFile = path.join(f.runs, 'mapping.json')
     const legacy = JSON.parse(fs.readFileSync(mappingFile))
+
     legacy.revision = 5
     delete legacy.evolution
     fs.writeFileSync(mappingFile, JSON.stringify(legacy))
@@ -1031,6 +1153,7 @@ test('service pins exact accepted history independently of legacy mapping revisi
       acceptedBaseline: { revision: 5, contractDigest: f.contract.digest }
     }
     const firstTarget = service.decideTarget(firstRequest, LOCAL_ACTOR)
+
     assert.deepEqual(service.getTarget(firstTarget.id).acceptedVersion, {
       revision: 1,
       contractDigest: f.contract.digest
@@ -1038,6 +1161,7 @@ test('service pins exact accepted history independently of legacy mapping revisi
     assert.equal(service.getTarget(firstTarget.id).acceptedBaseline.revision, 5)
 
     const config = path.join(f.repository, f.contract.configFile)
+
     fs.chmodSync(config, 0o644)
     fs.appendFileSync(
       config,
@@ -1046,6 +1170,7 @@ test('service pins exact accepted history independently of legacy mapping revisi
     const second = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(second.evidence.status, 'passed')
     assert.notEqual(
       first.snapshot.configurationDigest,
@@ -1055,6 +1180,7 @@ test('service pins exact accepted history independently of legacy mapping revisi
       { attemptId: second.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: secondReview.id,
@@ -1068,6 +1194,7 @@ test('service pins exact accepted history independently of legacy mapping revisi
       acceptedBaseline: { revision: 6, contractDigest: f.contract.digest }
     }
     const secondTarget = service.decideTarget(secondRequest, LOCAL_ACTOR)
+
     assert.equal(service.getTarget(secondTarget.id).acceptedVersion.revision, 2)
     await service.close()
     service = createService(f.repository, { directory: f.runs })
@@ -1082,6 +1209,7 @@ test('service pins exact accepted history independently of legacy mapping revisi
     // Prior consumers retained neither copy; reopening must not upgrade them.
     const targetsFile = path.join(f.runs, 'targets.json')
     const targets = JSON.parse(fs.readFileSync(targetsFile))
+
     delete targets.records[0].acceptedVersion
     delete targets.records[0].history[0].acceptedVersion
     fs.writeFileSync(targetsFile, JSON.stringify(targets))
@@ -1100,6 +1228,7 @@ test('service pins exact accepted history independently of legacy mapping revisi
 test('target proof production composes exact accepted and developing bundles with own-contract retention and no baseline promotion', async (t) => {
   const f = referenceFixture()
   let service = createService(f.repository, { directory: f.runs })
+
   try {
     const accepted = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -1108,6 +1237,7 @@ test('target proof production composes exact accepted and developing bundles wit
       { attemptId: accepted.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: acceptedReview.id,
@@ -1118,10 +1248,12 @@ test('target proof production composes exact accepted and developing bundles wit
     )
     const manifest = path.join(f.repository, f.contract.manifestPath)
     const definition = JSON.parse(fs.readFileSync(manifest))
+
     definition.flows[0].title += ' - Target proof'
     fs.chmodSync(manifest, 0o600)
     fs.writeFileSync(manifest, JSON.stringify(definition))
     const config = path.join(f.repository, f.contract.configFile)
+
     fs.chmodSync(config, 0o600)
     fs.appendFileSync(config, '\n// Frozen developing configuration\n')
     const developing = await service.wait(
@@ -1147,6 +1279,7 @@ test('target proof production composes exact accepted and developing bundles wit
     }
     const baseline = service.state().shared
     const testFile = path.join(f.repository, f.contract.testFile)
+
     fs.chmodSync(testFile, 0o600)
     fs.writeFileSync(
       testFile,
@@ -1161,6 +1294,7 @@ test('target proof production composes exact accepted and developing bundles wit
         LOCAL_ACTOR
       )
     )
+
     for (const record of [acceptedProof, targetProof]) {
       assert.equal(record.phase, 'completed')
       assert.equal(record.evidence.status, 'passed')
@@ -1174,6 +1308,7 @@ test('target proof production composes exact accepted and developing bundles wit
         service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR)
       )
     }
+
     assert.equal(
       acceptedProof.snapshot.verificationSource.digest,
       accepted.snapshot.verificationSource.digest
@@ -1197,6 +1332,7 @@ test('target proof production composes exact accepted and developing bundles wit
     assert.equal(service.get(targetProof.id).evidence.status, 'passed')
     const reads = t.mock.method(fs, 'readFileSync')
     const compose = t.mock.method(sourceOwner, 'composeSource')
+
     assert.equal(service.startTargetProof(request, LOCAL_ACTOR), targetProof.id)
     assert.equal(reads.mock.callCount(), 0)
     assert.equal(compose.mock.callCount(), 0)
@@ -1233,6 +1369,7 @@ test('target proof production composes exact accepted and developing bundles wit
 test('target proof lifecycle preserves cancellation interruption errors and retained exact verifier selection', async () => {
   const f = referenceFixture()
   let service = createService(f.repository, { directory: f.runs })
+
   try {
     const accepted = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -1241,6 +1378,7 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
       { attemptId: accepted.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: acceptedReview.id,
@@ -1250,6 +1388,7 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
       LOCAL_ACTOR
     )
     const config = path.join(f.repository, f.contract.configFile)
+
     fs.chmodSync(config, 0o600)
     fs.appendFileSync(config, '\n// Distinct target configuration\n')
     const developing = await service.wait(
@@ -1273,15 +1412,18 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
     const completed = await service.wait(
       service.startTargetProof(request, LOCAL_ACTOR)
     )
+
     assert.equal(completed.evidence.status, 'passed')
     await service.close()
     const file = path.join(f.runs, completed.id, 'record.json')
     const original = fs.readFileSync(file)
+
     for (const mutate of [
       (value) => (value.targetProof.request.role = 'other'),
       (value) => (value.targetProof.request.unknown = true)
     ]) {
       const malformed = JSON.parse(original)
+
       mutate(malformed)
       fs.writeFileSync(file, JSON.stringify(malformed))
       assert.throws(
@@ -1289,7 +1431,9 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
         /target proof|request/i
       )
     }
+
     const forged = JSON.parse(original)
+
     forged.targetProof.request.role = 'accepted'
     forged.targetProof.verificationSource =
       acceptedReview.candidate.verificationSource
@@ -1300,8 +1444,10 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
     )
     fs.writeFileSync(file, original)
     let executions = 0
+
     service = createService(f.repository, {
       directory: f.runs,
+
       runner: async ({ signal }) => {
         executions++
         if (!signal.aborted) {
@@ -1309,6 +1455,7 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
             signal.addEventListener('abort', resolve, { once: true })
           )
         }
+
         return { code: null, reason: 'cancelled', report: null, output: '' }
       }
     })
@@ -1317,18 +1464,22 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
       LOCAL_ACTOR
     )
     const cancelled = await service.cancel(cancellation, LOCAL_ACTOR)
+
     assert.equal(cancelled.phase, 'cancelled')
     assert.equal(executions, 1)
     await service.close()
     const interruptedFile = path.join(f.runs, cancellation, 'record.json')
     const interrupted = JSON.parse(fs.readFileSync(interruptedFile))
+
     interrupted.phase = 'running'
     delete interrupted.finishedAt
     fs.writeFileSync(interruptedFile, JSON.stringify(interrupted))
     service = createService(f.repository, {
       directory: f.runs,
+
       runner: async () => {
         executions++
+
         return { code: null, reason: 'timeout', report: null, output: '' }
       }
     })
@@ -1340,6 +1491,7 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
         LOCAL_ACTOR
       )
     )
+
     assert.equal(timed.phase, 'timed-out')
     assert.equal(executions, 2)
     // The reference was available at admission; later composition must check its bytes again.
@@ -1349,6 +1501,7 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
       'source',
       f.contract.configFile
     )
+
     fs.chmodSync(retainedConfig, 0o600)
     fs.appendFileSync(
       retainedConfig,
@@ -1360,6 +1513,7 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
         LOCAL_ACTOR
       )
     )
+
     assert.equal(failed.phase, 'error')
     assert.equal(failed.snapshot, undefined)
     assert.equal(executions, 2)
@@ -1385,6 +1539,7 @@ async function assessmentFixture(
   )
   const proofFile = path.join(f.repository, f.contract.testFile)
   const currentProof = fs.readFileSync(proofFile, 'utf8')
+
   if (distinct === 'retired-private-module') {
     fs.writeFileSync(privateModule, 'export const version = 1\n')
     fs.chmodSync(proofFile, 0o600)
@@ -1393,6 +1548,7 @@ async function assessmentFixture(
       "import '../retired-proof-helper'\n" + currentProof
     )
   }
+
   const accepted = await service.wait(
     service.start({ mode: 'candidate' }, LOCAL_ACTOR)
   )
@@ -1400,6 +1556,7 @@ async function assessmentFixture(
     { attemptId: accepted.id },
     LOCAL_ACTOR
   )
+
   service.decideEvolution(
     {
       id: acceptedReview.id,
@@ -1410,17 +1567,21 @@ async function assessmentFixture(
   )
   let source = accepted,
     review = acceptedReview
+
   if (distinct) {
     if (distinct === 'retired-private-module') {
       fs.rmSync(privateModule)
       fs.writeFileSync(proofFile, currentProof)
     }
+
     const config = path.join(f.repository, f.contract.configFile)
+
     fs.chmodSync(config, 0o600)
     fs.appendFileSync(config, '\n// Distinct assessment verifier\n')
     if (distinct === 'failure') {
       const assertions = path.join(f.repository, f.contract.testFile)
       const bytes = fs.readFileSync(assertions, 'utf8')
+
       fs.chmodSync(assertions, 0o600)
       fs.writeFileSync(
         assertions,
@@ -1430,15 +1591,18 @@ async function assessmentFixture(
         )
       )
     }
+
     source = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
     review = service.prepareEvolution({ attemptId: source.id }, LOCAL_ACTOR)
   }
+
   const request = pinnedTargetRequest(service, review)
   const obligations = review.candidate.contract.cases.filter(
     (item) => item.flowId === request.flowId
   )
+
   request.works = obligations.map((item) => ({
     id: randomUUID(),
     title: item.id,
@@ -1456,8 +1620,10 @@ async function assessmentFixture(
       }
     ]
   }
+
   request.pending = []
   const target = service.decideTarget(request, LOCAL_ACTOR)
+
   return {
     ...f,
     service,
@@ -1480,6 +1646,7 @@ async function fullRuntimeServiceEvidence() {
   )
   const runs = path.join(fixture.repository, 'runs')
   let service, server
+
   try {
     fixture.checkout(fixture.refs.base)
     fixture.installContract('accepted')
@@ -1487,11 +1654,13 @@ async function fullRuntimeServiceEvidence() {
     const acceptedSource = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(acceptedSource.evidence.status, 'passed')
     const acceptedReview = service.prepareEvolution(
       { attemptId: acceptedSource.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: acceptedReview.id,
@@ -1506,6 +1675,7 @@ async function fullRuntimeServiceEvidence() {
     const targetSource = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(targetSource.evidence.status, 'passed')
     const targetReview = service.prepareEvolution(
       { attemptId: targetSource.id },
@@ -1572,6 +1742,7 @@ async function fullRuntimeServiceEvidence() {
       },
       LOCAL_ACTOR
     )
+
     assert.throws(
       () =>
         service.startTargetAssessment(
@@ -1628,11 +1799,14 @@ async function fullRuntimeServiceEvidence() {
           LOCAL_ACTOR
         )
       )
+
       return { source, assessment }
     }
+
     const integrationRegression = await assess(
       fixture.refs.integrationRegression
     )
+
     assert.deepEqual(
       integrationRegression.assessment.result.targetContract.cases.map(
         (item) => [item.id, item.status]
@@ -1647,6 +1821,7 @@ async function fullRuntimeServiceEvidence() {
     assert.equal(integrationRegression.assessment.projection.eligible, false)
 
     const reverted = await assess(fixture.refs.reverted)
+
     assert.equal(reverted.source.snapshot.head, fixture.refs.reverted)
     assert.equal(reverted.assessment.result.source.head, fixture.refs.reverted)
     assert.equal(reverted.assessment.result.targetContract.status, 'failed')
@@ -1668,6 +1843,7 @@ async function fullRuntimeServiceEvidence() {
         )
       )
     }
+
     assert.equal(integrated.assessment.result.targetContract.status, 'passed')
     assert.equal(integrated.assessment.result.targetContract.status, 'passed')
     assert.ok(
@@ -1688,12 +1864,14 @@ async function fullRuntimeServiceEvidence() {
     )
 
     const retained = structuredClone(integrated.assessment)
+
     await service.close()
     service = undefined
     server = await startServer(fixture.repository, {
       url: 'http://127.0.0.1:0',
       serviceOptions: {
         directory: runs,
+
         runner: async () => {
           throw new Error('Restart must not rerun retained evidence')
         }
@@ -1705,6 +1883,7 @@ async function fullRuntimeServiceEvidence() {
       retained.result
     )
     const restartedReverted = service.getTargetAssessment(retainedReverted.id)
+
     assert.deepEqual(restartedReverted.result, retainedReverted.result)
     assert.equal(restartedReverted.result.source.head, fixture.refs.reverted)
     assert.equal(restartedReverted.result.integration.status, 'failed')
@@ -1723,9 +1902,11 @@ async function fullRuntimeServiceEvidence() {
       ['--url', server.origin, 'target-assessment-show', retained.id],
       {
         repositoryRoot: fixture.repository,
+
         write: (value) => cliOutput.push(value)
       }
     )
+
     assert.equal(shown, 0)
     assert.deepEqual(JSON.parse(cliOutput.join('')), api)
     assert.deepEqual(api, service.getTargetAssessment(retained.id))
@@ -1740,6 +1921,7 @@ async function fullRuntimeServiceEvidence() {
         'accepted.ui-context'
       ]
     }
+
     fs.writeFileSync(
       path.join(fixture.repository, 'target-acceptance.json'),
       JSON.stringify(acceptanceRequest)
@@ -1749,11 +1931,14 @@ async function fullRuntimeServiceEvidence() {
       ['--url', server.origin, 'target-accept', 'target-acceptance.json'],
       {
         repositoryRoot: fixture.repository,
+
         write: (value) => cliOutput.push(value)
       }
     )
+
     assert.equal(acceptedCode, 0)
     const acceptance = JSON.parse(cliOutput.join(''))
+
     assert.equal(acceptance.targetId, created.id)
     assert.equal(service.contract().digest, targetContract.digest)
     assert.equal(
@@ -1761,6 +1946,7 @@ async function fullRuntimeServiceEvidence() {
       false
     )
     const historicalRevert = service.getTargetAssessment(retainedReverted.id)
+
     assert.deepEqual(historicalRevert.result, retainedReverted.result)
     assert.equal(historicalRevert.projection.current, false)
     assert.equal(historicalRevert.projection.eligible, false)
@@ -1770,6 +1956,7 @@ async function fullRuntimeServiceEvidence() {
     } else {
       await service?.close()
     }
+
     fixture.cleanup()
   }
 }
@@ -1779,6 +1966,7 @@ test('full runtime fixture negative scenarios fail only the declared owner oblig
     root,
     path.join(root, 'tmp/flow-inspector/full-runtime-negative-tests')
   )
+
   try {
     for (const [kind, ref] of [
       ['accepted', fixture.refs.base],
@@ -1789,6 +1977,7 @@ test('full runtime fixture negative scenarios fail only the declared owner oblig
       const service = createService(fixture.repository, {
         directory: path.join(fixture.repository, 'negative-' + kind)
       })
+
       try {
         const contract = service.state().contract
         const result = await service.wait(
@@ -1797,6 +1986,7 @@ test('full runtime fixture negative scenarios fail only the declared owner oblig
             LOCAL_ACTOR
           )
         )
+
         assert.equal(result.evidence.status, 'failed')
         assert.deepEqual(
           result.evidence.cases
@@ -1821,10 +2011,12 @@ test(
   async (t) => {
     const f = await assessmentFixture()
     let service = f.service
+
     try {
       const target = service.getTarget(f.request.targetId)
       const reviewId = target.targetVerification.reviewId
       const beforeGeneric = JSON.stringify(service.state())
+
       assert.throws(
         () =>
           service.decideEvolution(
@@ -1841,6 +2033,7 @@ test(
       const assessment = await service.waitTargetAssessment(
         service.startTargetAssessment(f.request, LOCAL_ACTOR)
       )
+
       assert.equal(assessment.result.format, 3)
       assert.equal(assessment.result.targetContract.status, 'passed')
       assert.equal(assessment.projection.eligible, true)
@@ -1869,8 +2062,10 @@ test(
           fail = false
           throw new Error('Injected mapping rename failure')
         }
+
         return rename(from, to)
       })
+
       assert.throws(
         () => service.acceptTargetBaseline(request, LOCAL_ACTOR),
         /rename failure/
@@ -1879,6 +2074,7 @@ test(
       assert.equal(JSON.stringify(service.state()), liveBefore)
       write.mock.restore()
       const accepted = service.acceptTargetBaseline(request, LOCAL_ACTOR)
+
       assert.equal(accepted.targetId, target.id)
       assert.equal(accepted.assessmentId, assessment.id)
       assert.equal(accepted.resultingVersionRevision, 3)
@@ -1907,6 +2103,7 @@ test(
       await service.close()
       service = createService(f.repository, { directory: f.runs })
       const reads = t.mock.method(sourceOwner, 'verifyRetainedSnapshotBytes')
+
       assert.deepEqual(
         service.acceptTargetBaseline(canonicalRequest, LOCAL_ACTOR),
         accepted
@@ -1915,6 +2112,7 @@ test(
       assert.equal(service.contract().digest, target.targetRevision)
       await service.close()
       const mapping = JSON.parse(fs.readFileSync(mappingFile, 'utf8'))
+
       mapping.evolution.history.decisions.at(
         -1
       ).targetAcceptance.source.runtimeSourceDigest = '0'.repeat(64)
@@ -1947,10 +2145,12 @@ test(
       retirement: []
     }
     const file = path.join(f.runs, 'target-assessments.json')
+
     try {
       await service.close()
       const original = JSON.parse(fs.readFileSync(file, 'utf8'))
       const legacy = structuredClone(original)
+
       legacy.format = 1
       legacy.records[0].format = 1
       legacy.records[0].result.format = 1
@@ -1968,6 +2168,7 @@ test(
       )
       const producerBytes = fs.readFileSync(producerPath)
       const historicalProducer = JSON.parse(producerBytes)
+
       historicalProducer.targetProof.request.role = 'accepted'
       fs.writeFileSync(producerPath, JSON.stringify(historicalProducer))
       delete legacy.records[0].result.targetContract
@@ -2000,6 +2201,7 @@ test(
         }
       ]) {
         const invalid = structuredClone(original)
+
         mutate(invalid)
         fs.writeFileSync(file, JSON.stringify(invalid))
         assert.throws(
@@ -2011,6 +2213,7 @@ test(
       if (service) {
         await service.close().catch(() => undefined)
       }
+
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }
@@ -2023,10 +2226,12 @@ test(
     const f = await assessmentFixture(false, {}, true)
     let service = f.service,
       server
+
     try {
       const assessment = await service.waitTargetAssessment(
         service.startTargetAssessment(f.request, LOCAL_ACTOR)
       )
+
       assert.equal(assessment.result.targetContract.status, 'passed')
       assert.equal(assessment.result.works[1].status, 'passed')
       assert.equal(assessment.result.works[1].prerequisites.status, 'passed')
@@ -2043,6 +2248,7 @@ test(
         taskId,
         assessmentId: assessment.id
       }
+
       assert.throws(
         () =>
           service.decideTarget(
@@ -2063,6 +2269,7 @@ test(
       await service.close()
       const { startServer } = require('../server.cjs')
       const { main } = require('../cli.cjs')
+
       server = await startServer(f.repository, {
         url: 'http://127.0.0.1:0',
         serviceOptions: { directory: f.runs }
@@ -2073,8 +2280,10 @@ test(
       const validate = t.mock.method(sourceOwner, 'validateSourceSnapshot')
       const baseline = service.state().mapping
       const input = path.join(f.repository, 'offline-admission-request.json')
+
       fs.writeFileSync(input, JSON.stringify(request))
       const messages = []
+
       await main(
         [
           '--url',
@@ -2084,11 +2293,13 @@ test(
         ],
         {
           repositoryRoot: f.repository,
+
           write: (value) => messages.push(value)
         }
       )
       fs.rmSync(input)
       const admitted = JSON.parse(messages.join(''))
+
       assert.equal(assess.mock.callCount(), 0)
       assert.equal(validate.mock.callCount(), 0)
       assert.equal(admitted.decision.admission.assessmentId, assessment.id)
@@ -2106,6 +2317,7 @@ test(
       const api = await fetch(server.origin + '/api/targets/' + target.id).then(
         (response) => response.json()
       )
+
       assert.deepEqual(api, service.getTarget(target.id))
       assert.equal(api.works[1].prerequisites[0].status, 'passed')
       assess.mock.restore()
@@ -2116,6 +2328,7 @@ test(
         directory: f.runs
       })
       const restored = service.getTarget(target.id)
+
       assert.equal(
         restored.history.at(-1).admission.assessmentId,
         assessment.id
@@ -2129,6 +2342,7 @@ test(
       } else {
         await service.close()
       }
+
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }
@@ -2144,6 +2358,7 @@ async function admittedDependentTaskFixture() {
   const work = f.targetRequest.works[1]
   const taskId = randomUUID()
   const admissionId = randomUUID()
+
   service.decideTarget(
     {
       action: 'admit',
@@ -2159,6 +2374,7 @@ async function admittedDependentTaskFixture() {
   )
   await service.close()
   service = createService(f.repository, { directory: f.runs })
+
   return {
     ...f,
     service,
@@ -2190,11 +2406,13 @@ test(
   { skip: process.platform !== 'darwin', timeout: 50000 },
   async () => {
     const f = await admittedDependentTaskFixture()
+
     try {
       const baseline = f.service.state().mapping
       const task = await f.service.waitTask(
         f.service.startTask(f.taskRequest, LOCAL_ACTOR)
       )
+
       assert.equal(task.id, f.taskId)
       assert.equal(task.phase, 'completed')
       assert.equal(task.attempts.length, 1)
@@ -2213,6 +2431,7 @@ test(
   { skip: process.platform === 'darwin', timeout: 50000 },
   async () => {
     const f = await admittedDependentTaskFixture()
+
     try {
       assert.equal(f.service.state().tasks.available, false)
       assert.throws(
@@ -2234,9 +2453,11 @@ test('assessment registers complete private inventory before dispatch and retain
   const assessor = require('../target-evidence.cjs')
   const assess = t.mock.method(assessor, 'assessTargetSource')
   const project = t.mock.method(assessor, 'projectTargetAssessmentCurrentness')
+
   try {
     const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
     const initial = service.getTargetAssessment(id)
+
     assert.equal(initial.phase, 'running')
     assert.equal(initial.format, 3)
     assert.deepEqual(Object.keys(initial.roles), ['target'])
@@ -2248,10 +2469,12 @@ test('assessment registers complete private inventory before dispatch and retain
     const saved = JSON.parse(
       fs.readFileSync(path.join(f.runs, 'target-assessments.json'))
     )
+
     assert.equal(saved.records[0].slots.length, 1)
     assert.throws(() => service.start({}, LOCAL_ACTOR), /running|active/)
     assert.equal(service.startTargetAssessment(f.request, LOCAL_ACTOR), id)
     const completed = await service.waitTargetAssessment(id)
+
     assert.equal(completed.phase, 'completed')
     assert.equal(completed.result.targetContract.status, 'passed')
     assert.equal(completed.result.integration.status, 'passed')
@@ -2260,13 +2483,16 @@ test('assessment registers complete private inventory before dispatch and retain
     for (const slot of completed.slots) {
       assert.equal(service.get(slot.id).targetAssessmentId, id)
     }
+
     const counts = [assess.mock.callCount(), project.mock.callCount()]
     const reads = t.mock.method(fs, 'readFileSync')
+
     for (let i = 0; i < 5; i++) {
       service.getTargetAssessment(id)
       service.targetAssessments()
       assert.equal(service.startTargetAssessment(f.request, LOCAL_ACTOR), id)
     }
+
     assert.deepEqual(
       [assess.mock.callCount(), project.mock.callCount()],
       counts
@@ -2284,6 +2510,7 @@ test('assessment registers complete private inventory before dispatch and retain
     await service.close()
     service = createService(f.repository, { directory: f.runs })
     const restored = service.getTargetAssessment(id)
+
     assert.deepEqual(restored.result, completed.result)
     assert.equal(restored.projection.eligible, true)
     assert.equal(assess.mock.callCount(), 3)
@@ -2297,14 +2524,17 @@ test('assessment registration write failure leaves no ghost request and equivale
   const f = await assessmentFixture(false)
   const service = f.service
   const assessor = require('../target-evidence.cjs')
+
   try {
     const rename = fs.renameSync
     const write = t.mock.method(fs, 'renameSync', (from, to) => {
       if (to === path.join(f.runs, 'target-assessments.json')) {
         throw new Error('Simulated inventory write failure')
       }
+
       return rename(from, to)
     })
+
     assert.throws(
       () => service.startTargetAssessment(f.request, LOCAL_ACTOR),
       /inventory write failure/
@@ -2318,6 +2548,7 @@ test('assessment registration write failure leaves no ghost request and equivale
     const result = await service.waitTargetAssessment(
       service.startTargetAssessment(f.request, LOCAL_ACTOR)
     )
+
     assert.equal(result.slots.length, 1)
     assert.deepEqual(Object.keys(result.roles), ['target'])
     assert.equal(result.projection.eligible, true)
@@ -2326,6 +2557,7 @@ test('assessment registration write failure leaves no ghost request and equivale
       assessor,
       'projectTargetAssessmentCurrentness'
     )
+
     service.decideTarget(
       {
         action: 'revise',
@@ -2340,6 +2572,7 @@ test('assessment registration write failure leaves no ghost request and equivale
       LOCAL_ACTOR
     )
     const stale = service.getTargetAssessment(result.id)
+
     assert.equal(stale.result, result.result)
     assert.equal(stale.projection.eligible, false)
     assert.deepEqual(stale.projection.staleReasons, [
@@ -2358,14 +2591,17 @@ test('assessment registration write failure leaves no ghost request and equivale
 test('assessment cancellation preserves completed observations and restart never dispatches unfinished slots', async () => {
   const f = await assessmentFixture()
   let service = f.service
+
   await service.close()
   let calls = 0,
     entered
   const producerStarted = new Promise((resolve) => {
     entered = resolve
   })
+
   service = createService(f.repository, {
     directory: f.runs,
+
     runner: async (options) => {
       calls++
       entered()
@@ -2374,16 +2610,20 @@ test('assessment cancellation preserves completed observations and restart never
           options.signal.addEventListener('abort', resolve, { once: true })
         )
       }
+
       return { code: null, reason: 'cancelled', report: null, output: '' }
     }
   })
   try {
     const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
+
     await producerStarted
     const running = service.getTargetAssessment(id)
+
     assert.equal(running.result.targetContract.status, 'unknown')
     assert.equal(running.slots[0].phase, 'running')
     const cancelled = await service.cancelTargetAssessment(id, LOCAL_ACTOR)
+
     assert.equal(cancelled.phase, 'cancelled')
     assert.equal(cancelled.result.targetContract.status, 'unknown')
     assert.equal(cancelled.result.integration.status, 'unknown')
@@ -2391,18 +2631,21 @@ test('assessment cancellation preserves completed observations and restart never
     await service.close()
     const file = path.join(f.runs, 'target-assessments.json')
     const interrupted = JSON.parse(fs.readFileSync(file))
+
     interrupted.records[0].phase = 'running'
     delete interrupted.records[0].finishedAt
     interrupted.records[0].slots[0].phase = 'running'
     fs.writeFileSync(file, JSON.stringify(interrupted))
     service = createService(f.repository, {
       directory: f.runs,
+
       runner: async () => {
         calls++
         throw new Error('Unexpected restart dispatch')
       }
     })
     const restored = service.getTargetAssessment(id)
+
     assert.equal(restored.phase, 'interrupted')
     assert.equal(restored.result.targetContract.status, 'unknown')
     assert.equal(restored.result.integration.status, 'unknown')
@@ -2417,10 +2660,12 @@ test('assessment cancellation preserves completed observations and restart never
 test('assessment retains a real failed target proof and rejects cross-assessment or standalone inventory substitution', async () => {
   const f = await assessmentFixture('failure')
   let service = f.service
+
   try {
     const result = await service.waitTargetAssessment(
       service.startTargetAssessment(f.request, LOCAL_ACTOR)
     )
+
     assert.equal(result.phase, 'completed')
     assert.equal(result.result.targetContract.status, 'failed')
     assert.equal(result.result.integration.status, 'failed')
@@ -2432,6 +2677,7 @@ test('assessment retains a real failed target proof and rejects cross-assessment
     await service.close()
     const file = path.join(f.runs, 'target-assessments.json')
     const original = fs.readFileSync(file)
+
     for (const mutate of [
       (saved) =>
         (saved.records[0].roles.target.verificationSourceDigest = '0'.repeat(
@@ -2439,11 +2685,13 @@ test('assessment retains a real failed target proof and rejects cross-assessment
         )),
       (saved) => {
         const record = structuredClone(saved.records[0])
+
         record.id = randomUUID()
         saved.records.push(record)
       },
       (saved) => {
         const record = saved.records[0]
+
         record.roles.target.slotId = f.request.sourceAttemptId
         record.slots[0].id = f.request.sourceAttemptId
       },
@@ -2452,6 +2700,7 @@ test('assessment retains a real failed target proof and rejects cross-assessment
       (saved) => (saved.records[0].phase = 'cancelled')
     ]) {
       const saved = JSON.parse(original)
+
       mutate(saved)
       fs.writeFileSync(file, JSON.stringify(saved))
       assert.throws(
@@ -2459,6 +2708,7 @@ test('assessment retains a real failed target proof and rejects cross-assessment
         /assessment/i
       )
     }
+
     fs.writeFileSync(file, original)
     service = createService(f.repository, { directory: f.runs })
     assert.equal(
@@ -2474,9 +2724,11 @@ test('assessment retains a real failed target proof and rejects cross-assessment
 test('assessment cancelled before dispatch retains requested slots with explicit terminal reasons', async () => {
   const f = await assessmentFixture()
   let service = f.service
+
   try {
     const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
     const cancelled = await service.cancelTargetAssessment(id, LOCAL_ACTOR)
+
     assert.equal(cancelled.phase, 'cancelled')
     assert.equal(cancelled.result.targetContract.status, 'unknown')
     for (const slot of cancelled.slots) {
@@ -2484,9 +2736,11 @@ test('assessment cancelled before dispatch retains requested slots with explicit
       assert.ok(slot.reason)
       assert.throws(() => service.get(slot.id), /not found/i)
     }
+
     await service.close()
     const file = path.join(f.runs, 'target-assessments.json')
     const saved = JSON.parse(fs.readFileSync(file))
+
     delete saved.records[0].slots[0].reason
     fs.writeFileSync(file, JSON.stringify(saved))
     assert.throws(
@@ -2502,16 +2756,19 @@ test('assessment cancelled before dispatch retains requested slots with explicit
 test('assessment orchestration lock blocks task admission before the first producer microtask', async () => {
   const f = await assessmentFixture(false)
   let service = f.service
+
   await service.close()
   service = createService(f.repository, {
     directory: f.runs,
     agentOptions: {
       available: () => true,
+
       verify: async () => ({ evidence: { status: 'unknown' } })
     }
   })
   try {
     const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
+
     assert.throws(
       () =>
         service.startTask(
@@ -2541,22 +2798,26 @@ test('assessment orchestration lock blocks task admission before the first produ
 test('assessment settlement persistence failure preserves completed producer phase and records a separate orchestration error', async (t) => {
   const f = await assessmentFixture(false)
   let service = f.service
+
   try {
     const rename = fs.renameSync
     let failed = false
     const write = t.mock.method(fs, 'renameSync', (from, to) => {
       if (!failed && to === path.join(f.runs, 'target-assessments.json')) {
         const saved = JSON.parse(fs.readFileSync(from))
+
         if (saved.records[0].phase === 'completed') {
           failed = true
           throw new Error('Simulated settlement persistence failure')
         }
       }
+
       return rename(from, to)
     })
     const result = await service.waitTargetAssessment(
       service.startTargetAssessment(f.request, LOCAL_ACTOR)
     )
+
     write.mock.restore()
     assert.equal(failed, true)
     assert.equal(result.phase, 'error')
@@ -2583,20 +2844,25 @@ function captureDerivedSource(...args) {
     verificationSource: snapshot.verificationSource,
     runtimeAuthority: snapshot.runtimeAuthority
   })
+
   for (const file of generated.files) {
     const destination = path.join(snapshot.sourceRoot, file.path)
+
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
   }
+
   const files = [...snapshot.files, ...generated.executionSource.files].sort(
     (a, b) => a.path.localeCompare(b.path)
   )
   const bytes = JSON.stringify(files)
+
   fs.rmSync(path.join(root, snapshot.manifestPath))
   fs.writeFileSync(path.join(root, snapshot.manifestPath), bytes, {
     flag: 'wx',
     mode: 0o444
   })
+
   return {
     ...snapshot,
     files,
@@ -2609,14 +2875,17 @@ function captureDerivedSource(...args) {
     configurationDigest: generated.executionSource.digest
   }
 }
+
 async function runDerivedSource(options) {
   const { containedProcess } = require('../agent-verifier.cjs')
+
   return require('../runner.cjs').runVerification({
     ...options,
     contract: {
       ...options.contract,
       configFile: options.snapshot.executionSource.roles.configuration
     },
+
     processRunner: (input) =>
       containedProcess(
         {
@@ -2657,9 +2926,11 @@ test(
     const read = t.mock.method(fs, 'readFileSync')
     const assess = t.mock.method(evidenceOwner, 'assessEvidence')
     const requestId = randomUUID()
+
     try {
       const id = service.start({ requestId }, LOCAL_ACTOR)
       const record = await service.wait(id)
+
       assert.equal(
         record.evidence?.status,
         'passed',
@@ -2671,15 +2942,18 @@ test(
       )
       assert.equal(record.format, 3)
       const sourceRoot = path.join(dir, id, 'source')
+
       const sourceReads = () =>
         read.mock.calls.filter((call) =>
           String(call.arguments[0]).startsWith(sourceRoot + path.sep)
         ).length
+
       assert.equal(combined.mock.callCount(), 1)
       assert.equal(bytes.mock.callCount(), 1)
       assert.equal(sourceReads(), record.snapshot.fileCount)
       assert.deepEqual(combined.mock.calls[0].arguments[3], { sourceRoot })
       const artifact = assess.mock.calls[0].arguments[5]
+
       assert.deepEqual(
         artifact.executionSource,
         record.snapshot.executionSource
@@ -2699,11 +2973,13 @@ test(
       assert.equal(bytes.mock.callCount(), 2)
       assert.equal(sourceReads(), record.snapshot.fileCount * 2)
       const count = read.mock.callCount()
+
       for (let index = 0; index < 10; index++) {
         assert.equal(service.get(id).evidence.status, 'passed')
         service.state()
         assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
       }
+
       assert.equal(read.mock.callCount(), count)
       assert.equal(combined.mock.callCount(), 2)
       assert.equal(bytes.mock.callCount(), 2)
@@ -2756,6 +3032,7 @@ test('derived service admission rejects missing authority and actual bytes befor
           snapshot.sourceRoot,
           snapshot.executionSource.roles.bootstrap
         )
+
         fs.chmodSync(file, 0o644)
         fs.appendFileSync(file, '\n// changed\n')
       }
@@ -2772,18 +3049,24 @@ test('derived service admission rejects missing authority and actual bytes befor
     let executions = 0
     const service = createService(root, {
       directory: dir,
+
       capture: (...args) => {
         const snapshot = captureDerivedSource(...args)
+
         mutate(snapshot)
+
         return snapshot
       },
+
       runner: async () => {
         executions++
         throw new Error('Must not dispatch')
       }
     })
+
     try {
       const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
       assert.equal(record.phase, 'error', label)
       assert.equal(executions, 0, label)
     } finally {
@@ -2803,8 +3086,10 @@ test(
       capture: captureDerivedSource,
       runner: runDerivedSource
     })
+
     try {
       const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
       assert.equal(record.evidence?.status, 'passed', record.error)
       await service.close()
       const recordPath = path.join(dir, record.id, 'record.json')
@@ -2816,6 +3101,7 @@ test(
         record.snapshot.executionSource.roles.bootstrap
       )
       const original = fs.readFileSync(bootstrap)
+
       for (const [label, mutate] of [
         [
           'missing runtime authority',
@@ -2878,6 +3164,7 @@ test(
         ['missing bytes', () => fs.rmSync(bootstrap)]
       ]) {
         const value = JSON.parse(saved)
+
         mutate(value)
         fs.writeFileSync(recordPath, JSON.stringify(value))
         assert.throws(
@@ -2891,7 +3178,9 @@ test(
         fs.rmSync(bootstrap, { force: true })
         fs.writeFileSync(bootstrap, original, { flag: 'wx', mode: 0o444 })
       }
+
       const stale = JSON.parse(saved)
+
       stale.mappingRevision++
       fs.writeFileSync(recordPath, JSON.stringify(stale))
       service = createService(root, { directory: dir })
@@ -2921,16 +3210,22 @@ test(
       const dir = directory()
       const service = createService(root, {
         directory: dir,
+
         capture: (...args) => structuredClone(captureDerivedSource(...args)),
+
         runner: async (options) => {
           const result = await runDerivedSource(options)
+
           assert.equal(result.code, 0, result.output)
           mutate(options.snapshot)
+
           return result
         }
       })
+
       try {
         const record = await service.wait(service.start({}, LOCAL_ACTOR))
+
         assert.equal(record.phase, 'error')
         assert.match(record.error, /source|identity|provenance/i)
         assert.notEqual(record.evidence?.status, 'passed')
@@ -2957,10 +3252,12 @@ test(
       runner: runDerivedSource
     })
     const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+
     try {
       const record = await service.wait(
         service.start({ mode: 'candidate' }, LOCAL_ACTOR)
       )
+
       assert.equal(record.evidence?.status, 'passed', record.error)
       assert.throws(
         () => service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR),
@@ -2983,6 +3280,7 @@ async function candidateTargetFixture(distinct = 'failure', agentOptions = {}) {
   // The captured repository needs an installed dependency root for OS containment;
   // ordinary Vitest created only its local cache while resolving ancestor packages.
   const dependencies = path.join(f.repository, 'node_modules')
+
   fs.rmSync(dependencies, { recursive: true, force: true })
   fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
   const task = await f.service.waitTask(
@@ -3002,6 +3300,7 @@ async function candidateTargetFixture(distinct = 'failure', agentOptions = {}) {
       LOCAL_ACTOR
     )
   )
+
   return {
     ...f,
     task,
@@ -3020,6 +3319,7 @@ test(
   async (t) => {
     const f = await candidateTargetFixture()
     let service = f.service
+
     try {
       assert.equal(
         f.task.verificationStatus,
@@ -3041,6 +3341,7 @@ test(
       const target = await service.wait(
         service.startTargetProof(f.proofRequest, LOCAL_ACTOR)
       )
+
       assert.equal(accepted.evidence?.status, 'passed', accepted.error)
       assert.equal(target.evidence?.status, 'failed', target.error)
       assert.equal(accepted.format, 3)
@@ -3085,6 +3386,7 @@ test(
         fingerprint: currentFingerprint,
         ...currentShared
       } = service.state().shared
+
       assert.ok(
         previousObserved &&
           currentObserved &&
@@ -3095,6 +3397,7 @@ test(
       await service.close()
       service = createService(f.repository, {
         directory: f.runs,
+
         runner: () => {
           throw new Error('ordinary runner forbidden')
         }
@@ -3106,6 +3409,7 @@ test(
         LOCAL_ACTOR
       )
       const successor = await service.waitTask(f.task.id)
+
       assert.notEqual(
         successor.attempts.at(-1).id,
         f.proofRequest.sourceAttemptId
@@ -3121,6 +3425,7 @@ test(
       await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
       const reads = t.mock.method(fs, 'readFileSync')
       const count = compose.mock.callCount()
+
       assert.equal(
         service.startTargetProof(f.proofRequest, LOCAL_ACTOR),
         target.id
@@ -3163,6 +3468,7 @@ test(
       await service.close()
       const recordFile = path.join(f.runs, target.id, 'record.json')
       const originalRecord = JSON.parse(fs.readFileSync(recordFile))
+
       for (const alter of [
         (value) => {
           delete value.targetProof.runtime.taskId
@@ -3176,6 +3482,7 @@ test(
         }
       ]) {
         const changed = structuredClone(originalRecord)
+
         alter(changed)
         fs.writeFileSync(recordFile, JSON.stringify(changed))
         assert.throws(
@@ -3183,12 +3490,14 @@ test(
           /target proof selection|task source|target proof/i
         )
       }
+
       const taskFile = path.join(f.runs, 'tasks', f.task.id, 'task.json')
       const originalTask = JSON.parse(fs.readFileSync(taskFile))
       const incompleteTask = structuredClone(originalTask)
       const oldVerdict = incompleteTask.attempts.find(
         (attempt) => attempt.id === f.proofRequest.sourceAttemptId
       ).verdict
+
       delete oldVerdict.configurationDigest
       delete oldVerdict.executionSource.digest
       delete oldVerdict.verificationSource.digest
@@ -3200,9 +3509,11 @@ test(
         [recordFile, originalRecord],
         [acceptedFile, originalAccepted]
       ]
+
       for (const omitSavedScalars of [false, true]) {
         for (const [file, original] of referringRecords) {
           const changed = structuredClone(original)
+
           assert.equal(changed.targetProof.runtime.taskId, f.task.id)
           assert.equal(
             changed.targetProof.runtime.attemptId,
@@ -3213,9 +3524,12 @@ test(
             delete changed.targetProof.runtime.executionSourceDigest
             delete changed.targetProof.runtime.verificationSourceDigest
           }
+
           fs.writeFileSync(file, JSON.stringify(changed))
         }
+
         let unexpected
+
         try {
           assert.throws(() => {
             unexpected = createService(f.repository, { directory: f.runs })
@@ -3224,6 +3538,7 @@ test(
           await unexpected?.close()
         }
       }
+
       fs.writeFileSync(taskFile, JSON.stringify(originalTask))
       for (const [file, original] of referringRecords) {
         fs.writeFileSync(file, JSON.stringify(original))
@@ -3241,6 +3556,7 @@ test(
   async (t) => {
     const f = await candidateTargetFixture(false)
     let service = f.service
+
     try {
       assert.equal(
         f.task.verificationStatus,
@@ -3263,18 +3579,23 @@ test(
             options.snapshot.sourceRoot,
             options.snapshot.executionSource.roles.bootstrap
           )
+
           fs.chmodSync(file, 0o600)
           fs.appendFileSync(file, '\n// post-run corruption\n')
+
           return result
         }
       )
       const modulePath = require.resolve('../service.cjs'),
         saved = require.cache[modulePath]
+
       Reflect.deleteProperty(require.cache, modulePath)
       const isolated = require('../service.cjs').createService
+
       require.cache[modulePath] = saved
       service = isolated(f.repository, {
         directory: f.runs,
+
         runner: () => {
           throw new Error('ordinary runner forbidden')
         }
@@ -3283,6 +3604,7 @@ test(
       const record = await service.wait(
         service.startTargetProof(f.proofRequest, LOCAL_ACTOR)
       )
+
       assert.equal(contained.mock.callCount(), 1)
       assert.equal(bytes.mock.callCount(), 2)
       assert.equal(record.phase, 'error')
@@ -3292,6 +3614,7 @@ test(
       const report = JSON.parse(
         fs.readFileSync(path.join(f.repository, record.runner.reportPath))
       )
+
       assert.ok(report.numPassedTests > 0)
       await service.close()
       service = isolated(f.repository, { directory: f.runs })
@@ -3305,6 +3628,7 @@ test(
         requestId: randomUUID(),
         sourceAttemptId: record.id
       }
+
       delete ordinary.sourceTaskId
       assert.throws(
         () => service.startTargetProof(ordinary, LOCAL_ACTOR),
@@ -3312,6 +3636,7 @@ test(
       )
       await service.close()
       const manifest = path.join(f.runs, record.id, 'source-manifest.json')
+
       fs.chmodSync(manifest, 0o600)
       fs.writeFileSync(manifest, '[]')
       assert.throws(
@@ -3335,6 +3660,7 @@ test(
     })
     let service = f.service
     const { role, ...request } = f.proofRequest
+
     assert.equal(role, 'target')
     const assessor = require('../target-evidence.cjs')
     const assess = t.mock.method(assessor, 'assessTargetSource')
@@ -3342,15 +3668,18 @@ test(
       assessor,
       'projectTargetAssessmentCurrentness'
     )
+
     try {
       const selectionLookups = t.mock.method(Map.prototype, 'get')
       const id = service.startTargetAssessment(request, LOCAL_ACTOR)
       const sourceCache = selectionLookups.mock.calls.find(
         (call) => call.result?.taskId === f.task.id && call.result?.admission
       )?.this
+
       assert.ok(sourceCache)
       selectionLookups.mock.restore()
       const registered = service.getTargetAssessment(id)
+
       assert.equal(registered.runtime.taskId, f.task.id)
       assert.equal(registered.slots.length, 1)
       assert.equal(registered.result.targetContract.status, 'unknown')
@@ -3365,26 +3694,31 @@ test(
         runtimeSourceDigest: registered.runtime.runtimeSourceDigest
       })
       const before = service.getTask(f.task.id)
+
       await assert.rejects(
         service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR),
         /assessment|active|running/i
       )
       assert.deepEqual(service.getTask(f.task.id), before)
       const result = await service.waitTargetAssessment(id)
+
       assert.equal(result.phase, 'completed')
       assert.equal(result.result.targetContract.status, 'failed')
       assert.equal(result.result.integration.status, 'failed')
       assert.equal(assess.mock.callCount(), 2)
       for (const slot of result.slots) {
         const producer = service.get(slot.id)
+
         assert.equal(producer.format, 3)
         assert.equal(producer.targetProof.runtime.taskId, f.task.id)
         assert.equal(producer.targetAssessmentId, id)
       }
+
       const verdict = result.result
       const evaluated = result.evaluatedCurrent
       const beforeNotifications = notifications
       const beforeRetirementProjects = project.mock.callCount()
+
       await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
       assert.equal(notifications, beforeNotifications + 1)
       assert.equal(project.mock.callCount(), beforeRetirementProjects + 1)
@@ -3402,11 +3736,13 @@ test(
       const counts = [assess.mock.callCount(), project.mock.callCount()]
       const lookups = t.mock.method(Map.prototype, 'get')
       const reads = t.mock.method(fs, 'readFileSync')
+
       for (let i = 0; i < 3; i++) {
         service.getTargetAssessment(id)
         service.targetAssessments()
         assert.equal(service.startTargetAssessment(request, LOCAL_ACTOR), id)
       }
+
       assert.equal(reads.mock.callCount(), 0)
       assert.deepEqual(
         [assess.mock.callCount(), project.mock.callCount()],
@@ -3449,9 +3785,11 @@ test(
     const f = await candidateTargetFixture(false)
     let service = f.service
     const { role, ...request } = f.proofRequest
+
     assert.equal(role, 'target')
     try {
       const runs = service.state().runs.length
+
       for (const sourceTaskId of [null, '', undefined, randomUUID()]) {
         assert.throws(() =>
           service.startTargetAssessment(
@@ -3462,15 +3800,18 @@ test(
         assert.equal(service.state().runs.length, runs)
         assert.equal(service.targetAssessments().length, 0)
       }
+
       const completed = await service.waitTargetAssessment(
         service.startTargetAssessment(request, LOCAL_ACTOR)
       )
+
       assert.equal(completed.slots.length, 1)
       assert.deepEqual(Object.keys(completed.roles), ['target'])
       assert.equal(completed.result.targetContract.status, 'passed')
       assert.equal(completed.result.integration.status, 'passed')
       assert.equal(completed.projection.eligible, true)
       const producer = service.get(completed.slots[0].id)
+
       assert.equal(
         producer.snapshot.configurationDigest,
         producer.snapshot.executionSource.digest
@@ -3488,6 +3829,7 @@ test(
         pendingId,
         LOCAL_ACTOR
       )
+
       assert.equal(cancelled.phase, 'cancelled')
       assert.equal(cancelled.slots.length, 1)
       assert.equal(cancelled.slots[0].phase, 'cancelled')
@@ -3506,6 +3848,7 @@ test(
         pendingId
       )
       const read = t.mock.method(fs, 'readFileSync')
+
       assert.equal(
         service.getTargetAssessment(pendingId).projection.current,
         false
@@ -3531,14 +3874,17 @@ async function scopedWorkFixture(
     agentOptions: {
       adapterFactory(task) {
         let turn = 0
+
         return {
           async next(observation) {
             if (++turn === 1) {
               return { tool: 'read', path: task.allowedFiles[0] }
             }
+
             if (turn > 2) {
               return { tool: 'finish' }
             }
+
             return {
               tool: 'replace',
               path: task.allowedFiles[0],
@@ -3571,6 +3917,7 @@ async function scopedWorkFixture(
     { attemptId: accepted.id },
     LOCAL_ACTOR
   )
+
   service.decideEvolution(
     {
       id: first.id,
@@ -3581,6 +3928,7 @@ async function scopedWorkFixture(
   )
   const file = path.join(f.repository, f.contract.testFile)
   const bytes = fs.readFileSync(file, 'utf8')
+
   fs.chmodSync(file, 0o600)
   fs.writeFileSync(
     file,
@@ -3595,6 +3943,7 @@ async function scopedWorkFixture(
   const baseline = await service.wait(
     service.start({ mode: 'candidate' }, LOCAL_ACTOR)
   )
+
   assert.equal(baseline.evidence.status, 'passed', baseline.error)
   const review = service.prepareEvolution(
     { attemptId: baseline.id },
@@ -3608,6 +3957,7 @@ async function scopedWorkFixture(
     (item) =>
       item.id === (failure === 'own' ? 'deferred.outcome' : 'deferred.snapshot')
   )
+
   assert.ok(obligation)
   const work = {
     id: randomUUID(),
@@ -3636,6 +3986,7 @@ async function scopedWorkFixture(
         ]
       }
     : null
+
   request.works = dependent ? [work, dependentWork] : [work]
   request.pending = request.pending.filter(
     (id) => id !== obligation.id && id !== dependentObligation?.id
@@ -3658,6 +4009,7 @@ async function scopedWorkFixture(
     LOCAL_ACTOR
   )
   const dependencies = path.join(f.repository, 'node_modules')
+
   fs.rmSync(dependencies, { recursive: true, force: true })
   fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
   const task = await service.waitTask(
@@ -3677,6 +4029,7 @@ async function scopedWorkFixture(
       LOCAL_ACTOR
     )
   )
+
   assert.equal(
     task.attempts.at(-1).verdict.evidence.status,
     failure === 'shared' ? 'passed' : 'failed'
@@ -3691,6 +4044,7 @@ async function scopedWorkFixture(
   const assessment = await service.waitTargetAssessment(
     service.startTargetAssessment(assessmentRequest, LOCAL_ACTOR)
   )
+
   assert.equal(
     assessment.result.targetContract.status,
     ['preservation', 'own'].includes(failure) ? 'failed' : 'passed'
@@ -3704,6 +4058,7 @@ async function scopedWorkFixture(
     ['preservation', 'own'].includes(failure) ? 'failed' : 'pending'
   )
   assert.equal(assessment.projection.eligible, false)
+
   return {
     ...f,
     service,
@@ -3721,6 +4076,7 @@ test(
   { skip: process.platform !== 'darwin', timeout: 40000 },
   async () => {
     const f = await scopedWorkFixture(null, {}, true)
+
     try {
       assert.equal(
         f.assessment.result.works.find((item) => item.id === f.dependentWork.id)
@@ -3730,6 +4086,7 @@ test(
       const target = f.service.getTarget(f.assessment.request.targetId)
       const taskId = randomUUID()
       const admissionId = randomUUID()
+
       f.service.decideTarget(
         {
           action: 'admit',
@@ -3780,6 +4137,7 @@ test(
   async (t) => {
     const f = await scopedWorkFixture()
     const service = f.service
+
     try {
       const attemptId = f.task.attempts.at(-1).id
       const result = service.scopedWorkFor(
@@ -3788,6 +4146,7 @@ test(
         f.assessment.id,
         LOCAL_ACTOR
       )
+
       assert.equal(result.taskId, f.task.id)
       assert.equal(result.attemptId, attemptId)
       assert.equal(result.assessmentId, f.assessment.id)
@@ -3811,10 +4170,12 @@ test(
         'failed'
       )
       const maps = t.mock.method(Map.prototype, 'get')
+
       service.scopedWorkFor(f.task.id, attemptId, f.assessment.id, LOCAL_ACTOR)
       const sourceCache = maps.mock.calls.find(
         (call) => call.result?.taskId === f.task.id && call.result?.admission
       )?.this
+
       assert.ok(sourceCache)
       maps.mock.resetCalls()
       const reads = t.mock.method(fs, 'readFileSync')
@@ -3831,6 +4192,7 @@ test(
         f.assessment.id,
         LOCAL_ACTOR
       )
+
       assert.strictEqual(next.work, f.assessment.result.works[0])
       assert.strictEqual(next.runtime, f.assessment.runtime)
       assert.equal(
@@ -3852,6 +4214,7 @@ test(
         service.targetAssessments()
         service.getTask(f.task.id)
       }
+
       assert.equal(
         maps.mock.calls.filter((call) => call.this === sourceCache).length,
         0
@@ -3881,14 +4244,18 @@ test(
           /unavailable|stale|found|authorized/i
         )
       }
+
       // A completed observation without its private producer authority cannot be
       // promoted, even while the cached assessed work result remains passing.
       const originalGet = Map.prototype.get
+
       for (const slot of f.assessment.slots) {
         Map.prototype.get = function (key) {
           const value = originalGet.call(this, key)
+
           return key === slot.id && value?.admission ? undefined : value
         }
+
         try {
           assert.throws(
             () =>
@@ -3904,11 +4271,13 @@ test(
           Map.prototype.get = originalGet
         }
       }
+
       Map.prototype.get = function (key) {
         return this === sourceCache && key === f.task.id
           ? undefined
           : originalGet.call(this, key)
       }
+
       try {
         assert.throws(
           () =>
@@ -3923,11 +4292,14 @@ test(
       } finally {
         Map.prototype.get = originalGet
       }
+
       const taskSource = sourceCache.get(f.task.id)
+
       assert.ok(taskSource)
       for (const field of ['head', 'sourceDigest', 'configurationDigest']) {
         Map.prototype.get = function (key) {
           const value = originalGet.call(this, key)
+
           return this === sourceCache && key === f.task.id
             ? {
                 ...value,
@@ -3935,6 +4307,7 @@ test(
               }
             : value
         }
+
         try {
           assert.throws(
             () =>
@@ -3950,11 +4323,13 @@ test(
           Map.prototype.get = originalGet
         }
       }
+
       const deniedReview = service.reviewTask(
         f.task.id,
         { action: 'prepare' },
         LOCAL_ACTOR
       )
+
       // Existing review serial owns a live promise before its candidate check;
       // the private callback must not reject its consuming review lifetime.
       deniedReview.catch(() => undefined)
@@ -3970,6 +4345,7 @@ test(
       await assert.rejects(deniedReview, /verified/)
       const cancelRequest = { ...f.assessmentRequest, requestId: randomUUID() }
       const cancelId = service.startTargetAssessment(cancelRequest, LOCAL_ACTOR)
+
       assert.throws(
         () =>
           service.scopedWorkFor(
@@ -4042,6 +4418,7 @@ test(
   async () => {
     for (const failure of ['preservation', 'own']) {
       const f = await scopedWorkFixture(failure)
+
       try {
         const read = () =>
           f.service.scopedWorkFor(
@@ -4050,6 +4427,7 @@ test(
             f.assessment.id,
             LOCAL_ACTOR
           )
+
         assert.equal(f.assessment.result.targetContract.status, 'failed')
         assert.equal(f.assessment.projection.eligible, false)
         if (failure === 'own') {
@@ -4070,6 +4448,7 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async () => {
     const f = await scopedWorkFixture('shared')
+
     try {
       const handoff = f.service.scopedWorkFor(
         f.task.id,
@@ -4077,6 +4456,7 @@ test(
         f.assessment.id,
         LOCAL_ACTOR
       )
+
       assert.equal(handoff.producers.length, 1)
       assert.deepEqual(Object.keys(f.assessment.roles), ['target'])
       assert.strictEqual(handoff.roles, f.assessment.roles)
@@ -4086,6 +4466,7 @@ test(
       )
       assert.deepEqual(handoff.producers[0].roles, ['target'])
       const producer = f.service.get(handoff.producers[0].id)
+
       assert.equal(handoff.producers[0].sourceDigest, producer.snapshot.digest)
       assert.equal(
         handoff.producers[0].configurationDigest,
@@ -4128,13 +4509,17 @@ test(
     const adapter = {
       repository: 'offline/scoped-review',
       base: 'main',
+
       async inspect() {
         counts.inspect++
+
         return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
       },
+
       async deliver(preview, checkpoint) {
         counts.deliver++
         await checkpoint('create-branch')
+
         return {
           number: 1,
           state: 'open',
@@ -4148,6 +4533,7 @@ test(
     const attemptId = f.task.attempts.at(-1).id
     const selection = { attemptId, assessmentId: f.assessment.id }
     const baseline = service.state().mapping
+
     try {
       await assert.rejects(
         service.reviewTask(f.task.id, { action: 'prepare' }, LOCAL_ACTOR),
@@ -4158,6 +4544,7 @@ test(
         selection,
         LOCAL_ACTOR
       )
+
       assert.equal(preview.format, 2)
       assert.equal(preview.preview.candidateVerification, 'failed')
       assert.deepEqual(
@@ -4184,6 +4571,7 @@ test(
           LOCAL_ACTOR
         )
       )
+
       preview = await service.prepareScopedReview(
         f.task.id,
         { ...selection, assessmentId: secondAssessment.id },
@@ -4206,6 +4594,7 @@ test(
       assert.equal(counts.deliver, 0)
       const saved = service.getReview(f.task.id)
       const reads = t.mock.method(fs, 'readFileSync')
+
       assert.strictEqual(service.getReview(f.task.id), saved)
       assert.equal(reads.mock.callCount(), 0)
       reads.mock.restore()
@@ -4225,6 +4614,7 @@ test(
         },
         LOCAL_ACTOR
       )
+
       assert.equal(
         maps.mock.calls.filter(
           (call) => call.result?.taskId === f.task.id && call.result?.admission
@@ -4258,11 +4648,13 @@ test(
     const adapter = {
       repository: 'offline/scoped',
       base: 'main',
+
       async inspect() {
         return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
       }
     }
     const f = await scopedWorkFixture(null, adapter)
+
     try {
       const selection = {
         attemptId: f.task.attempts.at(-1).id,
@@ -4273,8 +4665,10 @@ test(
         selection,
         LOCAL_ACTOR
       )
+
       selection.assessmentId = randomUUID()
       const preview = await preparing
+
       assert.equal(preview.preview.scopedWork.assessmentId, f.assessment.id)
       const reads = { attemptId: 0, assessmentId: 0 }
       const accessorPreview = await f.service.prepareScopedReview(
@@ -4282,15 +4676,19 @@ test(
         {
           get attemptId() {
             reads.attemptId++
+
             return reads.attemptId === 1 ? selection.attemptId : 'invalid'
           },
+
           get assessmentId() {
             reads.assessmentId++
+
             return reads.assessmentId === 1 ? f.assessment.id : randomUUID()
           }
         },
         LOCAL_ACTOR
       )
+
       assert.deepEqual(reads, { attemptId: 1, assessmentId: 1 })
       assert.equal(accessorPreview.preview.attemptId, selection.attemptId)
       assert.equal(
@@ -4311,18 +4709,21 @@ test(
     const adapter = {
       repository: 'offline/scoped',
       base: 'main',
+
       async inspect() {
         return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
       }
     }
     const f = await scopedWorkFixture(null, adapter)
     let service = f.service
+
     try {
       const preview = await service.prepareScopedReview(
         f.task.id,
         { attemptId: f.task.attempts.at(-1).id, assessmentId: f.assessment.id },
         LOCAL_ACTOR
       )
+
       await service.close()
       const file = path.join(f.runs, 'reviews', f.task.id + '.json')
       const mutations = [
@@ -4334,6 +4735,7 @@ test(
         },
         (p) => {
           const producer = p.preview.scopedWork.producers[0]
+
           producer.reference = {
             ...producer.reference,
             attemptId: randomUUID()
@@ -4472,35 +4874,45 @@ test(
         name: 'identity mutation ' + index,
         mutate
       }))
+
       for (const keys of required) {
         changes.push({
           name: keys.join('.'),
+
           mutate(value) {
             let parent = value.preview.scopedWork
+
             for (const key of keys.slice(0, -1)) {
               parent = parent[key]
             }
+
             Reflect.deleteProperty(parent, keys.at(-1))
           }
         })
       }
+
       changes.push({
         name: 'aliased role paths',
+
         mutate(value) {
           const roles =
             value.preview.scopedWork.roles.target.reference.descriptor.roles
+
           roles.test = roles.configuration
         }
       })
       changes.push({
         name: 'uncanonical producer roles',
+
         mutate(value) {
           value.preview.scopedWork.producers[0].roles.push('accepted')
         }
       })
       const { createReviewOwner } = require('../pr-review.cjs')
+
       for (const { name, mutate } of changes) {
         const value = structuredClone(preview)
+
         mutate(value)
         value.previewDigest = sourceOwner.sha256(JSON.stringify(value.preview))
         fs.writeFileSync(file, JSON.stringify(value))
@@ -4511,6 +4923,7 @@ test(
           name
         )
       }
+
       fs.writeFileSync(file, JSON.stringify(preview))
       service = createService(f.repository, {
         directory: f.runs,
@@ -4540,19 +4953,23 @@ test(
     const adapter = {
       repository: 'offline/scoped',
       base: 'main',
+
       async inspect() {
         inspections++
         entered()
         await gate
+
         return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
       }
     }
     const f = await scopedWorkFixture(null, adapter)
+
     try {
       const selection = {
         attemptId: f.task.attempts.at(-1).id,
         assessmentId: f.assessment.id
       }
+
       for (const invalid of [
         null,
         {},
@@ -4564,6 +4981,7 @@ test(
           /selection/
         )
       }
+
       const reads = t.mock.method(fs, 'readFileSync')
       const hashPrototype = Object.getPrototypeOf(
         require('node:crypto').createHash('sha256')
@@ -4575,16 +4993,19 @@ test(
         selection,
         LOCAL_ACTOR
       )
+
       await started
       const sourceCalls = maps.mock.calls.filter(
         (call) => call.result?.taskId === f.task.id && call.result?.admission
       )
+
       assert.equal(sourceCalls.length, 1)
       const same = f.service.prepareScopedReview(
         f.task.id,
         { ...selection },
         LOCAL_ACTOR
       )
+
       await assert.rejects(
         f.service.prepareScopedReview(
           f.task.id,
@@ -4614,6 +5035,7 @@ test(
         f.task.snapshot.sourceRoot,
         'packages/factory/package.json'
       )
+
       assert.equal(
         reads.mock.calls.filter((call) => call.arguments[0] === manifest)
           .length,
@@ -4622,6 +5044,7 @@ test(
       const manifestIdentity = JSON.stringify(
         f.task.attempts.at(-1).verdict.files
       )
+
       assert.equal(
         hashes.mock.calls.filter(
           (call) => call.arguments[0] === manifestIdentity
@@ -4634,6 +5057,7 @@ test(
       release()
       assert.strictEqual(await same, await preparing)
       const preview = f.service.getReview(f.task.id)
+
       await f.service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
       await assert.rejects(
         f.service.reviewTask(
@@ -4649,9 +5073,11 @@ test(
       )
       const historyLookups = t.mock.method(Map.prototype, 'get')
       const historyReads = t.mock.method(fs, 'readFileSync')
+
       for (let i = 0; i < 3; i++) {
         f.service.getReview(f.task.id)
       }
+
       assert.equal(
         historyLookups.mock.calls.filter(
           (call) => call.this === sourceCalls[0].this
@@ -4679,19 +5105,23 @@ test(
     const adapter = {
       repository: 'offline/scoped',
       base: 'main',
+
       async inspect() {
         inspections++
+
         return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
       }
     }
     const f = await scopedWorkFixture(null, adapter)
     let service = f.service
+
     try {
       await service.close()
       const file = path.join(f.runs, 'tasks', f.task.id, 'task.json')
       const record = JSON.parse(fs.readFileSync(file, 'utf8'))
       const verdict = record.attempts.at(-1).verdict
       const substitute = path.join(f.runs, 'substitute-report.json')
+
       fs.writeFileSync(substitute, fs.readFileSync(verdict.runner.reportPath))
       verdict.runner.reportPath = substitute
       fs.writeFileSync(file, JSON.stringify(record))
@@ -4726,10 +5156,13 @@ test(
     const adapter = {
       repository: 'offline/scoped-public',
       base: 'main',
+
       async inspect() {
         counts.inspect++
+
         return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
       },
+
       async deliver() {
         counts.deliver++
         throw new Error('Preparation must not deliver')
@@ -4739,6 +5172,7 @@ test(
     const { startServer } = require('../server.cjs')
     const { main } = require('../cli.cjs')
     let server
+
     try {
       await f.service.close()
       server = await startServer(f.repository, {
@@ -4752,6 +5186,7 @@ test(
       const session = await fetch(server.origin + '/api/session').then(
         (response) => response.json()
       )
+
       const post = (body, authorized = true) =>
         fetch(endpoint, {
           method: 'POST',
@@ -4761,13 +5196,16 @@ test(
           },
           body: JSON.stringify(body)
         })
+
       assert.equal((await post(selection, false)).status, 403)
       assert.equal(counts.inspect, 0)
       assert.equal((await post({ ...selection, extra: true })).status, 409)
       assert.equal(counts.inspect, 0)
       const response = await post(selection)
+
       assert.equal(response.status, 200)
       const httpReview = await response.json()
+
       assert.equal(httpReview.format, 2)
       assert.equal(httpReview.preview.taskId, f.task.id)
       assert.equal(httpReview.preview.attemptId, attemptId)
@@ -4778,6 +5216,7 @@ test(
       assert.deepEqual(counts, { inspect: 1, deliver: 0 })
 
       const output = []
+
       assert.equal(
         await main(
           [
@@ -4790,12 +5229,14 @@ test(
           ],
           {
             repositoryRoot: f.repository,
+
             write: (value) => output.push(value)
           }
         ),
         0
       )
       const cliReview = JSON.parse(output.join(''))
+
       assert.equal(cliReview.previewDigest, httpReview.previewDigest)
       assert.deepEqual(
         cliReview.preview.scopedWork,
@@ -4806,6 +5247,7 @@ test(
         () =>
           main(['--url', server.origin, 'pr-prepare', f.task.id], {
             repositoryRoot: f.repository,
+
             write: () => undefined
           }),
         /verified/
@@ -4814,6 +5256,7 @@ test(
       const retained = await fetch(
         server.origin + '/api/tasks/' + f.task.id + '/review'
       ).then((value) => value.json())
+
       assert.equal(retained.previewDigest, httpReview.previewDigest)
       assert.deepEqual(counts, { inspect: 2, deliver: 0 })
     } finally {
@@ -4832,9 +5275,11 @@ test(
 
 test('updated current contract verifies after its historical private test dependency is removed', async () => {
   const f = await assessmentFixture('retired-private-module')
+
   try {
     const historical = f.service.get(f.acceptedProofId)
     const original = JSON.stringify(historical)
+
     assert.equal(fs.existsSync(f.privateModule), false)
     const oldTest = path.join(
       f.runs,
@@ -4842,10 +5287,12 @@ test('updated current contract verifies after its historical private test depend
       'source',
       f.contract.testFile
     )
+
     assert.match(fs.readFileSync(oldTest, 'utf8'), /retired-proof-helper/)
     const result = await f.service.waitTargetAssessment(
       f.service.startTargetAssessment(f.request, LOCAL_ACTOR)
     )
+
     assert.equal(result.projection.eligible, true)
     assert.equal(result.result.targetContract.status, 'passed')
     assert.deepEqual(

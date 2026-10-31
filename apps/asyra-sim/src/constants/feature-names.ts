@@ -13,6 +13,7 @@ export const StorageFeatureNames = {
   PREPARE_OBSERVATION: 'asyra-sim.prepare-observation',
   RETAIN_OBSERVATION: 'asyra-sim.retain-observation'
 } as const
+
 type ExistingFeatureNames = typeof EditingFeatureNames &
   typeof HistoryFeatureNames
 type NoOverlap =
@@ -28,6 +29,7 @@ type NoOverlap =
       : never
     : never
 const distinctKeys: NoOverlap = true
+
 void distinctKeys
 const distinctStorageKeys: Extract<
   keyof (ExistingFeatureNames & typeof AnalysisFeatureNames),
@@ -35,6 +37,7 @@ const distinctStorageKeys: Extract<
 > extends never
   ? true
   : never = true
+
 void distinctStorageKeys
 export const FeatureNames = {
   ...EditingFeatureNames,

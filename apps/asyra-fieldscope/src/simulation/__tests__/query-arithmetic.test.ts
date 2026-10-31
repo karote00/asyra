@@ -11,6 +11,7 @@ import {
 // Exact IEEE-754 rational oracle is independent of the production rounding path.
 function rational(value: number): [bigint, bigint] {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   const bits = view.getBigUint64(0)
   const exponent = Number((bits >> 52n) & 2047n)
@@ -18,10 +19,12 @@ function rational(value: number): [bigint, bigint] {
   const mantissa =
     (bits >> 63n ? -1n : 1n) * (exponent ? (1n << 52n) + fraction : fraction)
   const power = exponent ? exponent - 1023 - 52 : -1074
+
   return power >= 0
     ? [mantissa << BigInt(power), 1n]
     : [mantissa, 1n << BigInt(-power)]
 }
+
 function encloses(
   low: number,
   high: number,
@@ -32,13 +35,17 @@ function encloses(
     numerator = -numerator
     denominator = -denominator
   }
+
   expect(low <= high).toBe(true)
   if (Number.isFinite(low)) {
     const [n, d] = rational(low)
+
     expect(n * denominator <= numerator * d).toBe(true)
   }
+
   if (Number.isFinite(high)) {
     const [n, d] = rational(high)
+
     expect(n * denominator >= numerator * d).toBe(true)
   }
 }
@@ -56,10 +63,12 @@ it('encloses exact arithmetic across normal, subnormal and extreme finite values
     2 ** -1022,
     1e308
   ]
+
   for (const a of values) {
     for (const b of values) {
       const [an, ad] = rational(a),
         [bn, bd] = rational(b)
+
       for (const [result, n, d] of [
         [add(interval(a), interval(b)), an * bd + bn * ad, ad * bd],
         [subtract(interval(a), interval(b)), an * bd - bn * ad, ad * bd],
@@ -84,14 +93,17 @@ it('retains generically exact operations and encloses non-perfect square roots',
   ]) {
     expect(result).toEqual({ low: 5, high: 5 })
   }
+
   for (const value of [0.1, 2, 3, Number.MIN_VALUE, 1e308]) {
     const result = squareRoot(interval(value))
     const [n, d] = rational(value),
       [lo, ld] = rational(result.low),
       [hi, hd] = rational(result.high)
+
     expect(lo * lo * d <= n * ld * ld).toBe(true)
     expect(hi * hi * d >= n * hd * hd).toBe(true)
   }
+
   expect(divide(interval(1), { low: -1, high: 1 })).toEqual({
     low: -Infinity,
     high: Infinity
@@ -100,6 +112,7 @@ it('retains generically exact operations and encloses non-perfect square roots',
 
 it('encloses exact rational predicate ratios without losing large integer significands', async () => {
   const { fractionInterval } = await import('../query-arithmetic')
+
   for (const [n, d] of [
     [1n, 10n],
     [-1n, 3n],
@@ -108,11 +121,13 @@ it('encloses exact rational predicate ratios without losing large integer signif
     [(1n << 4096n) + 7n, 1n << 4095n]
   ] as const) {
     const result = fractionInterval(n, d)
+
     encloses(result.low, result.high, n, d)
     expect(Number.isFinite(result.low) && Number.isFinite(result.high)).toBe(
       true
     )
   }
+
   expect(fractionInterval(5n, 1n)).toEqual({ low: 5, high: 5 })
 })
 
@@ -129,6 +144,7 @@ it('shares exactly one scalar implementation through the supported query facade'
     'dyadic',
     'fractionInterval'
   ] as const
+
   expect(Object.keys(common).sort()).toEqual(
     [...exports, 'roundFraction'].sort()
   )
@@ -136,6 +152,7 @@ it('shares exactly one scalar implementation through the supported query facade'
   for (const name of exports) {
     expect(facade[name]).toBe(common[name])
   }
+
   expect(Object.is(common.interval(-0).low, -0)).toBe(true)
   expect(
     common.add(

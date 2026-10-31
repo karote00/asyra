@@ -21,6 +21,7 @@ const readSavedAssessments = async (directory: string) => {
   })[] = []
   const issues: string[] = []
   let files
+
   try {
     files = await readdir(join(directory, 'assessments'), {
       withFileTypes: true
@@ -29,8 +30,10 @@ const readSavedAssessments = async (directory: string) => {
     if ((error as { code?: string }).code === 'ENOENT') {
       return { entries, issues }
     }
+
     throw error
   }
+
   for (const file of files.filter(
     (file) => file.isFile() && file.name.endsWith('.json')
   )) {
@@ -38,6 +41,7 @@ const readSavedAssessments = async (directory: string) => {
       const value = JSON.parse(
         await readFile(join(directory, 'assessments', file.name), 'utf8')
       )
+
       if (
         !value ||
         value.schemaVersion !== 1 ||
@@ -57,11 +61,13 @@ const readSavedAssessments = async (directory: string) => {
       ) {
         throw new Error('Invalid assessment')
       }
+
       entries.push({ ...value, file: file.name })
     } catch {
       issues.push(`Unreadable assessment: ${file.name}`)
     }
   }
+
   return { entries, issues }
 }
 
@@ -90,6 +96,7 @@ const renderRun = (run: ReturnType<typeof evaluateExecution>) => {
   const longest = [...run.toolCalls]
     .sort((a, b) => (b.durationMs ?? -1) - (a.durationMs ?? -1))
     .slice(0, 10)
+
   lines.push(
     `Longest observed calls (${longest.length} of ${run.toolCalls.length}; full details with --json):`
   )
@@ -97,21 +104,26 @@ const renderRun = (run: ReturnType<typeof evaluateExecution>) => {
     const duration = run.timing.callDurations.find(
       (entry) => entry.callId === call.callId
     )
+
     lines.push(
       `  ${call.callId} - ${call.tool} - ${call.durationMs ?? 'unknown'} ms inclusive; ${duration?.ownMs ?? 'unknown'} ms own - ${call.responseTextBytes ?? 'unknown'} response bytes - sequence ${call.sequence}`
     )
   }
+
   for (const finding of run.findings) {
     lines.push(
       `  ${finding.kind} - call ${finding.callId ?? 'unknown'} - sequence ${finding.sequence ?? 'unknown'}: ${finding.observation} ${finding.possibleRemedy}`
     )
   }
+
   for (const issue of run.issues) {
     lines.push(`  Record issue: ${issue}`)
   }
+
   if (run.userFeedback !== null) {
     lines.push(`User feedback: ${run.userFeedback}`)
   }
+
   return lines.join('\n')
 }
 
@@ -139,19 +151,24 @@ export const runExecutionReportCli = async (
     const criteria: string[] = []
     let json = false
     let trace = false
+
     for (let index = 0; index < args.length; index++) {
       const flag = args[index]
+
       if (flag === '--help') {
         return { code: 0, output: help }
       }
+
       if (flag === '--trace') {
         trace = true
         continue
       }
+
       if (flag === '--json') {
         json = true
         continue
       }
+
       if (
         ![
           '--directory',
@@ -165,31 +182,40 @@ export const runExecutionReportCli = async (
       ) {
         throw new Error(`Unknown option: ${flag}`)
       }
+
       const value = args[++index]
+
       if (!value || value.startsWith('--')) {
         throw new Error(`Missing value for ${flag}`)
       }
+
       if (flag === '--criterion') {
         criteria.push(value)
         continue
       }
+
       if (options.has(flag)) {
         throw new Error(`Repeated option: ${flag}`)
       }
+
       options.set(flag, value)
     }
+
     if (
       options.has('--request') &&
       (options.has('--from') || options.has('--to'))
     ) {
       throw new Error('Choose a request or a period, not both.')
     }
+
     if (trace && (!options.has('--request') || options.has('--assess'))) {
       throw new Error(
         '--trace requires --request and cannot request assessment'
       )
     }
+
     const assessmentPurpose = options.get('--assess')
+
     if (
       assessmentPurpose &&
       (!options.has('--request') ||
@@ -200,16 +226,20 @@ export const runExecutionReportCli = async (
         '--assess requires --request, process or visual, and at least one --criterion.'
       )
     }
+
     if (criteria.length && !assessmentPurpose) {
       throw new Error('--criterion requires --assess.')
     }
+
     const directory =
       options.get('--directory') ??
       (environment.AI_EXECUTION_RECORD_DIR?.trim() || 'tmp/ai-executions')
     let feedback: Record<string, string> = {}
     const feedbackPath = options.get('--feedback')
+
     if (feedbackPath) {
       const parsed: unknown = JSON.parse(await readFile(feedbackPath, 'utf8'))
+
       if (
         !parsed ||
         typeof parsed !== 'object' ||
@@ -218,18 +248,22 @@ export const runExecutionReportCli = async (
       ) {
         throw new Error('Feedback must be an object of request IDs to strings.')
       }
+
       feedback = parsed as Record<string, string>
     }
+
     const files = (await readdir(directory, { withFileTypes: true }))
       .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
       .map((entry) => entry.name)
       .sort()
     const records = []
+
     for (const file of files) {
       records.push(
         parseExecutionRecord(await readFile(join(directory, file), 'utf8'))
       )
     }
+
     const sources = records.map((record, index) => ({
       file: files[index],
       requestId: record.requestId,
@@ -237,19 +271,23 @@ export const runExecutionReportCli = async (
     }))
     const requestId = options.get('--request')
     const savedAssessments = await readSavedAssessments(directory)
+
     if (requestId) {
       const matches = records.filter((record) => record.requestId === requestId)
+
       if (matches.length !== 1) {
         throw new Error(
           `Expected one record for ${requestId}; found ${matches.length}.`
         )
       }
+
       if (trace) {
         return {
           code: 0,
           output: JSON.stringify(exportExecutionTrace(matches[0]), null, 2)
         }
       }
+
       const report = {
         ...evaluateExecution(matches[0], {
           feedback: feedback[requestId],
@@ -262,10 +300,13 @@ export const runExecutionReportCli = async (
         sourceFile: sources.find((source) => source.requestId === requestId)
           ?.file
       }
+
       if (assessmentPurpose) {
         const purpose = assessmentPurpose as 'process' | 'visual'
         const controller = new AbortController()
+
         const abort = () => controller.abort()
+
         process.once('SIGINT', abort)
         try {
           const provider =
@@ -281,11 +322,13 @@ export const runExecutionReportCli = async (
             provider
           })
           const assessmentDirectory = join(directory, 'assessments')
+
           await mkdir(assessmentDirectory, { recursive: true, mode: 0o700 })
           const assessmentFile = join(
             assessmentDirectory,
             `${randomUUID()}.json`
           )
+
           await writeFile(
             assessmentFile,
             JSON.stringify(
@@ -299,6 +342,7 @@ export const runExecutionReportCli = async (
             ),
             { flag: 'wx', mode: 0o600 }
           )
+
           return {
             code: ['recorded', 'reused'].includes(assessment.status) ? 0 : 1,
             output: json
@@ -313,6 +357,7 @@ export const runExecutionReportCli = async (
           process.removeListener('SIGINT', abort)
         }
       }
+
       return {
         code: 0,
         output: json
@@ -320,6 +365,7 @@ export const runExecutionReportCli = async (
           : `${renderRun(report)}\nSaved assessments: ${report.assessments.length}; ${report.assessmentIssues.join('; ')}`
       }
     }
+
     const report = {
       ...createExecutionPeriodReport(records, {
         policy: dependencies.policy,
@@ -333,6 +379,7 @@ export const runExecutionReportCli = async (
     const assessments = savedAssessments.entries.filter((entry) =>
       includedRequests.has(entry.sourceRequestId)
     )
+
     if (json) {
       return {
         code: 0,
@@ -343,6 +390,7 @@ export const runExecutionReportCli = async (
         )
       }
     }
+
     return {
       code: 0,
       output: [

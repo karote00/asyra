@@ -36,9 +36,11 @@ const addElementFixture = (
       if (key === 'id') {
         return id
       }
+
       if (key === 'type') {
         return 'transaction-options-test'
       }
+
       return undefined
     }),
     getAllComputedData: vi.fn(() => computedSnapshot),
@@ -56,13 +58,16 @@ const addElementFixture = (
         }) as ElementRawData
     )
   } as unknown as ElementInstanceTypes
+
   sceneTree.addToMap(element)
+
   return { element, updateComputedData }
 }
 
 const captureProjectionEvidence = () => {
   const computedBatches: AllEvent[][] = []
   const transactionEvents: UpdateTransactionEvent[] = []
+
   subscriptions.push(
     subscribeToEventBatches((events) => {
       const computedEvents = events.filter(
@@ -70,6 +75,7 @@ const captureProjectionEvidence = () => {
           type === EventTypes.UPDATE_COMPUTED_DATA ||
           type === EventTypes.UPDATE_COMPUTED_DATA_PATCH
       )
+
       if (computedEvents.length > 0) {
         computedBatches.push(computedEvents)
       }
@@ -82,6 +88,7 @@ const captureProjectionEvidence = () => {
   )
   // The event bus replays its last event to new scalar subscribers.
   transactionEvents.length = 0
+
   return { computedBatches, transactionEvents }
 }
 
@@ -121,6 +128,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
         }
       ]
     } satisfies SceneTreeChange
+
     sceneTree.addChange(change)
 
     sceneTree.commitSceneTreeTransaction()
@@ -485,6 +493,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
         }
       }
     ).payload?.patch?.records?.points?.set?.['point-1']
+
     expect(replacement).toEqual({ before: undefined, after })
     expect(Object.prototype.hasOwnProperty.call(replacement, 'before')).toBe(
       true
@@ -508,6 +517,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
 
     const updatedRecord = fixture.updateComputedData.mock.calls[0]?.[1] as
       Record<string, unknown> | undefined
+
     expect(updatedRecord).toBeDefined()
     expect(Object.prototype.hasOwnProperty.call(updatedRecord, 'point-1')).toBe(
       true
@@ -552,6 +562,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
   it('stores a __proto__ record id as an own property', () => {
     const after = { id: '__proto__', x: 10, y: 20 }
     const set = Object.create(null) as Record<string, typeof after>
+
     Object.defineProperty(set, '__proto__', {
       enumerable: true,
       value: after
@@ -570,6 +581,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
 
     const updatedRecord = fixture.updateComputedData.mock.calls[0]?.[1] as
       Record<string, unknown> | undefined
+
     expect(Object.getPrototypeOf(updatedRecord)).toBe(Object.prototype)
     expect(
       Object.prototype.hasOwnProperty.call(updatedRecord, '__proto__')
@@ -585,6 +597,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
     const computedGet = vi.fn(() => {
       throw new Error('Not allowed to read a missing computed key')
     })
+
     Object.assign(fixture.element, {
       computed: {
         get: computedGet
@@ -616,6 +629,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
     'preserves a special top-level %s key in one ordinary patch envelope',
     (kind) => {
       const computedSnapshot: Record<string, unknown> = { x: 0, points: {} }
+
       Object.defineProperty(computedSnapshot, '__proto__', {
         value: kind === 'value' ? 'before' : { existing: 'before' },
         enumerable: true,
@@ -625,6 +639,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
       const values: NonNullable<ComputedDataPatch['values']> = { x: 1 }
       const records: NonNullable<ComputedDataPatch['records']> =
         kind === 'record' ? {} : { points: { set: { added: 'after' } } }
+
       Object.defineProperty(kind === 'value' ? values : records, '__proto__', {
         value: kind === 'value' ? 'after' : { set: { added: 'after' } },
         enumerable: true,
@@ -652,6 +667,7 @@ describe('SceneTree canonical transactions and local computed projection', () =>
         }
       ).payload?.patch
       const specialOutput = kind === 'value' ? patch?.values : patch?.records
+
       expect(
         Object.prototype.hasOwnProperty.call(specialOutput, '__proto__')
       ).toBe(true)

@@ -9,8 +9,10 @@ import {
 import { OFFICIAL_CLEARANCE_METHOD } from '../methods/official-method'
 
 const predicate = { kind: 'clearance', operator: 'above', value: 0.01 }
+
 function definition(acceptance?: unknown) {
   const draft = createSyntheticExperimentDraft(createSyntheticExample())
+
   return {
     ...draft,
     revision: 1,
@@ -36,6 +38,7 @@ it('admits and freezes typed acceptance trees without adding them to legacy snap
       }
     ]
   })
+
   expect(() => validateExperimentDefinition(input)).not.toThrow()
   validateExperimentDefinition(input)
   const snapshot = createExperimentSnapshot({
@@ -47,24 +50,29 @@ it('admits and freezes typed acceptance trees without adding them to legacy snap
     methods: [OFFICIAL_CLEARANCE_METHOD],
     acknowledgedWarningCodes: []
   })
+
   expect(snapshot.rule.acceptance).toEqual(input.rule.acceptance)
   expect(Object.isFrozen(snapshot.rule.acceptance)).toBe(true)
   expect(snapshot.rule.acceptance).not.toBe(input.rule.acceptance)
   expect(validateHistoricalSnapshot(snapshot)).toEqual(snapshot)
   const legacy = definition()
+
   validateExperimentDefinition(legacy)
   expect(legacy.rule).not.toHaveProperty('acceptance')
 })
 
 it('rejects unsupported, malformed, oversized and cyclic rule expressions', () => {
   let tooDeep: unknown = predicate
+
   for (let i = 0; i < 4; i++) {
     tooDeep = { kind: 'all', conditions: [predicate, tooDeep] }
   }
+
   const cycle: { kind: string; conditions: unknown[] } = {
     kind: 'all',
     conditions: [predicate]
   }
+
   cycle.conditions.push(cycle)
   const tooMany = {
     kind: 'all',
@@ -73,6 +81,7 @@ it('rejects unsupported, malformed, oversized and cyclic rule expressions', () =
       conditions: Array.from({ length: 4 }, () => predicate)
     }))
   }
+
   for (const invalid of [
     null,
     false,
@@ -110,6 +119,7 @@ it('accepts exactly 31 nodes at four levels and preserves strict zero thresholds
   const tree = { kind: 'all', conditions: [level2, level2] }
   // 1 + 2 * (1 + 3 * (1 + 4)) = 33: reduce two leaves to reach the exact limit.
   const exact = JSON.parse(JSON.stringify(tree)) as typeof tree
+
   exact.conditions[0].conditions[0].conditions.splice(0, 2)
   expect(JSON.stringify(exact).match(/"kind"/g)).toHaveLength(31)
   expect(() => validateExperimentDefinition(definition(exact))).not.toThrow()

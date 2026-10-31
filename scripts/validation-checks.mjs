@@ -11,9 +11,11 @@ const policy = JSON.parse(
 export function readValidationPlan(evidence) {
   const map = evidence.relationshipMap
   const digest = createHash('sha256').update(JSON.stringify(map)).digest('hex')
+
   if (digest !== evidence.relationshipMapDigest) {
     throw new Error('Validation relationship digest does not match')
   }
+
   const e2eSuites = map.executionPlan.checks.e2e.selected.map((id) => ({
     id,
     command:
@@ -50,10 +52,13 @@ export function validationCheckCommands(
       `Unresolved local obligations: ${plan.unresolved.join(', ')}`
     )
   }
+
   const checks = plan.executionPlan.checks
   const commands = []
+
   const add = (id, executable, args, env = {}, evidence = { type: 'exit' }) =>
     commands.push({ id, executable, args, env, evidence })
+
   const identity = {
     ...Object.fromEntries(
       Object.entries(executionIdentity).map(([key, value]) => [
@@ -63,6 +68,7 @@ export function validationCheckCommands(
     ),
     CI_RELATIONSHIP_MAP_DIGEST: plan.relationshipMapDigest
   }
+
   for (const [name, id, command] of [
     ['securityAudit', 'security-audit', 'security:audit'],
     ['dependencyValidation', 'dependencies', 'deps:validate'],
@@ -72,6 +78,7 @@ export function validationCheckCommands(
       add(id, 'yarn', [command])
     }
   }
+
   if (
     checks.frameworkDeclarations.mode !== 'not-selected' &&
     checks.frameworkDeclarations.tasks.length
@@ -83,12 +90,14 @@ export function validationCheckCommands(
       '--concurrency=2'
     ])
   }
+
   if (
     ['lint', 'repositoryScripts', 'naming'].some(
       (name) => checks[name].mode !== 'not-selected'
     )
   ) {
     const resultPath = path.join(outputDirectory, 'shared.json')
+
     add(
       'shared',
       process.execPath,
@@ -104,8 +113,10 @@ export function validationCheckCommands(
       { type: 'shared', path: resultPath }
     )
   }
+
   for (const workspace of plan.workspaceMatrix) {
     const directory = path.join(outputDirectory, 'workspaces')
+
     add(
       workspace.name,
       process.execPath,
@@ -126,12 +137,14 @@ export function validationCheckCommands(
       }
     )
   }
+
   if (plan.profileFiles?.length) {
     add('fieldscope-profiles', plan.profileCommand[0], [
       ...plan.profileCommand.slice(1),
       ...plan.profileFiles.flatMap((file) => ['--file', file])
     ])
   }
+
   if (checks.controlPlane.mode !== 'not-selected') {
     const directory = 'tools/flow-inspector/control-plane/__tests__'
     const files = fs
@@ -139,9 +152,11 @@ export function validationCheckCommands(
       .filter((name) => name.endsWith('.test.cjs') && !name.startsWith('board'))
       .sort()
       .map((name) => `${directory}/${name}`)
+
     if (!files.length) {
       throw new Error('Selected control-plane tests are missing')
     }
+
     add(
       'control-plane-tests',
       process.execPath,
@@ -150,8 +165,10 @@ export function validationCheckCommands(
       { type: 'tap' }
     )
   }
+
   for (const { id, command } of plan.e2eSuites) {
     const reportPath = path.join(outputDirectory, `${id}.json`)
+
     add(
       `e2e-${id}`,
       command.executable,
@@ -173,6 +190,7 @@ function main() {
   const evidenceFile = process.env.CI_SCOPE_EVIDENCE_FILE
   const evidence = JSON.parse(fs.readFileSync(evidenceFile, 'utf8'))
   const keys = ['repository', 'base', 'head', 'integration', 'run', 'attempt']
+
   if (
     evidence.version !== 2 ||
     keys.some(
@@ -187,6 +205,7 @@ function main() {
       'Validation evidence does not match the expected execution identity'
     )
   }
+
   const commands = validationCheckCommands(
     readValidationPlan(evidence),
     path.dirname(evidenceFile),
@@ -195,9 +214,11 @@ function main() {
   )
   const [option, id, ...extra] = process.argv.slice(2)
   const command = commands.find((entry) => entry.id === id)
+
   if (option !== '--check' || extra.length || !command) {
     throw new Error('Choose an admitted validation check with --check <id>')
   }
+
   execFileSync(command.executable, command.args, {
     stdio: 'inherit',
     env: {

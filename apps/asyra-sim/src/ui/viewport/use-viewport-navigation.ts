@@ -89,6 +89,7 @@ export function useViewportNavigation({
       ) {
         return
       }
+
       // Keep left-button native focus/blur so unfinished Object fields commit.
       // Middle-button navigation must suppress browser autoscroll.
       if (event.button === 1) {

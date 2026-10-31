@@ -41,6 +41,7 @@ describe('SelectionManager', () => {
   it('should call clear() on all registered selections when clearAllSelections is called', () => {
     const mockSelection1 = { ...mockBaseSelection, clear: vi.fn() }
     const mockSelection2 = { ...mockBaseSelection, clear: vi.fn() }
+
     manager.register('element', mockSelection1 as unknown as BaseSelection)
     manager.register('vectorPoint', mockSelection2 as unknown as BaseSelection)
 
@@ -69,6 +70,7 @@ describe('SelectionManager', () => {
       ...mockBaseSelection,
       dispose: vi.fn()
     }
+
     manager.register('element', selection as unknown as BaseSelection)
 
     expect(manager.unregister('element')).toBe(true)

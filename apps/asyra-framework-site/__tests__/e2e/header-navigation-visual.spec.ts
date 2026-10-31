@@ -85,8 +85,10 @@ test('homepage navigation works with keyboard and no JavaScript at desktop and m
       javaScriptEnabled: false,
       viewport: { width, height: 900 }
     })
+
     try {
       const page = await context.newPage()
+
       await page.goto('/')
       if (width < 1024) {
         await page.locator('summary').focus()
@@ -94,7 +96,9 @@ test('homepage navigation works with keyboard and no JavaScript at desktop and m
       } else {
         await expect(page.locator('summary')).toBeHidden()
       }
+
       const nav = page.getByRole('navigation', { name: 'Primary navigation' })
+
       await expect(
         nav.getByRole('link', { name: 'Docs', exact: true })
       ).toBeVisible()
@@ -126,6 +130,7 @@ test('mobile menu top row aligns with the header controls it replaces', async ({
       .locator('.site-frame-wordmark')
       .evaluate((element) => {
         const style = getComputedStyle(element)
+
         return {
           fontSize: style.fontSize,
           fontWeight: style.fontWeight,
@@ -134,12 +139,14 @@ test('mobile menu top row aligns with the header controls it replaces', async ({
         }
       })
     const trigger = await page.locator('.navigation-trigger').boundingBox()
+
     await page.getByRole('button', { name: 'Open navigation' }).click()
     const title = await page.locator('#navigation-title').boundingBox()
     const titleTypography = await page
       .locator('#navigation-title')
       .evaluate((element) => {
         const style = getComputedStyle(element)
+
         return {
           fontSize: style.fontSize,
           fontWeight: style.fontWeight,
@@ -178,6 +185,7 @@ test('mobile menu presents every destination as one uniform full-height list', a
     .getByRole('button', { name: 'Open navigation' })
     .evaluate((element) => {
       const style = getComputedStyle(element)
+
       return {
         borderRightWidth: style.borderRightWidth,
         borderTopStyle: style.borderTopStyle,
@@ -220,6 +228,7 @@ test('mobile menu presents every destination as one uniform full-height list', a
   const linkStyles = await links.evaluateAll((elements) =>
     elements.map((element) => {
       const style = getComputedStyle(element)
+
       return {
         borderBottomStyle: style.borderBottomStyle,
         borderBottomWidth: style.borderBottomWidth,
@@ -242,6 +251,7 @@ test('mobile menu presents every destination as one uniform full-height list', a
     .getByRole('button', { name: 'Close navigation' })
     .evaluate((element) => {
       const style = getComputedStyle(element)
+
       return {
         borderRightWidth: style.borderRightWidth,
         borderTopStyle: style.borderTopStyle,

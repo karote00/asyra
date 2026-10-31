@@ -89,15 +89,21 @@ function freeze<T>(value: T): T {
     for (const child of Object.values(value)) {
       freeze(child)
     }
+
     Object.freeze(value)
   }
+
   return value
 }
+
 const detached = <T>(value: T): T => freeze(structuredClone(value))
+
 const finiteTime = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
+
 const identity = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
+
 function assertCurrent(receipt: CanonicalMission, owners: SourceOwners) {
   if (
     !receipt ||
@@ -112,14 +118,17 @@ function assertCurrent(receipt: CanonicalMission, owners: SourceOwners) {
     )
   }
 }
+
 // Issuance identity is a lifecycle guard, not a computed-output cache.
 const preparedMissions = new WeakSet<PreparedMission>()
+
 export function prepareMission(
   receipt: CanonicalMission,
   owners: SourceOwners
 ): PreparedMission {
   assertCurrent(receipt, owners)
   const farm = detached(validateConfiguration(structuredClone(receipt.farm)))
+
   validateRobot(receipt.report.settings)
   const mission = Object.freeze({
     receipt,
@@ -129,9 +138,12 @@ export function prepareMission(
     scene: receipt.scene,
     robot: receipt.robot
   })
+
   preparedMissions.add(mission)
+
   return mission
 }
+
 function readEvidence(
   input: DispatchEvidence,
   mission: PreparedMission,
@@ -147,6 +159,7 @@ function readEvidence(
   ) {
     throw new DispatchAdmissionError('Invalid dispatch evidence identity')
   }
+
   if (
     ![now, input.observedAt, input.validFrom, input.validUntil].every(
       finiteTime
@@ -159,8 +172,10 @@ function readEvidence(
       'Invalid or expired dispatch evidence time'
     )
   }
+
   for (const purpose of ['dispatch', 'return'] as const) {
     const interval = input.intervals?.[purpose]
+
     if (
       !interval ||
       !finiteTime(interval.from) ||
@@ -172,11 +187,13 @@ function readEvidence(
       throw new DispatchAdmissionError('Invalid movement query interval')
     }
   }
+
   if (input.intervals.return.from < input.intervals.dispatch.until) {
     throw new DispatchAdmissionError(
       'Return query precedes dispatch completion'
     )
   }
+
   if (
     !input.survey ||
     !input.battery ||
@@ -186,6 +203,7 @@ function readEvidence(
   ) {
     throw new DispatchAdmissionError('Invalid dispatch evidence schema')
   }
+
   for (const value of [input.battery.soc, input.battery.socUncertainty]) {
     if (
       value !== null &&
@@ -197,7 +215,9 @@ function readEvidence(
       throw new DispatchAdmissionError('Invalid battery observation')
     }
   }
+
   const { crate } = input
+
   if (
     (crate.id !== null && !identity(crate.id)) ||
     (crate.cultivar !== null &&
@@ -206,6 +226,7 @@ function readEvidence(
   ) {
     throw new DispatchAdmissionError('Invalid crate observation')
   }
+
   if (
     crate.load &&
     crate.load.payloadLimit !== mission.report.settings.payloadLimit
@@ -214,16 +235,20 @@ function readEvidence(
       'Crate evidence cannot replace the mission payload limit'
     )
   }
+
   return detached(input)
 }
+
 function movementRequests(
   mission: PreparedMission,
   evidence: DispatchEvidence
 ): readonly MovementRequest[] {
   const { settings, lane } = mission.report
+
   if (!lane) {
     throw new DispatchAdmissionError('Missing completed route')
   }
+
   const dock: Point3 = Object.freeze([
     settings.dockX,
     0,
@@ -235,6 +260,7 @@ function movementRequests(
     settings.start
   ] as const)
   const end: Point3 = Object.freeze([lane.centerX, 0, settings.end] as const)
+
   return Object.freeze(
     (['dispatch', 'return'] as const).map((purpose) =>
       Object.freeze({
@@ -264,19 +290,24 @@ export function admitDispatch(
   if (!preparedMissions.has(mission)) {
     throw new DispatchAdmissionError('Unissued prepared mission')
   }
+
   assertCurrent(mission.receipt, owners)
   const evidence = readEvidence(input, mission, now)
   const { settings, route } = mission.report
   const reasons: string[] = []
+
   if (!mission.robot.rig) {
     reasons.push('unsupported-rig')
   }
+
   if (evidence.stowed !== true) {
     reasons.push('unverified-stowed-pose')
   }
+
   if (!route || !mission.report.lane) {
     reasons.push('invalid-route')
   }
+
   const lane = route
     ? assessHarvestLane({
         farm: mission.farm,
@@ -293,9 +324,11 @@ export function admitDispatch(
         survey: evidence.survey
       })
     : null
+
   if (lane && lane.status !== 'screened') {
     reasons.push(...lane.blocked, ...lane.unverified)
   }
+
   if (
     !evidence.crate.id ||
     evidence.crate.tareKg === null ||
@@ -303,26 +336,34 @@ export function admitDispatch(
   ) {
     reasons.push('crate-unverified')
   }
+
   const load = evidence.crate.load ? assessCrateLoad(evidence.crate.load) : null
+
   if (!load) {
     reasons.push('missing-load')
   } else if (load.action !== 'continue-screening') {
     reasons.push(...load.stop, ...load.exchange)
   }
+
   if (evidence.dock !== 'available') {
     reasons.push('dock-unavailable')
   }
+
   const batteryKnown =
     evidence.battery.soc !== null && evidence.battery.socUncertainty !== null
+
   if (!batteryKnown) {
     reasons.push('missing-battery')
   }
+
   // Query only after prerequisite screens. A energy still independently requires
   // the provider's complete return result and the declared battery observation.
   let movements: readonly MovementResult[] = []
   let returnAdmitted = false
+
   if (!reasons.length) {
     const requests = movementRequests(mission, evidence)
+
     if (typeof query !== 'function') {
       reasons.push('missing-movement-provider')
     } else {
@@ -354,6 +395,7 @@ export function admitDispatch(
               )
           )
         : []
+
       movements = Object.freeze(
         admittedResults.map((result) =>
           Object.freeze({
@@ -374,6 +416,7 @@ export function admitDispatch(
       }
     }
   }
+
   const energy = batteryKnown
     ? assessHarvestEnergy({
         ...settings,
@@ -384,13 +427,16 @@ export function admitDispatch(
         dockAvailable: evidence.dock === 'available'
       })
     : null
+
   if (energy && energy.action !== 'continue-screening') {
     reasons.push(
       ...energy.reasons,
       ...(energy.action === 'return-to-charge' ? ['dispatch-energy'] : [])
     )
   }
+
   assertCurrent(mission.receipt, owners)
+
   return Object.freeze({
     accepted: reasons.length === 0,
     mission,

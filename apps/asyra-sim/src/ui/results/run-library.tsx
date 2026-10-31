@@ -76,6 +76,7 @@ export function RunLibrary({
         if (event.key !== 'Escape' || event.nativeEvent.isComposing) {
           return
         }
+
         event.preventDefault()
         event.stopPropagation()
         onClose()
@@ -209,6 +210,7 @@ export function RunLibrary({
             )}
             {comparisonRuns.map((run, index) => {
               const label = `${index + 1} - ${run.name}`
+
               return (
                 <div
                   key={run.result.runId}

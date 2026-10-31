@@ -35,6 +35,7 @@ function snapshot(distance: number): ExperimentSnapshot {
     robotRootId: null,
     bodies: [body('primary', 0), body('obstacle', distance)]
   }
+
   return {
     version: 1,
     snapshotId: 'snapshot-1',
@@ -84,6 +85,7 @@ describe('M3 result validation and rule evaluation', () => {
   it('rejects additional executable or undeclared fields in method evidence envelopes', () => {
     const input = snapshot(1),
       evidence = runOfficialClearanceMethod(input)
+
     for (const invalid of [
       { ...evidence, executable: 'not permitted' },
       {
@@ -101,6 +103,7 @@ describe('M3 result validation and rule evaluation', () => {
       execution: 'cancelled',
       error: 'Cancelled'
     })
+
     expect(validateHistoricalResult(input, valid)).toEqual(valid)
     for (const patch of [
       { verdict: 'meets' },
@@ -120,9 +123,11 @@ describe('M3 result validation and rule evaluation', () => {
     const input = snapshot(1)
     const evidence = runOfficialClearanceMethod(input)
     const first = evidence.pairs[0]
+
     input.budget.maxIntervals = 1
     input.pairs = [...input.pairs, { ...input.pairs[0], id: 'second-pair' }]
     const pairs = [first, { ...first, pairId: 'second-pair' }]
+
     expect(() =>
       completeAnalysisResult(
         input,
@@ -145,6 +150,7 @@ describe('M3 result validation and rule evaluation', () => {
       runOfficialClearanceMethod(input),
       timing
     )
+
     expect(result).toMatchObject({
       execution: 'completed',
       coverage: 'complete',
@@ -160,14 +166,17 @@ describe('M3 result validation and rule evaluation', () => {
   it('preserves an established issue even when execution later cancels', () => {
     const input = snapshot(0)
     const pair = runOfficialClearanceMethod(input).pairs[0]
+
     if (!pair) {
       throw new Error('Expected pair evidence')
     }
+
     const result = terminalAnalysisResult(input, [pair], {
       ...timing,
       execution: 'cancelled',
       error: 'Cancelled by user'
     })
+
     expect(result).toMatchObject({
       execution: 'cancelled',
       coverage: 'partial',
@@ -180,15 +189,18 @@ describe('M3 result validation and rule evaluation', () => {
   it('never turns timeout, failure, or partial clear evidence into success', () => {
     const input = snapshot(1)
     const pair = runOfficialClearanceMethod(input).pairs[0]
+
     if (!pair) {
       throw new Error('Expected pair evidence')
     }
+
     for (const execution of ['cancelled', 'timed-out', 'failed'] as const) {
       const result = terminalAnalysisResult(input, [pair], {
         ...timing,
         execution,
         error: execution
       })
+
       expect(result.verdict).toBe('cannot-determine')
       expect(result.summary).toBe('cannot-determine')
       expect(result.coverage).toBe('partial')
@@ -199,19 +211,24 @@ describe('M3 result validation and rule evaluation', () => {
     const input = snapshot(1),
       valid = runOfficialClearanceMethod(input)
     const wrong = structuredClone(valid)
+
     wrong.snapshotId = 'other-snapshot'
     expect(() => completeAnalysisResult(input, wrong, timing)).toThrow(
       'identity'
     )
 
     const pair = structuredClone(valid.pairs[0])
+
     if (!pair) {
       throw new Error('Expected pair evidence')
     }
+
     const leaf = pair.evidence.leaves[0]
+
     if (!leaf) {
       throw new Error('Expected interval evidence')
     }
+
     leaf.lower = 5
     expect(() => validatePairProgress(input, pair)).toThrow('bound')
 

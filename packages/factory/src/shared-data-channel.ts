@@ -34,8 +34,10 @@ export class LocalSharedDataChannel implements SharedDataChannel {
           ? changes
           : cloneAndDeepFreezeValue([...changes])
     )
+
     measureBrowserDragPhase('factory:shared-channel-append', () => {
       const handlers = [...this.batchHandlers]
+
       handlers.forEach((handler) => {
         try {
           measureBrowserDragPhase('factory:shared-channel-observer', () =>
@@ -56,6 +58,7 @@ export class LocalSharedDataChannel implements SharedDataChannel {
 
   observeBatch(handler: SharedDataChannelBatchChangeHandler): () => void {
     this.batchHandlers.add(handler)
+
     return () => {
       this.batchHandlers.delete(handler)
     }
@@ -77,6 +80,7 @@ const assertSharedDataChannel = (
       `[factory] Shared data channel "${name}" requires appendBatch`
     )
   }
+
   if (typeof channel.observeBatch !== 'function') {
     throw new Error(
       `[factory] Shared data channel "${name}" requires observeBatch`
@@ -86,10 +90,12 @@ const assertSharedDataChannel = (
 
 export class SharedDataChannelRegistry {
   private activeOperations = 0
+
   private readonly channels = new MapRegistry<
     SharedDataChannelName,
     SharedDataChannel
   >()
+
   private readonly batchObserverStates = new Map<
     SharedDataChannelName,
     BatchObserverState
@@ -104,8 +110,10 @@ export class SharedDataChannelRegistry {
 
   unregister(name: SharedDataChannelName): boolean {
     const observerState = this.batchObserverStates.get(name)
+
     observerState?.dispose()
     this.batchObserverStates.delete(name)
+
     return this.channels.delete(name)
   }
 
@@ -113,6 +121,7 @@ export class SharedDataChannelRegistry {
   clear(): void {
     this.assertRuntimeResetAllowed()
     const states = [...this.batchObserverStates.values()]
+
     this.batchObserverStates.clear()
     this.channels.clear()
     states.forEach((state) => {
@@ -120,6 +129,7 @@ export class SharedDataChannelRegistry {
     })
     let failed = false
     let firstError: unknown
+
     states.forEach((state) => {
       try {
         state.dispose()
@@ -153,6 +163,7 @@ export class SharedDataChannelRegistry {
 
   import(name: SharedDataChannelName): SharedDataChannel {
     const channel = this.get(name)
+
     if (!channel) {
       throw new Error(`[factory] Shared data channel "${name}" not found`)
     }
@@ -169,10 +180,13 @@ export class SharedDataChannelRegistry {
     changes: readonly unknown[]
   ): boolean {
     const channel = this.channels.get(name)
+
     if (!channel) {
       return false
     }
+
     Reflect.apply(channel.appendBatch, channel, [changes])
+
     return true
   }
 
@@ -190,12 +204,14 @@ export class SharedDataChannelRegistry {
     handler: SharedDataChannelBatchChangeHandler<TChange>
   ): () => void {
     const channel = this.channels.get(name)
+
     if (!channel) {
       return noop
     }
 
     const batchHandler = handler as SharedDataChannelBatchChangeHandler
     let state = this.batchObserverStates.get(name)
+
     if (!state || state.channel !== channel) {
       state?.dispose()
       const handlers = new Set<SharedDataChannelBatchChangeHandler>([
@@ -206,6 +222,7 @@ export class SharedDataChannelRegistry {
         handlers,
         dispose: noop
       }
+
       this.batchObserverStates.set(name, nextState)
       this.activeOperations += 1
       try {
@@ -231,12 +248,14 @@ export class SharedDataChannelRegistry {
       } finally {
         this.activeOperations -= 1
       }
+
       state = nextState
     } else {
       state.handlers.add(batchHandler)
     }
 
     const observerState = state
+
     return () => {
       observerState.handlers.delete(batchHandler)
       if (

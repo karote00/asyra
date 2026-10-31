@@ -33,15 +33,20 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing measured pair')
         }
+
         const context = new OriginalMeshQuery()
         const indices = new WeakMap<object, MeshIndex>()
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation((...args) => {
           const index = build(...args)
+
           indices.set(args[0], index)
+
           return index
         })
         let active:
@@ -73,8 +78,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           uncertain: 0
         }
         const distance = convex.convexDistance
+
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
           const result = distance(...args)
+
           if (result.penetration) {
             convexStates.penetration++
           } else if (result.upper < snapshot.rule.minimumClearance) {
@@ -88,6 +95,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           } else {
             convexStates.uncertain++
           }
+
           if (
             active &&
             !active.attempted &&
@@ -97,15 +105,19 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             active.attempted = true
             attempts++
             let gap = 0
+
             if (mode === 'vertices') {
               const ops = poseOperations(intervalAlgebra)
               const norm = ops.norm(ops.vector(result.axis))
+
               if (norm[0] > 0) {
                 const count = () => {
                   vertexChecks++
                 }
+
                 const left = vertexProjection(active.a, result.axis, count),
                   right = vertexProjection(active.b, result.axis, count)
+
                 gap = Math.max(
                   0,
                   idiv(isub(interval(right[0]), interval(left[1])), norm)[0],
@@ -115,9 +127,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             } else {
               const ai = indices.get(active.a.geometry),
                 bi = indices.get(active.b.geometry)
+
               if (!ai || !bi) {
                 throw new Error('Missing exact complete source index')
               }
+
               gap = meshIndex.boundsGap(
                 meshIndex.worldBounds(ai.root.bounds, active.a.pose),
                 meshIndex.worldBounds(bi.root.bounds, active.b.pose)
@@ -135,16 +149,20 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 )
               }
             }
+
             active.gap = gap
             active.upper = result.upper
             active.work = context.work
           }
+
           return result
         })
         const queryDistance = context.distance.bind(context)
+
         context.distance = (...args) => {
           active = { a: args[0], b: args[1], attempted: false }
           const result = queryDistance(...args)
+
           if (active.attempted) {
             if (result.penetration) {
               finalStates.penetration++
@@ -158,18 +176,23 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               finalStates.other++
             }
           }
+
           if (active.gap && active.gap > 0) {
             if (active.upper === undefined || active.work === undefined) {
               throw new Error('Missing established warning evidence')
             }
+
             expect(result.penetration).toBe(false)
             expect(active.gap).toBeLessThanOrEqual(active.upper)
             certified++
             remainingWork += context.work - active.work
           }
+
           active = undefined
+
           return result
         }
+
         const result = queryOriginalPartPair(
           {
             workcell: snapshot.workcell,
@@ -186,6 +209,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- passive exact-source certificate feasibility, baseline still executes
         console.info(
           JSON.stringify({

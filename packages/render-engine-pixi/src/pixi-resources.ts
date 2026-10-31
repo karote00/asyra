@@ -70,7 +70,9 @@ const parseGradientData = (data: unknown): GradientDescriptorData => {
   if (!isRecord(data)) {
     throw new Error('Pixi gradient resource requires descriptor data')
   }
+
   const type = data.type
+
   if (
     type !== 'linear' &&
     type !== 'radial' &&
@@ -79,6 +81,7 @@ const parseGradientData = (data: unknown): GradientDescriptorData => {
   ) {
     throw new Error(`Unsupported Pixi gradient type: ${String(type)}`)
   }
+
   if (!Array.isArray(data.colorStops)) {
     throw new Error('Pixi gradient resource requires color stops')
   }
@@ -90,19 +93,23 @@ const parseCssColor = (color: ColorSource): RGBA => {
   if (typeof color === 'number') {
     return [(color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff, 0xff]
   }
+
   if (!colorCanvas) {
     colorCanvas = new OffscreenCanvas(1, 1)
     colorContext = colorCanvas.getContext('2d', {
       willReadFrequently: true
     })
   }
+
   if (!colorContext) {
     throw new Error('Pixi gradient color parsing context is unavailable')
   }
+
   colorContext.clearRect(0, 0, 1, 1)
   colorContext.fillStyle = String(color)
   colorContext.fillRect(0, 0, 1, 1)
   const pixel = colorContext.getImageData(0, 0, 1, 1).data
+
   return [pixel[0], pixel[1], pixel[2], pixel[3]]
 }
 
@@ -121,15 +128,18 @@ const sampleGradientColor = (
   position: number
 ): RGBA => {
   const clamped = Math.max(0, Math.min(1, position))
+
   if (stops.length === 0) {
     return [0, 0, 0, 255]
   }
+
   if (stops.length === 1) {
     return stops[0].color
   }
 
   let lower = stops[0]
   let upper = stops[stops.length - 1]
+
   for (let index = 0; index < stops.length - 1; index += 1) {
     if (clamped >= stops[index].offset && clamped <= stops[index + 1].offset) {
       lower = stops[index]
@@ -137,8 +147,10 @@ const sampleGradientColor = (
       break
     }
   }
+
   const range = upper.offset - lower.offset
   const ratio = range <= 0.00001 ? 0 : (clamped - lower.offset) / range
+
   return lower.color.map((channel, index) =>
     Math.round(channel + (upper.color[index] - channel) * ratio)
   ) as RGBA
@@ -150,9 +162,11 @@ const buildProceduralGradientTexture = (
   const size = GRADIENT_TEXTURE_SIZE
   const canvas = new OffscreenCanvas(size, size)
   const context = canvas.getContext('2d')
+
   if (!context) {
     throw new Error('Pixi gradient texture context is unavailable')
   }
+
   const image = context.createImageData(size, size)
   const preparedStops = prepareGradientStops(options.colorStops)
   const center = options.start ?? options.center ?? { x: 0.5, y: 0.5 }
@@ -177,6 +191,7 @@ const buildProceduralGradientTexture = (
 
       if (options.type === 'angular') {
         const angle = Math.atan2(offsetY, offsetX) - rotation
+
         position =
           (((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) /
           (Math.PI * 2)
@@ -191,6 +206,7 @@ const buildProceduralGradientTexture = (
         position
       )
       const pixel = (y * size + x) * 4
+
       image.data[pixel] = red
       image.data[pixel + 1] = green
       image.data[pixel + 2] = blue
@@ -199,6 +215,7 @@ const buildProceduralGradientTexture = (
   }
 
   context.putImageData(image, 0, 0)
+
   return new Texture({
     source: new CanvasSource({
       resource: canvas,
@@ -214,20 +231,25 @@ const createPatternResource = (
   scale: GradientPoint = { x: 1 / texture.width, y: 1 / texture.height }
 ): PixiOwnedResource => {
   const pattern = new FillPattern(texture, repeat)
+
   // Descriptors map source texels into normalized object bounds. Pixi local
   // patterns already normalize the texture, so convert that scale once here.
   pattern.textureSpace = 'local'
   const matrix = new Matrix()
+
   matrix.scale(scale.x * texture.width, scale.y * texture.height)
   pattern.setTransform(matrix)
+
   return {
     value: pattern,
+
     destroy: () => texture.destroy(true)
   }
 }
 
 const createGradientResource = (data: unknown): PixiOwnedResource => {
   const options = parseGradientData(data)
+
   if (options.type !== 'linear') {
     return createPatternResource(buildProceduralGradientTexture(options))
   }
@@ -244,10 +266,12 @@ const createGradientResource = (data: unknown): PixiOwnedResource => {
   const deltaX = end.x - start.x
   const deltaY = end.y - start.y
   const matrix = new Matrix()
+
   matrix.scale(Math.max(0.0001, Math.hypot(deltaX, deltaY)), 1)
   matrix.rotate(Math.atan2(deltaY, deltaX))
   matrix.translate(start.x, start.y)
   const buildGradient = gradient.buildGradient.bind(gradient)
+
   gradient.buildGradient = () => {
     buildGradient()
     gradient.transform = matrix
@@ -255,6 +279,7 @@ const createGradientResource = (data: unknown): PixiOwnedResource => {
 
   return {
     value: gradient,
+
     destroy: () => gradient.destroy()
   }
 }
@@ -266,7 +291,9 @@ export const getPixiGradientResourceKey = (
   if (descriptor.kind !== 'gradient') {
     return undefined
   }
+
   const options = parseGradientData(descriptor.data)
+
   if (
     options.colorStops.some(
       (stop) =>
@@ -277,24 +304,29 @@ export const getPixiGradientResourceKey = (
   ) {
     return undefined
   }
+
   const points = [
     options.start,
     options.end,
     options.center,
     options.outerCenter
   ]
+
   if (points.some((point) => point !== undefined && !isGradientPoint(point))) {
     return undefined
   }
+
   const scalars = [
     options.innerRadius,
     options.outerRadius,
     options.radiusY,
     options.rotation
   ]
+
   if (scalars.some((value) => value !== undefined && !Number.isFinite(value))) {
     return undefined
   }
+
   return JSON.stringify([
     options.type,
     options.textureSpace,
@@ -308,7 +340,9 @@ const createRasterPatternResource = (data: unknown): PixiOwnedResource => {
   if (!isRecord(data)) {
     throw new Error('Pixi raster pattern requires descriptor data')
   }
+
   const descriptor = data as unknown as RasterPatternDescriptorData
+
   if (
     !descriptor.source ||
     !Number.isFinite(descriptor.width) ||
@@ -316,6 +350,7 @@ const createRasterPatternResource = (data: unknown): PixiOwnedResource => {
   ) {
     throw new Error('Pixi raster pattern requires source dimensions')
   }
+
   const texture = new Texture({
     source: new CanvasSource({
       resource: descriptor.source,
@@ -323,6 +358,7 @@ const createRasterPatternResource = (data: unknown): PixiOwnedResource => {
       height: descriptor.height
     })
   })
+
   return createPatternResource(
     texture,
     descriptor.repeat,
@@ -338,8 +374,14 @@ export const createPixiOwnedResource = (
   switch (descriptor.kind) {
     case 'texture': {
       const texture = Texture.from(descriptor.data as never)
-      return { value: texture, destroy: () => texture.destroy() }
+
+      return {
+        value: texture,
+
+        destroy: () => texture.destroy()
+      }
     }
+
     case 'gradient':
       return createGradientResource(descriptor.data)
     case 'raster-pattern':

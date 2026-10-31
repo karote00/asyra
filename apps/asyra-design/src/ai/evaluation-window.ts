@@ -17,6 +17,7 @@ export const projectEvaluationReport = (turn: {
   const result = reportRecord(turn.result)
   const preview = reportRecord(result?.preview)
   const transaction = reportRecord(result?.transaction)
+
   if (
     turn.outcome === 'failed' ||
     turn.outcome === 'cancelled' ||
@@ -33,17 +34,21 @@ export const projectEvaluationReport = (turn: {
   ) {
     return
   }
+
   const action = reportRecord(preview.actions[0])
+
   if (
     action?.name !== AiActionNames.REPORT_OUTCOME ||
     typeof action.id !== 'string'
   ) {
     return
   }
+
   // Runtime appends the final batch receipts after all earlier acknowledged work.
   const receipt = reportRecord(result.actionResults.at(-1))
   const value = reportRecord(receipt?.result)
   const outcome = reportRecord(value?.toolOutcome)
+
   if (
     receipt?.actionId !== action.id ||
     receipt?.actionName !== action.name ||
@@ -58,6 +63,7 @@ export const projectEvaluationReport = (turn: {
   ) {
     return
   }
+
   return {
     attribution: 'model-self-report' as const,
     sourceRequestId: result.recordingId,
@@ -79,11 +85,14 @@ export const readEvaluationWindow = (
   if (value === undefined) {
     return undefined
   }
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Invalid evaluation window')
   }
+
   const { workDeadlineAt, reportTimeoutMs, expandedNodeLimit } =
     value as EvaluationWindow
+
   if (
     (expandedNodeLimit !== undefined && expandedNodeLimit !== 2000) ||
     !Number.isSafeInteger(workDeadlineAt) ||
@@ -95,6 +104,7 @@ export const readEvaluationWindow = (
   ) {
     throw new Error('Invalid evaluation window')
   }
+
   return {
     workDeadlineAt,
     reportTimeoutMs,

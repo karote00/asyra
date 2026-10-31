@@ -15,7 +15,9 @@ const keyboardEvent = (
     key: 'i',
     ...options
   })
+
   Object.defineProperty(event, 'target', { value: target })
+
   return event
 }
 
@@ -76,6 +78,7 @@ describe('Agent panel command metadata and shortcut', () => {
   it('bypasses unrelated editable fields but lets the Agent prompt toggle closed', () => {
     const input = document.createElement('input')
     const prompt = document.createElement('textarea')
+
     prompt.dataset.aiAgentPrompt = 'true'
 
     expect(

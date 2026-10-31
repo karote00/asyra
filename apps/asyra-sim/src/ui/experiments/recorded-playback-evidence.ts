@@ -9,15 +9,19 @@ import type { IntervalEvidence } from '../../analysis/methods/continuous-query'
 /** Query accepted proofs only; missing times must go to the live sampling owner. */
 export class RecordedPlaybackEvidence {
   private readonly cues = new Map<number, PlaybackFeedback>()
+
   private readonly times: number[]
+
   private readonly sources: ReadonlyMap<
     string,
     Pick<PlaybackIssue, 'bodyIds' | 'name'>
   >
+
   private readonly evidence: ReadonlyMap<
     string,
     PresentedRun['result']['pairEvidence'][number]['evidence']
   >
+
   private currentCue?: PlaybackFeedback
 
   constructor(private readonly run: PresentedRun) {
@@ -42,6 +46,7 @@ export class RecordedPlaybackEvidence {
     const evidence = new Map(
       run.result.pairEvidence.map((pair) => [pair.pairId, pair.evidence])
     )
+
     this.sources = sources
     this.evidence = evidence
     const witnesses = new Map<number, Map<string, PlaybackIssue>>()
@@ -131,8 +136,10 @@ export class RecordedPlaybackEvidence {
 
       // Only the current cue expands unknowns; never retain pairs × witnesses.
       this.currentCue = { ...cue, issues, complete }
+
       return this.currentCue
     }
+
     if (!this.covers(time, false)) {
       return
     }

@@ -50,9 +50,11 @@ export function installEditingFeatures(
       operation,
       FeatureNames.EDIT_WORKCELL
     )
+
   const api = {
     addObservation: (runId: string, draft: ObservationDraft) => {
       const input = structuredClone(draft)
+
       return execute(() =>
         addFieldObservation(
           core,
@@ -62,6 +64,7 @@ export function installEditingFeatures(
         )
       )
     },
+
     updateObservation: (
       runId: string,
       id: string,
@@ -69,6 +72,7 @@ export function installEditingFeatures(
       draft: ObservationDraft
     ) => {
       const input = structuredClone(draft)
+
       return execute(() =>
         updateFieldObservation(
           core,
@@ -80,36 +84,49 @@ export function installEditingFeatures(
         )
       )
     },
+
     removeObservation: (runId: string, id: string, expectedRevision: number) =>
       execute(() => removeFieldObservation(core, runId, id, expectedRevision)),
+
     attachRun: (runId: string) =>
       execute(() => {
         const run = artifacts?.readRun?.(runId)
+
         if (!run || run.runId !== runId) {
           throw new Error('Validated run evidence is unavailable')
         }
+
         return attachRunReference(core, run)
       }),
+
     captureDocument: () => execute(() => captureCanonicalDocument(core)),
+
     applyDocument: (data: unknown, assertCurrent: () => void) => {
       const input = structuredClone(data)
+
       return execute(() => {
         assertCurrent()
+
         return loadCanonicalDocument(core, input)
       })
     },
+
     createCandidate: (name: string, workcell: Workcell) => {
       const input = structuredClone(workcell)
+
       return execute(() =>
         model.createCandidate(core, name, input, artifacts?.validateVisuals)
       )
     },
+
     duplicateCandidate: (sourceId: string, name: string) =>
       execute(() =>
         duplicateCandidate(core, sourceId, name, artifacts?.validateVisuals)
       ),
+
     replace: (candidateId: string, workcell: Workcell) => {
       const input = structuredClone(workcell)
+
       return execute(() =>
         model.replaceWorkcell(
           core,
@@ -119,8 +136,10 @@ export function installEditingFeatures(
         )
       )
     },
+
     upsert: (candidateId: string, body: Body, robotRootId?: string | null) => {
       const input = structuredClone(body)
+
       return execute(() =>
         model.upsertBody(
           core,
@@ -131,12 +150,14 @@ export function installEditingFeatures(
         )
       )
     },
+
     setVisuals: (
       candidateId: string,
       bodyId: string,
       visuals: readonly VisualBinding[]
     ) => {
       const input = structuredClone(visuals)
+
       return execute(() =>
         setBodyVisuals(
           core,
@@ -147,12 +168,14 @@ export function installEditingFeatures(
         )
       )
     },
+
     upsertVisual: (
       candidateId: string,
       bodyId: string,
       binding: VisualBinding
     ) => {
       const input = structuredClone(binding)
+
       return execute(() =>
         upsertVisualBinding(
           core,
@@ -163,26 +186,32 @@ export function installEditingFeatures(
         )
       )
     },
+
     remove: (candidateId: string, bodyId: string) =>
       execute(() => model.removeBody(core, candidateId, bodyId)),
+
     createExperiment: (
       candidateId: string,
       name: string,
       draft: ExperimentDraft
     ) => {
       const input = structuredClone(draft)
+
       return execute(() => createExperiment(core, candidateId, name, input))
     },
+
     updateExperiment: (
       experimentId: string,
       expectedRevision: number,
       draft: ExperimentDraft
     ) => {
       const input = structuredClone(draft)
+
       return execute(() =>
         updateExperiment(core, experimentId, expectedRevision, input)
       )
     },
+
     removeExperiment: (experimentId: string) =>
       execute(() => removeExperiment(core, experimentId))
   }
@@ -201,6 +230,7 @@ export function installEditingFeatures(
           () => undoWithRenderPolicy({ mode: 'atomic' }),
           FeatureNames.HISTORY
         ),
+
       redo: () =>
         getSessionManager().runAfterCancellingActiveSessions(
           () => core.getSystemContextSnapshot(),
@@ -209,5 +239,6 @@ export function installEditingFeatures(
         )
     }
   })
+
   return { edit: edit.api, history: history.api }
 }

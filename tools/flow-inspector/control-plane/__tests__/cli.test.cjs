@@ -14,6 +14,7 @@ const root = path.resolve(__dirname, '../../../..')
 test('local CLI selects a product manifest without retargeting a remote service', async (t) => {
   const { sha256 } = require('../snapshot.cjs')
   const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'selection-'))
   const manifestPath = path.relative(
@@ -23,6 +24,7 @@ test('local CLI selects a product manifest without retargeting a remote service'
   const definition = structuredClone(
     require('../../../../packages/factory/flow-contracts.json')
   )
+
   definition.manifestPath = manifestPath
   fs.writeFileSync(path.join(root, manifestPath), JSON.stringify(definition))
   t.after(() => {
@@ -33,9 +35,11 @@ test('local CLI selects a product manifest without retargeting a remote service'
     )
   })
   const output = []
+
   assert.equal(
     await main(['--manifest', manifestPath, 'status'], {
       repositoryRoot: root,
+
       write: (line) => output.push(line)
     }),
     0
@@ -50,6 +54,7 @@ test('local CLI selects a product manifest without retargeting a remote service'
 test('offline provider contract uses identical CLI, HTTP and service task evidence', async () => {
   const { randomUUID } = require('node:crypto')
   const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'provider-'))
   const authorization = {
@@ -67,7 +72,9 @@ test('offline provider contract uses identical CLI, HTTP and service task eviden
       directory,
       agentOptions: {
         available: () => true,
+
         providerAuthorization: authorization,
+
         providerComplete: async () => ({
           terminal: true,
           text: '{"tool":"shell"}',
@@ -77,6 +84,7 @@ test('offline provider contract uses identical CLI, HTTP and service task eviden
     }
   })
   const messages = []
+
   try {
     const state = server.service.state()
     const request = {
@@ -92,12 +100,16 @@ test('offline provider contract uses identical CLI, HTTP and service task eviden
       budgets: { elapsedMs: 60000, toolCalls: 3, attempts: 2 }
     }
     const file = path.join(directory, 'request.json')
+
     fs.writeFileSync(file, JSON.stringify(request))
+
     const invoke = (...args) =>
       main(['--url', server.origin, ...args], {
         repositoryRoot: root,
+
         write: (value) => messages.push(value)
       })
+
     await invoke('task-start', path.relative(root, file))
     await server.service.waitTask(request.requestId)
     messages.length = 0
@@ -105,6 +117,7 @@ test('offline provider contract uses identical CLI, HTTP and service task eviden
     const http = await fetch(
       server.origin + '/api/tasks/' + request.requestId
     ).then((response) => response.json())
+
     assert.deepEqual(JSON.parse(messages.join('')), http)
     assert.deepEqual(http, server.service.getTask(request.requestId))
     assert.equal(http.providerRequests[0].usage.totalTokens, 3)
@@ -119,6 +132,7 @@ test(
   { timeout: 20000 },
   async () => {
     const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'store-'))
     const server = await startServer(root, {
@@ -127,12 +141,15 @@ test(
     })
     const messages = []
     const options = { write: (value) => messages.push(value) }
+
     const invoke = (...args) => main(['--url', server.origin, ...args], options)
+
     try {
       assert.equal(await invoke('mapping-diff'), 0)
       assert.match(messages.join('\n'), /unchanged/)
       assert.equal(await invoke('prove'), 0)
       const runs = server.service.state().runs
+
       assert.equal(runs.length, server.service.contract().scenarios.length + 1)
       assert.equal(await invoke('show', runs[0].id), 0)
       assert.match(messages.join('\n'), /Core proof passed/)
@@ -152,23 +169,29 @@ test(
   { timeout: 20000 },
   async (t) => {
     const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'phase4-'))
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const server = await startServer(root, {
       url: 'http://127.0.0.1:0',
       serviceOptions: { directory }
     })
     const messages = []
+
     const invoke = (...args) =>
       main(['--url', server.origin, ...args], {
         write: (value) => messages.push(value)
       })
+
     try {
       assert.equal(await invoke('candidate'), 0)
       const id = server.service.state().runs[0].id
+
       assert.equal(await invoke('contract-diff', id), 0)
       const review = server.service.state().evolution.reviews[0]
+
       assert.equal(
         await invoke('contract-accept', review.id, 'Reviewed candidate'),
         0
@@ -185,6 +208,7 @@ test(
 
 test('CI trial uses captured candidate proof while protected CI retains its accepted-base blocker', async (t) => {
   const originalFetch = globalThis.fetch
+
   t.after(() => {
     globalThis.fetch = originalFetch
   })
@@ -202,19 +226,26 @@ test('CI trial uses captured candidate proof while protected CI retains its acce
         blockers: ['Candidate differs from accepted supported obligations']
       }
     }
+
     globalThis.fetch = async (input) => {
       const pathname = new URL(input).pathname
+
       if (pathname === '/api/session') {
         return Response.json({ capability: 'test' })
       }
+
       if (pathname === '/api/runs') {
         return Response.json({ id: record.id })
       }
+
       assert.equal(pathname, '/api/runs/' + record.id)
+
       return Response.json(record)
     }
+
     const messages = []
     const options = { write: (value) => messages.push(value) }
+
     assert.equal(
       await main(['--url', 'http://127.0.0.1:1', 'ci-trial'], options),
       status === 'passed' ? 0 : 1,
@@ -230,8 +261,10 @@ test(
   { timeout: 30000 },
   async (t) => {
     const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'trial-'))
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const repository = createAcceptedRepository(root, directory)
     const server = await startServer(repository, {
@@ -239,6 +272,7 @@ test(
       serviceOptions: { directory: path.join(repository, 'tmp/store') }
     })
     const messages = []
+
     try {
       assert.equal(
         await main(['--url', server.origin, 'ci-trial'], {
@@ -257,6 +291,7 @@ test(
         1
       )
       const negative = server.service.get(server.service.state().runs[0].id)
+
       assert.equal(negative.ci.evidence.status, 'failed')
       assert.equal(negative.ci.deliveryStatus, 'blocked')
       assert.deepEqual(
@@ -280,6 +315,7 @@ test(
         messages.join('\n')
       )
       const recovery = server.service.get(server.service.state().runs[0].id)
+
       assert.equal(
         recovery.ci.evidence.passedCount,
         server.service.contract().cases.length
@@ -297,19 +333,24 @@ test(
   async (t) => {
     const { randomUUID } = require('node:crypto')
     const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'phase5-'))
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const server = await startServer(root, {
       url: 'http://127.0.0.1:0',
       serviceOptions: { directory, agentOptions: { available: () => true } }
     })
     const messages = []
+
     const invoke = (...args) =>
       main(['--url', server.origin, ...args], {
         repositoryRoot: root,
+
         write: (value) => messages.push(value)
       })
+
     try {
       const state = server.service.state()
       const request = {
@@ -324,15 +365,18 @@ test(
         budgets: { elapsedMs: 10000, toolCalls: 20, attempts: 3 }
       }
       const file = path.join(directory, 'request.json')
+
       fs.writeFileSync(file, JSON.stringify(request))
       const denied = await fetch(server.origin + '/api/tasks', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(request)
       })
+
       assert.equal(denied.status, 403)
       assert.equal(await invoke('task-start', path.relative(root, file)), 0)
       const id = JSON.parse(messages.at(-1)).id
+
       assert.equal(id, request.requestId)
       assert.equal(await invoke('task-cancel', id), 0)
       assert.equal(await invoke('task-show', id), 0)
@@ -351,13 +395,16 @@ test(
 test('target decisions share API CLI audit and survive service restart without running candidates', async (t) => {
   const { randomUUID } = require('node:crypto')
   const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'targets-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   let server = await startServer(root, {
     url: 'http://127.0.0.1:0',
     serviceOptions: { directory }
   })
+
   try {
     const state = server.service.state()
     const request = {
@@ -375,6 +422,7 @@ test('target decisions share API CLI audit and survive service restart without r
       works: [],
       pending: ['deferred.snapshot', 'deferred.outcome', 'deferred.delivery']
     }
+
     assert.equal(
       (
         await fetch(server.origin + '/api/targets/decide', {
@@ -386,13 +434,17 @@ test('target decisions share API CLI audit and survive service restart without r
       403
     )
     const file = path.join(directory, 'target-request.json')
+
     fs.writeFileSync(file, JSON.stringify(request))
     let messages = []
+
     const invoke = (...args) =>
       main(['--url', server.origin, ...args], {
         repositoryRoot: root,
+
         write: (value) => messages.push(value)
       })
+
     await invoke('target-decide', path.relative(root, file))
     assert.equal(JSON.parse(messages.join('')).revision, 1)
     messages = []
@@ -400,6 +452,7 @@ test('target decisions share API CLI audit and survive service restart without r
     const api = await fetch(
       server.origin + '/api/targets/' + request.requestId
     ).then((r) => r.json())
+
     assert.deepEqual(JSON.parse(messages.join('')), api)
     assert.deepEqual(api, server.service.getTarget(request.requestId))
     assert.equal(api.status, 'pending')
@@ -429,6 +482,7 @@ test('target decisions share API CLI audit and survive service restart without r
       },
       body: JSON.stringify({ ...request, reason: 'conflict' })
     })
+
     assert.equal(conflict.status, 409)
   } finally {
     await server.close()
@@ -440,6 +494,7 @@ test('API CLI work admission locks source before task launch, rejects bypass and
   const { LOCAL_ACTOR } = require('../service.cjs')
   const { captureSource } = require('../snapshot.cjs')
   const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'admission-'))
   let captures = 0,
@@ -448,11 +503,14 @@ test('API CLI work admission locks source before task launch, rejects bypass and
     directory,
     agentOptions: {
       available: () => true,
+
       capture: (...args) => {
         captures++
         const snapshot = captureSource(...args)
+
         return wrongSource ? { ...snapshot, digest: '0'.repeat(64) } : snapshot
       },
+
       verify: async () => ({ evidence: { status: 'unknown' } })
     }
   }
@@ -460,6 +518,7 @@ test('API CLI work admission locks source before task launch, rejects bypass and
     url: 'http://127.0.0.1:0',
     serviceOptions
   })
+
   t.after(async () => {
     await server.close()
     fs.rmSync(directory, { recursive: true, force: true })
@@ -468,6 +527,7 @@ test('API CLI work admission locks source before task launch, rejects bypass and
   const source = await server.service.wait(
     server.service.start({}, LOCAL_ACTOR)
   )
+
   assert.equal(source.evidence.status, 'passed')
   const work = {
     id: randomUUID(),
@@ -504,16 +564,22 @@ test('API CLI work admission locks source before task launch, rejects bypass and
     sourceAttemptId: source.id
   }
   const file = path.join(directory, 'request.json')
+
   const invoke = async (...args) => {
     const output = []
+
     await main(['--url', server.origin, ...args], {
       repositoryRoot: root,
+
       write: (v) => output.push(v)
     })
+
     return JSON.parse(output.join(''))
   }
+
   fs.writeFileSync(file, JSON.stringify(admission))
   const saved = await invoke('target-decide', path.relative(root, file))
+
   assert.equal(saved.revision, 2)
   assert.equal(captures, 0)
   const request = {
@@ -533,6 +599,7 @@ test('API CLI work admission locks source before task launch, rejects bypass and
     }
   }
   const omitted = { ...request }
+
   delete omitted.workBinding
   assert.throws(
     () => server.service.startTask(omitted, LOCAL_ACTOR),
@@ -553,12 +620,14 @@ test('API CLI work admission locks source before task launch, rejects bypass and
   await server.service.waitTask(request.requestId)
   assert.equal(server.service.getTask(request.requestId).attempts.length, 1)
   const detail = await invoke('target-show', target.id)
+
   assert.equal(detail.tasks[0].task.id, request.requestId)
   assert.equal(detail.works[0].assessment.status, 'unknown')
   assert.equal(detail.status, 'pending')
   const api = await fetch(server.origin + '/api/targets/' + target.id).then(
     (r) => r.json()
   )
+
   assert.deepEqual(detail, api)
   await server.close()
   server = await startServer(root, {
@@ -587,6 +656,7 @@ async function runAssessmentCliLifecycle() {
   const sourceOwner = require('../snapshot.cjs')
   const contract = require('../contracts.cjs').loadContract(root)
   const parent = path.join(root, 'tmp/flow-inspector/cli-assessment-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
   const snapshot = sourceOwner.captureSource(
@@ -597,6 +667,7 @@ async function runAssessmentCliLifecycle() {
   const repository = snapshot.sourceRoot
   let service = createService(repository),
     server
+
   const makeTarget = (review) => {
     const flow = review.candidate.contract.flows[0]
     const cases = review.candidate.contract.cases.filter(
@@ -626,21 +697,27 @@ async function runAssessmentCliLifecycle() {
       })),
       pending: []
     }
+
     return { request, target: service.decideTarget(request, LOCAL_ACTOR) }
   }
+
   let holdCancellation = false
   let signalCancellationReady
   const cancellationReady = new Promise((resolve) => {
     signalCancellationReady = resolve
   })
+
   const invoke = async (args, remote = false) => {
     const messages = []
     const code = await main(remote ? ['--url', server.origin, ...args] : args, {
       repositoryRoot: repository,
+
       write: (value) => messages.push(value)
     })
+
     return { code, value: JSON.parse(messages.at(-1)) }
   }
+
   try {
     const proof = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
@@ -649,6 +726,7 @@ async function runAssessmentCliLifecycle() {
       { attemptId: proof.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: review.id,
@@ -665,9 +743,11 @@ async function runAssessmentCliLifecycle() {
       sourceAttemptId: proof.id
     }
     const input = path.join(repository, 'assessment.json')
+
     fs.writeFileSync(input, JSON.stringify(request))
     await service.close()
     const local = await invoke(['target-assess', 'assessment.json'])
+
     assert.equal(local.code, 0)
     assert.equal(local.value.phase, 'completed')
     assert.equal(local.value.projection.eligible, true)
@@ -681,16 +761,20 @@ async function runAssessmentCliLifecycle() {
               options.signal.addEventListener('abort', resolve, { once: true })
             )
           }
+
           return require('../runner.cjs').runVerification(options)
         }
       }
     })
     service = server.service
     const replay = await invoke(['target-assess', 'assessment.json'], true)
+
     assert.deepEqual(replay, local)
     const remoteRequest = { ...request, requestId: randomUUID() }
+
     fs.writeFileSync(input, JSON.stringify(remoteRequest))
     const remote = await invoke(['target-assess', 'assessment.json'], true)
+
     assert.equal(remote.code, 0)
     assert.equal(remote.value.phase, 'completed')
     assert.equal(remote.value.result.targetContract.status, 'passed')
@@ -718,6 +802,7 @@ async function runAssessmentCliLifecycle() {
       LOCAL_ACTOR
     )
     const stale = await invoke(['target-assessment-wait', local.value.id], true)
+
     assert.equal(stale.code, 1)
     assert.equal(stale.value.result.integration.status, 'passed')
     assert.equal(stale.value.projection.current, false)
@@ -726,13 +811,16 @@ async function runAssessmentCliLifecycle() {
       requestId: randomUUID(),
       allocationRevision: 2
     }
+
     fs.writeFileSync(input, JSON.stringify(pendingRequest))
     const pending = await invoke(['target-assess', 'assessment.json'], true)
+
     assert.equal(pending.code, 1)
     assert.equal(pending.value.result.targetContract.status, 'passed')
     assert.equal(pending.value.result.integration.status, 'pending')
     const assertions = path.join(repository, contract.testFile)
     const bytes = fs.readFileSync(assertions, 'utf8')
+
     fs.chmodSync(assertions, 0o600)
     fs.writeFileSync(
       assertions,
@@ -744,12 +832,14 @@ async function runAssessmentCliLifecycle() {
     const failedProof = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(failedProof.evidence.status, 'failed')
     const failedReview = service.prepareEvolution(
       { attemptId: failedProof.id },
       LOCAL_ACTOR
     )
     const failedTarget = makeTarget(failedReview).target
+
     fs.writeFileSync(
       input,
       JSON.stringify({
@@ -760,6 +850,7 @@ async function runAssessmentCliLifecycle() {
       })
     )
     const failed = await invoke(['target-assess', 'assessment.json'], true)
+
     assert.equal(failed.code, 1)
     assert.equal(failed.value.result.targetContract.status, 'failed')
     assert.equal(failed.value.result.integration.status, 'failed')
@@ -768,17 +859,21 @@ async function runAssessmentCliLifecycle() {
       { ...pendingRequest, requestId: randomUUID() },
       LOCAL_ACTOR
     )
+
     await cancellationReady
     let cancelled
+
     try {
       cancelled = await invoke(['target-assessment-cancel', cancelId], true)
     } finally {
       holdCancellation = false
     }
+
     assert.equal(cancelled.code, 0)
     assert.equal(cancelled.value.phase, 'cancelled')
     if (process.platform === 'darwin') {
       const dependencies = path.join(repository, 'node_modules')
+
       fs.rmSync(dependencies, { recursive: true, force: true })
       fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
       const task = await service.waitTask(
@@ -804,10 +899,12 @@ async function runAssessmentCliLifecycle() {
         sourceTaskId: task.id,
         sourceAttemptId: task.attempts.at(-1).id
       }
+
       fs.writeFileSync(input, JSON.stringify(taskRequest))
       await server.close()
       server = undefined
       const taskLocal = await invoke(['target-assess', 'assessment.json'])
+
       assert.equal(taskLocal.code, 1)
       assert.equal(taskLocal.value.phase, 'completed')
       assert.equal(taskLocal.value.runtime.taskId, task.id)
@@ -832,11 +929,13 @@ async function runAssessmentCliLifecycle() {
         taskLocal
       )
       const taskRemoteRequest = { ...taskRequest, requestId: randomUUID() }
+
       fs.writeFileSync(input, JSON.stringify(taskRemoteRequest))
       const taskRemote = await invoke(
         ['target-assess', 'assessment.json'],
         true
       )
+
       assert.equal(taskRemote.code, 1)
       assert.equal(taskRemote.value.phase, 'completed')
       assert.equal(taskRemote.value.result.targetContract.status, 'failed')
@@ -845,11 +944,13 @@ async function runAssessmentCliLifecycle() {
       for (const slot of taskRemote.value.slots) {
         assert.equal(service.get(slot.id).format, 3)
       }
+
       await service.controlTask(task.id, { action: 'revoke' }, LOCAL_ACTOR)
       const taskReplay = await invoke(
         ['target-assess', 'assessment.json'],
         true
       )
+
       assert.equal(taskReplay.code, 1)
       assert.deepEqual(taskReplay.value.result, taskRemote.value.result)
       assert.equal(taskReplay.value.projection.current, false)
@@ -857,6 +958,7 @@ async function runAssessmentCliLifecycle() {
         ['target-assessment-show', taskRemote.value.id],
         true
       )
+
       assert.equal(taskShown.code, 0)
       assert.deepEqual(taskShown.value.result, taskRemote.value.result)
       fs.writeFileSync(
@@ -880,16 +982,19 @@ async function runAssessmentCliLifecycle() {
         /Invalid/
       )
     }
+
     fs.writeFileSync(assertions, bytes + '\n')
     const passingProof = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(passingProof.evidence.status, 'passed')
     const passingReview = service.prepareEvolution(
       { attemptId: passingProof.id },
       LOCAL_ACTOR
     )
     const { target: acceptanceTarget } = makeTarget(passingReview)
+
     await assert.rejects(
       () =>
         invoke(
@@ -904,8 +1009,10 @@ async function runAssessmentCliLifecycle() {
       allocationRevision: 1,
       sourceAttemptId: passingProof.id
     }
+
     fs.writeFileSync(input, JSON.stringify(acceptanceAssessmentRequest))
     const eligible = await invoke(['target-assess', 'assessment.json'], true)
+
     assert.equal(eligible.code, 0)
     assert.equal(eligible.value.projection.targetContract.status, 'passed')
     assert.equal(service.contract().digest, contract.digest)
@@ -917,6 +1024,7 @@ async function runAssessmentCliLifecycle() {
       reason: 'Accept exact complete offline CLI target',
       retirement: []
     }
+
     fs.writeFileSync(acceptanceFile, JSON.stringify(acceptanceRequest))
     await server.close()
     server = undefined
@@ -924,6 +1032,7 @@ async function runAssessmentCliLifecycle() {
       'target-accept',
       'target-acceptance.json'
     ])
+
     assert.equal(localAcceptance.code, 0)
     assert.equal(localAcceptance.value.assessmentId, eligible.value.id)
     server = await startServer(repository, { url: 'http://127.0.0.1:0' })
@@ -932,6 +1041,7 @@ async function runAssessmentCliLifecycle() {
       ['target-accept', 'target-acceptance.json'],
       true
     )
+
     assert.deepEqual(remoteReplay, localAcceptance)
     await assert.rejects(() => invoke(['target-accept'], true), /Usage/)
   } finally {
@@ -940,6 +1050,7 @@ async function runAssessmentCliLifecycle() {
     } else {
       await service.close()
     }
+
     fs.rmSync(directory, { recursive: true, force: true })
   }
 }

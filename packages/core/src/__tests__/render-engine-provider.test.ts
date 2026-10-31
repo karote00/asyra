@@ -17,8 +17,11 @@ const createCoreForTest = () => {
     props: {} as never,
     render: {
       setEngineProvider,
+
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1,
+
       registerLayer: vi.fn(),
       unregisterLayer: vi.fn(() => true)
     } as never,
@@ -26,9 +29,11 @@ const createCoreForTest = () => {
     selection: {} as never,
     systemContext: {} as never
   })
+
   core.setupInputSystem = vi.fn()
   core.initFeatureSystem = vi.fn()
   core.renderIsReady = vi.fn()
+
   return { core, renderCleanup, setEngineProvider }
 }
 
@@ -36,12 +41,17 @@ const createRenderer = (): IRenderer => ({
   name: 'provider-test-renderer',
   init: vi.fn(async () => ({ canvas: null, instance: null })),
   destroy: vi.fn(),
+
   getViewportPosition: () => ({ x: 0, y: 0 }),
+
   getViewportScale: () => 1,
+
   setViewportPosition: vi.fn(),
   setViewportScale: vi.fn(),
   resize: vi.fn(),
+
   getCanvas: () => null,
+
   getInstance: () => null
 })
 
@@ -66,8 +76,11 @@ describe('Core render-engine provider facade', () => {
 
   it('rejects a duplicate provider before replacing the accepted provider', () => {
     const { core, setEngineProvider } = createCoreForTest()
+
     const first: RenderEngineProvider = () => ({}) as never
+
     const second: RenderEngineProvider = () => ({}) as never
+
     core.setRenderEngineProvider(first)
 
     expect(() => core.setRenderEngineProvider(second)).toThrow(
@@ -91,6 +104,7 @@ describe('Core render-engine provider facade', () => {
   it('does not let a stale cleanup erase a later provider', () => {
     const { core } = createCoreForTest()
     const cleanupFirst = core.setRenderEngineProvider(() => ({}) as never)
+
     cleanupFirst()
     core.setRenderEngineProvider(() => ({}) as never)
 
@@ -102,6 +116,7 @@ describe('Core render-engine provider facade', () => {
   it('does not retain presence when Render rejects the provider', () => {
     const { core, setEngineProvider } = createCoreForTest()
     const failure = new Error('render rejected provider')
+
     setEngineProvider.mockImplementationOnce(() => {
       throw failure
     })
@@ -114,6 +129,7 @@ describe('Core render-engine provider facade', () => {
 
   it('rejects provider mutation after the first start closes composition', async () => {
     const { core, setEngineProvider } = createCoreForTest()
+
     core.setRenderer(createRenderer())
     await core.start(document.createElement('div'), { width: 1, height: 1 })
 
@@ -127,6 +143,7 @@ describe('Core render-engine provider facade', () => {
   it('reports permanently closed composition after failed startup entry', async () => {
     const { core } = createCoreForTest()
     const failure = new Error('startup failed')
+
     core.setRenderer({
       ...createRenderer(),
       init: vi.fn(async () => Promise.reject(failure))

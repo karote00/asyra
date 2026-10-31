@@ -8,6 +8,7 @@ export type WorkbenchState = ReturnType<typeof useWorkbenchController>
 /** One current read projection per workbench lifetime, with body-owned channels. */
 export class WorkbenchView extends ViewSource<WorkbenchState> {
   readonly workcell: ViewSource<Workcell | null>
+
   experiment: ViewSource<ExperimentInputs> | null
 
   private readonly bodies = new Map<string, ViewSource<Body>>()

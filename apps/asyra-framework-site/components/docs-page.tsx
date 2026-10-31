@@ -23,9 +23,11 @@ export async function getDocumentationMetadata(
 ): Promise<Metadata> {
   const { pages } = await loadContent()
   const page = pages.find(({ id }) => id === pageId)
+
   if (!page) {
     return { title: 'Documentation not found - Asyra' }
   }
+
   return {
     alternates: { canonical: page.href },
     description: page.description,
@@ -36,6 +38,7 @@ export async function getDocumentationMetadata(
 export async function DocumentationPage({ pageId }: { pageId: string }) {
   const content = await loadContent()
   const page = content.pages.find(({ id }) => id === pageId)
+
   if (!page) {
     notFound()
   }
@@ -73,8 +76,10 @@ export async function DocumentationPage({ pageId }: { pageId: string }) {
           ]
         : []
     )
+
     return [pageRecord, ...headingRecords]
   })
+
   return (
     <SiteFrame>
       <FoundationPageHero

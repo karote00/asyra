@@ -3,14 +3,18 @@ import { createHash } from 'node:crypto'
 
 const digest = (source) =>
   createHash('sha256').update(JSON.stringify(source)).digest('hex')
+
 const text = (value) => typeof value === 'string' && value.trim().length > 0
+
 const summary = (source = '') => {
   const blocks = [...source.matchAll(/```release-summary\s*\n([\s\S]*?)\n```/g)]
+
   assert.equal(
     blocks.length,
     1,
     'Each release page requires one release-summary block'
   )
+
   return JSON.parse(blocks[0][1])
 }
 
@@ -38,6 +42,7 @@ export function readReleaseHistory({ pages, read }) {
       title: page.title
     }))
   const byId = new Map()
+
   for (const record of records) {
     assert.ok(
       text(record.id) && /^[a-z0-9-]+$/.test(record.id),
@@ -90,8 +95,10 @@ export function readReleaseHistory({ pages, read }) {
         'Evidence must use durable public references, not expiring Actions links'
       )
     }
+
     const changes = new Set()
     const guides = new Set()
+
     for (const change of record.changes) {
       assert.ok(
         text(change.change) && !changes.has(change.change),
@@ -117,6 +124,7 @@ export function readReleaseHistory({ pages, read }) {
             paths.has(guide) && guide.startsWith('updates/')
               ? read(guide)
               : undefined
+
           assert.ok(text(source), `Missing registered guide: ${guide}`)
           assert.match(
             source,
@@ -125,6 +133,7 @@ export function readReleaseHistory({ pages, read }) {
           )
           guideDigests.set(guide, digest(source))
         }
+
         assert.equal(
           record.guideHashes?.[guide],
           guideDigests.get(guide),
@@ -133,13 +142,16 @@ export function readReleaseHistory({ pages, read }) {
         guides.add(guide)
       }
     }
+
     assert.deepEqual(
       Object.keys(record.guideHashes ?? {}).sort(),
       [...guides].sort(),
       'Guide hash inventory changed'
     )
   }
+
   const corrections = new Map()
+
   for (const record of records) {
     for (const id of [
       record.previous,
@@ -148,15 +160,19 @@ export function readReleaseHistory({ pages, read }) {
     ].filter(Boolean)) {
       assert.ok(byId.has(id), `Missing release reference: ${id}`)
     }
+
     if (record.previous) {
       const previous = byId.get(record.previous)
+
       assert.ok(
         previous.owner === record.owner && previous.channel === record.channel,
         'Predecessor owner/channel mismatch'
       )
     }
+
     if (record.supersedes) {
       const previous = byId.get(record.supersedes)
+
       assert.ok(text(record.correction), 'Missing correction reason')
       assert.deepEqual(
         [record.owner, record.channel, record.target, record.previous],
@@ -178,15 +194,19 @@ export function readReleaseHistory({ pages, read }) {
       }
     }
   }
+
   const visiting = new Set()
   const visited = new Set()
+
   const visit = (id) => {
     assert.ok(!visiting.has(id), 'Release history contains a cycle')
     if (visited.has(id)) {
       return
     }
+
     visiting.add(id)
     const record = byId.get(id)
+
     for (const next of [
       record.previous,
       record.supersedes,
@@ -194,34 +214,45 @@ export function readReleaseHistory({ pages, read }) {
     ].filter(Boolean)) {
       visit(next)
     }
+
     visiting.delete(id)
     visited.add(id)
   }
+
   records.forEach((record) => visit(record.id))
+
   // Corrections can redirect predecessor/prerequisite edges; validate that graph too.
   const effective = (id) => {
     while (corrections.has(id)) {
       id = corrections.get(id)
     }
+
     return id
   }
+
   visiting.clear()
   visited.clear()
+
   const visitEffective = (id) => {
     id = effective(id)
     assert.ok(!visiting.has(id), 'Corrected release history contains a cycle')
     if (visited.has(id)) {
       return
     }
+
     visiting.add(id)
     const record = byId.get(id)
+
     for (const next of [record.previous, ...record.requires].filter(Boolean)) {
       visitEffective(next)
     }
+
     visiting.delete(id)
     visited.add(id)
   }
+
   records.forEach((record) => visitEffective(record.id))
+
   return records
 }
 
@@ -233,12 +264,15 @@ function releaseSelector(records) {
       .filter((record) => record.supersedes && record.status === 'verified')
       .map((record) => [record.supersedes, record.id])
   )
+
   const effective = (id) => {
     while (corrections.has(id)) {
       id = corrections.get(id)
     }
+
     return byId.get(id)
   }
+
   return ({ from, to, pending, dependencies = {} }) => {
     const result = {
       releases: [],
@@ -249,26 +283,34 @@ function releaseSelector(records) {
     }
     const start = byId.get(from)
     const target = effective(to)
+
     if (!start) {
       result.gaps.push(`Unsupported baseline: ${from}`)
     }
+
     if (!target) {
       result.gaps.push(`Missing target: ${to}`)
     }
+
     if (result.gaps.length) {
       return result
     }
+
     const checkedPrerequisites = new Set()
+
     const requirements = (record) => {
       for (const required of record.requires) {
         const prerequisite = effective(required)
+
         if (checkedPrerequisites.has(prerequisite.id)) {
           continue
         }
+
         checkedPrerequisites.add(prerequisite.id)
         result.prerequisites.push(prerequisite.id)
         const selection =
           dependencies[`${prerequisite.channel}:${prerequisite.owner}`]
+
         if (!selection?.to) {
           result.needsInspection = true
           result.gaps.push(`Missing prerequisite target: ${prerequisite.owner}`)
@@ -277,38 +319,49 @@ function releaseSelector(records) {
             `Incompatible prerequisite: ${prerequisite.owner} requires ${prerequisite.id}, selected ${selection.to}`
           )
         }
+
         collectRange(selection?.from, prerequisite, selection?.pending)
       }
     }
+
     const add = (record) => {
       if (record.status !== 'verified') {
         result.gaps.push(`Release unavailable: ${record.id}`)
+
         return
       }
+
       if (result.releases.includes(record.id)) {
         return
       }
+
       requirements(record)
       result.releases.push(record.id)
       result.guides.push(...record.changes.flatMap((change) => change.guides))
     }
+
     const chain = (end, baseline) => {
       const path = []
       let cursor = end
+
       while (cursor && cursor.id !== baseline?.id) {
         path.unshift(cursor)
         cursor = cursor.previous ? effective(cursor.previous) : undefined
       }
+
       if (baseline && !cursor) {
         result.gaps.push(
           `Unsupported baseline ${baseline.id} for target ${end.id}`
         )
       }
+
       return path
     }
+
     const collectRange = (adoptedId, end, deferredIds) => {
       const adopted = byId.get(adoptedId)
       let baseline = effective(adoptedId)
+
       if (
         !adopted ||
         adopted.owner !== end.owner ||
@@ -322,37 +375,47 @@ function releaseSelector(records) {
       } else if (adopted.status !== 'verified') {
         result.gaps.push(`Baseline unavailable: ${adopted.id}`)
       }
+
       if (end.status !== 'verified') {
         result.gaps.push(`Release unavailable: ${end.id}`)
       }
+
       if (deferredIds === undefined) {
         result.needsInspection = true
       }
+
       for (const id of deferredIds ?? []) {
         const deferred = effective(id)
+
         if (!deferred) {
           result.gaps.push(`Missing pending release: ${id}`)
           continue
         }
+
         for (const record of chain(deferred)) {
           add(record)
         }
       }
+
       // A correction is guidance to inspect, never evidence of actual adoption.
       if (baseline && adopted.id !== baseline.id) {
         result.needsInspection = true
         add(baseline)
       }
+
       for (const record of chain(end, baseline)) {
         add(record)
       }
+
       // Even an already-adopted target may have unresolved prerequisite adoption.
       requirements(end)
     }
+
     collectRange(from, target, pending)
     for (const key of ['guides', 'prerequisites', 'gaps']) {
       result[key] = [...new Set(result[key])]
     }
+
     return result
   }
 }
@@ -372,12 +435,14 @@ export function renderReleaseHistory(records) {
     '## Covered deliveries',
     ''
   ]
+
   if (!records.some((record) => record.status === 'verified')) {
     lines.push(
       'No verified release summaries are registered yet. There is no supported release-to-release range to claim. Existing Text guides are modeled integration examples, not evidence that any published version introduced Text.',
       ''
     )
   }
+
   if (records.length) {
     lines.push(
       '| Summary | Owner / channel | Availability | Previous boundary | Prerequisites | Correction | Coverage |',
@@ -385,22 +450,28 @@ export function renderReleaseHistory(records) {
     )
     const select = releaseSelector(records)
     const byId = new Map(records.map((record) => [record.id, record]))
+
     const link = (id) => {
       const record = byId.get(id)
+
       return `[${id}](${record.path.replace(/^updates\//, '')})`
     }
+
     for (const record of records) {
       const selection = select({
         from: record.previous ?? record.id,
         to: record.id,
         pending: []
       })
+
       lines.push(
         `| ${link(record.id)} | ${record.owner} / ${record.channel} | ${record.status} | ${record.previous ? link(record.previous) : record.boundary} | ${record.requires.map(link).join(', ') || 'None declared'} | ${record.supersedes ? link(record.supersedes) + ': ' + record.correction : 'None'} | ${selection.gaps.join('; ') || 'Declared path; inspect adoption and dependency state'} |`
       )
     }
+
     lines.push('')
   }
+
   lines.push(
     '## Gaps and partial adoption',
     '',
@@ -417,5 +488,6 @@ export function renderReleaseHistory(records) {
     '- [App-owned migration](../build/persistence-migration.md)',
     ''
   )
+
   return lines.join('\n')
 }

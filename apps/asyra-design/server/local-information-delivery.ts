@@ -72,14 +72,17 @@ export const deliverInformation = (
 ): string => {
   const { contentPage, rehydrate: _rehydrate, ...query } = args
   const bytes = Buffer.from(text, 'utf8')
+
   if (bytes.length <= informationDeliveryBytes) {
     if (contentPage !== undefined) {
       throw new LocalToolInputError(
         'Content changed or no continuation exists; restart the original read.'
       )
     }
+
     return text
   }
+
   const identity = JSON.stringify(
     Object.keys(query)
       .sort()
@@ -95,8 +98,10 @@ export const deliverInformation = (
     .update(bytes)
     .digest('hex')
   let start = 0
+
   if (contentPage !== undefined) {
     const page = contentPage as { revision?: unknown; offset?: unknown }
+
     if (
       !page ||
       typeof page !== 'object' ||
@@ -109,17 +114,21 @@ export const deliverInformation = (
         'Invalid or stale content continuation; restart the original read.'
       )
     }
+
     start = Number(page.offset)
     if ((bytes[start] & 0xc0) === 0x80) {
       throw new LocalToolInputError('Content offset must be a UTF-8 boundary.')
     }
   }
+
   const boundary = (end: number) => {
     while (end > start && end < bytes.length && (bytes[end] & 0xc0) === 0x80) {
       end--
     }
+
     return end
   }
+
   const encode = (end: number) =>
     JSON.stringify({
       ...receipt,
@@ -140,12 +149,15 @@ export const deliverInformation = (
               }
       }
     })
+
   let low = start + 1,
     high = Math.min(bytes.length, start + informationDeliveryBytes),
     best = start
+
   while (low <= high) {
     const middle = Math.floor((low + high) / 2),
       end = boundary(middle)
+
     if (Buffer.byteLength(encode(end)) <= informationDeliveryBytes) {
       best = end
       low = middle + 1
@@ -153,10 +165,12 @@ export const deliverInformation = (
       high = middle - 1
     }
   }
+
   if (best <= start) {
     throw new LocalToolInputError(
       'Selector metadata exceeds the delivery budget; narrow the read selector.'
     )
   }
+
   return encode(best)
 }

@@ -20,6 +20,7 @@ describe('StateRegistry', () => {
     stateRegistry.register('customState', 'fallback', customObservable)
 
     const observable = stateRegistry.getObservable('customState')
+
     expect(observable).toBe(customObservable)
     expect(stateRegistry.getValue('customState')).toBe('customInitial')
   })
@@ -36,6 +37,7 @@ describe('StateRegistry', () => {
 
   it('should return false when unregistering non-existent state', () => {
     const result = stateRegistry.unregister('nonExistent')
+
     expect(result).toBe(false)
   })
 

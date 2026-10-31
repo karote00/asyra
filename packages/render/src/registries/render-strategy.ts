@@ -33,4 +33,5 @@ class RenderStrategyRegistry {
 }
 
 export const renderStrategyRegistry = new RenderStrategyRegistry()
+
 export default renderStrategyRegistry

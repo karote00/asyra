@@ -20,12 +20,14 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
   const firstCapture = receipt.actionResults.find(
     (entry: { actionName: string }) => entry.actionName === 'inspect_drawing'
   )
+
   firstCapture.result.image.dataUrl = uri
   if (!count) {
     receipt.actionResults = receipt.actionResults.filter(
       (entry: { actionName: string }) => entry.actionName !== 'inspect_drawing'
     )
   }
+
   const expectedImages = count
     ? [
         {
@@ -35,12 +37,14 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
         }
       ]
     : []
+
   if (count === 2) {
     const second = await sharp({
       create: { width: 4, height: 3, channels: 3, background: '#126584' }
     })
       .png()
       .toBuffer()
+
     receipt.actionResults.push({
       actionName: 'inspect_drawing',
       result: {
@@ -59,8 +63,10 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
       sha256: createHash('sha256').update(second).digest('hex')
     })
   }
+
   const content = await localToolContent(JSON.stringify(receipt))
   const raw = content[0].type === 'inputText' ? content[0].text : ''
+
   expect(
     content
       .filter((item) => item.type === 'inputImage')
@@ -68,9 +74,12 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
         if (item.type !== 'inputImage') {
           throw new Error('Expected image')
         }
+
         const [header, base64] = item.imageUrl.split(',')
+
         expect(header).toBe('data:image/png;base64')
         const bytes = Buffer.from(base64, 'base64')
+
         return {
           mediaType: 'image/png',
           bytes: bytes.length,
@@ -82,6 +91,7 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
   if (!native) {
     return
   }
+
   const nativeModule = new URL(
     '../../test-data/knowledge-evaluation/native-delivery.mjs',
     import.meta.url
@@ -122,12 +132,14 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
       }
     ]
   })
+
   expect(evidence.nativeReplies).toBe(1)
   expect(evidence.comparisons[0].containsSource).toBe(true)
   expect(evidence.comparisons[0].images).toEqual(expectedImages)
   expect(evidence.comparisons[0].imageBytesInText).toBe(false)
   expect(evidence.receipt.status).toBe('saved')
 }
+
 it.each([0, 1, 2])(
   'delivers complete App receipt text and image pixels without a native dependency - %i images',
   (count) => verifyImageDelivery(count, false)

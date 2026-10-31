@@ -57,8 +57,10 @@ function walkFiles(directory, root, output) {
   if (!fs.existsSync(directory)) {
     return
   }
+
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const absolute = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       walkFiles(absolute, root, output)
     } else if (entry.isFile()) {
@@ -69,7 +71,9 @@ function walkFiles(directory, root, output) {
 
 export function collectBrowserSpecFiles(workspaceRoot) {
   const discovered = []
+
   walkFiles(path.join(workspaceRoot, 'e2e'), workspaceRoot, discovered)
+
   return discovered
     .filter((file) => file.startsWith('e2e/') && file.endsWith('.spec.ts'))
     .sort()
@@ -98,14 +102,17 @@ export function mergePlaywrightReports(groupRuns) {
       report.errors?.length ?? 0,
       run.exitCode === 0 ? 0 : 1
     )
+
     suites.push(...(report.suites ?? []))
     errors.push(...(report.errors ?? []))
     if (run.error) {
       errors.push({ message: `${run.group} runner error: ${run.error}` })
     }
+
     if (!report.stats || passedCount + skippedCount + failedCount === 0) {
       errors.push({ message: `${run.group} produced no test outcomes` })
     }
+
     totals.testCount += passedCount + failedCount
     totals.passedCount += passedCount
     totals.failedCount += failedCount
@@ -138,16 +145,21 @@ export function selectBrowserGroups(inputs) {
   const files = inputs.map((file) =>
     file.replace(/^apps\/asyra-fieldscope\//, '')
   )
+
   if (!files.length) {
     return CI_E2E_GROUPS
   }
+
   if (new Set(files).size !== files.length) {
     throw new Error('Duplicate browser selection')
   }
+
   const known = new Set(CI_E2E_GROUPS.flatMap((group) => group.files))
+
   if (files.some((file) => !known.has(file))) {
     throw new Error('Unknown browser selection')
   }
+
   return CI_E2E_GROUPS.map((group) => ({
     ...group,
     files: group.files.filter((file) => files.includes(file))

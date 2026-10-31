@@ -210,6 +210,7 @@ class TestOwnerGeometryComponent extends BasePropertyComponent<TestOwnerGeometry
 
   getValue(): Record<string, DataTypes> {
     ownerGeometryGetValueCount += 1
+
     return {
       geometry: this.data.geometry as unknown as DataTypes
     }
@@ -247,6 +248,7 @@ class TestStrokeComponent extends BasePropertyComponent<TestStrokeAttrs> {
     if (data.fill && typeof data.fill === 'object') {
       this.data.fill = data.fill
     }
+
     this.assignLoadedValue('width', data.width)
   }
 
@@ -295,6 +297,7 @@ class TestStrokesComponent extends BasePropertyComponent<TestStrokesAttrs> {
     this.data.strokes.forEach((strokeId) => {
       const stroke = propsManager.getPropertyById(strokeId) as
         TestStrokeComponent | undefined
+
       if (!stroke) {
         return
       }
@@ -361,6 +364,7 @@ describe('SceneTree', () => {
         key: 'strokes',
         childType: TEST_STROKE_PROPERTY_TYPE,
         mode: 'ids' as const,
+
         toValue: (
           child: { get: (key: string) => unknown },
           childId: string
@@ -371,6 +375,7 @@ describe('SceneTree', () => {
         })
       }
     }
+
     registerPropertyComponent(
       TEST_REACTIVE_STROKES_PROPERTY_TYPE,
       createPropertyComponentFromConfig(reactiveStrokesDefinition),
@@ -470,6 +475,7 @@ describe('SceneTree', () => {
         alias: ['width', 'height']
       }
     ]
+
     componentRegistry.register({
       type: TEST_PREPARED_OWNER_TYPE,
       idPrefix: TEST_PREPARED_OWNER_TYPE,
@@ -518,14 +524,17 @@ describe('SceneTree', () => {
     expect(sceneTree.workspace).toBeDefined()
     expect(sceneTree.workspaceList.length).toBeGreaterThan(0)
     const workspaceId = sceneTree.workspace
+
     expect(sceneTree.getAllElements().has(workspaceId)).toBe(true)
 
     const workspace = sceneTree.getElementById(workspaceId)
+
     expect(workspace?.get('type')).toBe(EntityTypes.WORKSPACE)
   })
 
   it('should not create a new workspace if one already exists', () => {
     const customSceneTree = new SceneTree()
+
     customSceneTree.workspace = 'existing-workspace'
     customSceneTree.workspaceList = ['existing-workspace']
 
@@ -569,6 +578,7 @@ describe('SceneTree', () => {
       { id: 'el-add', type: TEST_EMPTY_TYPE },
       false
     )
+
     expect(element).not.toBeNull()
 
     sceneTree.addToMap(element as ElementInstanceTypes)
@@ -581,6 +591,7 @@ describe('SceneTree', () => {
       { id: 'el-remove', type: TEST_EMPTY_TYPE },
       false
     )
+
     expect(element).not.toBeNull()
 
     sceneTree.addToMap(element as ElementInstanceTypes)
@@ -595,6 +606,7 @@ describe('SceneTree', () => {
       { id: 'el-get', type: TEST_EMPTY_TYPE },
       false
     )
+
     expect(element).not.toBeNull()
 
     sceneTree.addToMap(element as ElementInstanceTypes)
@@ -637,6 +649,7 @@ describe('SceneTree', () => {
   it('records the original parent and child index before removing an element', () => {
     sceneTree.init()
     const workspaceId = sceneTree.workspace
+
     sceneTree.addNewElement({ id: 'first', type: 'rect', x: 0, y: 0 })
     sceneTree.addNewElement({ id: 'middle', type: 'rect', x: 0, y: 0 })
     sceneTree.addNewElement({ id: 'last', type: 'rect', x: 0, y: 0 })
@@ -668,6 +681,7 @@ describe('SceneTree', () => {
 
   it('restores a removed element to its original container and child index', () => {
     const containerType = 'test-container'
+
     componentRegistry.register({
       type: containerType,
       idPrefix: containerType,
@@ -703,6 +717,7 @@ describe('SceneTree', () => {
     const containerB = sceneTreeSingleton.getElementById(
       'container-b'
     ) as GroupInstanceTypes
+
     sceneTreeSingleton.addNewElement(
       { id: 'first', type: 'rect', x: 0, y: 0 },
       containerB
@@ -716,11 +731,13 @@ describe('SceneTree', () => {
       containerB
     )
     const removedData = sceneTreeSingleton.getElementById('middle')?.save()
+
     if (!removedData) {
       throw new Error('Expected middle element before removal')
     }
 
     const removalOwner = createTestTransactionOwner()
+
     expect(
       runWithTransactionOwner(removalOwner, () =>
         sceneTreeSingleton.removeElement({ id: 'middle' }, containerB)
@@ -736,6 +753,7 @@ describe('SceneTree', () => {
       undo: vi.fn(),
       redo: vi.fn()
     }
+
     runInTransactionReplayMode('rollback', () =>
       runWithTransactionOwner(transactionOwner, () =>
         publishEvent({
@@ -783,6 +801,7 @@ describe('SceneTree', () => {
         events.push(event as UpdateTransactionEvent)
       }
     })
+
     const getSceneActions = () =>
       events
         .map((event) => (event.payload as SceneTreeChange).action)
@@ -803,6 +822,7 @@ describe('SceneTree', () => {
 
     events.length = 0
     const removalOwner = createTestTransactionOwner()
+
     expect(
       runWithTransactionOwner(removalOwner, () =>
         sceneTreeSingleton.removeElement({ id: 'single-structural-owner' })
@@ -862,6 +882,7 @@ describe('SceneTree', () => {
       if (change.action !== PROPS_ACTIONS.ADD_PROPERTY) {
         return
       }
+
       ;(change as AddRemovePropertyChange).data.forEach((property) => {
         propertyAddIndexById.set(property.id, index)
       })
@@ -891,6 +912,7 @@ describe('SceneTree', () => {
     const element = {
       get: vi.fn(() => 'el-deleted-remove')
     } as unknown as ElementInstanceTypes
+
     sceneTree.addToDeleteMap(element)
 
     sceneTree.removeFromDeleteMap('el-deleted-remove')
@@ -904,6 +926,7 @@ describe('SceneTree', () => {
       save: vi.fn(() => elementData),
       get: vi.fn(() => 'el-restore')
     } as unknown as ElementInstanceTypes
+
     sceneTree.addToDeleteMap(element)
 
     const restored = sceneTree.getRestoreElementById('el-restore')
@@ -945,6 +968,7 @@ describe('SceneTree', () => {
     const removedData = sceneTreeSingleton
       .getElementById('replay-add-failure')
       ?.save()
+
     expect(removedData).toBeDefined()
     runWithTransactionOwner(createTestTransactionOwner(), () =>
       sceneTreeSingleton.removeElement({ id: 'replay-add-failure' })
@@ -965,6 +989,7 @@ describe('SceneTree', () => {
     }
 
     let capturedFailure: unknown
+
     try {
       runInTransactionReplayMode('undo', () =>
         runWithTransactionOwner(transactionOwner, () =>
@@ -1000,10 +1025,12 @@ describe('SceneTree', () => {
     const removableElement = sceneTreeSingleton.getElementById(
       'replay-remove-failure'
     )
+
     expect(removableElement).toBeDefined()
     if (!removableElement) {
       throw new Error('Expected replay-remove-failure before removal')
     }
+
     const data = removableElement.save()
     const replayFailure = Object.assign(
       new Error('transaction owner failed after accepting scene remove'),
@@ -1020,6 +1047,7 @@ describe('SceneTree', () => {
     }
 
     let capturedFailure: unknown
+
     try {
       runInTransactionReplayMode('undo', () =>
         runWithTransactionOwner(transactionOwner, () =>
@@ -1062,6 +1090,7 @@ describe('SceneTree', () => {
         y: 0
       })
       const element = sceneTreeSingleton.getElementById(`element-owner-${key}`)
+
       expect(element).toBeDefined()
       if (!element) {
         throw new Error(`Expected element-owner-${key}`)
@@ -1105,10 +1134,12 @@ describe('SceneTree', () => {
     const element = sceneTreeSingleton.getElementById(
       'raw-element-batch-replay'
     )
+
     expect(element).toBeDefined()
     if (!element) {
       throw new Error('Expected raw-element-batch-replay element')
     }
+
     const updateTransactionBatch = vi.fn()
     const transactionOwner: TransactionOwner = {
       startTransaction: vi.fn(),
@@ -1161,6 +1192,7 @@ describe('SceneTree', () => {
       type: 'rect',
       visible: true
     })
+
     sceneTree.addToMap(element)
     const beforeSnapshot = element.getAllComputedData()
 
@@ -1196,6 +1228,7 @@ describe('SceneTree', () => {
       id: 'special-record-local-patch',
       type: 'rect'
     })
+
     sceneTree.addToMap(element)
     sceneTree.updateLocalComputedData([
       {
@@ -1205,6 +1238,7 @@ describe('SceneTree', () => {
     ])
     const after = { id: '__proto__', x: 10, y: 20 }
     const set = Object.create(null) as Record<string, typeof after>
+
     Object.defineProperty(set, '__proto__', {
       value: after,
       enumerable: true,
@@ -1226,6 +1260,7 @@ describe('SceneTree', () => {
     const points = (
       element.getAllComputedData() as unknown as Record<string, unknown>
     ).points as Record<string, unknown>
+
     expect(Object.prototype.hasOwnProperty.call(points, '__proto__')).toBe(true)
     expect(points['__proto__']).toEqual({
       id: '__proto__',
@@ -1249,10 +1284,12 @@ describe('SceneTree', () => {
           event.type === EventTypes.UPDATE_COMPUTED_DATA ||
           event.type === EventTypes.UPDATE_COMPUTED_DATA_PATCH
       )
+
       if (computedEvents.length > 0) {
         computedBatches.push(computedEvents)
       }
     })
+
     events.length = 0
 
     const nextFill: TestPaint = {
@@ -1266,12 +1303,14 @@ describe('SceneTree', () => {
       fill: { kind: 'solid', color: '#cccccc', opacity: 1 },
       width: 10
     })
+
     propsManager.addToMap(stroke)
     const strokes = propsManager.createProperty({
       id: 'strokes-1',
       type: TEST_REACTIVE_STROKES_PROPERTY_TYPE,
       strokes: ['stroke-1']
     })
+
     propsManager.addToMap(strokes)
 
     const element = sceneTreeSingleton.createElement({
@@ -1281,6 +1320,7 @@ describe('SceneTree', () => {
         strokes: 'strokes-1'
       } as unknown as ElementRawData['props']
     }) as ElementInstanceTypes
+
     sceneTreeSingleton.addToMap(element)
     sceneTreeSingleton.cleanChanges()
 
@@ -1335,6 +1375,7 @@ describe('SceneTree', () => {
         height: 80
       }).save()
     )
+
     propsManager.addProperty([position, dimension])
     const dataToLoad = {
       workspace: 'ws-load',
@@ -1373,17 +1414,21 @@ describe('SceneTree', () => {
 
     // Verify exact element and workspace identities are loaded.
     const elementIds = Array.from(sceneTree.getAllElements().keys())
+
     expect(elementIds).toContain('el-load-1')
 
     // Verify rectangle element
     const rectElement = sceneTree.getElementById('el-load-1')
+
     expect(rectElement).toBeDefined()
     expect(rectElement?.get('type')).toBe('rect')
 
     // Verify workspace element type.
     const wsId = elementIds.find((id) => id !== 'el-load-1')
+
     if (wsId) {
       const wsElement = sceneTree.getElementById(wsId)
+
       expect(wsElement).toBeDefined()
       expect(wsElement?.get('type')).toBe(EntityTypes.WORKSPACE)
     } else {
@@ -1436,6 +1481,7 @@ describe('SceneTree', () => {
   it('rejects malformed hierarchy artifacts before replace-style apply', () => {
     const containerType = 'gate3-load-container'
     const leafType = 'gate3-load-leaf'
+
     componentRegistry.register({
       type: containerType,
       idPrefix: containerType,
@@ -1501,6 +1547,7 @@ describe('SceneTree', () => {
         }
       }
     })
+
     const cases: [
       string,
       (payload: ReturnType<typeof createValidPayload>) => void
@@ -1557,8 +1604,10 @@ describe('SceneTree', () => {
 
     sceneTree.init()
     const originalWorkspace = sceneTree.workspace
+
     for (const [label, mutate] of cases) {
       const payload = createValidPayload()
+
       mutate(payload)
       const validation = sceneTree.validateLoadData(payload)
 
@@ -1575,6 +1624,7 @@ describe('SceneTree', () => {
   it('round-trips exact nested hierarchy order and Group data', () => {
     const containerType = 'gate3-round-trip-container'
     const leafType = 'gate3-round-trip-leaf'
+
     componentRegistry.register({
       type: containerType,
       idPrefix: containerType,
@@ -1669,6 +1719,7 @@ describe('SceneTree', () => {
     }
 
     const validation = sceneTree.validateLoadData(payload)
+
     expect(validation.valid).toBe(true)
     expect(validation.diagnostics).toEqual([])
 
@@ -1692,6 +1743,7 @@ describe('SceneTree', () => {
         height: 40
       }).save()
     )
+
     propsManager.addProperty([position, dimension])
     const validation = sceneTree.validateLoadData({
       workspace: 'workspace',
@@ -1776,6 +1828,7 @@ describe('SceneTree', () => {
   it('refuses to serialize a non-canonical hierarchy', () => {
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     workspace.set('children', ['missing-child'])
     sceneTree.cleanChanges()
 
@@ -1785,6 +1838,7 @@ describe('SceneTree', () => {
   it('should save data correctly', () => {
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElement(
       { id: 'el-1', type: 'rect', x: 0, y: 0 },
       workspace as GroupInstanceTypes
@@ -1829,6 +1883,7 @@ describe('SceneTree', () => {
       const propertyIds = Object.values(
         sceneTree.getElementById(elementId)?.save().props ?? {}
       )
+
       expect(propertyIds).toHaveLength(2)
       propertyIds.forEach((propertyId) => {
         expect(propsManager.getPropertyById(propertyId)).toBeDefined()
@@ -1937,6 +1992,7 @@ describe('SceneTree', () => {
     ).toEqual(['owner-geometry-element'])
 
     const element = sceneTree.getElementById('owner-geometry-element')
+
     expect(
       (element?.getAllComputedData() as unknown as Record<string, unknown>)
         .geometry
@@ -1995,6 +2051,7 @@ describe('SceneTree', () => {
     const workspace = sceneTree.currentWorkspace as Workspace
     const beforeElementIds = [...sceneTree.getAllElements().keys()]
     const beforeProps = propsManager.save()
+
     vi.spyOn(propsManager, 'prepareTransactionEvents').mockImplementationOnce(
       () => {
         throw new Error('property transaction preparation failure')
@@ -2093,9 +2150,11 @@ describe('SceneTree', () => {
       .spyOn(propsManager, 'addProperty')
       .mockImplementation((components) => {
         const propertyIds = addProperty(components)
+
         activePropertyIdsDuringMaterialization.push(
           Object.keys(propsManager.save())
         )
+
         return propertyIds
       })
     const registerMany = vi.spyOn(propsManager, 'registerMany')
@@ -2181,20 +2240,24 @@ describe('SceneTree', () => {
         key: 'paints',
         childType,
         mode: 'ids-or-objects' as const,
+
         toChildData: (item: Record<string, unknown>) => ({
           opacity: 1,
           ...item
         })
       }
     }
+
     registerPropertySchema({
       type: childType,
       fields: [
         {
           key: 'opacity',
           kind: 'number',
+
           validate: (value) =>
             typeof value === 'number' && value >= 0 && value <= 1,
+
           defaultValue: 1
         }
       ]
@@ -2205,9 +2268,11 @@ describe('SceneTree', () => {
         {
           key: 'paints',
           kind: 'array',
+
           validate: (value) =>
             Array.isArray(value) &&
             value.every((item) => typeof item === 'string'),
+
           defaultValue: []
         }
       ]
@@ -2226,6 +2291,7 @@ describe('SceneTree', () => {
         defaultValue: [] as unknown[]
       }
     ]
+
     componentRegistry.register({
       type: elementType,
       idPrefix: elementType,
@@ -2413,6 +2479,7 @@ describe('SceneTree', () => {
     const addManyToMap = vi.fn((elements: readonly ElementInstanceTypes[]) => {
       elements.forEach(addToMap)
     })
+
     ;(
       sceneTree as SceneTree & {
         addManyToMap: (elements: readonly ElementInstanceTypes[]) => void
@@ -2448,6 +2515,7 @@ describe('SceneTree', () => {
     const addManyToMap = vi.fn((elements: readonly ElementInstanceTypes[]) => {
       elements.forEach(addToMap)
     })
+
     ;(
       sceneTree as SceneTree & {
         addManyToMap: (elements: readonly ElementInstanceTypes[]) => void
@@ -2461,6 +2529,7 @@ describe('SceneTree', () => {
       workspace,
       'insertChildrenFromCanonicalBatch'
     )
+
     const readBoundary = () => ({
       registryBatchCalls: addManyToMap.mock.calls.length,
       registeredElementCount: addManyToMap.mock.calls[0]?.[0].length ?? 0,
@@ -2519,10 +2588,12 @@ describe('SceneTree', () => {
       workspace as GroupInstanceTypes
     )
     const tombstone = sceneTree.getElementById(tombstoneId)
+
     expect(tombstone).toBeDefined()
     if (!tombstone) {
       throw new Error('Expected canonical tombstone fixture')
     }
+
     expect(
       runWithTransactionOwner(createTestTransactionOwner(), () =>
         sceneTree.removeElement(
@@ -2535,6 +2606,7 @@ describe('SceneTree', () => {
 
     const beforeChildren = [...workspace.get('children')]
     const beforeProps = propsManager.save()
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
 
@@ -2555,6 +2627,7 @@ describe('SceneTree', () => {
     }
 
     let capturedFailure: unknown
+
     try {
       runInTransactionReplayMode('redo', () =>
         runWithTransactionOwner(transactionOwner, () =>
@@ -2569,21 +2642,25 @@ describe('SceneTree', () => {
     } catch (error) {
       capturedFailure = error
     }
+
     expect(capturedFailure).toBe(handoffFailure)
     expect(wasTransactionReplayApplied(capturedFailure)).toBe(false)
 
     const orderedBatch =
       batchHandoff.mock.calls[0]?.[0].map(({ payload }) => {
         const change = payload as PropsChange | SceneTreeChange
+
         if (change.action === PROPS_ACTIONS.ADD_PROPERTY) {
           return 'props:add'
         }
+
         if (
           change.action === SCENE_TREE_ACTIONS.ADD_ELEMENT &&
           'data' in change
         ) {
           return `scene:add:${change.data.id}`
         }
+
         return `unexpected:${change.action}`
       }) ?? []
     const deliveredEvents = batchHandoff.mock.calls[0]?.[0] ?? []
@@ -2639,10 +2716,12 @@ describe('SceneTree', () => {
       workspace as GroupInstanceTypes
     )
     const tombstone = sceneTree.getElementById(tombstoneId)
+
     expect(tombstone).toBeDefined()
     if (!tombstone) {
       throw new Error('Expected canonical collision tombstone fixture')
     }
+
     expect(
       runWithTransactionOwner(createTestTransactionOwner(), () =>
         sceneTree.removeElement(
@@ -2654,6 +2733,7 @@ describe('SceneTree', () => {
 
     const beforeChildren = [...workspace.get('children')]
     const beforeProps = propsManager.save()
+
     expect(() =>
       sceneTree.addNewElements(
         [
@@ -2682,6 +2762,7 @@ describe('SceneTree', () => {
         updateEvents.push(event as UpdateTransactionEvent)
       }
     })
+
     updateEvents.length = 0
     const batchHandoff = vi.fn()
     const transactionOwner = {
@@ -2723,6 +2804,7 @@ describe('SceneTree', () => {
       new Error('pre-handoff projection failed'),
       { batchAccepted: true }
     )
+
     vi.spyOn(workspace, 'addNewElements').mockImplementation(
       (elements, parent, index) => {
         projectBatch(elements, parent, index)
@@ -2833,6 +2915,7 @@ describe('SceneTree', () => {
     expect(transactionOwner.updateTransactionBatch).toHaveBeenCalledOnce()
     const events = transactionOwner.updateTransactionBatch.mock
       .calls[0]?.[0] as readonly UpdateTransactionEvent[] | undefined
+
     expect(events).toHaveLength(1)
     expect(events?.[0]?.eventName).toBe(EventTypes.ADD_ELEMENTS)
     expect(
@@ -2864,6 +2947,7 @@ describe('SceneTree', () => {
   it('applies one exact canonical Scene removal preparation while Props stay active', () => {
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElements(
       [
         { id: 'active-props-remove-1', type: 'rect', x: 10, y: 20 },
@@ -2875,9 +2959,11 @@ describe('SceneTree', () => {
       sceneTree.getElementById('active-props-remove-1'),
       sceneTree.getElementById('active-props-remove-2')
     ]
+
     if (elements.some((element) => !element)) {
       throw new Error('Expected active-property removal fixtures')
     }
+
     const removals = elements.map((element, index) => ({
       data: (element as ElementInstanceTypes).save(),
       parentId: workspace.get('id'),
@@ -2885,6 +2971,7 @@ describe('SceneTree', () => {
     }))
     const propertySnapshot = propsManager.save()
     const replaceChildren = vi.spyOn(workspace, 'replaceBatchParentChildren')
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const updateTransaction = vi.fn()
@@ -2917,6 +3004,7 @@ describe('SceneTree', () => {
     expect(updateTransactionBatch).toHaveBeenCalledOnce()
     const events = updateTransactionBatch.mock
       .calls[0]?.[0] as readonly UpdateTransactionEvent[]
+
     expect(events).toHaveLength(1)
     expect(events[0]?.payload).toMatchObject({
       action: SCENE_TREE_ACTIONS.REMOVE_ELEMENTS
@@ -2957,6 +3045,7 @@ describe('SceneTree', () => {
   it('rejects later stale canonical removal evidence with no Scene prefix', () => {
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElements(
       [
         { id: 'active-props-valid-head', type: 'rect', x: 10, y: 20 },
@@ -2966,11 +3055,14 @@ describe('SceneTree', () => {
     )
     const head = sceneTree.getElementById('active-props-valid-head')
     const tail = sceneTree.getElementById('active-props-stale-tail')
+
     if (!head || !tail) {
       throw new Error('Expected stale active-property removal fixtures')
     }
+
     const beforeProps = propsManager.save()
     const beforeChildren = [...workspace.get('children')]
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
 
@@ -2999,6 +3091,7 @@ describe('SceneTree', () => {
 
   it('rejects nested canonical removals before changing hierarchy or retained properties', () => {
     const containerType = 'active-removal-container'
+
     componentRegistry.register({
       type: containerType,
       idPrefix: containerType,
@@ -3017,6 +3110,7 @@ describe('SceneTree', () => {
     })
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElement(
       { id: 'active-removal-group', type: containerType, x: 0, y: 0 },
       workspace as GroupInstanceTypes
@@ -3024,17 +3118,21 @@ describe('SceneTree', () => {
     const group = sceneTree.getElementById(
       'active-removal-group'
     ) as GroupInstanceTypes
+
     sceneTree.addNewElement(
       { id: 'active-removal-child', type: 'rect', x: 10, y: 20 },
       group
     )
     const child = sceneTree.getElementById('active-removal-child')
+
     if (!child) {
       throw new Error('Expected nested active-property removal fixture')
     }
+
     const beforeWorkspaceChildren = [...workspace.get('children')]
     const beforeGroupChildren = [...group.get('children')]
     const beforeProps = propsManager.save()
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
 
@@ -3065,20 +3163,24 @@ describe('SceneTree', () => {
   it('leaves canonical replay unapplied when its Scene batch handoff is rejected', () => {
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElement(
       { id: 'active-removal-preaccept', type: 'rect', x: 10, y: 20 },
       workspace as GroupInstanceTypes
     )
     const element = sceneTree.getElementById('active-removal-preaccept')
+
     if (!element) {
       throw new Error('Expected pre-accept removal fixture')
     }
+
     const removal = {
       data: element.save(),
       parentId: workspace.get('id'),
       index: 0
     }
     const beforeProps = propsManager.save()
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const preacceptFailure = Object.assign(
@@ -3121,15 +3223,19 @@ describe('SceneTree', () => {
   it('treats canonical Scene batch handoff as void', () => {
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElement(
       { id: 'active-removal-inactive-owner', type: 'rect', x: 10, y: 20 },
       workspace as GroupInstanceTypes
     )
     const element = sceneTree.getElementById('active-removal-inactive-owner')
+
     if (!element) {
       throw new Error('Expected inactive-owner removal fixture')
     }
+
     const beforeProps = propsManager.save()
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const transactionOwner = {
@@ -3169,6 +3275,7 @@ describe('SceneTree', () => {
   it('restores property relations before canonical projection resumes', () => {
     sceneTreeSingleton.init()
     const workspace = sceneTreeSingleton.currentWorkspace as Workspace
+
     sceneTreeSingleton.addNewElement(
       { id: 'retained-computed-restore', type: 'rect', x: 10, y: 20 },
       workspace as GroupInstanceTypes
@@ -3176,14 +3283,18 @@ describe('SceneTree', () => {
     const element = sceneTreeSingleton.getElementById(
       'retained-computed-restore'
     )
+
     if (!element) {
       throw new Error('Expected retained computed restore fixture')
     }
+
     const data = element.save()
     const positionId = element.props.getPropId(PropertyTypes.POSITION)
+
     if (!positionId) {
       throw new Error('Expected retained position property')
     }
+
     sceneTreeSingleton.cleanChanges()
     propsManager.cleanChanges()
 
@@ -3201,6 +3312,7 @@ describe('SceneTree', () => {
       undo: vi.fn(),
       redo: vi.fn()
     }
+
     expect(
       runWithTransactionOwner(removalOwner, () =>
         sceneTreeSingleton.applyPreparedElementMutation(preparedRemoval)
@@ -3213,6 +3325,7 @@ describe('SceneTree', () => {
       undo: vi.fn(),
       redo: vi.fn()
     }
+
     runInTransactionReplayMode('undo', () =>
       runWithTransactionOwner(transactionOwner, () =>
         publishEvent({
@@ -3245,6 +3358,7 @@ describe('SceneTree', () => {
 
   it('restores a complete retained subtree when its Scene batch handoff is rejected', () => {
     const containerType = 'active-subtree-container'
+
     componentRegistry.register({
       type: containerType,
       idPrefix: containerType,
@@ -3263,6 +3377,7 @@ describe('SceneTree', () => {
     })
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElement(
       { id: 'active-subtree-root', type: containerType, x: 0, y: 0 },
       workspace as GroupInstanceTypes
@@ -3270,17 +3385,21 @@ describe('SceneTree', () => {
     const group = sceneTree.getElementById(
       'active-subtree-root'
     ) as GroupInstanceTypes
+
     sceneTree.addNewElement(
       { id: 'active-subtree-child', type: 'rect', x: 10, y: 20 },
       group
     )
     const child = sceneTree.getElementById('active-subtree-child')
+
     if (!child) {
       throw new Error('Expected retained subtree child fixture')
     }
+
     const beforeWorkspaceChildren = [...workspace.get('children')]
     const beforeGroupChildren = [...group.get('children')]
     const beforeProps = propsManager.save()
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const handoffFailure = Object.assign(
@@ -3321,6 +3440,7 @@ describe('SceneTree', () => {
 
   it('Step 4 canonical owner: leaves an accepted retained subtree compatible with exact restore preflight', () => {
     const containerType = 'accepted-active-subtree-container'
+
     componentRegistry.register({
       type: containerType,
       idPrefix: containerType,
@@ -3339,6 +3459,7 @@ describe('SceneTree', () => {
     })
     sceneTree.init()
     const workspace = sceneTree.currentWorkspace as Workspace
+
     sceneTree.addNewElement(
       { id: 'accepted-active-subtree', type: containerType, x: 0, y: 0 },
       workspace as GroupInstanceTypes
@@ -3346,6 +3467,7 @@ describe('SceneTree', () => {
     const group = sceneTree.getElementById(
       'accepted-active-subtree'
     ) as GroupInstanceTypes
+
     sceneTree.addNewElement(
       { id: 'accepted-active-subtree-child', type: 'rect', x: 10, y: 20 },
       group
@@ -3379,11 +3501,13 @@ describe('SceneTree', () => {
     const hierarchyFailure = new Error('retained hierarchy restore failed')
     const replaceBatchParentChildren =
       workspace.replaceBatchParentChildren.bind(workspace)
+
     vi.spyOn(workspace, 'replaceBatchParentChildren').mockImplementation(
       (parent, children) => {
         if (parent.get('id') === group.get('id') && children.length > 0) {
           throw hierarchyFailure
         }
+
         replaceBatchParentChildren(parent, children)
       }
     )

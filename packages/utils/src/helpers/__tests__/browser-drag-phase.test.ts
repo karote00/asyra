@@ -20,6 +20,7 @@ describe('browser drag phase measurement', () => {
 
   it('reports the synchronous phase duration even when the action throws', () => {
     const sink = vi.fn<BrowserDragPhaseSink>()
+
     disposers.push(subscribeToBrowserDragPhases(sink))
     vi.spyOn(performance, 'now').mockReturnValueOnce(10).mockReturnValueOnce(16)
 
@@ -33,6 +34,7 @@ describe('browser drag phase measurement', () => {
 
   it('reports the asynchronous phase duration after the action settles', async () => {
     const sink = vi.fn<BrowserDragPhaseSink>()
+
     disposers.push(subscribeToBrowserDragPhases(sink))
     vi.spyOn(performance, 'now').mockReturnValueOnce(20).mockReturnValueOnce(29)
 
@@ -44,6 +46,7 @@ describe('browser drag phase measurement', () => {
 
   it('reports the asynchronous phase duration when the action rejects', async () => {
     const sink = vi.fn<BrowserDragPhaseSink>()
+
     disposers.push(subscribeToBrowserDragPhases(sink))
     vi.spyOn(performance, 'now').mockReturnValueOnce(30).mockReturnValueOnce(42)
 

@@ -306,9 +306,11 @@ const bulletList = (values) => values.map((value) => `- ${value}`).join('\n')
 
 const packageReadme = async (packageRecord) => {
   const copy = PACKAGE_COPY[packageRecord.directory]
+
   if (!copy) {
     throw new Error(`Missing package README copy for ${packageRecord.name}`)
   }
+
   const guideUrl = `${REPOSITORY_URL}/blob/main/${packageRecord.guide.path}`
 
   return format(
@@ -382,6 +384,7 @@ export const generatePublicPackageReadmes = async ({ repositoryRoot }) => {
     inputs.packages.map(({ directory }) => directory)
   )
   const copyDirectories = Object.keys(PACKAGE_COPY)
+
   if (
     copyDirectories.length !== expectedDirectories.size ||
     copyDirectories.some((directory) => !expectedDirectories.has(directory))
@@ -390,6 +393,7 @@ export const generatePublicPackageReadmes = async ({ repositoryRoot }) => {
       'Package README copy inventory does not match the release inventory'
     )
   }
+
   const readmes = await Promise.all(
     inputs.packages.map(async (packageRecord) =>
       Object.freeze({
@@ -398,15 +402,18 @@ export const generatePublicPackageReadmes = async ({ repositoryRoot }) => {
       })
     )
   )
+
   return Object.freeze(readmes)
 }
 
 export const writePublicPackageReadmes = async ({ repositoryRoot }) => {
   const root = path.resolve(repositoryRoot)
   const readmes = await generatePublicPackageReadmes({ repositoryRoot: root })
+
   readmes.forEach((readme) => {
     fs.writeFileSync(path.join(root, readme.path), readme.content)
   })
+
   return readmes.length
 }
 
@@ -419,9 +426,11 @@ export const checkPublicPackageReadmes = async ({ repositoryRoot }) => {
         fs.readFileSync(path.join(root, readme.path), 'utf8') !== readme.content
     )
     .map(({ path: readmePath }) => readmePath)
+
   if (stale.length > 0) {
     throw new Error(`Stale package READMEs: ${stale.join(', ')}`)
   }
+
   return readmes.length
 }
 
@@ -431,11 +440,13 @@ const isDirectInvocation =
 
 if (isDirectInvocation) {
   const mode = process.argv[2]
+
   if (!['--check', '--write'].includes(mode) || process.argv.length !== 3) {
     throw new Error(
       'Usage: node scripts/docs/public-package-readmes.mjs --check|--write'
     )
   }
+
   const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '../..'
@@ -444,5 +455,6 @@ if (isDirectInvocation) {
     mode === '--write'
       ? await writePublicPackageReadmes({ repositoryRoot })
       : await checkPublicPackageReadmes({ repositoryRoot })
+
   process.stdout.write(`Public package READMEs ${mode.slice(2)}: ${count}\n`)
 }

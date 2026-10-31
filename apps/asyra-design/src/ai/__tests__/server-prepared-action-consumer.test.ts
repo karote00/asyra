@@ -54,6 +54,7 @@ const createOvalDescriptor = (
 const preparedDrawingArtifact = (): PreparedDrawingArtifact => {
   const firstDescriptor = createOvalDescriptor('oval-server-1', 'Detail 1', 0)
   const secondDescriptor = createOvalDescriptor('oval-server-2', 'Detail 2', 20)
+
   return Object.freeze({
     artifactVersion: 1,
     compositionRole: 'cat-face',
@@ -144,9 +145,11 @@ describe('server-prepared Asyra Design action consumers', () => {
     ]
     const waitForPaint = vi.fn(() => {
       const next = paintBoundaries.shift()
+
       if (!next) {
         throw new Error('Unexpected paint boundary')
       }
+
       return next.promise
     })
     const yieldToHost = vi.fn(async () => undefined)
@@ -154,6 +157,7 @@ describe('server-prepared Asyra Design action consumers', () => {
       waitForPaint,
       yieldToHost
     }).find(({ name }) => name === AiActionNames.INSERT_VECTOR_COMPOSITION)
+
     if (!insert) {
       throw new Error('Missing insert composition action')
     }

@@ -18,6 +18,7 @@ export const storyArtwork: Readonly<
   Record<string, { src: string; width: number; height: number }>
 >
 export const storyLayerIds: readonly string[]
+
 export function clampProgress(value: number): number
 export function getStoryFrame(
   chapter: number,

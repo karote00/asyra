@@ -7,20 +7,24 @@ export const waitForObservedAppReady = async (
 ): Promise<void> => {
   await waitForAppReady(...args)
   let identity: unknown = null
+
   await expect
     .poll(
       async () => {
         identity = await args[0].evaluate(async () => {
           const { getActiveCollaborationHandle } =
             await import('../src/testing/runtime-access')
+
           return getActiveCollaborationHandle()?.identity ?? null
         })
+
         return identity
       },
       { timeout: 5000 }
     )
     .not.toBeNull()
   const info = test.info()
+
   await info.attach('collaboration-participant', {
     contentType: 'application/json',
     body: JSON.stringify({

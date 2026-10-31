@@ -136,6 +136,7 @@ describe('Asyra Design canonical collaboration delivery timeline', () => {
 
   it('does not replay the same create geometry on mouse up but sends a newer final pointer position', () => {
     const state = createElementSession.onStart?.(createStartSnapshot as never)
+
     createElementSession.onUpdate?.(
       {
         ...createStartSnapshot,

@@ -23,6 +23,7 @@ vi.mock('react/jsx-dev-runtime', async (original) => {
 
   return {
     ...actual,
+
     jsxDEV: (...args: Parameters<typeof actual.jsxDEV>) => {
       const props = args[1] as { className?: string; 'aria-label'?: string }
 
@@ -53,11 +54,13 @@ function renderExperiment(input: ExperimentInputs) {
   const snapshot = {
     experiments: input.runtime.getExperiments(input.candidateId)
   }
+
   if (registered) {
     registered.publish(snapshot)
   } else {
     registered = new ViewSource(snapshot)
   }
+
   input.runtime.views = registered as unknown as SimRuntime['views']
   if (inputSource) {
     inputSource.publish(input)
@@ -110,12 +113,16 @@ const runtime = {
   features: {
     live: {
       subscribe: () => () => undefined,
+
       subscribeRecords: () => () => undefined,
+
       getDiagnostics: () => liveDiagnostics,
+
       getRecords: () => emptyRecords
     }
   },
   getExperiments: vi.fn(() => [structuredClone(experiment)]),
+
   getMethodDescriptors: () => [
     { id: draft.method.id, version: draft.method.version }
   ]
@@ -144,7 +151,9 @@ it('preserves an unapplied experiment draft when the workcell changes', async ()
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
 
@@ -198,7 +207,9 @@ it('exposes a new experiment draft even when a saved experiment exists', async (
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
@@ -242,7 +253,9 @@ it('draft-only changes do not recapture canonical experiments', async () => {
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
@@ -296,7 +309,11 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
 
 it('initializes imported source text from the same canonical revision during save and replay', async () => {
   let current = structuredClone(experiment)
-  const replayRuntime = { ...runtime, getExperiments: () => [current] }
+  const replayRuntime = {
+    ...runtime,
+
+    getExperiments: () => [current]
+  }
   const inputs: ExperimentInputs = {
     runtime: replayRuntime,
     candidateId: 'candidate',
@@ -309,9 +326,12 @@ it('initializes imported source text from the same canonical revision during sav
     onRun: vi.fn(),
     onOpenRuns: vi.fn(),
     onVisualPreview: vi.fn(),
+
     isCurrent: () => true,
+
     visualImportActive: true
   }
+
   const lastTime = () =>
     host
       .querySelector<HTMLTextAreaElement>(
@@ -320,6 +340,7 @@ it('initializes imported source text from the same canonical revision during sav
       ?.value.split('\n')
       .at(-1)
       ?.split(',')[0]
+
   await act(() => renderExperiment(inputs))
   expect(lastTime()).toBe('8')
   current = structuredClone(experiment)
@@ -338,11 +359,13 @@ it('initializes imported source text from the same canonical revision during sav
 
 it('applies the validated trajectory after a completed field edit without duplicate submission', async () => {
   let finishSave: () => void = () => undefined
+
   let count = 0
   const updateExperiment = vi.fn(() => {
     if (++count === 1) {
       return Promise.resolve()
     }
+
     return new Promise<void>((resolve) => {
       finishSave = resolve
     })
@@ -356,6 +379,7 @@ it('applies the validated trajectory after a completed field edit without duplic
       await action(() => undefined)
     }
   )
+
   await act(() =>
     renderExperiment({
       runtime: savingRuntime,
@@ -369,16 +393,20 @@ it('applies the validated trajectory after a completed field edit without duplic
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing clearance input')
   }
+
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -392,6 +420,7 @@ it('applies the validated trajectory after a completed field edit without duplic
   const input = host.querySelector(
     'textarea[aria-label="Trajectory source data"]'
   ) as HTMLTextAreaElement
+
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLTextAreaElement.prototype,
@@ -418,6 +447,7 @@ it('applies the validated trajectory after a completed field edit without duplic
     number,
     typeof draft
   ]
+
   expect(saved[0]).toBe('study')
   expect(saved[2].trajectory.keyframes.at(-1)?.time).toBe(9)
   expect(saved[2].interval).toEqual([0, 8])
@@ -430,31 +460,38 @@ it('commits a completed valid field edit without Save and leaves intermediate te
     ...runtime,
     features: { ...runtime.features, edit: { updateExperiment } }
   } as unknown as SimRuntime
+
   await act(() =>
     renderExperiment({
       runtime: editingRuntime,
       candidateId: 'candidate',
       workcell: example.workcell,
       revision: 1,
+
       perform: async (action) => {
         await action(() => undefined)
       },
+
       onPlayback: vi.fn(),
       runs: [],
       retainedIds: new Set<string>(),
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing clearance field')
   }
+
   const input = async (text: string) =>
     act(() => {
       Object.getOwnPropertyDescriptor(
@@ -463,6 +500,7 @@ it('commits a completed valid field edit without Save and leaves intermediate te
       )?.set?.call(field, text)
       field.dispatchEvent(new Event('input', { bubbles: true }))
     })
+
   await input('3')
   await input('35')
   expect(updateExperiment).not.toHaveBeenCalled()
@@ -490,9 +528,11 @@ it('commits a completed valid field edit without Save and leaves intermediate te
   const budget = host.querySelector<HTMLInputElement>(
     '[aria-label="Wall-time budget (ms)"]'
   )
+
   if (!budget) {
     throw new Error('Missing budget')
   }
+
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -515,8 +555,11 @@ it('commits a completed valid field edit without Save and leaves intermediate te
 
 it('serializes completed edits arriving during a Feature action against the next canonical revision', async () => {
   let current = structuredClone(experiment)
+
   let finish: () => void = () => undefined
+
   let finishSecond: () => void = () => undefined
+
   const updateExperiment = vi.fn(
     async (_id: string, revision: number, next: typeof draft) => {
       if (revision === 1) {
@@ -524,11 +567,13 @@ it('serializes completed edits arriving during a Feature action against the next
           finish = resolve
         })
       }
+
       if (revision === 2) {
         await new Promise<void>((resolve) => {
           finishSecond = resolve
         })
       }
+
       current = {
         ...current,
         definition: {
@@ -547,34 +592,43 @@ it('serializes completed edits arriving during a Feature action against the next
   )
   const editingRuntime = {
     ...runtime,
+
     getExperiments: () => [current],
+
     features: { ...runtime.features, edit: { updateExperiment } }
   } as unknown as SimRuntime
+
   await act(() =>
     renderExperiment({
       runtime: editingRuntime,
       candidateId: 'candidate',
       workcell: example.workcell,
       revision: 1,
+
       perform: async (action) => {
         await action(() => undefined)
       },
+
       onPlayback: vi.fn(),
       runs: [],
       retainedIds: new Set<string>(),
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing clearance')
   }
+
   const edit = async (value: string) => {
     await act(async () => {
       Object.getOwnPropertyDescriptor(
@@ -587,6 +641,7 @@ it('serializes completed edits arriving during a Feature action against the next
       field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
     })
   }
+
   await edit('30')
   await edit('40')
   expect(updateExperiment).toHaveBeenCalledOnce()
@@ -609,7 +664,11 @@ it('serializes completed edits arriving during a Feature action against the next
 it('reuses an edited import source across a non-trajectory canonical revision without parsing again', async () => {
   let current = structuredClone(experiment)
   const inputs: ExperimentInputs = {
-    runtime: { ...runtime, getExperiments: () => [current] },
+    runtime: {
+      ...runtime,
+
+      getExperiments: () => [current]
+    },
     candidateId: 'candidate',
     workcell: example.workcell,
     revision: 1,
@@ -620,19 +679,25 @@ it('reuses an edited import source across a non-trajectory canonical revision wi
     onRun: vi.fn(),
     onOpenRuns: vi.fn(),
     onVisualPreview: vi.fn(),
+
     isCurrent: () => true,
+
     visualImportActive: true
   }
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
+
   try {
     await act(() => renderExperiment(inputs))
     const source = host.querySelector<HTMLTextAreaElement>(
       '[aria-label="Trajectory source data"]'
     )
+
     if (!source) {
       throw new Error('Missing source')
     }
+
     const text = source.value.replace('\n8,', '\n9,')
+
     await act(async () => {
       Object.getOwnPropertyDescriptor(
         HTMLTextAreaElement.prototype,
@@ -669,15 +734,20 @@ it('keeps preview playback across unrelated publications and invalidates it for 
     onRun: vi.fn(),
     onOpenRuns: vi.fn(),
     onVisualPreview: vi.fn(),
+
     isCurrent: () => true,
+
     visualImportActive: true
   }
+
   await act(() => renderExperiment(input))
   onPlayback.mockClear()
   const source = inputSource
+
   if (!source) {
     throw new Error('Missing input source')
   }
+
   await act(() => source.publish({ ...input, revision: 2 }))
   expect(onPlayback).not.toHaveBeenCalled()
   await act(() =>
@@ -694,6 +764,7 @@ it('does not acknowledge a failed edit when the shell reports and consumes the F
   const updateExperiment = vi.fn(async () => {
     throw new Error('Write rejected')
   })
+
   await act(() =>
     renderExperiment({
       runtime: {
@@ -703,6 +774,7 @@ it('does not acknowledge a failed edit when the shell reports and consumes the F
       candidateId: 'candidate',
       workcell: example.workcell,
       revision: 1,
+
       perform: async (action) => {
         try {
           await action(() => undefined)
@@ -710,22 +782,27 @@ it('does not acknowledge a failed edit when the shell reports and consumes the F
           /* Shell presents the error. */
         }
       },
+
       onPlayback: vi.fn(),
       runs: [],
       retainedIds: new Set<string>(),
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing clearance')
   }
+
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -751,35 +828,44 @@ it('preserves the authored analysis interval when an inline trajectory edit comp
       interval: [2, 5] as [number, number]
     }
   }
+
   await act(() =>
     renderExperiment({
       runtime: {
         ...runtime,
+
         getExperiments: () => [custom],
+
         features: { ...runtime.features, edit: { updateExperiment } }
       } as unknown as SimRuntime,
       candidateId: 'candidate',
       workcell: example.workcell,
       revision: 1,
+
       perform: async (action) => {
         await action(() => undefined)
       },
+
       onPlayback: vi.fn(),
       runs: [],
       retainedIds: new Set<string>(),
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
   const field = host.querySelector<HTMLTextAreaElement>(
     '[aria-label="Trajectory source data"]'
   )
+
   if (!field) {
     throw new Error('Missing source')
   }
+
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLTextAreaElement.prototype,
@@ -820,13 +906,18 @@ function admissionInput(overrides: Partial<SimRuntime> = {}) {
       ...runtime,
       preflightExperiment,
       createExperimentSnapshot,
+
       getCandidateLineage: () => undefined,
+
       getCandidates: () => [{ id: 'candidate', name: 'Candidate' }],
+
       features: {
         ...runtime.features,
         analysis: {
           run: analysisRun,
+
           subscribe: () => () => undefined,
+
           getProgress: () => null
         }
       },
@@ -835,27 +926,34 @@ function admissionInput(overrides: Partial<SimRuntime> = {}) {
     candidateId: 'candidate',
     workcell: example.workcell,
     revision: 1,
+
     perform: async (action) => {
       await action(() => undefined)
     },
+
     onPlayback: vi.fn(),
     runs: [],
     retainedIds: new Set(),
     onRun: vi.fn(),
     onOpenRuns: vi.fn(),
     onVisualPreview: vi.fn(),
+
     isCurrent: () => true,
+
     visualImportActive: true
   }
+
   return { input, analysisRun, preflightExperiment, createExperimentSnapshot }
 }
 
 it('offers one Run analysis entry and admits exactly once on repeated activation', async () => {
   const { input, analysisRun, preflightExperiment, createExperimentSnapshot } =
     admissionInput()
+
   await act(() => renderExperiment(input))
   expect(button('Run preflight')).toBeUndefined()
   const run = button('Run analysis')
+
   expect(run).toBeDefined()
   await act(() => {
     run?.click()
@@ -868,10 +966,12 @@ it('offers one Run analysis entry and admits exactly once on repeated activation
 
 it('keeps invalid authored input actionable and never starts a prior valid trajectory', async () => {
   const invalid = structuredClone(experiment)
+
   invalid.definition.exclusionsInput = 'invalid exclusion'
   const { input, analysisRun, createExperimentSnapshot } = admissionInput({
     getExperiments: () => [invalid]
   })
+
   await act(() => renderExperiment(input))
   expect(button('Run analysis')?.disabled).toBe(false)
   await act(() => button('Run analysis')?.click())
@@ -887,13 +987,16 @@ it('keeps invalid authored input actionable and never starts a prior valid traje
 
 it('does not execute the last valid scalar when unfinished numerical text is invalid', async () => {
   const { input, analysisRun, createExperimentSnapshot } = admissionInput()
+
   await act(() => renderExperiment(input))
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing input control')
   }
+
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -912,6 +1015,7 @@ it('does not execute the last valid scalar when unfinished numerical text is inv
 it('shows required resource acknowledgement before snapshot allocation and runs after acknowledgement', async () => {
   const { input, analysisRun, preflightExperiment, createExperimentSnapshot } =
     admissionInput()
+
   preflightExperiment.mockReturnValue({
     blockers: [],
     assumptions: [],
@@ -934,9 +1038,11 @@ it('shows required resource acknowledgement before snapshot allocation and runs 
   const warning = host.querySelector<HTMLInputElement>(
     '[data-testid="preflight-report"] input[type="checkbox"]'
   )
+
   if (!warning) {
     throw new Error('Missing input control')
   }
+
   await act(() => warning.click())
   await act(() =>
     inputSource?.publish({
@@ -950,9 +1056,11 @@ it('shows required resource acknowledgement before snapshot allocation and runs 
   const refreshedWarning = host.querySelector<HTMLInputElement>(
     '[data-testid="preflight-report"] input[type="checkbox"]'
   )
+
   if (!refreshedWarning) {
     throw new Error('Missing refreshed warning')
   }
+
   expect(refreshedWarning.checked).toBe(false)
   await act(() => refreshedWarning.click())
   await act(() => button('Run analysis')?.click())
@@ -965,6 +1073,7 @@ it('shows required resource acknowledgement before snapshot allocation and runs 
 it('keeps an empty-scope blocker actionable without freezing or allocating a run', async () => {
   const { input, analysisRun, preflightExperiment, createExperimentSnapshot } =
     admissionInput()
+
   preflightExperiment.mockReturnValue({
     blockers: [{ code: 'no-pairs', message: 'No checkable pairs' }],
     assumptions: [],
@@ -992,15 +1101,19 @@ it('keeps an empty-scope blocker actionable without freezing or allocating a run
 it('switches accessible tabs with preserved fields and zero canonical or source work', async () => {
   const { input, analysisRun } = admissionInput()
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
+
   await act(() => renderExperiment(input))
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing input control')
   }
+
   const source = host.querySelector('[aria-label="Trajectory source data"]')
   const tabs = [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+
   expect(tabs.map((tab) => tab.textContent)).toEqual([
     'Setup',
     'Preview',
@@ -1041,13 +1154,16 @@ it('switches accessible tabs with preserved fields and zero canonical or source 
 
 it('keeps Run outside scrolling tab content and routes invalid input back to Setup', async () => {
   const { input } = admissionInput()
+
   await act(() => renderExperiment(input))
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing input control')
   }
+
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -1074,7 +1190,9 @@ it('offers completion without changing the editing tab, focus or unfinished text
     methods: INSTALLED_METHOD_CATALOG.descriptors,
     acknowledgedWarningCodes: []
   })
+
   let finish: (result: AnalysisResult) => void = () => undefined
+
   input.runtime.createExperimentSnapshot = () => snapshot
   input.runtime.features.analysis.run = vi.fn(
     () =>
@@ -1096,9 +1214,11 @@ it('offers completion without changing the editing tab, focus or unfinished text
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
+
   if (!field) {
     throw new Error('Missing input control')
   }
+
   await act(() => {
     field.focus()
     Object.getOwnPropertyDescriptor(
@@ -1131,13 +1251,16 @@ it('offers completion without changing the editing tab, focus or unfinished text
 
 it('routes an undeclared time unit to its declaration field without allocating analysis', async () => {
   const { input, analysisRun, createExperimentSnapshot } = admissionInput()
+
   await act(() => renderExperiment(input))
   const field = host.querySelector<HTMLSelectElement>(
     '[aria-label="Time unit"]'
   )
+
   if (!field) {
     throw new Error('Missing time unit')
   }
+
   await act(() => {
     field.value = ''
     field.dispatchEvent(new Event('change', { bubbles: true }))
@@ -1157,6 +1280,7 @@ it('shows creation progress until the authoritative write completes', async () =
         finish = resolve
       })
   )
+
   await act(() =>
     renderExperiment({
       runtime,
@@ -1170,7 +1294,9 @@ it('shows creation progress until the authoritative write completes', async () =
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
@@ -1208,12 +1334,15 @@ it('exposes the bounded live diagnostic trace in playback observations', async (
       onRun: vi.fn(),
       onOpenRuns: vi.fn(),
       onVisualPreview: vi.fn(),
+
       isCurrent: () => true,
+
       visualImportActive: true
     })
   )
 
   const observations = host.querySelector('[data-testid="live-observations"]')
+
   expect(observations?.textContent).toContain('Playback diagnostics')
   expect(observations?.textContent).toContain('snapshot-17')
   expect(observations?.textContent).toContain('robot-arm::fixture-table')

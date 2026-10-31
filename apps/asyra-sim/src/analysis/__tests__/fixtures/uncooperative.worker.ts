@@ -6,6 +6,7 @@ import { AnalysisWorkerHost } from '../../worker-host'
 const catalog = createMethodCatalog([
   {
     descriptor: STATIC_SPHERE_METHOD,
+
     execute: () => {
       self.postMessage({ fixture: 'uncooperative-method-entered' })
       for (;;) {
@@ -19,6 +20,7 @@ const host = new AnalysisWorkerHost(
   (message) => self.postMessage(message),
   () => self.close()
 )
+
 self.addEventListener('message', (event: MessageEvent<unknown>) => {
   void host.handle(event.data)
 })

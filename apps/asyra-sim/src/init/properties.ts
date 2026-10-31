@@ -60,6 +60,7 @@ export const DEFAULT_EXPERIMENT_DEFINITION: ExperimentDefinition = {
   rule: { version: 1, revision: 1, minimumClearance: 0.02 },
   budget: { ...DEFAULT_EXPERIMENT_BUDGET }
 }
+
 export interface CandidateParameters {
   robotRootId: string | null
   lineage?: CandidateLineage
@@ -71,12 +72,14 @@ export interface RunReference {
   experimentId: string
   observations?: readonly FieldObservation[]
 }
+
 export function validRunReference(
   value: unknown
 ): value is RunReference | null {
   if (value === null) {
     return true
   }
+
   return (
     hasExactOwnKeys(value, [
       'version',
@@ -97,6 +100,7 @@ export function validRunReference(
       validFieldObservations(value.observations))
   )
 }
+
 export function validBodyProperty(value: unknown): value is BodyParameters {
   return (
     validBodyParameters(value) &&
@@ -105,13 +109,16 @@ export function validBodyProperty(value: unknown): value is BodyParameters {
     )
   )
 }
+
 export function validCandidateParameters(
   value: unknown
 ): value is CandidateParameters {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false
   }
+
   const candidate = value as CandidateParameters
+
   return (
     (candidate.robotRootId === null ||
       validIdentifier(candidate.robotRootId)) &&
@@ -119,6 +126,7 @@ export function validCandidateParameters(
       validCandidateLineage(candidate.lineage))
   )
 }
+
 export function installModelProperties(core: Core): void {
   const definitions = [
     {
@@ -146,10 +154,12 @@ export function installModelProperties(core: Core): void {
       validate: validRunReference
     }
   ]
+
   for (const definition of definitions) {
     const defaults = {
       [definition.key]: structuredClone(definition.defaultValue)
     }
+
     core.registerPropertySchema({
       type: definition.type,
       fields: [

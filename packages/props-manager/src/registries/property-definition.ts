@@ -15,6 +15,7 @@ interface RegisteredProperty {
 
 class ElementPropertyRegistry {
   private registry = new Map<string, RegisteredProperty>()
+
   private definitionsByComponent = new Map<
     string,
     Map<string, PropertyDefinition>
@@ -27,10 +28,12 @@ class ElementPropertyRegistry {
    */
   register(definition: PropertyDefinition, componentType: string): void {
     let componentDefinitions = this.definitionsByComponent.get(componentType)
+
     if (!componentDefinitions) {
       componentDefinitions = new Map<string, PropertyDefinition>()
       this.definitionsByComponent.set(componentType, componentDefinitions)
     }
+
     componentDefinitions.set(definition.name, definition)
 
     const existing = this.registry.get(definition.name)
@@ -85,6 +88,7 @@ class ElementPropertyRegistry {
    */
   getComponentTypesForProperty(name: string): string[] {
     const registered = this.registry.get(name)
+
     if (!registered) {
       return []
     }
@@ -94,14 +98,17 @@ class ElementPropertyRegistry {
 
   unregisterRelation(componentType: string, name: string): boolean {
     const componentDefinitions = this.definitionsByComponent.get(componentType)
+
     if (!componentDefinitions?.delete(name)) {
       return false
     }
+
     if (componentDefinitions.size === 0) {
       this.definitionsByComponent.delete(componentType)
     }
 
     this.removeReverseOwner(name, componentType)
+
     return true
   }
 
@@ -110,6 +117,7 @@ class ElementPropertyRegistry {
    */
   unregisterComponent(componentType: string): void {
     const definitions = this.definitionsByComponent.get(componentType)
+
     if (!definitions) {
       return
     }
@@ -117,11 +125,13 @@ class ElementPropertyRegistry {
     for (const name of definitions.keys()) {
       this.removeReverseOwner(name, componentType)
     }
+
     this.definitionsByComponent.delete(componentType)
   }
 
   private removeReverseOwner(name: string, componentType: string): void {
     const registered = this.registry.get(name)
+
     if (!registered) {
       return
     }
@@ -129,11 +139,13 @@ class ElementPropertyRegistry {
     registered.componentTypes.delete(componentType)
     if (registered.componentTypes.size === 0) {
       this.registry.delete(name)
+
       return
     }
 
     const nextOwner = Array.from(registered.componentTypes).sort()[0]
     const nextDefinition = this.definitionsByComponent.get(nextOwner)?.get(name)
+
     if (nextDefinition) {
       registered.definition = nextDefinition
     }
@@ -141,5 +153,6 @@ class ElementPropertyRegistry {
 }
 
 export const elementPropertyRegistry = new ElementPropertyRegistry()
+
 export default elementPropertyRegistry
 export type { PropertyDefinition }

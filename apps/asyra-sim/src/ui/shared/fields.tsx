@@ -40,6 +40,7 @@ export function CommittedInput({
         onChange={(event) => {
           const field = event.currentTarget
           let error = ''
+
           if (
             props.type === 'number' &&
             (field.value.trim() === '' || !Number.isFinite(Number(field.value)))
@@ -48,6 +49,7 @@ export function CommittedInput({
           } else if (validateOnCommit && !field.validity.valid) {
             error = field.validationMessage
           }
+
           setDraft({ source: value, text: field.value, error })
         }}
         onBlur={(event) => {
@@ -61,6 +63,7 @@ export function CommittedInput({
           ) {
             return
           }
+
           if (
             !cancelled.current &&
             draft?.source === value &&

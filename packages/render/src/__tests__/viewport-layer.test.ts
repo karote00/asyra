@@ -13,6 +13,7 @@ describe('ViewportLayer', () => {
     const runtime = new RenderObjectRuntime(engine, initialized.root)
     const viewport = new ViewportLayer()
     const overlay = new RenderContainer()
+
     runtime.attachRoot(viewport.view)
     runtime.attachRoot(overlay)
     expect(viewport.view.getEngineProperties().transformGroup).toBe(true)
@@ -20,6 +21,7 @@ describe('ViewportLayer', () => {
     const created = engine
       .getOperations()
       .find((operation) => operation.type === 'create-object')
+
     expect(
       created?.type === 'create-object' &&
         created.command.type === 'create-object' &&
@@ -27,6 +29,7 @@ describe('ViewportLayer', () => {
     ).toBe(true)
     viewport.view.transformGroup = false
     const updated = engine.getOperations().at(-1)
+
     expect(
       updated?.type === 'update-object' &&
         updated.command.type === 'update-object' &&
@@ -34,6 +37,7 @@ describe('ViewportLayer', () => {
     ).toBe(false)
     viewport.view.transformGroup = true
     const start = engine.getOperations().length
+
     viewport.panTo(25, 50)
     viewport.zoomTo(2)
     expect(
@@ -54,6 +58,7 @@ describe('ViewportLayer', () => {
       capabilities: [RenderEngineCapabilities.OBJECTS]
     })
     const execute = engine.execute.bind(engine)
+
     engine.execute = (command) => {
       if (
         command.type === 'create-object' ||
@@ -63,13 +68,17 @@ describe('ViewportLayer', () => {
           throw new Error('Unsupported transformGroup')
         }
       }
+
       return execute(command)
     }
+
     const initialized = engine.initialize({ host: {}, width: 100, height: 100 })
     const runtime = new RenderObjectRuntime(engine, initialized.root)
     const viewport = new ViewportLayer()
+
     runtime.attachRoot(viewport.view)
     const start = engine.getOperations().length
+
     viewport.view.transformGroup = false
     viewport.view.transformGroup = true
     expect(engine.getOperations()).toHaveLength(start)
@@ -123,6 +132,7 @@ describe('ViewportLayer fitBounds', () => {
     { name: 'landscape', width: 1000, height: 100 }
   ])('centers $name content in the visible viewport', ({ width, height }) => {
     const viewport = new ViewportLayer()
+
     viewport.fitBounds(
       { minX: -350, minY: 120, maxX: -350 + width, maxY: 120 + height },
       { minX: 240, minY: 48, maxX: 1440, maxY: 848 },
@@ -130,6 +140,7 @@ describe('ViewportLayer fitBounds', () => {
     )
     const scale = viewport.getScale()
     const position = viewport.getPosition()
+
     expect((-350 + width / 2) * scale + position.x).toBeCloseTo(840)
     expect((120 + height / 2) * scale + position.y).toBeCloseTo(448)
     expect(scale).toBeCloseTo(Math.min(1160 / width, 760 / height))

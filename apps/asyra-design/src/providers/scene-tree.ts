@@ -19,11 +19,13 @@ const useCanonicalUIProperty = <T extends PropertyValue>(
   return useSyncExternalStore(
     (callback) => {
       const subject = core.getUIPropertySubject<T>(key)
+
       if (!subject) {
         return () => undefined
       }
 
       const subscription = subject.subscribe(callback)
+
       return () => subscription.unsubscribe()
     },
     getSnapshot,
@@ -51,6 +53,7 @@ export const useElementData = (elementId: string): Partial<ElementRawData> => {
       const subject = core.getUIPropertySubject<ElementDataMap>(
         UI_PROPERTIES.ELEMENT_DATA_MAP
       )
+
       if (!subject) {
         return () => undefined
       }
@@ -58,9 +61,11 @@ export const useElementData = (elementId: string): Partial<ElementRawData> => {
       let previous = subject.getValue()?.[elementId]
       const subscription = subject.subscribe((next) => {
         const nextElementData = next?.[elementId]
+
         if (previous !== nextElementData) {
           previous = nextElementData
           callback()
+
           return
         }
 
@@ -79,6 +84,7 @@ export const useVectorIconPathMap = (elementId: string): string | null => {
     const map = core.getUIProperty<Record<string, string>>(
       UI_PROPERTIES.VECTOR_ICON_PATH_MAP
     )
+
     return map?.[elementId] ?? null
   }
 
@@ -87,6 +93,7 @@ export const useVectorIconPathMap = (elementId: string): string | null => {
       const subject = core.getUIPropertySubject<Record<string, string>>(
         UI_PROPERTIES.VECTOR_ICON_PATH_MAP
       )
+
       if (!subject) {
         return () => undefined
       }
@@ -96,9 +103,11 @@ export const useVectorIconPathMap = (elementId: string): string | null => {
         // Only notify when this element's path changes, not the whole map.
         const previousPath = previous?.[elementId]
         const nextPath = next?.[elementId]
+
         if (previousPath !== nextPath) {
           previous = next
           callback()
+
           return
         }
 

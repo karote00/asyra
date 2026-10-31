@@ -55,17 +55,20 @@ const official: InstalledMethodDescriptor = {
 export const INSTALLED_METHOD_CATALOG = createMethodCatalog([
   {
     descriptor: official,
+
     execute: (snapshot, context) =>
       runOfficialClearanceMethod(snapshot, context.checkpoint, context.emitPair)
   },
   {
     descriptor: STATIC_SPHERE_METHOD,
+
     execute: (snapshot, context) =>
       runStaticSphereMethod(snapshot, context.checkpoint, context.emitPair)
   },
   {
     descriptor: ORIGINAL_PART_METHOD,
     createExecutor: createOriginalPartExecutor,
+
     execute: (snapshot, context) =>
       runOriginalPartMethod(snapshot, context.checkpoint, context.emitPair)
   }

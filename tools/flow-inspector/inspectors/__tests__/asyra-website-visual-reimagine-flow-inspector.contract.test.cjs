@@ -18,11 +18,13 @@ const handoff = fs.readFileSync(path.join(visualRoot, 'handoff.md'), 'utf8')
 
 const inspectPng = (filePath) => {
   const content = fs.readFileSync(filePath)
+
   assert.equal(
     content.subarray(0, 8).toString('hex'),
     '89504e470d0a1a0a',
     `${filePath} must be a PNG`
   )
+
   return {
     width: content.readUInt32BE(16),
     height: content.readUInt32BE(20),
@@ -32,7 +34,9 @@ const inspectPng = (filePath) => {
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Visual Reimagine Inspector step: ${id}`)
+
   return value
 }
 
@@ -52,6 +56,7 @@ test('visual authority freezes three directions and the exact view-state set', (
 
 test('visual brief preserves product, asset, and acceptance boundaries', () => {
   const source = JSON.stringify([step('freeze-visual-brief'), data.invariants])
+
   assert.match(
     source,
     /Current runtime, optional composition, app-owned domains, and future work/i
@@ -64,6 +69,7 @@ test('visual brief preserves product, asset, and acceptance boundaries', () => {
 
 test('concept generation keeps images as inspected evidence', () => {
   const source = JSON.stringify(step('generate-concept-directions'))
+
   assert.match(source, /three coherent, original full-page directions/i)
   assert.match(source, /useful-scale PNG inspected/i)
   assert.match(source, /generated words as verified product copy/i)
@@ -75,6 +81,7 @@ test('selection owns responsive, Atlas, failure, and reduced-motion states', () 
     step('select-and-refine-direction'),
     data.acceptanceContracts
   ])
+
   assert.match(source, /All fourteen required view states/i)
   assert.match(
     source,
@@ -90,6 +97,7 @@ test('selection owns responsive, Atlas, failure, and reduced-motion states', () 
 
 test('handoff owns semantic tokens without becoming website implementation', () => {
   const source = JSON.stringify(step('annotate-visual-handoff'))
+
   assert.match(source, /semantic tokens without authoring website components/i)
   assert.match(source, /Generated imagery remains evidence/i)
   assert.match(source, /worldwide technical and non-technical audience/i)
@@ -99,6 +107,7 @@ test('handoff owns semantic tokens without becoming website implementation', () 
 
 test('verification fails closed on incomplete or implementation-dependent evidence', () => {
   const source = JSON.stringify(step('verify-visual-handoff'))
+
   assert.match(source, /manifest, eight PNG boards, handoff, Inspector/i)
   assert.match(source, /Every image is inspected/i)
   assert.match(source, /thumbnail-only review/i)
@@ -114,6 +123,7 @@ test('manifest verifies all eight inspected full-scale PNG boards', () => {
   assert.equal(manifest.selectedBoards.length, 5)
 
   const artifacts = [...manifest.directions, ...manifest.selectedBoards]
+
   assert.equal(artifacts.length, 8)
   assert.deepEqual(
     artifacts.map(({ path: artifactPath }) => artifactPath).sort(),
@@ -127,6 +137,7 @@ test('manifest verifies all eight inspected full-scale PNG boards', () => {
     assert.match(artifact.inspection.result, /^pass/, artifact.path)
 
     const filePath = path.join(visualRoot, artifact.path)
+
     assert.ok(fs.existsSync(filePath), artifact.path)
     assert.deepEqual(
       inspectPng(filePath),
@@ -144,6 +155,7 @@ test('selected boards cover the exact fourteen view states', () => {
   const selectedBoardIds = new Set(
     manifest.selectedBoards.map(({ id }) => id)
   )
+
   assert.equal(selectedBoardIds.size, manifest.selectedBoards.length)
   assert.deepEqual(
     Object.keys(manifest.viewStateCoverage).sort(),
@@ -169,6 +181,7 @@ test('handoff resolves global, semantic, interaction, motion, and asset rules', 
     '## Per-View Implementation Annotations',
     '## Implementation Boundaries'
   ]
+
   requiredSections.forEach((section) => assert.match(handoff, new RegExp(section)))
 
   assert.match(handoff, /worldwide non-engineer/i)
@@ -202,6 +215,7 @@ test('handoff resolves global, semantic, interaction, motion, and asset rules', 
 
 test('global comprehension and the selected revision-two implementation stay explicit', () => {
   const source = JSON.stringify([data.acceptanceContracts, data.invariants])
+
   assert.match(source, /non-engineer can understand what Asyra enables/i)
   assert.match(source, /localization-resilient layout/i)
   assert.match(source, /Cosmic Atlas Revision 2/i)
@@ -214,6 +228,7 @@ test('routes, artifacts, failure owners, and cache boundaries resolve', () => {
   const artifactOwners = new Map(
     data.artifacts.map(({ id, ownerStepId }) => [id, ownerStepId])
   )
+
   assert.equal(stepIds.size, data.steps.length)
   assert.equal(artifactOwners.size, data.artifacts.length)
 

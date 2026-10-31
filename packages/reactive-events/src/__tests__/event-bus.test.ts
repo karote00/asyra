@@ -61,6 +61,7 @@ describe('Event Bus - Communication Backbone', () => {
         () => false
       )
       let applied: ReturnType<typeof subscribeToSynchronousEvent> | undefined
+
       try {
         expect(
           publishEvent({
@@ -94,6 +95,7 @@ describe('Event Bus - Communication Backbone', () => {
         synchronousSubscriber
       )
       const observerSubscription = subscribeToEvents(observerSubscriber)
+
       observerSubscriber.mockClear()
       const event: TestEvent = {
         type: EventTypes.ADD_PROPERTY,
@@ -325,6 +327,7 @@ describe('Event Bus - Communication Backbone', () => {
       )
 
       let capturedFailure: unknown
+
       try {
         runInTransactionReplayMode('undo', () =>
           publishEvent({
@@ -347,6 +350,7 @@ describe('Event Bus - Communication Backbone', () => {
           throw primitiveFailure
         }
       )
+
       capturedFailure = undefined
       try {
         runInTransactionReplayMode('undo', () =>
@@ -373,6 +377,7 @@ describe('Event Bus - Communication Backbone', () => {
         synchronousSubscriber
       )
       const observerSubscription = subscribeToEvents(observer)
+
       observer.mockClear()
       const event: TestEvent = {
         type: EventTypes.SELECT_ELEMENTS,
@@ -392,6 +397,7 @@ describe('Event Bus - Communication Backbone', () => {
       const eventSubscriber = vi.fn()
       const batchSubscription = subscribeToEventBatches(batchSubscriber)
       const eventSubscription = subscribeToEvents(eventSubscriber)
+
       batchSubscriber.mockClear()
       eventSubscriber.mockClear()
       const events = [
@@ -420,6 +426,7 @@ describe('Event Bus - Communication Backbone', () => {
       let lateSubscription: ReturnType<typeof subscribeToEvents> | undefined
       const firstSubscription = subscribeToEvents((event) => {
         const message = (event as TestEvent).payload?.message
+
         if (message === 'batch-snapshot-first' && !lateSubscription) {
           lateSubscription = subscribeToEvents(lateSubscriber)
         }
@@ -477,6 +484,7 @@ describe('Event Bus - Communication Backbone', () => {
     it('keeps the public ReplaySubject ingress connected to helper subscribers', () => {
       const subscriber = vi.fn()
       const subscription = subscribeToEvents(subscriber)
+
       subscriber.mockClear()
       const event: TestEvent = {
         type: EventTypes.ADD_ELEMENT,
@@ -716,6 +724,7 @@ describe('owner-prepared replay restoration', () => {
 
   it('retains both outer and nested owner preimages on failure', () => {
     const failure = new Error('Nested owner failure')
+
     expect(() =>
       runInTransactionReplayMode('undo', () => {
         acknowledgeTransactionReplayApplied([first])

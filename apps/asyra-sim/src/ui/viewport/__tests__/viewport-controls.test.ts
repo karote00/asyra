@@ -84,6 +84,7 @@ beforeEach(async () => {
     left: 0,
     right: 800,
     bottom: 600,
+
     toJSON: () => ({ width: 800, height: 600 })
   })
 

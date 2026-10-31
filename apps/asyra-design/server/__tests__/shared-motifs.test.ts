@@ -58,6 +58,7 @@ const generic = (order = 'cell-major') => {
     order,
     motifs: { template: 'markers' }
   }
+
   return {
     type: 'group',
     name: 'Signs',
@@ -87,8 +88,10 @@ const generic = (order = 'cell-major') => {
     ]
   }
 }
+
 const inline = (input: ReturnType<typeof generic>) => {
   const { motifTemplates, ...draft } = input
+
   return {
     ...draft,
     children: input.children.map((grid) => ({
@@ -103,6 +106,7 @@ it('preserves every recorded object while reducing the entire invocation by fift
     Buffer.byteLength(JSON.stringify(fixture.compact))
   ).toBeLessThanOrEqual(fixture.baseline.inputBytes * 0.85)
   const actual = prepareDesign(fixture.compact.draft, 'same')
+
   expect(actual).toEqual(prepareDesign(fixture.input.draft, 'same'))
   expect(actual.entries).toHaveLength(2669)
   expect(
@@ -113,6 +117,7 @@ it.each(['cell-major', 'motif-major'])(
   'preserves independent boundaries, palettes, offsets and %s order',
   async (order) => {
     const input = generic(order)
+
     expect(prepareDesign(input, 'same')).toEqual(
       prepareDesign(inline(input), 'same')
     )
@@ -129,6 +134,7 @@ it.each(['cell-major', 'motif-major'])(
       members: input.children
     }
     const expected = { ...p, members: inline(input).children }
+
     expect(prepareDesign({ ...input, children: [p] }, 'same')).toEqual(
       prepareDesign({ ...inline(input), children: [expected] }, 'same')
     )
@@ -138,11 +144,13 @@ it('validates a shared definition once while each surface owns its projection', 
   const input = generic()
   const vertices = input.motifTemplates.markers[0].vertices
   const read = vi.fn(() => vertices)
+
   Object.defineProperty(input.motifTemplates.markers[0], 'vertices', {
     get: read,
     enumerable: true
   })
   const result = constructDesign(input)
+
   expect(read).toHaveBeenCalledTimes(1)
   expect(result.sourceWork.pathCommands).toBe(14)
   expect(result.sourceWork.projectionCalls).toBe(10)
@@ -150,6 +158,7 @@ it('validates a shared definition once while each surface owns its projection', 
 })
 it('counts reference output and retains definitions in source-selected parts', () => {
   const input = generic()
+
   expect(measureDesignBudget(input).observed).toMatchObject({
     expandedNodes: 25,
     expandedPathCommands: 72,
@@ -167,12 +176,15 @@ it('counts reference output and retains definitions in source-selected parts', (
   ).toMatchObject({ sourcePathCommands: 20, expandedNodes: 25 })
   // Small deterministic partition exercises reference retention, not a live capacity experiment.
   const partitions = partitionDesignBudget(input, 15).partitions
+
   if (!partitions) {
     throw new Error('Missing partitions')
   }
+
   expect(partitions).toHaveLength(2)
   for (const part of partitions) {
     const selected = selectDesignSource(input, part.selections)
+
     expect(prepareDesign(selected, 'same').entries).toHaveLength(13)
   }
 })
@@ -215,6 +227,7 @@ it.each([
   ]
 ])('rejects %s before publishing an artifact', (_name, change) => {
   const d = generic()
+
   change(d)
   expect(() => prepareDesign(d, 'invalid')).toThrow()
 })
@@ -227,9 +240,11 @@ it('admits both public forms and rejects reference overrides in the same dispatc
     }
   ])
   const definition = owner.definitions.find((d) => d.name === 'prepare_design')
+
   if (!definition) {
     throw new Error('Missing preparation definition')
   }
+
   expect(
     operationInputIssue({ draft: generic() }, definition.inputSchema)
   ).toBeUndefined()
@@ -237,6 +252,7 @@ it('admits both public forms and rejects reference overrides in the same dispatc
     operationInputIssue({ draft: inline(generic()) }, definition.inputSchema)
   ).toBeUndefined()
   const bad = generic()
+
   Object.assign(bad.children[0].motifs, { fill: '#ffffff' })
   expect(
     operationInputIssue({ draft: bad }, definition.inputSchema)
@@ -250,12 +266,15 @@ it('isolates retained source, rejects cancellation and releases artifacts withou
     input,
     new AbortController().signal
   )
+
   input.motifTemplates.markers[0].vertices[0].u = 0.2
   const artifact = session.resolve(receipt.artifactId)
+
   expect(artifact).toEqual(prepareDesign(original, receipt.artifactId))
   expect(session.recipe(receipt.artifactId).recipe).toEqual(original)
   expect(session.resolve(receipt.artifactId)).toBe(artifact)
   const next = session.prepare(input)
+
   expect(session.resolve(next.artifactId).entries).toEqual(
     prepareDesign(input, next.artifactId).entries
   )
@@ -301,35 +320,42 @@ it('reduces complete selected delivery and saved invocation without another page
   let bytes = 0,
     pages = 0,
     text = ''
+
   while (args) {
     const raw = await operations.call(
       'describe_design_apis',
       args,
       new AbortController().signal
     )
+
     pageBytes.push(Buffer.byteLength(raw))
     bytes += Buffer.byteLength(raw)
     pages++
     expect(pages).toBeLessThanOrEqual(fixture.baseline.guideReplies)
     const reply = JSON.parse(raw)
+
     if (!reply.contentDelivery) {
       text += raw
       break
     }
+
     text += reply.contentDelivery.text
     args = reply.contentDelivery.next?.arguments
   }
+
   expect(
     JSON.parse(text).tools[0].invocationExample.invocation.arguments.draft
       .motifTemplates
   ).toBeDefined()
   recordAcquisitionCost(fixture.query, text, pageBytes)
   const { resultKey, ...contract } = JSON.parse(text)
+
   expect(resultKey).toEqual(expect.any(String))
   // Keep the original contract-only budget; the total below still includes the handle.
   const { deliverInformation } = await import('../local-information-delivery')
   let budgetQuery: Record<string, unknown> = fixture.query
   let contractBytes = 0
+
   for (;;) {
     const pageText = deliverInformation(
       JSON.stringify(contract),
@@ -337,13 +363,17 @@ it('reduces complete selected delivery and saved invocation without another page
       budgetQuery,
       'contract-budget'
     )
+
     contractBytes += Buffer.byteLength(pageText)
     const page = JSON.parse(pageText).contentDelivery
+
     if (!page || page.lastPage) {
       break
     }
+
     budgetQuery = page.next.arguments
   }
+
   expect(contractBytes).toBeLessThanOrEqual(
     completeUsageBudget(fixture.baseline.guideWireBytes, 'draft', true)
   )
@@ -362,6 +392,7 @@ it('keeps inline exceptions independent alongside shared definitions', () => {
     key: 'exception',
     motifs: structuredClone(source.motifTemplates.markers)
   }
+
   exception.motifs[0].vertices[0].u = 0.3
   const actual = prepareDesign(
     {
@@ -370,6 +401,7 @@ it('keeps inline exceptions independent alongside shared definitions', () => {
     },
     'same'
   )
+
   expect(actual).toEqual(
     prepareDesign(
       {

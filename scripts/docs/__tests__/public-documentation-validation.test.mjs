@@ -22,6 +22,7 @@ test('structured release summaries stay concise while guides retain their depth 
     '# Release summary\n\n' +
     'Explain retained data and required consumer actions. '.repeat(8) +
     '\n\n## Canonical sources\n'
+
   assert.doesNotThrow(() =>
     validatePageStructure({
       page: { id: 'updates/releases/example', title: 'Release summary' },
@@ -84,6 +85,7 @@ test('public overview routes the published Starter, Design, and advanced composi
   const starter = overview.indexOf('### Generic Starter source')
   const design = overview.indexOf('### Complete Design product')
   const advanced = overview.indexOf('### Advanced composition')
+
   assert.ok(starter > 0 && starter < design && design < advanced)
   assert.match(overview, /apps\/starter-app\/docs\/ONBOARDING\.md/u)
   assert.match(
@@ -149,6 +151,7 @@ test('public import validation rejects private and unsupported subpaths', () => 
       }
     ]
   }
+
   assert.throws(
     () =>
       validatePublicImportMentions({

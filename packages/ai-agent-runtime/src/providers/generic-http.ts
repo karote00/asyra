@@ -61,10 +61,12 @@ const validateEndpoint = (value: string): string => {
 
   const endpoint = value.trim()
   const hasScheme = /^[A-Za-z][A-Za-z\d+.-]*:/.test(endpoint)
+
   if (!hasScheme && !endpoint.startsWith('//')) {
     try {
       const base = new URL('https://same-origin.invalid')
       const relative = new URL(endpoint, base)
+
       if (
         relative.origin === base.origin &&
         relative.username.length === 0 &&
@@ -78,6 +80,7 @@ const validateEndpoint = (value: string): string => {
   }
 
   let url: URL
+
   try {
     url = new URL(endpoint)
   } catch {
@@ -112,7 +115,9 @@ const validateTimeout = (value: number | null | undefined): number | null => {
   if (value === null) {
     return null
   }
+
   const timeoutMs = value ?? DEFAULT_TIMEOUT_MS
+
   if (
     !Number.isFinite(timeoutMs) ||
     !Number.isInteger(timeoutMs) ||
@@ -137,6 +142,7 @@ const detachHeaders = (
 
   for (const [rawName, rawValue] of Object.entries(value ?? {})) {
     const name = rawName.trim().toLowerCase()
+
     if (name.length === 0 || typeof rawValue !== 'string') {
       return providerError({
         code: 'AI_PROVIDER_INVALID_CONFIGURATION',
@@ -186,6 +192,7 @@ const assertJsonSafe = (
   }
 
   const prototype = Object.getPrototypeOf(value)
+
   if (
     !Array.isArray(value) &&
     prototype !== Object.prototype &&
@@ -207,8 +214,10 @@ const assertJsonSafe = (
             message: 'AI provider input must not contain sparse arrays.'
           })
         }
+
         assertJsonSafe(value[index], ancestors)
       }
+
       return
     }
 
@@ -221,6 +230,7 @@ const assertJsonSafe = (
       }
 
       const descriptor = Object.getOwnPropertyDescriptor(value, key)
+
       if (!descriptor?.enumerable || !('value' in descriptor)) {
         return providerError({
           code: 'AI_PROVIDER_INVALID_INPUT',
@@ -261,10 +271,15 @@ const getPlatformFetch = (): AiFetch => {
 
 class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
   private readonly endpoint: string
+
   private readonly fetch: AiFetch
+
   private readonly headers: Readonly<Record<string, string>>
+
   private readonly timeoutMs: number | null
+
   private readonly attempts = new Set<ProviderAttempt>()
+
   private disposed = false
 
   constructor(options: GenericHttpAiProviderOptions) {
@@ -295,11 +310,14 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
     const body = serializeInput(input)
     const attempt: ProviderAttempt = {
       cleanup: () => undefined,
+
       controller: new AbortController(),
       disposed: false,
       timedOut: false
     }
+
     const abortTransport = () => attempt.controller.abort()
+
     options.signal.addEventListener('abort', abortTransport, {
       once: true
     })
@@ -319,6 +337,7 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
       })
     })
     let cleaned = false
+
     attempt.cleanup = () => {
       if (cleaned) {
         return
@@ -328,6 +347,7 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
       if (timeout !== undefined) {
         clearTimeout(timeout)
       }
+
       options.signal.removeEventListener('abort', abortTransport)
       if (abortWaitListener) {
         attempt.controller.signal.removeEventListener(
@@ -335,8 +355,10 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
           abortWaitListener
         )
       }
+
       this.attempts.delete(attempt)
     }
+
     this.attempts.add(attempt)
 
     try {
@@ -360,6 +382,7 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
       }
 
       let output: unknown
+
       try {
         output = await Promise.race([response.json(), aborted])
       } catch (error) {
@@ -375,6 +398,7 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
       }
 
       this.assertAttemptActive(attempt, options.signal)
+
       return output as AiActionBatch
     } catch (error) {
       if (error instanceof AiProviderError) {

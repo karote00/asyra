@@ -7,6 +7,7 @@ it('constructs shared tea geometry once per composition and gives the composer t
   const chair = vi.spyOn(furnishings, 'teaChair')
   const table = vi.spyOn(furnishings, 'teaTable')
   const add = vi.fn()
+
   composeOfficeSeating({ add })
   expect(chair).not.toHaveBeenCalled()
   expect(table).toHaveBeenCalledTimes(1)
@@ -25,6 +26,7 @@ it('reuses the constructed tabletop for room decoration and reconstructs only fo
   // Keep this integration test focused on tabletop construction ownership.
   const coffee = vi.spyOn(tableware, 'americanoGlass').mockReturnValue([])
   const sugar = vi.spyOn(tableware, 'sugarJar').mockReturnValue([])
+
   try {
     createReferenceScene('room-furnishings')
     expect(table).toHaveBeenCalledTimes(1)

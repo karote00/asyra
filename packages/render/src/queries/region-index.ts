@@ -31,6 +31,7 @@ interface Location {
 /** One cell per entry; large extents use a coarser level instead of duplicating IDs. */
 export class RegionIndex<T> {
   private readonly levels = new Map<number, Map<string, Cell<T>>>()
+
   private readonly locations = new Map<T, Location>()
 
   set(id: T, bounds: Rect): void {
@@ -47,15 +48,20 @@ export class RegionIndex<T> {
     const x = Math.floor((bounds.x + bounds.width / 2) / size)
     const y = Math.floor((bounds.y + bounds.height / 2) / size)
     const key = `${x},${y}`
+
     this.delete(id)
     let level = this.levels.get(size)
+
     if (!level) {
       this.levels.set(size, (level = new Map()))
     }
+
     let cell = level.get(key)
+
     if (!cell) {
       level.set(key, (cell = { x, y, entries: new Map() }))
     }
+
     cell.entries.set(id, { ...bounds })
     this.locations.set(id, { size, key })
   }
@@ -66,21 +72,27 @@ export class RegionIndex<T> {
 
   delete(id: T): void {
     const location = this.locations.get(id)
+
     if (!location) {
       return
     }
+
     const level = this.levels.get(location.size)
     const cell = level?.get(location.key)
+
     if (!level || !cell) {
       throw new Error('Region index location has no owning cell')
     }
+
     cell.entries.delete(id)
     if (!cell.entries.size) {
       level.delete(location.key)
     }
+
     if (!level.size) {
       this.levels.delete(location.size)
     }
+
     this.locations.delete(id)
   }
 
@@ -91,11 +103,13 @@ export class RegionIndex<T> {
   } {
     assertRegionBounds(bounds)
     const result = { values: [] as T[], visitedCells: 0, checkedEntries: 0 }
+
     const visit = (cell: Cell<T> | undefined) => {
       result.visitedCells++
       if (!cell) {
         return
       }
+
       for (const [id, entry] of cell.entries) {
         result.checkedEntries++
         if (
@@ -108,6 +122,7 @@ export class RegionIndex<T> {
         }
       }
     }
+
     for (const [size, cells] of this.levels) {
       // Full cell padding covers the largest entry in this level, including boundaries.
       const minX = Math.floor(bounds.x / size) - 1
@@ -115,6 +130,7 @@ export class RegionIndex<T> {
       const minY = Math.floor(bounds.y / size) - 1
       const maxY = Math.floor((bounds.y + bounds.height) / size) + 1
       const cellCount = (maxX - minX + 1) * (maxY - minY + 1)
+
       if (
         cellCount <= cells.size &&
         [minX, maxX, minY, maxY].every(Number.isSafeInteger)
@@ -139,6 +155,7 @@ export class RegionIndex<T> {
         }
       }
     }
+
     return result
   }
 }

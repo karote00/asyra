@@ -50,6 +50,7 @@ describe('preset shared data channel lifecycle', () => {
     const dispose = registerDefaultSharedDataChannels(
       core
     ) as unknown as () => void
+
     dispose()
 
     expect(

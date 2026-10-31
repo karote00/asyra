@@ -75,12 +75,14 @@ const createValidatorFromDefault = <T>(
   }
 
   const expectedType = typeof defaultValue
+
   return ((value: unknown): value is T => typeof value === expectedType) as
     ManagedPropertyValidator<T> | never
 }
 
 export class ManagedPropertyState {
   private properties = new Map<string, ManagedProperty<unknown>>()
+
   private validatedLoadArtifacts = new WeakMap<
     ManagedPropertyLoadValidationResult,
     ManagedPropertyValidatedArtifact
@@ -96,10 +98,12 @@ export class ManagedPropertyState {
       data: cloneLoadData(validatedSnapshot),
       diagnostics
     }
+
     this.validatedLoadArtifacts.set(result, {
       data: validatedSnapshot,
       properties
     })
+
     return result
   }
 
@@ -116,7 +120,9 @@ export class ManagedPropertyState {
           `[ManagedPropertyState] Property "${key}" already registered, returning existing`
         )
       }
+
       const existing = this.getProperty<T>(key)
+
       if (existing) {
         return existing.state
       }
@@ -126,10 +132,13 @@ export class ManagedPropertyState {
     const validate =
       options?.validate ?? createValidatorFromDefault(defaultValue)
     const runtime = options?.runtime ?? true
+
     this.properties.set(key, {
       key,
       state,
+
       validate: (value: unknown) => validate(value),
+
       runtime
     } as ManagedProperty<unknown>)
 
@@ -138,18 +147,22 @@ export class ManagedPropertyState {
 
   get<T>(key: string): T | undefined {
     const prop = this.properties.get(key)
+
     return prop?.state.getValue() as T | undefined
   }
 
   set<T>(key: string, value: T): void {
     const prop = this.properties.get(key)
+
     if (prop) {
       if (!prop.validate(value)) {
         console.warn(
           `[ManagedPropertyState] Rejected invalid value for "${key}" during runtime set`
         )
+
         return
       }
+
       prop.state.next(value)
     } else {
       console.warn(`[ManagedPropertyState] Property "${key}" not found`)
@@ -158,10 +171,12 @@ export class ManagedPropertyState {
 
   setIfRegistered<T>(key: string, value: T): void {
     const prop = this.properties.get(key)
+
     if (prop) {
       if (!prop.validate(value)) {
         return
       }
+
       prop.state.next(value)
     }
   }
@@ -185,6 +200,7 @@ export class ManagedPropertyState {
         path: 'systemContext',
         message: 'Expected object map for managed properties'
       })
+
       return this.createLoadValidationResult(
         sanitized,
         diagnostics,
@@ -194,12 +210,14 @@ export class ManagedPropertyState {
 
     Object.entries(data).forEach(([key, value]) => {
       const prop = this.properties.get(key)
+
       if (!prop) {
         diagnostics.push({
           key,
           path: `systemContext.${key}`,
           message: 'Ignored unregistered managed property during load'
         })
+
         return
       }
 
@@ -209,6 +227,7 @@ export class ManagedPropertyState {
           path: `systemContext.${key}`,
           message: 'Ignored runtime-only managed property during load'
         })
+
         return
       }
 
@@ -218,6 +237,7 @@ export class ManagedPropertyState {
           path: `systemContext.${key}`,
           message: 'Ignored invalid managed property value during load'
         })
+
         return
       }
 
@@ -234,6 +254,7 @@ export class ManagedPropertyState {
 
   applyValidatedData(result: ManagedPropertyLoadValidationResult): void {
     const artifact = this.validatedLoadArtifacts.get(result)
+
     if (!artifact) {
       throw new Error(
         '[ManagedPropertyState] Expected an owner-issued one-shot validated load artifact'
@@ -256,18 +277,23 @@ export class ManagedPropertyState {
 
   load(data: unknown): ManagedPropertyLoadDiagnostic[] {
     const result = this.validateLoadData(data)
+
     this.applyValidatedData(result)
+
     return result.diagnostics
   }
 
   save(): Record<string, unknown> {
     const result: Record<string, unknown> = {}
+
     this.properties.forEach((property, key) => {
       if (property.runtime) {
         return
       }
+
       result[key] = property.state.getValue()
     })
+
     return result
   }
 
@@ -277,6 +303,7 @@ export class ManagedPropertyState {
 
   getObservable<T>(key: string): BehaviorSubject<T> | undefined {
     const prop = this.properties.get(key)
+
     return prop?.state as BehaviorSubject<T> | undefined
   }
 
@@ -286,11 +313,14 @@ export class ManagedPropertyState {
 
   unregister(key: string): boolean {
     const property = this.properties.get(key)
+
     if (!property) {
       return false
     }
+
     this.properties.delete(key)
     property.state.complete()
+
     return true
   }
 
@@ -300,9 +330,11 @@ export class ManagedPropertyState {
 
   resetRuntime(): void {
     const properties = [...this.properties.values()]
+
     this.properties.clear()
     this.validatedLoadArtifacts = new WeakMap()
     const failures: unknown[] = []
+
     properties.forEach(({ state }) => {
       try {
         state.complete()

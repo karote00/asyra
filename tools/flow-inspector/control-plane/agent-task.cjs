@@ -40,6 +40,7 @@ const phases = [
   'interrupted',
   'failed'
 ]
+
 function createTaskOwner(
   repositoryRoot,
   {
@@ -72,27 +73,34 @@ function createTaskOwner(
   let ordered = []
   let active = null
   let closed = false
+
   const event = (name, actor) => ({
     event: name,
     actor,
     at: new Date().toISOString()
   })
+
   const taskDirectory = (id) => {
     if (!validId(id)) {
       throw new Error('Invalid task identity')
     }
+
     return safePath(
       repositoryRoot,
       path.relative(repositoryRoot, path.join(directory, id))
     )
   }
+
   function save(record, name, actor = record.actor, source = null) {
     const next = { ...record, audit: [...record.audit, event(name, actor)] }
     const artifact = source ? taskSource(next, source) : null
+
     writeAtomic(path.join(taskDirectory(record.id), 'task.json'), next)
     const frozen = freeze(structuredClone(next))
+
     records.set(record.id, frozen)
     const previous = sources.get(record.id)
+
     if (
       closed ||
       record.phase !== 'completed' ||
@@ -101,15 +109,20 @@ function createTaskOwner(
     ) {
       sources.delete(record.id)
     }
+
     if (!closed && artifact) {
       sources.set(record.id, artifact)
     }
+
     onChange()
+
     return frozen
   }
+
   function taskSource(record, source) {
     const attempt = record.attempts.at(-1)
     const verdict = attempt?.verdict
+
     if (
       record.phase !== 'completed' ||
       record.revoked ||
@@ -118,12 +131,14 @@ function createTaskOwner(
     ) {
       return null
     }
+
     const sourceRoot = safePath(
       taskDirectory(record.id),
       'verification/' + attempt.id + '/source'
     )
     const snapshot = record.snapshot
     const scoped = Object.hasOwn(verdict ?? {}, 'runtimeAuthority')
+
     if (
       source.sourceRoot !== sourceRoot ||
       source.head !== snapshot.head ||
@@ -152,6 +167,7 @@ function createTaskOwner(
     ) {
       throw new Error('Invalid completed task source identity')
     }
+
     return freeze(
       structuredClone({
         taskId: record.id,
@@ -174,6 +190,7 @@ function createTaskOwner(
       })
     )
   }
+
   function retainedSource(record) {
     const id = record.id
     const passed = record.verificationStatus === 'passed'
@@ -188,13 +205,16 @@ function createTaskOwner(
     const derived =
       record.format === 2 ||
       descriptors.some((key) => Object.hasOwn(verdict ?? {}, key))
+
     if (
       !passed &&
       !descriptors.some((key) => Object.hasOwn(verdict ?? {}, key))
     ) {
       return null
     }
+
     let executionContext
+
     if (derived) {
       if (
         !descriptors.every((key) => Object.hasOwn(verdict ?? {}, key)) ||
@@ -202,12 +222,14 @@ function createTaskOwner(
       ) {
         throw new Error('Invalid retained candidate source descriptors')
       }
+
       const verificationDirectory = safePath(
         taskDirectory(id),
         'verification/' + attempt.id
       )
       const sourceRoot = safePath(verificationDirectory, 'source')
       const reportPath = safePath(verificationDirectory, 'vitest.json')
+
       if (
         (passed && verdict.runner?.reportPath !== reportPath) ||
         verdict.artifactDirectory !==
@@ -216,11 +238,15 @@ function createTaskOwner(
       ) {
         throw new Error('Invalid retained candidate source identity')
       }
+
       const baselineRoot = record.snapshot.sourceRoot
+
       if (typeof baselineRoot !== 'string') {
         throw new Error('Invalid retained baseline source')
       }
+
       const inputName = path.basename(path.dirname(baselineRoot))
+
       if (
         !inputName.startsWith('input-') ||
         !validId(inputName.slice(6)) ||
@@ -228,8 +254,10 @@ function createTaskOwner(
       ) {
         throw new Error('Invalid retained baseline source identity')
       }
+
       executionContext = { sourceRoot }
     }
+
     if (
       (passed && !verdict?.runner?.reportPath) ||
       !verdict.files ||
@@ -238,11 +266,13 @@ function createTaskOwner(
     ) {
       throw new Error('Invalid task verification evidence')
     }
+
     const retainedContract = loadContract(
       record.snapshot.sourceRoot,
       undefined,
       record.snapshot.verificationSource?.roles?.manifest
     )
+
     if (
       derived &&
       (retainedContract.digest !== record.task.contractDigest ||
@@ -253,6 +283,7 @@ function createTaskOwner(
     ) {
       throw new Error('Invalid retained baseline contract identity')
     }
+
     const candidate = {
       ...record.snapshot,
       files: verdict.files,
@@ -271,6 +302,7 @@ function createTaskOwner(
         verdict.configurationDigest ?? record.snapshot.configurationDigest,
       digest: verdict.sourceDigest
     }
+
     if (derived) {
       verifyRetainedSnapshotBytes(
         repositoryRoot,
@@ -278,6 +310,7 @@ function createTaskOwner(
         candidate.files
       )
     }
+
     if (!passed) {
       const admitted = validateSourceSnapshot(
         candidate,
@@ -285,6 +318,7 @@ function createTaskOwner(
         candidate.files,
         executionContext
       )
+
       return taskSource(record, {
         sourceRoot: executionContext.sourceRoot,
         head: candidate.head,
@@ -297,14 +331,17 @@ function createTaskOwner(
         ...admitted
       })
     }
+
     const reportFile = safePath(
       taskDirectory(id),
       path.relative(taskDirectory(id), verdict.runner.reportPath)
     )
     const reportBytes = fs.readFileSync(reportFile)
+
     if (sha256(reportBytes) !== verdict.runner.reportDigest) {
       throw new Error('Task report fingerprint changed')
     }
+
     const assessed = assessSourceEvidence(
       retainedContract,
       candidate,
@@ -314,23 +351,30 @@ function createTaskOwner(
       undefined,
       executionContext
     )
+
     if (
       assessed.evidence.status !== 'passed' ||
       JSON.stringify(assessed.evidence) !== JSON.stringify(verdict.evidence)
     ) {
       throw new Error('Invalid retained candidate evidence')
     }
+
     return assessed.source ? taskSource(record, assessed.source) : null
   }
+
   for (const id of fs.readdirSync(directory)) {
     if (!validId(id)) {
       continue
     }
+
     const file = safePath(taskDirectory(id), 'task.json')
+
     if (!fs.existsSync(file)) {
       continue
     }
+
     const record = JSON.parse(fs.readFileSync(file, 'utf8'))
+
     if (
       ![1, 2].includes(record.format) ||
       record.id !== id ||
@@ -344,6 +388,7 @@ function createTaskOwner(
     ) {
       throw new Error('Invalid persisted task')
     }
+
     for (const key of ['elapsedMs', 'toolCalls', 'attempts']) {
       if (
         !Number.isSafeInteger(record.usage?.[key]) ||
@@ -353,6 +398,7 @@ function createTaskOwner(
         throw new Error('Invalid cumulative task budget')
       }
     }
+
     if (
       record.task.requestId !== id ||
       record.actor !== record.task.actor ||
@@ -363,11 +409,14 @@ function createTaskOwner(
     ) {
       throw new Error('Invalid task identity or fingerprint')
     }
+
     if (record.task.provider) {
       if (!Array.isArray(record.providerRequests)) {
         throw new Error('Missing provider reservations')
       }
+
       const ids = new Set()
+
       for (const request of record.providerRequests) {
         if (
           !validId(request.id) ||
@@ -383,8 +432,10 @@ function createTaskOwner(
         ) {
           throw new Error('Invalid provider reservation')
         }
+
         ids.add(request.id)
       }
+
       if (
         record.providerRequests.some((request) => request.state === 'reserved')
       ) {
@@ -396,18 +447,21 @@ function createTaskOwner(
         save(record, 'provider-interrupted-on-restart')
       }
     }
+
     if (
       (record.workStatus === 'needs-review') !==
       (record.verificationStatus === 'passed')
     ) {
       throw new Error('Invalid task work and evidence relationship')
     }
+
     if (
       record.verificationStatus === 'passed' ||
       record.phase === 'completed'
     ) {
       try {
         const source = retainedSource(record)
+
         if (source && record.phase === 'completed' && !record.revoked) {
           sources.set(id, source)
         }
@@ -417,6 +471,7 @@ function createTaskOwner(
         }
       }
     }
+
     if (record.phase === 'running') {
       if (Number.isInteger(record.runnerPid) && record.runnerPid > 0) {
         try {
@@ -428,6 +483,7 @@ function createTaskOwner(
           }
         }
       }
+
       record.phase = 'interrupted'
       record.usage.elapsedMs = Math.min(
         record.task.budgets.elapsedMs,
@@ -440,28 +496,37 @@ function createTaskOwner(
     } else {
       records.set(id, freeze(record))
     }
+
     ordered.push(id)
   }
+
   ordered.sort((a, b) =>
     records.get(b).startedAt.localeCompare(records.get(a).startedAt)
   )
+
   const get = (id) => {
     const record = records.get(id)
+
     if (!record) {
       throw new Error('Task not found')
     }
+
     return record
   }
+
   const checkBaseline = (record) => {
     const current = getBaseline()
+
     if (
       record.task.contractDigest !== current.contract.digest ||
       record.task.revision !== current.revision
     ) {
       throw new Error('Task accepted baseline is stale')
     }
+
     return current.contract
   }
+
   const checkBudget = (record) => {
     for (const key of ['elapsedMs', 'toolCalls', 'attempts']) {
       if (record.usage[key] >= record.task.budgets[key]) {
@@ -469,18 +534,22 @@ function createTaskOwner(
       }
     }
   }
+
   const authorizeTask = (record, actor) => {
     if (!actor || actor !== record.actor) {
       throw new Error('Task actor is not authorized')
     }
+
     if (record.revoked) {
       throw new Error('Task capability was revoked')
     }
   }
+
   const checkProvider = (task) => {
     if (!task.provider) {
       return
     }
+
     if (
       !providerComplete ||
       JSON.stringify(task.provider) !== JSON.stringify(providerAuthorization) ||
@@ -488,46 +557,59 @@ function createTaskOwner(
     ) {
       throw new Error('Provider authorization unavailable or expired')
     }
+
     let count = 0
+
     for (const record of records.values()) {
       for (const request of record.providerRequests ?? []) {
         if (request.state !== 'settled') {
           throw new Error('Provider remote request unresolved')
         }
+
         if (!request.usage) {
           throw new Error('Provider usage unresolved')
         }
       }
+
       if (record.task.provider?.id === task.provider.id) {
         count += record.providerRequests.length
       }
     }
+
     if (count >= task.provider.maxRequests) {
       throw new Error('Provider request budget exhausted')
     }
   }
+
   const idle = () => {
     if (closed) {
       throw new Error('Task owner is closed')
     }
+
     if (active) {
       throw new Error('A task is already running')
     }
+
     requireIdle()
     if (!available()) {
       throw new Error('OS containment unavailable; task execution denied')
     }
   }
+
   const readCandidate = (record, file) => {
     if (!canonicalFile(file) || !record.task.allowedFiles.includes(file)) {
       throw new Error('File outside task scope')
     }
+
     const absolute = safePath(taskDirectory(record.id), 'candidate/' + file)
     const stat = fs.lstatSync(absolute)
+
     if (!stat.isFile() || stat.size > TASK_POLICY.maxFileBytes) {
       throw new Error('Invalid or oversized candidate file')
     }
+
     const bytes = fs.readFileSync(absolute)
+
     return {
       absolute,
       bytes,
@@ -535,10 +617,13 @@ function createTaskOwner(
       content: bytes.toString('utf8')
     }
   }
+
   function launch(id, scenario, actor) {
     let record = get(id)
+
     authorizeTask(record, actor)
     const contract = checkBaseline(record)
+
     checkBudget(record)
     checkProvider(record.task)
     const remaining = record.task.budgets.elapsedMs - record.usage.elapsedMs
@@ -547,12 +632,15 @@ function createTaskOwner(
     const controller = new AbortController()
     let reason = null
     let timer
+
     const stop = (why) => {
       if (!reason) {
         reason = why
       }
+
       controller.abort()
     }
+
     active = { id, stop, promise: null }
     record = save(
       {
@@ -576,6 +664,7 @@ function createTaskOwner(
       actor
     )
     const baseElapsed = record.usage.elapsedMs
+
     const chargeTime = (value) => ({
       ...value,
       usage: {
@@ -586,6 +675,7 @@ function createTaskOwner(
         )
       }
     })
+
     const promise = Promise.resolve().then(async () => {
       let observation = null
       let progressed = false
@@ -603,27 +693,34 @@ function createTaskOwner(
           })
         }
       })
+
       timer = setTimeout(() => stop('timed-out'), remaining)
       try {
         let adapter
+
         if (record.task.provider) {
           adapter = providerAdapter(record.task, {
             complete: providerComplete,
             signal: controller.signal,
+
             onSpawn: (pid) =>
               save({ ...get(id), runnerPid: pid }, 'provider-process-started'),
+
             sourceIdentity: {
               digest: record.snapshot.digest,
               head: record.snapshot.head
             },
             previousVerification:
               record.attempts.at(-2)?.verdict?.evidence ?? null,
+
             reserve: () => {
               if (controller.signal.aborted) {
                 throw new Error('Provider request cancelled')
               }
+
               checkProvider(get(id).task)
               const requestId = randomUUID()
+
               save(
                 {
                   ...get(id),
@@ -639,12 +736,15 @@ function createTaskOwner(
                 },
                 'provider-request-reserved'
               )
+
               return requestId
             },
+
             settle: (requestId, result) => {
               if (closed || active?.id !== id) {
                 return
               }
+
               save(
                 {
                   ...get(id),
@@ -661,17 +761,21 @@ function createTaskOwner(
         } else {
           adapter = adapterFactory(record.task, scenario, contract)
         }
+
         while (!controller.signal.aborted) {
           record = get(id)
           if (record.usage.toolCalls >= record.task.budgets.toolCalls) {
             reason = 'limited'
             break
           }
+
           pendingOperation = adapter.next(observation)
           const operation = await Promise.race([pendingOperation, aborted])
+
           if (controller.signal.aborted) {
             break
           }
+
           record = save(
             chargeTime({
               ...get(id),
@@ -686,6 +790,7 @@ function createTaskOwner(
             reason = 'timed-out'
             break
           }
+
           if (
             !operation ||
             typeof operation !== 'object' ||
@@ -696,13 +801,16 @@ function createTaskOwner(
           ) {
             throw new Error('Unsupported or oversized agent operation')
           }
+
           if (operation.tool === 'finish') {
             if (Object.keys(operation).length !== 1) {
               throw new Error('Invalid finish operation')
             }
+
             if (!progressed) {
               throw new Error('Agent produced no source progress')
             }
+
             verifying = true
             const options = {
               repositoryRoot,
@@ -717,35 +825,45 @@ function createTaskOwner(
                 1,
                 record.task.budgets.elapsedMs - record.usage.elapsedMs
               ),
+
               onSpawn: (pid) =>
                 save({ ...get(id), runnerPid: pid }, 'verification-started')
             }
+
             if (verify) {
               verdict = await verify(options)
             } else {
               const produced = await produce(options)
+
               verdict = produced.verdict
               proofSource = produced.source
             }
+
             if (!controller.signal.aborted) {
               reason = 'completed'
             }
+
             break
           }
+
           const expectedKeys =
             operation.tool === 'read'
               ? ['tool', 'path']
               : ['tool', 'path', 'digest', 'before', 'after']
+
           if (
             Object.keys(operation).some((key) => !expectedKeys.includes(key))
           ) {
             throw new Error('Unknown operation field')
           }
+
           const source = readCandidate(record, operation.path)
+
           if (operation.tool === 'read') {
             observation = { content: source.content, digest: source.digest }
             continue
           }
+
           if (
             operation.digest !== source.digest ||
             typeof operation.before !== 'string' ||
@@ -755,16 +873,19 @@ function createTaskOwner(
           ) {
             throw new Error('Stale digest or ambiguous replacement')
           }
+
           const content = source.content.replace(
             operation.before,
             () => operation.after
           )
+
           if (
             Buffer.byteLength(content) > TASK_POLICY.maxFileBytes ||
             content === source.content
           ) {
             throw new Error('Oversized or unchanged candidate')
           }
+
           fs.writeFileSync(source.absolute, content, { flag: 'w', mode: 0o600 })
           const afterDigest = sha256(content)
           const changes = record.changes.filter(
@@ -773,6 +894,7 @@ function createTaskOwner(
           const baseline = record.snapshot.files.find(
             (value) => value.path === operation.path
           )
+
           changes.push({
             path: operation.path,
             beforeDigest: baseline.digest,
@@ -793,6 +915,7 @@ function createTaskOwner(
           await providerComplete.cancel()
           await pendingOperation?.catch(() => undefined)
         }
+
         const current = chargeTime(get(id))
         const phase = reason ?? 'failed'
         const verificationStatus =
@@ -810,6 +933,7 @@ function createTaskOwner(
               }
             : attempt
         )
+
         save(
           {
             ...current,
@@ -838,22 +962,32 @@ function createTaskOwner(
         )
         active = null
       }
+
       return get(id)
     })
+
     active.promise = promise
+
     return id
   }
+
   return {
     activeId: () => active?.id ?? null,
+
     sourceFor(taskId, attemptId) {
       if (closed || !validId(taskId) || !validId(attemptId)) {
         return null
       }
+
       const source = sources.get(taskId)
+
       return source?.admission.attemptId === attemptId ? source : null
     },
+
     get,
+
     list: () => ordered.map((id) => get(id)),
+
     start(request, actor) {
       const current = getBaseline()
       const task = admitTask(
@@ -864,37 +998,47 @@ function createTaskOwner(
         providerAuthorization
       )
       const fingerprint = sha256(JSON.stringify(task))
+
       if (records.has(task.requestId)) {
         if (get(task.requestId).fingerprint !== fingerprint) {
           throw new Error('Task request identity conflict')
         }
+
         return task.requestId
       }
+
       idle()
       checkWork(task)
       checkProvider(task)
       const id = task.requestId
       const taskRoot = taskDirectory(id)
+
       fs.mkdirSync(taskRoot, { recursive: true })
       const captureRoot = path.join(taskRoot, 'input-' + randomUUID())
       const snapshot = capture(repositoryRoot, captureRoot, current.contract)
+
       admitTaskSource(task, snapshot)
       checkWork(task, snapshot)
       for (const file of task.allowedFiles) {
         if (!snapshot.files.some((entry) => entry.path === file)) {
           throw new Error('Allowed source file is absent from snapshot')
         }
+
         const input = safePath(snapshot.sourceRoot, file)
+
         if (fs.statSync(input).size > TASK_POLICY.maxFileBytes) {
           throw new Error('Source file exceeds task limit')
         }
+
         const destination = safePath(taskRoot, 'candidate/' + file)
+
         fs.mkdirSync(path.dirname(destination), { recursive: true })
         fs.writeFileSync(destination, fs.readFileSync(input), {
           flag: 'wx',
           mode: 0o600
         })
       }
+
       const record = {
         format: 2,
         id,
@@ -915,12 +1059,16 @@ function createTaskOwner(
         workStatus: 'incomplete',
         deliveryStatus: 'not-delivered'
       }
+
       ordered.unshift(id)
       save(record, 'task-admitted')
+
       return launch(id, task.scenario, actor)
     },
+
     resume(id, scenario, actor) {
       const record = get(id)
+
       authorizeTask(record, actor)
       checkBaseline(record)
       checkWork(record.task, record.snapshot)
@@ -932,75 +1080,95 @@ function createTaskOwner(
       ) {
         throw new Error('Unknown demonstration')
       }
+
       idle()
       for (const file of record.snapshot.files) {
         const bytes = fs.readFileSync(
           safePath(record.snapshot.sourceRoot, file.path)
         )
+
         if (sha256(bytes) !== file.digest) {
           throw new Error('Captured baseline source changed')
         }
       }
+
       for (const file of record.task.allowedFiles) {
         const current = readCandidate(record, file)
         const expected =
           record.changes.find((value) => value.path === file)?.afterDigest ??
           record.snapshot.files.find((value) => value.path === file).digest
+
         if (current.digest !== expected) {
           throw new Error(
             'Candidate source changed outside task; human review required'
           )
         }
       }
+
       return launch(id, scenario, actor)
     },
+
     async wait(id) {
       if (active?.id === id) {
         await active.promise
       }
+
       return get(id)
     },
+
     async stop(id, action, actor) {
       const record = get(id)
+
       if (record.actor !== actor) {
         throw new Error('Task actor is not authorized')
       }
+
       const phase = {
         cancel: 'cancelled',
         stop: 'stopped',
         handoff: 'handed-off',
         revoke: 'revoked'
       }[action]
+
       if (!phase) {
         throw new Error('Unknown task stop action')
       }
+
       if (active?.id === id) {
         active.stop(phase)
         await active.promise
       }
+
       return save(
         { ...get(id), phase, revoked: record.revoked || action === 'revoke' },
         action,
         actor
       )
     },
+
     changes(id) {
       const record = get(id)
+
       return record.changes.map((change) => {
         const after = readCandidate(record, change.path)
+
         if (after.digest !== change.afterDigest) {
           throw new Error('Candidate source fingerprint changed')
         }
+
         const before = fs.readFileSync(
           safePath(record.snapshot.sourceRoot, change.path),
           'utf8'
         )
+
         if (sha256(before) !== change.beforeDigest) {
           throw new Error('Baseline fingerprint changed')
         }
+
         return { ...change, before, after: after.content }
       })
     },
+
     async close() {
       closed = true
       sources.clear()
@@ -1011,4 +1179,5 @@ function createTaskOwner(
     }
   }
 }
+
 module.exports = { createTaskOwner }

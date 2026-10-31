@@ -29,28 +29,36 @@ describe('Preset default cleanup ownership', () => {
     ]
     const systemProperties = new Set([PresetSystemPropertyKeys.PRIMARY_TOOL])
     const calls: string[] = []
+
     const removeRegistration = (kind: string, key: string): void => {
       calls.push(`${kind}:${key}`)
       const index = registrations.findIndex(
         ({ ref }) => ref.kind === kind && ref.key === key
       )
+
       if (index >= 0) {
         registrations.splice(index, 1)
       }
     }
+
     const core = {
       getRegistrations: () => registrations,
+
       getRegistration: (ref: { kind: string; key: string }) =>
         registrations.find(
           (registration) =>
             registration.ref.kind === ref.kind &&
             registration.ref.key === ref.key
         ),
+
       unregisterComponent: (key: string) =>
         removeRegistration('component', key),
+
       unregisterRenderStrategy: (key: string) =>
         removeRegistration('render-strategy', key),
+
       hasSystemProperty: (key: string) => systemProperties.has(key),
+
       unregisterSystemProperty: (key: string) => {
         calls.push(`system-property:${key}`)
         systemProperties.delete(key)
@@ -104,6 +112,7 @@ describe('Preset default cleanup ownership', () => {
       if (renderCleanupAttempts === 1) {
         throw new Error('temporary failure')
       }
+
       registrations.splice(
         registrations.findIndex(({ ref }) => ref.kind === 'render-strategy'),
         1
@@ -111,17 +120,21 @@ describe('Preset default cleanup ownership', () => {
     })
     const core = {
       getRegistrations: () => registrations,
+
       getRegistration: (ref: { kind: string; key: string }) =>
         registrations.find(
           (registration) =>
             registration.ref.kind === ref.kind &&
             registration.ref.key === ref.key
         ),
+
       unregisterComponent: componentCleanup,
       unregisterRenderStrategy: renderCleanup,
+
       hasSystemProperty: () => false
     } as unknown as PresetCoreAPIs
     const cleanup = createOwnedStateCleanup(core)
+
     registrations.push(
       {
         ref: { kind: 'component', key: 'rectangle' },
@@ -154,9 +167,12 @@ describe('Preset default cleanup ownership', () => {
     )
     const core = {
       getSelection: (type: string) => selections.get(type),
+
       defineSelection: (type: string, selection: BaseSelection) =>
         selections.set(type, selection),
+
       unregisterSelection: (type: string) => selections.delete(type),
+
       defineSystemProperty: vi.fn()
     } as unknown as PresetCoreAPIs
 
@@ -182,6 +198,7 @@ describe('Preset default cleanup ownership', () => {
       registerPropertySchema: vi.fn(),
       definePropertyComponent: vi.fn((definition: { type: string }) => {
         registeredPropertyTypes.add(definition.type)
+
         return vi.fn()
       }),
       defineUIProperty: vi.fn(
@@ -257,10 +274,13 @@ describe('Preset default cleanup ownership', () => {
     const cleanups: (() => void)[] = []
     const core = {
       getSelection: (type: string) => selections.get(type),
+
       defineSelection: (type: string, selection: BaseSelection) => {
         selections.set(type, selection)
       },
+
       unregisterSelection: (type: string) => selections.delete(type),
+
       defineUIProperty: vi.fn(),
       defineSystemProperty: vi.fn(
         (_key: string, defaultValue: unknown) =>

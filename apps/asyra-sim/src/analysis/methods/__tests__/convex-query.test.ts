@@ -13,15 +13,18 @@ import type { Geometry } from '../../../domain/workcell'
 import { convexDistance, type ConvexShape } from '../convex-query'
 
 const ops = poseOperations(intervalAlgebra)
+
 const shape = (
   geometry: Geometry,
   pose: Pose = IDENTITY_POSE
 ): ConvexShape => ({ geometry, pose: ops.fromPose(pose) })
+
 const geometries: Geometry[] = [
   { kind: 'sphere', radius: 1 },
   { kind: 'box', size: [2, 2, 2] },
   { kind: 'capsule', radius: 1, length: 2 }
 ]
+
 describe('convex distance certificates', () => {
   it('bounds an original triangle without replacing it by its box or full-part hull', () => {
     const triangle: ConvexShape = {
@@ -43,17 +46,20 @@ describe('convex distance certificates', () => {
       )
     )
     const exact = 0.8 / Math.sqrt(2) - 0.1
+
     expect(result.lower).toBeLessThanOrEqual(exact)
     expect(result.upper).toBeGreaterThanOrEqual(exact)
     expect(result.lower).toBeGreaterThan(0.46)
   })
   it('establishes shallow overlap on either side of a collinear closest simplex', () => {
     const sphere = { kind: 'sphere' as const, radius: 0.1 }
+
     for (const sign of [-1, 1]) {
       const result = convexDistance(
         shape(sphere, { ...IDENTITY_POSE, position: [3 + sign * 0.15, 0, 0] }),
         shape(sphere, { ...IDENTITY_POSE, position: [3, 0, 0] })
       )
+
       expect(result.penetration).toBe(true)
     }
   })
@@ -67,6 +73,7 @@ describe('convex distance certificates', () => {
       { ...IDENTITY_POSE, position: [970, 0, 0] }
     )
     const result = convexDistance(small, large)
+
     expect(result.lower).toBeLessThanOrEqual(9.9999)
     expect(result.upper).toBeGreaterThanOrEqual(9.9999)
     expect(result.upper - result.lower).toBeLessThan(1e-6)
@@ -75,6 +82,7 @@ describe('convex distance certificates', () => {
     for (let b = a; b < 3; b++) {
       const ga = geometries[a],
         gb = geometries[b]
+
       it(`${ga.kind}/${gb.kind}: encloses analytic separation with symmetry and transformed axes`, () => {
         for (const angle of [0, 0.3, 1.2]) {
           const rotation: Pose = {
@@ -88,6 +96,7 @@ describe('convex distance certificates', () => {
             )
           const result = convexDistance(sa, sb),
             reverse = convexDistance(sb, sa)
+
           for (const evidence of [result, reverse]) {
             expect(evidence.lower).toBeLessThanOrEqual(3)
             expect(evidence.upper).toBeGreaterThanOrEqual(3)
@@ -101,6 +110,7 @@ describe('convex distance certificates', () => {
           shape(ga),
           shape(gb, { ...IDENTITY_POSE, position: [0.3, 0.1, 0.2] })
         )
+
         expect(overlap.penetration).toBe(true)
         expect(overlap.lower).toBe(0)
         expect(overlap.upper).toBe(0)
@@ -108,18 +118,21 @@ describe('convex distance certificates', () => {
           shape(ga),
           shape(gb, { ...IDENTITY_POSE, position: [2, 0, 0] })
         )
+
         expect(touching.penetration).toBe(false)
         expect(touching.lower).toBe(0)
         expect(touching.upper).toBeLessThan(1e-5)
       })
     }
   }
+
   it('bounds an independent sphere diagonal and capsule endpoint distance', () => {
     const sphere = { kind: 'sphere', radius: 0.5 } as const
     const diagonal = convexDistance(
       shape(sphere),
       shape(sphere, { ...IDENTITY_POSE, position: [3, 4, 0] })
     )
+
     expect(diagonal.lower).toBeLessThanOrEqual(4)
     expect(diagonal.upper).toBeGreaterThanOrEqual(4)
     expect(diagonal.upper - diagonal.lower).toBeLessThan(1e-6)
@@ -128,6 +141,7 @@ describe('convex distance certificates', () => {
       shape(capsule),
       shape(capsule, { ...IDENTITY_POSE, position: [0, 7, 0] })
     )
+
     expect(endpoint.lower).toBeLessThanOrEqual(3)
     expect(endpoint.upper).toBeGreaterThanOrEqual(3)
   })
@@ -141,6 +155,7 @@ describe('convex distance certificates', () => {
       1e-12,
       1
     )
+
     expect(result.converged).toBe(false)
     expect(result.iterations).toBe(1)
     expect(result.lower).toBeGreaterThanOrEqual(0)

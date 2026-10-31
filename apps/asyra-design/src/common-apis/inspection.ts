@@ -7,6 +7,7 @@ export const inspectionApis = {
     view: 'overview' | 'detail' = 'overview'
   ) => {
     const root = core.getElementMetadata(elementId)
+
     if (
       !root ||
       (root.type === 'workspace' && elementId !== core.getCurrentWorkspaceId())
@@ -20,6 +21,7 @@ export const inspectionApis = {
           'The inspection target does not exist in the current scene. Use a current element ID or the current workspace ID for overview; do not regroup or redraw.'
       }
     }
+
     if (root.type === 'workspace') {
       if (region || view === 'detail') {
         return {
@@ -31,6 +33,7 @@ export const inspectionApis = {
             'Workspace supports overview only. For native detail, select a concrete child and its local region; do not substitute overview for required detail or regroup the document.'
         }
       }
+
       if (root.childCount === 0) {
         return {
           available: false,
@@ -42,11 +45,13 @@ export const inspectionApis = {
         }
       }
     }
+
     try {
       const image = core.captureElementSnapshot(elementId, 1024, {
         nativeResolution: !!region || view === 'detail',
         ...(region ? { region } : {})
       })
+
       return {
         available: true,
         settlement: 'completed' as const,

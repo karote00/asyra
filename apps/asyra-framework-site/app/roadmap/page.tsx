@@ -21,6 +21,7 @@ export default async function RoadmapPage() {
   const roadmap = content.pages.find(
     ({ id }) => id === 'learn/runtime-boundaries-roadmap'
   )
+
   if (!roadmap) {
     throw new Error('Missing accepted runtime roadmap guide')
   }

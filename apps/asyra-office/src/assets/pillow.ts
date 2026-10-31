@@ -6,6 +6,7 @@ const source = requiredSpecValue(
   spec.modules.find((m) => m.moduleId === 'throw-pillow'),
   'throw-pillow'
 )
+
 function pillowMesh(intervals: readonly number[], radial: number) {
   const g = requiredSpecValue(source.geometry, 'pillow geometry')
   const curves = requiredSpecValue(g.outlineCubicSegments, 'pillow outline')
@@ -18,13 +19,17 @@ function pillowMesh(intervals: readonly number[], radial: number) {
   const mesh = emptyMesh(),
     n = outline.length
   let seam: number[] = []
+
   for (const side of [-1, 1]) {
     const centre = mesh.positions.length / 3
+
     mesh.positions.push(0, side * 0.055, 0.16)
     mesh.uvs.push(0.5, 0.5)
     let prior: number[] = []
+
     const triangle = (a: number, b: number, c: number) =>
       mesh.indices.push(...(side === -1 ? [a, c, b] : [a, b, c]))
+
     for (let j = 1; j <= radial; j++) {
       const a = (j * Math.PI) / (2 * radial),
         r = Math.sin(a),
@@ -34,12 +39,16 @@ function pillowMesh(intervals: readonly number[], radial: number) {
           ? seam
           : outline.map(([x, , z]) => {
               const id = mesh.positions.length / 3
+
               mesh.positions.push(r * x, y, 0.16 + r * z)
               mesh.uvs.push(0.5 + (r * x) / 0.32, 0.5 + (r * z) / 0.32)
+
               return id
             })
+
       for (let i = 0; i < n; i++) {
         const k = (i + 1) % n
+
         if (j === 1) {
           triangle(centre, row[i], row[k])
         } else {
@@ -47,20 +56,26 @@ function pillowMesh(intervals: readonly number[], radial: number) {
           triangle(prior[i], row[k], prior[k])
         }
       }
+
       if (j === radial) {
         seam = row
       }
+
       prior = row
     }
   }
+
   return mesh
 }
+
 export function throwPillow(): AssetPart {
   const g = requiredSpecValue(source.geometry, 'pillow geometry'),
     tier = requiredSpecValue(source.lod, 'pillow LoD').tiers[2]
+
   if (!('outlineIntervals' in tier) || !('radialIntervals' in tier)) {
     throw new Error('Invalid pillow LoD')
   }
+
   return {
     ...part(
       'pillow',

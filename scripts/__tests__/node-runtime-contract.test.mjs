@@ -85,9 +85,11 @@ test('release artifacts and consumers enforce Node.js 24', () => {
 
   for (const contract of contracts) {
     const source = readText(contract.path)
+
     for (const pattern of contract.patterns) {
       assert.match(source, pattern, `${contract.path} ${pattern}`)
     }
+
     assert.doesNotMatch(source, /Node(?:\.js)? 20\.x|'20\.x'/)
   }
 })
@@ -140,9 +142,11 @@ test('Cloudflare workflows use the supported runtime and static build graph', ()
   })
   for (const file of ['app-cloudflare.yml', 'site-cloudflare.yml']) {
     const workflow = readText(`.github/workflows/${file}`)
+
     assert.match(workflow, /node-version: '24'/)
     assert.match(workflow, /yarn install --immutable/)
   }
+
   assert.match(
     readText('.github/workflows/site-cloudflare.yml'),
     /build:static/

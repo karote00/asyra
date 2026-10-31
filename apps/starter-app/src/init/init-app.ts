@@ -39,6 +39,7 @@ export const initApp = (options: AppOptions = {}) => {
   let disposing: Promise<void> | undefined
   const historyApis = createHistoryApis(() => !disposed)
   const storage = options.storage ?? defaultStorage()
+
   registerStarterSchema(
     core,
     createItemPropertySchema(options.itemField),
@@ -46,9 +47,11 @@ export const initApp = (options: AppOptions = {}) => {
   )
   core.setLoadSource({
     name: 'starter-empty-document',
+
     load: async () => createEmptyCoreDocument()
   })
   const releaseChannels = registerStarterSharedDataChannels(core)
+
   applyPreset(core, { profile: PresetProfiles['2D'], defaults: [] })
   const projection = new StarterProjectionStore(core, options.itemField)
   const ui = initUIProperties(core, projection)
@@ -77,6 +80,7 @@ export const initApp = (options: AppOptions = {}) => {
     projection,
     controller,
     ui,
+
     async start(
       container: HTMLElement,
       { width = 800, height = 480 } = {}
@@ -84,6 +88,7 @@ export const initApp = (options: AppOptions = {}) => {
       if (disposed) {
         throw new Error('App is disposed.')
       }
+
       if (!starting) {
         starting = (async () => {
           await core.start(container, {
@@ -94,6 +99,7 @@ export const initApp = (options: AppOptions = {}) => {
           if (disposed) {
             return
           }
+
           renderLayer.resize(width, height)
           projection.refresh()
           core.setUIProperty(UIProperties.ready, true)
@@ -104,16 +110,20 @@ export const initApp = (options: AppOptions = {}) => {
           )
         })()
       }
+
       return starting
     },
+
     resize(width: number, height: number): void {
       if (disposed) {
         return
       }
+
       core.setUIProperty(UIProperties.canvasWidth, width)
       core.resizeRenderer(width, height)
       renderLayer.resize(width, height)
     },
+
     previewItemPosition(
       id: string | null,
       offset?: { x: number; y: number }
@@ -122,10 +132,12 @@ export const initApp = (options: AppOptions = {}) => {
         renderLayer.setPreview(id, offset)
       }
     },
+
     dispose(): Promise<void> {
       if (disposing) {
         return disposing
       }
+
       disposed = true
       controller.dispose()
       releaseProjection()
@@ -139,6 +151,7 @@ export const initApp = (options: AppOptions = {}) => {
         projection.dispose()
         feature.dispose()
       })
+
       return disposing
     }
   }

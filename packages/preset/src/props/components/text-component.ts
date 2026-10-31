@@ -85,6 +85,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'textSizing',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.textSizing,
+
       validate: (value) =>
         TEXT_PROPERTY_VALUE_SCHEMAS.textSizing.enum.some(
           (mode) => mode === value
@@ -94,6 +95,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'text',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.text,
+
       validate: (value) =>
         typeof value === 'string' &&
         value.length <= TEXT_PROPERTY_VALUE_SCHEMAS.text.maxLength
@@ -102,6 +104,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'fontFamily',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.fontFamily,
+
       validate: (value) =>
         typeof value === 'string' &&
         value.trim().length >=
@@ -112,6 +115,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'fontSize',
       kind: 'number',
       defaultValue: DEFAULT_TEXT_DATA.fontSize,
+
       validate: (value) =>
         finiteRange(
           value,
@@ -123,6 +127,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'fontWeight',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.fontWeight,
+
       validate: (value) =>
         TEXT_PROPERTY_VALUE_SCHEMAS.fontWeight.enum.some(
           (option) => option === value
@@ -132,6 +137,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'fontStyle',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.fontStyle,
+
       validate: (value) =>
         TEXT_PROPERTY_VALUE_SCHEMAS.fontStyle.enum.some(
           (option) => option === value
@@ -141,6 +147,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'textAlign',
       kind: 'string',
       defaultValue: DEFAULT_TEXT_DATA.textAlign,
+
       validate: (value) =>
         TEXT_PROPERTY_VALUE_SCHEMAS.textAlign.enum.some(
           (option) => option === value
@@ -150,6 +157,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'lineHeight',
       kind: 'number',
       defaultValue: DEFAULT_TEXT_DATA.lineHeight,
+
       validate: (value) =>
         finiteRange(
           value,
@@ -161,6 +169,7 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       key: 'letterSpacing',
       kind: 'number',
       defaultValue: DEFAULT_TEXT_DATA.letterSpacing,
+
       validate: (value) =>
         finiteRange(
           value,

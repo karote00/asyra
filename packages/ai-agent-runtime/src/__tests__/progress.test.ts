@@ -16,6 +16,7 @@ const deferred = <T>() => {
     resolve = resolvePromise
     reject = rejectPromise
   })
+
   return { promise, reject, resolve }
 }
 
@@ -118,9 +119,11 @@ describe('AI runtime operational progress', () => {
         }
       })
     )
+
     await runtime.run({
       intent: 'smooth',
       signal: new AbortController().signal,
+
       progressObserver: (update) => updates.push(update)
     })
     expect(
@@ -140,7 +143,9 @@ describe('AI runtime operational progress', () => {
       metadata: {
         authorization: 'Bearer request-secret'
       },
+
       progressObserver: (update) => updates.push(update),
+
       signal: new AbortController().signal
     })
 
@@ -196,6 +201,7 @@ describe('AI runtime operational progress', () => {
     expect(updates.every(Object.isFrozen)).toBe(true)
 
     const serialized = JSON.stringify(updates)
+
     expect(serialized).not.toContain('provider-action-secret')
     expect(serialized).not.toContain('context-secret')
     expect(serialized).not.toContain('executor-secret')
@@ -220,7 +226,9 @@ describe('AI runtime operational progress', () => {
 
     const settlement = runtime.run({
       intent: 'delete the selected shape',
+
       progressObserver: (update) => updates.push(update),
+
       signal: new AbortController().signal
     })
 
@@ -265,7 +273,9 @@ describe('AI runtime operational progress', () => {
 
     await runtime.run({
       intent: 'hide the selected shape',
+
       progressObserver: (update) => updates.push(update),
+
       signal: new AbortController().signal
     })
 
@@ -306,6 +316,7 @@ describe('AI runtime operational progress', () => {
         options: {
           retryPolicy: {
             maxAttempts: 2,
+
             shouldRetry: () => true
           }
         },
@@ -323,7 +334,9 @@ describe('AI runtime operational progress', () => {
 
     const result = await runtime.run({
       intent: 'fail safely',
+
       progressObserver: (update) => updates.push(update),
+
       signal: new AbortController().signal
     })
 
@@ -360,9 +373,12 @@ describe('AI runtime operational progress', () => {
 
     const settlement = runtime.run({
       intent: 'wait for provider',
+
       progressObserver: (update) => updates.push(update),
+
       signal: controller.signal
     })
+
     await vi.waitFor(() => {
       expect(phases(updates)).toEqual(['context', 'provider'])
     })
@@ -393,9 +409,12 @@ describe('AI runtime operational progress', () => {
 
     const settlement = runtime.run({
       intent: 'wait for disposal',
+
       progressObserver: (update) => updates.push(update),
+
       signal: new AbortController().signal
     })
+
     await vi.waitFor(() => {
       expect(phases(updates)).toEqual(['context', 'provider'])
     })
@@ -424,14 +443,17 @@ it('forwards bounded provider tool progress only during the owning request', asy
         requestActionBatch: async (_input, options) => {
           report = options.onProgress
           report?.({ tool: 'vectorizer', status: 'running' })
+
           return candidateActionBatch()
         }
       }
     })
   )
+
   await runtime.run({
     intent: 'draw',
     signal: new AbortController().signal,
+
     progressObserver: (update) => updates.push(update)
   })
   expect(updates).toContainEqual(
@@ -442,6 +464,7 @@ it('forwards bounded provider tool progress only during the owning request', asy
     })
   )
   const count = updates.length
+
   report?.({ tool: 'vectorizer', status: 'completed' })
   expect(updates).toHaveLength(count)
   await runtime.dispose()
@@ -466,6 +489,7 @@ it('retains activity identity while dropping duplicate and stale producer events
               sequence: 2
             }
           }
+
           options.onProgress?.(event)
           options.onProgress?.(event)
           options.onProgress?.({
@@ -473,15 +497,18 @@ it('retains activity identity while dropping duplicate and stale producer events
             message: 'Old work',
             activity: { ...event.activity, sequence: 1 }
           })
+
           return candidateActionBatch()
         }
       }
     })
   )
+
   try {
     await runtime.run({
       intent: 'Draw',
       signal: new AbortController().signal,
+
       progressObserver: (event) => updates.push(event)
     })
     expect(updates.filter((event) => event.activity)).toEqual([
@@ -507,27 +534,38 @@ it('keeps the request record open through final action and history settlement wi
   const action = deferred<unknown>()
   const history = deferred<undefined>()
   const upload = deferred<{ status: 'saved'; path: null }>()
+
   const write = (record: { event: string; [key: string]: unknown }) => {
     records.push(record)
   }
+
   const runtime = createAiAgentRuntime(
     runtimeInput({
-      createRecordingSink: () => ({ write, flush: () => upload.promise }),
+      createRecordingSink: () => ({
+        write,
+
+        flush: () => upload.promise
+      }),
+
       actionDefinitions: [visibilityAction(vi.fn(() => action.promise))],
       transactionRunner: {
         run: async (_label, execute) => {
           const result = await execute()
+
           await history.promise
+
           return result
         }
       }
     })
   )
+
   try {
     const pending = runtime.run({
       intent: 'Draw',
       signal: new AbortController().signal
     })
+
     await vi.waitFor(() =>
       expect(records.some((record) => record.stage === 'action_started')).toBe(
         true
@@ -567,6 +605,7 @@ it('records domain waits and shows settlement progress after provider completion
   }[] = []
   const updates: AiRuntimeProgressUpdate[] = []
   const definition = visibilityAction()
+
   definition.execute = async (_args, context) => {
     context.reportProgress?.({
       phase: 'settlement',
@@ -575,29 +614,35 @@ it('records domain waits and shows settlement progress after provider completion
     if (!context.observe) {
       throw new Error('Missing Runtime observation boundary')
     }
+
     return context.observe(
       'durability',
       'Confirm durable publication target',
       async () => ({ durableSequence: 7 })
     )
   }
+
   const runtime = createAiAgentRuntime(
     runtimeInput({
       actionDefinitions: [definition],
+
       createRecordingSink: () => ({
         write: (entry) => {
           records.push(entry)
         },
+
         flush: async () => ({ status: 'saved', path: null })
       })
     })
   )
+
   try {
     expect(
       (
         await runtime.run({
           intent: 'Draw',
           signal: new AbortController().signal,
+
           progressObserver: (event) => updates.push(event)
         })
       ).status
@@ -632,27 +677,32 @@ it.each(['failed', 'cancelled'] as const)(
           write: (record) => {
             records.push(record)
           },
+
           flush: async () => {
             throw new Error('diagnostics unavailable')
           }
         }),
+
         actionDefinitions: [
           visibilityAction(
             vi.fn(async () => {
               if (outcome === 'cancelled') {
                 controller.abort()
               }
+
               throw new Error('action failed')
             })
           )
         ]
       })
     )
+
     try {
       const result = await runtime.run({
         intent: 'Draw',
         signal: controller.signal
       })
+
       expect(result.status).toBe(outcome)
       expect(
         records.filter((record) => record.event === 'ai_request_usage')
@@ -669,24 +719,30 @@ it('links host publication observations without appending after the request term
     runtimeInput({
       createRecordingSink: () => {
         const records: { event: string; [key: string]: unknown }[] = []
+
         streams.push(records)
+
         return {
           write: (record) => {
             records.push(record)
           },
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     })
   )
+
   try {
     const result = await runtime.run({
       intent: 'Draw',
       signal: new AbortController().signal
     })
+
     if (!result.recordingId) {
       throw new Error('Missing request recording ID')
     }
+
     runtime.observe?.({
       sourceRequestId: result.recordingId,
       purpose: 'conversation-publication',
@@ -710,25 +766,30 @@ it('separates mutation admission from canonical work and gives repeated domain s
     [key: string]: unknown
   }[] = []
   const definition = visibilityAction()
+
   definition.execute = async (_args, context) => {
     await context.runMutation?.(() => 'written')
     await context.observe?.('verify', 'Check result', async () => true)
     await context.observe?.('verify', 'Check result', async () => true)
   }
+
   const runtime = createAiAgentRuntime(
     runtimeInput({
       actionDefinitions: [definition],
       transactionRunner: {
         run: async (_label, execute) => execute(async (write) => write())
       },
+
       createRecordingSink: () => ({
         write: (entry) => {
           records.push(entry)
         },
+
         flush: async () => ({ status: 'saved', path: null })
       })
     })
   )
+
   try {
     expect(
       (
@@ -741,6 +802,7 @@ it('separates mutation admission from canonical work and gives repeated domain s
     const started = records.filter(
       (entry) => entry.stage === 'lifecycle_started'
     )
+
     expect(started.map((entry) => entry.evidence?.purpose)).toContain(
       'Await mutation admission'
     )
@@ -750,6 +812,7 @@ it('separates mutation admission from canonical work and gives repeated domain s
     const checks = started.filter(
       (entry) => entry.evidence?.purpose === 'Check result'
     )
+
     expect(new Set(checks.map((entry) => entry.callId)).size).toBe(2)
   } finally {
     await runtime.dispose()
@@ -765,6 +828,7 @@ it('rejects invalid activity parent and phase contracts at the shared transport 
     scope: 'call',
     sequence: 1
   }
+
   expect(isExecutionActivity(value)).toBe(true)
   expect(isExecutionActivity({ ...value, parentCallId: 'prepare' })).toBe(false)
   expect(isExecutionActivity({ ...value, phase: 'imaginary' })).toBe(false)
@@ -807,54 +871,68 @@ it.each(['success', 'failure', 'cancelled'] as const)(
                 if (outcome === 'cancelled') {
                   controller.abort()
                 }
+
                 throw new Error('Action did not complete')
               }
+
               return { apiKey: 'executor-secret', changed: true }
             })
           )
         ]
       })
     )
+
     try {
       const result = await runtime.run({
         intent: 'Refine both parts',
         signal: controller.signal,
+
         progressObserver: (update) => updates.push(update)
       })
       const scoped = updates.filter((update) => update.activity)
       const expected = ['running']
+
       if (outcome !== 'cancelled') {
         expected.push('completed')
       }
+
       if (outcome === 'success') {
         expected.push('running', 'completed')
       }
+
       expect(scoped.map((update) => update.toolStatus)).toEqual(expected)
       if (outcome !== 'cancelled') {
         expect(scoped[0].activity?.callId).toBe(scoped[1].activity?.callId)
       }
+
       if (outcome === 'success') {
         expect(scoped[2].activity?.callId).toBe(scoped[3].activity?.callId)
         expect(scoped[0].activity?.callId).not.toBe(scoped[2].activity?.callId)
       }
+
       const expectedStatus = {
         success: 'executed',
         failure: 'failed',
         cancelled: 'cancelled'
       }
+
       expect(result.status).toBe(expectedStatus[outcome])
       if (outcome === 'cancelled') {
         // Abort suppresses further observer notifications; the returned outcome
         // is the authoritative signal for the App's settled projection.
         expect(executions).toBe(1)
+
         return
       }
+
       const completion = scoped[1]
+
       expect(completion.activity?.kind).toBe('system')
       expect(completion.tool).toBe('set_element_visibility')
       if (!completion.activity || !scoped[0].activity) {
         throw new Error('Expected paired scoped activity')
       }
+
       expect(completion.activity.sequence).toBeGreaterThan(
         scoped[0].activity.sequence
       )
@@ -872,6 +950,7 @@ it('keeps authored action activity identities distinct across batches reusing ac
     callId?: unknown
     evidence?: unknown
   }[] = []
+
   const makeBatch = (batchId: string) => ({
     ...candidateActionBatch(),
     batchId,
@@ -880,33 +959,42 @@ it('keeps authored action activity identities distinct across batches reusing ac
       summary: { kind: 'work', text: `Refine ${batchId}` }
     }))
   })
+
   const runtime = createAiAgentRuntime(
     runtimeInput({
       createRecordingSink: () => ({
         write: (entry) => {
           records.push(entry)
         },
+
         flush: async () => ({ status: 'saved', path: null })
       }),
+
       provider: {
         requestActionBatch: async (_input, options) => {
           if (!options.executeBatch) {
             throw new Error('Expected batch executor')
           }
+
           await options.executeBatch(makeBatch('first'))
+
           return makeBatch('second')
         }
       }
     })
   )
+
   try {
     const result = await runtime.run({
       intent: 'Refine twice',
       signal: new AbortController().signal,
+
       progressObserver: (update) => updates.push(update)
     })
+
     expect(result.status).toBe('executed')
     const scoped = updates.filter((update) => update.activity)
+
     expect(scoped.map((update) => update.toolStatus)).toEqual([
       'running',
       'completed',
@@ -952,9 +1040,11 @@ it('admits only declared actual dispatch effects on activity transport', () => {
     sequence: 1,
     phase: 'executing'
   }
+
   for (const effect of ['read', 'prepare', 'mutation', 'external', 'mixed']) {
     expect(isExecutionActivity({ ...activity, effect })).toBe(true)
   }
+
   expect(isExecutionActivity({ ...activity, effect: 'draw-anything' })).toBe(
     false
   )

@@ -23,6 +23,7 @@ describe('lazy render presentation bounds', () => {
     const viewport = new RenderContainer()
     const group = new RenderGraphics()
     const child = new RenderGraphics().rect(0, 0, 80, 40).fill(0x123456)
+
     viewport.addChild(group)
     group.addChild(child)
     runtime.attachRoot(viewport)
@@ -30,12 +31,15 @@ describe('lazy render presentation bounds', () => {
       type: 'bounds' as const,
       bounds: { x: 10, y: 20, width: 80, height: 40 }
     }))
+
     engine.query = query
+
     return { engine, runtime, viewport, group, child, query }
   }
 
   it('lazily measures descendants once and shares the retained bounds across local and world reads', () => {
     const { group, query } = setup()
+
     expect(query).not.toHaveBeenCalled()
     expect(group.getPresentationLocalBounds()).toEqual({
       x: 10,
@@ -55,6 +59,7 @@ describe('lazy render presentation bounds', () => {
 
   it('reuses local geometry during continuous viewport pan and zoom', () => {
     const { group, viewport, query } = setup()
+
     group.getBounds()
     for (let i = 1; i <= 20; i++) {
       viewport.position.set(i * 10, i * 20)
@@ -66,6 +71,7 @@ describe('lazy render presentation bounds', () => {
         height: 40 * i
       })
     }
+
     expect(query).toHaveBeenCalledTimes(1)
   })
 
@@ -80,25 +86,32 @@ describe('lazy render presentation bounds', () => {
     'invalidates affected ancestors lazily for a child %s change',
     (change) => {
       const { group, child, query } = setup()
+
       group.getBounds()
       if (change === 'geometry') {
         child.clear().rect(0, 0, 20, 10).fill(0x123456)
       }
+
       if (change === 'position') {
         child.x = 30
       }
+
       if (change === 'rotation') {
         child.rotation = 0.4
       }
+
       if (change === 'visibility') {
         child.visible = false
       }
+
       if (change === 'renderable') {
         child.renderable = false
       }
+
       if (change === 'dimension') {
         child.width = 50
       }
+
       expect(query).toHaveBeenCalledTimes(1)
       query.mockReturnValue({
         type: 'bounds',
@@ -113,6 +126,7 @@ describe('lazy render presentation bounds', () => {
   it('coalesces descendant changes without invalidating unrelated sibling content', () => {
     const { viewport, group, child, query } = setup()
     const sibling = new RenderGraphics()
+
     viewport.addChild(sibling)
     group.getBounds()
     sibling.getBounds()
@@ -129,9 +143,11 @@ describe('lazy render presentation bounds', () => {
 
   it('projects cached bounds through current rotation without remeasuring content', () => {
     const { group, query } = setup()
+
     group.getBounds()
     group.rotation = Math.PI / 2
     const bounds = group.getBounds()
+
     expect(bounds.x).toBeCloseTo(-60)
     expect(bounds.y).toBeCloseTo(10)
     expect(bounds.width).toBeCloseTo(40)
@@ -141,6 +157,7 @@ describe('lazy render presentation bounds', () => {
 
   it('starts a new measurement lifetime when an object is reattached', () => {
     const { group, query, runtime } = setup()
+
     group.getBounds()
     runtime.destroyObject(group)
     runtime.attachNode(group)
@@ -151,6 +168,7 @@ describe('lazy render presentation bounds', () => {
   it('invalidates old and new parents on reparent, removal and destruction', () => {
     const { viewport, group, child, query } = setup()
     const other = new RenderGraphics()
+
     viewport.addChild(other)
     group.getBounds()
     other.getBounds()
@@ -169,6 +187,7 @@ describe('lazy render presentation bounds', () => {
   it('mesh geometry invalidates bounds while material-only changes reuse them', () => {
     const { group, query } = setup()
     const mesh = new RenderMesh()
+
     group.addChild(mesh)
     group.getBounds()
     mesh.update({ tint: 0xabcdef })
@@ -187,14 +206,18 @@ describe('lazy render presentation bounds', () => {
 
   it('delivers pending draws once before measuring, including a later geometry edit', () => {
     const { engine, group, child, query } = setup()
+
     const draws = () =>
       engine.getOperations().filter((op) => op.type === 'draw')
+
     query.mockImplementation(() => {
       expect(draws().length).toBeGreaterThan(0)
+
       return { type: 'bounds', bounds: { x: 0, y: 0, width: 80, height: 40 } }
     })
     group.getBounds()
     const firstDraws = draws().length
+
     group.getBounds()
     expect(draws()).toHaveLength(firstDraws)
     child.clear().rect(0, 0, 20, 10).fill(0x123456)
@@ -204,6 +227,7 @@ describe('lazy render presentation bounds', () => {
 
   it('rejects invalid native results without caching substitute bounds', () => {
     const { group, query } = setup()
+
     query.mockReturnValue({
       type: 'bounds',
       bounds: { x: 0, y: 0, width: Number.NaN, height: 40 }
@@ -222,6 +246,7 @@ describe('lazy render presentation bounds', () => {
     const { root } = engine.initialize({ host: {}, width: 640, height: 480 })
     const runtime = new RenderObjectRuntime(engine, root)
     const group = new RenderGraphics()
+
     runtime.attachRoot(group)
     engine.query = vi.fn(() => ({
       type: 'bounds',

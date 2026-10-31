@@ -22,21 +22,37 @@ export interface LiveSampleOptions {
 /** Owns one transient UI playback lifetime; method results never become model state. */
 export class LivePreview {
   private alive = true
+
   private time = 0
+
   private presentedTime = 0
+
   private seeking = false
+
   private awaitingSeek = false
+
   private queryTime = 0
+
   private anchorTime: number | null = null
+
   private snapshot: ExperimentSnapshot | null = null
+
   private abort: AbortController | null = null
+
   private unsubscribe: (() => void) | null = null
+
   private opened = false
+
   private feedback: PlaybackFeedback = checkingFeedback()
+
   private lastSample: LiveState['sample'] = null
+
   private diagnosticId: number | null = null
+
   private checkedTime: number | null = null
+
   private generation = 0
+
   completion: Promise<void>
 
   constructor(
@@ -104,6 +120,7 @@ export class LivePreview {
       this.stopWork()
       this.lastSample = null
       this.accept(recorded)
+
       return
     }
 
@@ -119,6 +136,7 @@ export class LivePreview {
     if (this.seeking) {
       this.presentedTime = this.time
     }
+
     this.awaitingSeek = false
     this.checkedTime = feedback.checkedTime
     this.project()
@@ -209,6 +227,7 @@ export class LivePreview {
 
             if (state.status === 'ready') {
               this.accept(feedback)
+
               return
             }
 

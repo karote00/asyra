@@ -221,7 +221,9 @@ it('queries immutable interval leaves with bounded binary-search work across tim
   }
 
   const evidence = new RecordedPlaybackEvidence({ snapshot, result })
+
   const readCount = (pairId: string) => reads.get(pairId)?.value ?? 0
+
   const baselines = new Map(
     result.pairEvidence.map((pair) => [pair.pairId, readCount(pair.pairId)])
   )

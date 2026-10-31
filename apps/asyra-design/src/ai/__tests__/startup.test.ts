@@ -81,9 +81,12 @@ it('allows every registered App action without confirmation while denying unknow
   }
   const startup = createAiStartup({
     createConfirmation: () => confirmation as never,
+
     createHistory: () => history as never,
+
     createProvider: () => ({ requestActionBatch: vi.fn() })
   })
+
   try {
     const input = compose.mock.calls[0][0]
     const decisions = await Promise.all(
@@ -101,6 +104,7 @@ it('allows every registered App action without confirmation while denying unknow
         })
       }))
     )
+
     expect(decisions.filter(({ decision }) => decision !== 'allow')).toEqual([])
     await expect(
       input.permissionPolicy.evaluate({
@@ -109,6 +113,7 @@ it('allows every registered App action without confirmation while denying unknow
           name: 'unregistered_external_action',
           arguments: {},
           summary: {},
+
           execute: async () => null
         },
         context: {}

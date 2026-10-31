@@ -38,6 +38,7 @@ async function setup(initial?: AcceptanceExpression) {
       createElement(AcceptanceFields, {
         value,
         baseline: 0.02,
+
         onChange: (next) => {
           value = next
 

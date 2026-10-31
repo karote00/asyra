@@ -19,6 +19,7 @@ test('mobile reference dialog preserves external links and restores keyboard foc
       fullPage: true
     })
   }
+
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).not.toBeVisible()
   await expect(

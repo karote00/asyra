@@ -27,17 +27,20 @@ export const referenceFailure = (
   if (error instanceof ReferenceAcquisitionError) {
     return error.failure
   }
+
   const code =
     typeof error === 'object' && error !== null && 'code' in error
       ? error.code
       : undefined
   const timeout = error instanceof Error && error.name === 'TimeoutError'
   let reason = 'network-error'
+
   if (timeout) {
     reason = 'timeout'
   } else if (stage === 'dns') {
     reason = 'dns-failed'
   }
+
   return {
     stage,
     reason,
@@ -70,16 +73,19 @@ const awaitAddress = (
 ): Promise<string> =>
   new Promise((resolve, reject) => {
     const abort = () => reject(signal.reason)
+
     signal.addEventListener('abort', abort, { once: true })
     if (signal.aborted) {
       abort()
     }
+
     value
       .then(resolve, reject)
       .finally(() => signal.removeEventListener('abort', abort))
   })
 
 const blockedAddresses = new BlockList()
+
 for (const [address, prefix] of [
   ['0.0.0.0', 8],
   ['10.0.0.0', 8],
@@ -102,11 +108,13 @@ for (const [address, prefix] of [
 
 export const validateReferenceImageUrl = (value: string): URL => {
   let url: URL
+
   try {
     url = new URL(value)
   } catch {
     throw referenceRejection('url', 'invalid-url')
   }
+
   if (
     value.length > 4096 ||
     url.protocol !== 'https:' ||
@@ -120,6 +128,7 @@ export const validateReferenceImageUrl = (value: string): URL => {
   ) {
     throw referenceRejection('url', 'unsupported-url')
   }
+
   return url
 }
 
@@ -134,6 +143,7 @@ export const resolvePublicImageAddress = async (
   const addresses = isIP(hostname)
     ? [{ address: hostname, family: isIP(hostname) }]
     : await resolveAddresses(hostname)
+
   if (
     !addresses.length ||
     addresses.some(
@@ -145,10 +155,13 @@ export const resolvePublicImageAddress = async (
   ) {
     throw referenceRejection('dns', 'non-public-host')
   }
+
   const first = addresses[0]
+
   if (!first) {
     throw referenceRejection('dns', 'missing-public-address')
   }
+
   return first.address
 }
 
@@ -162,11 +175,14 @@ const downloadReference = async (
   const media =
     kind === 'page' ? /^text\/html(;|$)/i : /^image\/(png|jpeg|webp)(;|$)/i
   const deadline = AbortSignal.any([signal, AbortSignal.timeout(15_000)])
+
   for (let attempt = 1; attempt <= 2; attempt++) {
     let stage: ReferenceFailure['stage'] = 'url'
+
     try {
       signal.throwIfAborted()
       let url = validateReferenceImageUrl(value)
+
       for (let hop = 0; hop <= 3; hop++) {
         deadline.throwIfAborted()
         stage = 'dns'
@@ -174,6 +190,7 @@ const downloadReference = async (
           resolvePublicImageAddress(url.hostname),
           deadline
         )
+
         deadline.throwIfAborted()
         stage = 'request'
         const result = await new Promise<{
@@ -188,8 +205,10 @@ const downloadReference = async (
               agent: false,
               family: 4,
               signal: deadline,
+
               lookup: (_hostname, _options, callback) =>
                 callback(null, address, 4),
+
               headers: {
                 'User-Agent':
                   'asyra-design/1.0 (https://github.com/karote00/asyra)',
@@ -202,22 +221,27 @@ const downloadReference = async (
             (response) => {
               const status = response.statusCode ?? 0
               const type = String(response.headers['content-type'] ?? '')
+
               if ([301, 302, 303, 307, 308].includes(status)) {
                 response.destroy()
                 if (!response.headers.location) {
                   reject(
                     referenceRejection('redirect', 'missing-location', status)
                   )
+
                   return
                 }
+
                 resolve({
                   status,
                   location: response.headers.location,
                   type,
                   bytes: Buffer.alloc(0)
                 })
+
                 return
               }
+
               if (
                 status !== 200 ||
                 !media.test(type) ||
@@ -237,19 +261,25 @@ const downloadReference = async (
                         !media.test(type) ? 'unsupported-media' : 'size-limit'
                       )
                 )
+
                 return
               }
+
               const chunks: Buffer[] = []
               let size = 0
+
               response.on('error', reject)
               response.on('data', (chunk: Buffer) => {
                 size += chunk.length
                 if (size > limit) {
                   const error = referenceRejection('response', 'size-limit')
+
                   response.destroy(error)
                   reject(error)
+
                   return
                 }
+
                 chunks.push(chunk)
               })
               response.on('end', () =>
@@ -257,14 +287,17 @@ const downloadReference = async (
               )
             }
           )
+
           req.on('error', reject)
           req.end()
         })
+
         if (result.location) {
           stage = 'redirect'
           url = validateReferenceImageUrl(new URL(result.location, url).href)
           continue
         }
+
         return {
           url: url.href,
           response: new Response(result.bytes, {
@@ -275,6 +308,7 @@ const downloadReference = async (
           })
         }
       }
+
       throw referenceRejection('redirect', 'redirect-limit')
     } catch (error) {
       signal.throwIfAborted()
@@ -282,6 +316,7 @@ const downloadReference = async (
         ...referenceFailure(deadline.aborted ? deadline.reason : error, stage),
         attempts: attempt
       }
+
       // Retry-After belongs to the source: never hammer it or sleep beyond this call's deadline.
       if (
         attempt === 1 &&
@@ -291,9 +326,11 @@ const downloadReference = async (
       ) {
         continue
       }
+
       throw new ReferenceAcquisitionError(failure)
     }
   }
+
   throw referenceRejection('request', 'attempt-limit')
 }
 

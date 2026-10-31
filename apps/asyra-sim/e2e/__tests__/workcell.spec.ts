@@ -7,11 +7,13 @@ test('Undo can remove the initial model and a blank workcell is editable', async
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const initialDepth = await readHistoryDepth(page)
+
   for (let remaining = initialDepth - 1; remaining > 0; remaining--) {
     await page.getByRole('button', { name: 'Undo' }).click()
     await expect(page.getByRole('treeitem')).toHaveCount(11)
     await expect.poll(() => readHistoryDepth(page)).toBe(remaining)
   }
+
   await page.getByRole('button', { name: 'Undo' }).click()
   await expect(page.getByRole('treeitem')).toHaveCount(0)
   await expect(
@@ -30,18 +32,23 @@ test('normal CUSTOM workbench renders, edits, undoes, resizes, and picks canonic
   page
 }, testInfo) => {
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await expect(page.getByRole('treeitem')).toHaveCount(11)
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
+
   await expect(canvas).toBeVisible()
   const graphics = await canvas.evaluate((canvas) => {
     const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
+
     if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
     }
+
     const info = gl.getExtension('WEBGL_debug_renderer_info')
+
     return {
       version: gl.getParameter(gl.VERSION),
       renderer: info
@@ -52,6 +59,7 @@ test('normal CUSTOM workbench renders, edits, undoes, resizes, and picks canonic
       deviceScaleFactor: devicePixelRatio
     }
   })
+
   expect(graphics.version).toContain('WebGL 2')
   expect(graphics.width).toBeGreaterThan(0)
   expect(graphics.height).toBeGreaterThan(0)
@@ -96,24 +104,31 @@ test('normal CUSTOM workbench renders, edits, undoes, resizes, and picks canonic
         if (!(node instanceof HTMLCanvasElement)) {
           throw new Error('Expected canvas')
         }
+
         return [node.width, node.height]
       })
     )
     .toEqual([975, 904])
   const box = await canvas.boundingBox()
+
   if (!box) {
     throw new Error('Missing canvas surface')
   }
+
   // Independent perspective projection of the fixed fixture center, not renderer picking.
   const eye = [3.2, 2.4, 3.6],
     target = [0, 0.9, 0],
     point = [-0.75, 0.65, 0.45]
+
   const normalize = (v: number[]) => {
     const length = Math.hypot(...v)
+
     return v.map((x) => x / length)
   }
+
   const dot = (a: number[], b: number[]) =>
     a.reduce((sum, v, i) => sum + v * b[i], 0)
+
   const forward = normalize(target.map((v, i) => v - eye[i])),
     right = normalize([-forward[2], 0, forward[0]])
   const up = [
@@ -124,6 +139,7 @@ test('normal CUSTOM workbench renders, edits, undoes, resizes, and picks canonic
   const relative = point.map((v, i) => v - eye[i]),
     depth = dot(relative, forward),
     focal = box.height / (2 * Math.tan((23 * Math.PI) / 180))
+
   await page.mouse.click(
     box.x + box.width / 2 + (dot(relative, right) * focal) / depth,
     box.y + box.height / 2 - (dot(relative, up) * focal) / depth
@@ -183,6 +199,7 @@ test('invalid native part dimensions are rejected without losing the authored ge
   await page.getByRole('button', { name: 'Add fixture', exact: true }).click()
   const dimension = page.getByLabel('Shape 1 size (m) X', { exact: true })
   const original = await dimension.inputValue()
+
   await dimension.fill('-1')
   await page.getByLabel('Object name').click()
   await expect(page.getByRole('alert')).toBeVisible()

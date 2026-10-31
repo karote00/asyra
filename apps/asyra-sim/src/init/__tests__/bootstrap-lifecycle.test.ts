@@ -28,19 +28,25 @@ function historicalSnapshot(
   const experiment = runtime
     .getExperiments(candidateId)
     .find((item) => item.id === experimentId)
+
   if (!experiment) {
     throw new Error('Missing historical experiment fixture')
   }
+
   const legacy = createSyntheticExample().workcell
   const workcell = runtime.getWorkcell(candidateId)
+
   // Author the actual v1 fixture, not new execution from today's original parts.
   for (const body of workcell.bodies) {
     const previous = legacy.bodies.find((item) => item.id === body.id)
+
     if (!previous) {
       throw new Error('Missing legacy fixture body')
     }
+
     body.colliders = previous.colliders
   }
+
   return historicalProxyFixture({
     snapshotId: 'historical-proxy-input',
     candidateId,
@@ -62,6 +68,7 @@ function historicalSnapshot(
 const runtimes: SimRuntime[] = []
 const callbacks: ResizeObserverCallback[] = []
 const disconnects: ReturnType<typeof vi.fn>[] = []
+
 beforeEach(() => {
   callbacks.length = 0
   disconnects.length = 0
@@ -72,8 +79,11 @@ beforeEach(() => {
         callbacks.push(callback)
         disconnects.push(this.disconnect)
       }
+
       observe = vi.fn()
+
       unobserve = vi.fn()
+
       disconnect = vi.fn()
     }
   )
@@ -82,16 +92,20 @@ afterEach(async () => {
   for (const runtime of runtimes.splice(0)) {
     await runtime.dispose().catch(() => undefined)
   }
+
   if (core.getRuntimeState() === 'active') {
     await core.resetRuntime()
   }
+
   vi.unstubAllGlobals()
 })
 
 const environment = () => {
   const host = document.createElement('div'),
     drivers: GraphicsDriver[] = []
+
   host.getBoundingClientRect = () => new DOMRect(0, 0, 640, 480)
+
   const provider = () =>
     new ThreeEngine({
       createDriver: () => {
@@ -106,12 +120,17 @@ const environment = () => {
           render: vi.fn(),
           dispose: vi.fn()
         }
+
         drivers.push(driver)
+
         return driver
       },
+
       requestFrame: () => 1,
+
       cancelFrame: () => undefined
     })
+
   const start = async (
     snapshot?: Parameters<typeof bootstrap>[2],
     prepared?: VisualAssetArchive
@@ -123,9 +142,12 @@ const environment = () => {
         ? await prepareProjectVisuals(snapshot, decoder)
         : new VisualAssetArchive(decoder))
     const runtime = await bootstrap(host, provider, snapshot, resources)
+
     runtimes.push(runtime)
+
     return runtime
   }
+
   return { host, drivers, provider, start }
 }
 
@@ -137,6 +159,7 @@ describe('App composition lifetime', () => {
       first.id,
       'B'
     )
+
     runtime.views.selectCandidate(duplicate)
     expect(runtime.views.getSnapshot().workcell?.bodies).toHaveLength(11)
     await runtime.features.history.undo()
@@ -155,17 +178,21 @@ describe('App composition lifetime', () => {
     )
     const session = new ProjectSession(repository, {
       capture: () => runtime.captureSnapshot(),
+
       apply: async () => []
     })
+
     await session.start()
     let release!: () => void
     const blocked = new Promise<void>((resolve) => {
       release = resolve
     })
     const append = repository.append.bind(repository)
+
     repository.append = vi.fn(
       async (...args: Parameters<IndexedProjectRepository['append']>) => {
         await blocked
+
         return append(...args)
       }
     )
@@ -176,6 +203,7 @@ describe('App composition lifetime', () => {
     )
     const candidate = runtime.getCandidates()[0]
     const body = runtime.getWorkcell(candidate.id).bodies[0]
+
     await runtime.features.edit.upsert(candidate.id, {
       ...body,
       name: 'Action A'
@@ -184,13 +212,19 @@ describe('App composition lifetime', () => {
     const manager = getSessionManager()
     const onCancel = vi.fn(),
       onEnd = vi.fn()
+
     manager.registerSession(
       'test.persistence-interaction',
       'test.persistence-interaction',
       10,
       true,
       SessionCancelPolicies.ROLLBACK,
-      { onStart: () => ({}), onCancel, onEnd }
+      {
+        onStart: () => ({}),
+
+        onCancel,
+        onEnd
+      }
     )
     await manager.handleStart(
       'test.persistence-interaction',
@@ -224,8 +258,10 @@ describe('App composition lifetime', () => {
     )
     const session = new ProjectSession(repository, {
       capture: () => first.captureSnapshot(),
+
       apply: async () => []
     })
+
     await session.start()
     const capture = vi.spyOn(first, 'captureSnapshot')
     const stop = first.subscribe((publication) =>
@@ -235,6 +271,7 @@ describe('App composition lifetime', () => {
     )
     const candidate = first.getCandidates()[0]
     const body = first.getWorkcell(candidate.id).bodies[0]
+
     await first.features.edit.upsert(candidate.id, {
       ...body,
       name: 'Journal body',
@@ -243,6 +280,7 @@ describe('App composition lifetime', () => {
     await first.features.history.undo()
     await first.features.history.redo()
     const experiment = first.getExperiments(candidate.id)[0]
+
     await first.features.edit.createExperiment(
       candidate.id,
       'Journal experiment',
@@ -251,9 +289,11 @@ describe('App composition lifetime', () => {
     const removable = first
       .getWorkcell(candidate.id)
       .bodies.find((item) => item.id === 'example:fixture-post')
+
     if (!removable) {
       throw new Error('Missing removable fixture')
     }
+
     await first.features.edit.remove(candidate.id, removable.id)
     await first.features.history.undo()
     const frozen = first.createExperimentSnapshot(experiment.id, [])
@@ -275,11 +315,13 @@ describe('App composition lifetime', () => {
         error: 'Cancelled'
       })
     }
+
     await first.features.storage.retain(record)
     const bytes = new TextEncoder().encode('Observed fixture')
     const receipt = await first.features.observations.prepare([
       { filename: 'field.txt', bytes }
     ])
+
     await first.features.observations.retain(receipt, {
       runId: 'journal-run',
       draft: {
@@ -292,10 +334,13 @@ describe('App composition lifetime', () => {
     expect(capture).not.toHaveBeenCalled()
     const expected = await first.captureSnapshot()
     const metadata = session.getState().project
+
     if (!metadata) {
       throw new Error('Missing acknowledged project')
     }
+
     const stored = await repository.read(metadata.id)
+
     expect(stored.journal).toHaveLength(8)
     expect(
       stored.journal?.flatMap((entry) => entry.resources.runs ?? [])
@@ -312,19 +357,23 @@ describe('App composition lifetime', () => {
       decodeProject(stored.payload),
       stored.journal ?? []
     )
+
     stop()
     session.close()
     await first.dispose()
     const replay = vi.spyOn(core, 'applyRemoteCanonicalChangeSlices')
     const second = await start(recovered)
+
     expect(replay).toHaveBeenCalledTimes(recovered.replay?.length ?? 0)
     for (const [index, call] of replay.mock.calls.entries()) {
       expect(call[0].slices).toBe(recovered.replay?.[index].slices)
     }
+
     replay.mockRestore()
     expect(second.getHistoryDepth()).toBe(0)
     expect(await second.captureSnapshot()).toEqual(expected)
     const note = second.getObservations('journal-run')[0]
+
     expect(
       Array.from(second.getObservationAttachment(note.attachments[0]))
     ).toEqual(Array.from(bytes))
@@ -333,12 +382,14 @@ describe('App composition lifetime', () => {
   it('shares registered workcell and run values across unrelated experiment edits and invalidates real dependencies', async () => {
     const runtime = await environment().start()
     const candidate = runtime.getCandidates()[0]
+
     runtime.views.selectCandidate(candidate.id)
     const before = runtime.views.getSnapshot()
     const listener = vi.fn()
     const stop = runtime.views.subscribe((view) => view.workcell, listener)
     const experiment = runtime.getExperiments(candidate.id)[0]
     const reads = vi.spyOn(workcellQueries, 'readWorkcell')
+
     await runtime.features.edit.updateExperiment(
       experiment.id,
       experiment.definition.revision,
@@ -357,6 +408,7 @@ describe('App composition lifetime', () => {
     // UI/viewport consumers must not request another canonical workcell.
     expect(reads).toHaveBeenCalledTimes(1)
     const body = runtime.getWorkcell(candidate.id).bodies[0]
+
     await runtime.features.edit.upsert(candidate.id, {
       ...body,
       name: 'Projected body'
@@ -377,14 +429,18 @@ describe('App composition lifetime', () => {
     const { start } = environment()
     const first = await start()
     const oldListener = vi.fn()
+
     first.subscribe(oldListener)
     const saved = await first.captureSnapshot()
+
     await first.dispose()
     const second = await start(saved)
     const listener = vi.fn()
+
     second.subscribe(listener)
     const candidate = second.getCandidates()[0]
     const body = second.getWorkcell(candidate.id).bodies[0]
+
     await second.features.edit.upsert(candidate.id, {
       ...body,
       name: 'Successor'
@@ -400,11 +456,14 @@ describe('App composition lifetime', () => {
       runtime.createExperimentSnapshot(experiment.id, [])
     )
     const geometry = snapshot.workcell.bodies[0].colliders[0].geometry
+
     if (geometry.kind !== 'mesh') {
       throw new Error('Missing full part')
     }
+
     geometry.positions = geometry.positions.map((n) => n * 0.5)
     const before = runtime.getHistoryDepth()
+
     await expect(
       runtime.features.storage.retain({
         version: 1,
@@ -452,6 +511,7 @@ describe('App composition lifetime', () => {
         error: 'Cancelled'
       })
     }
+
     await first.features.storage.retain(record)
     const input = new TextEncoder().encode('Observed gap: 25 mm')
     const receipt = await first.features.observations.prepare([
@@ -466,9 +526,11 @@ describe('App composition lifetime', () => {
         attachments: receipt.attachments
       }
     })
+
     expect(first.getHistoryDepth()).toBe(depth + 1)
     expect(first.getRuns()).toEqual([record])
     const note = first.getObservations('field-run')[0]
+
     expect(note.id).toBe(id)
     expect(
       Array.from(first.getObservationAttachment(note.attachments[0]))
@@ -481,10 +543,13 @@ describe('App composition lifetime', () => {
     expect((await first.captureSnapshot()).observationSources).toBeUndefined()
     await first.features.history.undo()
     const saved = decodeProject(encodeProject(await first.captureSnapshot()))
+
     expect(saved.observationSources).toHaveLength(1)
     const exported = first.exportObservations('field-run')
+
     expect(JSON.parse(exported).sources).toEqual(saved.observationSources)
     const release = first.pauseEditing()
+
     expect(() =>
       first.features.observations.prepare([
         { filename: 'late.txt', bytes: input }
@@ -500,9 +565,11 @@ describe('App composition lifetime', () => {
     expect(() => first.exportObservations('field-run')).toThrow('closed')
     expect(() => first.features.observations.discard(receipt)).toThrow('closed')
     const sources = saved.observationSources
+
     if (!sources) {
       throw new Error('Missing saved sources')
     }
+
     const corrupt = {
       ...saved,
       observationSources: sources.map((source) => ({
@@ -510,9 +577,11 @@ describe('App composition lifetime', () => {
         base64: `${source.base64.startsWith('A') ? 'B' : 'A'}${source.base64.slice(1)}`
       }))
     }
+
     await expect(start(corrupt)).rejects.toThrow('digest')
     expect(core.isCompositionOpen()).toBe(true)
     const second = await start(saved)
+
     expect(second.getHistoryDepth()).toBe(0)
     expect(second.getRuns()).toEqual([record])
     expect(second.exportObservations('field-run')).toBe(exported)
@@ -531,6 +600,7 @@ describe('App composition lifetime', () => {
     const owner = core,
       defineComponent = owner.defineComponent
     const released: ObservationAttachmentArchive[] = []
+
     owner.defineComponent = vi.fn(() => {
       throw new Error('component registration unavailable')
     })
@@ -538,6 +608,7 @@ describe('App composition lifetime', () => {
       released.push(this)
       original.call(this)
     }
+
     try {
       await expect(bootstrap(host)).rejects.toThrow(
         'component registration unavailable'
@@ -565,6 +636,7 @@ describe('App composition lifetime', () => {
       encodeGlb(json, binary),
       'reference.glb'
     )
+
     expect(first.getHistoryDepth()).toBe(depth)
     const assetId = await first.features.visuals.retain(
       prepared,
@@ -577,6 +649,7 @@ describe('App composition lifetime', () => {
         scale: [1, 1, 1]
       }
     )
+
     expect(first.getHistoryDepth()).toBe(depth + 1)
     expect(
       first.getVisualAssets(first.getWorkcell(candidate.id)).get(assetId)
@@ -592,6 +665,7 @@ describe('App composition lifetime', () => {
     await first.features.history.redo()
     const experiment = first.getExperiments(candidate.id)[0],
       frozen = historicalSnapshot(first, candidate.id, experiment.id)
+
     await first.features.storage.retain({
       version: 1,
       name: 'Visual provenance',
@@ -612,6 +686,7 @@ describe('App composition lifetime', () => {
     })
     await first.features.edit.setVisuals(candidate.id, body.id, [])
     const saved = decodeProject(encodeProject(await first.captureSnapshot()))
+
     expect(saved.visualSources).toHaveLength(initialSources.length + 1)
     expect(saved.visualSources).toEqual(
       expect.arrayContaining([...initialSources, prepared.source])
@@ -633,6 +708,7 @@ describe('App composition lifetime', () => {
       saved,
       await prepareProjectVisuals(saved, rehydration)
     )
+
     expect(rehydration.decode).toHaveBeenCalledTimes(initialSources.length + 1)
     expect(second.getHistoryDepth()).toBe(0)
     expect(
@@ -647,6 +723,7 @@ describe('App composition lifetime', () => {
     const { host } = environment(),
       decoder = { decode: decodeRestrictedGlb, dispose: vi.fn() }
     const resources = new VisualAssetArchive(decoder)
+
     await expect(
       bootstrap(
         host,
@@ -664,12 +741,15 @@ describe('App composition lifetime', () => {
   it('exposes analysis progress while paused but rejects the retired reader', async () => {
     const { start } = environment(),
       first = await start()
+
     expect(first.features.analysis.getProgress()).toBeNull()
     const resume = first.pauseEditing()
+
     expect(first.features.analysis.getProgress()).toBeNull()
     resume()
     await first.dispose()
     const second = await start()
+
     expect(second.features.analysis.getProgress()).toBeNull()
     expect(() => first.features.analysis.getProgress()).toThrow('closed')
   })
@@ -678,18 +758,24 @@ describe('App composition lifetime', () => {
       first = await start()
     const a = first.getCandidates()[0].id,
       b = await first.features.edit.duplicateCandidate(a, 'B')
+
     expect(first.getCandidateLineage(a)).toBeUndefined()
     const lineage = first.getCandidateLineage(b)
+
     expect(lineage?.copiedFromCandidateId).toBe(a)
     if (!lineage) {
       throw new Error('Missing lineage')
     }
+
     const source = first.getCandidateLineage(b)
+
     Object.values(lineage.bodyOrigins)[0].bodyId = 'external-change'
     expect(first.getCandidateLineage(b)).toEqual(source)
     const saved = await first.captureSnapshot()
+
     await first.dispose()
     const second = await start(saved)
+
     expect(second.getCandidateLineage(b)).toEqual(source)
     expect(second.getHistoryDepth()).toBe(0)
     expect(() => first.getCandidateLineage(b)).toThrow('closed')
@@ -702,6 +788,7 @@ describe('App composition lifetime', () => {
       experiment = first.getExperiments(candidate.id)[0]
     const snapshot = first.createExperimentSnapshot(experiment.id, [])
     const methods = first.getMethodDescriptors()
+
     expect(methods).toHaveLength(3)
     expect(snapshot.version).toBe(2)
     expect(snapshot.methodDescriptor).toEqual(
@@ -710,6 +797,7 @@ describe('App composition lifetime', () => {
     if (!methods[0].manifest) {
       throw new Error('Missing installed method manifest')
     }
+
     methods[0].manifest.name = 'Caller mutation'
     expect(first.getMethodDescriptors()[0].manifest?.name).not.toBe(
       'Caller mutation'
@@ -734,6 +822,7 @@ describe('App composition lifetime', () => {
         error: 'Cancelled'
       })
     }
+
     await first.features.storage.retain(record)
     expect(first.getRuns()).toEqual([record])
     await first.features.history.undo()
@@ -741,11 +830,14 @@ describe('App composition lifetime', () => {
     expect((await first.captureSnapshot()).runs).toBeUndefined()
     await first.features.history.redo()
     const saved = decodeProject(encodeProject(await first.captureSnapshot()))
+
     expect(saved.runs).toEqual([record])
     const missing = { ...saved, runs: [] }
+
     expect(() => encodeProject(missing)).toThrow('Missing or mismatched')
     await first.dispose()
     const second = await start(saved)
+
     expect(second.getRuns()).toEqual([record])
     expect(second.getHistoryDepth()).toBe(0)
     expect(() => first.features.storage.retain(record)).toThrow('closed')
@@ -757,6 +849,7 @@ describe('App composition lifetime', () => {
     const original = first.getWorkcell(candidate.id).bodies[0]
     const experiments = first.getExperiments(candidate.id)
     const a = await first.captureSnapshot()
+
     await first.features.edit.upsert(candidate.id, {
       ...original,
       name: 'Saved B'
@@ -764,12 +857,14 @@ describe('App composition lifetime', () => {
     const b = await first.captureSnapshot()
     const oldResize = callbacks[0]
     const disposal = first.dispose()
+
     expect(first.dispose()).toBe(disposal)
     await disposal
     const second = await start({
       ...b,
       loadIssues: [{ path: 'source', message: 'Retained review requirement' }]
     })
+
     expect(second.getCandidates()).toHaveLength(1)
     expect(second.getWorkcell(candidate.id).bodies[0].name).toBe('Saved B')
     expect(second.getHistoryDepth()).toBe(0)
@@ -785,6 +880,7 @@ describe('App composition lifetime', () => {
     expect(drivers[1].setSize).toHaveBeenLastCalledWith(640, 480)
     await second.dispose()
     const third = await start(a)
+
     expect(third.getWorkcell(candidate.id).bodies[0]).toEqual(original)
     expect(third.getHistoryDepth()).toBe(0)
     expect(third.getExperiments(candidate.id)).toEqual(experiments)
@@ -801,14 +897,19 @@ describe('App composition lifetime', () => {
     const { start } = environment()
     const first = await start()
     const candidate = first.getCandidates()[0]
+
     for (const experiment of first.getExperiments(candidate.id).slice(1)) {
       await first.features.edit.removeExperiment(experiment.id)
     }
+
     const experiments = first.getExperiments(candidate.id)
+
     expect(experiments).toHaveLength(1)
     const saved = await first.captureSnapshot()
+
     await first.dispose()
     const second = await start(saved)
+
     expect(second.getExperiments(candidate.id)).toEqual(experiments)
     expect(second.getHistoryDepth()).toBe(0)
   })
@@ -818,8 +919,10 @@ describe('App composition lifetime', () => {
       runtime = await start()
     const releaseFirst = runtime.pauseEditing(),
       releaseSecond = runtime.pauseEditing()
+
     expect(() => runtime.features.history.undo()).toThrow('paused')
     const captured = await runtime.captureSnapshot()
+
     expect(captured.document.sceneTree.workspaceList).not.toEqual([])
     releaseFirst()
     expect(() => runtime.features.history.undo()).toThrow('paused')
@@ -838,6 +941,7 @@ describe('App composition lifetime', () => {
       original = runtime.getWorkcell(candidate.id)
     const target = await runtime.save(),
       depth = runtime.getHistoryDepth()
+
     target.sceneTree.elements[original.bodies[0].id].parentId = 'missing-parent'
     expect(() => runtime.preflight(target)).toThrow('invalid hierarchy')
     expect(runtime.getHistoryDepth()).toBe(depth)
@@ -846,6 +950,7 @@ describe('App composition lifetime', () => {
 
   it('cleans failed startup before another bootstrap can compose', async () => {
     const { host, start } = environment()
+
     await expect(
       bootstrap(host, () => {
         throw new Error('engine unavailable')
@@ -854,12 +959,14 @@ describe('App composition lifetime', () => {
     expect(core.isCompositionOpen()).toBe(true)
     expect(core.getRegistrations()).toEqual([])
     const runtime = await start()
+
     expect(runtime.getCandidates()).toHaveLength(1)
   })
 
   it('does not take ownership of an already-started runtime', async () => {
     const { host, provider, start, drivers } = environment(),
       runtime = await start()
+
     await expect(bootstrap(host, provider)).rejects.toThrow('already started')
     expect(runtime.getCandidates()).toHaveLength(1)
     expect(drivers[0].dispose).not.toHaveBeenCalled()
@@ -869,10 +976,12 @@ describe('App composition lifetime', () => {
     const { start, drivers } = environment(),
       runtime = await start(),
       cause = new Error('observer cleanup failed')
+
     disconnects[0].mockImplementation(() => {
       throw cause
     })
     const disposal = runtime.dispose()
+
     await expect(disposal).rejects.toBe(cause)
     expect(runtime.dispose()).toBe(disposal)
     expect(drivers[0].dispose).toHaveBeenCalledOnce()

@@ -21,14 +21,18 @@ test('two-finger pinch changes camera distance and touch handoff stays continuou
     page.getByText('單指轉向 - 雙指平移 - 捏合前後移動')
   ).toBeVisible()
   const scene = page.getByTestId('scene')
+
   await scene.scrollIntoViewIfNeeded()
   const bounds = await scene.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing viewport')
   }
+
   const x = bounds.x + bounds.width / 2
   const y = bounds.y + bounds.height / 2
   const session = await page.context().newCDPSession(page)
+
   const touch = (
     type: 'touchStart' | 'touchMove' | 'touchEnd' | 'touchCancel',
     points: number[][]
@@ -37,6 +41,7 @@ test('two-finger pinch changes camera distance and touch handoff stays continuou
       type,
       touchPoints: points.map(([id, px, py]) => ({ id, x: px, y: py }))
     })
+
   await touch('touchStart', [
     [1, x - 40, y],
     [2, x + 40, y]
@@ -53,6 +58,7 @@ test('two-finger pinch changes camera distance and touch handoff stays continuou
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
   const canvas = page.locator('canvas')
   const beforePan = await canvas.screenshot()
+
   await touch('touchMove', [
     [1, x - 20, y + 25],
     [2, x + 60, y + 25]
@@ -60,6 +66,7 @@ test('two-finger pinch changes camera distance and touch handoff stays continuou
   expect((await canvas.screenshot()).equals(beforePan)).toBe(false)
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
   const panned = await canvas.screenshot()
+
   await touch('touchStart', [
     [1, x - 20, y + 25],
     [2, x + 60, y + 25],
@@ -80,6 +87,7 @@ test('two-finger pinch changes camera distance and touch handoff stays continuou
   expect((await canvas.screenshot()).equals(panned)).toBe(false)
   await touch('touchCancel', [])
   const canceled = await canvas.screenshot()
+
   await touch('touchStart', [[4, x, y]])
   expect((await canvas.screenshot()).equals(canceled)).toBe(true)
   await touch('touchEnd', [])
@@ -99,13 +107,17 @@ test('two-finger translation matches desktop pan instead of stationary look', as
     page.getByText('單指轉向 - 雙指平移 - 捏合前後移動')
   ).toBeVisible()
   const scene = page.getByTestId('scene')
+
   await scene.scrollIntoViewIfNeeded()
   const bounds = await scene.boundingBox()
+
   if (!bounds) {
     throw new Error('Missing viewport')
   }
+
   const x = bounds.x + bounds.width / 2
   const y = bounds.y + bounds.height / 2
+
   await page.mouse.move(x, y)
   await page.keyboard.down('Shift')
   await page.mouse.down()
@@ -123,10 +135,12 @@ test('two-finger translation matches desktop pan instead of stationary look', as
     clip,
     path: testInfo.outputPath('mouse-pan.png')
   })
+
   await page.reload()
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   await scene.scrollIntoViewIfNeeded()
   const session = await page.context().newCDPSession(page)
+
   await session.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
     touchPoints: [

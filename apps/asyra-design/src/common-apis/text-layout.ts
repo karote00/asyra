@@ -15,6 +15,7 @@ export const measureTextBox = (
   if (typography.textSizing === TextSizing.FIXED) {
     return { ...bounds }
   }
+
   const measured = core.measureText({
     ...typography,
     text,
@@ -23,6 +24,7 @@ export const measureTextBox = (
         ? bounds.width
         : undefined
   })
+
   return { ...bounds, width: measured.width, height: measured.height }
 }
 
@@ -41,23 +43,31 @@ export const projectTextLayoutUpdate = (
   ) {
     return values
   }
+
   if (core.getElementData(elementId)?.type !== TEXT_COMPONENT_TYPE) {
     return values
   }
+
   const data = core.getElementComputedData(elementId)
+
   if (!data) {
     return values
   }
+
   const typography = { ...data, ...values } as unknown as TextData
+
   if (typography.textSizing === TextSizing.FIXED) {
     return values
   }
+
   if ('height' in values) {
     return { ...values, textSizing: TextSizing.FIXED }
   }
+
   if ('width' in values) {
     typography.textSizing = TextSizing.AUTO_HEIGHT
   }
+
   const bounds = measureTextBox(
     typography,
     {
@@ -68,6 +78,7 @@ export const projectTextLayoutUpdate = (
     },
     typography.text
   )
+
   return {
     ...values,
     textSizing: typography.textSizing,

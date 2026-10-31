@@ -17,6 +17,7 @@ const repositoryRoot = path.resolve(
   '../..'
 )
 const temporaryParent = path.join(repositoryRoot, 'tmp')
+
 const tarballPathFor = ({ artifactDirectory, packageName, version }) =>
   path.join(
     artifactDirectory,
@@ -48,6 +49,7 @@ test('release package artifact plan packs every frozen package exactly once', ()
       'utf8'
     )
   ).version
+
   assert.deepEqual(plan[0], {
     packageName: '@asyra/ai-agent-runtime',
     version: firstVersion,
@@ -108,10 +110,12 @@ test('package builder runs the canonical build once and packs each package once'
     const result = packFrameworkReleasePackages({
       repositoryRoot,
       artifactDirectory,
+
       runCommand(command, args, options) {
         commands.push({ command, args, cwd: options.cwd })
         if (args.includes('pack')) {
           const outputIndex = args.indexOf('--out')
+
           fs.writeFileSync(args[outputIndex + 1], 'packed')
         }
       }
@@ -126,6 +130,7 @@ test('package builder runs the canonical build once and packs each package once'
     assert.equal(
       commands.slice(1).every(({ command, args, cwd }, index) => {
         const record = result.packages[index]
+
         return (
           command === 'yarn' &&
           cwd === repositoryRoot &&
@@ -159,9 +164,11 @@ test('prebuilt package builder skips the build command without changing pack own
       repositoryRoot,
       artifactDirectory,
       prebuilt: true,
+
       runCommand(command, args, options) {
         commands.push({ command, args, cwd: options.cwd })
         const outputIndex = args.indexOf('--out')
+
         fs.writeFileSync(args[outputIndex + 1], 'packed')
       }
     })
@@ -228,6 +235,7 @@ test('real package tarballs contain only declared release files and resolvable e
       repositoryRoot,
       artifactDirectory,
       prebuilt: true,
+
       runCommand(command, args, options) {
         execFileSync(command, args, {
           cwd: options.cwd,
@@ -275,6 +283,7 @@ test('real package tarballs contain only declared release files and resolvable e
           ? [entry]
           : Object.values(entry).filter((value) => typeof value === 'string')
       )
+
       for (const exportedPath of exportedPaths) {
         assert.ok(
           entries.includes(`package/${exportedPath.replace(/^\.\//, '')}`),
@@ -287,6 +296,7 @@ test('real package tarballs contain only declared release files and resolvable e
       repositoryRoot,
       artifactDirectory
     })
+
     assert.equal(validated.packages.length, 19)
     assert.equal(
       validated.packages.every(

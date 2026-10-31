@@ -15,6 +15,7 @@ interface SwitchPrimaryToolAPI {
 const api: SwitchPrimaryToolAPI = {
   switch: (tool: string) => {
     const pathEditingMode = systemContextApis.getPathEditingMode()
+
     systemContextApis.switchPrimaryTool(tool)
 
     if (!pathEditingMode) {
@@ -24,6 +25,7 @@ const api: SwitchPrimaryToolAPI = {
     // Keep path editing active for Select, but disconnect preview segment.
     if (tool === PrimaryToolType.SELECT) {
       systemContextApis.setPathEditingStartNewSubpath(true)
+
       return
     }
 
@@ -31,6 +33,7 @@ const api: SwitchPrimaryToolAPI = {
     // mode so the next anchor click chooses the continuation source.
     if (tool === PrimaryToolType.PEN) {
       systemContextApis.setPathEditingStartNewSubpath(true)
+
       return
     }
 
@@ -46,12 +49,16 @@ export const switchPrimaryToolFeature = defineFeature(
     priority: 10,
     exclusive: true,
     api,
+
     execution: (snapshot: SystemContextSnapshotWithDetail) => {
       const tool = snapshot.detail?.primaryTool as string
+
       if (tool) {
         api.switch(tool)
+
         return { tool }
       }
+
       return null
     }
   }

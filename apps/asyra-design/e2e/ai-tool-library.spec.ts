@@ -13,16 +13,19 @@ test('manages saved metadata in the conversation panel without a drawing request
   let version = 'observed'
   const commands: unknown[] = []
   let drawingRequests = 0
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
   await page.route('**/api/ai/action-batch', (route) => {
     drawingRequests++
+
     return route.abort()
   })
   // Deterministic transport fixture; canonical durable state is tested by the host suite.
   await page.route(`**${ToolLibraryManagement.endpoint}`, async (route) => {
     const input = route.request().postDataJSON()
+
     commands.push(input)
     if (input.operation !== 'list') {
       expect(input).toEqual({
@@ -56,9 +59,11 @@ test('manages saved metadata in the conversation panel without a drawing request
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
   const before = await getUndoHistoryDepth(page)
+
   await page.getByRole('button', { name: 'Open Agent' }).click()
   await page.getByRole('button', { name: 'Saved tools', exact: true }).click()
   const panel = page.getByRole('region', { name: 'Saved tools', exact: true })
+
   await expect(
     panel.getByText('facade.editable-window-grid', { exact: true })
   ).toBeVisible()
@@ -67,9 +72,11 @@ test('manages saved metadata in the conversation panel without a drawing request
   ).toBeVisible()
   const bounds = await panel.boundingBox()
   const viewport = page.viewportSize()
+
   if (!bounds || !viewport) {
     throw new Error('Expected visible saved tools panel')
   }
+
   expect(bounds.x).toBeGreaterThanOrEqual(0)
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width)
   await page.screenshot({ path: testInfo.outputPath('saved-tools.png') })

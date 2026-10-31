@@ -34,14 +34,17 @@ export const resolvePropertyComponentConfigRoles = (
 ) => {
   const defaults = isRecord(config.defaults) ? config.defaults : {}
   const inferredPersistKeys = Object.keys(defaults)
+
   if (config.children && !inferredPersistKeys.includes(config.children.key)) {
     inferredPersistKeys.push(config.children.key)
   }
+
   const persistKeys = config.persistKeys ?? inferredPersistKeys
   const unitKeys =
     config.unitKeys ?? persistKeys.filter((key) => key.endsWith('Unit'))
   const valueKeys =
     config.valueKeys ?? persistKeys.filter((key) => !unitKeys.includes(key))
+
   return { defaults, persistKeys, valueKeys, unitKeys }
 }
 
@@ -56,8 +59,10 @@ export const markPropertyComponentBatchRebindable = (
 ): void => {
   if (relation) {
     batchRebindablePropertyComponentRelations.set(component, { ...relation })
+
     return
   }
+
   batchRebindablePropertyComponentRelations.delete(component)
 }
 
@@ -65,6 +70,7 @@ export const getPropertyComponentBatchRebindableRelation = (
   component: PropertyComponentConstructor
 ): PropertyChildRelationDefinition | undefined => {
   const relation = batchRebindablePropertyComponentRelations.get(component)
+
   return relation ? { ...relation } : undefined
 }
 
@@ -75,6 +81,7 @@ export const arePropertyChildRelationsEqual = (
   if (!left || !right) {
     return left === right
   }
+
   return (
     left.key === right.key &&
     left.childType === right.childType &&
@@ -96,14 +103,17 @@ export const isPropertyComponentBatchRebindable = (
 
 class PropertyComponentRegistry {
   private registry = new MapRegistry<string, PropertyComponentConstructor>()
+
   private configDefinitions = new Map<
     string,
     PropertyComponentConfigRegistration
   >()
+
   private canonicalChildRelations = new Map<
     string,
     PropertyChildRelationDefinition
   >()
+
   private registrationRevisions = new Map<string, number>()
 
   private bumpRegistrationRevision(type: string): void {
@@ -125,6 +135,7 @@ class PropertyComponentRegistry {
     }
 
     const configChildRelation = configDefinition?.children
+
     if (
       configChildRelation &&
       canonicalChildRelation &&
@@ -137,7 +148,9 @@ class PropertyComponentRegistry {
         `Property component "${type}" has incoherent canonical child metadata`
       )
     }
+
     const childRelation = canonicalChildRelation ?? configChildRelation
+
     this.registry.register(type, component, {
       duplicateErrorMessage:
         options.duplicateErrorMessage ??
@@ -146,15 +159,18 @@ class PropertyComponentRegistry {
     if (canonicalChildRelation) {
       markPropertyComponentBatchRebindable(component, canonicalChildRelation)
     }
+
     if (childRelation) {
       this.canonicalChildRelations.set(type, { ...childRelation })
     }
+
     if (configDefinition) {
       this.configDefinitions.set(
         type,
         clonePropertyComponentConfigRegistration(configDefinition)
       )
     }
+
     this.bumpRegistrationRevision(type)
   }
 
@@ -170,6 +186,7 @@ class PropertyComponentRegistry {
     type: string
   ): PropertyComponentConfigRegistration | undefined {
     const definition = this.configDefinitions.get(type)
+
     return definition
       ? clonePropertyComponentConfigRegistration(definition)
       : undefined
@@ -179,6 +196,7 @@ class PropertyComponentRegistry {
     type: string
   ): PropertyChildRelationDefinition | undefined {
     const relation = this.canonicalChildRelations.get(type)
+
     return relation ? { ...relation } : undefined
   }
 
@@ -190,9 +208,11 @@ class PropertyComponentRegistry {
     const removedConfig = this.configDefinitions.delete(type)
     const removedCanonicalRelation = this.canonicalChildRelations.delete(type)
     const removedComponent = this.registry.delete(type)
+
     if (removedConfig || removedCanonicalRelation || removedComponent) {
       this.bumpRegistrationRevision(type)
     }
+
     return removedComponent
   }
 
@@ -207,16 +227,19 @@ class PropertyComponentRegistry {
       clonePropertyComponentConfigRegistration(configDefinition)
     )
     const childRelation = configDefinition.children
+
     if (childRelation) {
       this.canonicalChildRelations.set(type, { ...childRelation })
     } else {
       this.canonicalChildRelations.delete(type)
     }
+
     this.bumpRegistrationRevision(type)
   }
 
   clear(): void {
     const clearedTypes = this.registry.keys()
+
     this.registry.clear()
     this.configDefinitions.clear()
     this.canonicalChildRelations.clear()

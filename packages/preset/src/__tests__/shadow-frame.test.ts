@@ -9,6 +9,7 @@ function setup() {
     new THREE.BoxGeometry(),
     new THREE.MeshStandardMaterial()
   )
+
   caster.castShadow = true
   scene.add(caster)
   const shadowMap = { enabled: true, autoUpdate: true, needsUpdate: false }
@@ -21,6 +22,7 @@ function setup() {
         (shadowMap.autoUpdate || shadowMap.needsUpdate)
       ) {
         const names: string[] = []
+
         scene.traverseVisible((object) => {
           if (object.castShadow) {
             names.push(object.uuid)
@@ -32,11 +34,13 @@ function setup() {
     })
   }
   const draw = createShadowFrame(renderer)
+
   return { scene, camera, caster, renderer, shadows, draw, shadowMap }
 }
 
 it('shares shadow output, not color rendering, and invalidates visible caster configurations', () => {
   const f = setup()
+
   f.draw(f.scene, f.camera)
   f.draw(f.scene, f.camera)
   expect(f.shadows).toHaveLength(1)
@@ -59,6 +63,7 @@ it('shares shadow output, not color rendering, and invalidates visible caster co
 it('detects caster descendants hidden by a non-casting optical parent', () => {
   const f = setup()
   const parent = new THREE.Mesh()
+
   parent.add(f.caster)
   f.scene.add(parent)
   f.draw(f.scene, f.camera)
@@ -69,6 +74,7 @@ it('detects caster descendants hidden by a non-casting optical parent', () => {
 
 it('honors camera identity, explicit dirty requests and a new flush', () => {
   const f = setup()
+
   f.draw(f.scene, f.camera)
   f.shadowMap.needsUpdate = true
   f.draw(f.scene, f.camera)
@@ -79,6 +85,7 @@ it('honors camera identity, explicit dirty requests and a new flush', () => {
 
 it('preserves disabled shadows and manual shadow scheduling', () => {
   const f = setup()
+
   f.shadowMap.enabled = false
   f.draw(f.scene, f.camera)
   expect(f.shadows).toHaveLength(0)
@@ -94,6 +101,7 @@ it('preserves disabled shadows and manual shadow scheduling', () => {
 
 it('restores automatic shadows after failure and retries without reusing an incomplete pass', () => {
   const f = setup()
+
   f.draw(f.scene, f.camera)
   f.renderer.render.mockImplementationOnce(() => {
     expect(f.shadowMap.autoUpdate).toBe(false)

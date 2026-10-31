@@ -35,6 +35,7 @@ export function ExperimentResult({
       isPresentedRunStale(selectedRun, workcell, canonicalDraft, inputReader),
     [selectedRun, workcell, canonicalDraft, inputReader]
   )
+
   return (
     <>
       {!selectedRun && (
@@ -76,6 +77,7 @@ export function ExperimentResult({
 }
 
 const noSubscription = () => () => undefined
+
 const noState = () => null
 
 function ResultSaving({
@@ -94,10 +96,12 @@ function ResultSaving({
   const [pending, setPending] = useState(false)
   const active = useRef(false)
   const [error, setError] = useState('')
+
   const retry = async (action: () => unknown) => {
     if (active.current) {
       return
     }
+
     active.current = true
     setPending(true)
     setError('')
@@ -110,16 +114,20 @@ function ResultSaving({
       setPending(false)
     }
   }
+
   let label = 'Result could not be added to this project.'
+
   if (retained) {
     label = 'Saving to this project'
     if (state?.status === 'saved' && !state.dirty) {
       label = 'Saved to this project'
     }
+
     if (state?.status === 'error') {
       label = `Saving failed: ${state.error}`
     }
   }
+
   return (
     <div
       className="retention-actions text-[10px] text-sim-muted grid gap-2"

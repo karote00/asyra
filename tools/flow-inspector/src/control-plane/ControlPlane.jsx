@@ -156,6 +156,7 @@ function ControlPlaneView({
     }
 
     const close = () => setMenu(null)
+
     const escape = (event) => {
       if (event.key === 'Escape') {
         close()
@@ -183,6 +184,7 @@ function ControlPlaneView({
 
     try {
       const value = await request(route, body)
+
       setRevision((current) => current + 1)
 
       return value
@@ -239,6 +241,7 @@ function ControlPlaneView({
         onStepMenu={(stepId, event) => {
           event.preventDefault()
           const rect = event.currentTarget.getBoundingClientRect()
+
           setSelectedStep(stepId)
           setMenu({
             stepId,

@@ -19,6 +19,7 @@ test('explicit static production enables collection without enabling preview bui
     SITE_ENV: 'production',
     NEXT_PUBLIC_GA_MEASUREMENT_ID: configured.NEXT_PUBLIC_GA_MEASUREMENT_ID
   }
+
   assert.deepEqual(resolveGoogleSiteServices(staticEnvironment), {
     measurementId: configured.NEXT_PUBLIC_GA_MEASUREMENT_ID
   })
@@ -69,6 +70,7 @@ test('invalid production identifiers fail instead of injecting scripts', () => {
     )
     assert.throws(() => googleAnalyticsBootstrap(value), /measurement ID/)
   }
+
   assert.throws(
     () =>
       resolveGoogleSiteServices({
@@ -81,12 +83,15 @@ test('invalid production identifiers fail instead of injecting scripts', () => {
 
 test('the bootstrap initializes the official queue once without advertising signals', () => {
   const sandbox = {}
+
   sandbox.window = sandbox
   const script = googleAnalyticsBootstrap(
     configured.NEXT_PUBLIC_GA_MEASUREMENT_ID
   )
+
   vm.runInNewContext(script, sandbox)
   const events = Array.from(sandbox.dataLayer, (entry) => Array.from(entry))
+
   assert.equal(events[0][0], 'js')
   assert.equal(events[1][0], 'config')
   assert.equal(events[1][1], configured.NEXT_PUBLIC_GA_MEASUREMENT_ID)
@@ -105,6 +110,7 @@ test('the site build receives Google and indexing settings through Turbo', async
     await readFile(new URL('../turbo.json', import.meta.url), 'utf8')
   )
   const task = turbo.tasks['build:asyra-framework-site']
+
   for (const key of [
     'SITE_ENV',
     'NEXT_PUBLIC_GA_MEASUREMENT_ID',

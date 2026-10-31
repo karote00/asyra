@@ -18,5 +18,6 @@ export function generateRequestId(): string {
   }
 
   requestIdCounter++
+
   return `${Date.now()}-${requestIdCounter}`
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createPreparedDesignReview } from '../local-prepared-design-review'
 
 const signal = () => new AbortController().signal
+
 const setup = () => {
   let current = true
   let requirementRevision = 1
@@ -24,21 +25,28 @@ const setup = () => {
   const assess = vi.fn(() => {
     throw new Error('Model execution is forbidden')
   })
+
   const recipe = (id: string) => {
     const value = recipes.get(id)
+
     if (!value) {
       throw new Error('Missing fixture recipe')
     }
+
     return value
   }
+
   const options = {
     resolveRecipe: (id: string) => {
       const result = recipes.get(id)
+
       if (!result) {
         throw new Error('Unavailable artifact')
       }
+
       return result
     },
+
     context: () => ({
       criteria: {
         shape: { requirement: 'Draw a box' },
@@ -47,6 +55,7 @@ const setup = () => {
       requirementRevision,
       referenceImageIndexes: []
     }),
+
     resolveAttachment: async (parentId?: string) => ({
       workspaceId: 'workspace',
       parentId: parentId ?? 'workspace',
@@ -57,20 +66,25 @@ const setup = () => {
         { x: 0, y: 1 }
       ]
     }),
+
     attachmentCurrent: async () => current,
+
     // A foreign caller cannot reactivate the removed model hook.
     assess
   }
   const owner = createPreparedDesignReview(options)
+
   return {
     owner,
     options,
     assess,
     recipes,
     recipe,
+
     invalidate: () => {
       current = false
     },
+
     changeReferences: () => {
       requirementRevision++
     }
@@ -81,6 +95,7 @@ describe('tool-only prepared recipe checks', () => {
   it('checks data with no model call and never certifies appearance', async () => {
     const f = setup()
     const first = await f.owner.review({ artifactId: 'a' }, signal())
+
     expect(first).toMatchObject({
       status: 'pass',
       appearance: 'unverified',
@@ -101,6 +116,7 @@ describe('tool-only prepared recipe checks', () => {
 
   it('blocks compiler failures regardless of partial key or criterion coverage', async () => {
     const f = setup()
+
     f.recipe('a').findings.push({
       kind: 'requirement',
       key: 'body',
@@ -112,6 +128,7 @@ describe('tool-only prepared recipe checks', () => {
       { artifactId: 'a', keys: ['body'], criterionIds: ['material'] },
       signal()
     )
+
     expect(first.status).toBe('fail')
     expect(() => f.owner.assertApplicable('a')).toThrow(/correction/)
     f.recipes.set('alias', structuredClone(f.recipe('a')))
@@ -123,6 +140,7 @@ describe('tool-only prepared recipe checks', () => {
 
   it('iterates corrected source without losing provenance or invoking a model', async () => {
     const f = setup()
+
     f.recipe('a').findings.push({ kind: 'overflow', key: 'body' })
     await f.owner.review({ artifactId: 'a' }, signal())
     f.recipes.set('b', {
@@ -134,6 +152,7 @@ describe('tool-only prepared recipe checks', () => {
       { artifactId: 'b', previousArtifactId: 'a' },
       signal()
     )
+
     expect(next).toMatchObject({
       status: 'pass',
       previousReview: { artifactId: 'a', sourceChanged: true }
@@ -145,6 +164,7 @@ describe('tool-only prepared recipe checks', () => {
 
   it('requires current parent and source evidence before applying', async () => {
     const f = setup()
+
     await f.owner.review({ artifactId: 'a', parentId: 'parent' }, signal())
     expect(() => f.owner.assertApplicable('a', 'other')).toThrow(/parent/)
     f.changeReferences()
@@ -156,8 +176,10 @@ describe('tool-only prepared recipe checks', () => {
 
   it('invalidates selected-part reuse when containing source changes', async () => {
     const f = setup()
+
     await f.owner.review({ artifactId: 'a', keys: ['body'] }, signal())
     const source = f.recipe('a').recipe as { x?: number }
+
     source.x = 100
     expect(
       (await f.owner.review({ artifactId: 'a', keys: ['body'] }, signal()))
@@ -167,6 +189,7 @@ describe('tool-only prepared recipe checks', () => {
 
   it('reports stale attachments and does not approve them', async () => {
     const f = setup()
+
     f.invalidate()
     expect(
       (await f.owner.review({ artifactId: 'a' }, signal())).evidenceCurrent
@@ -178,6 +201,7 @@ describe('tool-only prepared recipe checks', () => {
 
   it('rejects missing, ambiguous and cancelled inputs without model fallback', async () => {
     const f = setup()
+
     for (const args of [
       { artifactId: 'missing' },
       { artifactId: 'a', keys: ['missing'] },
@@ -186,6 +210,7 @@ describe('tool-only prepared recipe checks', () => {
     ]) {
       await expect(f.owner.review(args, signal())).rejects.toThrow()
     }
+
     f.recipe('a').recipe = {
       children: [{ key: 'body' }, { key: 'body' }]
     }
@@ -193,6 +218,7 @@ describe('tool-only prepared recipe checks', () => {
       f.owner.review({ artifactId: 'a', keys: ['body'] }, signal())
     ).rejects.toThrow(/ambiguous/)
     const controller = new AbortController()
+
     controller.abort()
     await expect(
       f.owner.review({ artifactId: 'a' }, controller.signal)
@@ -203,6 +229,7 @@ describe('tool-only prepared recipe checks', () => {
 
 it('rejects known compiler failures even when the caller omits an explicit review', () => {
   const f = setup()
+
   f.recipe('a').findings.push({
     kind: 'requirement',
     key: 'body',
@@ -215,6 +242,7 @@ it('rejects known compiler failures even when the caller omits an explicit revie
 
 it('refreshes each retained parent receipt without replacing it with workspace evidence', async () => {
   const fixture = setup()
+
   fixture.recipes.set('b', structuredClone(fixture.recipe('a')))
   const invalid = new Set<string>()
   const resolveAttachment = vi.fn(async (parentId?: string) => ({
@@ -234,9 +262,11 @@ it('refreshes each retained parent receipt without replacing it with workspace e
     resolveAttachment,
     attachmentCurrent
   })
+
   await owner.review({ artifactId: 'a', parentId: 'tier-a' }, signal())
   await owner.review({ artifactId: 'b', parentId: 'tier-b' }, signal())
   const before = owner.read({ includePassed: true })
+
   resolveAttachment.mockClear()
   attachmentCurrent.mockClear()
   await owner.refresh(signal())
@@ -255,6 +285,7 @@ it('refreshes each retained parent receipt without replacing it with workspace e
     if (attachment.parentId === 'tier-a') {
       throw new Error('One receipt unavailable')
     }
+
     return true
   })
   await owner.refresh(signal())
@@ -276,13 +307,16 @@ it('does not retain a current attachment claim when its validity check fails', a
   let fail = false
   const owner = createPreparedDesignReview({
     ...fixture.options,
+
     attachmentCurrent: async () => {
       if (fail) {
         throw new Error('Evidence transport failed')
       }
+
       return true
     }
   })
+
   await owner.review({ artifactId: 'a' }, signal())
   fail = true
   await expect(owner.refresh(signal())).resolves.toBeUndefined()
@@ -312,6 +346,7 @@ it('reuses automatically published compiler checks and explicitly continues a co
   }
   const initial = session.prepare(draft)
   const before = owner.read({ includePassed: true }).items[0]
+
   expect(before.status).toBe('fail')
   await owner.review({ artifactId: initial.artifactId }, signal())
   expect(
@@ -321,6 +356,7 @@ it('reuses automatically published compiler checks and explicitly continues a co
   ).toEqual(before)
   expect(owner.read({ includePassed: true }).items).toHaveLength(2)
   const corrected = session.prepare({ ...draft, width: 40 })
+
   await owner.review(
     {
       artifactId: corrected.artifactId,
@@ -344,6 +380,7 @@ it('reuses semantic attachment checks across fresh receipts while validating cur
   let sequence = 0
   let sessionId = 'document-a'
   let width = 30
+
   f.options.resolveAttachment = async () => ({
     workspaceId: 'workspace',
     parentId: 'workspace',

@@ -6,6 +6,7 @@ const spec = requiredSpecValue(
   street.modules.find((m) => m.moduleId === 'streetlight-vintage-lantern'),
   "street.modules.find(\n  (m) => m.moduleId === 'streetlight-vintage-lantern'\n)"
 )
+
 /** Shape-preserving radial interpolation from the approved construction guide. */
 function profile(stations: number[][], lastDerivative = 0): number[][] {
   const h = stations.slice(1).map((s, i) => s[0] - stations[i][0])
@@ -14,21 +15,27 @@ function profile(stations: number[][], lastDerivative = 0): number[][] {
     if (i === 0) {
       return 0
     }
+
     if (i === stations.length - 1) {
       return lastDerivative
     }
+
     if (d[i - 1] * d[i] <= 0) {
       return 0
     }
+
     const a = 2 * h[i] + h[i - 1],
       b = h[i] + 2 * h[i - 1]
+
     return (a + b) / (a / d[i - 1] + b / d[i])
   })
+
   return stations
     .slice(0, -1)
     .flatMap(([z, r], i) =>
       Array.from({ length: 8 }, (_, j) => {
         const u = j / 8
+
         return [
           (2 * u ** 3 - 3 * u * u + 1) * r +
             (u ** 3 - 2 * u * u + u) * h[i] * slopes[i] +
@@ -45,35 +52,45 @@ function profile(stations: number[][], lastDerivative = 0): number[][] {
       ]
     ])
 }
+
 /** Closed ruled prism; matching polygon vertices preserve the specified slope. */
 function prism(bottom: Vec[], top: Vec[]): Mesh {
   const m = emptyMesh(),
     n = bottom.length
+
   for (const p of [...bottom, ...top]) {
     m.positions.push(...p)
     m.uvs.push((p[0] + 0.3) / 0.6, (p[2] - 1.94) / 0.8)
   }
+
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n
+
     m.indices.push(i, j, j + n, i, j + n, i + n)
   }
+
   for (let i = 1; i < n - 1; i++) {
     m.indices.push(0, i + 1, i, n, n + i, n + i + 1)
   }
+
   return m
 }
+
 const square = (half: number, z: number): Vec[] => [
   [-half, -half, z],
   [half, -half, z],
   [half, half, z],
   [-half, half, z]
 ]
+
 export function lantern(): AssetPart[] {
   const s = spec,
     metal = 0x393b37,
     p: AssetPart[] = []
+
   const revolve = (id: string, stations: number[][], color = metal) =>
     p.push(part(id, lathe(profile(stations), 64), color, 'metal'))
+
   revolve('foot', [
     [0, 0],
     ...requiredSpecValue(s.foot, 's.foot').latheZRadiusMetres
@@ -85,7 +102,9 @@ export function lantern(): AssetPart[] {
       c.partId === 'foot-collar' ? 0x756344 : metal
     )
   }
+
   const shaft = requiredSpecValue(s.shaft, 's.shaft')
+
   p.push(
     part(
       'shaft',
@@ -101,12 +120,14 @@ export function lantern(): AssetPart[] {
     )
   )
   revolve('neck', requiredSpecValue(s.neck, 's.neck').latheZRadiusMetres)
+
   const f = requiredSpecValue(s.frame, 's.frame'),
     [z0, z1] = f.zRangeMetres,
     a = (z: number) =>
       f.bottomOuterSideMetres / 2 +
       (((f.topOuterSideMetres - f.bottomOuterSideMetres) / 2) * (z - z0)) /
         (z1 - z0)
+
   p.push(
     part(
       'tray',
@@ -129,15 +150,18 @@ export function lantern(): AssetPart[] {
       [z0 + f.bottomRingHeightMetres, z1 - f.topRingHeightMetres, -1, -1],
       [z0 + f.bottomRingHeightMetres, z1 - f.topRingHeightMetres, 1, 1]
     ]
+
     for (const [i, [lo, hi, left, right]] of segments.entries()) {
       const section = (z: number): Vec[] => {
         const half = a(z)
         let x0 = -half,
           x1 = half
+
         if (left === right) {
           x0 = left < 0 ? -half : half - f.postFaceWidthMetres
           x1 = right < 0 ? -half + f.postFaceWidthMetres : half
         }
+
         return [
           [x0, -half, z],
           [x1, -half, z],
@@ -145,7 +169,9 @@ export function lantern(): AssetPart[] {
           [x0, -half + f.wallDepthAlongXYMetres, z]
         ]
       }
+
       const mesh = emptyMesh()
+
       append(
         mesh,
         prism(section(lo), section(hi)),
@@ -154,9 +180,11 @@ export function lantern(): AssetPart[] {
       )
       p.push(part(`frame-${face}-${i}`, mesh, metal, 'metal'))
     }
+
     const g = requiredSpecValue(s.glass, 's.glass'),
       section = (z: number, width: number): Vec[] => {
         const front = -a(z) + g.frontPlaneSetbackAlongXYMetres
+
         return [
           [-width / 2, front, z],
           [width / 2, front, z],
@@ -164,7 +192,9 @@ export function lantern(): AssetPart[] {
           [-width / 2, front + g.wallThicknessMetres, z]
         ]
       }
+
     const pane = emptyMesh()
+
     append(
       pane,
       prism(
@@ -176,7 +206,9 @@ export function lantern(): AssetPart[] {
     )
     p.push(part(`pane-${face}`, pane, 0xe6c47f, 'plain'))
   }
+
   const r = requiredSpecValue(s.roof, 's.roof')
+
   p.push(
     ...placeParts(
       [
@@ -214,13 +246,17 @@ export function lantern(): AssetPart[] {
     (ftop.topSphereStartZMetres - ftop.topSphereCentreZMetres) /
       ftop.topSphereRadiusMetres
   )
+
   for (let i = 1; i <= 24; i++) {
     const t = start * (1 - i / 24)
+
     fp.push([
       ftop.topSphereRadiusMetres * Math.sin(t),
       ftop.topSphereCentreZMetres + ftop.topSphereRadiusMetres * Math.cos(t)
     ])
   }
+
   p.push(part('finial', lathe(fp, 64), metal, 'metal'))
+
   return p
 }

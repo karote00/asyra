@@ -17,14 +17,18 @@ import { withSourceWitness } from './witness-transport-control'
 function historicalContext(): OriginalMeshQuery {
   const context = new OriginalMeshQuery()
   const make = context.createStaticSampler.bind(context)
+
   context.createStaticSampler = (settings) => {
     const sample = make(settings)
+
     return (a, b, origin, source) => sample(a, b, origin, source)
   }
+
   return context
 }
 
 const ops = kinematics.poseOperations(kinematics.intervalAlgebra)
+
 interface Packet {
   shapes: readonly [ConvexShape, ConvexShape]
   evidence: DistanceEvidence
@@ -32,8 +36,10 @@ interface Packet {
   time: number
   boundary: number
 }
+
 const copyInterval = (value: Interval): Interval =>
   Object.freeze([value[0], value[1]])
+
 function copyShape(shape: ConvexShape): ConvexShape {
   return Object.freeze({
     geometry: shape.geometry,
@@ -47,6 +53,7 @@ function copyShape(shape: ConvexShape): ConvexShape {
     })
   })
 }
+
 function transportBackward(
   source: Packet,
   target: {
@@ -70,23 +77,30 @@ function transportBackward(
   ) {
     throw new Error('Invalid adjacent source provenance')
   }
+
   tick()
   const a = localPoint(source.shapes[0].pose, source.evidence.witnessA)
+
   tick()
   const b = localPoint(source.shapes[1].pose, source.evidence.witnessB)
+
   tick()
   const wa = ops.add(
     target.shapes[0].pose.position,
     ops.rotate(target.shapes[0].pose.rotation, a)
   )
+
   tick()
   const wb = ops.add(
     target.shapes[1].pose.position,
     ops.rotate(target.shapes[1].pose.rotation, b)
   )
+
   tick()
+
   return { a: wa, b: wb, upper: ops.norm(ops.sub(wa, wb))[1] }
 }
+
 afterEach(() => vi.restoreAllMocks())
 
 it('encloses exact source vertices and their rational squared distance while transporting backward in time', () => {
@@ -95,6 +109,7 @@ it('encloses exact source vertices and their rational squared distance while tra
     kind: 'box' as const,
     size: [1 / 4, 1 / 4, 1 / 4] as const
   }
+
   const shape = (
     position: readonly [number, number, number],
     rotation: readonly [number, number, number, number] = [0, 0, 0, 1]
@@ -102,6 +117,7 @@ it('encloses exact source vertices and their rational squared distance while tra
     geometry,
     pose: ops.fromPose({ ...IDENTITY_POSE, position, rotation })
   })
+
   const source: Packet = {
     segment: 1,
     time: 1,
@@ -140,6 +156,7 @@ it('encloses exact source vertices and their rational squared distance while tra
     },
     () => work++
   )
+
   expect(work).toBe(6)
   result.a.forEach((axis) => {
     expect(axis[0]).toBeLessThanOrEqual(1 / 8)
@@ -150,18 +167,23 @@ it('encloses exact source vertices and their rational squared distance while tra
     expect(axis[1]).toBeGreaterThanOrEqual(0)
   })
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, result.upper)
   const bits = view.getBigUint64(0),
     exponent = Number((bits >> 52n) & 2047n)
   let n = bits & ((1n << 52n) - 1n)
+
   if (exponent) {
     n += 1n << 52n
   }
+
   const shift = exponent ? exponent - 1075 : -1074,
     d = shift < 0 ? 1n << BigInt(-shift) : 1n
+
   if (shift >= 0) {
     n <<= BigInt(shift)
   }
+
   expect(n * n * 64n).toBeGreaterThanOrEqual(d * d * 3n)
 })
 
@@ -174,9 +196,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (pair) =>
           pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
       )
+
       if (!pair) {
         throw new Error('Missing admitted pair')
       }
+
       const sourceTime = snapshot.trajectory.keyframes[114].time,
         targetTime = snapshot.trajectory.keyframes[113].time
       const context = historicalContext()
@@ -196,8 +220,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         witness(...args: unknown[]): DistanceEvidence['witnessA']
       }
       const witness = initialOwner.witness.bind(context)
+
       initialOwner.witness = (...args) => {
         const result = witness(...args)
+
         if (inTarget) {
           initialPoints.push(result)
           if (
@@ -208,25 +234,31 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             firstWarningWork = context.work - targetBefore
           }
         }
+
         return result
       }
+
       const project = projection.projectedBoundsGap
+
       vi.spyOn(projection, 'projectedBoundsGap').mockImplementation(
         (a, ap, b, bp, threshold, checkpoint) =>
           project(a, ap, b, bp, threshold, () => {
             if (inTarget) {
               targetAxes++
             }
+
             checkpoint()
           })
       )
       const contains = membership.shapeMembership
+
       vi.spyOn(membership, 'shapeMembership').mockImplementation(
         (point, shape, index, checkpoint) =>
           contains(point, shape, index, () => {
             if (inTarget) {
               targetMembership++
             }
+
             checkpoint()
           })
       )
@@ -234,30 +266,39 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         transported: ReturnType<typeof transportBackward> | undefined
       const order: { segment: number; time: number }[] = []
       const interpolate = kinematics.interpolateSegment
+
       vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
         (...args) => {
           segment = args[1]
           if (!Array.isArray(args[2])) {
             throw new Error('Expected actual interval input')
           }
+
           time = [args[2][0], args[2][1]]
+
           return interpolate(...args)
         }
       )
+
       const tick = () => {
         const before = context.work
+
         try {
           context.chargeSourceWitness()
         } finally {
           addedWork += context.work - before
         }
       }
+
       const solve = convex.convexDistance
+
       vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
         const result = solve(...args)
+
         if (inTarget) {
           targetConvex++
         }
+
         if (
           inTarget &&
           firstWarningWork === undefined &&
@@ -265,17 +306,22 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         ) {
           firstWarningWork = context.work - targetBefore
         }
+
         return result
       })
       const distance = context.distance.bind(context)
+
       context.distance = (a, b, threshold, tolerance, iterations) => {
         if (!time || time[0] !== time[1]) {
           throw new Error('Expected actual static query')
         }
+
         const actualTime = time[0],
           actualSegment = segment
+
         order.push({ segment: actualSegment, time: actualTime })
         const isTarget = actualSegment === 113 && actualTime === targetTime
+
         if (isTarget) {
           if (
             !packet ||
@@ -284,6 +330,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           ) {
             throw new Error('Missing completed earlier segment source')
           }
+
           transported = transportBackward(
             packet,
             {
@@ -298,7 +345,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           initialPoints = []
           inTarget = true
         }
+
         let result: DistanceEvidence
+
         try {
           result = distance(a, b, threshold, tolerance, iterations)
         } finally {
@@ -307,6 +356,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             inTarget = false
           }
         }
+
         if (actualSegment === 114 && actualTime === sourceTime) {
           expect(result.penetration).toBe(false)
           expect(result.lower).toBeGreaterThan(0)
@@ -319,12 +369,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             if (shape.geometry.kind !== 'mesh') {
               throw new Error('Expected original mesh')
             }
+
             expect(
               Object.isFrozen(shape.geometry) &&
                 Object.isFrozen(shape.geometry.positions) &&
                 Object.isFrozen(shape.geometry.indices)
             ).toBe(true)
           }
+
           tick()
           packet = Object.freeze({
             segment: actualSegment,
@@ -345,11 +397,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             })
           })
         }
+
         if (isTarget) {
           targetResult = result
         }
+
         return result
       }
+
       const result = queryOriginalPartPair(
         {
           workcell: snapshot.workcell,
@@ -366,10 +421,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         () => undefined,
         context
       )
+
       expect(result.coverage).toBe('complete')
       const sourceLeaves = result.leaves.filter(
         (leaf) => leaf.start >= sourceTime
       )
+
       expect(sourceLeaves.length).toBeGreaterThan(0)
       expect(sourceLeaves.every((leaf) => leaf.state !== 'unresolved')).toBe(
         true
@@ -378,6 +435,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         snapshot.trajectory.keyframes[115].time
       )
       const firstTarget = order.findIndex((row) => row.segment === 113)
+
       expect(firstTarget).toBeGreaterThan(0)
       expect(order.slice(firstTarget).every((row) => row.segment === 113)).toBe(
         true
@@ -387,6 +445,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       if (!packet || !targetResult || !transported) {
         throw new Error('Missing actual boundary evidence')
       }
+
       // eslint-disable-next-line no-console -- passive upper eligibility and cost limit, never an actual saving
       console.info(
         JSON.stringify({
@@ -427,11 +486,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (pair) =>
           pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
       )
+
       if (!pair) {
         throw new Error('Missing admitted pair')
       }
+
       const sourceTime = snapshot.trajectory.keyframes[114].time,
         targetTime = snapshot.trajectory.keyframes[113].time
+
       const run = (enabled: boolean) => {
         vi.restoreAllMocks()
         const context = historicalContext()
@@ -454,21 +516,26 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           evidence: DistanceEvidence
         }[] = []
         const interpolate = kinematics.interpolateSegment
+
         vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
           (...args) => {
             segment = args[1]
             if (!Array.isArray(args[2])) {
               throw new Error('Expected actual interval input')
             }
+
             time = [args[2][0], args[2][1]]
+
             return interpolate(...args)
           }
         )
         const solve = convex.convexDistance
+
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
           if (inTarget) {
             targetConvex++
           }
+
           return solve(...args)
         })
         for (const [key, add] of [
@@ -492,8 +559,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           ]
         ] as const) {
           const charge = context[key].bind(context)
+
           context[key] = () => {
             const before = context.work
+
             try {
               return charge()
             } finally {
@@ -501,36 +570,46 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             }
           }
         }
+
         const tick = () => {
           const before = context.work
+
           try {
             context.chargeSourceWitness()
           } finally {
             addedWork += context.work - before
           }
         }
+
         const lower = context.lowerOver.bind(context)
+
         context.lowerOver = (...args) => {
           const before = context.work
+
           try {
             return lower(...args)
           } finally {
             lowerWork += context.work - before
           }
         }
+
         const distance = context.distance.bind(context)
+
         context.distance = (a, b, threshold, tolerance, iterations) => {
           if (!time || time[0] !== time[1]) {
             throw new Error('Expected actual static query')
           }
+
           const at = time[0],
             index = segment,
             isTarget = index === 113 && at === targetTime
           const beforeTransport = context.work
+
           if (enabled && isTarget) {
             if (!packet) {
               throw new Error('Expected actual completed source')
             }
+
             transported = transportBackward(
               packet,
               {
@@ -542,9 +621,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               tick
             )
           }
+
           const before = context.work
+
           inTarget = isTarget
           let evidence: DistanceEvidence
+
           try {
             evidence =
               enabled && isTarget && transported
@@ -557,8 +639,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             if (isTarget) {
               targetWork = context.work - beforeTransport
             }
+
             inTarget = false
           }
+
           samples.push({ segment: index, time: at, evidence })
           if (enabled && index === 114 && at === sourceTime) {
             expect(evidence.penetration).toBe(false)
@@ -572,12 +656,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               if (shape.geometry.kind !== 'mesh') {
                 throw new Error('Expected original source mesh')
               }
+
               expect(
                 Object.isFrozen(shape.geometry) &&
                   Object.isFrozen(shape.geometry.positions) &&
                   Object.isFrozen(shape.geometry.indices)
               ).toBe(true)
             }
+
             tick()
             packet = Object.freeze({
               segment: index,
@@ -598,8 +684,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               })
             })
           }
+
           return evidence
         }
+
         const started = performance.now()
         const evidence = queryOriginalPartPair(
           {
@@ -624,10 +712,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           handoffWork,
           derivationWork
         }
+
         expect(
           Object.values(categories).reduce((sum, value) => sum + value, 0)
         ).toBe(context.work)
         expect(Object.hasOwn(context, 'witness')).toBe(false)
+
         return {
           evidence,
           samples,
@@ -640,13 +730,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           milliseconds: performance.now() - started
         }
       }
+
       const control = run(false),
         candidate = run(true)
       const differences = candidate.samples.flatMap((sample, index) => {
         const baseline = control.samples[index]
+
         if (JSON.stringify(sample) === JSON.stringify(baseline)) {
           return []
         }
+
         return [
           {
             segment: sample.segment,
@@ -663,6 +756,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         ]
       })
+
       // eslint-disable-next-line no-console -- one bounded actual delta, including failed strict observables
       console.info(
         JSON.stringify({
@@ -692,9 +786,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const baselineTarget = control.samples.find(
         (sample) => sample.segment === 113 && sample.time === targetTime
       )
+
       if (!target || !baselineTarget || !candidate.transported) {
         throw new Error('Missing injected target')
       }
+
       // The original solver may improve the certified initial source upper.
       expect(target.evidence.upper).toBeLessThan(candidate.transported.upper)
       expect(target.evidence.witnessA).toEqual(baselineTarget.evidence.witnessA)

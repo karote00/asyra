@@ -55,6 +55,7 @@ function input(x = 1, y = 0, threshold = 0.1, error = 0) {
     rule: { version: 1, revision: 1, minimumClearance: threshold },
     budget: { maxIntervals: 20, maxDurationMs: 1000 }
   }
+
   return { workcell, definition }
 }
 
@@ -79,6 +80,7 @@ describe('independent static sphere method', () => {
       const frozen = snapshot(input(x, y)),
         evidence = runStaticSphereMethod(frozen)
       const pair = evidence.pairs[0].evidence
+
       expect(pair.lower).toBeLessThanOrEqual(exact)
       expect(pair.upper).toBeGreaterThanOrEqual(exact)
       expect((pair.upper ?? Infinity) - pair.lower).toBeLessThan(1e-10)
@@ -87,6 +89,7 @@ describe('independent static sphere method', () => {
         startedAt: 1,
         endedAt: 2
       })
+
       expect(result.coverage).toBe('complete')
       expect(result.verdict).toBe(exact === 0 ? 'does-not-meet' : 'meets')
       expect(result.method.id).toBe(STATIC_SPHERE_METHOD.id)
@@ -101,6 +104,7 @@ describe('independent static sphere method', () => {
     ]) {
       const frozen = snapshot(source),
         evidence = runStaticSphereMethod(frozen)
+
       expect(evidence.coverage).toBe('partial')
       expect(evidence.pairs[0].evidence.leaves[0].penetration).toBe(false)
       expect(
@@ -115,6 +119,7 @@ describe('independent static sphere method', () => {
 
   it('uses shared joint and body-local collider poses, not only body origins', () => {
     const source = input(1)
+
     source.workcell.robotRootId = 'root'
     source.workcell.bodies[0].role = 'link'
     source.workcell.bodies[0].parentId = 'root'
@@ -142,18 +147,21 @@ describe('independent static sphere method', () => {
     ]
     const evidence = runStaticSphereMethod(snapshot(source)),
       exact = Math.sqrt(1.25) - 0.25
+
     expect(evidence.pairs[0].evidence.lower).toBeLessThanOrEqual(exact)
     expect(evidence.pairs[0].evidence.upper).toBeGreaterThanOrEqual(exact)
   })
 
   it('rejects motion and unsupported shapes in preflight', () => {
     const motion = input()
+
     motion.definition.trajectory.keyframes = [
       { time: 0, joints: {} },
       { time: 1, joints: {} }
     ]
     motion.definition.interval = [0, 1]
     const box = input()
+
     box.workcell.bodies[1].colliders[0].geometry = {
       kind: 'box',
       size: [1, 1, 1]
@@ -175,12 +183,14 @@ describe('independent static sphere method', () => {
       [20, 1000]
     ]) {
       const source = input(offset, 0, 0)
+
       source.workcell.bodies = [
         sphere('a', 0, 0, radius),
         sphere('b', offset, 0, radius)
       ]
       const pair = runStaticSphereMethod(snapshot(source)).pairs[0].evidence
       const expected = offset - 2 * radius
+
       expect(pair.lower).toBeLessThanOrEqual(expected)
       expect(pair.upper).toBeGreaterThanOrEqual(expected)
       expect(pair.coverage).toBe('complete')
@@ -189,6 +199,7 @@ describe('independent static sphere method', () => {
 
   it('retains unevaluated pairs and propagates cooperative cancellation', () => {
     const source = input()
+
     source.workcell.bodies = [...source.workcell.bodies, sphere('c', 2)]
     source.definition.scope.influencingBodyIds = ['b', 'c']
     source.definition.budget.maxIntervals = 1
@@ -199,6 +210,7 @@ describe('independent static sphere method', () => {
       () => undefined,
       (pair) => received.push(pair.pairId)
     )
+
     expect(evidence.evaluations).toBe(1)
     expect(evidence.coverage).toBe('partial')
     expect(evidence.pairs[1].evidence).toMatchObject({

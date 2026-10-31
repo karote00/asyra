@@ -18,11 +18,13 @@ const listTests = (config, environment = {}) => {
       env: { ...process.env, ...environment }
     }
   )
+
   assert.equal(
     result.status,
     0,
     `Playwright discovery failed for ${config}:\n${result.stderr}`
   )
+
   return result.stdout
 }
 
@@ -194,6 +196,7 @@ test('Playwright routes the formal backend through the same document-session flo
       /yarn workspace @asyra\/asyra-design test:e2e:status-toast/
     )
   }
+
   assert.doesNotMatch(
     viteConfig,
     /['"]\/api\/documents['"]|DOCUMENT_PERSISTENCE_BACKEND_URL/,
@@ -367,6 +370,7 @@ test('the AI CRDT recording owns dedicated fresh app and collaboration servers',
       "test('records two live CRDT clients while Agent creates"
     )
   )
+
   assert.match(
     recordingSource,
     /chromium\.launchPersistentContext\([\s\S]*--window-position=\$\{left\},\$\{top\}[\s\S]*--window-size=\$\{width\},\$\{height\}/
@@ -420,6 +424,7 @@ test('the AI CRDT recording owns dedicated fresh app and collaboration servers',
       "test('keeps two connected Actors converged through one complete high-detail cat Undo and Redo'"
     )
   )
+
   assert.match(
     recordingSource,
     /creationActorADurationMs\)\.toBeLessThanOrEqual\(\s*HIGH_DETAIL_ACTOR_A_CREATION_TIMEOUT_MS\s*\)/
@@ -476,6 +481,7 @@ test('the AI CRDT recording owns dedicated fresh app and collaboration servers',
   const historyRedoDeadlineIndex = highDetailHistoryCase.indexOf(
     'expect(evidence.redoConvergenceMs).toBeLessThanOrEqual('
   )
+
   assert.ok(
     historyActorADeadlineIndex >= 0 &&
       historyActorADeadlineIndex < historyActorBWaitIndex &&
@@ -676,6 +682,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const appServerSource = configSource.slice(
     configSource.indexOf("trackedServerCommand(\n      'app-server'")
   )
+
   assert.match(websocketServerSource, /stdout:\s*['"]pipe['"]/)
   assert.doesNotMatch(appServerSource, /stdout:\s*['"]pipe['"]/)
   assert.doesNotMatch(configSource, /endpointLocalOnly|ENDPOINT_LOCAL_ONLY/)
@@ -791,6 +798,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const singleActorAppURL'),
     specSource.indexOf('const waitForCollaboration')
   )
+
   assert.match(localURLSource, /fileId/)
   assert.match(
     specSource,
@@ -800,6 +808,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf("test('single-Actor local attribution'"),
     specSource.indexOf("test('creation-only high-detail endpoint proof'")
   )
+
   assert.ok(
     localAttributionSource.indexOf('await createActor(') <
       localAttributionSource.indexOf('await waitForGuardReady('),
@@ -830,6 +839,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     localAttributionSource.indexOf("startGuardPhase('local-request')"),
     localAttributionSource.indexOf("endGuardPhase('local-request')")
   )
+
   assert.doesNotMatch(
     measuredLocalRequestSource,
     /getBy|\.locator\(|expect\(|\.fill\(|\.boundingBox\(/
@@ -862,6 +872,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const createLocalAttributionHeartbeatController'),
     specSource.indexOf('const readCanonicalSummary')
   )
+
   assert.match(localHeartbeatControllerSource, /latestCompletedPhase/)
   assert.match(localHeartbeatControllerSource, /activeHeartbeatPhase/)
   assert.match(
@@ -880,6 +891,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf("test('two-Actor operation and idle attribution'"),
     specSource.indexOf("test('creation-only high-detail endpoint proof'")
   )
+
   assert.match(twoActorActivitySource, /Performance\.getMetrics/)
   assert.match(twoActorActivitySource, /summarizeRendererPerformanceWindow/)
   assert.match(twoActorActivitySource, /prepareAiTurn\(\s*actorA/)
@@ -929,6 +941,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const prepareAiTurn'),
     specSource.indexOf('const triggerPreparedAiTurn')
   )
+
   assert.match(
     preparedTurnSource,
     /\.fill\(prompt\)[\s\S]*click\(\{\s*trial:\s*true\s*\}\)[\s\S]*boundingBox\(\)[\s\S]*data-endpoint-prepared-ai-submit/
@@ -937,6 +950,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const triggerPreparedAiTurn'),
     specSource.indexOf('const assertPreparedAiTurnSettled')
   )
+
   assert.match(triggerPreparedTurnSource, /page\.mouse\.click/)
   assert.match(specSource, /turnAccepted/)
   assert.match(specSource, /readLatestTurnSettlement/)
@@ -957,6 +971,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   assert.match(specSource, /readViewportPosition/)
   assert.match(specSource, /readZoom/)
   const coreDebugHandle = ['__', 'Core', '__'].join('')
+
   assert.equal(specSource.includes(coreDebugHandle), false)
   assert.match(specSource, /RuntimeDiagnosticEvents\.REQUEST/)
   assert.match(
@@ -980,6 +995,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const highDetailSource = specSource.slice(
     specSource.indexOf("test('creation-only high-detail endpoint proof'")
   )
+
   assert.doesNotMatch(highDetailSource, /readCanonicalSummary\(actorB\)/)
   assert.match(highDetailSource, /receiverConvergenceSummary/)
   assert.match(
@@ -1002,6 +1018,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const totalDeadlineIndex = highDetailSource.indexOf(
     'expect(totalCreationFlowMs).toBeLessThanOrEqual('
   )
+
   assert.ok(
     actorADeadlineIndex >= 0 &&
       actorADeadlineIndex < actorBWaitIndex &&
@@ -1017,6 +1034,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const recordAttempt ='),
     specSource.indexOf('const rectangleControl')
   )
+
   assert.match(interactionAttemptObserverSource, /requestAnimationFrame/)
   assert.doesNotMatch(interactionAttemptObserverSource, /queueMicrotask/)
   assert.match(highDetailSource, /deleteKeyBlocked/)
@@ -1039,6 +1057,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const installLocalInteractionProbe'),
     specSource.indexOf('const waitForLocalInteractionProbe')
   )
+
   assert.match(localInteractionProbeSource, /MutationObserver/)
   assert.match(localInteractionProbeSource, /waitForBoundedProbeFrames/)
   assert.match(
@@ -1054,6 +1073,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const createHeartbeatController ='),
     specSource.indexOf('const installLocalInteractionProbe =')
   )
+
   assert.equal(
     heartbeatControllerSource.match(/delay\(ENDPOINT_HEARTBEAT_INTERVAL_MS\)/g)
       ?.length,
@@ -1094,6 +1114,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const highDetailFailureSource = highDetailSource.slice(
     highDetailSource.indexOf('} catch (error) {')
   )
+
   assert.equal(
     highDetailFailureSource.match(/readFinalDiagnostics\(\s*actorA/g)?.length,
     1
@@ -1154,6 +1175,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const creationMarkIndex = highDetailSource.indexOf(
     'heartbeat.markCreationStarted(creationStartedAtMs)'
   )
+
   assert.ok(creationPhaseIndex >= 0)
   assert.ok(guardedCreationHeartbeatIndex > creationPhaseIndex)
   assert.ok(creationStartedAtIndex > guardedCreationHeartbeatIndex)
@@ -1168,6 +1190,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     ),
     highDetailSource.indexOf('triggerPreparedAiTurn(preparedTurn)')
   )
+
   assert.doesNotMatch(requestReadyToDispatchSource, /heartbeat\.sample\(\)/)
   assert.equal(
     requestReadyToDispatchSource.match(
@@ -1197,6 +1220,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const deleteInputIndex = highDetailSource.indexOf(
     "actorA.keyboard.press('Delete')"
   )
+
   assert.ok(firstVisibleHandoffIndex > creationMarkIndex)
   assert.ok(firstMouseMoveIndex > firstVisibleHandoffIndex)
   assert.ok(quarterProgressIndex > firstMouseMoveIndex)
@@ -1249,6 +1273,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const actorBNavigationIndex = stagedBootstrapSource.indexOf(
     "'actor-b-navigation'"
   )
+
   assert.ok(actorACreateIndex >= 0)
   assert.ok(actorBBrowserLaunchIndex > actorACollaborationReadyIndex)
   assert.ok(actorBCreateIndex > actorBBrowserLaunchIndex)
@@ -1276,6 +1301,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const createActor = async ('),
     specSource.indexOf('const prepareEndpointActorsSequentially = async (')
   )
+
   assert.match(
     createActorSource,
     /const context = await browser\.newContext[\s\S]*try\s*{[\s\S]*await context\.newPage\(\)[\s\S]*catch[\s\S]*await context\.close\(\)/
@@ -1295,6 +1321,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const postPhaseBoundary'),
     specSource.indexOf('const waitForGuardReady')
   )
+
   assert.match(
     phaseBoundarySource,
     /AbortSignal\.timeout\(RESOURCE_GUARD_PHASE_BOUNDARY_TIMEOUT_MS\)/
@@ -1303,6 +1330,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const initialHeartbeatIndex = highDetailSource.indexOf(
     'const initialHeartbeat = await heartbeat.sample()'
   )
+
   assert.ok(initialHeartbeatIndex >= 0)
   assert.ok(initialHeartbeatIndex < guardReadyIndex)
   assert.match(specSource, /browserErrors/)
@@ -1322,6 +1350,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     specSource.indexOf('const readActorSample'),
     specSource.indexOf('const delay')
   )
+
   assert.match(
     actorSampleSource,
     /requestRuntimeDiagnostic\(page,\s*['"]profile:read-actor-sample['"]\)/
@@ -1390,6 +1419,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const responseOverlayIndex = endpointPreparation.indexOf(
     'node e2e/prepare-server-response-preview.mjs'
   )
+
   assert.ok(clientBuildIndex >= 0)
   assert.ok(
     collaborationBuildIndex > clientBuildIndex,
@@ -1425,8 +1455,10 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
 
 test('continuous navigation measurement stays outside CI and ordinary discovery', () => {
   const ordinary = listTests('playwright.config.ts', { CI: 'true' })
+
   assert.doesNotMatch(ordinary, /continuous-navigation\.local\.spec\.ts/)
   const local = listTests('playwright.navigation-local.config.ts', { CI: '' })
+
   assert.match(local, /continuous-navigation\.local\.spec\.ts/)
   assert.match(local, /chromium-dpr-1/)
   assert.match(local, /chromium-dpr-2/)
@@ -1446,6 +1478,7 @@ test('continuous navigation measurement stays outside CI and ordinary discovery'
       env: { ...process.env, CI: 'true' }
     }
   )
+
   assert.notEqual(rejected.status, 0)
   assert.match(
     rejected.stderr,
@@ -1462,6 +1495,7 @@ test('personal recording scenarios stay outside ordinary CI discovery', () => {
         /local-ai-provider\.spec\.ts/.test(line) &&
         /recording|local subscription draws the upper two Taipei/.test(line)
     )
+
   assert.deepEqual(
     personal,
     [],
@@ -1487,13 +1521,16 @@ test('personal automation and duplicate document bytes remain outside Git', () =
       cwd: appDirectory,
       encoding: 'utf8'
     })
+
     assert.equal(ignored.status, 0, `${file} must stay local`)
   }
+
   const archive = 'e2e/fixtures/large-document/Taipei-101-full-document.zip'
   const included = spawnSync('git', ['check-ignore', '--no-index', archive], {
     cwd: appDirectory,
     encoding: 'utf8'
   })
+
   assert.equal(
     included.status,
     1,

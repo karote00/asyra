@@ -18,6 +18,7 @@ import { observeActionBatch } from '../local-action-observation'
 import type { ExecuteAiBatch } from '../../src/ai/action-batch-protocol'
 
 const literal = (value: unknown) => ({ kind: 'literal', value })
+
 const inputSchema = {
   type: 'object',
   additionalProperties: false,
@@ -90,6 +91,7 @@ const fixture = () => {
   let changed: ((change: { elementIds: string[] }) => void) | undefined
   const create = vi.fn(() => {
     changed?.({ elementIds: ['created-id'] })
+
     return ['created-id'] as (string | null)[]
   })
   const select = vi.fn()
@@ -106,13 +108,16 @@ const fixture = () => {
     {
       observe: (listener) => {
         changed = listener
+
         return () => {
           changed = undefined
         }
       },
+
       resolve: () => 'live'
     }
   )
+
   actions.push(
     createDesignReviewAction(
       async () => ({
@@ -144,20 +149,26 @@ const fixture = () => {
     },
     store: {
       read: async (key) => entries.get(key),
+
       list: async () => [...entries.values()],
+
       write: async (input) => {
         if (entries.get(input.key)?.version !== input.expectedVersion) {
           throw new Error('Conflict')
         }
+
         const entry = {
           key: input.key,
           record: input.record,
           version: crypto.randomUUID()
         }
+
         entries.set(input.key, entry)
+
         return entry
       }
     },
+
     createGroups: () => [
       {
         name: 'design_operations',
@@ -166,6 +177,7 @@ const fixture = () => {
           actions.map(createAiToolContract),
           {
             modelActions: (value) => value,
+
             resolveBatch: (value) => value
           },
           async (batch) => ({
@@ -175,9 +187,11 @@ const fixture = () => {
                 const action = actions.find(
                   (action) => action.name === call.name
                 )
+
                 if (!action) {
                   throw new Error('Unknown action')
                 }
+
                 return {
                   actionId: call.id,
                   actionName: call.name,
@@ -185,9 +199,12 @@ const fixture = () => {
                     JSON.stringify(
                       await action.execute(call.arguments, {
                         signal,
+
                         runMutation: async (work, settled) => {
                           const value = work()
+
                           settled?.(value)
+
                           return value
                         }
                       })
@@ -199,6 +216,7 @@ const fixture = () => {
           }),
           {
             getNativeTools: () => host.definitions(),
+
             getNativeToolsRevision: () => host.revision
           }
         )
@@ -206,24 +224,29 @@ const fixture = () => {
     ]
   })
   let id = 0
+
   const invoke = async (name: string, input: unknown) =>
     JSON.parse((await host.invoke({ name, input, callId: String(++id) })).text)
+
   return { host, invoke, create, select }
 }
 
 it('composes actual canonical basic operations and hands creation identities through secured browser dispatch', async () => {
   const app = fixture()
+
   try {
     const admitted = await app.invoke('tool_library.submit_tool', {
       submissionId: 'create-selected',
       proposal
     })
+
     expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
     const result = await app.invoke('tool_library.invoke_tool', {
       name: proposal.name,
       revision: 1,
       input: { width: 17 }
     })
+
     expect(result, JSON.stringify(result)).toMatchObject({
       execution: { status: 'success', value: null },
       storage: { status: 'saved' }
@@ -236,6 +259,7 @@ it('composes actual canonical basic operations and hands creation identities thr
       'design_operations.describe_design_apis',
       { operation: 'element.createElements' }
     )
+
     expect(semantic.apis[0].recipeDependency).toEqual({
       name: proposal.steps[0].tool,
       revision: 8,
@@ -259,6 +283,7 @@ it('composes actual canonical basic operations and hands creation identities thr
         { names: [proposal.steps[0].tool] }
       )
     )
+
     expect(lookup.tools[0]).toMatchObject({
       registeredName: proposal.steps[0].tool,
       revision: 8,
@@ -272,6 +297,7 @@ it('composes actual canonical basic operations and hands creation identities thr
     const definition = app.host
       .definitions()
       .find((item) => item.registeredName === proposal.steps[0].tool)
+
     expect(definition?.execution).toMatchObject({
       kind: 'registered-tool',
       namespace: 'tool_library',
@@ -285,13 +311,16 @@ it('composes actual canonical basic operations and hands creation identities thr
 
 it('rejects a saved dependency identity replaced by the canonical mutation scope contract', async () => {
   const app = fixture()
+
   try {
     const replaced = structuredClone(proposal)
+
     replaced.steps[0].revision = 2
     const result = await app.invoke('tool_library.submit_tool', {
       submissionId: 'replaced-mutation-contract',
       proposal: replaced
     })
+
     expect(result).toMatchObject({ ok: false, code: 'admission' })
     expect(result.issues).toEqual(
       expect.arrayContaining([
@@ -307,18 +336,21 @@ it('rejects a saved dependency identity replaced by the canonical mutation scope
 
 it('stops a composed successor when the canonical creation receipt reports unavailable items', async () => {
   const app = fixture()
+
   app.create.mockReturnValue([null])
   try {
     const admitted = await app.invoke('tool_library.submit_tool', {
       submissionId: 'failed-create',
       proposal
     })
+
     expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
     const result = await app.invoke('tool_library.invoke_tool', {
       name: proposal.name,
       revision: 1,
       input: { width: 17 }
     })
+
     expect(result.execution.status).not.toBe('success')
     expect(app.select).not.toHaveBeenCalled()
     expect(app.create).toHaveBeenCalledTimes(1)
@@ -352,6 +384,7 @@ const inspectionHandoffFixture = () => {
     unavailable: false,
     findings: [] as unknown[]
   }
+
   const methods = (owner: string) =>
     new Proxy(
       {},
@@ -360,22 +393,28 @@ const inspectionHandoffFixture = () => {
           (_target, key) =>
           (..._args: unknown[]) => {
             const name = `${owner}.${String(key)}`
+
             calls.push(name)
             const change = changes.get(name)
+
             if (change) {
               change.removed?.forEach((id) => removed.add(id))
               changed?.({
                 elementIds: [...change.elementIds, ...(change.removed ?? [])]
               })
             }
+
             const value = values.get(name)
+
             if (value instanceof Error) {
               throw value
             }
+
             return value
           }
       }
     )
+
   const actions = createBasicApiActions(
     () => ({
       core: methods('core'),
@@ -389,10 +428,12 @@ const inspectionHandoffFixture = () => {
     {
       observe: (listener) => {
         changed = listener
+
         return () => {
           changed = undefined
         }
       },
+
       resolve: (id) => (removed.has(id) ? 'removed' : 'live')
     }
   )
@@ -405,17 +446,21 @@ const inspectionHandoffFixture = () => {
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} }))
   ]
+
   const dispatch: ExecuteAiBatch = async (batch) => ({
     context: {},
     actionResults: await Promise.all(
       batch.actions.map(async (call) => {
         let result: unknown
+
         if (call.name === AiActionNames.REVIEW_DESIGN) {
           const target = String(call.arguments.elementId)
+
           checked.push(target)
           if (state.checkFailure) {
             throw new Error('Mechanical service unavailable')
           }
+
           result = {
             available: !state.unavailable,
             complete: true,
@@ -424,28 +469,36 @@ const inspectionHandoffFixture = () => {
           }
         } else if (call.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
           const evidence = call.arguments.evidence as { receiptId: string }
+
           validated.push(evidence.receiptId)
           if (state.validationFailure) {
             throw new Error('Validation transport unavailable')
           }
+
           result = {
             current: state.current,
             validatedAt: { sessionId: 'consumer-validation', revision: 1 }
           }
         } else {
           const action = actions.find((action) => action.name === call.name)
+
           if (!action) {
             throw new Error('Unknown canonical action')
           }
+
           result = await action.execute(call.arguments, {
             signal,
+
             runMutation: async (work, settled) => {
               const value = work()
+
               settled?.(value)
+
               return value
             }
           })
         }
+
         if (
           state.missingMutationScope &&
           result &&
@@ -453,6 +506,7 @@ const inspectionHandoffFixture = () => {
         ) {
           delete (result as Record<string, unknown>).mutationScope
         }
+
         if (
           state.incompleteMutationScope &&
           call.name.startsWith('api_') &&
@@ -461,11 +515,14 @@ const inspectionHandoffFixture = () => {
         ) {
           const scope = (result as { mutationScope?: { complete: boolean } })
             .mutationScope
+
           if (scope) {
             scope.complete = false
           }
         }
+
         let actionId = call.id
+
         if (state.mismatchedMutation && call.name.startsWith('api_')) {
           actionId = 'wrong-write'
         } else if (
@@ -474,6 +531,7 @@ const inspectionHandoffFixture = () => {
         ) {
           actionId = 'different-call'
         }
+
         return {
           actionId,
           actionName: call.name,
@@ -482,12 +540,15 @@ const inspectionHandoffFixture = () => {
       })
     )
   })
+
   const observation = vi.fn()
   const owner = createLocalOperationTools(
     definitions,
     {
       modelActions: (value) => value,
+
       resolveBatch: (value) => value,
+
       checkResults
     },
     async (batch) =>
@@ -498,6 +559,7 @@ const inspectionHandoffFixture = () => {
           async (submitted) => {
             const receipt = await dispatch(submitted)
             const exchange = createBatchExchange()
+
             return exchange.execute(submitted, signal, (frame) => {
               if (!exchange.accept(frame.receiptToken, receipt)) {
                 throw new Error(
@@ -513,24 +575,30 @@ const inspectionHandoffFixture = () => {
         0
       )
   )
+
   const api = (name: string) => `api_${name.replace('.', '_')}`
+
   const invoke = async (name: string, args: unknown) =>
     JSON.parse(await owner.call(name, args, signal))
+
   const write = (name: string, args: unknown) =>
     invoke(api(name), {
       arguments: args,
       inspection: 'defer'
     })
+
   const review = (elementId: string) =>
     invoke(AiActionNames.REVIEW_DESIGN, {
       arguments: { elementId }
     })
+
   const read = (ids?: string[]) =>
     invoke(AiDesignToolIds.READ_DESIGN_CHECKS, {
       view: 'details',
       includePassed: true,
       ...(ids ? { ids } : {})
     })
+
   const done = () =>
     owner.settleOutcome({
       batchId: 'done',
@@ -543,6 +611,7 @@ const inspectionHandoffFixture = () => {
         }
       ]
     }).actions[0].arguments.outcome
+
   return {
     owner,
     api,
@@ -642,6 +711,7 @@ it.each([
   'checks actual canonical %s targets in a fresh request',
   async (name, args, value, targets) => {
     const f = inspectionHandoffFixture()
+
     f.values.set(name, value)
     f.changes.set(name, { elementIds: [...targets] })
     await f.write(name, args)
@@ -652,6 +722,7 @@ it.each([
 
 it('does not turn a read result field into a mutation inspection target', async () => {
   const f = inspectionHandoffFixture()
+
   f.values.set('element.createElements', ['a'])
   f.changes.set('element.createElements', { elementIds: ['a'] })
   f.values.set('core.getElementData', {
@@ -673,6 +744,7 @@ it('does not turn a read result field into a mutation inspection target', async 
 
 it('retires an already measured failure when its target is confirmed removed', async () => {
   const f = inspectionHandoffFixture()
+
   f.state.findings = [{ kind: 'text-overflow', elementId: 'a' }]
   await f.review('a')
   f.values.set('element.deleteElements', {
@@ -685,6 +757,7 @@ it('retires an already measured failure when its target is confirmed removed', a
 
 it('keeps a failed currency read from leaving a prior pass current', async () => {
   const f = inspectionHandoffFixture()
+
   await f.review('a')
   f.state.validationFailure = true
   await f.read(['measurement:a']).catch(() => undefined)
@@ -696,6 +769,7 @@ it('keeps a failed currency read from leaving a prior pass current', async () =>
 
 it('returns existing unresolved findings when a current measurement is reused', async () => {
   const f = inspectionHandoffFixture()
+
   f.state.findings = [{ kind: 'text-overflow', elementId: 'a' }]
   await f.review('a')
   f.checked.length = 0
@@ -705,12 +779,14 @@ it('returns existing unresolved findings when a current measurement is reused', 
     true,
     f.signal
   )
+
   expect(f.checked).toEqual([])
   expect(JSON.stringify(result)).toMatch(/text-overflow|measurement:a/)
 })
 
 it('preserves known evidence as unresolved when a subsequent check is unavailable', async () => {
   const f = inspectionHandoffFixture()
+
   f.state.findings = [{ kind: 'text-overflow', elementId: 'a' }]
   await f.review('a')
   f.state.current = false
@@ -720,15 +796,18 @@ it('preserves known evidence as unresolved when a subsequent check is unavailabl
     ids: ['measurement:a'],
     includePassed: true
   }).items[0]
+
   expect(result.status).not.toBe('pass')
   expect(result.evidence).toContain('text-overflow')
 })
 
 it('validates only requested measurement dependencies for an explicit check read', async () => {
   const f = inspectionHandoffFixture()
+
   for (const id of ['a', 'b', 'c']) {
     await f.review(id)
   }
+
   f.validated.length = 0
   await f.read(['measurement:b'])
   expect(f.validated).toEqual(['b'])
@@ -738,6 +817,7 @@ it.each(['mismatchedReceipt', 'unavailable'] as const)(
   'does not certify a %s mechanical receipt',
   async (mode) => {
     const f = inspectionHandoffFixture()
+
     f.state[mode] = true
     await f.review('a')
     expect(
@@ -748,6 +828,7 @@ it.each(['mismatchedReceipt', 'unavailable'] as const)(
 
 it('does not block completion after a canonical empty creation receipt', async () => {
   const f = inspectionHandoffFixture()
+
   f.values.set('element.createElements', [])
   await f.write('element.createElements', { createOptions: [] })
   expect(f.checked).toEqual([])
@@ -756,9 +837,11 @@ it('does not block completion after a canonical empty creation receipt', async (
 
 it('keeps unrelated passed checks intact after invalidating another target', async () => {
   const f = inspectionHandoffFixture()
+
   for (const id of ['a', 'b']) {
     await f.review(id)
   }
+
   f.checkResults.invalidate(['measurement:a'], 'Only a changed')
   expect(
     f.checkResults.read({ ids: ['measurement:b'], includePassed: true })
@@ -769,6 +852,7 @@ it('keeps unrelated passed checks intact after invalidating another target', asy
 it('stops before new checks when the invocation is already cancelled', async () => {
   const f = inspectionHandoffFixture()
   const controller = new AbortController()
+
   controller.abort()
   await expect(
     f.owner.finishInspection(new Set(['a']), undefined, true, controller.signal)
@@ -782,6 +866,7 @@ it.each([
   ['core.getViewportScale', {}]
 ] as const)('does not scan drawing geometry for %s', async (name, args) => {
   const f = inspectionHandoffFixture()
+
   await f.write(name, args)
   expect(f.checked).toEqual([])
   expect(f.done()).toBe('completed')
@@ -789,12 +874,14 @@ it.each([
 
 it('surfaces a missing mechanical service without replaying the acknowledged write', async () => {
   const f = inspectionHandoffFixture()
+
   f.state.checkFailure = true
   f.values.set('element.createElements', ['a'])
   f.changes.set('element.createElements', { elementIds: ['a'] })
   const result = await f.write('element.createElements', {
     createOptions: [{ type: 'rect' }]
   })
+
   expect(f.calls).toEqual(['element.createElements'])
   expect(result.measurementIssues).toEqual([
     expect.objectContaining({ elementId: 'a' })
@@ -804,6 +891,7 @@ it('surfaces a missing mechanical service without replaying the acknowledged wri
 
 it('reuses a current passing measurement without recomputation', async () => {
   const f = inspectionHandoffFixture()
+
   await f.review('a')
   f.checked.length = 0
   await f.owner.finishInspection(new Set(['a']), undefined, true, f.signal)
@@ -813,6 +901,7 @@ it('reuses a current passing measurement without recomputation', async () => {
 
 it('invalidates prior success when an explicit mechanical recheck fails', async () => {
   const f = inspectionHandoffFixture()
+
   await f.review('a')
   f.state.checkFailure = true
   await expect(f.review('a')).rejects.toThrow('Mechanical service unavailable')
@@ -824,6 +913,7 @@ it('invalidates prior success when an explicit mechanical recheck fails', async 
 
 it('can recover a stale measurement at the next coherent boundary', async () => {
   const f = inspectionHandoffFixture()
+
   await f.review('a')
   f.state.validationFailure = true
   await f.read(['measurement:a'])
@@ -840,12 +930,14 @@ it.each(['missingMutationScope', 'mismatchedMutation'] as const)(
   'retains unresolved mutation scope for %s without pretending checks passed',
   async (mode) => {
     const f = inspectionHandoffFixture()
+
     f.state[mode] = true
     f.values.set('element.createElements', ['a'])
     f.changes.set('element.createElements', { elementIds: ['a'] })
     const result = await f.write('element.createElements', {
       createOptions: [{ type: 'rect' }]
     })
+
     expect(f.checked).toEqual([])
     expect(result.checks.firstPendingId).toMatch(/^mutation-scope:/)
     expect(f.done()).toBe('unsupported')
@@ -855,10 +947,12 @@ it.each(['missingMutationScope', 'mismatchedMutation'] as const)(
 
 it('does not claim completion after a mutation transport failure with no acknowledgement', async () => {
   const f = inspectionHandoffFixture()
+
   f.values.set('element.createElements', new Error('Transport disconnected'))
   const lost = await f.write('element.createElements', {
     createOptions: [{ type: 'rect' }]
   })
+
   expect(lost).toMatchObject({
     message: 'Transport disconnected',
     recoverable: false,
@@ -876,12 +970,14 @@ it.each([
   'stops later writes after %s while preserving reads and an honest terminal outcome',
   async (mode) => {
     const f = inspectionHandoffFixture()
+
     f.state[mode] = true
     f.values.set('element.createElements', ['a'])
     f.changes.set('element.createElements', { elementIds: ['a'] })
     const first = await f.write('element.createElements', {
       createOptions: [{ type: 'rect' }]
     })
+
     expect(first.measurementIssues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -892,6 +988,7 @@ it.each([
     f.state[mode] = false
     await f.review('a')
     const retained = await f.read([first.checks.firstPendingId])
+
     expect(retained.items[0]).toMatchObject({
       origin: 'tool',
       status: 'unverified'
@@ -899,6 +996,7 @@ it.each([
     const blocked = await f.write('element.createElements', {
       createOptions: [{ type: 'rect' }]
     })
+
     expect(blocked).toMatchObject({
       code: 'MUTATION_SCOPE_UNAVAILABLE',
       recoverable: false,
@@ -914,6 +1012,7 @@ it.each([false, true])(
   'keeps large automatic mechanical results retained with compact delivery, findings=%s',
   async (findings) => {
     const f = inspectionHandoffFixture()
+
     f.values.set('element.createElements', ['a', 'b'])
     f.changes.set('element.createElements', { elementIds: ['a', 'b'] })
     f.state.findings = findings
@@ -926,6 +1025,7 @@ it.each([false, true])(
     const result = await f.write('element.createElements', {
       createOptions: [{ type: 'rect' }, { type: 'rect' }]
     })
+
     expect(
       result.actionResults.map(
         (entry: { actionName: string }) => entry.actionName
@@ -935,11 +1035,13 @@ it.each([false, true])(
     expect(JSON.stringify(result).length).toBeLessThan(3000)
     expect(f.checked).toEqual(['a', 'b'])
     const read = await f.read(['measurement:a'])
+
     expect(JSON.parse(read.items[0].evidence).findings).toEqual(
       f.state.findings
     )
     expect(f.checked).toEqual(['a', 'b'])
     const explicit = await f.review('a')
+
     expect(explicit.actionResults[0].result.findings).toEqual(f.state.findings)
     f.state.current = false
     const full = await f.invoke('execute_design_batch', {
@@ -952,6 +1054,7 @@ it.each([false, true])(
       inspection: 'defer',
       response: 'full'
     })
+
     expect(full.actionResults[0].result.appliedElementIds).toEqual(['a', 'b'])
     expect(
       full.actionResults
@@ -968,10 +1071,12 @@ it.each([false, true])(
 
 it('does not clear unacknowledged write settlement with a later geometry pass or leak it into a fresh request', async () => {
   const f = inspectionHandoffFixture()
+
   f.values.set('element.createElements', new Error('Transport disconnected'))
   const lost = await f.write('element.createElements', {
     createOptions: [{ type: 'rect' }]
   })
+
   expect(lost).toMatchObject({
     message: 'Transport disconnected',
     recoverable: false,
@@ -981,27 +1086,32 @@ it('does not clear unacknowledged write settlement with a later geometry pass or
   const blocked = await f.write('element.createElements', {
     createOptions: [{ type: 'rect' }]
   })
+
   expect(blocked).toMatchObject({
     recoverable: false,
     code: 'MUTATION_SCOPE_UNAVAILABLE'
   })
   expect(f.calls).toHaveLength(1)
   const next = inspectionHandoffFixture()
+
   next.values.set('element.createElements', ['next'])
   next.changes.set('element.createElements', { elementIds: ['next'] })
   const result = await next.write('element.createElements', {
     createOptions: [{ type: 'rect' }]
   })
+
   expect(result.checks.counts.pass).toBe(1)
   expect(next.calls).toHaveLength(1)
 })
 
 it('delivers terminal scope recovery on the first lost mutation acknowledgement', async () => {
   const f = inspectionHandoffFixture()
+
   f.values.set('element.createElements', new Error('Transport disconnected'))
   const result = await f.write('element.createElements', {
     createOptions: [{ type: 'rect' }]
   })
+
   expect(result).toMatchObject({
     recoverable: false,
     message: 'Transport disconnected',
@@ -1043,9 +1153,11 @@ it.each([
           Object.assign(geometry.child, values)
           changed?.({ elementIds: ['child'] })
         }
+
         if (mode === 'cancel') {
           controller.abort()
         }
+
         // Missing output violates the explicit property receipt contract after the write.
         return mode === 'unconfirmed'
           ? undefined
@@ -1057,7 +1169,9 @@ it.each([
         id === 'frame'
           ? { type: 'frame', children: ['child'] }
           : { type: 'rect', parentId: 'frame' },
+
       computed: (id) => geometry[id],
+
       measure: () => []
     })
     const measured = vi.fn(review)
@@ -1087,10 +1201,12 @@ it.each([
         {
           observe: (listener) => {
             changed = listener
+
             return () => {
               changed = undefined
             }
           },
+
           resolve: () => 'live'
         }
       ).filter((action) =>
@@ -1117,20 +1233,26 @@ it.each([
       },
       store: {
         read: async (key) => entries.get(key),
+
         list: async () => [...entries.values()],
+
         write: async (input) => {
           if (entries.get(input.key)?.version !== input.expectedVersion) {
             throw new Error('Conflict')
           }
+
           const entry = {
             key: input.key,
             record: input.record,
             version: crypto.randomUUID()
           }
+
           entries.set(input.key, entry)
+
           return entry
         }
       },
+
       createGroups: () => [
         {
           name: 'design_operations',
@@ -1140,25 +1262,33 @@ it.each([
             actions.map(createAiToolContract),
             {
               modelActions: (value) => value,
+
               resolveBatch: (value) => value
             },
             async (batch) => {
               const receipt: import('../../src/ai/action-batch-protocol').AiBatchReceipt =
                 { context: null, actionResults: [] }
+
               for (const call of batch.actions) {
                 const action = actions.find((item) => item.name === call.name)
+
                 if (!action) {
                   throw new Error('Unknown action')
                 }
+
                 calls.push(call.name)
                 const result = await action.execute(call.arguments as never, {
                   signal: controller.signal,
+
                   runMutation: async (work, settled) => {
                     const value = work()
+
                     settled?.(value)
+
                     return value
                   }
                 })
+
                 receipt.actionResults.push({
                   actionId: call.id,
                   actionName: call.name,
@@ -1187,6 +1317,7 @@ it.each([
                   )
                 }
               }
+
               return receipt
             },
             { requestSignal: controller.signal }
@@ -1194,9 +1325,12 @@ it.each([
         }
       ]
     })
+
     const invoke = async (name: string, input: unknown) =>
       JSON.parse((await host.invoke({ name, input })).text)
+
     const initial = await measured('frame')
+
     expect(initial.findings).toContainEqual(
       expect.objectContaining({
         kind:
@@ -1214,9 +1348,11 @@ it.each([
     const initialRead = host
       .definitions()
       .find((tool) => tool.name === 'api_core_getElementMetadata')
+
     if (!checker || !repair || !initialRead) {
       throw new Error('Missing registered mechanical tools')
     }
+
     const checkInput = {
       kind: 'object',
       fields: {
@@ -1307,11 +1443,13 @@ it.each([
         path: '/result/actionResults/0/result/verification/status'
       }
     }
+
     try {
       const admitted = await invoke('tool_library.submit_tool', {
         submissionId: 'repair-container',
         proposal: recipe
       })
+
       expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
       const execution = invoke('tool_library.invoke_tool', {
         name: recipe.name,
@@ -1322,6 +1460,7 @@ it.each([
           values: { x: 50, y: 10 }
         }
       })
+
       if (mode === 'cancel') {
         await expect(execution).rejects.toMatchObject({ name: 'AbortError' })
         expect(positions).toHaveBeenCalledOnce()
@@ -1329,9 +1468,12 @@ it.each([
         expect([...entries.values()].map((entry) => entry.record)).toEqual([
           expect.objectContaining({ availability: 'candidate', evidence: null })
         ])
+
         return
       }
+
       const result = await execution
+
       expect(
         calls.filter((name) => name === 'api_core_getElementMetadata')
       ).toHaveLength(1)
@@ -1351,6 +1493,7 @@ it.each([
           expect.objectContaining({ availability: 'candidate', evidence: null })
         ])
       }
+
       expect(positions).toHaveBeenCalledTimes(mode === 'decision' ? 0 : 1)
       if (mode === 'unconfirmed') {
         expect(result.execution.calls).toContainEqual(
@@ -1367,11 +1510,13 @@ it.each([
           )
         ).toHaveLength(1)
       }
+
       if (mode === 'stuck') {
         expect(result.execution.issues.join(' ')).toContain(
           'Repeated verification progress'
         )
       }
+
       if (mode === 'decision') {
         expect(result.execution.status).toBe('failed')
         expect(JSON.stringify(result.execution.recovery)).toContain(
@@ -1381,6 +1526,7 @@ it.each([
           'rotated-bounds-unchecked'
         )
       }
+
       expect(
         result.execution.calls.filter(
           (call: { name: string }) => call.name === repair.registeredName
@@ -1394,6 +1540,7 @@ it.each([
 
 it('continues only an unresolved suffix using acknowledged document identities in a new admitted segment', async () => {
   const app = fixture()
+
   app.select.mockImplementationOnce(() => {
     throw new Error('Selection interrupted')
   })
@@ -1409,14 +1556,17 @@ it('continues only an unresolved suffix using acknowledged document identities i
       revision: 1,
       input: { width: 17 }
     })
+
     expect(first.execution.status).not.toBe('success')
     expect(first.storage).toBeUndefined()
     const created = first.execution.recovery.find(
       (entry: { name: string; status: string }) =>
         entry.name === proposal.steps[0].tool && entry.status === 'success'
     )
+
     expect(created).toMatchObject({ settlement: 'completed' })
     const ids = created.value.actionResults[0].result.appliedElementIds
+
     expect(ids).toEqual(['created-id'])
     const next = {
       format: 1,
@@ -1448,6 +1598,7 @@ it('continues only an unresolved suffix using acknowledged document identities i
     const found = await app.invoke('design_operations.describe_design_apis', {
       operation: 'selection.selectElements'
     })
+
     expect(found.apis[0].recipeDependency).toMatchObject({
       name: proposal.steps[1].tool,
       revision: proposal.steps[1].revision
@@ -1463,6 +1614,7 @@ it('continues only an unresolved suffix using acknowledged document identities i
       revision: 1,
       input: ids
     })
+
     expect(resumed).toMatchObject({
       execution: { status: 'success' },
       storage: { status: 'saved', availability: 'eligible' }
@@ -1474,6 +1626,7 @@ it('continues only an unresolved suffix using acknowledged document identities i
       'design_operations.describe_design_apis',
       { names: [next.name] }
     )
+
     expect(available.tools[0]).toMatchObject({
       name: next.name,
       availability: 'eligible'
@@ -1485,19 +1638,23 @@ it('continues only an unresolved suffix using acknowledged document identities i
 
 it('continues discovery through a rejected library submission when the actual catalog is unchanged', async () => {
   const app = fixture()
+
   try {
     const first = await app.invoke('design_operations.describe_design_apis', {
       category: 'tools'
     })
+
     expect(first.next).toBeDefined()
     const revision = app.host.revision
     const catalog = app.host.definitions()
     const rejected = structuredClone(proposal)
+
     rejected.steps[0].revision = 2
     const submission = await app.invoke('tool_library.submit_tool', {
       submissionId: 'rejected-between-pages',
       proposal: rejected
     })
+
     expect(submission).toMatchObject({ ok: false, code: 'admission' })
     expect(app.host.revision).toBeGreaterThan(revision)
     expect(app.host.definitions()).toEqual(catalog)
@@ -1505,6 +1662,7 @@ it('continues discovery through a rejected library submission when the actual ca
       'design_operations.describe_design_apis',
       first.next.arguments
     )
+
     expect(
       next.toolOutcome,
       JSON.stringify({
@@ -1530,16 +1688,20 @@ it('retains typed known findings when a later canonical measurement is unavailab
     parentId: 'frame',
     right: 20
   }
+
   f.state.findings = [finding]
   const first = await f.review('frame')
+
   f.state.unavailable = true
   f.state.findings = []
   const next = await f.review('frame')
   const current = f.checkResults.select(next.mechanicalSelection.checks)[0]
+
   expect(current.retired).toBe(false)
   if (current.retired) {
     throw new Error('Unexpected retirement')
   }
+
   expect(current.recheck).toMatchObject({
     kind: 'measurement',
     findings: [finding]
@@ -1562,10 +1724,15 @@ it.each(['not-started', 'unknown'] as const)(
           inputSchema: {}
         }
       ],
-      { modelActions: (value) => value, resolveBatch: (value) => value },
+      {
+        modelActions: (value) => value,
+
+        resolveBatch: (value) => value
+      },
       async (batch) => {
         attempts++
         const action = batch.actions[0]
+
         return requireBatchSuccess(
           batch,
           {
@@ -1586,12 +1753,14 @@ it.each(['not-started', 'unknown'] as const)(
         )
       }
     )
+
     const call = () =>
       owner.call(
         AiActionNames.UPDATE_DESIGN_ELEMENT,
         { arguments: { elementId: 'child', properties: { x: 10 } } },
         new AbortController().signal
       )
+
     await call()
     await call()
     expect(attempts).toBe(settlement === 'not-started' ? 2 : 1)

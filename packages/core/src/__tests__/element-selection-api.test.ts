@@ -42,18 +42,23 @@ describe('createElementSelectionAPIs.selectElements', () => {
         })
       ]
     ])
+
     return {
       get: (type: string) => selections.get(type),
+
       getChannelByAction: (action: string) => {
         if (action === 'selectElements') {
           return channels.element
         }
+
         if (action === 'selectVectorPoints') {
           return channels.vectorPoint
         }
+
         if (action === 'selectVectorSegments') {
           return channels.vectorSegment
         }
+
         return
       }
     }
@@ -101,10 +106,12 @@ describe('createElementSelectionAPIs.selectElements', () => {
     const deps = createSelectionDeps()
     const factory = new Factory()
     const apis = createElementSelectionAPIs(deps, factory)
+
     factory.registerTransactionValidator('selection-references', () => {
       const selectedIds = [
         ...(deps.get(channels.element)?.getSelectedIds() ?? [])
       ]
+
       return selectedIds.every((id) => id === 'element-1')
         ? undefined
         : {
@@ -129,6 +136,7 @@ describe('createElementSelectionAPIs.selectElements', () => {
     const secondFactory = new Factory()
     const firstApis = createElementSelectionAPIs(firstDeps, firstFactory)
     const secondApis = createElementSelectionAPIs(secondDeps, secondFactory)
+
     firstFactory.registerTransactionValidator('reject-first-selection', () => ({
       valid: false,
       code: 'invalid-selection',
@@ -195,6 +203,7 @@ describe('createElementSelectionAPIs.selectElements', () => {
     const deps = {
       get: (type: string) =>
         type === customChannel ? customSelection : undefined,
+
       getChannelByAction: (action: string) =>
         action === 'selectCustom' ? customChannel : undefined
     }
@@ -294,6 +303,7 @@ describe('createElementSelectionAPIs.selectElements', () => {
   it('throws when wrapper action channel is not registered', () => {
     const apis = createElementSelectionAPIs({
       get: () => undefined,
+
       getChannelByAction: () => undefined
     })
 

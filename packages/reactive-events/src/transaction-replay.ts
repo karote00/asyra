@@ -53,12 +53,14 @@ export const getFailedTransactionReplayRestorationEvents = (
   if (isObjectFailure(failure)) {
     return appliedReplayFailures.get(failure)?.restorationEvents
   }
+
   if (
     lastPrimitiveReplayFailure &&
     Object.is(lastPrimitiveReplayFailure.failure, failure)
   ) {
     return lastPrimitiveReplayFailure.restorationEvents
   }
+
   return undefined
 }
 
@@ -82,9 +84,11 @@ const combineRestorationEvents = (
 ): readonly AllEvent[] | undefined => {
   const nestedEvents =
     nested?.token === context.token ? nested.restorationEvents : undefined
+
   if (!nestedEvents) {
     return context.restorationEvents
   }
+
   return Object.freeze([...nestedEvents, ...(context.restorationEvents ?? [])])
 }
 
@@ -98,12 +102,14 @@ export const runInTransactionReplayMode = <T>(
     applied: false,
     token: previousContext?.token ?? Symbol('transaction-replay')
   }
+
   activeReplayContext = context
   try {
     return callback()
   } catch (failure) {
     if (isObjectFailure(failure)) {
       const nestedFailure = appliedReplayFailures.get(failure)
+
       appliedReplayFailures.set(failure, {
         token: context.token,
         restorationEvents: combineRestorationEvents(context, nestedFailure),
@@ -113,6 +119,7 @@ export const runInTransactionReplayMode = <T>(
       })
     } else {
       const nestedFailure = lastPrimitiveReplayFailure
+
       lastPrimitiveReplayFailure = {
         failure,
         token: context.token,
@@ -129,6 +136,7 @@ export const runInTransactionReplayMode = <T>(
             nestedFailure.applied)
       }
     }
+
     throw failure
   } finally {
     activeReplayContext = previousContext

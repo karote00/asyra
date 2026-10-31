@@ -14,17 +14,22 @@ import type { WalkingRigidTransform } from '../domain/walking-robot-definition'
 export type MechanicsVector = readonly [Interval, Interval, Interval]
 export type MechanicsPlanePoint = readonly [number, number]
 export const STANDARD_GRAVITY_METRES_PER_SECOND_SQUARED = 9.80665
+
 const zero = () => interval(0)
+
 const uncertain = (): Interval => ({ low: -Infinity, high: Infinity })
+
 export const mechanicsVector = (p: Point3): MechanicsVector => [
   interval(p[0]),
   interval(p[1]),
   interval(p[2])
 ]
+
 export const mechanicsAdd = (
   a: MechanicsVector,
   b: MechanicsVector
 ): MechanicsVector => [add(a[0], b[0]), add(a[1], b[1]), add(a[2], b[2])]
+
 export const mechanicsSubtract = (
   a: MechanicsVector,
   b: MechanicsVector
@@ -33,17 +38,21 @@ export const mechanicsSubtract = (
   subtract(a[1], b[1]),
   subtract(a[2], b[2])
 ]
+
 export const mechanicsScale = (
   a: MechanicsVector,
   b: Interval
 ): MechanicsVector => [multiply(a[0], b), multiply(a[1], b), multiply(a[2], b)]
+
 const dot = (a: MechanicsVector, b: MechanicsVector) =>
   add(add(multiply(a[0], b[0]), multiply(a[1], b[1])), multiply(a[2], b[2]))
+
 const cross = (a: MechanicsVector, b: MechanicsVector): MechanicsVector => [
   subtract(multiply(a[1], b[2]), multiply(a[2], b[1])),
   subtract(multiply(a[2], b[0]), multiply(a[0], b[2])),
   subtract(multiply(a[0], b[1]), multiply(a[1], b[0]))
 ]
+
 const square = (v: Interval): Interval => {
   if (v.low <= 0 && v.high >= 0) {
     return {
@@ -54,10 +63,13 @@ const square = (v: Interval): Interval => {
       )
     }
   }
+
   return multiply(v, v)
 }
+
 export const mechanicsMagnitude = (v: MechanicsVector) =>
   squareRoot(add(add(square(v[0]), square(v[1])), square(v[2])))
+
 function rotate(
   frame: WalkingRigidTransform,
   p: MechanicsVector
@@ -68,6 +80,7 @@ function rotate(
       frame.rotation[2]
     ]),
     twiceCross = mechanicsScale(cross(q, p), interval(2))
+
   return mechanicsAdd(
     p,
     mechanicsAdd(
@@ -76,6 +89,7 @@ function rotate(
     )
   )
 }
+
 /** Directed arithmetic over the completed binary64 pose, not ideal-real trig. */
 export function mechanicsTransform(
   frame: WalkingRigidTransform,
@@ -83,16 +97,20 @@ export function mechanicsTransform(
 ): MechanicsVector {
   return mechanicsAdd(mechanicsVector(frame.position), rotate(frame, p))
 }
+
 export function mechanicsCentreOfMass(
   entries: readonly { massKg: number; position: MechanicsVector }[]
 ) {
   let totalMass = zero(),
     weighted = mechanicsVector([0, 0, 0])
+
   for (const entry of entries) {
     const mass = interval(entry.massKg)
+
     totalMass = add(totalMass, mass)
     weighted = mechanicsAdd(weighted, mechanicsScale(entry.position, mass))
   }
+
   return {
     totalMass,
     worldCoM: weighted.map((v) =>
@@ -100,6 +118,7 @@ export function mechanicsCentreOfMass(
     ) as unknown as MechanicsVector
   }
 }
+
 export function mechanicsTorque(
   pivot: MechanicsVector,
   position: MechanicsVector,
@@ -110,8 +129,10 @@ export function mechanicsTorque(
     multiply(mass, interval(-STANDARD_GRAVITY_METRES_PER_SECOND_SQUARED)),
     zero()
   ])
+
   return { vector, magnitude: mechanicsMagnitude(vector) }
 }
+
 function orientation(
   a: MechanicsPlanePoint,
   b: MechanicsPlanePoint,
@@ -120,11 +141,13 @@ function orientation(
   const values = [...a, ...b, ...c].map(dyadic),
     exponent = Math.min(...values.map((v) => v.exponent)),
     ints = values.map((v) => v.significand << BigInt(v.exponent - exponent))
+
   return (
     (ints[2] - ints[0]) * (ints[5] - ints[1]) -
     (ints[3] - ints[1]) * (ints[4] - ints[0])
   )
 }
+
 /** Exact dyadic orientation makes collinearity a decision, not an epsilon. */
 export function mechanicsHull(
   points: readonly MechanicsPlanePoint[]
@@ -134,11 +157,14 @@ export function mechanicsHull(
     .filter(
       (p, i, all) => i === 0 || p[0] !== all[i - 1][0] || p[1] !== all[i - 1][1]
     )
+
   if (sorted.length < 3) {
     return sorted
   }
+
   const half = (values: readonly MechanicsPlanePoint[]) => {
     const result: MechanicsPlanePoint[] = []
+
     for (const value of values) {
       while (
         result.length >= 2 &&
@@ -150,11 +176,15 @@ export function mechanicsHull(
       ) {
         result.pop()
       }
+
       result.push(value)
     }
+
     result.pop()
+
     return result
   }
+
   return [...half(sorted), ...half([...sorted].reverse())]
 }
 
@@ -220,8 +250,10 @@ export function mechanicsSupport(
       ),
       torque = mechanicsTorque(pivot, centre, mass).vector,
       moment = subtract(divide(dot(worldEdge, torque), length), reserveMoment)
+
     return { from: a, until: b, marginMetres: margin, momentNm: moment }
   })
+
   const minimum = (values: readonly Interval[]): Interval =>
     values.length
       ? {
@@ -229,9 +261,11 @@ export function mechanicsSupport(
           high: Math.min(...values.map((x) => x.high))
         }
       : uncertain()
+
   const supportMarginMetres = minimum(edges.map((e) => e.marginMetres)),
     minimumMomentNm = minimum(edges.map((e) => e.momentNm))
   let status: 'screened' | 'blocked' | 'unknown' = 'unknown'
+
   if (hull.length < 3) {
     status = 'blocked'
   } else if (supported) {
@@ -243,6 +277,7 @@ export function mechanicsSupport(
       status = 'screened'
     }
   }
+
   return {
     status,
     hull,

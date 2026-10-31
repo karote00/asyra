@@ -16,11 +16,13 @@ class SelectionManager {
 
   unregister(type: string): boolean {
     const selection = this.selections.get(type)
+
     if (!selection) {
       return false
     }
 
     selection.dispose()
+
     return this.selections.delete(type)
   }
 
@@ -33,6 +35,7 @@ class SelectionManager {
         return channel
       }
     }
+
     return
   }
 
@@ -43,8 +46,10 @@ class SelectionManager {
   /** Release channel instances without publishing selection mutations. */
   resetRuntime(): void {
     const selections = new Set(this.selections.values())
+
     this.selections.clear()
     const failures: unknown[] = []
+
     selections.forEach((selection) => {
       try {
         selection.dispose()

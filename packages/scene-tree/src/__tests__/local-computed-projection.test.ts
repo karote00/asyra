@@ -105,6 +105,7 @@ class SharedProjectionRootComponent extends BasePropertyComponent<SharedProjecti
     const child = this.propertyComponentAccessor.getPropertyById(
       this.data.children[0] ?? ''
     )
+
     return child?.getValue() ?? {}
   }
 
@@ -150,10 +151,13 @@ const createElement = (
     },
     false
   )
+
   if (!element) {
     throw new Error(`Expected local computed fixture "${id}"`)
   }
+
   sceneTree.addToMap(element)
+
   return element
 }
 
@@ -212,16 +216,20 @@ describe('SceneTree local computed projection', () => {
 
   it('reads each accepted property batch inside one transaction without projecting again at commit', () => {
     const element = createElement('transaction-read-your-writes')
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const positionId = element.save().props?.[PropertyTypes.POSITION]
+
     if (typeof positionId !== 'string') {
       throw new Error('Missing position property')
     }
+
     const project = vi.spyOn(
       sceneTree,
       'projectLocalComputedDataFromPropertyIds'
     )
+
     try {
       runTransaction(() => {
         propsManager.updatePropertyById(positionId, 'x', 48)
@@ -248,13 +256,16 @@ describe('SceneTree local computed projection', () => {
   it('updates only computed state and publishes one ordered ordinary values batch', () => {
     const first = createElement('local-values-first')
     const second = createElement('local-values-second')
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const propsBefore = propsManager.save()
     const computedBatches: unknown[][] = []
+
     subscriptions.push(
       subscribeToEventBatches((events) => {
         const computedEvents = events.filter(isComputedProjectionEvent)
+
         if (computedEvents.length > 0) {
           computedBatches.push(computedEvents)
         }
@@ -338,14 +349,17 @@ describe('SceneTree local computed projection', () => {
 
   it('preflights the complete local patch batch before applying any prefix', () => {
     const first = createElement('local-patch-first')
+
     createElement('local-patch-second')
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const propsBefore = propsManager.save()
     const computedBatches: unknown[][] = []
+
     subscriptions.push(
       subscribeToEventBatches((events) => {
         const computedEvents = events.filter(isComputedProjectionEvent)
+
         if (computedEvents.length > 0) {
           computedBatches.push(computedEvents)
         }
@@ -394,6 +408,7 @@ describe('SceneTree local computed projection', () => {
       width: 100,
       height: 100
     })
+
     propsManager.addProperty([sharedPosition, firstDimension, secondDimension])
     const first = createElement('shared-owner-first', {
       [PropertyTypes.POSITION]: sharedPosition.get('id'),
@@ -403,6 +418,7 @@ describe('SceneTree local computed projection', () => {
       [PropertyTypes.POSITION]: sharedPosition.get('id'),
       [PropertyTypes.DIMENSION]: secondDimension.get('id')
     } as ElementRawData['props'])
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
 
@@ -414,9 +430,11 @@ describe('SceneTree local computed projection', () => {
 
     const computedBatches: unknown[][] = []
     const transactionEvents: UpdateTransactionEvent[] = []
+
     subscriptions.push(
       subscribeToEventBatches((events) => {
         const computedEvents = events.filter(isComputedProjectionEvent)
+
         if (computedEvents.length > 0) {
           computedBatches.push(computedEvents)
         }
@@ -457,6 +475,7 @@ describe('SceneTree local computed projection', () => {
             action?: string
           }
         ).action
+
         return (
           action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA ||
           action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA_BATCH ||
@@ -478,6 +497,7 @@ describe('SceneTree local computed projection', () => {
         mode: 'ids' as const
       }
     }
+
     registerPropertyComponent(
       SHARED_PROJECTION_ROOT_TYPE,
       SharedProjectionRootComponent,
@@ -525,6 +545,7 @@ describe('SceneTree local computed projection', () => {
       type: SHARED_PROJECTION_ROOT_TYPE,
       children: [child.get('id')]
     })
+
     propsManager.addProperty([child, firstRoot, secondRoot])
 
     const createSharedElement = (
@@ -541,12 +562,16 @@ describe('SceneTree local computed projection', () => {
         },
         false
       )
+
       if (!element) {
         throw new Error(`Expected shared projection fixture "${id}"`)
       }
+
       sceneTree.addToMap(element)
+
       return element
     }
+
     const first = createSharedElement(
       'shared-projection-owner-a',
       firstRoot.get('id')
@@ -555,13 +580,16 @@ describe('SceneTree local computed projection', () => {
       'shared-projection-owner-b',
       secondRoot.get('id')
     )
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
 
     const computedBatches: unknown[][] = []
+
     subscriptions.push(
       subscribeToEventBatches((events) => {
         const computedEvents = events.filter(isComputedProjectionEvent)
+
         if (computedEvents.length > 0) {
           computedBatches.push(computedEvents)
         }
@@ -620,10 +648,12 @@ describe('SceneTree local computed projection', () => {
       width: 180,
       height: 96
     })
+
     propsManager.addProperty([position, dimension])
     propsManager.cleanChanges()
     const propsBefore = propsManager.save()
     const transactionEvents: UpdateTransactionEvent[] = []
+
     subscriptions.push(
       subscribeToEvents((event) => {
         if (event.type === EventTypes.UPDATE_TRANSACTION) {
@@ -687,6 +717,7 @@ describe('SceneTree local computed projection', () => {
     }
 
     const loadedElement = sceneTree.getElementById(elementId)
+
     expect(loadedElement?.computed.get('x')).toBe(31)
     expect(loadedElement?.computed.get('y')).toBe(47)
     expect(loadedElement?.computed.get('width')).toBe(180)
@@ -696,6 +727,7 @@ describe('SceneTree local computed projection', () => {
     expect(
       transactionEvents.filter(({ payload }) => {
         const action = (payload as { action?: string }).action
+
         return (
           action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA ||
           action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA_BATCH ||

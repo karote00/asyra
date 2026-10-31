@@ -50,11 +50,14 @@ const collaborationModuleState = vi.hoisted(() => ({
 
 vi.mock('@asyra/collaboration', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@asyra/collaboration')>()
+
   collaborationModuleState.actualCreateCollaboration =
     actual.createCollaboration
   collaborationModuleState.createCollaboration = actual.createCollaboration
+
   return {
     ...actual,
+
     createCollaboration: (
       ...args: Parameters<typeof actual.createCollaboration>
     ) => collaborationModuleState.createCollaboration(...args)
@@ -78,6 +81,7 @@ const createDeferred = <Value>() => {
     resolve = promiseResolve
     reject = promiseReject
   })
+
   return { promise, reject, resolve }
 }
 
@@ -88,10 +92,13 @@ const freezePublication = (
     if (value === null || typeof value !== 'object' || Object.isFrozen(value)) {
       return
     }
+
     Object.values(value).forEach(freezeValue)
     Object.freeze(value)
   }
+
   freezeValue(publication)
+
   return publication
 }
 
@@ -113,6 +120,7 @@ const factoryPublication = (publicationId: string): SharedPublication => {
     orderedIds: [`position-${publicationId}`],
     payload
   }
+
   return freezePublication({
     publicationId,
     artifactId,
@@ -300,6 +308,7 @@ it('runs the server Reset barrier before disposing the active file session and c
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
+
   await prepared.activate()
 
   await resetCollaborationDocument('file-reset-recovery')
@@ -312,6 +321,7 @@ it('runs the server Reset barrier before disposing the active file session and c
 it('clears reset-invalidated recovery before it can enter the new document generation', async () => {
   const fileId = 'file-reset-generation-recovery'
   const legacyOutbox = new DocumentPublicationOutbox({ fileId })
+
   await legacyOutbox.initialize()
   await legacyOutbox.bindDocumentGeneration(0)
   await legacyOutbox.append(remotePublication('publication-before-reset'))
@@ -336,6 +346,7 @@ it('clears reset-invalidated recovery before it can enter the new document gener
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   await handle.whenIdle()
 
   expect(sendPublication).not.toHaveBeenCalled()
@@ -374,6 +385,7 @@ it('settles each remote publication projection before releasing the handler', as
       order.push('canonical-apply-start')
       await remoteApplication.promise
       order.push('canonical-apply-complete')
+
       return true
     },
     async () => {
@@ -389,6 +401,7 @@ it('settles each remote publication projection before releasing the handler', as
   ).then(() => {
     handlerSettled = true
   })
+
   await Promise.resolve()
 
   expect(order).toEqual(['canonical-apply-start'])
@@ -420,11 +433,13 @@ it('settles each remote publication projection before releasing the handler', as
 it('opens the socket bootstrap before activation and applies its tail before live delivery starts', async () => {
   const order: string[] = []
   const publication = remotePublication('bootstrap-tail')
+
   vi.spyOn(
     CollaborationWebSocketProvider.prototype,
     'openDocumentSession'
   ).mockImplementation(async () => {
     order.push('open-session')
+
     return {
       checkpoint: EMPTY_DOCUMENT,
       durableSequence: 0,
@@ -443,6 +458,7 @@ it('opens the socket bootstrap before activation and applies its tail before liv
   })
   vi.spyOn(factory, 'runRemoteTransaction').mockImplementation((mutate) => {
     order.push('remote-transaction')
+
     return mutate()
   })
 
@@ -478,6 +494,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
       workspaceList: ['workspace-reconnect']
     }
   }
+
   vi.mocked(CollaborationWebSocketProvider.prototype.openDocumentSession)
     .mockResolvedValueOnce({
       checkpoint: EMPTY_DOCUMENT,
@@ -487,6 +504,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
     })
     .mockImplementationOnce(async () => {
       order.push('reconnect-open')
+
       return {
         checkpoint: reconnectDocument,
         durableSequence: 0,
@@ -502,6 +520,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
     })
     .mockImplementationOnce(async () => {
       order.push('reconnect-open')
+
       return {
         checkpoint: reconnectDocument,
         durableSequence: 0,
@@ -529,6 +548,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
   })
   vi.spyOn(factory, 'runRemoteTransaction').mockImplementation((mutate) => {
     order.push('remote-transaction')
+
     return mutate()
   })
 
@@ -538,6 +558,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   order.length = 0
 
   await handle.reconnect()
@@ -565,6 +586,7 @@ it('keeps a provisional local session active and retries an unavailable socket a
     createDeferred<
       Awaited<ReturnType<CollaborationWebSocketProvider['openDocumentSession']>>
     >()
+
   vi.mocked(CollaborationWebSocketProvider.prototype.openDocumentSession)
     .mockRejectedValueOnce(
       new ProviderFailure('connection-failed', 'socket server unavailable')
@@ -577,6 +599,7 @@ it('keeps a provisional local session active and retries an unavailable socket a
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
+
   vi.useFakeTimers()
   const handle = await prepared.activate()
 
@@ -657,9 +680,11 @@ it('keeps a provisional local session active and retries an unavailable socket a
 
 it('retains disconnected Factory publications and removes them after reconnect source acceptance', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -672,11 +697,13 @@ it('retains disconnected Factory publications and removes them after reconnect s
     )
     .mockImplementation(async (publication, consumeAcceptedSource) => {
       await consumeAcceptedSource(publication)
+
       return {
         publicationId: publication.publicationId,
         sequence: 1
       }
     })
+
   vi.spyOn(core, 'applyCanonicalChanges').mockImplementation(() => undefined)
   vi.spyOn(factory, 'runRemoteTransaction').mockImplementation((mutate) =>
     mutate()
@@ -687,6 +714,7 @@ it('retains disconnected Factory publications and removes them after reconnect s
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   await handle.disconnect()
 
   publish?.(factoryPublication('offline-local'))
@@ -736,6 +764,7 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
     createDeferred<
       Awaited<ReturnType<CollaborationWebSocketProvider['openDocumentSession']>>
     >()
+
   vi.mocked(CollaborationWebSocketProvider.prototype.openDocumentSession)
     .mockResolvedValueOnce({
       checkpoint: EMPTY_DOCUMENT,
@@ -757,9 +786,11 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
       pendingTail: []
     })
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -770,6 +801,7 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
     'sendPublicationWithAcceptance'
   ).mockImplementation(async (publication, consumeAcceptedSource) => {
     await consumeAcceptedSource(publication)
+
     return {
       publicationId: publication.publicationId,
       sequence: 1
@@ -778,6 +810,7 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
   const applyCanonicalChanges = vi
     .spyOn(core, 'applyCanonicalChanges')
     .mockImplementation(() => undefined)
+
   vi.spyOn(factory, 'runRemoteTransaction').mockImplementation((mutate) =>
     mutate()
   )
@@ -789,9 +822,11 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   await handle.disconnect()
 
   const reconnecting = handle.reconnect()
+
   publish?.(factoryPublication('queued-before-reconnect'))
   reconnectBootstrap.resolve({
     checkpoint: EMPTY_DOCUMENT,
@@ -834,6 +869,7 @@ it('disposes the previous composition before a reconnect replacement becomes liv
     disconnect: vi.fn(async () => undefined),
     dispose: vi.fn(async () => undefined)
   }
+
   collaborationModuleState.createCollaboration = vi
     .fn()
     .mockReturnValueOnce(firstComposition as never)
@@ -845,6 +881,7 @@ it('disposes the previous composition before a reconnect replacement becomes liv
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   await handle.disconnect()
   await handle.reconnect()
 
@@ -858,9 +895,11 @@ it('disposes the previous composition before a reconnect replacement becomes liv
 
 it('retains an acknowledgement-rejected publication as an explicit conflict', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -911,6 +950,7 @@ it('starts the real app collaboration composition without an Awareness preview r
   const createCollaboration = vi
     .fn()
     .mockReturnValue(harness.collaboration as never)
+
   collaborationModuleState.createCollaboration = createCollaboration
 
   await startCollaboration({
@@ -921,6 +961,7 @@ it('starts the real app collaboration composition without an Awareness preview r
 
   expect(createCollaboration).toHaveBeenCalledOnce()
   const composition = createCollaboration.mock.calls[0][0]
+
   expect(composition.provider).toBeInstanceOf(CollaborationWebSocketProvider)
   expect(composition.provider?.identity).toEqual({
     documentId: 'file-lifecycle',
@@ -942,6 +983,7 @@ it('binds source-sliced remote canonical requests to one Factory coordinator', a
     collaborationOperations,
     'createPublicationProcessor'
   )
+
   collaborationModuleState.createCollaboration = vi.fn(
     () => harness.collaboration as never
   )
@@ -954,6 +996,7 @@ it('binds source-sliced remote canonical requests to one Factory coordinator', a
 
   expect(createPublicationProcessor).toHaveBeenCalledOnce()
   const options = createPublicationProcessor.mock.calls[0]?.[0]
+
   expect(options).toEqual({
     decideRemotePublication: expect.any(Function),
     applyRemoteCanonicalChangeSlices: expect.any(Function)
@@ -984,6 +1027,7 @@ it('exposes remote publication outcomes through the local collaboration handle',
   )
   const forwardOutcome =
     harness.collaboration.observePublicationOutcomes.mock.calls[0]?.[0]
+
   forwardOutcome?.({
     direction: 'remote',
     status: 'processed',
@@ -1002,6 +1046,7 @@ it('exposes provider status through the local collaboration handle', async () =>
     CollaborationWebSocketProvider.prototype,
     'onStatusChange'
   )
+
   collaborationModuleState.createCollaboration = vi.fn(
     () => harness.collaboration as never
   )
@@ -1016,6 +1061,7 @@ it('exposes provider status through the local collaboration handle', async () =>
 
   expect(onStatusChange).toHaveBeenCalledWith(expect.any(Function))
   const forwardStatus = onStatusChange.mock.calls[0]?.[0]
+
   forwardStatus?.('failed')
   expect(subscriber).toHaveBeenCalledWith('disconnected')
   expect(unsubscribe).toEqual(expect.any(Function))
@@ -1023,16 +1069,19 @@ it('exposes provider status through the local collaboration handle', async () =>
 
 it('settles after remote apply without saving the receiving document', async () => {
   const order: string[] = []
+
   vi.spyOn(core, 'applyCanonicalChanges').mockImplementation(() => {
     order.push('core-apply')
   })
   vi.spyOn(factory, 'runRemoteTransaction').mockImplementation((mutate) => {
     order.push('remote-transaction')
+
     return mutate()
   })
   const createCollaboration = vi
     .fn()
     .mockReturnValue(harness.collaboration as never)
+
   collaborationModuleState.createCollaboration = createCollaboration
 
   await startCollaboration({
@@ -1041,6 +1090,7 @@ it('settles after remote apply without saving the receiving document', async () 
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const composition = createCollaboration.mock.calls[0]?.[0]
+
   if (!composition) {
     throw new Error('Expected collaboration composition')
   }
@@ -1063,9 +1113,11 @@ it('settles after remote apply without saving the receiving document', async () 
 it('confirms persistence after earlier publications without blocking later publications', async () => {
   const capture = vi.spyOn(core, 'getCanonicalOwnerSnapshot')
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1095,8 +1147,10 @@ it('confirms persistence after earlier publications without blocking later publi
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   publish?.(factoryPublication('before-confirmation'))
   const confirmation = handle.confirmPersistence()
+
   await vi.waitFor(() => expect(confirm).toHaveBeenCalledOnce())
   expect(send).toHaveBeenCalledWith(
     expect.objectContaining({ publicationId: 'before-confirmation' }),
@@ -1122,9 +1176,11 @@ it('confirms persistence after earlier publications without blocking later publi
 
 it('cancels a queued persistence confirmation without waiting for a pending publication', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1147,6 +1203,7 @@ it('cancels a queued persistence confirmation without waiting for a pending publ
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   publish?.(factoryPublication('pending-publication'))
   await vi.waitFor(() => expect(send).toHaveBeenCalledOnce())
   const controller = new AbortController()
@@ -1156,6 +1213,7 @@ it('cancels a queued persistence confirmation without waiting for a pending publ
     .catch((error: unknown) => {
       failure = error
     })
+
   controller.abort(new Error('Cancelled confirmation'))
   try {
     await vi.waitFor(() =>
@@ -1166,11 +1224,13 @@ it('cancels a queued persistence confirmation without waiting for a pending publ
     await confirmation
     await handle.whenIdle()
   }
+
   expect(confirm).not.toHaveBeenCalled()
 })
 
 it('retains a producer conversion failure instead of reporting an unsaved local publication as synced', async () => {
   const producer = new Factory()
+
   producer.registerSharedDataChannel(
     SharedDataChannelNames.SCENE_TREE,
     new LocalSharedDataChannel()
@@ -1179,6 +1239,7 @@ it('retains a producer conversion failure instead of reporting an unsaved local 
     producer.subscribeToSharedPublication.bind(producer)
   )
   const sourcePublications: SharedPublication[] = []
+
   producer.subscribeToSharedPublication((publication) =>
     sourcePublications.push(publication)
   )
@@ -1196,6 +1257,7 @@ it('retains a producer conversion failure instead of reporting an unsaved local 
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   producer.startTransaction()
   producer.updateTransaction({
     type: TransactionEventTypes.UPDATE_TRANSACTION,
@@ -1219,6 +1281,7 @@ it('retains a producer conversion failure instead of reporting an unsaved local 
   const retained = new DocumentPublicationOutbox({
     fileId: 'file-producer-conversion-failure'
   })
+
   await retained.initialize()
   expect(retained.getConflicts()).toHaveLength(1)
   expect(retained.getRecoverablePublications()).toHaveLength(0)
@@ -1256,6 +1319,7 @@ it('retains a producer conversion failure instead of reporting an unsaved local 
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const reopenedHandle = await reopened.activate()
+
   await reopenedHandle.whenIdle()
   expect(reopenedHandle.getSessionState()).toMatchObject({
     pendingCount: 2,
@@ -1270,9 +1334,11 @@ it('retains a producer conversion failure instead of reporting an unsaved local 
 
 it('blocks confirmation and transport after failed preparation retention even through reconnect and later edits', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1286,6 +1352,7 @@ it('blocks confirmation and transport after failed preparation retention even th
     CollaborationWebSocketProvider.prototype,
     'confirmPersistence'
   )
+
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
   const prepared = await prepareCollaborationDocumentSession({
     fileId: 'preparation-storage-failure',
@@ -1293,6 +1360,7 @@ it('blocks confirmation and transport after failed preparation retention even th
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   vi.spyOn(
     IndexedDbPublicationOutboxStorage.prototype,
     'put'
@@ -1311,6 +1379,7 @@ it('blocks confirmation and transport after failed preparation retention even th
       }))
     }))
   })
+
   publish?.(invalid)
   await expect(handle.confirmPersistence()).rejects.toThrow(
     'pending, conflicted or unavailable'
@@ -1336,9 +1405,11 @@ it('blocks confirmation and transport after failed preparation retention even th
 
 it('retains action replay and compensation behind a rejected predecessor without sending them', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1357,6 +1428,7 @@ it('retains action replay and compensation behind a rejected predecessor without
         'rejected-predecessor'
       )
     )
+
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
   const prepared = await prepareCollaborationDocumentSession({
     fileId: 'rejected-replay-prefix',
@@ -1364,6 +1436,7 @@ it('retains action replay and compensation behind a rejected predecessor without
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   publish?.(factoryPublication('rejected-predecessor'))
   for (const origin of [
     'action',
@@ -1381,6 +1454,7 @@ it('retains action replay and compensation behind a rejected predecessor without
       })
     )
   }
+
   await handle.whenIdle()
   expect(send).toHaveBeenCalledOnce()
   expect(handle.getSessionState()).toMatchObject({
@@ -1390,6 +1464,7 @@ it('retains action replay and compensation behind a rejected predecessor without
   const reloaded = new DocumentPublicationOutbox({
     fileId: 'rejected-replay-prefix'
   })
+
   await reloaded.initialize()
   expect(reloaded.getState()).toEqual({ pendingCount: 5, status: 'conflicted' })
   expect(reloaded.getRecoverablePublications()).toEqual([])
@@ -1397,9 +1472,11 @@ it('retains action replay and compensation behind a rejected predecessor without
 
 it('preserves the local recovery document across reconnect and reopen, then resumes canonical saving after preparation is repaired', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1410,12 +1487,15 @@ it('preserves the local recovery document across reconnect and reopen, then resu
     ...EMPTY_DOCUMENT,
     props: { savedWork: { id: 'savedWork', type: 'test', value: 17 } }
   }
+
   vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(draft as never)
   const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
+
   vi.spyOn(core, 'applyRemoteCanonicalChangeSlices').mockResolvedValue(
     undefined
   )
   const prepare = vi.spyOn(documentPreparation, 'prepareDocumentPublication')
+
   prepare.mockImplementationOnce(() => {
     throw new Error('temporary converter failure')
   })
@@ -1426,9 +1506,11 @@ it('preserves the local recovery document across reconnect and reopen, then resu
     )
     .mockImplementation(async (publication, consume) => {
       await consume?.(publication)
+
       return { publicationId: publication.publicationId, sequence: 1 }
     })
   const receipt = { documentId: 'recovery-complete', durableSequence: 1 }
+
   vi.spyOn(
     CollaborationWebSocketProvider.prototype,
     'confirmPersistence'
@@ -1440,6 +1522,7 @@ it('preserves the local recovery document across reconnect and reopen, then resu
   }
   const initial = await prepareCollaborationDocumentSession(mode)
   const handle = await initial.activate()
+
   publish?.(factoryPublication('recoverable-source'))
   await handle.whenIdle()
   expect(handle.getRecoveryDocument()).toMatchObject(draft)
@@ -1448,13 +1531,17 @@ it('preserves the local recovery document across reconnect and reopen, then resu
   expect(send).not.toHaveBeenCalled()
   await disposeCollaboration()
   const reopened = await prepareCollaborationDocumentSession(mode)
+
   expect(reopened.bootstrap.checkpoint).toMatchObject(draft)
   const reopenedHandle = await reopened.activate()
+
   await reopenedHandle.prepareRecovery()
   await disposeCollaboration()
   const resumed = await prepareCollaborationDocumentSession(mode)
+
   expect(resumed.bootstrap.checkpoint).toEqual(EMPTY_DOCUMENT)
   const resumedHandle = await resumed.activate()
+
   await resumedHandle.whenIdle()
   expect(send).toHaveBeenCalledTimes(1)
   expect(resumedHandle.getSessionState()).toMatchObject({
@@ -1466,9 +1553,11 @@ it('preserves the local recovery document across reconnect and reopen, then resu
 
 it('retains the failed source even when capturing its recovery document also fails', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1490,6 +1579,7 @@ it('retains the failed source even when capturing its recovery document also fai
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   expect(() => publish?.(factoryPublication('must-retain'))).not.toThrow()
   await handle.whenIdle()
   expect(handle.getSessionState()).toMatchObject({
@@ -1498,6 +1588,7 @@ it('retains the failed source even when capturing its recovery document also fai
     recoveryAvailable: true
   })
   const retained = new DocumentPublicationOutbox({ fileId: 'snapshot-failed' })
+
   await retained.initialize()
   expect(retained.getConflicts()[0]?.publicationId).toBe('must-retain')
   expect(handle.hasUnpersistedChanges()).toBe(false)
@@ -1505,9 +1596,11 @@ it('retains the failed source even when capturing its recovery document also fai
 
 it('isolates a rejected source even when persisting the conflict fails', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1515,6 +1608,7 @@ it('isolates a rejected source even when persisting the conflict fails', async (
   )
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
   const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
+
   vi.spyOn(
     CollaborationWebSocketProvider.prototype,
     'sendPublicationWithAcceptance'
@@ -1531,6 +1625,7 @@ it('isolates a rejected source even when persisting the conflict fails', async (
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   publish?.(factoryPublication('rejected-source'))
   await handle.whenIdle()
   expect(handle.getSessionState()).toMatchObject({
@@ -1544,6 +1639,7 @@ it('isolates a rejected source even when persisting the conflict fails', async (
 it('keeps reopened recovery available after failed Reset and clears it only after authoritative Reset succeeds', async () => {
   const fileId = 'reopened-recovery-reset'
   const outbox = new DocumentPublicationOutbox({ fileId })
+
   await outbox.initialize()
   await outbox.bindDocumentGeneration(0)
   await outbox.appendPreparationFailure(
@@ -1557,6 +1653,7 @@ it('keeps reopened recovery available after failed Reset and clears it only afte
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   expect(handle.getSessionState().recoveryAvailable).toBe(true)
   const reset = vi.mocked(
     CollaborationWebSocketProvider.prototype.resetDocument
@@ -1564,6 +1661,7 @@ it('keeps reopened recovery available after failed Reset and clears it only afte
   const completeBootstrap = vi.mocked(
     CollaborationWebSocketProvider.prototype.completeDocumentBootstrap
   )
+
   completeBootstrap.mockClear()
   reset.mockImplementationOnce(async () => {
     expect(completeBootstrap).toHaveBeenCalledOnce()
@@ -1574,12 +1672,14 @@ it('keeps reopened recovery available after failed Reset and clears it only afte
   )
   expect(getActiveCollaborationHandle()).toBe(handle)
   const retained = new DocumentPublicationOutbox({ fileId })
+
   await retained.initialize()
   expect(retained.getState().pendingCount).toBe(1)
   await resetCollaborationDocument(fileId)
   expect(reset).toHaveBeenCalledTimes(2)
   expect(getActiveCollaborationHandle()).toBeUndefined()
   const cleared = new DocumentPublicationOutbox({ fileId })
+
   await cleared.initialize()
   expect(cleared.getState().pendingCount).toBe(0)
 })
@@ -1587,6 +1687,7 @@ it('keeps reopened recovery available after failed Reset and clears it only afte
 it('keeps preparation retry available after reopening evidence whose optional draft capture failed', async () => {
   const fileId = 'recovery-without-captured-draft'
   const outbox = new DocumentPublicationOutbox({ fileId })
+
   await outbox.initialize()
   await outbox.bindDocumentGeneration(0)
   await outbox.appendPreparationFailure(
@@ -1599,6 +1700,7 @@ it('keeps preparation retry available after reopening evidence whose optional dr
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   expect(handle.getSessionState()).toMatchObject({
     recoveryAvailable: true,
     sync: 'conflicted'
@@ -1607,15 +1709,18 @@ it('keeps preparation retry available after reopening evidence whose optional dr
   vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
   await handle.prepareRecovery()
   const retained = new DocumentPublicationOutbox({ fileId })
+
   await retained.initialize()
   expect(retained.getRecoverablePublications()).toHaveLength(1)
 })
 
 it('exposes recovery after accepted-source cleanup fails and preserves the exact source for retry', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1625,6 +1730,7 @@ it('exposes recovery after accepted-source cleanup fails and preserves the exact
     ...EMPTY_DOCUMENT,
     props: { retained: { id: 'retained', value: 5 } }
   }
+
   vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(draft as never)
   vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -1644,6 +1750,7 @@ it('exposes recovery after accepted-source cleanup fails and preserves the exact
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   publish?.(factoryPublication('accepted-source'))
   await handle.whenIdle()
   expect(handle.getSessionState()).toMatchObject({
@@ -1657,6 +1764,7 @@ it('exposes recovery after accepted-source cleanup fails and preserves the exact
   const outbox = new DocumentPublicationOutbox({
     fileId: 'accepted-cleanup-failed'
   })
+
   await outbox.initialize()
   expect(
     outbox.getRecoverablePublications().map((record) => record.publicationId)
@@ -1666,9 +1774,11 @@ it('exposes recovery after accepted-source cleanup fails and preserves the exact
 
 it('abandons an in-flight reconnect when a source failure establishes a recovery draft', async () => {
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1678,6 +1788,7 @@ it('abandons an in-flight reconnect when a source failure establishes a recovery
     ...EMPTY_DOCUMENT,
     props: { retained: { id: 'retained', value: 7 } }
   }
+
   vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(draft as never)
   const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
   const prepared = await prepareCollaborationDocumentSession({
@@ -1686,19 +1797,23 @@ it('abandons an in-flight reconnect when a source failure establishes a recovery
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   await handle.disconnect()
   const opened = createDeferred<undefined>()
   const pending =
     createDeferred<
       Awaited<ReturnType<CollaborationWebSocketProvider['openDocumentSession']>>
     >()
+
   vi.mocked(
     CollaborationWebSocketProvider.prototype.openDocumentSession
   ).mockImplementationOnce(() => {
     opened.resolve(undefined)
+
     return pending.promise
   })
   const reconnecting = handle.reconnect()
+
   await opened.promise
   vi.spyOn(
     documentPreparation,
@@ -1727,15 +1842,18 @@ it('abandons an in-flight reconnect when a source failure establishes a recovery
 it('does not reload Core or erase history when a live edit is rejected after successful recovery replay', async () => {
   const fileId = 'live-rejection-after-replay'
   const outbox = new DocumentPublicationOutbox({ fileId })
+
   await outbox.initialize()
   await outbox.bindDocumentGeneration(0)
   await outbox.append(
     prepareDocumentPublication(factoryPublication('old-replay'))
   )
   let publish: ((publication: SharedPublication) => void) | undefined
+
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
@@ -1755,6 +1873,7 @@ it('does not reload Core or erase history when a live edit is rejected after suc
     )
     .mockImplementation(async (publication, consume) => {
       await consume(publication)
+
       return { publicationId: publication.publicationId, sequence: 1 }
     })
   const prepared = await prepareCollaborationDocumentSession({
@@ -1763,6 +1882,7 @@ it('does not reload Core or erase history when a live edit is rejected after suc
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   expect(handle.getSessionState().sync).toBe('synced')
   load.mockClear()
   send.mockRejectedValueOnce(
@@ -1786,6 +1906,7 @@ it('does not permit recovery reload while a new transaction remains open after r
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(false)
   await handle.whenIdle()
   expect(handle.hasUnpersistedChanges()).toBe(true)
@@ -1794,6 +1915,7 @@ it('does not permit recovery reload while a new transaction remains open after r
 it('keeps startup recovery actionable when binding retained records to the document generation fails', async () => {
   const fileId = 'generation-bind-storage-failure'
   const outbox = new DocumentPublicationOutbox({ fileId })
+
   await outbox.initialize()
   await outbox.append(
     prepareDocumentPublication(factoryPublication('unbound-source'))
@@ -1801,6 +1923,7 @@ it('keeps startup recovery actionable when binding retained records to the docum
   const put = vi
     .spyOn(IndexedDbPublicationOutboxStorage.prototype, 'put')
     .mockRejectedValueOnce(new Error('binding storage failed'))
+
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
   vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
   const prepared = await prepareCollaborationDocumentSession({
@@ -1809,12 +1932,14 @@ it('keeps startup recovery actionable when binding retained records to the docum
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
+
   expect(handle.getSessionState()).toMatchObject({
     recoveryAvailable: true,
     sync: 'storage-failed'
   })
   await handle.prepareRecovery()
   const retained = new DocumentPublicationOutbox({ fileId })
+
   await retained.initialize()
   expect(retained.getRecoverablePublications()[0]?.documentGeneration).toBe(0)
   expect(put).toHaveBeenCalledTimes(2)
@@ -1828,6 +1953,7 @@ it('cannot revive an activation after its document session is disposed', async (
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
+
   vi.mocked(
     CollaborationWebSocketProvider.prototype.completeDocumentBootstrap
   ).mockImplementationOnce(async () => {
@@ -1836,6 +1962,7 @@ it('cannot revive an activation after its document session is disposed', async (
   })
   const activation = prepared.activate()
   const rejected = expect(activation).rejects.toThrow('disposed')
+
   await starting.promise
   await disposeCollaboration()
   pending.resolve(undefined)
@@ -1853,10 +1980,12 @@ it.each(['resolved', 'rejected'] as const)(
         >
       >()
     const opening = createDeferred<undefined>()
+
     vi.mocked(
       CollaborationWebSocketProvider.prototype.openDocumentSession
     ).mockImplementationOnce(() => {
       opening.resolve(undefined)
+
       return pending.promise
     })
     const unsubscribe = vi.fn()
@@ -1869,12 +1998,14 @@ it.each(['resolved', 'rejected'] as const)(
       session.prepare({
         load: vi.fn(),
         applyRemoteCanonicalChangeSlices: vi.fn(async () => undefined),
+
         subscribeToSharedPublication: () => unsubscribe
       })
     )
     const rejected = expect(preparation).rejects.toThrow(
       settlement === 'resolved' ? 'disposed' : 'Bootstrap failed'
     )
+
     await opening.promise
     const disposal = session.dispose()
     const successor = await prepareCollaborationDocumentSession({
@@ -1883,6 +2014,7 @@ it.each(['resolved', 'rejected'] as const)(
       endpoint: 'ws://127.0.0.1:4101/collaboration'
     })
     const active = await successor.activate()
+
     if (settlement === 'resolved') {
       pending.resolve({
         checkpoint: EMPTY_DOCUMENT,
@@ -1893,6 +2025,7 @@ it.each(['resolved', 'rejected'] as const)(
     } else {
       pending.reject(new Error('Bootstrap failed'))
     }
+
     await rejected
     await disposal
     expect(unsubscribe).toHaveBeenCalledOnce()
@@ -1910,8 +2043,10 @@ it('retires a prepared checkpoint load source when its Core session is disposed'
   const preparation = await session.prepare({
     load: vi.fn(),
     applyRemoteCanonicalChangeSlices: vi.fn(async () => undefined),
+
     subscribeToSharedPublication: () => vi.fn()
   })
+
   expect(await preparation?.loadSource?.load()).toEqual(EMPTY_DOCUMENT)
   await session.dispose()
   await expect(preparation?.loadSource?.load()).rejects.toThrow('disposed')

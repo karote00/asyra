@@ -30,7 +30,9 @@ export async function runResponsiveLayout(
       .getByRole('combobox', { name: '語言', exact: true })
       .selectOption('en')
   }
+
   const english = locale === 'en'
+
   await checkLayout(page)
   if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
@@ -38,16 +40,21 @@ export async function runResponsiveLayout(
       fullPage: true
     })
   }
+
   if (width < 1100) {
     const editorToggle = page.locator(
       'button[aria-controls="configuration-panel"]'
     )
+
     if ((await editorToggle.getAttribute('aria-expanded')) !== 'true') {
       await editorToggle.click()
     }
+
     await expect(editorToggle).toHaveAttribute('aria-expanded', 'true')
   }
+
   const right = page.locator('#configuration-panel .workspace-panel-content')
+
   await page.locator('.scene-workspace').evaluate(async (workspace) => {
     await Promise.all(
       workspace
@@ -62,6 +69,7 @@ export async function runResponsiveLayout(
       const toggle = document.querySelector(
         'button[aria-controls="configuration-panel"]'
       )
+
       return {
         expanded: toggle?.getAttribute('aria-expanded'),
         rightOpen: panel.parentElement?.getAttribute('data-right-open'),
@@ -70,6 +78,7 @@ export async function runResponsiveLayout(
         contentVisibility: content ? getComputedStyle(content).visibility : null
       }
     })
+
   expect(panelState).toEqual({
     expanded: 'true',
     rightOpen: 'true',
@@ -85,6 +94,7 @@ export async function runResponsiveLayout(
       fullPage: true
     })
   }
+
   await right.evaluate((node) => {
     node.scrollTop = node.scrollHeight
   })
@@ -103,6 +113,7 @@ export async function runResponsiveLayout(
       fullPage: true
     })
   }
+
   if (width < 1100) {
     await page
       .getByRole('button', {
@@ -111,6 +122,7 @@ export async function runResponsiveLayout(
       })
       .click()
   }
+
   await expect(
     page.getByLabel(english ? 'Yu-Nu cherry tomato' : '玉女小蕃茄', {
       exact: true
@@ -123,6 +135,7 @@ export async function runResponsiveLayout(
       fullPage: true
     })
   }
+
   await page
     .getByLabel(english ? 'Film opacity' : '覆膜不透明度', { exact: true })
     .scrollIntoViewIfNeeded()
@@ -138,6 +151,7 @@ export async function runResponsiveLayout(
       fullPage: true
     })
   }
+
   await page
     .getByRole('button', {
       name: english ? 'References' : '參考資料',
@@ -153,6 +167,7 @@ export async function runResponsiveLayout(
     })
     .click()
   const dialog = page.getByRole('dialog')
+
   await expect(dialog).toBeVisible()
   await checkLayout(page)
   await expect(dialog.locator('a')).toHaveAttribute('target', '_blank')
@@ -166,6 +181,7 @@ export async function runResponsiveLayout(
       fullPage: true
     })
   }
+
   await dialog.locator('p').last().scrollIntoViewIfNeeded()
   await expect(dialog.locator('p').last()).toBeInViewport()
   if (!usesCpuSoftwareRenderer) {
@@ -174,6 +190,7 @@ export async function runResponsiveLayout(
       fullPage: true
     })
   }
+
   if (english) {
     const attributes = await page
       .locator('[aria-label], [aria-description], [title]')
@@ -186,14 +203,19 @@ export async function runResponsiveLayout(
           )
           .join(' ')
       )
+
     expect(attributes).not.toMatch(/\p{Script=Han}/u)
     const copy = await page.locator('body').evaluate((node) => {
       const clone = node.cloneNode(true) as HTMLElement
+
       clone.querySelectorAll('option, script').forEach((item) => item.remove())
+
       return clone.textContent
     })
+
     expect(copy).not.toMatch(/\p{Script=Han}/u)
   }
+
   await page
     .getByRole('button', {
       name: english ? 'Close references' : '關閉參考資料',

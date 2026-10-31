@@ -12,6 +12,7 @@ interface SourceIdentity {
   sourceRevision?: string
   sourceFingerprint?: string
 }
+
 const describeError = (error: unknown) =>
   error instanceof Error
     ? { name: error.name, message: error.message, stack: error.stack }
@@ -36,6 +37,7 @@ export async function createExecutionEvidence(options: {
         kind === 'navigation' &&
         permitted?.name === participant.name &&
         permitted.remaining === 1
+
       if (planned && permitted) {
         permitted.remaining--
       } else {
@@ -45,6 +47,7 @@ export async function createExecutionEvidence(options: {
           participant: participant.name
         })
       }
+
       navigation.push({
         participant: participant.name,
         kind,
@@ -53,9 +56,11 @@ export async function createExecutionEvidence(options: {
       })
     })
   )
+
   if (sourceBefore.sourceIdentityStatus !== 'captured') {
     violations.push({ kind: 'source-unavailable' })
   }
+
   for (const participant of options.participants) {
     try {
       baselines.set(participant.name, await participant.readRuntime())
@@ -67,12 +72,15 @@ export async function createExecutionEvidence(options: {
       })
     }
   }
+
   const environmentError = (cause?: unknown) =>
     new Error('E2E execution environment continuity failed', { cause })
+
   const assertContinuous = async () => {
     for (const participant of options.participants) {
       try {
         const actual = await participant.readRuntime()
+
         if (actual !== baselines.get(participant.name)) {
           violations.push({
             kind: 'runtime-replaced',
@@ -88,12 +96,15 @@ export async function createExecutionEvidence(options: {
         })
       }
     }
+
     if (violations.length) {
       throw environmentError()
     }
   }
+
   const capture = async () => {
     const participants = []
+
     for (const participant of options.participants) {
       try {
         // Do not use a cached snapshot after a runtime or connection is lost.
@@ -115,15 +126,19 @@ export async function createExecutionEvidence(options: {
         })
       }
     }
+
     let checkpoint: unknown
+
     try {
       checkpoint = { status: 'captured', value: await options.readCheckpoint() }
     } catch (error) {
       violations.push({ kind: 'checkpoint-unavailable' })
       checkpoint = { status: 'unavailable', error: describeError(error) }
     }
+
     return { participants, checkpoint }
   }
+
   const phase = async <T>(
     name: string,
     action: () => Promise<T>,
@@ -134,6 +149,7 @@ export async function createExecutionEvidence(options: {
     let original: unknown
     let failed = false
     let result!: T
+
     try {
       await assertContinuous()
       result = await action()
@@ -141,7 +157,9 @@ export async function createExecutionEvidence(options: {
       original = error
       failed = true
     }
+
     const after = await capture()
+
     try {
       await assertContinuous()
     } catch (error) {
@@ -150,6 +168,7 @@ export async function createExecutionEvidence(options: {
         failed = true
       }
     }
+
     phases.push({
       name,
       startedAt,
@@ -163,18 +182,23 @@ export async function createExecutionEvidence(options: {
     if (violations.length) {
       throw environmentError(original)
     }
+
     if (failed) {
       throw original
     }
+
     return result
   }
+
   return {
     assertContinuous,
     phase,
+
     reload: async (name: string, action: () => Promise<void>) => {
       if (!baselines.has(name) || permitted) {
         throw new Error('Invalid planned reload participant')
       }
+
       await phase('planned reload - ' + name, async () => {
         permitted = { name, remaining: 1 }
         try {
@@ -185,27 +209,34 @@ export async function createExecutionEvidence(options: {
               participant: name
             })
           }
+
           const participant = options.participants.find(
             (entry) => entry.name === name
           )
+
           if (!participant) {
             throw new Error('Missing planned reload participant')
           }
+
           const next = await participant.readRuntime()
+
           if (next === baselines.get(name)) {
             violations.push({
               kind: 'planned-runtime-unchanged',
               participant: name
             })
           }
+
           baselines.set(name, next)
         } finally {
           permitted = undefined
         }
       })
     },
+
     finish: async (originalError?: unknown) => {
       let sourceAfter: SourceIdentity = { sourceIdentityStatus: 'unavailable' }
+
       try {
         try {
           sourceAfter = await options.captureSource()
@@ -215,6 +246,7 @@ export async function createExecutionEvidence(options: {
             detail: describeError(error)
           })
         }
+
         if (sourceAfter.sourceIdentityStatus !== 'captured') {
           violations.push({ kind: 'source-unavailable' })
         } else if (
@@ -223,11 +255,13 @@ export async function createExecutionEvidence(options: {
         ) {
           violations.push({ kind: 'source-changed' })
         }
+
         try {
           await assertContinuous()
         } catch {
           /* Violations remain in the attachment. */
         }
+
         try {
           await options.attach({
             originalError:
@@ -247,8 +281,10 @@ export async function createExecutionEvidence(options: {
               'E2E failure evidence attachment failed'
             )
           }
+
           throw error
         }
+
         if (violations.length) {
           throw environmentError(originalError)
         }
@@ -268,6 +304,7 @@ export async function undo(page: Page, assertContinuous?: () => Promise<void>) {
   await assertContinuous?.()
   // Click on the toolbar area (neutral zone) to gain focus without triggering tools
   const toolbar = page.getByTestId('toolbar')
+
   await toolbar.click({ position: { x: 5, y: 5 } })
 
   await assertContinuous?.()
@@ -287,6 +324,7 @@ export async function redo(page: Page, assertContinuous?: () => Promise<void>) {
   await assertContinuous?.()
   // Click on the toolbar area (neutral zone) to gain focus without triggering tools
   const toolbar = page.getByTestId('toolbar')
+
   await toolbar.click({ position: { x: 5, y: 5 } })
 
   await assertContinuous?.()
@@ -305,7 +343,9 @@ export async function redo(page: Page, assertContinuous?: () => Promise<void>) {
 export function observeExecutionPage(page: Page, name: string) {
   return {
     name,
+
     readRuntime: () => page.evaluate(() => performance.timeOrigin),
+
     read: async () => {
       if (page.url() === 'about:blank') {
         return {
@@ -313,9 +353,11 @@ export function observeExecutionPage(page: Page, name: string) {
           state: 'not-started'
         }
       }
+
       const snapshot = await page.evaluate(async () => {
         const { core } = await import('../src/testing/runtime-access')
         const data = await core.save()
+
         return {
           runtimeId: performance.timeOrigin,
           historyDepth: core.getUndoHistoryDepth(),
@@ -326,14 +368,19 @@ export function observeExecutionPage(page: Page, name: string) {
           }
         }
       })
+
       return snapshot
     },
+
     subscribe(listener: (kind: 'navigation' | 'closed') => void) {
       // A full document load replaces the runtime; hash navigation does not.
       const loaded = () => listener('navigation')
+
       const closed = () => listener('closed')
+
       page.on('load', loaded)
       page.on('close', closed)
+
       return () => {
         page.off('load', loaded)
         page.off('close', closed)

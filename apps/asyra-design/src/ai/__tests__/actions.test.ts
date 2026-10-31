@@ -15,6 +15,7 @@ import {
 
 const originalMetadata = core.getElementMetadata
 const originalSelection = core.selectElements
+
 afterEach(() => {
   core.getElementMetadata = originalMetadata
   core.selectElements = originalSelection
@@ -44,9 +45,11 @@ const actionByName = (name: string, apis: AiActionApis) => {
   const action = createAiActions(apis).find(
     (candidate) => candidate.name === name
   )
+
   if (!action) {
     throw new Error(`Missing test action: ${name}`)
   }
+
   return action
 }
 
@@ -60,6 +63,7 @@ describe('Asyra Design AI actions', () => {
       AiActionNames.INSERT_VECTOR_COMPOSITION,
       actionApis()
     )
+
     expect(action.inputSchema).toMatchObject({
       properties: {
         groupDescriptor: {
@@ -117,6 +121,7 @@ describe('Asyra Design AI actions', () => {
       actionApis()
     )
     const schema = JSON.stringify(action.inputSchema)
+
     expect(schema).toContain('"rect"')
     expect(schema).not.toContain('"rectangle"')
   })
@@ -126,6 +131,7 @@ describe('Asyra Design AI actions', () => {
       AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       actionApis()
     )
+
     expect(action.inputSchema).toMatchObject({
       properties: {
         updates: {
@@ -235,6 +241,7 @@ describe('Asyra Design AI actions', () => {
         { elementId: 'shape-1', visible: false },
         executionContext()
       )
+
       expect(result).toMatchObject({
         elementId: 'shape-1',
         changed: ownerStatus === 'changed',
@@ -253,13 +260,16 @@ describe('Asyra Design AI actions', () => {
     const apis = actionApis()
     const controller = new AbortController()
     const action = actionByName(AiActionNames.SET_ELEMENT_VISIBILITY, apis)
+
     await expect(
       action.execute(
         { elementId: 'shape-1', visible: false },
         {
           signal: controller.signal,
+
           runMutation: async (write) => {
             controller.abort(new Error('Stopped before write'))
+
             return write()
           }
         }
@@ -273,6 +283,7 @@ describe('Asyra Design AI actions', () => {
     async (...ids) => {
       const apis = actionApis()
       let selected = ['previous']
+
       core.getElementMetadata = vi.fn((id) =>
         id === 'shape-1'
           ? ({ id, type: 'rect' } as ReturnType<typeof core.getElementMetadata>)
@@ -281,9 +292,11 @@ describe('Asyra Design AI actions', () => {
       const write = vi.fn((next: string[]) => {
         selected = next
       })
+
       core.selectElements = write
       apis.selectElements = selectionApis.selectElements
       const action = actionByName(AiActionNames.SELECT_ELEMENTS, apis)
+
       await expect(
         action.execute({ elementIds: ids }, executionContext())
       ).rejects.toThrow('Selection target does not exist: missing')
@@ -299,22 +312,27 @@ describe('Asyra Design AI actions', () => {
   it('checks target existence at the scheduled mutation boundary', async () => {
     const apis = actionApis()
     let exists = true
+
     core.getElementMetadata = vi.fn((id) =>
       exists
         ? ({ id, type: 'rect' } as ReturnType<typeof core.getElementMetadata>)
         : undefined
     )
     const write = vi.fn(() => undefined)
+
     core.selectElements = write
     apis.selectElements = selectionApis.selectElements
     const action = actionByName(AiActionNames.SELECT_ELEMENTS, apis)
+
     await expect(
       action.execute(
         { elementIds: ['removed'] },
         {
           ...executionContext(),
+
           runMutation: async (mutate) => {
             exists = false
+
             return mutate()
           }
         }
@@ -327,13 +345,16 @@ describe('Asyra Design AI actions', () => {
     const apis = actionApis()
     const controller = new AbortController()
     const action = actionByName(AiActionNames.SELECT_ELEMENTS, apis)
+
     await expect(
       action.execute(
         { elementIds: ['shape-1'] },
         {
           signal: controller.signal,
+
           runMutation: async (mutate) => {
             controller.abort()
+
             return mutate()
           }
         }
@@ -346,6 +367,7 @@ describe('Asyra Design AI actions', () => {
     const apis = actionApis()
     const action = actionByName(AiActionNames.SET_ELEMENT_VISIBILITY, apis)
     const controller = new AbortController()
+
     controller.abort()
 
     await expect(
@@ -376,6 +398,7 @@ describe('reported capability boundaries', () => {
       },
       executionContext()
     )
+
     expect(result).toMatchObject({
       status: 'no-change',
       outcome: 'unsupported',
@@ -400,6 +423,7 @@ it('reports drawing completion separately from durable document acknowledgement'
       confirmPersistence: confirmation
     }).find((item) => item.name === AiActionNames.REPORT_OUTCOME)
   )
+
   await expect(
     action.execute(
       { outcome: 'completed', message: 'Drawing completed.' },
@@ -420,6 +444,7 @@ it('retains completed drawing work when persistence confirmation is unavailable'
       }
     }).find((item) => item.name === AiActionNames.REPORT_OUTCOME)
   )
+
   await expect(
     action.execute(
       { outcome: 'completed', message: 'Drawing completed.' },
@@ -439,9 +464,11 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
       if (storage === 'unavailable') {
         throw new Error('offline')
       }
+
       if (storage === 'local-only') {
         return { status: storage } as const
       }
+
       return {
         status: storage,
         documentId: 'drawing',
@@ -458,16 +485,20 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
     const action = observeAiAction(definition)
     const controller = createAiConversationController({
       getElementType: () => undefined,
+
       feature: {
         cancel: () => false,
+
         execute: async () => {
           const result = await action.execute(
             { outcome: 'completed', message: 'Drawing saved successfully.' },
             executionContext()
           )
+
           expect(
             operationInputIssue(result, definition.outputSchema)
           ).toBeUndefined()
+
           return {
             status: 'executed',
             actionResults: [
@@ -477,9 +508,11 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
         }
       }
     })
+
     try {
       const turn = await controller.submit('Finish this drawing')
       const summary = summarizeAiTurn(turn)
+
       if (storage === 'unavailable') {
         expect(turn.outcome).toBe('partial')
         expect(summary.message).toContain('could not be confirmed')
@@ -490,6 +523,7 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
       } else {
         expect(summary.message).toBe('Drawing saved successfully.')
       }
+
       expect(canRetryAiTurn(turn)).toBe(false)
       expect(confirmPersistence).toHaveBeenCalledOnce()
     } finally {
@@ -502,6 +536,7 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) {
     throw new Error('Required test fixture is unavailable')
   }
+
   return value
 }
 
@@ -512,6 +547,7 @@ it.each([
   'publishes the existing nonblank control-input constraint for %s',
   async (name, input) => {
     const action = actionByName(name as string, actionApis())
+
     await expect(
       action.execute(input as never, executionContext())
     ).rejects.toThrow()
@@ -558,11 +594,13 @@ it.each([
     const apis = actionApis()
     const action = observeAiAction(actionByName(name as string, apis))
     const result = await action.execute(input as never, executionContext())
+
     expect(result).toMatchObject(expected as object)
     expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
     for (const api of Object.values(apis)) {
       expect(api).not.toHaveBeenCalled()
     }
+
     await expect(
       action.execute(input as never, { signal: AbortSignal.abort() })
     ).rejects.toThrow()

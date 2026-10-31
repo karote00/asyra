@@ -7,6 +7,7 @@ const { directory } = require('./fixtures.cjs')
 const { loadContract } = require('../../control-plane/contracts.cjs')
 const { fromContracts, criterionId } = require('../producers.cjs')
 const { createFlowService } = require('../service.cjs')
+
 test(
   'real selected Factory case publishes current evidence through the confirmed action',
   { timeout: 120000 },
@@ -15,16 +16,19 @@ test(
       dir = directory(t),
       contract = loadContract(root),
       doc = fromContracts([contract], 'project')[0]
+
     fs.writeFileSync(
       path.join(dir, doc.flowId + '.flow.json'),
       JSON.stringify(doc)
     )
     const service = createFlowService(root, dir)
+
     t.after(() => service.close())
     const candidate = contract.cases[0],
       id = criterionId(contract, candidate)
     const preview = service.preview(doc.flowId, candidate.stepId, id)
     const result = await service.rerun({ ...preview, confirm: true })
+
     assert.equal(
       result.code,
       0,
@@ -43,6 +47,7 @@ test(
     )
     assert.equal(result.coverageComplete, true, JSON.stringify(result.context))
     const observations = service.snapshot().documents[0].current.observations
+
     assert.equal(observations.length, 1)
     assert.equal(observations[0].criterionId, id)
     assert.equal(observations[0].status, 'passed')
@@ -57,13 +62,18 @@ test(
   async (t) => {
     const net = require('node:net'),
       { runProcess } = require('../../control-plane/runner.cjs')
+
     const freePort = async () => {
       const listener = net.createServer()
+
       await new Promise((resolve) => listener.listen(0, '127.0.0.1', resolve))
       const port = listener.address().port
+
       await new Promise((resolve) => listener.close(resolve))
+
       return port
     }
+
     const root = path.resolve(__dirname, '../../../..'),
       dir = directory(t),
       contract = loadContract(
@@ -72,6 +82,7 @@ test(
         'apps/asyra-design/playwright-collaboration-flow-contracts.json'
       ),
       doc = fromContracts([contract], 'project')[0]
+
     fs.writeFileSync(
       path.join(dir, doc.flowId + '.flow.json'),
       JSON.stringify(doc)
@@ -97,6 +108,7 @@ test(
           }
         })
     })
+
     t.after(() => service.close())
     const candidate = contract.cases[0],
       id = criterionId(contract, candidate)
@@ -104,6 +116,7 @@ test(
       ...service.preview(doc.flowId, candidate.stepId, id),
       confirm: true
     })
+
     assert.equal(
       result.code,
       0,
@@ -122,6 +135,7 @@ test(
     )
     assert.equal(result.coverageComplete, true, JSON.stringify(result.context))
     const current = service.snapshot().documents[0].current
+
     assert.equal(current.observations.length, 1)
     assert.equal(current.observations[0].criterionId, id)
     assert.equal(current.observations[0].status, 'passed')

@@ -50,12 +50,14 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
   if (!options.requestId.trim()) {
     throw new TypeError('A request identity is required')
   }
+
   if (
     !Number.isSafeInteger(options.receiptCapacity) ||
     options.receiptCapacity < 1
   ) {
     throw new TypeError('Receipt capacity must be a positive safe integer')
   }
+
   const pending = new Map<
     string,
     {
@@ -67,15 +69,20 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
   const active = new Set<Promise<unknown>>()
   let generation = 0
   let closing: Promise<void> | undefined
+
   const track = <T>(work: () => Promise<T>): Promise<T> => {
     if (closing) {
       return Promise.reject(new Error('Tool library is closing'))
     }
+
     const running = Promise.resolve().then(work)
+
     active.add(running)
     void running.finally(() => active.delete(running)).catch(() => undefined)
+
     return running
   }
+
   const changing = <T>(work: () => Promise<T>): Promise<T> =>
     track(async () => {
       try {
@@ -84,11 +91,13 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         generation++
       }
     })
+
   const library = createAiToolLibrary({
     registry: options.registry,
     capacity: options.capacity,
     limits: options.limits,
     validate: options.validate,
+
     createExecutor: (recipe) => async (input, context) => {
       const { execution } = await invoke({
         name: recipe.contract.name,
@@ -96,6 +105,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         input,
         signal: context.signal
       })
+
       if (execution.status !== 'success') {
         throw new AiToolContractError('output', execution.issues.join('; '), {
           status: execution.status,
@@ -103,6 +113,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           value: execution.value
         })
       }
+
       return execution.value
     }
   })
@@ -124,15 +135,20 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
   })
   const management = createAiToolStoreManagement(options)
   const savedIdentities = new Set<string>()
+
   const identity = (name: string, revision: number) =>
     JSON.stringify([name, revision])
+
   const save = async (input: Parameters<typeof persistence.save>[0]) => {
     const result = await persistence.save(input)
+
     if (result.status === 'saved') {
       savedIdentities.add(identity(input.name, input.revision))
     }
+
     return result
   }
+
   const rejected = (issue: string): LocalToolInvocationResult => ({
     execution: {
       status: 'failed',
@@ -141,6 +157,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
       issues: [issue]
     }
   })
+
   const invoke = (
     input: AiInvocation & { revision?: number }
   ): Promise<LocalToolInvocationResult> =>
@@ -149,40 +166,50 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         requestId: options.requestId,
         revision: input.revision
       })
+
       if (!registered || registered.definition.composition !== 'allowed') {
         return rejected(
           'Use an available data-plane tool; library controls cannot be invoked as recipes.'
         )
       }
+
       const callId = input.callId ?? randomUUID()
       const composed = registered.kind === 'composition'
       const revision = registered.definition.revision
+
       if (composed) {
         const checked = new Set<string>()
+
         const verifySaved = async (
           name: string,
           revision: number
         ): Promise<void> => {
           const key = identity(name, revision)
+
           if (checked.has(key)) {
             return
           }
+
           checked.add(key)
           const entry = options.registry.registration(name, {
             requestId: options.requestId,
             revision
           })
+
           if (!entry) {
             throw new Error(
               'A recipe dependency is unavailable; refresh discovery before invoking.'
             )
           }
+
           if (entry.kind !== 'composition') {
             return
           }
+
           const requiresSaved =
             entry.availability === 'eligible' || savedIdentities.has(key)
           let current: Awaited<ReturnType<typeof management.read>>
+
           try {
             current = await management.read(name, revision)
           } catch {
@@ -192,6 +219,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
               )
             }
           }
+
           if (
             (!current && requiresSaved) ||
             (current &&
@@ -203,14 +231,18 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
               'Saved tool is unavailable; refresh discovery before invoking.'
             )
           }
+
           const recipe = library.recipe(name, revision)
+
           if (!recipe) {
             throw new Error('The admitted recipe is unavailable.')
           }
+
           for (const dependency of recipe.dependencies) {
             await verifySaved(dependency.name, dependency.revision)
           }
         }
+
         try {
           await verifySaved(input.name, revision)
         } catch (error) {
@@ -218,18 +250,22 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
             error instanceof Error ? error.message : String(error)
           )
         }
+
         if (pending.has(callId)) {
           return rejected(
             'An active or unsaved invocation already owns this call identity.'
           )
         }
+
         if (pending.size >= options.receiptCapacity) {
           return rejected(
             'Save outstanding receipts before starting another composition.'
           )
         }
+
         pending.set(callId, { name: input.name, revision })
       }
+
       try {
         const execution = await invoker.invoke({
           ...input,
@@ -237,21 +273,26 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           revision,
           requestId: options.requestId
         })
+
         if (!composed) {
           return { execution }
         }
+
         if (
           execution.status !== 'success' ||
           execution.settlement !== 'completed' ||
           execution.issues.length
         ) {
           pending.delete(callId)
+
           return { execution }
         }
+
         pending.set(callId, { name: input.name, revision, receipt: execution })
         const storage = await createAiInvoker<AiToolSaveResult>({
           observe: (event) => {
             const observation = options.observe?.(event)
+
             try {
               if (event.phase === 'started') {
                 options.onPhase?.(event.call, 'execution')
@@ -259,8 +300,10 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
             } catch {
               /* Diagnostic phase failure cannot replace durable product evidence. */
             }
+
             return observation
           },
+
           execute: async () => {
             return save({
               name: input.name,
@@ -275,10 +318,12 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           parentCallId: input.parentCallId,
           actor: 'app-server'
         })
+
         generation++
         if (storage.status === 'saved') {
           pending.delete(callId)
         }
+
         return {
           execution,
           storage,
@@ -288,15 +333,18 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         if (composed) {
           pending.delete(callId)
         }
+
         throw error
       }
     })
 
   return {
     invoke,
+
     get revision() {
       return generation
     },
+
     list() {
       return options.registry
         .list({ requestId: options.requestId })
@@ -304,9 +352,11 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           const registered = options.registry.registration(item.name, {
             requestId: options.requestId
           })
+
           if (!registered) {
             throw new Error('Registered tool changed during discovery')
           }
+
           return {
             ...createAiToolContract(registered.definition),
             kind: registered.kind,
@@ -314,51 +364,66 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           }
         })
     },
+
     describe(name: string, revision?: number) {
       const definition = options.registry.get(name, {
         requestId: options.requestId,
         revision
       })
+
       return definition ? createAiToolContract(definition) : undefined
     },
+
     describeRecovery(name: string, revision: number) {
       const contracts = new Map<string, AiToolContract>()
+
       const collect = (name: string, revision: number) => {
         const key = identity(name, revision)
+
         if (contracts.has(key)) {
           return
         }
+
         const definition = options.registry.get(name, {
           requestId: options.requestId,
           revision
         })
+
         if (!definition) {
           return
         }
+
         contracts.set(key, createAiToolContract(definition))
         for (const dependency of library.recipe(name, revision)?.dependencies ??
           []) {
           collect(dependency.name, dependency.revision)
         }
       }
+
       collect(name, revision)
+
       return createAiRecipeRecoverySchema([...contracts.values()])
     },
+
     submit: (input: Omit<AiRecipeSubmission, 'requestId'>) =>
       changing(async () => {
         const result = library.submit({
           ...input,
           requestId: options.requestId
         })
+
         if (!result.ok) {
           return result
         }
+
         const storage = await save({
           ...result,
           requestId: options.requestId
         })
+
         return { ...result, storage }
       }),
+
     save: (input: {
       name: string
       revision: number
@@ -369,6 +434,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           input.receiptId === undefined
             ? undefined
             : pending.get(input.receiptId)
+
         if (
           input.receiptId !== undefined &&
           (!retained?.receipt ||
@@ -381,18 +447,23 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
               'A genuine completed receipt for this request and exact revision is required.'
           }
         }
+
         const result = await save({
           name: input.name,
           revision: input.revision,
           requestId: options.requestId,
           ...(retained?.receipt ? { receipt: retained.receipt } : {})
         })
+
         if (result.status === 'saved' && input.receiptId !== undefined) {
           pending.delete(input.receiptId)
         }
+
         return result
       }),
+
     load: () => changing(() => persistence.load(options.requestId)),
+
     resume: (name: string, revision: number) =>
       changing(async () => {
         const result = await persistence.resume({
@@ -400,22 +471,27 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           revision,
           requestId: options.requestId
         })
+
         if (result.ok) {
           savedIdentities.add(identity(name, revision))
         }
+
         return result
       }),
+
     setState: (
       name: string,
       revision: number,
       state: 'suspended' | 'retired'
     ) => changing(() => persistence.setState(name, revision, state)),
+
     dispose(): Promise<void> {
       closing ??= Promise.allSettled([...active]).then(() => {
         library.releaseRequest(options.requestId)
         pending.clear()
         savedIdentities.clear()
       })
+
       return closing
     }
   }

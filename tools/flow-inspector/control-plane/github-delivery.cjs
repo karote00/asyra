@@ -4,16 +4,20 @@ const { execFile, execFileSync } = require('node:child_process')
 const { safePath, sha256 } = require('./snapshot.cjs')
 const { canonicalFile } = require('./agent-contract.cjs')
 const { validateMetadata } = require('./pr-review.cjs')
+
 const hex = (value) => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value)
+
 const need = (value, message) => {
   if (!value) {
     throw new Error('GitHub delivery: ' + message)
   }
 }
+
 function transportError(error) {
   const raw = String(error.stderr ?? '')
   let code = 'transport-unknown',
     noEffect = false
+
   if (/HTTP 401\b/.test(raw)) {
     code = 'authentication'
     noEffect = true
@@ -30,11 +34,13 @@ function transportError(error) {
     code = 'conflict'
     noEffect = true
   }
+
   return Object.assign(new Error('GitHub delivery: ' + code), {
     code,
     noEffect
   })
 }
+
 function ghRequest(root, method, route, body) {
   return new Promise((resolve, reject) => {
     const args = [
@@ -49,9 +55,11 @@ function ghRequest(root, method, route, body) {
       'X-GitHub-Api-Version: 2022-11-28',
       route
     ]
+
     if (body !== undefined) {
       args.push('--input', '-')
     }
+
     const child = execFile(
       'gh',
       args,
@@ -74,8 +82,10 @@ function ghRequest(root, method, route, body) {
           if (method === 'GET' && /HTTP 404\b/.test(stderr)) {
             return resolve(null)
           }
+
           return reject(transportError({ stderr }))
         }
+
         try {
           resolve(JSON.parse(stdout))
         } catch {
@@ -83,10 +93,12 @@ function ghRequest(root, method, route, body) {
         }
       }
     )
+
     child.stdin.on('error', () => undefined)
     child.stdin.end(body === undefined ? undefined : JSON.stringify(body))
   })
 }
+
 function createGitHubDelivery(
   root,
   {
@@ -108,11 +120,14 @@ function createGitHubDelivery(
     'invalid base branch'
   )
   const prefix = 'repos/' + repository + '/'
+
   const api = (method, route, body) => request(method, prefix + route, body)
+
   const checkLocal =
     local ??
     ((input) => {
       let dirty
+
       try {
         dirty = execFileSync(
           'git',
@@ -128,12 +143,14 @@ function createGitHubDelivery(
       } catch {
         throw new Error('GitHub delivery: local Git unavailable')
       }
+
       need(
         !dirty.trim(),
         'dirty worktree; commit or preserve changes before delivery'
       )
       for (const file of input.files) {
         const absolute = safePath(root, file.path)
+
         need(
           fs.lstatSync(absolute).isFile() &&
             sha256(fs.readFileSync(absolute)) === file.digest,
@@ -141,17 +158,22 @@ function createGitHubDelivery(
         )
       }
     })
+
   const readBase = async () => {
     const ref = await api('GET', 'git/ref/heads/' + base)
+
     need(hex(ref?.object?.sha), 'base unavailable')
+
     return ref.object.sha
   }
+
   const validatePreview = (p) => {
     const sourcePrefix =
       typeof p.packageOwnership?.path === 'string' &&
       p.packageOwnership.path.endsWith('/package.json')
         ? p.packageOwnership.path.slice(0, -'package.json'.length) + 'src/'
         : null
+
     need(
       p.repository === repository &&
         p.base === base &&
@@ -182,6 +204,7 @@ function createGitHubDelivery(
       )
     }
   }
+
   function project(pr, p, expectedHead) {
     need(
       Number.isSafeInteger(pr?.number) && pr.number > 0 && hex(pr.head?.sha),
@@ -194,6 +217,7 @@ function createGitHubDelivery(
       'PR repository or branch mismatch'
     )
     need(['open', 'closed'].includes(pr.state), 'unknown PR state')
+
     return {
       number: pr.number,
       url: 'https://github.com/' + repository + '/pull/' + pr.number,
@@ -207,16 +231,19 @@ function createGitHubDelivery(
       stale: false
     }
   }
+
   async function findPR(p, record) {
     if (record.observation?.number) {
       return api('GET', 'pulls/' + record.observation.number)
     }
+
     const list = await api(
       'GET',
       'pulls?state=all&head=' +
         encodeURIComponent(repository.split('/')[0] + ':' + p.branch) +
         '&per_page=100'
     )
+
     need(Array.isArray(list) && list.length < 100, 'PR query incomplete')
     const matches = list.filter(
       (pr) =>
@@ -224,23 +251,29 @@ function createGitHubDelivery(
         pr.head?.sha === record.expectedHead &&
         pr.base?.ref === base
     )
+
     need(matches.length <= 1, 'ambiguous PR identity')
     if (!matches.length) {
       return null
     }
+
     // List responses do not reliably include the merged boolean.
     return api('GET', 'pulls/' + matches[0].number)
   }
+
   return {
     repository,
     base,
+
     async inspect(input) {
       checkLocal(input)
       const baseSha = await readBase(),
         commit = await api('GET', 'git/commits/' + baseSha)
+
       need(hex(commit?.tree?.sha), 'base tree unavailable')
       const baseTree = commit.tree.sha,
         contents = await api('GET', 'git/trees/' + baseTree + '?recursive=1')
+
       need(
         contents &&
           contents.truncated === false &&
@@ -248,8 +281,10 @@ function createGitHubDelivery(
         'base tree incomplete'
       )
       const entries = new Map(contents.tree.map((item) => [item.path, item]))
+
       for (const file of input.files) {
         const entry = entries.get(file.path)
+
         need(
           entry?.type === 'blob' &&
             entry.mode === '100644' &&
@@ -257,10 +292,12 @@ function createGitHubDelivery(
           'base source differs from captured baseline'
         )
       }
+
       if (input.metadata) {
         validateMetadata(input)
         need(!entries.has(input.metadata.path), 'metadata path already exists')
         const ancestor = entries.get('.changeset')
+
         need(
           !ancestor || (ancestor.type === 'tree' && ancestor.mode === '040000'),
           'invalid metadata ancestor'
@@ -271,20 +308,25 @@ function createGitHubDelivery(
               name.endsWith('/package.json') &&
               change.path.startsWith(name.slice(0, -'package.json'.length))
           )
+
           need(
             owners.every((name) => name === input.packageOwnership.path),
             'ambiguous package ownership'
           )
         }
       }
+
       return { baseSha, baseTree }
     },
+
     async deliver(p, checkpoint, record) {
       validatePreview(p)
       const metadata = validateMetadata(p)
+
       need((await readBase()) === p.baseSha, 'base advanced before effects')
       let expectedHead = record.expectedHead
       const existing = await api('GET', 'git/ref/heads/' + p.branch)
+
       if (existing) {
         need(
           expectedHead && existing.object?.sha === expectedHead,
@@ -305,6 +347,7 @@ function createGitHubDelivery(
               content: c.after
             }))
           })
+
           need(hex(tree?.sha), 'missing created tree')
           await checkpoint('create-commit')
           const commit = await api('POST', 'git/commits', {
@@ -312,15 +355,18 @@ function createGitHubDelivery(
             tree: tree.sha,
             parents: [p.baseSha]
           })
+
           need(hex(commit?.sha), 'missing created commit')
           expectedHead = commit.sha
         }
+
         await checkpoint('create-branch', { expectedHead })
         await api('POST', 'git/refs', {
           ref: 'refs/heads/' + p.branch,
           sha: expectedHead
         })
       }
+
       await checkpoint('create-pr', { expectedHead })
       const pr = await api('POST', 'pulls', {
         title: p.title,
@@ -330,20 +376,26 @@ function createGitHubDelivery(
         draft: false,
         maintainer_can_modify: false
       })
+
       return project(pr, p, expectedHead)
     },
+
     async observe(p, record) {
       validatePreview(p)
       const pr = await findPR(p, record)
+
       if (!pr) {
         return null
       }
+
       let result = project(pr, p, record.expectedHead)
+
       try {
         const [runs, statuses] = await Promise.all([
           api('GET', 'commits/' + result.headSha + '/check-runs?per_page=100'),
           api('GET', 'commits/' + result.headSha + '/status?per_page=100')
         ])
+
         need(
           runs &&
             Array.isArray(runs.check_runs) &&
@@ -370,6 +422,7 @@ function createGitHubDelivery(
           }))
         ]
         let status = 'unknown'
+
         if (
           items.length &&
           items.every(
@@ -398,12 +451,16 @@ function createGitHubDelivery(
         ) {
           status = 'pending'
         }
+
         const latest = await api('GET', 'pulls/' + result.number)
+
         if (latest.head?.sha !== result.headSha) {
           result = project(latest, p, record.expectedHead)
           result.stale = true
+
           return result
         }
+
         return { ...result, checks: { headSha: result.headSha, status, items } }
       } catch {
         return { ...result, checks: null, stale: true }
@@ -411,4 +468,5 @@ function createGitHubDelivery(
     }
   }
 }
+
 module.exports = { createGitHubDelivery, transportError }

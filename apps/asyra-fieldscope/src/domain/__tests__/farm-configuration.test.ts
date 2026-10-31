@@ -33,9 +33,11 @@ const config = {
     { id: 'fixture-4', kind: 'soil' as const, width: 2 }
   ]
 }
+
 it('derives arches, final frames, typed strips, soil-side poles and net elevations from one configuration', () => {
   const accepted = validateConfiguration(config)
   const site = configurationSite(accepted)
+
   expect(site.margin).toBeCloseTo(2.2)
   expect(roofPoint(0, 0, 0, site)[0]).toBeCloseTo(0)
   expect(roofPoint(0, 0, 0, site)[1]).toBeCloseTo(2.7)
@@ -48,6 +50,7 @@ it('derives arches, final frames, typed strips, soil-side poles and net elevatio
     )
   ).toHaveLength(4)
   const layout = createLayout(site, accepted.strips)
+
   expect(layout.strips.slice(0, 4).map((s) => s.kind)).toEqual([
     'drain',
     'soil',
@@ -55,6 +58,7 @@ it('derives arches, final frames, typed strips, soil-side poles and net elevatio
     'soil'
   ])
   const assembly = createSupportAssembly(accepted)
+
   expect(assembly.tubes).toHaveLength(4 * 3 * 20)
   expect(assembly.tubes[0].x).toBeCloseTo(2.62)
   for (const tube of assembly.tubes) {
@@ -63,7 +67,9 @@ it('derives arches, final frames, typed strips, soil-side poles and net elevatio
     expect(tube.points[0][1]).toBe(-0.15)
     expect(tube.points[1][1]).toBeCloseTo(3)
   }
+
   const net = createPlantingNet(assembly, accepted)
+
   expect(net.ties).toHaveLength(assembly.tubes.length)
   expect(
     Math.min(...net.strands.flatMap((s) => s.points.map((p) => p[1])))
@@ -78,6 +84,7 @@ it('accepts soil-only layouts without generating phantom supports or empty meshe
     ...config,
     strips: [{ id: 'fixture-5', kind: 'soil', width: 6 }]
   })
+
   expect(createSupportAssembly(accepted).tubes).toHaveLength(0)
   expect(
     buildSiteMeshes(accepted).every(
@@ -101,16 +108,21 @@ it.each([
 it('keeps both exterior barriers at the outer boundaries when side margins exceed two metres', () => {
   const meshes = buildSiteMeshes(validateConfiguration(config))
   const shape = meshes.find((mesh) => mesh.id === 'barriers')?.descriptor.shape
+
   if (shape?.kind !== 'triangles') {
     throw new Error('Expected triangle geometry')
   }
+
   const xs = shape.positions.filter((_, i) => i % 3 === 0)
+
   expect(Math.min(...xs)).toBeCloseTo(0)
   expect(Math.max(...xs)).toBeCloseTo(32)
   const film = meshes.find((mesh) => mesh.id === 'film')?.descriptor.shape
+
   if (film?.kind !== 'triangles') {
     throw new Error('Expected film geometry')
   }
+
   expect(Math.max(...film.positions.filter((_, i) => i % 3 === 1))).toBeCloseTo(
     4.5
   )
@@ -137,6 +149,7 @@ it('uses an authored crossbeam elevation independently of total roof height', ()
     eaveHeight: 3.4
   })
   const site = configurationSite(accepted)
+
   expect(site.eave).toBe(3.4)
   expect(site.height).toBe(5)
   expect(roofPoint(0, 0, 0, site)[1]).toBeCloseTo(3.4)
@@ -163,6 +176,7 @@ it('accepts exactly two centimetres of symmetric clearance without rounding belo
   const site = configurationSite(
     validateConfiguration({ ...DEFAULT_CONFIGURATION, width: total + 0.04 })
   )
+
   expect(site.margin).toBeCloseTo(0.02)
 })
 
@@ -170,6 +184,7 @@ it.each([undefined, '', '   ', 12])(
   'rejects missing or invalid canonical strip identity: %s',
   (id) => {
     const input = structuredClone(DEFAULT_CONFIGURATION)
+
     Object.assign(input.strips[0], { id })
     expect(() => validateConfiguration(input)).toThrow()
   }
@@ -183,23 +198,27 @@ it('rejects duplicate strip identities even when their dimensions differ', () =>
       id: 'duplicate'
     }))
   }
+
   expect(() => validateConfiguration(input)).toThrow()
 })
 
 it('keeps default identities stable and gives each added strip a new identity', () => {
   const first = validateConfiguration(DEFAULT_CONFIGURATION)
   const second = validateConfiguration(DEFAULT_CONFIGURATION)
+
   expect(first.strips.map((strip) => strip.id)).toEqual(
     second.strips.map((strip) => strip.id)
   )
   const added = createConfigurationStrip('soil', 0.3)
   const replacement = createConfigurationStrip('soil', 0.3)
+
   expect(added.id).not.toBe(replacement.id)
   expect(first.strips.some((strip) => strip.id === added.id)).toBe(false)
   const accepted = validateConfiguration({
     ...first,
     strips: [...first.strips, added]
   })
+
   expect(accepted.strips.at(-1)).toEqual(added)
   expect(added).toEqual({ id: added.id, kind: 'soil', width: 0.3 })
 })

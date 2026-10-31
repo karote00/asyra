@@ -11,8 +11,10 @@ import { createLayout } from '../../domain/greenhouse'
 
 it('centers section labels on their strip widths independently of drain depth', async () => {
   const host = document.createElement('div')
+
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const root = createRoot(host)
+
   await act(async () => root.render(<CrossSection />))
   try {
     const labels = host.querySelectorAll('svg[role="img"] text')
@@ -20,6 +22,7 @@ it('centers section labels on their strip widths independently of drain depth', 
       configurationSite(DEFAULT_CONFIGURATION),
       DEFAULT_CONFIGURATION.strips
     ).strips.filter((strip) => strip.bay === 0)
+
     expect(labels.length).toBe(strips.length)
     strips.forEach((strip, index) => {
       expect(Number(labels[index].getAttribute('x'))).toBeCloseTo(

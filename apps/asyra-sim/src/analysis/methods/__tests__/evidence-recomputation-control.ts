@@ -4,6 +4,7 @@ import * as continuous from '../continuous-query'
 /** Retain the pre-handoff temporal baseline for explicitly historical hypotheses. */
 export function useEvidenceRecomputationControl(): void {
   const query = continuous.queryContinuousPair
+
   vi.spyOn(continuous, 'queryContinuousPair').mockImplementation(
     (input, settings, checkpoint, kernel) =>
       query(

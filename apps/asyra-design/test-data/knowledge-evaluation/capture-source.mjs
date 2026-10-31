@@ -36,13 +36,16 @@ export function captureSources(root, destination) {
     .toString()
     .split('\0')
     .filter(Boolean)
+
   // App consumes package build output; capture ignored current builds as well.
   const walk = (directory) => {
     if (!fs.existsSync(directory)) {
       return
     }
+
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
       const file = path.join(directory, entry.name)
+
       if (entry.isDirectory()) {
         walk(file)
       } else if (entry.isFile()) {
@@ -50,24 +53,32 @@ export function captureSources(root, destination) {
       }
     }
   }
+
   const packages = path.join(root, 'packages')
+
   if (fs.existsSync(packages)) {
     for (const entry of fs.readdirSync(packages)) {
       walk(path.join(packages, entry, 'dist'))
     }
   }
+
   const sources = {},
     contents = {}
+
   for (const file of [...new Set(listed)].filter(relevant).sort()) {
     const filename = path.join(root, file)
+
     if (!fs.existsSync(filename)) {
       sources[file] = { deleted: true }
       continue
     }
+
     if (!fs.lstatSync(filename).isFile()) {
       throw new Error(`Source is not a regular file: ${file}`)
     }
+
     const bytes = fs.readFileSync(filename)
+
     sources[file] = {
       bytes: bytes.length,
       sha256: createHash('sha256').update(bytes).digest('hex')
@@ -76,14 +87,17 @@ export function captureSources(root, destination) {
       contents[file] = bytes.toString('base64')
     }
   }
+
   const digest = createHash('sha256')
     .update(JSON.stringify(sources))
     .digest('hex')
+
   if (destination) {
     fs.writeFileSync(destination, gzipSync(JSON.stringify(contents)), {
       flag: 'wx'
     })
   }
+
   return { digest, files: sources, archive: destination }
 }
 
@@ -96,6 +110,7 @@ export function verifyEvaluationService(service, app) {
   ) {
     throw new Error('Evaluation service ownership unavailable')
   }
+
   const cwd = execFileSync(
     'lsof',
     ['-a', '-p', String(service.pid), '-d', 'cwd', '-Fn'],
@@ -106,15 +121,18 @@ export function verifyEvaluationService(service, app) {
     ['-o', 'command=', '-p', String(service.pid)],
     { encoding: 'utf8', timeout: 2000 }
   )
+
   if (!cwd.split('\n').includes('n' + app) || !/\bvite\b/.test(command)) {
     throw new Error('Evaluation service cwd or command mismatch')
   }
+
   return { pid: service.pid, cwd: app, command: command.trim() }
 }
 
 /** Observe only this page's existing provider transport; never send or modify it. */
 export function captureRequestIdentity(request, origin) {
   const url = new URL(request.url())
+
   if (
     request.method() !== 'POST' ||
     url.origin !== origin ||
@@ -122,14 +140,18 @@ export function captureRequestIdentity(request, origin) {
   ) {
     return undefined
   }
+
   // The same endpoint accepts execution receipts without starting a model request.
   // Match the server's header-presence branch before interpreting the body.
   if (request.headers()[AI_BATCH_RECEIPT_HEADER] !== undefined) {
     return undefined
   }
+
   const id = request.postDataJSON()?.metadata?.sourceRequestId
+
   if (typeof id !== 'string' || !id.trim()) {
     throw new Error('Provider request has no source identity')
   }
+
   return id
 }

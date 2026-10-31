@@ -59,6 +59,7 @@ export const RECTANGLE_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
   const replayPath = () => {
     graphic.rect(0, 0, data.width, data.height)
   }
+
   replayPath()
   applyRenderableFill(graphic, data.fills, { replayPath })
 

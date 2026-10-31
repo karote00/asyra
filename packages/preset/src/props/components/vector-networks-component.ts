@@ -19,11 +19,13 @@ export const vectorNetworksPropertyComponentDefinition =
     key: 'networks',
     childType: PropertyTypes.VECTOR_NETWORK,
     childIdType: VECTOR_TOPOLOGY_NETWORK_ID_TYPE,
+
     toChildData: (item) => ({
       pointIds: toStringArray(item.pointIds),
       segmentIds: toStringArray(item.segmentIds),
       closed: toBoolean(item.closed)
     }),
+
     toValue: (child, childId) => ({
       id: childId,
       pointIds: toStringArray(child.get('pointIds')),

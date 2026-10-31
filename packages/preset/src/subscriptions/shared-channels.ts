@@ -36,6 +36,7 @@ export const registerDefaultSharedDataChannels = (
   const channelLifetimes =
     channelLifetimesByCore.get(core) ??
     new Map<SharedDataChannelName, SharedChannelLifetime>()
+
   channelLifetimesByCore.set(core, channelLifetimes)
   const acquiredChannels: SharedDataChannelName[] = []
   let disposed = false
@@ -48,6 +49,7 @@ export const registerDefaultSharedDataChannels = (
     for (let index = acquiredChannels.length - 1; index >= 0; index--) {
       const name = acquiredChannels[index]
       const lifetime = channelLifetimes.get(name)
+
       if (!lifetime) {
         acquiredChannels.splice(index, 1)
         continue
@@ -62,27 +64,34 @@ export const registerDefaultSharedDataChannels = (
       if (lifetime.ownedByPreset) {
         core.unregisterSharedDataChannel(name)
       }
+
       channelLifetimes.delete(name)
       acquiredChannels.splice(index, 1)
     }
+
     if (channelLifetimes.size === 0) {
       channelLifetimesByCore.delete(core)
     }
+
     disposed = true
   }
+
   const cleanupReporter = createCleanupReporter(onCleanupReady, dispose)
 
   try {
     channelNames.forEach((name) => {
       const lifetime = channelLifetimes.get(name)
+
       if (lifetime) {
         lifetime.count += 1
         acquiredChannels.push(name)
         cleanupReporter.report()
+
         return
       }
 
       const ownedByPreset = !core.hasSharedDataChannel(name)
+
       if (ownedByPreset) {
         core.registerSharedDataChannel(
           name,
@@ -98,6 +107,7 @@ export const registerDefaultSharedDataChannels = (
     if (!cleanupReporter.hasReported()) {
       dispose()
     }
+
     throw error
   }
 

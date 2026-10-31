@@ -9,6 +9,7 @@ import source from './fixtures/recorded-101/pattern-budget-recovery-20261023.jso
 
 it('preserves explicit evaluation policy and rejects unsupported overrides', () => {
   const window = { workDeadlineAt: Date.now() + 120000, reportTimeoutMs: 60000 }
+
   expect(readEvaluationWindow({ ...window, expandedNodeLimit: 2000 })).toEqual({
     ...window,
     expandedNodeLimit: 2000
@@ -43,6 +44,7 @@ it('keeps the exact test boundary and default production requests independent', 
       height: 1
     }))
   })
+
   expect(inspectDesignBudget(draft(2000), 2000)).toBeUndefined()
   expect(
     inspectDesignBudget(draft(2001), 2000)?.budget.allowed.expandedNodes
@@ -55,6 +57,7 @@ it('keeps the exact test boundary and default production requests independent', 
     undefined,
     2000
   )
+
   expect(() => session.prepare(draft(2001))).toThrow(/budget/i)
   await expect(
     session.prepareAsync(draft(2001), new AbortController().signal)
@@ -66,6 +69,7 @@ it('keeps the exact test boundary and default production requests independent', 
   const schema = tools.definitions.find(
     (d) => d.name === 'prepare_design'
   )?.inputSchema
+
   expect(JSON.stringify(schema)).toContain('2000 expanded objects')
   expect(JSON.stringify(schema)).not.toContain('10000 expanded objects')
 })
@@ -73,28 +77,37 @@ it('keeps the exact test boundary and default production requests independent', 
 it('partitions the preserved source under the effective limit without changing source coverage', () => {
   const store = createDesignDraftRepairStore(2000)
   const id = store.retain(source.input.draft)
+
   if (!id) {
     throw new Error('Missing source')
   }
+
   const parts = store.describe(id)?.partitions
+
   if (!parts) {
     throw new Error('Missing partitions')
   }
+
   expect(parts.length).toBeGreaterThan(2)
   let count = 1
+
   for (let partition = 0; partition < parts.length; partition++) {
     const draft = store.repair({ draftId: id, partition })
     const measured = measureDesignBudget(draft, 2000)
+
     expect(measured.exceeded).toEqual([])
     expect(measured.allowed.expandedNodes).toBe(2000)
     count += measured.observed.expandedNodes - 1
   }
+
   expect(count).toBe(13095)
   const production = createDesignDraftRepairStore()
   const productionId = production.retain(source.input.draft)
+
   if (!productionId) {
     throw new Error('Missing production source')
   }
+
   expect(production.describe(productionId)?.partitions).toHaveLength(2)
   expect(() => production.repair({ draftId: id, partition: 0 })).toThrow(
     /unavailable/
@@ -104,8 +117,10 @@ it('partitions the preserved source under the effective limit without changing s
 it('admits the authorized fifteen-minute window while enforcing independent work and report ceilings', () => {
   const now = 1793070000000
   const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+
   try {
     const policy = { workDeadlineAt: now + 900000, reportTimeoutMs: 60000 }
+
     expect(readEvaluationWindow(policy)).toEqual(policy)
     expect(() =>
       readEvaluationWindow({ ...policy, workDeadlineAt: now + 900001 })

@@ -18,6 +18,7 @@ describe('browser diagnostic outbox', () => {
     const factory = new IDBFactory()
     const first = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
     const item = record('request-a', 0)
+
     await first.append([item])
     item.event = 'changed'
     await first.close()
@@ -25,6 +26,7 @@ describe('browser diagnostic outbox', () => {
       factory,
       keyRange: IDBKeyRange
     })
+
     expect(await reopened.requests()).toEqual(['request-a'])
     expect(await reopened.read('request-a', 0, 32)).toEqual([
       record('request-a', 0)
@@ -37,6 +39,7 @@ describe('browser diagnostic outbox', () => {
       factory: new IDBFactory(),
       keyRange: IDBKeyRange
     })
+
     for (const item of [
       record('a', 0),
       record('a', 1),
@@ -45,6 +48,7 @@ describe('browser diagnostic outbox', () => {
     ]) {
       await outbox.append([item])
     }
+
     expect(await outbox.read('a', 1, 1)).toEqual([record('a', 1)])
     await outbox.remove('a')
     expect(await outbox.requests()).toEqual(['b'])
@@ -57,6 +61,7 @@ describe('browser diagnostic outbox', () => {
       factory: new IDBFactory(),
       keyRange: IDBKeyRange
     })
+
     await outbox.append([record('a', 0)])
     await expect(
       outbox.append([{ ...record('a', 0), event: 'changed' }])
@@ -70,6 +75,7 @@ describe('browser diagnostic outbox', () => {
       factory: new IDBFactory(),
       keyRange: IDBKeyRange
     })
+
     await outbox.close()
     await expect(outbox.append([record('a', 0)])).rejects.toThrow('closed')
   })
@@ -79,6 +85,7 @@ describe('durable diagnostic gaps', () => {
   it('keeps reserved gap metadata across reopen and excludes control from payload reads', async () => {
     const factory = new IDBFactory()
     const first = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+
     await first.reserve('gap-request')
     await first.append([record('gap-request', 0)])
     await first.recordGap({
@@ -96,6 +103,7 @@ describe('durable diagnostic gaps', () => {
     await first.reserve('gap-request')
     await first.close()
     const second = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+
     expect(await second.gap('gap-request')).toEqual({
       requestId: 'gap-request',
       fromSequence: 1,
@@ -117,6 +125,7 @@ describe('durable diagnostic gaps', () => {
       factory: new IDBFactory(),
       keyRange: IDBKeyRange
     })
+
     await outbox.reserve('control-only')
     await expect(outbox.append([record('control-only', -1)])).rejects.toThrow(
       'sequence'
@@ -142,14 +151,17 @@ it('replaces reserved padding with bounded loss metadata without growing the con
     factory: new IDBFactory(),
     keyRange: IDBKeyRange
   })
+
   try {
     await outbox.reserve('reserved')
     const initial = added.mock.calls.find(
       ([value]) => value.sequence === -1
     )?.[0]
+
     if (!initial) {
       throw new Error('Missing control reservation')
     }
+
     await outbox.recordGap({
       requestId: 'reserved',
       fromSequence: 0,
@@ -157,6 +169,7 @@ it('replaces reserved padding with bounded loss metadata without growing the con
       stage: 'mixed'
     })
     const updated = put.mock.calls[0][0]
+
     expect(JSON.stringify(updated).length).toBeLessThanOrEqual(
       JSON.stringify(initial).length
     )
@@ -179,6 +192,7 @@ it('recovers a real browser storage gap after payload quota failure without inve
       if (value.sequence === 1) {
         throw new DOMException('Payload quota reached', 'QuotaExceededError')
       }
+
       return original.call(this, value, key)
     })
   const send = vi.fn(async () => ({
@@ -186,8 +200,10 @@ it('recovers a real browser storage gap after payload quota failure without inve
     acknowledgedSequence: 2,
     complete: true
   }))
+
   try {
     const sink = createRecordDeliverySink({ outbox, send })
+
     sink.write(record('quota', 0))
     sink.write(record('quota', 1))
     sink.write({ ...record('quota', 2), event: 'ai_request_usage' })
@@ -198,8 +214,10 @@ it('recovers a real browser storage gap after payload quota failure without inve
       factory,
       keyRange: IDBKeyRange
     })
+
     try {
       const onIssue = vi.fn()
+
       expect(
         await recoverRecordDelivery({ outbox: recovered, send, onIssue })
       ).toEqual({ complete: false })
@@ -227,12 +245,14 @@ it('recovers a real browser storage gap after payload quota failure without inve
 it('atomically rejects a conflicting batch and preserves the exact durable prefix after reopen', async () => {
   const factory = new IDBFactory()
   const first = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+
   await first.append([record('a', 1)])
   await expect(
     first.append([record('a', 0), record('a', 1), record('a', 2)])
   ).rejects.toThrow()
   await first.close()
   const second = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+
   expect(await second.read('a', 0, 32)).toEqual([record('a', 1)])
   await expect(second.append([record('a', 2), record('b', 3)])).rejects.toThrow(
     'ownership'
@@ -246,6 +266,7 @@ it('persists byte-bounded bursts larger than a transport page in one atomic tran
   const records = Array.from({ length: 300 }, (_, sequence) =>
     record('burst', sequence)
   )
+
   await outbox.append(records)
   await expect(
     outbox.append(
@@ -258,6 +279,7 @@ it('persists byte-bounded bursts larger than a transport page in one atomic tran
   ).rejects.toThrow('batch')
   await outbox.close()
   const reopened = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+
   expect(await reopened.read('burst', 0, 1000)).toEqual(records)
   await reopened.close()
 })

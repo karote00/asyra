@@ -19,6 +19,7 @@ const reportPath = path.resolve(
     path.join(appRoot, '.artifacts', 'fieldscope-e2e-ci.playwright.json')
 )
 const assigned = CI_E2E_GROUPS.flatMap(({ files }) => files).toSorted()
+
 if (
   assigned.length !== new Set(assigned).size ||
   JSON.stringify(assigned) !== JSON.stringify(collectBrowserSpecFiles(appRoot))
@@ -34,12 +35,14 @@ const temporaryDirectory = path.resolve(appRoot, '../../tmp/browser')
 const outputRoot = path.join(appRoot, 'test-results', 'ci', `${Date.now()}`)
 const totalTimeoutMs = 900_000
 const startedAt = Date.now()
+
 fs.mkdirSync(path.dirname(reportPath), { recursive: true })
 fs.mkdirSync(artifactDirectory, { recursive: true })
 fs.mkdirSync(temporaryDirectory, { recursive: true })
 
 let activeChild
 let receivedSignal = null
+
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     receivedSignal = signal
@@ -54,8 +57,10 @@ function runPlaywright(command, environment) {
       env: environment,
       stdio: 'inherit'
     })
+
     activeChild = child
     let spawnError = null
+
     child.on('error', (error) => {
       spawnError = error.message
     })
@@ -68,10 +73,12 @@ function runPlaywright(command, environment) {
 
 const groupRuns = []
 const failedGroups = []
+
 for (const [index, group] of selectBrowserGroups(
   process.argv.slice(2)
 ).entries()) {
   const remainingTimeout = totalTimeoutMs - (Date.now() - startedAt)
+
   if (remainingTimeout <= 0 || receivedSignal) {
     failedGroups.push(group.name)
     groupRuns.push({
@@ -87,6 +94,7 @@ for (const [index, group] of selectBrowserGroups(
     `${index}-${group.name}.json`
   )
   const outputDirectory = path.join(outputRoot, group.name)
+
   fs.rmSync(childReportPath, { force: true })
   const command = [
     require.resolve('@playwright/test/cli'),
@@ -108,23 +116,27 @@ for (const [index, group] of selectBrowserGroups(
 
   let report = null
   let reportError = null
+
   try {
     report = JSON.parse(fs.readFileSync(childReportPath, 'utf8'))
   } catch (error) {
     reportError = error.message
   }
+
   const run = {
     group: group.name,
     exitCode: result.exitCode,
     error: result.error ?? reportError,
     report
   }
+
   groupRuns.push(run)
   const outcomes = report?.stats
     ? (report.stats.expected ?? 0) +
       (report.stats.unexpected ?? 0) +
       (report.stats.skipped ?? 0)
     : 0
+
   if (
     result.exitCode !== 0 ||
     result.error ||
@@ -150,11 +162,13 @@ for (const [index, group] of selectBrowserGroups(
         error: `Not started because the runner received ${receivedSignal}.`
       })
     }
+
     break
   }
 }
 
 const merged = mergePlaywrightReports(groupRuns)
+
 fs.writeFileSync(reportPath, JSON.stringify(merged, null, 2))
 if (failedGroups.length) {
   process.stderr.write(

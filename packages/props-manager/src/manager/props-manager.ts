@@ -189,6 +189,7 @@ const deepFreezePropertyContract = <T>(value: T): T => {
     )
     Object.freeze(value)
   }
+
   return value
 }
 
@@ -217,12 +218,15 @@ const describeInvalidRuntimePropertyFieldValue = (value: unknown): string => {
   if (typeof value === 'number' && !Number.isFinite(value)) {
     return 'non-finite number'
   }
+
   if (Array.isArray(value)) {
     return 'array'
   }
+
   if (value === null) {
     return 'null'
   }
+
   return typeof value
 }
 
@@ -448,18 +452,23 @@ interface PreparedPropertyMutationArtifact {
 
 class PropsManager {
   _components: Map<string, PropertyComponentInstanceTypes> = new Map()
+
   _deletedMap: Map<string, PropertyComponentInstanceTypes> = new Map()
+
   changes: PropsChange[] = []
+
   private validatedLoadArtifacts = new WeakMap<
     PropsLoadValidationResult,
     PropsComponentRawData
   >()
+
   private validatedRestoreArtifacts = new WeakMap<
     PreparedPropsRestore,
     {
       snapshot: PropsRestoreSnapshot
     }
   >()
+
   private validatedPropertyCreationArtifacts = new WeakMap<
     PreparedPropertyCreationBatch,
     {
@@ -469,6 +478,7 @@ class PropsManager {
       sourceSemantics: PropertyCreationSourceSemantics
     }
   >()
+
   private validatedOrdinaryPropertyCreationArtifacts = new WeakMap<
     PreparedOrdinaryPropertyCreationBatch,
     {
@@ -476,6 +486,7 @@ class PropsManager {
       registrationContracts: readonly PropertyCreationTypeContract[]
     }
   >()
+
   private validatedActivePropertyArtifacts = new WeakMap<
     PreparedActivePropertyBatch,
     {
@@ -483,47 +494,63 @@ class PropsManager {
       instances: readonly PropertyComponentInstanceTypes[]
     }
   >()
+
   private validatedPropertyMutationArtifacts = new WeakMap<
     PreparedPropertyMutationBatch,
     PreparedPropertyMutationArtifact
   >()
+
   private readonly componentAccessor: PropertyComponentAccessor
+
   private propertyCreationBatch: PropertyCreationBatchState | null = null
+
   private activePropertyBatch: ActivePropertyBatchState | null = null
+
   private propertyMutationStagedById: Map<
     string,
     PropertyComponentInstanceTypes
   > | null = null
+
   private propertyMutationApplyActive = false
+
   private resettingRuntime = false
+
   private readonly relationshipChildIdsByOwnerId = new Map<
     string,
     readonly string[]
   >()
+
   private readonly relationshipOwnerIdsByChildId = new Map<
     string,
     Set<string>
   >()
+
   private propertyStateRevision = 0
 
   constructor() {
     this.componentAccessor = {
       getPropertyById: (propertyId) =>
         this.resolvePropertyForComponent(propertyId),
+
       validateSharedWrite: (propertyId, key, value) => {
         const active = this._components.get(propertyId)
+
         if (!active) {
           throw new Error(
             `[PropsManager] Shared property "${propertyId}" is not active`
           )
         }
+
         const records: Record<string, PropertyComponentRawData> = {}
+
         for (const dependent of this.resolvePropertyAncestorIds([propertyId])) {
           const component = this._components.get(dependent)
+
           if (component) {
             records[dependent] = component.save()
           }
         }
+
         records[propertyId] = {
           ...active.save(),
           [key]: clonePropsValue(value)
@@ -533,12 +560,15 @@ class PropsManager {
           (id) => records[id] ?? this._components.get(id)?.save()
         )
       },
+
       addToMap: (component) => this.addToMap(component),
+
       createComponent: (data) =>
         this.createPropertyInternal(
           data as Partial<PropertyComponentRawData>,
           'relationship-child'
         ),
+
       addChange: (change) =>
         this.addChange({
           action: PROPS_ACTIONS.UPDATE_PROPERTY,
@@ -569,10 +599,12 @@ class PropsManager {
     const inheritance = readPropertyInheritance(
       raw as unknown as Record<string, unknown>
     )
+
     if (inheritance) {
       const explicitChildren = relation
         ? inheritance.overrides[relation.key]
         : undefined
+
       return Object.freeze([
         ...new Set([
           inheritance.sourceId,
@@ -583,9 +615,11 @@ class PropsManager {
         ])
       ])
     }
+
     if (!relation) {
       return
     }
+
     if (
       sourceSnapshot &&
       (sourceSnapshot.id !== propertyId || sourceSnapshot.type !== type)
@@ -594,6 +628,7 @@ class PropsManager {
         `[PropsManager] Property relationship index received inexact owner "${propertyId}"`
       )
     }
+
     const value = sourceSnapshot
       ? (sourceSnapshot as unknown as Readonly<Record<string, unknown>>)[
           relation.key
@@ -603,6 +638,7 @@ class PropsManager {
             data: Readonly<Record<string, unknown>>
           }
         ).data[relation.key]
+
     if (
       !Array.isArray(value) ||
       value.some((childId) => typeof childId !== 'string') ||
@@ -610,6 +646,7 @@ class PropsManager {
     ) {
       return Object.freeze([])
     }
+
     return Object.freeze([...(value as string[])])
   }
 
@@ -620,6 +657,7 @@ class PropsManager {
     const hasPreviousOwner = this.relationshipChildIdsByOwnerId.has(ownerId)
     const previousChildIds =
       this.relationshipChildIdsByOwnerId.get(ownerId) ?? []
+
     if (
       (!hasPreviousOwner && nextChildIds === undefined) ||
       (hasPreviousOwner &&
@@ -631,8 +669,10 @@ class PropsManager {
     ) {
       return
     }
+
     previousChildIds.forEach((childId) => {
       const ownerIds = this.relationshipOwnerIdsByChildId.get(childId)
+
       ownerIds?.delete(ownerId)
       if (ownerIds?.size === 0) {
         this.relationshipOwnerIdsByChildId.delete(childId)
@@ -640,13 +680,17 @@ class PropsManager {
     })
     if (nextChildIds === undefined) {
       this.relationshipChildIdsByOwnerId.delete(ownerId)
+
       return
     }
+
     const retainedChildIds = Object.freeze([...nextChildIds])
+
     this.relationshipChildIdsByOwnerId.set(ownerId, retainedChildIds)
     retainedChildIds.forEach((childId) => {
       const ownerIds =
         this.relationshipOwnerIdsByChildId.get(childId) ?? new Set<string>()
+
       ownerIds.add(ownerId)
       this.relationshipOwnerIdsByChildId.set(childId, ownerIds)
     })
@@ -667,6 +711,7 @@ class PropsManager {
     relationshipChildIds: readonly string[] | undefined
   ): void {
     const propertyId = component.get('id')
+
     this._components.set(propertyId, component)
     this.replaceRelationshipOwnerEdges(propertyId, relationshipChildIds)
   }
@@ -675,8 +720,10 @@ class PropsManager {
     propertyId: string
   ): PropertyComponentInstanceTypes | undefined {
     const component = this._components.get(propertyId)
+
     this._components.delete(propertyId)
     this.replaceRelationshipOwnerEdges(propertyId, undefined)
+
     return component
   }
 
@@ -689,7 +736,9 @@ class PropsManager {
       data: cloneLoadData(validatedSnapshot),
       diagnostics
     }
+
     this.validatedLoadArtifacts.set(result, validatedSnapshot)
+
     return result
   }
 
@@ -702,6 +751,7 @@ class PropsManager {
         path: 'props',
         message: 'Expected object map for props data'
       })
+
       return this.createLoadValidationResult(sanitized, diagnostics)
     }
 
@@ -711,22 +761,27 @@ class PropsManager {
           path: `props.${componentId}`,
           message: 'Skipped non-object property component during load'
         })
+
         return
       }
 
       const rawType = rawComponent.type
+
       if (typeof rawType !== 'string' || rawType.length === 0) {
         diagnostics.push({
           path: `props.${componentId}.type`,
           message: 'Skipped property component with invalid type during load'
         })
+
         return
       }
+
       if (!getPropertyComponent(rawType)) {
         diagnostics.push({
           path: `props.${componentId}.type`,
           message: `Skipped unregistered property component type "${rawType}" during load`
         })
+
         return
       }
 
@@ -744,16 +799,19 @@ class PropsManager {
 
     validatePropertyInheritanceGraph(sanitized)
     validatePropertyInheritanceCycles(sanitized)
+
     return this.createLoadValidationResult(sanitized, diagnostics)
   }
 
   applyValidatedLoad(result: PropsLoadValidationResult): void {
     const validated = this.validatedLoadArtifacts.get(result)
+
     if (!validated) {
       throw new Error(
         '[PropsManager] Expected an owner-issued one-shot validated load artifact'
       )
     }
+
     this.validatedLoadArtifacts.delete(result)
     this.dispose()
 
@@ -762,17 +820,20 @@ class PropsManager {
         this.componentAccessor,
         () => createProperty(validated[componentId])
       ) as PropertyComponentInstanceTypes
+
       this.addToMap(newProperty)
     })
   }
 
   load(data: PropsComponentRawData | unknown) {
     const result = this.validateLoadData(data)
+
     this.applyValidatedLoad(result)
   }
 
   save(): PropsComponentRawData {
     const data = {} as PropsComponentRawData
+
     this._components.forEach((component, componentId) => {
       data[componentId] = component.save()
     })
@@ -803,18 +864,22 @@ class PropsManager {
         '[PropsManager] Property-source evidence cannot accept an initiating owner'
       )
     }
+
     if (this.activePropertyBatch) {
       const activeBatch = this.activePropertyBatch
+
       if (isUpdatePropertyChange(change)) {
         this.restoreActivePropertyBatch(activeBatch, change)
         throw new Error(
           `[PropsManager] Active property reuse batch cannot update active property "${change.id}"`
         )
       }
+
       throw new Error(
         '[PropsManager] Active property reuse batch cannot record property changes'
       )
     }
+
     if (
       this.propertyMutationStagedById &&
       isUpdatePropertyChange(change) &&
@@ -822,6 +887,7 @@ class PropsManager {
     ) {
       return
     }
+
     if (
       this.propertyCreationBatch &&
       isUpdatePropertyChange(change) &&
@@ -832,13 +898,17 @@ class PropsManager {
           '[PropsManager] Canonical property creation batch received an incompatible update'
         )
       }
+
       return
     }
+
     if (this.propertyCreationBatch && isUpdatePropertyChange(change)) {
       this.propertyCreationBatch.existingUpdates.push(change)
     }
+
     let relationshipChildIds: readonly string[] | undefined
     let updatesRelationshipIndex = false
+
     if (isUpdatePropertyChange(change)) {
       const component = this._components.get(change.id)
       const type = component?.get('type')
@@ -846,15 +916,18 @@ class PropsManager {
         typeof type === 'string'
           ? getPropertyComponentCanonicalChildRelation(type)
           : undefined
+
       if (component && relation?.key === change.key) {
         relationshipChildIds = this.prepareRelationshipIndexEntry(component)
         updatesRelationshipIndex = true
       }
     }
+
     this.changes.push(change)
     if (updatesRelationshipIndex && isUpdatePropertyChange(change)) {
       this.replaceRelationshipOwnerEdges(change.id, relationshipChildIds)
     }
+
     this.advancePropertyStateRevision()
   }
 
@@ -880,11 +953,13 @@ class PropsManager {
       if (completedIds.has(propertyId)) {
         return
       }
+
       if (visitingIds.has(propertyId)) {
         throw new Error(
           `[PropsManager] Property ancestor resolution found a relationship cycle at "${propertyId}"`
         )
       }
+
       if (!this._components.has(propertyId)) {
         throw new Error(
           `[PropsManager] Property ancestor resolution requires active property "${propertyId}"`
@@ -896,6 +971,7 @@ class PropsManager {
         emittedIds.add(propertyId)
         orderedIds.push(propertyId)
       }
+
       this.relationshipOwnerIdsByChildId.get(propertyId)?.forEach((ownerId) => {
         if (
           !this.relationshipChildIdsByOwnerId.get(ownerId)?.includes(propertyId)
@@ -904,6 +980,7 @@ class PropsManager {
             `[PropsManager] Property ancestor resolution found an inconsistent relationship "${ownerId}:${propertyId}"`
           )
         }
+
         visit(ownerId)
       })
       visitingIds.delete(propertyId)
@@ -916,6 +993,7 @@ class PropsManager {
           '[PropsManager] Property ancestor resolution requires valid property ids'
         )
       }
+
       visit(propertyId)
     })
 
@@ -926,9 +1004,11 @@ class PropsManager {
     propertyId: string
   ): PropertyComponentInstanceTypes | undefined {
     const active = this._components.get(propertyId)
+
     if (active) {
       return active
     }
+
     return (
       this.propertyMutationStagedById?.get(propertyId) ??
       this.propertyCreationBatch?.stagedById.get(propertyId)
@@ -937,6 +1017,7 @@ class PropsManager {
 
   getPropertyIdsByType(type: string): string[] {
     const ids = new Set<string>()
+
     const collect = (
       components: Map<string, PropertyComponentInstanceTypes>
     ): void => {
@@ -949,20 +1030,26 @@ class PropsManager {
 
     collect(this._components)
     collect(this._deletedMap)
+
     return Array.from(ids)
   }
 
   addToMap(component: PropertyComponentInstanceTypes) {
     const comId = component.get('id')
+
     if (!component || !comId) {
       return
     }
+
     const active = this._components.get(comId)
+
     if (this.propertyMutationStagedById) {
       if (active === component) {
         return
       }
+
       const staged = this.propertyMutationStagedById.get(comId)
+
       if (
         (staged !== undefined && staged !== component) ||
         active !== undefined ||
@@ -972,9 +1059,12 @@ class PropsManager {
           `[PropsManager] Property mutation cannot stage property "${comId}"`
         )
       }
+
       this.propertyMutationStagedById.set(comId, component)
+
       return
     }
+
     if (this.activePropertyBatch) {
       if (
         !this.activePropertyBatch.componentIds.has(comId) ||
@@ -984,8 +1074,10 @@ class PropsManager {
           `[PropsManager] Active property reuse batch cannot register property "${comId}"`
         )
       }
+
       return
     }
+
     if (
       this.propertyCreationBatch &&
       active !== undefined &&
@@ -995,6 +1087,7 @@ class PropsManager {
         `[PropsManager] Canonical property creation batch cannot replace active property "${comId}"`
       )
     }
+
     if (
       this.propertyCreationBatch &&
       active === component &&
@@ -1004,16 +1097,19 @@ class PropsManager {
         `[PropsManager] Canonical property creation batch cannot register active owner property "${comId}"`
       )
     }
+
     if (this.propertyCreationBatch) {
       if (this.propertyCreationBatch.stagedById.get(comId) !== component) {
         throw new Error(
           `[PropsManager] Canonical property creation batch cannot stage property "${comId}"`
         )
       }
+
       return
     }
 
     const relationshipChildIds = this.prepareRelationshipIndexEntry(component)
+
     this.removeFromDeletedMap(comId)
     this.registerActiveComponent(component, relationshipChildIds)
     if (active !== component) {
@@ -1027,7 +1123,9 @@ class PropsManager {
         `[PropsManager] Active property reuse batch cannot remove property "${componentId}"`
       )
     }
+
     const component = this.getPropertyById(componentId)
+
     if (!component) {
       return
     }
@@ -1054,16 +1152,19 @@ class PropsManager {
     registrationContractByType: Map<string, PropertyCreationTypeContract>
   ): PropertyCreationTypeContract {
     const existing = registrationContractByType.get(type)
+
     if (existing) {
       return existing
     }
 
     const constructor = getPropertyComponent(type)
+
     if (!type || !constructor) {
       throw new Error(
         `[PropsManager] Property creation has an unregistered type "${type}"`
       )
     }
+
     const componentRegistrationRevision =
       getPropertyComponentRegistrationRevision(type)
     const schemaRegistrationRevision =
@@ -1073,6 +1174,7 @@ class PropsManager {
     )
     const batchRebindableRelation =
       getPropertyComponentBatchRebindableRelation(constructor)
+
     if (
       batchRebindableRelation &&
       !arePropertyChildRelationsEqual(batchRebindableRelation, childRelation)
@@ -1081,7 +1183,9 @@ class PropsManager {
         `[PropsManager] Property creation has incoherent relationship registration for "${type}"`
       )
     }
+
     const schema = snapshotPropertySchema(getRegisteredPropertySchema(type))
+
     if (
       getPropertyComponentRegistrationRevision(type) !==
         componentRegistrationRevision ||
@@ -1100,7 +1204,9 @@ class PropsManager {
       componentRegistrationRevision,
       schemaRegistrationRevision
     })
+
     registrationContractByType.set(type, contract)
+
     return contract
   }
 
@@ -1129,6 +1235,7 @@ class PropsManager {
           PropertyCreationTypeContract
         >()
         const capturedRelationshipContractTypes = new Set<string>()
+
         const captureRelationshipContracts = (
           type: string,
           visiting = new Set<string>()
@@ -1139,30 +1246,37 @@ class PropsManager {
           ) {
             return
           }
+
           visiting.add(type)
           const contract = this.capturePropertyCreationTypeContract(
             type,
             registrationContractByType
           )
+
           if (contract.childRelation) {
             captureRelationshipContracts(
               contract.childRelation.childType,
               visiting
             )
           }
+
           visiting.delete(type)
           capturedRelationshipContractTypes.add(type)
         }
+
         const explicitDescriptorChildTypes = new Map<string, string>()
+
         const preflightRelationshipDescriptor = (
           value: unknown,
           contract: PropertyCreationTypeContract,
           ownerLabel: string
         ): void => {
           const childRelation = contract.childRelation
+
           if (!childRelation) {
             return
           }
+
           const preflightDescriptorEntry = (
             item: unknown,
             label: string,
@@ -1174,18 +1288,22 @@ class PropsManager {
                 explicitDescriptorChildTypes.get(item) ??
                 preparedRootTypesById.get(item)
               const childType = activeChild?.get('type') ?? preparedChildType
+
               if (!childType) {
                 throw new Error(
                   `[PropsManager] Ordinary property creation is missing relationship child "${item}"`
                 )
               }
+
               if (childType !== childRelation.childType) {
                 throw new Error(
                   `[PropsManager] Ordinary property creation relationship child "${item}" has the wrong type`
                 )
               }
+
               return
             }
+
             if (
               (keyedChildId !== undefined && keyedChildId.length === 0) ||
               (childRelation.mode ?? 'ids') !== 'ids-or-objects' ||
@@ -1200,6 +1318,7 @@ class PropsManager {
               typeof item.id === 'string' && item.id.length > 0
                 ? item.id
                 : undefined
+
             if (
               keyedChildId !== undefined &&
               itemChildId !== undefined &&
@@ -1209,8 +1328,10 @@ class PropsManager {
                 `[PropsManager] Ordinary property creation relationship child "${keyedChildId}" has conflicting canonical ids`
               )
             }
+
             let explicitChildId = keyedChildId ?? itemChildId
             let mappedChild: Record<string, unknown> | null
+
             try {
               mappedChild = childRelation.toChildData
                 ? childRelation.toChildData(item, explicitChildId)
@@ -1218,15 +1339,18 @@ class PropsManager {
             } catch {
               mappedChild = null
             }
+
             if (!isRecord(mappedChild)) {
               throw new Error(
                 `[PropsManager] Ordinary property creation has an invalid relationship descriptor for "${label}"`
               )
             }
+
             const normalizedChild: Record<string, unknown> = {
               ...mappedChild,
               type: childRelation.childType
             }
+
             if (
               typeof normalizedChild.id === 'string' &&
               normalizedChild.id.length > 0
@@ -1236,20 +1360,25 @@ class PropsManager {
                   `[PropsManager] Ordinary property creation relationship child "${explicitChildId}" changed its canonical id`
                 )
               }
+
               explicitChildId = normalizedChild.id
             }
+
             if (!explicitChildId) {
               delete normalizedChild.id
               explicitChildId = undefined
             }
+
             if (explicitChildId) {
               const activeChild = this._components.get(explicitChildId)
+
               if (activeChild) {
                 if (activeChild.get('type') !== childRelation.childType) {
                   throw new Error(
                     `[PropsManager] Ordinary property creation relationship child "${explicitChildId}" has the wrong type`
                   )
                 }
+
                 if (
                   Object.keys(normalizedChild).some(
                     (key) => key !== 'id' && key !== 'type'
@@ -1279,14 +1408,17 @@ class PropsManager {
             const childContract = registrationContractByType.get(
               childRelation.childType
             )
+
             if (!childContract) {
               throw new Error(
                 `[PropsManager] Ordinary property creation has an unregistered relationship child type "${childRelation.childType}"`
               )
             }
+
             const excludedChildKeys = childContract.childRelation
               ? new Set([childContract.childRelation.key])
               : undefined
+
             assertRuntimePropertyFields(
               normalizedChild,
               childContract.schema,
@@ -1316,8 +1448,10 @@ class PropsManager {
                 undefined
               )
             })
+
             return
           }
+
           if (
             childRelation.collection === 'array-or-record' &&
             isRecord(value)
@@ -1329,8 +1463,10 @@ class PropsManager {
                 childId
               )
             })
+
             return
           }
+
           throw new Error(
             `[PropsManager] Ordinary property creation has an invalid relationship descriptor for "${ownerLabel}"`
           )
@@ -1355,6 +1491,7 @@ class PropsManager {
           const ownerPropertyIds = sourceOwner.propertyIds as
             Readonly<Record<string, unknown>> | undefined
           const observedNames = new Set<string>()
+
           sourceOwner.definitions.forEach((sourceDefinition) => {
             if (
               !isRecord(sourceDefinition) ||
@@ -1368,6 +1505,7 @@ class PropsManager {
                 `[PropsManager] Ordinary property creation has an invalid definition for owner ${ownerIndex}`
               )
             }
+
             observedNames.add(sourceDefinition.name)
             captureRelationshipContracts(sourceDefinition.type)
             const contract = registrationContractByType.get(
@@ -1388,6 +1526,7 @@ class PropsManager {
             const excludedRelationKeys = relationKey
               ? new Set([relationKey])
               : undefined
+
             assertRuntimePropertyFields(
               ownerData,
               definitionSchema,
@@ -1395,6 +1534,7 @@ class PropsManager {
               excludedRelationKeys
             )
             let defaultCreationValue: unknown
+
             if (sourceDefinition.defaultValue !== undefined) {
               defaultCreationValue = deepFreezePropertyContract(
                 clonePropsValue(sourceDefinition.defaultValue)
@@ -1402,6 +1542,7 @@ class PropsManager {
               const defaultData = {
                 [sourceDefinition.name]: defaultCreationValue
               }
+
               assertRuntimePropertyFields(
                 defaultData,
                 contract.schema,
@@ -1432,15 +1573,18 @@ class PropsManager {
               ...(definitionSchema?.fields.map(({ key }) => key) ?? [])
             ])
             const creationData: Record<string, unknown> = {}
+
             if (sourceDefinition.defaultValue !== undefined) {
               creationData[sourceDefinition.name] = defaultCreationValue
             }
+
             activeMutationKeys.forEach((key) => {
               if (Object.prototype.hasOwnProperty.call(ownerData, key)) {
                 creationData[key] = ownerData[key]
               }
             })
             const frozenCreationData = Object.freeze(creationData)
+
             if (
               relationKey &&
               Object.prototype.hasOwnProperty.call(ownerData, relationKey)
@@ -1451,6 +1595,7 @@ class PropsManager {
                 ownerLabel: sourceDefinition.name
               })
             }
+
             if (
               requestedId !== undefined &&
               (typeof requestedId !== 'string' ||
@@ -1465,6 +1610,7 @@ class PropsManager {
                 `[PropsManager] Ordinary property creation has an unavailable property id for "${sourceDefinition.name}"`
               )
             }
+
             if (
               activeComponent &&
               [...activeMutationKeys].some((key) =>
@@ -1475,10 +1621,12 @@ class PropsManager {
                 `[PropsManager] Ordinary property creation cannot apply an active owner override for "${sourceDefinition.name}"`
               )
             }
+
             if (requestedId && !activeComponent) {
               reservedNewComponentIds.add(requestedId)
               preparedRootTypesById.set(requestedId, sourceDefinition.type)
             }
+
             roots.push(
               Object.freeze({
                 name: sourceDefinition.name,
@@ -1500,12 +1648,14 @@ class PropsManager {
           ownerCount: sourceOwners.length,
           rootPropertyCount: roots.length
         })
+
         this.validatedOrdinaryPropertyCreationArtifacts.set(prepared, {
           roots: Object.freeze(roots),
           registrationContracts: Object.freeze([
             ...registrationContractByType.values()
           ])
         })
+
         return prepared
       }
     )
@@ -1558,6 +1708,7 @@ class PropsManager {
     )
     const rootComponentIds = clonePropsValue(sourceRootComponentIds as string[])
     const componentIds = components.map(({ id }) => id)
+
     if (
       componentIds.some(
         (componentId) =>
@@ -1569,6 +1720,7 @@ class PropsManager {
         '[PropsManager] Canonical property creation has duplicate or invalid component ids'
       )
     }
+
     if (
       rootComponentIds.some(
         (componentId) =>
@@ -1579,6 +1731,7 @@ class PropsManager {
         '[PropsManager] Canonical property creation has invalid owner roots'
       )
     }
+
     const uniqueRootComponentIds = [...new Set(rootComponentIds)]
 
     const componentById = new Map(
@@ -1591,6 +1744,7 @@ class PropsManager {
       string,
       PropertyCreationTypeContract
     >()
+
     components.forEach((component) => {
       const type =
         isRecord(component) && typeof component.type === 'string'
@@ -1599,11 +1753,13 @@ class PropsManager {
       let registrationContract = registrationContractByType.get(type)
       const constructor =
         registrationContract?.constructor ?? getPropertyComponent(type)
+
       if (!isRecord(component) || !type || !constructor) {
         throw new Error(
           `[PropsManager] Canonical property creation has invalid component "${component.id ?? ''}"`
         )
       }
+
       if (!registrationContract) {
         const componentRegistrationRevision =
           getPropertyComponentRegistrationRevision(type)
@@ -1614,6 +1770,7 @@ class PropsManager {
         )
         const batchRebindableRelation =
           getPropertyComponentBatchRebindableRelation(constructor)
+
         if (
           batchRebindableRelation &&
           !arePropertyChildRelationsEqual(
@@ -1625,7 +1782,9 @@ class PropsManager {
             `[PropsManager] Canonical property creation has incoherent relationship registration for "${type}"`
           )
         }
+
         const schema = snapshotPropertySchema(getRegisteredPropertySchema(type))
+
         if (
           getPropertyComponentRegistrationRevision(type) !==
             componentRegistrationRevision ||
@@ -1636,6 +1795,7 @@ class PropsManager {
             `[PropsManager] Canonical property creation registration changed for "${type}"`
           )
         }
+
         registrationContract = {
           type,
           constructor,
@@ -1646,6 +1806,7 @@ class PropsManager {
         }
         registrationContractByType.set(type, registrationContract)
       }
+
       assertRuntimePropertyFields(
         component as Readonly<Record<string, unknown>>,
         registrationContract.schema,
@@ -1676,19 +1837,24 @@ class PropsManager {
     const visitingComponentIds = new Set<string>()
     const parentFirstDeclarativeComponentIds = new Set<string>()
     const requiresDeferredRebindById = new Map<string, boolean>()
+
     const visit = (componentId: string): boolean => {
       if (visitingComponentIds.has(componentId)) {
         throw new Error(
           `[PropsManager] Canonical property creation has a relationship cycle at "${componentId}"`
         )
       }
+
       if (requiresDeferredRebindById.has(componentId)) {
         return requiresDeferredRebindById.get(componentId) as boolean
       }
+
       const component = componentById.get(componentId)
+
       if (!component) {
         return false
       }
+
       visitingComponentIds.add(componentId)
       reachableComponentIds.add(componentId)
       const registrationContract = registrationContractByType.get(
@@ -1699,18 +1865,24 @@ class PropsManager {
         component as unknown as Record<string, unknown>,
         childRelation?.key
       )
+
       if (inheritedDependencies) {
         inheritedDependencies.forEach((dependency) => visit(dependency))
         visitingComponentIds.delete(componentId)
         requiresDeferredRebindById.set(componentId, false)
+
         return false
       }
+
       if (!childRelation) {
         visitingComponentIds.delete(componentId)
         requiresDeferredRebindById.set(componentId, false)
+
         return false
       }
+
       const childIds = (component as Record<string, unknown>)[childRelation.key]
+
       if (childIds === undefined && sourceSemantics === 'normalize-partial') {
         const componentConstructor = registrationContract?.constructor
         const requiresDeferredRebind = Boolean(
@@ -1720,13 +1892,16 @@ class PropsManager {
             childRelation
           )
         )
+
         visitingComponentIds.delete(componentId)
         requiresDeferredRebindById.set(componentId, requiresDeferredRebind)
         if (requiresDeferredRebind) {
           parentFirstDeclarativeComponentIds.add(componentId)
         }
+
         return requiresDeferredRebind
       }
+
       if (
         !Array.isArray(childIds) ||
         childIds.some((childId) => typeof childId !== 'string') ||
@@ -1736,29 +1911,36 @@ class PropsManager {
           `[PropsManager] Canonical property creation has malformed child relation for "${componentId}"`
         )
       }
+
       let requiresDeferredRebind = false
+
       childIds.forEach((childId) => {
         const sourceChild = componentById.get(childId)
         const childType =
           sourceChild?.type ?? this.getPropertyById(childId)?.get('type')
+
         if (!childType) {
           throw new Error(
             `[PropsManager] Canonical property creation is missing relation child "${childId}"`
           )
         }
+
         if (childType !== childRelation.childType) {
           throw new Error(
             `[PropsManager] Canonical property creation child "${childId}" has the wrong type`
           )
         }
+
         if (sourceChild) {
           const childRequiresDeferredRebind = visit(childId)
+
           if (
             (sourceIndexById.get(childId) as number) >=
               (sourceIndexById.get(componentId) as number) ||
             childRequiresDeferredRebind
           ) {
             const componentConstructor = registrationContract?.constructor
+
             if (
               !componentConstructor ||
               !isPropertyComponentBatchRebindable(
@@ -1770,6 +1952,7 @@ class PropsManager {
                 `[PropsManager] Canonical property creation requires child-first order for "${childId}"`
               )
             }
+
             requiresDeferredRebind = true
           }
         }
@@ -1779,8 +1962,10 @@ class PropsManager {
       if (requiresDeferredRebind) {
         parentFirstDeclarativeComponentIds.add(componentId)
       }
+
       return requiresDeferredRebind
     }
+
     uniqueRootComponentIds.forEach(visit)
     if (reachableComponentIds.size !== components.length) {
       throw new Error(
@@ -1793,6 +1978,7 @@ class PropsManager {
       componentIds: Object.freeze([...componentIds]),
       rootComponentIds: Object.freeze([...uniqueRootComponentIds])
     })
+
     this.validatedPropertyCreationArtifacts.set(prepared, {
       components: Object.freeze(components.map((component) => component)),
       registrationContracts: Object.freeze([
@@ -1803,6 +1989,7 @@ class PropsManager {
       ]),
       sourceSemantics
     })
+
     return prepared
   }
 
@@ -1814,17 +2001,21 @@ class PropsManager {
         '[PropsManager] Applying a prepared property creation batch requires an active property creation batch'
       )
     }
+
     const artifact = this.validatedPropertyCreationArtifacts.get(prepared)
+
     if (!artifact) {
       throw new Error(
         '[PropsManager] Expected an owner-issued one-shot prepared property creation batch'
       )
     }
+
     this.validatedPropertyCreationArtifacts.delete(prepared)
 
     const inheritedRecords = Object.fromEntries(
       artifact.components.map((record) => [record.id, record])
     )
+
     validatePropertyInheritanceGraph(
       inheritedRecords,
       (id) => inheritedRecords[id] ?? this.getPropertyById(id)?.save()
@@ -1835,10 +2026,12 @@ class PropsManager {
       artifact.parentFirstDeclarativeComponentIds,
       artifact.sourceSemantics
     )
+
     if (artifact.sourceSemantics === 'exact') {
       measurePropertyBatchPhase('props-manager:creation-exact', () => {
         components.forEach((component, index) => {
           const sourceComponent = artifact.components[index]
+
           if (!isEqual(component.save(), sourceComponent)) {
             throw new Error(
               '[PropsManager] Canonical property creation changed exact component data'
@@ -1847,6 +2040,7 @@ class PropsManager {
         })
       })
     }
+
     return Object.freeze(components.map((component) => component.get('id')))
   }
 
@@ -1884,17 +2078,21 @@ class PropsManager {
       sourceComponents as PropertyComponentRawData[]
     )
     const rootComponentIds = clonePropsValue(sourceRootComponentIds as string[])
+
     finishClone()
 
     const finishExact = beginPropertyBatchPhase(
       'props-manager:active-preflight-exact'
     )
+
     if (components.some((component) => !isRecord(component))) {
       throw new Error(
         '[PropsManager] Active property batch has invalid component data'
       )
     }
+
     const componentIds = components.map(({ id }) => id)
+
     if (
       componentIds.some(
         (componentId) =>
@@ -1906,6 +2104,7 @@ class PropsManager {
         '[PropsManager] Active property batch has duplicate or invalid component ids'
       )
     }
+
     if (
       rootComponentIds.some(
         (componentId) =>
@@ -1916,6 +2115,7 @@ class PropsManager {
         '[PropsManager] Active property batch has invalid owner roots'
       )
     }
+
     const uniqueRootComponentIds = [...new Set(rootComponentIds)]
     const componentById = new Map(
       components.map((component) => [component.id, component] as const)
@@ -1930,7 +2130,9 @@ class PropsManager {
           `[PropsManager] Active property batch has invalid component "${component.id ?? ''}"`
         )
       }
+
       const active = this.getPropertyById(component.id)
+
       if (
         !active ||
         active.get('type') !== component.type ||
@@ -1940,6 +2142,7 @@ class PropsManager {
           `[PropsManager] Active property batch changed exact component data for "${component.id}"`
         )
       }
+
       return active
     })
 
@@ -1956,14 +2159,18 @@ class PropsManager {
       'props-manager:active-preflight-relations'
     )
     const visitedComponentIds = new Set<string>()
+
     const visit = (componentId: string): void => {
       if (visitedComponentIds.has(componentId)) {
         return
       }
+
       const component = componentById.get(componentId)
+
       if (!component) {
         return
       }
+
       visitedComponentIds.add(componentId)
       const childRelation = getPropertyComponentCanonicalChildRelation(
         component.type
@@ -1972,14 +2179,19 @@ class PropsManager {
         component as unknown as Record<string, unknown>,
         childRelation?.key
       )
+
       if (inheritedDependencies) {
         inheritedDependencies.forEach(visit)
+
         return
       }
+
       if (!childRelation) {
         return
       }
+
       const childIds = (component as Record<string, unknown>)[childRelation.key]
+
       if (
         !Array.isArray(childIds) ||
         childIds.some((childId) => typeof childId !== 'string') ||
@@ -1989,14 +2201,17 @@ class PropsManager {
           `[PropsManager] Active property batch has malformed child relation for "${componentId}"`
         )
       }
+
       childIds.forEach((childId) => {
         const sourceChild = componentById.get(childId)
         const activeChild = this.getPropertyById(childId)
+
         if (!activeChild) {
           throw new Error(
             `[PropsManager] Active property batch is missing relation child "${childId}"`
           )
         }
+
         if (
           activeChild.get('type') !== childRelation.childType ||
           (sourceChild && sourceChild.type !== childRelation.childType)
@@ -2005,11 +2220,13 @@ class PropsManager {
             `[PropsManager] Active property batch child "${childId}" has the wrong type`
           )
         }
+
         if (sourceChild) {
           visit(childId)
         }
       })
     }
+
     uniqueRootComponentIds.forEach(visit)
     componentIds.forEach(visit)
     finishRelations()
@@ -2019,10 +2236,12 @@ class PropsManager {
       componentIds: Object.freeze([...componentIds]),
       rootComponentIds: Object.freeze([...uniqueRootComponentIds])
     })
+
     this.validatedActivePropertyArtifacts.set(prepared, {
       components: Object.freeze(components.map((component) => component)),
       instances: Object.freeze([...instances])
     })
+
     return prepared
   }
 
@@ -2031,12 +2250,15 @@ class PropsManager {
     rejectedUpdate?: UpdatePropertyChange
   ) {
     const shouldRestoreBatch = this.activePropertyBatch === batch
+
     if (shouldRestoreBatch) {
       this.activePropertyBatch = null
     }
+
     try {
       if (rejectedUpdate) {
         const rejectedComponent = this._components.get(rejectedUpdate.id)
+
         if (rejectedComponent) {
           rejectedComponent.load({
             ...rejectedComponent.save(),
@@ -2044,16 +2266,20 @@ class PropsManager {
           })
         }
       }
+
       batch.components.forEach((component, index) => {
         const snapshot = batch.snapshots[index]
+
         if (!snapshot) {
           return
         }
+
         component.load(clonePropsValue(snapshot))
         const relationshipChildIds = this.prepareRelationshipIndexEntry(
           component,
           snapshot
         )
+
         if (this._components.get(snapshot.id) !== component) {
           this.registerActiveComponent(component, relationshipChildIds)
         } else {
@@ -2086,6 +2312,7 @@ class PropsManager {
       sourceComponents,
       sourceRootComponentIds
     )
+
     return this.consumeActivePropertyBatch(prepared, operation, false)
   }
 
@@ -2103,16 +2330,19 @@ class PropsManager {
   ): T {
     this.assertActivePropertyBatchCanStart()
     const artifact = this.validatedActivePropertyArtifacts.get(prepared)
+
     if (!artifact) {
       throw new Error(
         '[PropsManager] Expected an owner-issued one-shot prepared active property batch'
       )
     }
+
     this.validatedActivePropertyArtifacts.delete(prepared)
     if (verifyEntryExact) {
       measurePropertyBatchPhase('props-manager:active-enter-exact', () => {
         artifact.components.forEach((snapshot, index) => {
           const instance = artifact.instances[index]
+
           if (
             !instance ||
             this.getPropertyById(snapshot.id) !== instance ||
@@ -2132,11 +2362,13 @@ class PropsManager {
       components: artifact.instances,
       snapshots: artifact.components
     }
+
     this.activePropertyBatch = batch
     try {
       measurePropertyBatchPhase('props-manager:active-rebind-relations', () => {
         batch.components.forEach((component, index) => {
           const snapshot = batch.snapshots[index]
+
           if (
             snapshot &&
             getPropertyComponentCanonicalChildRelation(snapshot.type)
@@ -2161,12 +2393,14 @@ class PropsManager {
                 component || !isEqual(component.save(), batch.snapshots[index])
           )
       )
+
       if (changed) {
         this.restoreActivePropertyBatch(batch)
         throw new Error(
           '[PropsManager] Active property reuse batch cannot update active property'
         )
       }
+
       return result
     } catch (error) {
       this.restoreActivePropertyBatch(batch)
@@ -2200,6 +2434,7 @@ class PropsManager {
     )
     const components = validatedSnapshot.components
     const componentIds = components.map(({ id }) => id)
+
     if (
       componentIds.some((componentId) => typeof componentId !== 'string') ||
       new Set(componentIds).size !== componentIds.length
@@ -2212,6 +2447,7 @@ class PropsManager {
     const componentById = new Map(
       components.map((component) => [component.id, component] as const)
     )
+
     components.forEach((component) => {
       if (
         !isRecord(component) ||
@@ -2224,11 +2460,13 @@ class PropsManager {
           '[PropsManager] Invalid property restore: malformed component data'
         )
       }
+
       if (!getPropertyComponent(component.type)) {
         throw new Error(
           `[PropsManager] Invalid property restore: unregistered property type "${component.type}"`
         )
       }
+
       if (this.getPropertyById(component.id)) {
         throw new Error(
           `[PropsManager] Invalid property restore: active property "${component.id}" already exists`
@@ -2237,6 +2475,7 @@ class PropsManager {
     })
 
     const relationKeys = new Set<string>()
+
     validatedRelations.forEach((relation) => {
       if (
         !isRecord(relation) ||
@@ -2249,23 +2488,29 @@ class PropsManager {
           '[PropsManager] Invalid property restore: malformed owner relation'
         )
       }
+
       const relationKey = `${relation.ownerElementId}:${relation.ownerPropertyName}`
+
       if (relationKeys.has(relationKey)) {
         throw new Error(
           `[PropsManager] Invalid property restore: duplicate owner relation "${relationKey}"`
         )
       }
+
       relationKeys.add(relationKey)
       const component = componentById.get(relation.componentId)
+
       if (!component) {
         throw new Error(
           `[PropsManager] Invalid property restore: missing owner data for "${relation.componentId}"`
         )
       }
+
       const definition = elementPropertyRegistry.getForComponent(
         relation.ownerElementType,
         relation.ownerPropertyName
       )
+
       if (!definition || definition.type !== component.type) {
         throw new Error(
           `[PropsManager] Invalid property restore: malformed owner relation for "${relation.componentId}"`
@@ -2278,14 +2523,18 @@ class PropsManager {
       (id) => componentById.get(id) ?? this.getPropertyById(id)?.save()
     )
     const reachableSnapshotIds = new Set<string>()
+
     const visit = (componentId: string): void => {
       if (reachableSnapshotIds.has(componentId)) {
         return
       }
+
       const component = componentById.get(componentId)
+
       if (!component) {
         return
       }
+
       reachableSnapshotIds.add(componentId)
       const childRelation = getPropertyComponentCanonicalChildRelation(
         component.type
@@ -2294,16 +2543,21 @@ class PropsManager {
         component as unknown as Record<string, unknown>,
         childRelation?.key
       )
+
       if (inheritedDependencies) {
         inheritedDependencies.forEach(visit)
+
         return
       }
+
       if (!childRelation) {
         return
       }
+
       const childIds = (component as unknown as Record<string, unknown>)[
         childRelation.key
       ]
+
       if (
         !Array.isArray(childIds) ||
         childIds.some((childId) => typeof childId !== 'string') ||
@@ -2313,25 +2567,30 @@ class PropsManager {
           `[PropsManager] Invalid property restore: malformed child relation for "${componentId}"`
         )
       }
+
       childIds.forEach((childId) => {
         const snapshotChild = componentById.get(childId)
         const activeChild = this.getPropertyById(childId)
         const childType = snapshotChild?.type ?? activeChild?.get('type')
+
         if (!childType) {
           throw new Error(
             `[PropsManager] Invalid property restore: missing relation child "${childId}"`
           )
         }
+
         if (childType !== childRelation.childType) {
           throw new Error(
             `[PropsManager] Invalid property restore: malformed child relation type for "${childId}"`
           )
         }
+
         if (snapshotChild) {
           visit(childId)
         }
       })
     }
+
     validatedRelations.forEach(({ componentId }) => visit(componentId))
     if (reachableSnapshotIds.size !== components.length) {
       throw new Error(
@@ -2342,6 +2601,7 @@ class PropsManager {
     const preparedEntries = components.map((component) => {
       const tombstone = this._deletedMap.get(component.id)
       let strategy: PropsRestoreStrategy = 'materialize'
+
       if (tombstone) {
         if (
           tombstone.get('type') !== component.type ||
@@ -2351,8 +2611,10 @@ class PropsManager {
             `[PropsManager] Invalid property restore: incompatible tombstone for "${component.id}"`
           )
         }
+
         strategy = 'reuse'
       }
+
       return Object.freeze({ componentId: component.id, strategy })
     })
     const prepared: PreparedPropsRestore = Object.freeze({
@@ -2362,9 +2624,11 @@ class PropsManager {
         validatedRelations.map((relation) => Object.freeze(relation))
       )
     })
+
     this.validatedRestoreArtifacts.set(prepared, {
       snapshot: validatedSnapshot
     })
+
     return prepared
   }
 
@@ -2373,11 +2637,13 @@ class PropsManager {
     options?: EVENT_OPTIONS
   ): readonly string[] {
     const artifact = this.validatedRestoreArtifacts.get(prepared)
+
     if (!artifact) {
       throw new Error(
         '[PropsManager] Expected an owner-issued one-shot prepared property restore'
       )
     }
+
     this.validatedRestoreArtifacts.delete(prepared)
 
     const snapshotById = new Map(
@@ -2385,21 +2651,26 @@ class PropsManager {
         (component) => [component.id, component] as const
       )
     )
+
     validatePropertyInheritanceGraph(
       Object.fromEntries(snapshotById),
       (id) => snapshotById.get(id) ?? this.getPropertyById(id)?.save()
     )
     const materialized = new Map<string, PropertyComponentInstanceTypes>()
+
     try {
       prepared.entries.forEach(({ componentId, strategy }) => {
         const data = snapshotById.get(componentId)
+
         if (!data || this.getPropertyById(componentId)) {
           throw new Error(
             `[PropsManager] Cannot apply property restore: stale component "${componentId}"`
           )
         }
+
         if (strategy === 'reuse') {
           const tombstone = this.getRestoreComponentById(componentId)
+
           if (
             !tombstone ||
             tombstone.get('type') !== data.type ||
@@ -2409,18 +2680,23 @@ class PropsManager {
               `[PropsManager] Cannot apply property restore: stale tombstone "${componentId}"`
             )
           }
+
           materialized.set(componentId, tombstone)
+
           return
         }
+
         if (strategy !== 'materialize') {
           throw new Error(
             `[PropsManager] Cannot apply property restore: invalid strategy for "${componentId}"`
           )
         }
+
         const component = runWithPropertyComponentAccessor(
           this.componentAccessor,
           () => createProperty(data)
         )
+
         if (
           component.get('id') !== componentId ||
           !isEqual(component.save(), data)
@@ -2430,6 +2706,7 @@ class PropsManager {
             `[PropsManager] Cannot apply property restore: exact materialization failed for "${componentId}"`
           )
         }
+
         materialized.set(componentId, component)
       })
     } catch (error) {
@@ -2443,15 +2720,18 @@ class PropsManager {
 
     const appliedIds: string[] = []
     const changeStart = this.changes.length
+
     try {
       prepared.entries.forEach(({ componentId }) => {
         const component = materialized.get(componentId)
         const data = snapshotById.get(componentId)
+
         if (!component || !data) {
           throw new Error(
             `[PropsManager] Cannot apply property restore: missing prepared component "${componentId}"`
           )
         }
+
         this.addToMap(component)
         appliedIds.push(componentId)
         runWithPropertyComponentAccessor(this.componentAccessor, () =>
@@ -2463,6 +2743,7 @@ class PropsManager {
             `[PropsManager] Cannot apply property restore: exact data changed for "${componentId}"`
           )
         }
+
         this.addChangeForAddProperty(component)
       })
     } catch (error) {
@@ -2472,6 +2753,7 @@ class PropsManager {
         const strategy = prepared.entries.find(
           (entry) => entry.componentId === componentId
         )?.strategy
+
         if (component && strategy === 'reuse') {
           this._deletedMap.set(componentId, component)
         } else {
@@ -2485,6 +2767,7 @@ class PropsManager {
       acknowledgeTransactionReplayApplied()
       this.commitChanges(options)
     }
+
     return Object.freeze([...appliedIds])
   }
 
@@ -2511,6 +2794,7 @@ class PropsManager {
           clonePropsValue(snapshots)
         )
       : snapshots
+
     this.addChange({
       eventName: EventTypes.ADD_PROPERTY,
       data,
@@ -2542,6 +2826,7 @@ class PropsManager {
       ...propData,
       type: propData.type as PropertyType
     }
+
     return constructor
       ? createPropertyWithConstructor(data, constructor)
       : (createProperty(data) as PropertyComponentInstanceTypes)
@@ -2552,12 +2837,15 @@ class PropsManager {
     componentAccessReady = true
   ): void {
     const batch = this.propertyCreationBatch
+
     if (!batch) {
       throw new Error(
         '[PropsManager] Canonical property creation requires an active property creation batch'
       )
     }
+
     const propertyId = newProperty.get('id')
+
     if (
       typeof propertyId !== 'string' ||
       propertyId.length === 0 ||
@@ -2570,6 +2858,7 @@ class PropsManager {
         `[PropsManager] Canonical property creation batch has duplicate property "${propertyId}"`
       )
     }
+
     batch.componentIds.add(propertyId)
     batch.components.push(newProperty)
     if (componentAccessReady) {
@@ -2585,6 +2874,7 @@ class PropsManager {
       const currentChildRelation = snapshotPropertyChildRelation(
         getPropertyComponentCanonicalChildRelation(registrationContract.type)
       )
+
       if (
         getPropertyComponentRegistrationRevision(registrationContract.type) !==
           registrationContract.componentRegistrationRevision ||
@@ -2633,26 +2923,32 @@ class PropsManager {
     const visiting = new Set<string>()
     const visited = new Set<string>()
     const ordered: string[] = []
+
     const visit = (componentId: string): void => {
       if (visited.has(componentId)) {
         return
       }
+
       if (visiting.has(componentId)) {
         throw new Error(
           `[PropsManager] Canonical property creation has a relationship cycle at "${componentId}"`
         )
       }
+
       const component = componentById.get(componentId)
+
       if (!component) {
         throw new Error(
           `[PropsManager] Canonical property creation batch cannot rebind property "${componentId}"`
         )
       }
+
       const type = component.get('type')
       const childRelation =
         typeof type === 'string'
           ? registrationContractByType.get(type)?.childRelation
           : undefined
+
       if (!childRelation) {
         throw new Error(
           `[PropsManager] Canonical property creation batch cannot rebind property "${componentId}"`
@@ -2663,6 +2959,7 @@ class PropsManager {
       const saved = component.save() as Record<string, unknown>
       const savedChildIds = saved[childRelation.key]
       const childIds = savedChildIds === undefined ? [] : savedChildIds
+
       if (
         !Array.isArray(childIds) ||
         childIds.some((childId) => typeof childId !== 'string') ||
@@ -2672,20 +2969,24 @@ class PropsManager {
           `[PropsManager] Canonical property creation has malformed child relation for "${componentId}"`
         )
       }
+
       childIds.forEach((childId) => {
         const sourceChild = componentById.get(childId)
         const childType =
           sourceChild?.get('type') ?? this.getPropertyById(childId)?.get('type')
+
         if (!childType) {
           throw new Error(
             `[PropsManager] Canonical property creation is missing relation child "${childId}"`
           )
         }
+
         if (childType !== childRelation.childType) {
           throw new Error(
             `[PropsManager] Canonical property creation child "${childId}" has the wrong type`
           )
         }
+
         if (sourceChild && deferredComponentIds.has(childId)) {
           visit(childId)
         }
@@ -2696,6 +2997,7 @@ class PropsManager {
     }
 
     deferredComponentIds.forEach(visit)
+
     return Object.freeze(ordered)
   }
 
@@ -2706,11 +3008,13 @@ class PropsManager {
     sourceSemantics: PropertyCreationSourceSemantics
   ): readonly PropertyComponentInstanceTypes[] {
     const batch = this.propertyCreationBatch
+
     if (!batch) {
       throw new Error(
         '[PropsManager] Canonical property batch requires an active property creation batch'
       )
     }
+
     if (sourceComponents.length === 0) {
       throw new Error(
         '[PropsManager] Canonical property batch requires property components'
@@ -2724,14 +3028,17 @@ class PropsManager {
           [registrationContract.type, registrationContract] as const
       )
     )
+
     const resolveBatchPropertySchema = (
       type: string
     ): PropertySchema | undefined => {
       const registrationContract = registrationContractByType.get(type)
+
       return registrationContract
         ? registrationContract.schema
         : getRegisteredPropertySchema(type)
     }
+
     const deferredTypes = new Set(
       sourceComponents.flatMap((sourceComponent) =>
         typeof sourceComponent.id === 'string' &&
@@ -2741,6 +3048,7 @@ class PropsManager {
           : []
       )
     )
+
     measurePropertyBatchPhase('props-manager:creation-registry-readiness', () =>
       this.assertPropertyCreationRegistrationReadiness(
         registrationContracts,
@@ -2756,24 +3064,29 @@ class PropsManager {
               typeof sourceComponent.type === 'string'
                 ? registrationContractByType.get(sourceComponent.type)
                 : undefined
+
             if (!registrationContract) {
               throw new Error(
                 `[PropsManager] Canonical property creation registration changed for "${sourceComponent.id ?? ''}"`
               )
             }
+
             const component = this.instantiateProperty(
               sourceComponent,
               registrationContract.constructor
             )
+
             this.stagePropertyCreation(
               component,
               typeof sourceComponent.id !== 'string' ||
                 !parentFirstIds.has(sourceComponent.id)
             )
+
             return component
           })
         )
     )
+
     measurePropertyBatchPhase(
       'props-manager:creation-post-materialize-readiness',
       () =>
@@ -2800,25 +3113,32 @@ class PropsManager {
               index
             ])
           )
+
           relationshipRebindIds.forEach((componentId) => {
             const index = sourceIndexById.get(componentId)
+
             if (index === undefined) {
               throw new Error(
                 `[PropsManager] Canonical property creation batch cannot rebind property "${componentId}"`
               )
             }
+
             const sourceComponent = sourceComponents[index]
+
             if (!sourceComponent || typeof sourceComponent.id !== 'string') {
               throw new Error(
                 `[PropsManager] Canonical property creation batch cannot rebind property "${componentId}"`
               )
             }
+
             const component = components[index]
+
             if (!component || component.get('id') !== componentId) {
               throw new Error(
                 `[PropsManager] Canonical property creation batch cannot rebind property "${componentId}"`
               )
             }
+
             component.load(sourceComponent as PropertyComponentRawData)
             batch.stagedById.set(componentId, component)
           })
@@ -2835,6 +3155,7 @@ class PropsManager {
     measurePropertyBatchPhase('props-manager:creation-register', () =>
       this.registerMany(components)
     )
+
     return Object.freeze([...components])
   }
 
@@ -2847,15 +3168,19 @@ class PropsManager {
       trustedStagedBatch !== undefined &&
       trustedStagedBatch === batch &&
       components === batch.components
+
     if (trustedStagedBatch !== undefined && !trustsStagedOwner) {
       throw new Error(
         '[PropsManager] Trusted property registration requires the active staged owner batch'
       )
     }
+
     if (!trustsStagedOwner) {
       const observedIds = new Set<string>()
+
       components.forEach((component) => {
         const propertyId = component.get('id')
+
         if (
           typeof propertyId !== 'string' ||
           propertyId.length === 0 ||
@@ -2868,12 +3193,15 @@ class PropsManager {
             `[PropsManager] Canonical property creation batch cannot register property "${propertyId}"`
           )
         }
+
         observedIds.add(propertyId)
       })
     }
+
     const relationshipEntries = components.map((component) =>
       this.prepareRelationshipIndexEntry(component)
     )
+
     components.forEach((component, index) => {
       this.registerActiveComponent(component, relationshipEntries[index])
     })
@@ -2902,15 +3230,18 @@ class PropsManager {
 
     const batch = this.propertyCreationBatch
     let materializationData = propData
+
     if (batch && source === 'owner-root') {
       const preparedRoot =
         batch.ordinaryRootCreations[batch.ordinaryRootCreationIndex]
+
       if (preparedRoot) {
         if (propData.type !== preparedRoot.type) {
           throw new Error(
             `[PropsManager] Ordinary property creation materialized an unexpected root for "${preparedRoot.name}"`
           )
         }
+
         batch.ordinaryRootCreationIndex += 1
         materializationData = {
           ...propData,
@@ -2921,9 +3252,11 @@ class PropsManager {
     }
 
     const create = () => this.instantiateProperty(materializationData)
+
     const newProperty = this.propertyCreationBatch
       ? create()
       : runWithPropertyComponentAccessor(this.componentAccessor, create)
+
     if (this.propertyCreationBatch) {
       this.stagePropertyCreation(newProperty)
       if (typeof materializationData.id === 'string') {
@@ -2935,6 +3268,7 @@ class PropsManager {
     } else {
       this.addChangeForAddProperty(newProperty)
     }
+
     return newProperty
   }
 
@@ -2954,9 +3288,11 @@ class PropsManager {
           .reverse()
           .forEach((change) => {
             const component = this._components.get(change.id)
+
             if (!component) {
               return
             }
+
             component.load({
               ...component.save(),
               [change.key]: clonePropsValue(change.before)
@@ -2976,9 +3312,11 @@ class PropsManager {
       .reverse()
       .forEach((component) => {
         const propertyId = component.get('id')
+
         if (this._components.get(propertyId) === component) {
           this.unregisterActiveComponent(propertyId)
         }
+
         ;(component as unknown as { dispose?: () => void }).dispose?.()
       })
     this.changes.splice(batch.changeStart)
@@ -2994,9 +3332,12 @@ class PropsManager {
           '[PropsManager] A prepared ordinary property creation batch cannot enter a nested creation batch'
         )
       }
+
       return Object.freeze({
         result: operation(),
+
         rollback: () => undefined,
+
         complete: () => undefined
       })
     }
@@ -3006,16 +3347,19 @@ class PropsManager {
           preparedOrdinaryBatch
         )
       : undefined
+
     if (preparedOrdinaryBatch && !ordinaryArtifact) {
       throw new Error(
         '[PropsManager] Expected an owner-issued one-shot prepared ordinary property creation batch'
       )
     }
+
     if (preparedOrdinaryBatch) {
       this.validatedOrdinaryPropertyCreationArtifacts.delete(
         preparedOrdinaryBatch
       )
     }
+
     if (ordinaryArtifact) {
       this.assertPropertyCreationRegistrationReadiness(
         ordinaryArtifact.registrationContracts,
@@ -3035,9 +3379,11 @@ class PropsManager {
     }
 
     const activeSchemaByType = new Map<string, PropertySchema | undefined>()
+
     if (!ordinaryArtifact) {
       this._components.forEach((component) => {
         const type = component.get('type')
+
         if (typeof type === 'string' && !activeSchemaByType.has(type)) {
           activeSchemaByType.set(
             type,
@@ -3046,6 +3392,7 @@ class PropsManager {
         }
       })
     }
+
     const batch: PropertyCreationBatchState = {
       changeStart: this.changes.length,
       components: [],
@@ -3062,6 +3409,7 @@ class PropsManager {
         ) ?? Object.freeze([]),
       ordinaryRootCreationIndex: 0
     }
+
     this.propertyCreationBatch = batch
     try {
       const result = measurePropertyBatchPhase(
@@ -3069,8 +3417,10 @@ class PropsManager {
         () =>
           runWithPropertyComponentAccessor(this.componentAccessor, operation)
       )
+
       measurePropertyBatchPhase('props-manager:creation-finalize', () => {
         const operationChanges = this.changes.slice(batch.changeStart)
+
         if (
           operationChanges.length !== batch.existingUpdates.length ||
           operationChanges.some(
@@ -3081,6 +3431,7 @@ class PropsManager {
             '[PropsManager] Canonical property creation batch produced incompatible pending changes'
           )
         }
+
         if (ordinaryArtifact) {
           this.finalizeOrdinaryPropertyCreationBatch(batch)
         } else {
@@ -3088,12 +3439,15 @@ class PropsManager {
             (component) =>
               this._components.get(component.get('id')) !== component
           )
+
           if (stagedComponents.length > 0) {
             this.registerMany(stagedComponents)
           }
         }
+
         batch.components.forEach((component) => {
           const propertyId = component.get('id')
+
           if (this._components.get(propertyId) !== component) {
             throw new Error(
               `[PropsManager] Canonical property creation batch did not register property "${propertyId}"`
@@ -3106,16 +3460,21 @@ class PropsManager {
           this.addChangeForAddProperties(batch.components, !ordinaryArtifact)
         })
       }
+
       let active = true
+
       return Object.freeze({
         result,
+
         rollback: () => {
           if (!active) {
             return
           }
+
           active = false
           this.rollbackPropertyCreationBatch(batch)
         },
+
         complete: () => {
           active = false
         }
@@ -3139,8 +3498,10 @@ class PropsManager {
         (component): component is PropertyComponentInstanceTypes =>
           Boolean(component)
       )
+
       components.forEach((component) => {
         const componentId = component.get('id')
+
         if (
           this.propertyCreationBatch?.stagedById.get(componentId) !==
             component ||
@@ -3154,14 +3515,17 @@ class PropsManager {
       const result = components.reduce(
         (propertyIds, component) => {
           propertyIds[component.get('type')] = component.get('id')
+
           return propertyIds
         },
         {} as Record<PropertyType, string>
       )
+
       components.forEach((component) => {
         this.propertyCreationBatch?.rootComponents.push(component)
         this.propertyCreationBatch?.rootComponentIds.add(component.get('id'))
       })
+
       return result
     }
 
@@ -3173,6 +3537,7 @@ class PropsManager {
 
         this.addToMap(com)
         acc[com.get('type')] = com.get('id')
+
         return acc
       },
       {} as Record<PropertyType, string>
@@ -3181,6 +3546,7 @@ class PropsManager {
 
   removeProperty(propComponentIds: string[], _options?: EVENT_OPTIONS) {
     const removed = new Set(propComponentIds)
+
     for (const propertyId of removed) {
       for (const ownerId of this.relationshipOwnerIdsByChildId.get(
         propertyId
@@ -3188,7 +3554,9 @@ class PropsManager {
         if (removed.has(ownerId)) {
           continue
         }
+
         const owner = this._components.get(ownerId)?.save()
+
         if (owner?.inheritance) {
           throw new Error(
             `[PropsManager] Cannot remove inherited source or local binding "${propertyId}" still used by "${ownerId}"`
@@ -3196,8 +3564,10 @@ class PropsManager {
         }
       }
     }
+
     propComponentIds.forEach((propComponentId) => {
       const component = this.getPropertyById(propComponentId)
+
       if (!component) {
         return
       }
@@ -3260,6 +3630,7 @@ class PropsManager {
         '[PropsManager] Property mutation batch requires an operations request'
       )
     }
+
     if (sourceRequest.operations.length > 0 && this.changes.length > 0) {
       throw new Error(
         '[PropsManager] Property mutation batch cannot start with pending property evidence'
@@ -3294,13 +3665,16 @@ class PropsManager {
     const defaultsByType = new Map<string, Readonly<Record<string, unknown>>>()
     const orderedPropertyIds: string[] = []
     const orderedPropertyIdSet = new Set<string>()
+
     const appendOrderedPropertyId = (propertyId: string) => {
       if (orderedPropertyIdSet.has(propertyId)) {
         return
       }
+
       orderedPropertyIdSet.add(propertyId)
       orderedPropertyIds.push(propertyId)
     }
+
     const requestedPropertyIds = new Set<string>()
     const touchedPropertyIds: string[] = []
     const touchedPropertyIdSet = new Set<string>()
@@ -3335,23 +3709,28 @@ class PropsManager {
       propertyType: string
     ): void => {
       const reservedType = reservedCreationTypesById.get(propertyId)
+
       if (reservedType !== undefined && reservedType !== propertyType) {
         throw new Error(
           `[PropsManager] Property mutation reserves conflicting types for "${propertyId}"`
         )
       }
+
       reservedCreationTypesById.set(propertyId, propertyType)
     }
+
     mutations.forEach((sourceMutation) => {
       if (!isRecord(sourceMutation)) {
         return
       }
+
       if (
         sourceMutation.kind === 'create-owner-properties' &&
         Array.isArray(sourceMutation.definitions) &&
         isRecord(sourceMutation.propertyIds)
       ) {
         const propertyIds = sourceMutation.propertyIds
+
         sourceMutation.definitions.forEach((definition) => {
           if (
             !isRecord(definition) ||
@@ -3360,13 +3739,17 @@ class PropsManager {
           ) {
             return
           }
+
           const propertyId = propertyIds[definition.name]
+
           if (typeof propertyId === 'string' && propertyId.length > 0) {
             reserveCreationIdentity(propertyId, definition.type)
           }
         })
+
         return
       }
+
       if (
         (sourceMutation.kind === 'create-exact-property-graph' ||
           sourceMutation.kind === 'create-exact-property-records') &&
@@ -3388,6 +3771,7 @@ class PropsManager {
 
     const captureContract = (type: string): PropertyCreationTypeContract =>
       this.capturePropertyCreationTypeContract(type, registrationContractByType)
+
     const captureOwnerDefinition = (
       ownerElementType: string,
       ownerPropertyName: string,
@@ -3398,6 +3782,7 @@ class PropsManager {
         ownerElementType,
         ownerPropertyName
       )
+
       if (
         !current ||
         current.name !== ownerPropertyName ||
@@ -3407,18 +3792,23 @@ class PropsManager {
           `[PropsManager] Detached property creation has an invalid owner relation for "${key}"`
         )
       }
+
       const existing = ownerDefinitionContractByKey.get(key)
+
       if (existing) {
         if (!isEqual(existing.definition, current)) {
           throw new Error(
             `[PropsManager] Detached property creation owner definition registration changed for "${key}"`
           )
         }
+
         return existing.definition
       }
+
       const definition = deepFreezePropertyContract(
         clonePropertyDefinitionValue(current) as PropertyDefinition
       )
+
       ownerDefinitionContractByKey.set(
         key,
         Object.freeze({
@@ -3427,71 +3817,96 @@ class PropsManager {
           definition
         })
       )
+
       return definition
     }
+
     const captureActiveSnapshot = (
       propertyId: string
     ): PropertyComponentRawData | undefined => {
       const existing = workingSnapshots.get(propertyId)
+
       if (existing) {
         return existing
       }
+
       const component = activeById.get(propertyId)
+
       if (!component) {
         return
       }
+
       const snapshot = deepFreezePropertyContract(
         clonePropsValue(component.save())
       )
+
       originalSnapshots.set(propertyId, snapshot)
       const workingSnapshot = clonePropsValue(snapshot)
+
       workingSnapshots.set(propertyId, workingSnapshot)
+
       return workingSnapshot
     }
+
     const getFieldByKey = (
       contract: PropertyCreationTypeContract
     ): ReadonlyMap<string, PropertyFieldSchema> => {
       const existing = fieldByType.get(contract.type)
+
       if (existing) {
         return existing
       }
+
       const fields = new Map(
         contract.schema?.fields.map((field) => [field.key, field] as const) ??
           []
       )
+
       fieldByType.set(contract.type, fields)
+
       return fields
     }
+
     const getComponentConfig = (
       type: string
     ): ReturnType<typeof getPropertyComponentConfigDefinition> => {
       if (!configByType.has(type)) {
         configByType.set(type, getPropertyComponentConfigDefinition(type))
       }
+
       return configByType.get(type)
     }
+
     const getPersistKeys = (type: string): ReadonlySet<string> => {
       const existing = persistKeysByType.get(type)
+
       if (existing) {
         return existing
       }
+
       const config = getComponentConfig(type)
       const keys = new Set(
         config ? resolvePropertyComponentConfigRoles(config).persistKeys : []
       )
+
       persistKeysByType.set(type, keys)
+
       return keys
     }
+
     const getDefaultValues = (
       contract: PropertyCreationTypeContract
     ): Readonly<Record<string, unknown>> => {
       const existing = defaultsByType.get(contract.type)
+
       if (existing) {
         return existing
       }
+
       const values: Record<string, unknown> = {}
       const config = getComponentConfig(contract.type)
       const defaults = config?.defaults
+
       getPersistKeys(contract.type).forEach((key) => {
         if (
           defaults &&
@@ -3511,48 +3926,62 @@ class PropsManager {
           }
         })
       }
+
       const frozen = deepFreezePropertyContract(values)
+
       defaultsByType.set(contract.type, frozen)
+
       return frozen
     }
+
     const touchExisting = (propertyId: string): void => {
       if (!touchedPropertyIdSet.has(propertyId)) {
         touchedPropertyIdSet.add(propertyId)
         touchedPropertyIds.push(propertyId)
       }
     }
+
     const associatePropertyWithOwner = (
       propertyId: string,
       orderedId: string
     ): void => {
       let ownerIdSet = canonicalOwnerIdSetByPropertyId.get(propertyId)
+
       if (!ownerIdSet) {
         ownerIdSet = new Set()
         canonicalOwnerIdSetByPropertyId.set(propertyId, ownerIdSet)
       }
+
       if (!ownerIdSet.has(orderedId)) {
         ownerIdSet.add(orderedId)
         const propertyIds = canonicalPropertyIdsByOwnerId.get(orderedId) ?? []
+
         propertyIds.push(propertyId)
         canonicalPropertyIdsByOwnerId.set(orderedId, propertyIds)
       }
     }
+
     const captureMutationOwner = (
       propertyId: string,
       orderedId = propertyId
     ): string => {
       let rootPropertyIds = rootPropertyIdsByOwnerId.get(orderedId)
+
       if (!rootPropertyIds) {
         orderedOwnerIds.push(orderedId)
         rootPropertyIds = []
         rootPropertyIdsByOwnerId.set(orderedId, rootPropertyIds)
       }
+
       if (!rootPropertyIds.includes(propertyId)) {
         rootPropertyIds.push(propertyId)
       }
+
       associatePropertyWithOwner(propertyId, orderedId)
+
       return orderedId
     }
+
     const addRemovedCandidate = (
       propertyId: string,
       orderedId: string
@@ -3563,12 +3992,14 @@ class PropsManager {
         removedCandidateIds.push(propertyId)
       }
     }
+
     const readRelationIds = (
       snapshot: Readonly<Record<string, unknown>>,
       relation: PropertyChildRelationDefinition,
       ownerLabel: string
     ): string[] => {
       const value = snapshot[relation.key]
+
       if (
         !Array.isArray(value) ||
         value.some((childId) => typeof childId !== 'string') ||
@@ -3578,8 +4009,10 @@ class PropsManager {
           `[PropsManager] Property mutation has an invalid relationship "${ownerLabel}.${relation.key}"`
         )
       }
+
       return [...(value as string[])]
     }
+
     const assertField = (
       snapshot: Readonly<Record<string, unknown>>,
       contract: PropertyCreationTypeContract,
@@ -3592,22 +4025,27 @@ class PropsManager {
           `[PropsManager] Property mutation cannot replace canonical field "${propertyId}.${key}"`
         )
       }
+
       const field = getFieldByKey(contract).get(key)
+
       if (!Object.prototype.hasOwnProperty.call(snapshot, key) && !field) {
         throw new Error(
           `[PropsManager] Property mutation has an unknown field "${propertyId}.${key}"`
         )
       }
+
       if (field && !isRuntimePropertyFieldValueValid(field, value)) {
         throw new Error(
           `[PropsManager] Invalid runtime property field "${propertyId}.${key}" (received ${describeInvalidRuntimePropertyFieldValue(value)})`
         )
       }
     }
+
     const resolveChildSnapshot = (
       childId: string
     ): PropertyComponentRawData | undefined =>
       createdComponents.get(childId) ?? captureActiveSnapshot(childId)
+
     const assertRelationIds = (
       childIds: readonly string[],
       relation: PropertyChildRelationDefinition,
@@ -3617,14 +4055,18 @@ class PropsManager {
       childIds.forEach((childId) => {
         if (identityOnlyChildIds?.has(childId)) {
           const child = activeById.get(childId)
+
           if (!child || child.get('type') !== relation.childType) {
             throw new Error(
               `[PropsManager] Property mutation "${ownerLabel}" has an invalid relationship child "${childId}"`
             )
           }
+
           return
         }
+
         const child = resolveChildSnapshot(childId)
+
         if (!child || child.type !== relation.childType) {
           throw new Error(
             `[PropsManager] Property mutation "${ownerLabel}" has an invalid relationship child "${childId}"`
@@ -3632,6 +4074,7 @@ class PropsManager {
         }
       })
     }
+
     const addUpdateEvidence = (
       propertyId: string,
       key: string,
@@ -3642,6 +4085,7 @@ class PropsManager {
       if (isEqual(before, after)) {
         return
       }
+
       updateEvidence.push({
         action: PROPS_ACTIONS.UPDATE_PROPERTY,
         eventName: EventTypes.UPDATE_PROPERTY,
@@ -3652,6 +4096,7 @@ class PropsManager {
         after: clonePropsValue(after) as UpdatePropertyChange['after']
       })
     }
+
     const addReplaceLatestHistoryEvidence = (
       propertyId: string,
       key: string,
@@ -3662,6 +4107,7 @@ class PropsManager {
       if (mutationOptions?.history?.mode !== 'replace-latest') {
         return
       }
+
       replaceLatestHistoryEvidence.push({
         action: PROPS_ACTIONS.UPDATE_PROPERTY,
         eventName: EventTypes.UPDATE_PROPERTY,
@@ -3672,32 +4118,40 @@ class PropsManager {
         after: clonePropsValue(after) as UpdatePropertyChange['after']
       })
     }
+
     const creationRelationsByMutationIndex = new Map<
       number,
       readonly ElementPropertyRelation[]
     >()
     const creationOwnerRelationKeys = new Set<string>()
+
     const reserveCreationOwnerRelation = (
       ownerElementId: string,
       ownerPropertyName: string
     ): void => {
       const key = JSON.stringify([ownerElementId, ownerPropertyName])
+
       if (creationOwnerRelationKeys.has(key)) {
         throw new Error(
           `[PropsManager] Detached property creation has a duplicate owner relation "${ownerElementId}.${ownerPropertyName}"`
         )
       }
+
       creationOwnerRelationKeys.add(key)
     }
+
     const captureCreationActive = (
       propertyId: string
     ): PropertyComponentInstanceTypes | undefined => {
       const component = activeById.get(propertyId)
+
       if (component) {
         captureActiveSnapshot(propertyId)
       }
+
       return component
     }
+
     const prepareCreationRecord = (
       sourceData: Readonly<Record<string, unknown>>,
       expectedType: string,
@@ -3708,6 +4162,7 @@ class PropsManager {
       const data = clonePropertyDefinitionValue(
         sourceData
       ) as PropertyComponentRawData
+
       if (
         typeof data.type !== 'string' ||
         data.type !== expectedType ||
@@ -3718,11 +4173,13 @@ class PropsManager {
           `[PropsManager] Detached property creation has invalid canonical data for "${ownerLabel}"`
         )
       }
+
       const hasExplicitPropertyId =
         typeof data.id === 'string' && data.id.length > 0
       let propertyId = hasExplicitPropertyId
         ? (data.id as string)
         : id(IDTypes.PROPS)
+
       while (
         activeById.has(propertyId) ||
         this._deletedMap.has(propertyId) ||
@@ -3734,8 +4191,10 @@ class PropsManager {
             `[PropsManager] Detached property creation has duplicate or unavailable property id "${data.id}"`
           )
         }
+
         propertyId = id(IDTypes.PROPS)
       }
+
       data.id = propertyId
       if (
         activeById.has(propertyId) ||
@@ -3746,6 +4205,7 @@ class PropsManager {
           `[PropsManager] Detached property creation has duplicate or unavailable property id "${propertyId}"`
         )
       }
+
       assertRuntimePropertyFields(
         data as Readonly<Record<string, unknown>>,
         contract.schema,
@@ -3753,9 +4213,11 @@ class PropsManager {
       )
 
       let preparedRecord = data as unknown as Record<string, unknown>
+
       if (!exact) {
         const config = getComponentConfig(expectedType)
         const sourceRecord = data as unknown as Record<string, unknown>
+
         preparedRecord = {
           ...(getDefaultValues(contract) as Record<string, unknown>)
         }
@@ -3779,6 +4241,7 @@ class PropsManager {
               ...fixedKeys,
               ...(config.dynamicReservedKeys ?? [])
             ])
+
             Object.entries(sourceRecord).forEach(([key, value]) => {
               if (!reservedKeys.has(key) && value !== undefined) {
                 preparedRecord[key] = value
@@ -3788,29 +4251,38 @@ class PropsManager {
         } else {
           Object.assign(preparedRecord, sourceRecord)
         }
+
         preparedRecord.id = propertyId
         preparedRecord.type = expectedType
       }
+
       const relation = contract.childRelation
+
       if (!exact && relation && preparedRecord[relation.key] === undefined) {
         preparedRecord[relation.key] = []
       }
+
       const preparedData = preparedRecord as unknown as PropertyComponentRawData
       const prepared = deepFreezePropertyContract(preparedData)
+
       createdComponents.set(propertyId, prepared)
+
       return prepared
     }
+
     const normalizeOrdinaryRelation = (
       value: unknown,
       ownerContract: PropertyCreationTypeContract,
       ownerLabel: string
     ): readonly string[] => {
       const relation = ownerContract.childRelation
+
       if (!relation) {
         throw new Error(
           `[PropsManager] Detached property creation has an invalid relationship for "${ownerLabel}"`
         )
       }
+
       let entries:
         | {
             item: unknown
@@ -3818,6 +4290,7 @@ class PropsManager {
             label: string
           }[]
         | undefined
+
       if (Array.isArray(value)) {
         entries = value.map((item, index) => ({
           item,
@@ -3831,28 +4304,34 @@ class PropsManager {
           label: `${ownerLabel}.${keyedId}`
         }))
       }
+
       if (!entries) {
         throw new Error(
           `[PropsManager] Detached property creation has an invalid relationship descriptor for "${ownerLabel}"`
         )
       }
+
       const childIds = entries.map(({ item, keyedId, label }) => {
         if (typeof item === 'string' && keyedId === undefined) {
           const child =
             createdComponents.get(item) ?? captureActiveSnapshot(item)
           const reservedType = reservedCreationTypesById.get(item)
+
           if (!child && reservedType === undefined) {
             throw new Error(
               `[PropsManager] Detached property creation is missing relationship child "${item}"`
             )
           }
+
           if ((child?.type ?? reservedType) !== relation.childType) {
             throw new Error(
               `[PropsManager] Detached property creation relationship child "${item}" has the wrong type`
             )
           }
+
           return item
         }
+
         if (
           (relation.mode ?? 'ids') !== 'ids-or-objects' ||
           !isRecord(item) ||
@@ -3862,15 +4341,18 @@ class PropsManager {
             `[PropsManager] Detached property creation has an invalid relationship descriptor for "${label}"`
           )
         }
+
         const itemId =
           typeof item.id === 'string' && item.id.length > 0
             ? item.id
             : undefined
+
         if (keyedId && itemId && keyedId !== itemId) {
           throw new Error(
             `[PropsManager] Detached property creation relationship child "${keyedId}" has conflicting canonical ids`
           )
         }
+
         const explicitId = keyedId ?? itemId
         const existing = explicitId
           ? (createdComponents.get(explicitId) ??
@@ -3879,20 +4361,25 @@ class PropsManager {
         const reservedType = explicitId
           ? reservedCreationTypesById.get(explicitId)
           : undefined
+
         if (existing || reservedType !== undefined) {
           if ((existing?.type ?? reservedType) !== relation.childType) {
             throw new Error(
               `[PropsManager] Detached property creation relationship child "${explicitId}" has the wrong type`
             )
           }
+
           if (Object.keys(item).some((key) => key !== 'id' && key !== 'type')) {
             throw new Error(
               `[PropsManager] Detached property creation cannot override relationship child "${explicitId}"`
             )
           }
+
           return explicitId as string
         }
+
         let mapped: Record<string, unknown> | null
+
         try {
           mapped = relation.toChildData
             ? relation.toChildData(
@@ -3903,20 +4390,24 @@ class PropsManager {
         } catch {
           mapped = null
         }
+
         if (!isRecord(mapped)) {
           throw new Error(
             `[PropsManager] Detached property creation has an invalid relationship descriptor for "${label}"`
           )
         }
+
         const mappedId =
           typeof mapped.id === 'string' && mapped.id.length > 0
             ? mapped.id
             : undefined
+
         if (explicitId && mappedId && explicitId !== mappedId) {
           throw new Error(
             `[PropsManager] Detached property creation relationship child "${explicitId}" changed its canonical id`
           )
         }
+
         const canonicalId = explicitId ?? mappedId
         const childContract = captureContract(relation.childType)
         const childData: Record<string, unknown> = {
@@ -3924,9 +4415,11 @@ class PropsManager {
           ...(canonicalId ? { id: canonicalId } : {}),
           type: relation.childType
         }
+
         if (!canonicalId && childData.id === '') {
           delete childData.id
         }
+
         if (
           childContract.childRelation &&
           Object.prototype.hasOwnProperty.call(
@@ -3941,6 +4434,7 @@ class PropsManager {
               label
             )
         }
+
         return prepareCreationRecord(
           childData,
           relation.childType,
@@ -3948,13 +4442,16 @@ class PropsManager {
           false
         ).id
       })
+
       if (new Set(childIds).size !== childIds.length) {
         throw new Error(
           `[PropsManager] Detached property creation has duplicate relationship children for "${ownerLabel}"`
         )
       }
+
       return childIds
     }
+
     const prepareOrdinaryCreation = (
       sourceMutation: Readonly<Record<string, unknown>>,
       mutationIndex: number
@@ -3974,6 +4471,7 @@ class PropsManager {
           `[PropsManager] Detached property creation has an invalid owner at item ${mutationIndex}`
         )
       }
+
       const definitions = sourceMutation.definitions
       const data = sourceMutation.data
       const propertyIds = sourceMutation.propertyIds
@@ -3992,17 +4490,20 @@ class PropsManager {
               `[PropsManager] Detached property creation has an invalid definition at item ${mutationIndex}:${definitionIndex}`
             )
           }
+
           names.add(sourceDefinition.name)
           const registered = captureOwnerDefinition(
             sourceMutation.ownerElementType as string,
             sourceDefinition.name,
             sourceDefinition.type
           )
+
           if (!isEqual(registered, sourceDefinition)) {
             throw new Error(
               `[PropsManager] Detached property creation has an invalid owner relation for "${sourceDefinition.name}"`
             )
           }
+
           reserveCreationOwnerRelation(
             sourceMutation.ownerElementId as string,
             sourceDefinition.name
@@ -4023,6 +4524,7 @@ class PropsManager {
               : []),
             ...(schema?.fields.map(({ key }) => key) ?? [])
           ])
+
           return {
             definition: sourceDefinition as unknown as PropertyDefinition,
             contract,
@@ -4030,6 +4532,7 @@ class PropsManager {
           }
         }
       )
+
       if (
         propertyIds &&
         Object.keys(propertyIds).some((name) => !names.has(name))
@@ -4038,17 +4541,22 @@ class PropsManager {
           `[PropsManager] Detached property creation has an invalid requested property id`
         )
       }
+
       const valuesByName = new Map<string, Record<string, unknown>>(
         preparedDefinitions.map(({ definition }) => [definition.name, {}])
       )
+
       Object.entries(data).forEach(([key, value]) => {
         const matches = preparedDefinitions.filter(({ keys }) => keys.has(key))
+
         if (matches.length > 1) {
           throw new Error(
             `[PropsManager] Detached property creation has an ambiguous owner field "${key}"`
           )
         }
+
         const match = matches[0]
+
         if (match) {
           ;(valuesByName.get(match.definition.name) as Record<string, unknown>)[
             key
@@ -4056,8 +4564,10 @@ class PropsManager {
         }
       })
       const relations: ElementPropertyRelation[] = []
+
       preparedDefinitions.forEach(({ definition, contract }) => {
         const requestedId = propertyIds?.[definition.name]
+
         if (
           requestedId !== undefined &&
           (typeof requestedId !== 'string' || requestedId.length === 0)
@@ -4066,11 +4576,13 @@ class PropsManager {
             `[PropsManager] Detached property creation has an invalid requested property id for "${definition.name}"`
           )
         }
+
         const mappedValues = valuesByName.get(definition.name) ?? {}
         const active = requestedId
           ? captureCreationActive(requestedId)
           : undefined
         let propertyId: string
+
         if (active) {
           if (
             active.get('type') !== definition.type ||
@@ -4080,6 +4592,7 @@ class PropsManager {
               `[PropsManager] Detached property creation cannot override active property "${requestedId}"`
             )
           }
+
           propertyId = requestedId as string
         } else {
           const raw: Record<string, unknown> = {
@@ -4094,6 +4607,7 @@ class PropsManager {
               : {}),
             ...mappedValues
           }
+
           if (
             contract.childRelation &&
             Object.prototype.hasOwnProperty.call(
@@ -4108,6 +4622,7 @@ class PropsManager {
                 `${sourceMutation.ownerElementId}.${definition.name}`
             )
           }
+
           propertyId = prepareCreationRecord(
             raw,
             definition.type,
@@ -4116,10 +4631,12 @@ class PropsManager {
             false
           ).id
         }
+
         if (!requestedPropertyIds.has(propertyId)) {
           requestedPropertyIds.add(propertyId)
           appendOrderedPropertyId(propertyId)
         }
+
         captureMutationOwner(
           propertyId,
           sourceMutation.ownerElementId as string
@@ -4136,12 +4653,14 @@ class PropsManager {
         Object.freeze(relations)
       )
     }
+
     const prepareExactCreation = (
       sourceMutation: Readonly<Record<string, unknown>>,
       mutationIndex: number
     ): void => {
       const canonicalRecords =
         sourceMutation.kind === 'create-exact-property-records'
+
       if (
         (!canonicalRecords &&
           (!Array.isArray(sourceMutation.ownerRelations) ||
@@ -4152,12 +4671,14 @@ class PropsManager {
           `[PropsManager] Exact property creation requires canonical records or owner relations at item ${mutationIndex}`
         )
       }
+
       const relations = canonicalRecords
         ? []
         : (clonePropertyDefinitionValue(
             sourceMutation.ownerRelations
           ) as ElementPropertyRelation[])
       const sourceComponents = sourceMutation.components
+
       if (
         sourceComponents.some(
           (component) =>
@@ -4172,38 +4693,47 @@ class PropsManager {
           '[PropsManager] Exact property creation has duplicate or invalid component ids'
         )
       }
+
       const components = sourceComponents as readonly PropertyComponentRawData[]
       const componentIds = components.map((component) => component.id)
+
       if (new Set(componentIds).size !== componentIds.length) {
         throw new Error(
           '[PropsManager] Exact property creation has duplicate or invalid component ids'
         )
       }
+
       const componentById = new Map(
         components.map((component) => [component.id, component] as const)
       )
+
       const resolveOwnerRoot = (
         propertyId: string
       ): PropertyComponentRawData => {
         const detached =
           componentById.get(propertyId) ?? createdComponents.get(propertyId)
+
         if (detached) {
           return detached
         }
+
         const active = captureCreationActive(propertyId)
         const activeSnapshot = active
           ? captureActiveSnapshot(propertyId)
           : undefined
+
         if (!active || !activeSnapshot) {
           throw new Error(
             `[PropsManager] Exact property creation is missing active root "${propertyId}"`
           )
         }
+
         const activeType = activeSnapshot.type
         const contract =
           typeof activeType === 'string'
             ? captureContract(activeType)
             : undefined
+
         if (
           activeSnapshot.id !== propertyId ||
           active.get('id') !== propertyId ||
@@ -4215,8 +4745,10 @@ class PropsManager {
             `[PropsManager] Exact property creation has an invalid active root "${propertyId}"`
           )
         }
+
         return activeSnapshot
       }
+
       components.forEach((component) => {
         if (
           !isRecord(component) ||
@@ -4229,12 +4761,16 @@ class PropsManager {
             `[PropsManager] Exact property creation has duplicate or invalid component ids`
           )
         }
+
         const contract = captureContract(component.type)
         const inactive = this._deletedMap.get(component.id)
+
         if (!inactive) {
           return
         }
+
         const inactiveSnapshot = clonePropsValue(inactive.save())
+
         if (
           inactive.get('type') !== component.type ||
           !(inactive instanceof contract.constructor) ||
@@ -4244,6 +4780,7 @@ class PropsManager {
             `[PropsManager] Exact property creation has incompatible inactive data for "${component.id}"`
           )
         }
+
         reactivatedComponents.set(
           component.id,
           Object.freeze({
@@ -4253,6 +4790,7 @@ class PropsManager {
         )
       })
       const ownerTypeById = new Map<string, string>()
+
       relations.forEach((relation) => {
         if (
           !isRecord(relation) ||
@@ -4269,11 +4807,13 @@ class PropsManager {
             '[PropsManager] Exact property creation has an invalid owner relation'
           )
         }
+
         reserveCreationOwnerRelation(
           relation.ownerElementId,
           relation.ownerPropertyName
         )
         const knownOwnerType = ownerTypeById.get(relation.ownerElementId)
+
         if (
           knownOwnerType !== undefined &&
           knownOwnerType !== relation.ownerElementType
@@ -4282,23 +4822,28 @@ class PropsManager {
             `[PropsManager] Exact property creation has an invalid owner relation for "${relation.ownerElementId}"`
           )
         }
+
         ownerTypeById.set(relation.ownerElementId, relation.ownerElementType)
         const root = resolveOwnerRoot(relation.componentId)
+
         captureContract(root.type)
         const registeredDefinition = elementPropertyRegistry.getForComponent(
           relation.ownerElementType,
           relation.ownerPropertyName
         )
+
         if (!registeredDefinition) {
           throw new Error(
             `[PropsManager] Exact property creation has an invalid owner relation for "${relation.componentId}"`
           )
         }
+
         const definition = captureOwnerDefinition(
           relation.ownerElementType,
           relation.ownerPropertyName,
           registeredDefinition.type
         )
+
         if (root.type !== definition.type) {
           throw new Error(
             `[PropsManager] Exact property creation owner root "${relation.componentId}" has the wrong type`
@@ -4308,6 +4853,7 @@ class PropsManager {
       // Reachability uses the final registered relationships of existing owners
       // in this same preparation. Validation below still checks every delta.
       const pendingLayerMutations = new Map<string, Record<string, unknown>[]>()
+
       mutations.forEach((mutation) => {
         if (
           !isRecord(mutation) ||
@@ -4317,7 +4863,9 @@ class PropsManager {
         ) {
           return
         }
+
         const changes = pendingLayerMutations.get(mutation.propertyId) ?? []
+
         changes.push(...mutation.changes.filter(isRecord))
         pendingLayerMutations.set(mutation.propertyId, changes)
       })
@@ -4325,26 +4873,34 @@ class PropsManager {
       const visitedActive = new Set<string>()
       const visited = new Set<string>()
       const childFirstIds: string[] = []
+
       const visit = (propertyId: string): void => {
         if (visited.has(propertyId)) {
           return
         }
+
         if (visiting.has(propertyId)) {
           throw new Error(
             `[PropsManager] Exact property creation has a relationship cycle at "${propertyId}"`
           )
         }
+
         const component = componentById.get(propertyId)
+
         if (!component) {
           if (visitedActive.has(propertyId)) {
             return
           }
+
           const active = captureActiveSnapshot(propertyId)
+
           if (!active) {
             return
           }
+
           visiting.add(propertyId)
           const prospective = clonePropsValue(active)
+
           for (const change of pendingLayerMutations.get(propertyId) ?? []) {
             if (
               (change.layer !== 'overrides' &&
@@ -4355,10 +4911,12 @@ class PropsManager {
             ) {
               continue
             }
+
             const fields = prospective.inheritance[change.layer] as Record<
               string,
               unknown
             >
+
             if (change.state.present === true) {
               Object.defineProperty(fields, change.key, {
                 value: change.state.value,
@@ -4370,6 +4928,7 @@ class PropsManager {
               Reflect.deleteProperty(fields, change.key)
             }
           }
+
           const relation = captureContract(prospective.type).childRelation
           const dependencies =
             readPropertyInheritanceDependencies(
@@ -4384,19 +4943,24 @@ class PropsManager {
                   relation.key
                 ]
               : [])
+
           for (const child of dependencies) {
             visit(child)
           }
+
           visiting.delete(propertyId)
           visitedActive.add(propertyId)
+
           return
         }
+
         visiting.add(propertyId)
         const contract = captureContract(component.type)
         const relation = contract.childRelation
         const inheritance = readPropertyInheritance(
           component as unknown as Record<string, unknown>
         )
+
         if (inheritance) {
           const dependencies = [
             inheritance.sourceId,
@@ -4405,6 +4969,7 @@ class PropsManager {
               ? (inheritance.overrides[relation.key] as string[])
               : [])
           ]
+
           for (const dependency of dependencies) {
             visit(dependency)
           }
@@ -4412,6 +4977,7 @@ class PropsManager {
           const childIds = (
             component as unknown as Readonly<Record<string, unknown>>
           )[relation.key]
+
           if (
             !Array.isArray(childIds) ||
             childIds.some((childId) => typeof childId !== 'string') ||
@@ -4421,17 +4987,20 @@ class PropsManager {
               `[PropsManager] Exact property creation has a malformed child relation for "${propertyId}"`
             )
           }
+
           ;(childIds as string[]).forEach((childId) => {
             const localChild = componentById.get(childId)
             const activeChild = localChild
               ? undefined
               : (createdComponents.get(childId) ??
                 captureActiveSnapshot(childId))
+
             if (!localChild && !activeChild) {
               throw new Error(
                 `[PropsManager] Exact property creation is missing relation child "${childId}"`
               )
             }
+
             if (
               (localChild?.type ?? activeChild?.type) !== relation.childType
             ) {
@@ -4439,32 +5008,39 @@ class PropsManager {
                 `[PropsManager] Exact property creation child "${childId}" has the wrong type`
               )
             }
+
             if (localChild) {
               visit(childId)
             }
           })
         }
+
         visiting.delete(propertyId)
         visited.add(propertyId)
         childFirstIds.push(propertyId)
       }
+
       if (canonicalRecords) {
         components.forEach(({ id }) => visit(id))
       } else {
         relations.forEach(({ componentId }) => visit(componentId))
       }
+
       if (visited.size !== components.length) {
         throw new Error(
           '[PropsManager] Exact property creation contains an unowned property'
         )
       }
+
       childFirstIds.forEach((propertyId) => {
         const component = componentById.get(propertyId)
+
         if (!component) {
           throw new Error(
             `[PropsManager] Exact property creation is missing component "${propertyId}"`
           )
         }
+
         if (reactivatedComponents.has(propertyId)) {
           createdComponents.set(
             propertyId,
@@ -4474,8 +5050,10 @@ class PropsManager {
               ) as PropertyComponentRawData
             )
           )
+
           return
         }
+
         prepareCreationRecord(
           component as unknown as Readonly<Record<string, unknown>>,
           component.type,
@@ -4490,6 +5068,7 @@ class PropsManager {
         ) {
           requestedPropertyIds.add(relation.componentId)
         }
+
         appendOrderedPropertyId(relation.componentId)
         captureMutationOwner(relation.componentId, relation.ownerElementId)
       })
@@ -4500,15 +5079,18 @@ class PropsManager {
           captureMutationOwner(id)
         })
       }
+
       creationRelationsByMutationIndex.set(
         mutationIndex,
         Object.freeze(relations)
       )
     }
+
     mutations.forEach((sourceMutation, mutationIndex) => {
       if (!isRecord(sourceMutation)) {
         return
       }
+
       if (sourceMutation.kind === 'create-owner-properties') {
         prepareOrdinaryCreation(sourceMutation, mutationIndex)
       } else if (
@@ -4525,18 +5107,23 @@ class PropsManager {
           `[PropsManager] Property mutation item ${mutationIndex} is invalid`
         )
       }
+
       const creationRelations =
         creationRelationsByMutationIndex.get(mutationIndex)
+
       if (creationRelations) {
         ownerRelations.push(...creationRelations)
+
         return
       }
+
       if (sourceMutation.kind === 'remove-exact-property-records') {
         if (exactRetirementIds || !Array.isArray(sourceMutation.components)) {
           throw new Error(
             '[PropsManager] Exact record retirement requires one canonical record list'
           )
         }
+
         exactRetirementIds = new Set<string>()
         for (const record of sourceMutation.components) {
           if (
@@ -4549,23 +5136,29 @@ class PropsManager {
               '[PropsManager] Exact record retirement has duplicate or invalid identities'
             )
           }
+
           const current = captureActiveSnapshot(record.id)
+
           if (!current || !isEqual(current, record)) {
             throw new Error(
               `[PropsManager] Exact record retirement has missing or stale data for "${record.id}"`
             )
           }
+
           exactRetirementIds.add(record.id)
           requestedPropertyIds.add(record.id)
           appendOrderedPropertyId(record.id)
           addRemovedCandidate(record.id, captureMutationOwner(record.id))
           relationshipMutationRootIds.add(record.id)
         }
+
         return
       }
+
       if (sourceMutation.kind === 'remove-exact-orphan-property-graphs') {
         const orphanRootPropertyIds = sourceMutation.orphanRootPropertyIds
         const retainedRootPropertyIds = sourceMutation.retainedRootPropertyIds
+
         if (
           hasExactOrphanRemovalMutation ||
           !Array.isArray(orphanRootPropertyIds) ||
@@ -4588,11 +5181,13 @@ class PropsManager {
             '[PropsManager] Exact orphan property graph removal requires explicit deduplicated root-id sets for orphan and retained roots'
           )
         }
+
         const detachedOrphanRootPropertyIds = [...orphanRootPropertyIds]
         const detachedRetainedRootPropertyIds = [...retainedRootPropertyIds]
         const detachedOrphanRootPropertyIdSet = new Set(
           detachedOrphanRootPropertyIds
         )
+
         if (
           detachedRetainedRootPropertyIds.some((propertyId) =>
             detachedOrphanRootPropertyIdSet.has(propertyId)
@@ -4602,22 +5197,27 @@ class PropsManager {
             '[PropsManager] Exact orphan and retained root-id sets must be disjoint'
           )
         }
+
         hasExactOrphanRemovalMutation = true
         detachedRetainedRootPropertyIds.forEach((propertyId) => {
           const instance = activeById.get(propertyId)
+
           if (!instance) {
             throw new Error(
               `[PropsManager] Exact orphan property graph removal is missing active retained root "${propertyId}"`
             )
           }
+
           const type = instance.get('type')
           const contract =
             typeof type === 'string' ? captureContract(type) : undefined
+
           if (!contract || !(instance instanceof contract.constructor)) {
             throw new Error(
               `[PropsManager] Exact orphan property graph removal has an invalid active retained root "${propertyId}"`
             )
           }
+
           retainedRootPropertyIdSet.add(propertyId)
           retainedRootIdentityReads.push(
             Object.freeze({
@@ -4632,14 +5232,18 @@ class PropsManager {
               `[PropsManager] Exact orphan property graph removal has a duplicate root "${propertyId}"`
             )
           }
+
           const component = activeById.get(propertyId)
           const snapshot = captureActiveSnapshot(propertyId)
+
           if (!component || !snapshot) {
             throw new Error(
               `[PropsManager] Exact orphan property graph removal is missing active root "${propertyId}"`
             )
           }
+
           const contract = captureContract(snapshot.type)
+
           if (
             !(component instanceof contract.constructor) ||
             component.get('type') !== snapshot.type
@@ -4648,16 +5252,21 @@ class PropsManager {
               `[PropsManager] Exact orphan property graph removal has an invalid active root "${propertyId}"`
             )
           }
+
           requestedPropertyIds.add(propertyId)
           appendOrderedPropertyId(propertyId)
           const orderedId = captureMutationOwner(propertyId)
+
           addRemovedCandidate(propertyId, orderedId)
           exactOrphanCandidateIds.add(propertyId)
           relationshipMutationRootIds.add(propertyId)
         })
+
         return
       }
+
       const propertyId = sourceMutation.propertyId
+
       if (
         typeof propertyId !== 'string' ||
         propertyId.length === 0 ||
@@ -4667,14 +5276,18 @@ class PropsManager {
           `[PropsManager] Property mutation item ${mutationIndex} has a duplicate or invalid property id`
         )
       }
+
       const component = activeById.get(propertyId)
       const snapshot = captureActiveSnapshot(propertyId)
+
       if (!component || !snapshot) {
         throw new Error(
           `[PropsManager] Property mutation is missing active property "${propertyId}"`
         )
       }
+
       const contract = captureContract(snapshot.type)
+
       if (
         !(component instanceof contract.constructor) ||
         component.get('type') !== snapshot.type
@@ -4683,6 +5296,7 @@ class PropsManager {
           `[PropsManager] Property mutation has an invalid active instance "${propertyId}"`
         )
       }
+
       if (
         Object.prototype.hasOwnProperty.call(sourceMutation, 'owner') ||
         Object.prototype.hasOwnProperty.call(
@@ -4698,7 +5312,9 @@ class PropsManager {
           `[PropsManager] Property-source mutation "${propertyId}" cannot accept an initiating owner`
         )
       }
+
       const orderedId = captureMutationOwner(propertyId)
+
       requestedPropertyIds.add(propertyId)
       appendOrderedPropertyId(propertyId)
 
@@ -4711,8 +5327,10 @@ class PropsManager {
             `[PropsManager] Property layer mutation "${propertyId}" requires changes`
           )
         }
+
         const nextSnapshot = clonePropsValue(snapshot)
         const seen = new Set<string>()
+
         for (const change of sourceMutation.changes) {
           if (
             !isRecord(change) ||
@@ -4734,14 +5352,18 @@ class PropsManager {
               `[PropsManager] Invalid property layer change "${propertyId}"`
             )
           }
+
           const identity = JSON.stringify([change.layer, change.key])
+
           if (seen.has(identity)) {
             throw new Error(
               `[PropsManager] Duplicate property layer change "${propertyId}"`
             )
           }
+
           seen.add(identity)
           let target: Record<string, unknown>
+
           if (change.layer === 'sharedSource') {
             if (
               change.key !== 'sharedSource' ||
@@ -4752,14 +5374,17 @@ class PropsManager {
                 `[PropsManager] Invalid shared source transition "${propertyId}"`
               )
             }
+
             target = nextSnapshot as unknown as Record<string, unknown>
           } else {
             const inheritance = nextSnapshot.inheritance
+
             if (!inheritance) {
               throw new Error(
                 `[PropsManager] Property "${propertyId}" has no inheritance layer`
               )
             }
+
             if (
               change.layer === 'overrides' &&
               (!getPersistKeys(snapshot.type).has(change.key) ||
@@ -4769,12 +5394,14 @@ class PropsManager {
                 `[PropsManager] Unknown override field "${propertyId}.${change.key}"`
               )
             }
+
             if (change.layer === 'childBindings') {
               const relation = contract.childRelation
               const source =
                 captureActiveSnapshot(inheritance.sourceId) ??
                 createdComponents.get(inheritance.sourceId)
               let membership: unknown
+
               if (relation) {
                 membership = Object.prototype.hasOwnProperty.call(
                   inheritance.overrides,
@@ -4785,6 +5412,7 @@ class PropsManager {
                       source as unknown as Record<string, unknown> | undefined
                     )?.[relation.key]
               }
+
               if (
                 !Array.isArray(membership) ||
                 (!membership.includes(change.key) &&
@@ -4799,27 +5427,32 @@ class PropsManager {
                 )
               }
             }
+
             target =
               change.layer === 'overrides'
                 ? inheritance.overrides
                 : inheritance.childBindings
           }
+
           const before = Object.prototype.hasOwnProperty.call(
             target,
             change.key
           )
             ? { present: true, value: target[change.key] }
             : { present: false }
+
           if (
             change.layer === 'overrides' &&
             change.key === contract.childRelation?.key
           ) {
             const inheritance = nextSnapshot.inheritance
+
             if (!inheritance) {
               throw new Error(
                 '[PropsManager] Missing inheritance for membership edit'
               )
             }
+
             const source =
               createdComponents.get(inheritance.sourceId) ??
               captureActiveSnapshot(inheritance.sourceId)
@@ -4828,6 +5461,7 @@ class PropsManager {
             )?.[change.key]
             const previous = before.present ? before.value : inherited
             const next = change.state.present ? change.state.value : inherited
+
             if (
               !Array.isArray(previous) ||
               !Array.isArray(next) ||
@@ -4838,6 +5472,7 @@ class PropsManager {
                 '[PropsManager] Invalid local membership replacement'
               )
             }
+
             for (const childId of previous) {
               if (!next.includes(childId)) {
                 addRemovedCandidate(
@@ -4847,6 +5482,7 @@ class PropsManager {
               }
             }
           }
+
           if (
             change.layer === 'childBindings' &&
             before.present &&
@@ -4855,6 +5491,7 @@ class PropsManager {
           ) {
             addRemovedCandidate(before.value, orderedId)
           }
+
           if (change.state.present) {
             Object.defineProperty(target, change.key, {
               value: clonePropsValue(change.state.value),
@@ -4865,6 +5502,7 @@ class PropsManager {
           } else {
             Reflect.deleteProperty(target, change.key)
           }
+
           addUpdateEvidence(
             propertyId,
             change.key,
@@ -4880,6 +5518,7 @@ class PropsManager {
             change.layer as PropertyLayer
           )
         }
+
         workingSnapshots.set(propertyId, nextSnapshot)
         if (!isEqual(snapshot, nextSnapshot)) {
           touchExisting(propertyId)
@@ -4895,20 +5534,25 @@ class PropsManager {
             relationshipMutationRootIds.add(propertyId)
           }
         }
+
         return
       }
+
       if (snapshot.inheritance) {
         throw new Error(
           `[PropsManager] Inherited property "${propertyId}" requires an explicit layer mutation`
         )
       }
+
       if (sourceMutation.kind === 'values') {
         if (!isRecord(sourceMutation.values)) {
           throw new Error(
             `[PropsManager] Property mutation "${propertyId}" requires value replacements`
           )
         }
+
         const nextSnapshot = clonePropsValue(snapshot)
+
         Object.entries(sourceMutation.values).forEach(([key, value]) => {
           assertField(
             snapshot as unknown as Readonly<Record<string, unknown>>,
@@ -4928,23 +5572,28 @@ class PropsManager {
                 `[PropsManager] Property mutation has an invalid relationship "${propertyId}.${key}"`
               )
             }
+
             const nextChildIds = [...(value as string[])]
             const nextChildIdSet = new Set(nextChildIds)
+
             assertRelationIds(nextChildIds, contract.childRelation, propertyId)
             const previousChildIds = readRelationIds(
               snapshot as Readonly<Record<string, unknown>>,
               contract.childRelation,
               propertyId
             )
+
             previousChildIds.forEach((childId) => {
               if (!nextChildIdSet.has(childId)) {
                 addRemovedCandidate(childId, orderedId)
               }
             })
           }
+
           const before = (
             nextSnapshot as unknown as Readonly<Record<string, unknown>>
           )[key]
+
           ;(nextSnapshot as unknown as Record<string, unknown>)[key] =
             clonePropsValue(value)
           addReplaceLatestHistoryEvidence(propertyId, key, before, value)
@@ -4959,6 +5608,7 @@ class PropsManager {
         if (!isEqual(snapshot, nextSnapshot)) {
           touchExisting(propertyId)
         }
+
         return
       }
 
@@ -4967,7 +5617,9 @@ class PropsManager {
           `[PropsManager] Property mutation "${propertyId}" has an invalid kind`
         )
       }
+
       const relation = contract.childRelation
+
       if (
         !relation ||
         typeof sourceMutation.key !== 'string' ||
@@ -4978,18 +5630,22 @@ class PropsManager {
           `[PropsManager] Property mutation "${propertyId}" has an invalid record relationship`
         )
       }
+
       relationshipMutationRootIds.add(propertyId)
       const replacementValues =
         sourceMutation.values === undefined ? {} : sourceMutation.values
+
       if (!isRecord(replacementValues)) {
         throw new Error(
           `[PropsManager] Property mutation "${propertyId}" has invalid value replacements`
         )
       }
+
       const setRecords =
         sourceMutation.set === undefined ? {} : sourceMutation.set
       const removeIds =
         sourceMutation.remove === undefined ? [] : sourceMutation.remove
+
       if (
         !isRecord(setRecords) ||
         !Array.isArray(removeIds) ||
@@ -5002,8 +5658,10 @@ class PropsManager {
           `[PropsManager] Property mutation "${propertyId}" has invalid record operations`
         )
       }
+
       const setEntries = Object.entries(setRecords)
       const removeIdSet = new Set(removeIds)
+
       if (
         setEntries.some(
           ([childId, values]) =>
@@ -5023,12 +5681,14 @@ class PropsManager {
         propertyId
       )
       const previousChildIdSet = new Set(previousChildIds)
+
       removeIds.forEach((childId) => {
         if (!previousChildIdSet.has(childId)) {
           throw new Error(
             `[PropsManager] Property mutation "${propertyId}" cannot unlink missing record "${childId}"`
           )
         }
+
         addRemovedCandidate(childId, orderedId)
       })
       const nextChildIds = previousChildIds.filter(
@@ -5043,11 +5703,13 @@ class PropsManager {
               childId
             )
           : sourceValues
+
         if (!isRecord(mappedValues)) {
           throw new Error(
             `[PropsManager] Property mutation has invalid record "${childId}"`
           )
         }
+
         if (
           (mappedValues.id !== undefined && mappedValues.id !== childId) ||
           (mappedValues.type !== undefined &&
@@ -5057,6 +5719,7 @@ class PropsManager {
             `[PropsManager] Property mutation has invalid canonical record "${childId}"`
           )
         }
+
         const childContract = captureContract(relation.childType)
         const childValues = Object.entries(mappedValues).reduce<
           Record<string, unknown>
@@ -5064,18 +5727,23 @@ class PropsManager {
           if (key !== 'id' && key !== 'type') {
             values[key] = clonePropsValue(value)
           }
+
           return values
         }, {})
         const existingChild = resolveChildSnapshot(childId)
+
         associatePropertyWithOwner(childId, orderedId)
         if (existingChild) {
           const isCreatedChild = createdComponents.has(childId)
+
           if (existingChild.type !== relation.childType) {
             throw new Error(
               `[PropsManager] Property mutation record "${childId}" has the wrong type`
             )
           }
+
           const nextChild = clonePropsValue(existingChild)
+
           Object.entries(childValues).forEach(([key, value]) => {
             assertField(
               existingChild as unknown as Readonly<Record<string, unknown>>,
@@ -5087,12 +5755,14 @@ class PropsManager {
             const before = (
               nextChild as unknown as Readonly<Record<string, unknown>>
             )[key]
+
             ;(nextChild as unknown as Record<string, unknown>)[key] =
               clonePropsValue(value)
             addReplaceLatestHistoryEvidence(childId, key, before, value)
             if (childContract.childRelation?.key === key) {
               relationshipMutationRootIds.add(childId)
             }
+
             if (!isCreatedChild) {
               addUpdateEvidence(childId, key, before, value)
             }
@@ -5112,6 +5782,7 @@ class PropsManager {
           }
         } else {
           const inactiveChild = this._deletedMap.get(childId)
+
           if (
             createdComponents.has(childId) ||
             (inactiveChild && getTransactionReplayMode() === null)
@@ -5120,8 +5791,10 @@ class PropsManager {
               `[PropsManager] Property mutation record "${childId}" conflicts with an existing canonical id`
             )
           }
+
           const childConfig = getComponentConfig(relation.childType)
           const configuredPersistKeys = getPersistKeys(relation.childType)
+
           if (
             childConfig &&
             !childConfig.allowDynamicKeys &&
@@ -5133,15 +5806,18 @@ class PropsManager {
               `[PropsManager] Property mutation has an unknown field "${childId}"`
             )
           }
+
           const normalizedChildValues = clonePropsValue(
             getDefaultValues(childContract)
           ) as Record<string, unknown>
+
           Object.assign(normalizedChildValues, childValues)
           const created = {
             id: childId,
             type: relation.childType,
             ...normalizedChildValues
           } as PropertyComponentRawData
+
           assertRuntimePropertyFields(
             created as unknown as Readonly<Record<string, unknown>>,
             childContract.schema,
@@ -5149,6 +5825,7 @@ class PropsManager {
           )
           if (inactiveChild) {
             const inactiveSnapshot = clonePropsValue(inactiveChild.save())
+
             if (
               inactiveChild.get('type') !== relation.childType ||
               !(inactiveChild instanceof childContract.constructor) ||
@@ -5158,6 +5835,7 @@ class PropsManager {
                 `[PropsManager] Property mutation record "${childId}" has incompatible inactive data`
               )
             }
+
             reactivatedComponents.set(
               childId,
               Object.freeze({
@@ -5166,8 +5844,10 @@ class PropsManager {
               })
             )
           }
+
           createdComponents.set(childId, created)
         }
+
         if (!nextChildIdSet.has(childId)) {
           nextChildIds.push(childId)
           nextChildIdSet.add(childId)
@@ -5176,12 +5856,14 @@ class PropsManager {
 
       assertRelationIds(nextChildIds, relation, propertyId)
       const nextParent = clonePropsValue(snapshot)
+
       Object.entries(replacementValues).forEach(([key, value]) => {
         if (key === relation.key) {
           throw new Error(
             `[PropsManager] Property mutation "${propertyId}" cannot replace its record relationship`
           )
         }
+
         assertField(
           snapshot as unknown as Readonly<Record<string, unknown>>,
           contract,
@@ -5192,6 +5874,7 @@ class PropsManager {
         const before = (
           nextParent as unknown as Readonly<Record<string, unknown>>
         )[key]
+
         ;(nextParent as unknown as Record<string, unknown>)[key] =
           clonePropsValue(value)
         addReplaceLatestHistoryEvidence(propertyId, key, before, value)
@@ -5228,14 +5911,18 @@ class PropsManager {
       PreparedRelationshipOwnersRead
     >()
     const sharedRetentionReads = new Map<string, PreparedSharedRetentionRead>()
+
     const readActiveChildIds = (
       ownerId: string
     ): readonly string[] | undefined => {
       const captured = relationshipChildrenReads.get(ownerId)
+
       if (captured) {
         return captured.present ? captured.childIds : undefined
       }
+
       const current = this.relationshipChildIdsByOwnerId.get(ownerId)
+
       relationshipChildrenReads.set(
         ownerId,
         Object.freeze({
@@ -5244,15 +5931,20 @@ class PropsManager {
           childIds: Object.freeze([...(current ?? [])])
         })
       )
+
       return current
     }
+
     const readActiveOwnerIds = (childId: string): ReadonlySet<string> => {
       const captured = relationshipOwnersReads.get(childId)
+
       if (captured) {
         return new Set(captured.ownerIds)
       }
+
       const current = this.relationshipOwnerIdsByChildId.get(childId)
       const ownerIds = [...(current ?? [])].sort()
+
       relationshipOwnersReads.set(
         childId,
         Object.freeze({
@@ -5261,23 +5953,30 @@ class PropsManager {
           ownerIds: Object.freeze(ownerIds)
         })
       )
+
       return new Set(ownerIds)
     }
+
     const inheritanceCandidates = new Map<string, PropertyComponentRawData>()
+
     const visitInheritanceDependents = (propertyId: string): void => {
       if (inheritanceCandidates.has(propertyId)) {
         return
       }
+
       const record =
         createdComponents.get(propertyId) ?? captureActiveSnapshot(propertyId)
+
       if (!record) {
         return
       }
+
       inheritanceCandidates.set(propertyId, record)
       for (const ownerId of readActiveOwnerIds(propertyId)) {
         visitInheritanceDependents(ownerId)
       }
     }
+
     for (const propertyId of new Set([
       ...touchedPropertyIds,
       ...createdComponents.keys()
@@ -5285,6 +5984,7 @@ class PropsManager {
       const after =
         createdComponents.get(propertyId) ?? workingSnapshots.get(propertyId)
       const before = originalSnapshots.get(propertyId)
+
       if (
         after?.inheritance ||
         after?.sharedSource ||
@@ -5294,14 +5994,17 @@ class PropsManager {
         visitInheritanceDependents(propertyId)
       }
     }
+
     // Membership belongs to the source collection. An explicitly detached local
     // child cannot pin a removed source slot, but its exact record remains undoable.
     for (const [propertyId, record] of inheritanceCandidates) {
       const inheritance = record.inheritance
       const relation = getComponentConfig(record.type)?.children
+
       if (!inheritance || !relation || !activeById.has(propertyId)) {
         continue
       }
+
       const source =
         createdComponents.get(inheritance.sourceId) ??
         captureActiveSnapshot(inheritance.sourceId)
@@ -5313,26 +6016,33 @@ class PropsManager {
         : (source as unknown as Record<string, unknown> | undefined)?.[
             relation.key
           ]
+
       if (!Array.isArray(membership)) {
         continue
       }
+
       for (const [sourceChildId, localId] of Object.entries(
         inheritance.childBindings
       )) {
         if (membership.includes(sourceChildId)) {
           continue
         }
+
         const local =
           createdComponents.get(localId) ?? captureActiveSnapshot(localId)
+
         if (!local || local.inheritance) {
           continue
         }
+
         Reflect.deleteProperty(inheritance.childBindings, sourceChildId)
         const ownerId = captureMutationOwner(propertyId)
+
         if (!requestedPropertyIds.has(propertyId)) {
           requestedPropertyIds.add(propertyId)
           appendOrderedPropertyId(propertyId)
         }
+
         touchExisting(propertyId)
         relationshipMutationRootIds.add(propertyId)
         updateEvidence.unshift({
@@ -5347,6 +6057,7 @@ class PropsManager {
         addRemovedCandidate(localId, ownerId)
       }
     }
+
     validatePropertyInheritanceGraph(
       Object.fromEntries(inheritanceCandidates),
       (propertyId) =>
@@ -5357,40 +6068,51 @@ class PropsManager {
       ownerId: string
     ): readonly string[] | undefined =>
       workingChildIdsByOwnerId.get(ownerId) ?? readActiveChildIds(ownerId)
+
     const getWorkingOwnerIds = (childId: string): ReadonlySet<string> => {
       const existing = workingOwnerIdsByChildId.get(childId)
+
       if (existing) {
         if (untrackedWorkingOwnerIds.has(childId)) {
           readActiveOwnerIds(childId)
           untrackedWorkingOwnerIds.delete(childId)
         }
+
         return existing
       }
+
       return readActiveOwnerIds(childId)
     }
+
     const getMutableWorkingOwnerIds = (
       childId: string,
       captureDependency = true
     ): Set<string> => {
       const existing = workingOwnerIdsByChildId.get(childId)
+
       if (existing) {
         if (captureDependency && untrackedWorkingOwnerIds.has(childId)) {
           readActiveOwnerIds(childId)
           untrackedWorkingOwnerIds.delete(childId)
         }
+
         return existing
       }
+
       const ownerIds = new Set(
         captureDependency
           ? readActiveOwnerIds(childId)
           : (this.relationshipOwnerIdsByChildId.get(childId) ?? [])
       )
+
       workingOwnerIdsByChildId.set(childId, ownerIds)
       if (!captureDependency) {
         untrackedWorkingOwnerIds.add(childId)
       }
+
       return ownerIds
     }
+
     const replaceWorkingOwnerEdges = (
       ownerId: string,
       nextChildIds: readonly string[],
@@ -5399,6 +6121,7 @@ class PropsManager {
       const previousChildIds = getWorkingChildIds(ownerId) ?? []
       const previousChildIdSet = new Set(previousChildIds)
       const nextChildIdSet = new Set(nextChildIds)
+
       previousChildIds.forEach((childId) => {
         if (!nextChildIdSet.has(childId)) {
           getMutableWorkingOwnerIds(childId, captureReverseDependencies).delete(
@@ -5415,6 +6138,7 @@ class PropsManager {
       })
       workingChildIdsByOwnerId.set(ownerId, Object.freeze([...nextChildIds]))
     }
+
     const indexWorkingOwner = (
       ownerId: string,
       snapshot: PropertyComponentRawData,
@@ -5424,11 +6148,13 @@ class PropsManager {
       const inheritance = readPropertyInheritance(
         snapshot as unknown as Readonly<Record<string, unknown>>
       )
+
       if (inheritance) {
         const inheritedChildren =
           relation && Array.isArray(inheritance.overrides[relation.key])
             ? (inheritance.overrides[relation.key] as string[])
             : []
+
         replaceWorkingOwnerEdges(
           ownerId,
           [
@@ -5440,11 +6166,14 @@ class PropsManager {
           ],
           activeById.has(ownerId)
         )
+
         return
       }
+
       if (!relation) {
         return
       }
+
       const isActiveOwner = activeById.has(ownerId)
       const hasPreparedEdges = workingChildIdsByOwnerId.has(ownerId)
       const requiresActiveIndexMatch =
@@ -5457,6 +6186,7 @@ class PropsManager {
         relation,
         ownerId
       )
+
       assertRelationIds(
         childIds,
         relation,
@@ -5465,6 +6195,7 @@ class PropsManager {
       )
       if (requiresActiveIndexMatch) {
         const indexedChildIds = readActiveChildIds(ownerId)
+
         if (
           indexedChildIds === undefined ||
           !isEqual(indexedChildIds, childIds)
@@ -5474,6 +6205,7 @@ class PropsManager {
           )
         }
       }
+
       if (requiresActiveIndexMatch) {
         childIds.forEach((childId) => {
           if (!getWorkingOwnerIds(childId).has(ownerId)) {
@@ -5483,6 +6215,7 @@ class PropsManager {
           }
         })
       }
+
       replaceWorkingOwnerEdges(ownerId, childIds, isActiveOwner)
       if (requireExactActiveIndex) {
         childIds.forEach((childId) => {
@@ -5494,6 +6227,7 @@ class PropsManager {
         })
       }
     }
+
     if (relationshipMutationRootIds.size > 0 || createdComponents.size > 0) {
       new Set([
         ...relationshipMutationRootIds,
@@ -5503,11 +6237,13 @@ class PropsManager {
           createdComponents.get(propertyId) ??
           workingSnapshots.get(propertyId) ??
           captureActiveSnapshot(propertyId)
+
         if (!snapshot) {
           throw new Error(
             `[PropsManager] Property mutation cannot snapshot relationship owner "${propertyId}"`
           )
         }
+
         indexWorkingOwner(
           propertyId,
           snapshot,
@@ -5518,9 +6254,11 @@ class PropsManager {
       const visiting = new Set<string>()
       const ordinarilyVisited = new Set<string>()
       const exactlyVisited = new Set<string>()
+
       const visitRelationshipGraph = (propertyId: string): void => {
         const requiresExactRelationshipSet =
           exactOrphanCandidateIds.has(propertyId)
+
         if (
           requiresExactRelationshipSet
             ? exactlyVisited.has(propertyId)
@@ -5529,22 +6267,27 @@ class PropsManager {
         ) {
           return
         }
+
         if (visiting.has(propertyId)) {
           throw new Error(
             `[PropsManager] Property mutation has a relationship cycle at "${propertyId}"`
           )
         }
+
         const snapshot =
           createdComponents.get(propertyId) ??
           workingSnapshots.get(propertyId) ??
           captureActiveSnapshot(propertyId)
+
         if (!snapshot) {
           throw new Error(
             `[PropsManager] Property mutation cannot snapshot relationship graph property "${propertyId}"`
           )
         }
+
         const contract = captureContract(snapshot.type)
         const active = activeById.get(propertyId)
+
         if (
           active &&
           (!(active instanceof contract.constructor) ||
@@ -5554,6 +6297,7 @@ class PropsManager {
             `[PropsManager] Property mutation has an invalid relationship graph instance "${propertyId}"`
           )
         }
+
         indexWorkingOwner(propertyId, snapshot, requiresExactRelationshipSet)
         visiting.add(propertyId)
         getWorkingChildIds(propertyId)?.forEach((childId) => {
@@ -5563,15 +6307,18 @@ class PropsManager {
           ) {
             return
           }
+
           if (
             requiresExactRelationshipSet &&
             snapshot.inheritance?.sourceId === childId
           ) {
             return
           }
+
           if (requiresExactRelationshipSet) {
             exactOrphanCandidateIds.add(childId)
           }
+
           visitRelationshipGraph(childId)
         })
         visiting.delete(propertyId)
@@ -5581,6 +6328,7 @@ class PropsManager {
           ordinarilyVisited.add(propertyId)
         }
       }
+
       new Set([
         ...relationshipMutationRootIds,
         ...removedCandidateIds,
@@ -5603,25 +6351,31 @@ class PropsManager {
         const inheritance = (
           component as unknown as { data: PropertyComponentRawData }
         ).data.inheritance
+
         if (inheritance) {
           if (!indexedAffected) {
             return
           }
+
           const snapshot = captureActiveSnapshot(ownerId)
+
           if (!snapshot) {
             throw new Error(
               `[PropsManager] Missing inherited owner "${ownerId}"`
             )
           }
+
           const expectedEdges = this.prepareRelationshipIndexEntry(
             component,
             snapshot
           )
+
           if (!isEqual(indexedChildIds, expectedEdges)) {
             throw new Error(
               `[PropsManager] Inconsistent inherited source index "${ownerId}"`
             )
           }
+
           readActiveChildIds(ownerId)
           for (const dependency of expectedEdges ?? []) {
             if (!readActiveOwnerIds(dependency).has(ownerId)) {
@@ -5630,9 +6384,12 @@ class PropsManager {
               )
             }
           }
+
           indexWorkingOwner(ownerId, snapshot, true)
+
           return
         }
+
         const rawChildIds = relation
           ? (
               component as unknown as {
@@ -5647,9 +6404,11 @@ class PropsManager {
               typeof childId === 'string' &&
               exactOrphanCandidateIds.has(childId)
           )
+
         if (!indexedAffected && !rawAffected) {
           return
         }
+
         if (
           !relation ||
           !Array.isArray(rawChildIds) ||
@@ -5662,6 +6421,7 @@ class PropsManager {
             `[PropsManager] Exact orphan property graph has an inconsistent forward relationship for "${ownerId}"`
           )
         }
+
         ;(rawChildIds as string[]).forEach((childId) => {
           if (
             exactOrphanCandidateIds.has(childId) &&
@@ -5683,30 +6443,37 @@ class PropsManager {
               indexedChildIds: Object.freeze([...indexedChildIds])
             })
           )
+
           return
         }
+
         const ownerSnapshot =
           workingSnapshots.get(ownerId) ?? captureActiveSnapshot(ownerId)
+
         if (!ownerSnapshot) {
           throw new Error(
             `[PropsManager] Exact orphan property graph cannot snapshot affected owner "${ownerId}"`
           )
         }
+
         indexWorkingOwner(ownerId, ownerSnapshot, true)
       })
     }
 
     orderedOwnerIds.forEach((orderedId) => {
       const visited = new Set<string>()
+
       const visitCreatedDescendants = (propertyId: string): void => {
         if (visited.has(propertyId)) {
           return
         }
+
         visited.add(propertyId)
         getWorkingChildIds(propertyId)?.forEach((childId) => {
           if (createdComponents.has(childId)) {
             associatePropertyWithOwner(childId, orderedId)
           }
+
           if (
             createdComponents.has(childId) ||
             relationshipMutationRootIds.has(childId)
@@ -5715,6 +6482,7 @@ class PropsManager {
           }
         })
       }
+
       ;(rootPropertyIdsByOwnerId.get(orderedId) ?? []).forEach(
         visitCreatedDescendants
       )
@@ -5725,24 +6493,31 @@ class PropsManager {
     const pendingRemovalIds = [...removedCandidateIds]
     const queuedRemovalIds = new Set(pendingRemovalIds)
     let removalIndex = 0
+
     while (removalIndex < pendingRemovalIds.length) {
       const candidateId = pendingRemovalIds[removalIndex++]
+
       queuedRemovalIds.delete(candidateId)
       if (exactRetirementIds && !exactRetirementIds.has(candidateId)) {
         continue
       }
+
       const candidateOwnerIds = canonicalOwnerIdSetByPropertyId.get(candidateId)
+
       if (!candidateOwnerIds || candidateOwnerIds.size === 0) {
         throw new Error(
           `[PropsManager] Property mutation cannot resolve canonical owner for removed record "${candidateId}"`
         )
       }
+
       const workingOwnerIds = [...getWorkingOwnerIds(candidateId)]
+
       if (exactOrphanCandidateIds.has(candidateId)) {
         workingOwnerIds.forEach((ownerId) => {
           if (retainedRootPropertyIdSet.has(ownerId)) {
             const retainedRelationshipRead =
               retainedRootRelationshipReads.get(ownerId)
+
             if (
               !retainedRelationshipRead ||
               !retainedRelationshipRead.rawChildIds.includes(candidateId)
@@ -5751,17 +6526,21 @@ class PropsManager {
                 `[PropsManager] Exact orphan property graph has a missing retained owner relationship "${ownerId}:${candidateId}"`
               )
             }
+
             return
           }
+
           const ownerSnapshot =
             createdComponents.get(ownerId) ??
             workingSnapshots.get(ownerId) ??
             captureActiveSnapshot(ownerId)
+
           if (!ownerSnapshot) {
             throw new Error(
               `[PropsManager] Exact orphan property graph has a missing retaining owner "${ownerId}"`
             )
           }
+
           indexWorkingOwner(ownerId, ownerSnapshot, true)
           if (!(getWorkingChildIds(ownerId) ?? []).includes(candidateId)) {
             throw new Error(
@@ -5770,9 +6549,11 @@ class PropsManager {
           }
         })
       }
+
       const hasLiveOwner = workingOwnerIds.some(
         (ownerId) => !removedIds.has(ownerId)
       )
+
       if (hasLiveOwner && !exactOrphanCandidateIds.has(candidateId)) {
         const activeOwnerRead = relationshipOwnersReads.get(candidateId)
         const workingOwnerIdSet = new Set(workingOwnerIds)
@@ -5781,6 +6562,7 @@ class PropsManager {
             (ownerId) => !workingOwnerIdSet.has(ownerId)
           )
         )
+
         workingOwnerIds.forEach((ownerId) => {
           if (removedIds.has(ownerId)) {
             preparedRemovedOwnerIds.add(ownerId)
@@ -5798,6 +6580,7 @@ class PropsManager {
           )
         }
       }
+
       if (
         removedIds.has(candidateId) ||
         createdComponents.has(candidateId) ||
@@ -5805,22 +6588,27 @@ class PropsManager {
       ) {
         continue
       }
+
       const candidate = activeById.get(candidateId)
       const candidateSnapshot = captureActiveSnapshot(candidateId)
+
       if (!candidate || !candidateSnapshot) {
         throw new Error(
           `[PropsManager] Property mutation cannot remove missing record "${candidateId}"`
         )
       }
+
       if (
         candidateSnapshot.sharedSource &&
         !requestedPropertyIds.has(candidateId)
       ) {
         continue
       }
+
       removedIds.add(candidateId)
       orderedRemovedIds.push(candidateId)
       const childIds = getWorkingChildIds(candidateId) ?? []
+
       replaceWorkingOwnerEdges(candidateId, [])
       childIds.forEach((childId) => {
         if (
@@ -5830,9 +6618,11 @@ class PropsManager {
         ) {
           return
         }
+
         if (exactOrphanCandidateIds.has(candidateId)) {
           exactOrphanCandidateIds.add(childId)
         }
+
         candidateOwnerIds.forEach((orderedId) =>
           associatePropertyWithOwner(childId, orderedId)
         )
@@ -5858,10 +6648,12 @@ class PropsManager {
 
     const orderedCreatedIds: string[] = []
     const orderedCreatedIdSet = new Set<string>()
+
     const orderCreatedChildFirst = (propertyId: string): void => {
       if (orderedCreatedIdSet.has(propertyId)) {
         return
       }
+
       getWorkingChildIds(propertyId)?.forEach((childId) => {
         if (createdComponents.has(childId)) {
           orderCreatedChildFirst(childId)
@@ -5870,32 +6662,40 @@ class PropsManager {
       orderedCreatedIdSet.add(propertyId)
       orderedCreatedIds.push(propertyId)
     }
+
     createdComponents.forEach((_snapshot, propertyId) =>
       orderCreatedChildFirst(propertyId)
     )
     const createdSnapshots = orderedCreatedIds.map((propertyId) => {
       const snapshot = createdComponents.get(propertyId)
+
       if (!snapshot) {
         throw new Error(
           `[PropsManager] Property mutation cannot order created record "${propertyId}"`
         )
       }
+
       return deepFreezePropertyContract(snapshot)
     })
     const removedComponents = orderedRemovedIds.map((propertyId) => {
       const component = activeById.get(propertyId)
+
       if (!component) {
         throw new Error(
           `[PropsManager] Property mutation cannot resolve removed record "${propertyId}"`
         )
       }
+
       return component
     })
+
     const promotesSource = (change: UpdatePropertyChange): boolean =>
       change.layer === 'sharedSource' &&
       isRecord(change.after) &&
       change.after.present === true
+
     const evidence: PropsChange[] = updateEvidence.filter(promotesSource)
+
     if (createdSnapshots.length > 0) {
       evidence.push({
         eventName: EventTypes.ADD_PROPERTY,
@@ -5905,13 +6705,16 @@ class PropsManager {
         undoAction: EventTypes.REMOVE_PROPERTY
       })
     }
+
     const remainingUpdates = updateEvidence.filter(
       (change) => !promotesSource(change)
     )
+
     const removesChildBinding = (change: UpdatePropertyChange): boolean =>
       change.layer === 'childBindings' &&
       isRecord(change.after) &&
       change.after.present === false
+
     // Replay validates each canonical link. Remove links before removing their
     // membership; inverse replay restores membership before restoring links.
     evidence.push(...remainingUpdates.filter(removesChildBinding))
@@ -5923,11 +6726,13 @@ class PropsManager {
         eventName: EventTypes.REMOVE_PROPERTY,
         data: orderedRemovedIds.map((propertyId) => {
           const snapshot = workingSnapshots.get(propertyId)
+
           if (!snapshot) {
             throw new Error(
               `[PropsManager] Property mutation cannot capture removed record "${propertyId}"`
             )
           }
+
           return deepFreezePropertyContract(snapshot)
         }),
         action: PROPS_ACTIONS.REMOVE_PROPERTY,
@@ -5952,11 +6757,13 @@ class PropsManager {
     const readComponents = [...originalSnapshots].map(
       ([propertyId, before]) => {
         const instance = activeById.get(propertyId)
+
         if (!instance) {
           throw new Error(
             `[PropsManager] Property mutation cannot retain read property "${propertyId}"`
           )
         }
+
         return Object.freeze({
           instance,
           before
@@ -5967,11 +6774,13 @@ class PropsManager {
       const instance = activeById.get(propertyId)
       const before = originalSnapshots.get(propertyId)
       const after = workingSnapshots.get(propertyId)
+
       if (!instance || !before || !after) {
         throw new Error(
           `[PropsManager] Property mutation cannot retain changed property "${propertyId}"`
         )
       }
+
       return Object.freeze({
         instance,
         before,
@@ -5980,11 +6789,13 @@ class PropsManager {
     })
     const frozenEvidence = deepFreezePropertyContract(evidence)
     const mutableOrderedOwnerIdsByPropertyId = new Map<string, string[]>()
+
     orderedOwnerIds.forEach((orderedId) => {
       ;(canonicalPropertyIdsByOwnerId.get(orderedId) ?? []).forEach(
         (propertyId) => {
           const ownerIds =
             mutableOrderedOwnerIdsByPropertyId.get(propertyId) ?? []
+
           ownerIds.push(orderedId)
           mutableOrderedOwnerIdsByPropertyId.set(propertyId, ownerIds)
         }
@@ -5999,18 +6810,22 @@ class PropsManager {
           [propertyId, Object.freeze(ownerIds)] as const
       )
     )
+
     const orderedCanonicalOwnerIds = (
       propertyId: string
     ): readonly string[] => {
       const ownerIds =
         orderedCanonicalOwnerIdsByPropertyId.get(propertyId) ?? []
+
       if (ownerIds.length === 0) {
         throw new Error(
           `[PropsManager] Property mutation cannot resolve canonical owner for evidence "${propertyId}"`
         )
       }
+
       return ownerIds
     }
+
     const createLifecycleCanonicalEvidence = (
       change: AddRemovePropertyChange
     ): NonNullable<UpdateTransactionEvent['canonicalEvidence']> => {
@@ -6021,14 +6836,18 @@ class PropsManager {
           readonly data: PropertyComponentRawData[]
         }
       >()
+
       change.data.forEach((property) => {
         const orderedIds = orderedCanonicalOwnerIds(property.id)
         const key = JSON.stringify(orderedIds)
         const record = recordsByOwnerIds.get(key)
+
         if (record) {
           record.data.push(property)
+
           return
         }
+
         recordsByOwnerIds.set(key, {
           orderedIds,
           data: [property]
@@ -6042,6 +6861,7 @@ class PropsManager {
           [...recordsByOwnerIds.values()].flatMap((record) => record.orderedIds)
         )
       ]
+
       return {
         orderedIds,
         sharedRecords: [...recordsByOwnerIds.values()].map((record) => ({
@@ -6053,10 +6873,12 @@ class PropsManager {
         }))
       }
     }
+
     const transactionOptions: EVENT_OPTIONS = {
       ...(mutationOptions ?? {}),
       shared: mutationOptions?.shared ?? SharedDataChannelNames.PROPS
     }
+
     const createTransactionEvent = (
       change: PropsChange
     ): PreparedPropsTransactionEvent => {
@@ -6065,6 +6887,7 @@ class PropsManager {
             orderedIds: orderedCanonicalOwnerIds(change.id)
           }
         : createLifecycleCanonicalEvidence(change)
+
       return {
         type: TransactionEventTypes.UPDATE_TRANSACTION,
         eventName: change.eventName,
@@ -6073,10 +6896,12 @@ class PropsManager {
         canonicalEvidence
       }
     }
+
     const replaceLatestHistoryEvidenceByKey = new Map<
       string,
       UpdatePropertyChange
     >()
+
     replaceLatestHistoryEvidence.forEach((change) => {
       const eventKey = JSON.stringify([
         change.eventName,
@@ -6085,6 +6910,7 @@ class PropsManager {
         change.key
       ])
       const existing = replaceLatestHistoryEvidenceByKey.get(eventKey)
+
       replaceLatestHistoryEvidenceByKey.set(
         eventKey,
         existing ? { ...change, before: existing.before } : change
@@ -6111,6 +6937,7 @@ class PropsManager {
           : {})
       }))
     )
+
     this.validatedPropertyMutationArtifacts.set(prepared, {
       owners,
       ownerRelations: frozenOwnerRelations,
@@ -6140,6 +6967,7 @@ class PropsManager {
       evidence: frozenEvidence,
       transactionEvents
     })
+
     return prepared
   }
 
@@ -6151,6 +6979,7 @@ class PropsManager {
         '[PropsManager] Reentrant canonical property mutation apply is not allowed'
       )
     }
+
     this.propertyMutationApplyActive = true
     try {
       return this.applyOwnedPropertyMutationBatch(prepared)
@@ -6163,11 +6992,13 @@ class PropsManager {
     prepared: PreparedPropertyMutationBatch
   ): PropertyMutationBatchResult {
     const artifact = this.validatedPropertyMutationArtifacts.get(prepared)
+
     if (!artifact) {
       throw new Error(
         '[PropsManager] Expected an owner-issued one-shot prepared property mutation batch'
       )
     }
+
     this.validatedPropertyMutationArtifacts.delete(prepared)
 
     artifact.ownerDefinitionContracts.forEach(
@@ -6176,6 +7007,7 @@ class PropsManager {
           ownerElementType,
           ownerPropertyName
         )
+
         if (!current || !isEqual(current, definition)) {
           throw new Error(
             `[PropsManager] Detached property creation owner definition registration changed for "${ownerElementType}:${ownerPropertyName}"`
@@ -6206,6 +7038,7 @@ class PropsManager {
       artifact.relationshipChildrenReads.every(
         ({ ownerId, present, childIds }) => {
           const current = this.relationshipChildIdsByOwnerId.get(ownerId)
+
           return (
             (current !== undefined) === present &&
             isEqual(current ?? [], childIds)
@@ -6216,6 +7049,7 @@ class PropsManager {
         ({ childId, present, ownerIds }) => {
           const current = this.relationshipOwnerIdsByChildId.get(childId)
           const sharedRetentionRead = sharedRetentionReadByChildId.get(childId)
+
           if (retainedRootIds.has(childId)) {
             // Explicit retention makes unrelated incoming edges irrelevant. The
             // exact edges that this preparation will remove must still exist.
@@ -6223,11 +7057,13 @@ class PropsManager {
               .filter((ownerId) => removedOwnerIds.has(ownerId))
               .every((ownerId) => current?.has(ownerId))
           }
+
           if (sharedRetentionRead) {
             const currentOwnerIds = new Set(current ?? [])
             const preparedRemovedOwnerIds = new Set(
               sharedRetentionRead.preparedRemovedOwnerIds
             )
+
             return (
               sharedRetentionRead.preparedRemovedOwnerIds.every((ownerId) =>
                 currentOwnerIds.has(ownerId)
@@ -6237,6 +7073,7 @@ class PropsManager {
               )
             )
           }
+
           return (
             (current !== undefined) === present &&
             isEqual([...(current ?? [])].sort(), ownerIds)
@@ -6257,6 +7094,7 @@ class PropsManager {
               data: Readonly<Record<string, unknown>>
             }
           ).data[relationKey]
+
           return (
             this._components.get(propertyId) === instance &&
             Array.isArray(currentRawChildIds) &&
@@ -6271,6 +7109,7 @@ class PropsManager {
           )
         }
       )
+
     if (
       artifact.readComponents.some(
         ({ instance, before }) =>
@@ -6279,6 +7118,7 @@ class PropsManager {
       ) ||
       artifact.createdComponents.some(({ id }) => {
         const reactivated = reactivatedComponentById.get(id)
+
         return reactivated
           ? this._components.has(id) ||
               this._deletedMap.get(id) !== reactivated.instance ||
@@ -6318,26 +7158,31 @@ class PropsManager {
       artifact.removedComponents.map((component) => component.get('id'))
     )
     let transactionBatchHandoffStarted = false
+
     try {
       const registrationContractByType = new Map(
         artifact.registrationContracts.map(
           (contract) => [contract.type, contract] as const
         )
       )
+
       this.propertyMutationStagedById = stagedMutationInstances
       runWithPropertyComponentAccessor(this.componentAccessor, () => {
         artifact.createdComponents.forEach((snapshot) => {
           const contract = registrationContractByType.get(snapshot.type)
+
           if (!contract) {
             throw new Error(
               `[PropsManager] Property mutation is missing registration for "${snapshot.id}"`
             )
           }
+
           const reactivated = reactivatedComponentById.get(snapshot.id)
           const component =
             reactivated?.instance ??
             this.propertyMutationStagedById?.get(snapshot.id) ??
             this.instantiateProperty(snapshot, contract.constructor)
+
           if (reactivated) {
             if (
               this._deletedMap.get(snapshot.id) !== component ||
@@ -6347,9 +7192,11 @@ class PropsManager {
                 `[PropsManager] Property mutation cannot reactivate changed record "${snapshot.id}"`
               )
             }
+
             this._deletedMap.delete(snapshot.id)
             reactivatedInstances.add(component)
           }
+
           createdInstances.push(component)
           this.addToMap(component)
         })
@@ -6365,11 +7212,13 @@ class PropsManager {
             '[PropsManager] Property mutation materialized an inexact record graph'
           )
         }
+
         if (this.changes.length !== changeStart) {
           throw new Error(
             '[PropsManager] Property mutation materialization emitted property changes'
           )
         }
+
         this.assertPropertyCreationRegistrationReadiness(
           artifact.registrationContracts,
           new Set()
@@ -6383,17 +7232,20 @@ class PropsManager {
               `[PropsManager] Property mutation changed exact data for "${after.id}"`
             )
           }
+
           if (!removedPropertyIds.has(after.id)) {
             this.refreshRelationshipOwnerEdges(instance, after)
           }
         })
         artifact.removedComponents.forEach((component) => {
           const propertyId = component.get('id')
+
           if (this._components.get(propertyId) !== component) {
             throw new Error(
               `[PropsManager] Property mutation cannot remove changed record "${propertyId}"`
             )
           }
+
           this.unregisterActiveComponent(propertyId)
           this._deletedMap.set(propertyId, component)
           removedInstances.push(component)
@@ -6401,11 +7253,13 @@ class PropsManager {
       })
 
       const evidence = artifact.evidence
+
       transactionBatchHandoffStarted = true
       updateTransactionBatch(artifact.transactionEvents)
       acknowledgeTransactionReplayApplied()
       this.changes.splice(changeStart)
       this.advancePropertyStateRevision()
+
       return deepFreezePropertyContract({
         owners: [...artifact.owners],
         ownerRelations: [...artifact.ownerRelations],
@@ -6423,6 +7277,7 @@ class PropsManager {
         acknowledgeTransactionReplayApplied()
         throw error
       }
+
       const attemptCleanup = (operation: () => void): void => {
         try {
           operation()
@@ -6430,9 +7285,11 @@ class PropsManager {
           // Cleanup is best-effort and cannot replace the canonical apply failure.
         }
       }
+
       removedInstances.reverse().forEach((component) => {
         attemptCleanup(() => {
           const propertyId = component.get('id')
+
           this._deletedMap.delete(propertyId)
           this.registerActiveComponent(
             component,
@@ -6444,6 +7301,7 @@ class PropsManager {
         PropertyComponentInstanceTypes,
         PropertyComponentRawData
       >()
+
       artifact.existingComponents.forEach(({ instance, before }) => {
         restoreSnapshots.set(instance, before)
       })
@@ -6452,11 +7310,13 @@ class PropsManager {
           attemptCleanup(() => {
             instance.load(clonePropsValue(before))
             const propertyId = before.id
+
             this._deletedMap.delete(propertyId)
             const relationshipChildIds = this.prepareRelationshipIndexEntry(
               instance,
               before
             )
+
             if (this._components.get(propertyId) !== instance) {
               this.registerActiveComponent(instance, relationshipChildIds)
             } else {
@@ -6474,6 +7334,7 @@ class PropsManager {
       ]).forEach((component) => {
         attemptCleanup(() => {
           const propertyId = component.get('id')
+
           if (this._components.get(propertyId) === component) {
             this.unregisterActiveComponent(propertyId)
           }
@@ -6507,6 +7368,7 @@ class PropsManager {
     options?: EvnetOptions
   ) {
     const component = this.getPropertyById(componentId)
+
     if (!component) {
       return
     }
@@ -6515,6 +7377,7 @@ class PropsManager {
       if (options) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         component.set(key as any, data as any, options)
+
         return
       }
 
@@ -6538,21 +7401,28 @@ class PropsManager {
     }
 
     const removeChanges = this.changes.filter(isRemovePropertyChange)
+
     if (removeChanges.length === this.changes.length) {
       const firstRemove = removeChanges[0]
+
       if (!firstRemove) {
         return this.changes
       }
+
       const { data: _firstData, ...firstRemoveContract } = firstRemove
       const removedIds = new Set<string>()
       const removedData: PropertyComponentRawData[] = []
+
       for (const removeChange of removeChanges) {
         const { data: _data, ...removeContract } = removeChange
+
         if (!isEqual(removeContract, firstRemoveContract)) {
           return this.changes
         }
+
         for (const propertyData of removeChange.data) {
           const propertyId = propertyData.id
+
           if (
             typeof propertyId !== 'string' ||
             propertyId.length === 0 ||
@@ -6560,10 +7430,12 @@ class PropsManager {
           ) {
             return this.changes
           }
+
           removedIds.add(propertyId)
           removedData.push(propertyData)
         }
       }
+
       return [
         {
           ...firstRemove,
@@ -6573,6 +7445,7 @@ class PropsManager {
     }
 
     const addChanges = this.changes.filter(isAddPropertyChange)
+
     if (addChanges.length === 0) {
       return this.changes
     }
@@ -6582,13 +7455,17 @@ class PropsManager {
     const orderedIds: string[] = []
     const createdIds = new Set<string>()
     const initialSnapshots = new Map<string, PropertyComponentRawData>()
+
     for (const addChange of addChanges) {
       const { data: _data, ...addContract } = addChange
+
       if (!isEqual(addContract, firstAddContract)) {
         return this.changes
       }
+
       for (const propertyData of addChange.data) {
         const propertyId = propertyData.id
+
         if (
           typeof propertyId !== 'string' ||
           propertyId.length === 0 ||
@@ -6597,6 +7474,7 @@ class PropsManager {
         ) {
           return this.changes
         }
+
         createdIds.add(propertyId)
         orderedIds.push(propertyId)
         initialSnapshots.set(propertyId, propertyData)
@@ -6608,14 +7486,19 @@ class PropsManager {
     const canBatch = this.changes.every((change) => {
       if (isAddPropertyChange(change)) {
         change.data.forEach(({ id }) => observedAddIds.add(id as string))
+
         return true
       }
+
       if (!isUpdatePropertyChange(change) || !observedAddIds.has(change.id)) {
         return false
       }
+
       updatedIds.add(change.id)
+
       return isEqual(change.options, firstAdd.options)
     })
+
     if (!canBatch) {
       return this.changes
     }
@@ -6623,22 +7506,27 @@ class PropsManager {
     const finalData = orderedIds.map((propertyId) => {
       if (!updatedIds.has(propertyId)) {
         const initialSnapshot = initialSnapshots.get(propertyId)
+
         if (!initialSnapshot) {
           throw new Error(
             `[PropsManager] Canonical property batch is missing initial snapshot "${propertyId}"`
           )
         }
+
         return initialSnapshot
       }
 
       const property = this.getPropertyById(propertyId)
+
       if (!property) {
         throw new Error(
           `[PropsManager] Canonical property batch is missing active property "${propertyId}"`
         )
       }
+
       return clonePropsValue(property.save())
     })
+
     return [
       {
         ...firstAdd,
@@ -6655,6 +7543,7 @@ class PropsManager {
       const orderedIds = isUpdatePropertyChange(change)
         ? [change.id]
         : change.data.map(({ id }) => id)
+
       return {
         type: EventTypes.UPDATE_TRANSACTION,
         eventName: change.eventName,
@@ -6681,6 +7570,7 @@ class PropsManager {
     owners: readonly CanonicalPropertyDeliveryOwner[]
   ): readonly CanonicalPropertyDeliveryRecord[] {
     const propertyById = new Map<string, PropertyComponentRawData>()
+
     change.data.forEach((property) => {
       if (
         typeof property.id !== 'string' ||
@@ -6691,6 +7581,7 @@ class PropsManager {
           '[PropsManager] Canonical property delivery requires unique property ids'
         )
       }
+
       propertyById.set(property.id, property)
     })
 
@@ -6699,21 +7590,27 @@ class PropsManager {
       string,
       PropertyChildRelationDefinition | undefined
     >()
+
     owners.forEach(({ rootPropertyIds }, ownerIndex) => {
       const visitingPropertyIds = new Set<string>()
+
       const visit = (propertyId: string): void => {
         if (visitingPropertyIds.has(propertyId)) {
           throw new Error(
             `[PropsManager] Canonical property delivery has a relationship cycle at "${propertyId}"`
           )
         }
+
         if (ownerIndexByPropertyId.has(propertyId)) {
           return
         }
+
         const property = propertyById.get(propertyId)
+
         if (!property) {
           return
         }
+
         visitingPropertyIds.add(propertyId)
         ownerIndexByPropertyId.set(propertyId, ownerIndex)
         if (!childRelationByType.has(property.type)) {
@@ -6722,11 +7619,14 @@ class PropsManager {
             getPropertyComponentCanonicalChildRelation(property.type)
           )
         }
+
         const childRelation = childRelationByType.get(property.type)
+
         if (childRelation) {
           const childIds = (
             property as unknown as Readonly<Record<string, unknown>>
           )[childRelation.key]
+
           if (
             !Array.isArray(childIds) ||
             childIds.some((childId) => typeof childId !== 'string')
@@ -6735,23 +7635,30 @@ class PropsManager {
               `[PropsManager] Canonical property delivery has malformed child relation for "${propertyId}"`
             )
           }
+
           childIds.forEach(visit)
         }
+
         visitingPropertyIds.delete(propertyId)
       }
+
       rootPropertyIds.forEach(visit)
     })
 
     const dataByOwner = owners.map(() => [] as PropertyComponentRawData[])
+
     change.data.forEach((property) => {
       const ownerIndex = ownerIndexByPropertyId.get(property.id)
+
       if (ownerIndex === undefined) {
         throw new Error(
           `[PropsManager] Canonical property delivery has unowned property "${property.id}"`
         )
       }
+
       dataByOwner[ownerIndex].push(property)
     })
+
     return owners.map(({ orderedId }, ownerIndex) => ({
       orderedIds: [orderedId],
       payload: {
@@ -6778,6 +7685,7 @@ class PropsManager {
       ...this._deletedMap.values(),
       ...(this.propertyMutationStagedById?.values() ?? [])
     ])
+
     components.forEach((component) => {
       ;(component as unknown as { dispose?: () => void }).dispose?.()
     })
@@ -6797,13 +7705,16 @@ class PropsManager {
         '[PropsManager] Runtime reset requires idle canonical property batches'
       )
     }
+
     this.resettingRuntime = true
     const failures: unknown[] = []
+
     try {
       const components = new Set([
         ...this._components.values(),
         ...this._deletedMap.values()
       ])
+
       components.forEach((component) => {
         try {
           ;(component as unknown as { dispose?: () => void }).dispose?.()
@@ -6821,6 +7732,7 @@ class PropsManager {
     } finally {
       this.resettingRuntime = false
     }
+
     if (failures.length > 0) {
       throw failures[0]
     }

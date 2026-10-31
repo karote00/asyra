@@ -71,6 +71,7 @@ const Input: React.FC<InputProps> = ({
       }
 
       const input = inputRef.current as HTMLInputElement
+
       if (e.code === 'Enter') {
         e.preventDefault()
         input.blur()
@@ -86,6 +87,7 @@ const Input: React.FC<InputProps> = ({
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const newData = e.target.value
+
       setData(newData)
     },
     [setData]
@@ -93,6 +95,7 @@ const Input: React.FC<InputProps> = ({
 
   const handleBlur = useCallback(() => {
     const accepted = onChange(data)
+
     if (accepted === false) {
       setData(value?.toString() ?? '')
     }
@@ -105,11 +108,14 @@ const Input: React.FC<InputProps> = ({
   const showsSteps = stepControls && rest.type === 'number'
   const step =
     rest.step === 'any' || rest.step === undefined ? 1 : Number(rest.step)
+
   const nextStep = (direction: number) => {
     if (!data.trim()) {
       return null
     }
+
     const next = Number((Number(data) + direction * step).toPrecision(12))
+
     if (
       !Number.isFinite(next) ||
       disabled ||
@@ -119,14 +125,19 @@ const Input: React.FC<InputProps> = ({
     ) {
       return null
     }
+
     return next
   }
+
   const applyStep = (direction: number) => {
     const next = nextStep(direction)
+
     if (next === null) {
       return
     }
+
     const nextData = String(next)
+
     if (onChange(nextData) !== false) {
       setData(nextData)
     }

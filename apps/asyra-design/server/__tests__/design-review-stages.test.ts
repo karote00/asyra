@@ -6,6 +6,7 @@ import recordedScope from './fixtures/recorded-101/scope-handoff-20261017.json'
 import recordedReview from './fixtures/recorded-101/review-handoff.json'
 import { createLocalImageTools } from '../local-image-tools'
 import { createDesignCheckResults } from '../design-check-results'
+
 // Schema-only fixtures describe the binding shape; owner tests below issue real bindings.
 const schemaReviewInput = (input: unknown): unknown => {
   if (
@@ -15,9 +16,11 @@ const schemaReviewInput = (input: unknown): unknown => {
   ) {
     return input
   }
+
   const value = input as Record<string, unknown> & {
     checks: Record<string, unknown>[]
   }
+
   return {
     ...value,
     checks: value.checks.map((check) => ({
@@ -38,6 +41,7 @@ const schemaReviewInput = (input: unknown): unknown => {
     }))
   }
 }
+
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
@@ -50,6 +54,7 @@ const reviewCriteria = (names: readonly string[]) =>
       }
     ])
   )
+
 import { describe, it, expect } from 'vitest'
 import {
   createLocalDesignReview,
@@ -71,6 +76,7 @@ const plan = {
   detailRequired: true
 }
 const testReferenceImages = createLocalImageTools({ metadata: {} })
+
 for (const bytes of ['YQ==', 'Yg==', 'Yw==']) {
   testReferenceImages.addReference({
     dataUrl: `data:image/png;base64,${bytes}`,
@@ -85,6 +91,7 @@ for (const bytes of ['YQ==', 'Yg==', 'Yw==']) {
     }
   })
 }
+
 const declaredUses = (criteria: string[], limitations: string[] = []) =>
   criteria.flatMap((criterionId) =>
     ['visual', 'fact', 'preparation'].map((purpose) => ({
@@ -95,6 +102,7 @@ const declaredUses = (criteria: string[], limitations: string[] = []) =>
       limitations
     }))
   )
+
 const useReceipts = (
   review: ReturnType<typeof createLocalDesignReview>,
   index: number,
@@ -113,6 +121,7 @@ const useReceipts = (
         )
         .map((use) => use.receipt)
     )
+
 const referenceReview = (
   options: Parameters<typeof createLocalDesignReview>[0] = {}
 ) =>
@@ -121,6 +130,7 @@ const referenceReview = (
     validateReferences: testReferenceImages.validateReferences,
     resolveSources: testReferenceImages.resolveSources
   })
+
 const assessReferences = (
   review: ReturnType<typeof createLocalDesignReview>,
   indexes: number[]
@@ -136,15 +146,18 @@ const assessReferences = (
         uses: declaredUses(['Viewpoint', 'Finish'])
       }))
   })
+
 const check = (criterionId: string, status = 'pass') => ({
   criterionId,
   status,
   evidence: `Observed ${criterionId} ${status}`
 })
+
 const inspect = (r: ReturnType<typeof createLocalDesignReview>) => [
   r.inspect('root', true, true)?.inspectionId,
   r.inspect('detail', true, false)?.inspectionId
 ]
+
 describe('construction and comparison review', () => {
   it('acknowledges plan storage without retransmitting narrative and retains review state', () => {
     const review = createLocalDesignReview()
@@ -175,6 +188,7 @@ describe('construction and comparison review', () => {
       ]
     }
     const saved = review.record(source)
+
     expect(saved).toEqual({
       phase: 'plan',
       recorded: true,
@@ -194,6 +208,7 @@ describe('construction and comparison review', () => {
         }
       }
     })
+
     expect(JSON.stringify(longer)).toBe(JSON.stringify(saved))
     review.mutate()
     expect(
@@ -225,9 +240,11 @@ describe('construction and comparison review', () => {
   })
   it('admits a structure overview but never treats it as final approval', () => {
     const r = createLocalDesignReview()
+
     r.record(plan)
     r.mutate()
     const ids = [r.inspect('root', true, true)?.inspectionId]
+
     expect(
       r.record({
         phase: 'structure',
@@ -251,9 +268,11 @@ describe('construction and comparison review', () => {
   })
   it('reports loss of an earlier passing criterion without accepting stale evidence', () => {
     const r = createLocalDesignReview()
+
     r.record(plan)
     r.mutate()
     const ids = inspect(r)
+
     r.record({
       phase: 'visual',
       ...wholeViewJudgments(ids, [check('Viewpoint'), check('Finish', 'fail')])
@@ -272,6 +291,7 @@ describe('construction and comparison review', () => {
         check('Finish')
       ])
     })
+
     expect(result).toMatchObject({
       accepted: false,
       regressions: [
@@ -294,6 +314,7 @@ describe('construction and comparison review', () => {
 
 it('reports whole-structure readiness independently of final acceptance and preparation', () => {
   const r = createLocalDesignReview()
+
   r.record(plan)
   expect(r.getStructureIssue()).toBeTruthy()
   r.mutate()
@@ -320,6 +341,7 @@ it('reports whole-structure readiness independently of final acceptance and prep
 
 it('retains deferred work through mutations and requires a current final disposition', () => {
   const r = createLocalDesignReview()
+
   r.record(plan)
   r.mutate()
   const deferredDetails = [
@@ -329,6 +351,7 @@ it('retains deferred work through mutations and requires a current final disposi
       reason: 'Probably behind the front facade'
     }
   ]
+
   expect(
     r.record({
       phase: 'structure',
@@ -345,6 +368,7 @@ it('retains deferred work through mutations and requires a current final disposi
     phase: 'visual',
     ...wholeViewJudgments(inspect(r), [check('Viewpoint'), check('Finish')])
   }
+
   expect(r.record(visual)).toMatchObject({
     accepted: false,
     pendingDetails: ['rear']
@@ -394,6 +418,7 @@ it('retains deferred work through mutations and requires a current final disposi
 
 it('rejects unknown, duplicate or empty deferred dispositions and isolates requests', () => {
   const r = createLocalDesignReview()
+
   r.record({
     ...plan,
     deferredDetails: [
@@ -405,6 +430,7 @@ it('rejects unknown, duplicate or empty deferred dispositions and isolates reque
     phase: 'visual',
     ...wholeViewJudgments(inspect(r), [check('Viewpoint'), check('Finish')])
   }
+
   for (const deferredChecks of [
     [{ id: 'unknown', status: 'omit', evidence: 'covered' }],
     [{ id: 'rear', status: 'omit', evidence: '' }],
@@ -415,7 +441,9 @@ it('rejects unknown, duplicate or empty deferred dispositions and isolates reque
   ]) {
     expect(() => r.record({ ...visual, deferredChecks })).toThrow()
   }
+
   const other = createLocalDesignReview()
+
   other.record(plan)
   other.mutate()
   expect(
@@ -428,6 +456,7 @@ it('rejects unknown, duplicate or empty deferred dispositions and isolates reque
 
 it('reopens final review when a later structure assessment declares deferred work', () => {
   const r = createLocalDesignReview()
+
   r.record(plan)
   r.mutate()
   r.record({
@@ -462,6 +491,7 @@ it.each(
   'rejects malformed deferred additions without recording them',
   ({ deferredDetails }) => {
     const r = createLocalDesignReview()
+
     expect(() => r.record({ ...plan, deferredDetails })).toThrow()
     r.record(plan)
     r.mutate()
@@ -476,15 +506,18 @@ it.each(
 
 it('advertises required plan and inspection fields before tool execution', () => {
   const schema = designEvidenceSchema
+
   for (const field of ['method', 'references', 'criteria', 'detailRequired']) {
     const input = Object.fromEntries(
       Object.entries(plan).filter(([key]) => key !== field)
     )
+
     expect(
       operationInputIssue(schemaReviewInput(input), schema),
       field
     ).toBeDefined()
   }
+
   expect(operationInputIssue(schemaReviewInput(plan), schema)).toBeUndefined()
   for (const phase of ['structure', 'visual']) {
     expect(
@@ -509,9 +542,11 @@ it('retains field validation when native discovery projects a review alternative
   const inspectionSchema = designEvidenceSchema.oneOf.find(
     (schema) => schema.properties.phase.const === 'visual'
   )
+
   if (!planSchema || !inspectionSchema) {
     throw new Error('Missing review phase schema')
   }
+
   expect(
     operationInputIssue(schemaReviewInput(plan), planSchema)
   ).toBeUndefined()
@@ -525,10 +560,12 @@ it('retains field validation when native discovery projects a review alternative
       operationInputIssue(schemaReviewInput({ ...plan, ...patch }), planSchema)
     ).toBeDefined()
   }
+
   const visual = {
     phase: 'visual',
     ...wholeViewJudgments(['current'], [check('Viewpoint')])
   }
+
   expect(
     operationInputIssue(schemaReviewInput(visual), inspectionSchema)
   ).toBeUndefined()
@@ -562,6 +599,7 @@ it('keeps complete plan facts and bindings behind the compact acknowledgement', 
       elementIds: ['existing-element']
     }
   ]
+
   expect(review.record({ ...plan, facts: [sourceFact], factBindings })).toEqual(
     {
       phase: 'plan',
@@ -581,6 +619,7 @@ it('keeps complete plan facts and bindings behind the compact acknowledgement', 
 
 it('retains verified source facts across drawing revisions without rejudging them', () => {
   const review = createLocalDesignReview()
+
   expect(
     operationInputIssue(
       schemaReviewInput({ phase: 'facts', facts: [sourceFact] }),
@@ -588,6 +627,7 @@ it('retains verified source facts across drawing revisions without rejudging the
     )
   ).toBeUndefined()
   const saved = review.record({ phase: 'facts', facts: [sourceFact] })
+
   expect(saved).toMatchObject({ facts: [{ ...sourceFact, status: 'valid' }] })
   review.mutate()
   review.mutate()
@@ -598,6 +638,7 @@ it('retains verified source facts across drawing revisions without rejudging the
   const detached = review.record({ phase: 'facts' }) as {
     facts: { statement: string }[]
   }
+
   detached.facts[0].statement = 'Changed by consumer'
   expect(review.record({ phase: 'facts' })).toEqual(saved)
   expect(createLocalDesignReview().record({ phase: 'facts' })).toMatchObject({
@@ -612,6 +653,7 @@ it('invalidates only changed source dependencies and requires explicit evidence 
     id: 'scale',
     dependencies: [{ key: 'request:scale', version: '1' }]
   }
+
   review.record({ phase: 'facts', facts: [sourceFact, unitFact] })
   expect(() =>
     review.record({
@@ -638,6 +680,7 @@ it('invalidates only changed source dependencies and requires explicit evidence 
     reason: 'source_changed',
     evidence: 'The corrected survey supersedes revision 1.'
   }
+
   expect(
     review.record({ phase: 'facts', dependencyChanges: [change] })
   ).toMatchObject({
@@ -654,6 +697,7 @@ it('invalidates only changed source dependencies and requires explicit evidence 
     dependencies: [{ key: 'reference:survey', version: '2' }],
     verification: 'Verified the corrected survey.'
   }
+
   expect(review.record({ phase: 'facts', facts: [corrected] })).toMatchObject({
     facts: [
       { ...corrected, status: 'valid' },
@@ -664,8 +708,10 @@ it('invalidates only changed source dependencies and requires explicit evidence 
 
 it('rejects incomplete and conflicting fact changes atomically', () => {
   const review = createLocalDesignReview()
+
   review.record({ phase: 'facts', facts: [sourceFact] })
   const saved = review.record({ phase: 'facts' })
+
   for (const patch of [
     { sources: [] },
     { verification: '' },
@@ -680,6 +726,7 @@ it('rejects incomplete and conflicting fact changes atomically', () => {
       })
     ).toThrow()
   }
+
   expect(() =>
     review.record({
       phase: 'facts',
@@ -704,6 +751,7 @@ it('rejects incomplete and conflicting fact changes atomically', () => {
 
 it('reopens completion when a source fact changes and cannot approve unresolved facts', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.record({ phase: 'facts', facts: [sourceFact] })
   review.mutate()
@@ -714,6 +762,7 @@ it('reopens completion when a source fact changes and cannot approve unresolved 
       check('Finish')
     ])
   }
+
   review.record(visual)
   expect(review.isAccepted()).toBe(true)
   review.record({
@@ -735,6 +784,7 @@ it('reopens completion when a source fact changes and cannot approve unresolved 
 it('captures facts with the first plan and binds their application to current criterion checks', () => {
   const review = createLocalDesignReview()
   const input = { ...plan, facts: [sourceFact] }
+
   expect(
     operationInputIssue(schemaReviewInput(input), designEvidenceSchema)
   ).toBeUndefined()
@@ -744,6 +794,7 @@ it('captures facts with the first plan and binds their application to current cr
   const factBindings = [
     { factId: sourceFact.id, criterionId: 'Viewpoint', elementIds: ['crown'] }
   ]
+
   expect(
     operationInputIssue(
       schemaReviewInput({ phase: 'facts', factBindings }),
@@ -760,6 +811,7 @@ it('captures facts with the first plan and binds their application to current cr
       check('Finish')
     ])
   }
+
   expect(review.record(visual)).toMatchObject({
     accepted: true,
     checks: [
@@ -789,6 +841,7 @@ it('captures facts with the first plan and binds their application to current cr
 
 it('rejects invalid bindings atomically and does not borrow another invocation targets', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   expect(() =>
     review.record({
@@ -816,6 +869,7 @@ it('rejects invalid bindings atomically and does not borrow another invocation t
 
 it('allows a focused intermediate assessment without certifying unfinished final criteria', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.mutate()
   const overview = [review.inspect('root', true, true)?.inspectionId]
@@ -824,6 +878,7 @@ it('allows a focused intermediate assessment without certifying unfinished final
     final: false,
     ...wholeViewJudgments(overview, [check('Viewpoint')])
   }
+
   expect(
     operationInputIssue(schemaReviewInput(stage), designEvidenceSchema)
   ).toBeUndefined()
@@ -855,6 +910,7 @@ it('reuses an identical fact regardless of JSON property order', () => {
   const review = createLocalDesignReview()
   const first = review.record({ phase: 'facts', facts: [sourceFact] })
   const reordered = Object.fromEntries(Object.entries(sourceFact).reverse())
+
   expect(review.record({ phase: 'facts', facts: [reordered] })).toEqual(first)
 })
 
@@ -864,6 +920,7 @@ describe('phase-specific tool admission', () => {
     ...wholeViewJudgments(['current'], [check('Viewpoint')])
   }
   const visual = { ...structure, phase: 'visual' }
+
   it.each([
     [plan, { final: true }],
     [plan, { inspectionIds: ['current'] }],
@@ -924,6 +981,7 @@ describe('phase-specific tool admission', () => {
         (schema) =>
           operationInputIssue(schemaReviewInput(input), schema) === undefined
       )
+
       expect(branches).toHaveLength(1)
       expect(
         operationInputIssue(
@@ -959,6 +1017,7 @@ it('retains observable structure checks linked to the original request by stable
     structureCriteria: ['silhouette'],
     detailRequired: true
   }
+
   expect(
     operationInputIssue(schemaReviewInput(input), designEvidenceSchema)
   ).toBeUndefined()
@@ -969,6 +1028,7 @@ it('retains observable structure checks linked to the original request by stable
     silhouette: { requirement: input.criteria.silhouette.requirement }
   })
   const inspectionIds = inspect(review)
+
   expect(
     review.record({
       phase: 'structure',
@@ -1027,8 +1087,10 @@ it('provides executable fact and binding examples in the native-discoverable des
       )
     ).description.matchAll(/```json\n([\s\S]*?)\n```/g)
   ].map((match) => JSON.parse(match[1]))
+
   expect(examples.length).toBeGreaterThanOrEqual(2)
   const review = createLocalDesignReview()
+
   review.record({
     ...plan,
     criteria: {
@@ -1047,6 +1109,7 @@ it('provides executable fact and binding examples in the native-discoverable des
     ).toBeUndefined()
     expect(() => review.record(example)).not.toThrow()
   }
+
   expect(review.record({ phase: 'facts' })).toMatchObject({
     facts: [expect.objectContaining({ status: 'valid' })],
     factBindings: [expect.objectContaining({ criterionId: 'viewpoint' })]
@@ -1056,6 +1119,7 @@ it('provides executable fact and binding examples in the native-discoverable des
 it('advertises an executable deferred-detail example including the required reason', () => {
   const item = designEvidenceSchema.properties.deferredDetails.examples[0][0]
   const input = { ...plan, deferredDetails: [item] }
+
   expect(
     operationInputIssue(schemaReviewInput(input), designEvidenceSchema)
   ).toBeUndefined()
@@ -1063,6 +1127,7 @@ it('advertises an executable deferred-detail example including the required reas
     deferredDetailIds: [item.id]
   })
   const { reason: _reason, ...missingReason } = item
+
   expect(
     operationInputIssue(
       schemaReviewInput({ ...plan, deferredDetails: [missingReason] }),
@@ -1073,6 +1138,7 @@ it('advertises an executable deferred-detail example including the required reas
 
 it('validates a candidate without overwriting the previous completed review', () => {
   const r = createLocalDesignReview()
+
   r.record({ ...plan, detailRequired: false })
   r.mutate()
   const args = {
@@ -1082,6 +1148,7 @@ it('validates a candidate without overwriting the previous completed review', ()
       [check('Viewpoint'), check('Finish')]
     )
   }
+
   r.record(args)
   const changed = {
     ...args,
@@ -1090,6 +1157,7 @@ it('validates a candidate without overwriting the previous completed review', ()
       check('Finish')
     ])
   }
+
   r.validateReview(changed)
   expect(r.isAccepted()).toBe(true)
   expect(r.record(changed)).toMatchObject({
@@ -1099,6 +1167,7 @@ it('validates a candidate without overwriting the previous completed review', ()
 
 it('can select a replacement reference after drawing without rewriting requirements', () => {
   const r = referenceReview({})
+
   r.record({ ...plan, referenceImageIndexes: [0] })
   r.mutate()
   assessReferences(r, [2])
@@ -1111,6 +1180,7 @@ it('can select a replacement reference after drawing without rewriting requireme
 
 it('routes visual and data evidence separately without dropping the data requirement', () => {
   const r = createLocalDesignReview({})
+
   r.record({
     ...plan,
     detailRequired: false,
@@ -1141,6 +1211,7 @@ it('routes visual and data evidence separately without dropping the data require
       [check('view'), check('scale')]
     )
   }
+
   expect(r.record(args)).toMatchObject({
     structureAccepted: true
   })
@@ -1157,6 +1228,7 @@ it('routes visual and data evidence separately without dropping the data require
 
 it('preserves an explicit reference when resubmitting a plan without reference changes', () => {
   const r = referenceReview()
+
   r.record({ ...plan, referenceImageIndexes: [1] })
   assessReferences(r, [1])
   r.record(plan)
@@ -1182,6 +1254,7 @@ it.each(['plan', 'references'])(
               (tool) => tool.name === 'select_design_references'
             )
           ).inputSchema
+
     expect(
       operationInputIssue(schemaReviewInput(input), schema)
     ).toBeUndefined()
@@ -1209,6 +1282,7 @@ it('admits the published plan example through the real schema and review owner',
     operationInputIssue(schemaReviewInput(reviewPlanExample), reviewPlanSchema)
   ).toBeUndefined()
   const review = createLocalDesignReview()
+
   expect(review.record(reviewPlanExample)).toMatchObject({ recorded: true })
   for (const field of reviewPlanSchema.properties.criteria.additionalProperties
     .required) {
@@ -1222,6 +1296,7 @@ it('admits the published plan example through the real schema and review owner',
         )
       }
     }
+
     expect(
       operationInputIssue(schemaReviewInput(invalid), reviewPlanSchema)
     ).toContain(field)
@@ -1231,6 +1306,7 @@ it('admits the published plan example through the real schema and review owner',
 
 it('records initial criteria after first pixels without accepting or rewriting the result', () => {
   const review = createLocalDesignReview({})
+
   review.mutate()
   expect(review.getIssue()).toBeDefined()
   expect(review.record(plan)).toMatchObject({ recorded: true })
@@ -1258,6 +1334,7 @@ it('retains source assertions separately while preparation consumes only declare
     scope:
       'Establishes tower massing only; construction photo does not establish finished facade detail.'
   }
+
   review.record({
     ...plan,
     referenceImageIndexes: [1],
@@ -1290,6 +1367,7 @@ it('retains source assertions separately while preparation consumes only declare
       verification: fact.verification
     }
   ]
+
   expect(review.record({ phase: 'facts' })).toMatchObject({
     facts: expect.arrayContaining(
       expected.map((item) => expect.objectContaining(item))
@@ -1297,9 +1375,11 @@ it('retains source assertions separately while preparation consumes only declare
   })
   const detached = review.record({ phase: 'facts' })
   const retainedFact = detached.facts?.[0]
+
   if (!retainedFact) {
     throw new Error('Missing bound source fact')
   }
+
   retainedFact.sources[0] = 'mutated'
   expect(review.record({ phase: 'facts' }).facts).toEqual(
     expect.arrayContaining(
@@ -1328,6 +1408,7 @@ it('retains source assertions separately while preparation consumes only declare
 
 it('hands all unresolved criteria and inspected scope to correction without accepting stale evidence', () => {
   const r = createLocalDesignReview({})
+
   r.record(plan)
   r.mutate()
   const region = { x: 10, y: 20, width: 30, height: 40 }
@@ -1345,6 +1426,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
     phase: 'visual',
     ...wholeViewJudgments(inspectionIds, failed.checks)
   })
+
   expect(result.correction).toMatchObject({
     diagnosticOnly: true,
     requiresFreshReview: true,
@@ -1366,6 +1448,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
     overall: { status: 'pass' as const, evidence: 'Corrected' },
     checks: [check('Viewpoint'), check('Finish')]
   }
+
   expect(() =>
     r.record({
       phase: 'visual',
@@ -1378,6 +1461,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
     r.inspect('drawing', true, true)?.inspectionId as string,
     r.inspect('tier', true, false, region)?.inspectionId as string
   ]
+
   expect(
     r.record({ phase: 'visual', ...wholeViewJudgments(fresh, passed.checks) })
   ).toMatchObject({ accepted: true, correction: { checks: [] } })
@@ -1388,6 +1472,7 @@ it('preserves accepted review for identical facts bindings and reference selecti
   const factBindings = [
     { factId: sourceFact.id, criterionId: 'Viewpoint', elementIds: ['root'] }
   ]
+
   review.record({
     ...plan,
     facts: [sourceFact],
@@ -1397,6 +1482,7 @@ it('preserves accepted review for identical facts bindings and reference selecti
   assessReferences(review, [0])
   review.mutate()
   const inspectionIds = inspect(review)
+
   review.record({
     phase: 'visual',
     ...wholeViewJudgments(inspectionIds, [check('Viewpoint'), check('Finish')])
@@ -1415,12 +1501,14 @@ it('preserves accepted review for identical facts bindings and reference selecti
   expect(review.overviewTargets(inspectionIds)).toEqual(['root'])
   expect(review.getIssue()).toBeUndefined()
   const factsBefore = review.record({ phase: 'facts' })
+
   expect(review.selectReferences([0])).toMatchObject({
     review: { requiredCriterionIds: [] }
   })
   expect(review.selectReferences([0])).not.toHaveProperty('review.next')
   const indexes = [2]
   const receipt = assessReferences(review, indexes)
+
   indexes.push(3)
   expect(receipt).toMatchObject({
     changed: true,
@@ -1438,6 +1526,7 @@ it('preserves accepted review for identical facts bindings and reference selecti
     expect(() => review.selectReferences(invalid)).toThrow()
     expect(review.preparationContext().referenceUses).toEqual([])
   }
+
   expect(() =>
     review.record({ phase: 'facts', referenceImageIndexes: [1] })
   ).toThrow('select_design_references')
@@ -1449,6 +1538,7 @@ it('preserves accepted review for identical facts bindings and reference selecti
 
 it('preserves reviewed work when adding an unrelated unbound fact', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.mutate()
   review.record({
@@ -1465,6 +1555,7 @@ it('preserves reviewed work when adding an unrelated unbound fact', () => {
 
 it('returns affected criteria and a fresh review handoff when a bound source changes', () => {
   const review = createLocalDesignReview()
+
   review.record({
     ...plan,
     facts: [sourceFact],
@@ -1491,6 +1582,7 @@ it('returns affected criteria and a fresh review handoff when a bound source cha
       }
     ]
   })
+
   expect(receipt).toMatchObject({
     review: {
       accepted: false,
@@ -1512,6 +1604,7 @@ it('returns affected criteria and a fresh review handoff when a bound source cha
       }
     ]
   })
+
   expect(repaired).toMatchObject({
     review: {
       requiredCriterionIds: ['Viewpoint'],
@@ -1527,6 +1620,7 @@ it('returns affected criteria and a fresh review handoff when a bound source cha
 
 it('invalidates unknown review impact when an existing unbound fact is replaced atomically', () => {
   const review = createLocalDesignReview()
+
   review.record({ ...plan, facts: [sourceFact] })
   review.mutate()
   review.record({
@@ -1560,6 +1654,7 @@ it('invalidates unknown review impact when an existing unbound fact is replaced 
     review.readChecks().items.every((item) => item.status === 'stale')
   ).toBe(true)
   const inspectionIds = inspect(review)
+
   review.record({
     phase: 'visual',
     final: false,
@@ -1582,6 +1677,7 @@ it('invalidates unknown review impact when an existing unbound fact is replaced 
 
 it('corrects derived calculation notes without changing source facts or approved geometry', () => {
   const review = createLocalDesignReview()
+
   review.record({ ...plan, facts: [sourceFact] })
   review.mutate()
   review.record({
@@ -1599,6 +1695,7 @@ it('corrects derived calculation notes without changing source facts or approved
     verification:
       'Calculated from retained source dimensions and the chosen projection.'
   }
+
   review.recordCalculations({ calculations: [calculation] })
   const result = review.recordCalculations({
     calculations: [
@@ -1610,6 +1707,7 @@ it('corrects derived calculation notes without changing source facts or approved
       }
     ]
   })
+
   expect(result.calculations[0]).toMatchObject({
     value: 46040.43558146182,
     status: 'valid'
@@ -1652,6 +1750,7 @@ it('rechecks only affected data criteria after a source correction while retaini
       verification: 'data'
     }
   }
+
   review.record({
     ...plan,
     criteria,
@@ -1666,6 +1765,7 @@ it('rechecks only affected data criteria after a source correction while retaini
   const inspectionIds = [
     requireTestValue(review.inspect('root', true, true)).inspectionId
   ]
+
   review.record({
     phase: 'visual',
     ...wholeViewJudgments(inspectionIds, [check('appearance'), check('scale')])
@@ -1720,6 +1820,7 @@ it('rechecks only affected data criteria after a source correction while retaini
 
 it('rejects a calculation batch atomically when any source is unavailable', () => {
   const review = createLocalDesignReview()
+
   review.record({ phase: 'facts', facts: [sourceFact] })
   const good = {
     id: 'length',
@@ -1728,6 +1829,7 @@ it('rejects a calculation batch atomically when any source is unavailable', () =
     sourceFactIds: [sourceFact.id],
     verification: 'Exact calculation.'
   }
+
   expect(() =>
     review.recordCalculations({
       calculations: [good, { ...good, id: 'other', sourceFactIds: ['missing'] }]
@@ -1745,6 +1847,7 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) {
     throw new Error('Required test fixture is unavailable')
   }
+
   return value
 }
 
@@ -1770,9 +1873,12 @@ describe('reference identity handoff', () => {
       resolveSources: images.resolveSources,
       validateReferences: images.validateReferences
     })
+
     review.record(plan)
+
     return { images, review }
   }
+
   const fact = {
     id: 'facade',
     statement: 'The facade uses glass.',
@@ -1781,8 +1887,10 @@ describe('reference identity handoff', () => {
     sources: ['attachment:0'],
     dependencies: [{ key: 'photo', version: '1' }]
   }
+
   it('rejects nonexistent selected or cited attachments before accepting evidence', () => {
     const { review } = setup()
+
     expect(() => review.selectReferences([2])).toThrow(/reference/i)
     expect(() =>
       review.record({
@@ -1794,6 +1902,7 @@ describe('reference identity handoff', () => {
   })
   it('corrects provenance explicitly without changing fact value or inventing dependency versions', () => {
     const { review, images } = setup()
+
     review.record({ phase: 'facts', facts: [fact] })
     const fixed = review.record({
       phase: 'facts',
@@ -1813,6 +1922,7 @@ describe('reference identity handoff', () => {
         dependencies: unknown
       }[]
     )[0]
+
     expect(retained.sources).toEqual(images.resolveSources(['attachment:1']))
     expect(retained.statement).toBe(fact.statement)
     expect(retained.dependencies).toEqual(fact.dependencies)
@@ -1830,6 +1940,7 @@ describe('reference identity handoff', () => {
 describe('reference applicability and fact evidence', () => {
   const setup = () => {
     const images = createLocalImageTools({ metadata: {} })
+
     for (const bytes of ['YQ==', 'Yg==']) {
       images.addReference({
         dataUrl: `data:image/png;base64,${bytes}`,
@@ -1844,11 +1955,14 @@ describe('reference applicability and fact evidence', () => {
         }
       })
     }
+
     const review = createLocalDesignReview({
       resolveSources: images.resolveSources,
       validateReferences: images.validateReferences
     })
+
     review.record(plan)
+
     const decision = (
       index: number,
       status = 'accepted',
@@ -1864,10 +1978,13 @@ describe('reference applicability and fact evidence', () => {
       ),
       reason: 'Observed applicability to this requirement'
     })
+
     return { review, images, decision }
   }
+
   it('cannot approve pending reference selection or bound facts with rejected image support', () => {
     const { review, decision } = setup()
+
     review.selectReferences([0])
     review.mutate()
     const args = {
@@ -1877,6 +1994,7 @@ describe('reference applicability and fact evidence', () => {
         check('Finish')
       ])
     }
+
     expect(review.record(args)).toMatchObject({ accepted: false })
     review.selectReferences([0], {
       requirementRevision: 1,
@@ -1895,6 +2013,7 @@ describe('reference applicability and fact evidence', () => {
     })
     expect(() => review.record(args)).toThrow(/fact-purpose/)
     const saved = review.record({ phase: 'facts' })
+
     review.selectReferences([0], {
       requirementRevision: 1,
       referenceDecisions: [decision(0)]
@@ -1932,6 +2051,7 @@ describe('reference applicability and fact evidence', () => {
   })
   it('does not invalidate accepted evidence for an unused reference decision change', () => {
     const { review, decision } = setup()
+
     review.selectReferences([0, 1], {
       requirementRevision: 1,
       referenceDecisions: [decision(0), decision(1)]
@@ -1946,6 +2066,7 @@ describe('reference applicability and fact evidence', () => {
       ])
     })
     const before = review.readChecks({ includePassed: true })
+
     expect(
       review.selectReferences([0], {
         requirementRevision: 1,
@@ -1965,6 +2086,7 @@ describe('reference applicability and fact evidence', () => {
       mediaType: 'image/png',
       size: 1
     })
+
     review.selectReferences([0, alias], {
       requirementRevision: 1,
       referenceDecisions: [decision(0)]
@@ -1988,6 +2110,7 @@ describe('reference applicability and fact evidence', () => {
       ...decision(1, 'rejected', []),
       reason: 'Logo is not a building reference'
     }
+
     expect(
       review.selectReferences([0], {
         requirementRevision: 1,
@@ -2009,6 +2132,7 @@ describe('reference applicability and fact evidence', () => {
   })
   it('retains pending and rejected images without supplying them as comparison evidence', () => {
     const { review, images, decision } = setup()
+
     review.selectReferences([0])
     expect(review.preparationContext().referenceUses).toEqual([])
     review.selectReferences([0], {
@@ -2023,6 +2147,7 @@ describe('reference applicability and fact evidence', () => {
   })
   it('replaces a scoped reference without reopening unrelated accepted criteria', () => {
     const { review, decision } = setup()
+
     review.selectReferences([0], {
       requirementRevision: 1,
       referenceDecisions: [
@@ -2031,6 +2156,7 @@ describe('reference applicability and fact evidence', () => {
       ]
     })
     const ids = inspect(review)
+
     expect(
       review.record({
         phase: 'visual',
@@ -2046,6 +2172,7 @@ describe('reference applicability and fact evidence', () => {
     const finish = review
       .readChecks({ includePassed: true })
       .items.find((item) => item.criterionId === 'Finish')
+
     expect(review.selectReferences([1])).toMatchObject({
       review: {
         accepted: false,
@@ -2069,6 +2196,7 @@ describe('reference applicability and fact evidence', () => {
       })
     ).toMatchObject({ accepted: true })
     const accepted = review.readChecks({ includePassed: true })
+
     expect(() =>
       review.selectReferences([1], {
         requirementRevision: 1,
@@ -2081,11 +2209,13 @@ describe('reference applicability and fact evidence', () => {
 
   it('recovers pending and rejected reference replacement without discarding unrelated passes', () => {
     const { review, decision } = setup()
+
     review.selectReferences([0], {
       requirementRevision: 1,
       referenceDecisions: [decision(0, 'restricted', ['Viewpoint'])]
     })
     const ids = inspect(review)
+
     review.record({
       phase: 'visual',
       ...wholeViewJudgments(ids, [
@@ -2099,12 +2229,14 @@ describe('reference applicability and fact evidence', () => {
     const finish = review
       .readChecks({ includePassed: true })
       .items.find((item) => item.criterionId === 'Finish')
+
     const assertFinish = () =>
       expect(
         review
           .readChecks({ includePassed: true })
           .items.find((item) => item.criterionId === 'Finish')
       ).toEqual(finish)
+
     review.selectReferences([1])
     expect(review.isAccepted()).toBe(false)
     assertFinish()
@@ -2115,6 +2247,7 @@ describe('reference applicability and fact evidence', () => {
     expect(review.isAccepted()).toBe(false)
     assertFinish()
     const before = review.preparationContext()
+
     expect(() =>
       review.selectReferences([1], {
         requirementRevision: 1,
@@ -2126,6 +2259,7 @@ describe('reference applicability and fact evidence', () => {
       requirementRevision: 1,
       referenceDecisions: [decision(1, 'restricted', ['Viewpoint'])]
     })
+
     expect(corrected).toMatchObject({
       review: { accepted: false, affectedCriterionIds: [] }
     })
@@ -2151,6 +2285,7 @@ describe('reference applicability and fact evidence', () => {
       mediaType: 'image/png',
       size: 1
     })
+
     review.selectReferences([0], {
       requirementRevision: 1,
       referenceDecisions: [decision(0)]
@@ -2164,6 +2299,7 @@ describe('reference applicability and fact evidence', () => {
     })
     const use = useReceipts(review, 0, 'visual', 'Viewpoint')[0]
     const before = review.readChecks({ includePassed: true })
+
     expect(
       review.selectReferences([alias], {
         requirementRevision: 1,
@@ -2189,6 +2325,7 @@ describe('reference applicability and fact evidence', () => {
         region: { x: 5, y: 10, width: 30, height: 40 }
       }))
     }
+
     review.selectReferences([0], {
       requirementRevision: 1,
       referenceDecisions: [value]
@@ -2198,6 +2335,7 @@ describe('reference applicability and fact evidence', () => {
   })
   it('admits a source for a construction requirement only after an explicit current decision', () => {
     const { review, decision } = setup()
+
     review.selectReferences([0], {
       requirementRevision: 1,
       referenceDecisions: [decision(0, 'rejected', [])]
@@ -2225,6 +2363,7 @@ describe('reference applicability and fact evidence', () => {
   it('rejects an unknown identity or out-of-image region atomically', () => {
     const { review, decision } = setup()
     const before = review.preparationContext()
+
     for (const invalid of [
       { ...decision(0), referenceId: 'reference:unknown' },
       {
@@ -2248,6 +2387,7 @@ describe('reference applicability and fact evidence', () => {
   })
   it('does not let one applicable image bless other rejected citations or verify URL assertions', () => {
     const { review, decision } = setup()
+
     review.selectReferences([0, 1], {
       requirementRevision: 1,
       referenceDecisions: [decision(0), decision(1, 'rejected', [])]
@@ -2263,6 +2403,7 @@ describe('reference applicability and fact evidence', () => {
         { factId: fact.id, criterionId: 'Viewpoint', elementIds: ['tower'] }
       ]
     })
+
     expect(result.facts).toMatchObject([
       {
         status: 'valid',
@@ -2281,6 +2422,7 @@ describe('reference applicability and fact evidence', () => {
   })
   it('expires applicability when requirements change without touching original source assertions', () => {
     const { review, decision } = setup()
+
     review.selectReferences([0], {
       requirementRevision: 1,
       referenceDecisions: [decision(0)]
@@ -2306,6 +2448,7 @@ describe('reference applicability and fact evidence', () => {
 
 it('retains primary-agent passes, pending work and scene invalidation without erasing evidence', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.mutate()
   review.record({
@@ -2350,9 +2493,11 @@ it('retains primary-agent passes, pending work and scene invalidation without er
 
 it('rechecks only unresolved criteria when the scene and passed dependencies are unchanged', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.mutate()
   const inspectionIds = inspect(review)
+
   review.record({
     phase: 'visual',
     ...wholeViewJudgments(inspectionIds, [
@@ -2363,6 +2508,7 @@ it('rechecks only unresolved criteria when the scene and passed dependencies are
   const before = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.id === 'visual:Viewpoint')
+
   expect(
     review.record({
       phase: 'visual',
@@ -2372,11 +2518,13 @@ it('rechecks only unresolved criteria when the scene and passed dependencies are
   const after = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.id === 'visual:Viewpoint')
+
   expect(after).toEqual(before)
 })
 
 it('does not revive stale passes when only another criterion is reviewed after a scene edit', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.mutate()
   review.record({
@@ -2388,6 +2536,7 @@ it('does not revive stale passes when only another criterion is reviewed after a
   })
   review.mutate()
   const inspectionIds = inspect(review)
+
   review.record({
     phase: 'visual',
     final: false,
@@ -2415,6 +2564,7 @@ describe('criterion inspection dependencies', () => {
   const scoped = () => {
     const review = createLocalDesignReview()
     const names = Array.from({ length: 8 }, (_, i) => `tier-${i + 1}`)
+
     review.record({
       ...plan,
       criteria: reviewCriteria(names),
@@ -2429,6 +2579,7 @@ describe('criterion inspection dependencies', () => {
           receiptId: name
         })?.inspectionId
     )
+
     review.record({
       phase: 'visual',
       inspectionIds: ids,
@@ -2437,11 +2588,14 @@ describe('criterion inspection dependencies', () => {
         inspectionIds: [ids[i]]
       }))
     })
+
     return { review, names, ids }
   }
+
   it('reopens only the changed tier while preserving other passed evidence and mixed current capture ages', () => {
     const { review, names, ids } = scoped()
     const prior = review.readChecks({ includePassed: true }).items
+
     review.mutate()
     expect(review.isAccepted()).toBe(false)
     expect(review.readChecks().counts.pass).toBe(8)
@@ -2459,6 +2613,7 @@ describe('criterion inspection dependencies', () => {
       receiptId: 'tier-3-new'
     })?.inspectionId
     const current = ids.map((id, i) => (i === 2 ? fresh : id))
+
     expect(review.evidenceFor(current)).toBeDefined()
     expect(
       review.record({
@@ -2471,6 +2626,7 @@ describe('criterion inspection dependencies', () => {
   })
   it('rejects criterion dependencies not delivered in this review and retains explicitly shared image dependencies', () => {
     const { review, ids } = scoped()
+
     expect(() =>
       review.record({
         phase: 'visual',
@@ -2496,6 +2652,7 @@ describe('criterion inspection dependencies', () => {
 
 it('retains eight regional units under one criterion and repairs only the invalid unit', () => {
   const review = createLocalDesignReview()
+
   review.record({
     ...plan,
     criteria: {
@@ -2519,22 +2676,26 @@ it('retains eight regional units under one criterion and repairs only the invali
         receiptId: `tier-${index}`
       })?.inspectionId as string
   )
+
   const unit = (index: number, image = images[index]) => ({
     ...check('Finish'),
     unitId: `tier-${index}`,
     inspectionIds: [image]
   })
+
   const stage = {
     phase: 'visual',
     final: false,
     inspectionIds: images,
     checks: images.map((_, index) => unit(index))
   }
+
   expect(
     operationInputIssue(schemaReviewInput(stage), designEvidenceSchema)
   ).toBeUndefined()
   expect(review.record(stage)).toMatchObject({ accepted: false })
   const before = review.readChecks({ includePassed: true })
+
   expect(before.counts).toEqual({ pass: 8, fail: 0, stale: 1, unverified: 0 })
   review.invalidateInspections([images[2]], 'Third tier changed')
   expect(review.readChecks().counts).toEqual({
@@ -2548,6 +2709,7 @@ it('retains eight regional units under one criterion and repairs only the invali
     revision: 9,
     receiptId: 'overview'
   })?.inspectionId as string
+
   expect(
     review.record({
       phase: 'visual',
@@ -2565,13 +2727,16 @@ it('retains eight regional units under one criterion and repairs only the invali
     inspectionIds: [repaired],
     checks: [unit(2, repaired)]
   }
+
   review.record(repair)
   const after = review.readChecks({ includePassed: true })
+
   for (const index of [0, 1, 3, 4, 5, 6, 7]) {
     expect(after.items.find((item) => item.unitId === `tier-${index}`)).toEqual(
       before.items.find((item) => item.unitId === `tier-${index}`)
     )
   }
+
   review.record(repair)
   expect(review.readChecks({ includePassed: true })).toEqual(after)
   expect(
@@ -2581,8 +2746,10 @@ it('retains eight regional units under one criterion and repairs only the invali
     })
   ).toMatchObject({ accepted: true })
   const beforeCoverageFailure = review.readChecks({ includePassed: true })
+
   review.invalidateWholeView('A new drawing root is outside the overview')
   const afterCoverageFailure = review.readChecks({ includePassed: true })
+
   expect(afterCoverageFailure.counts).toEqual({
     pass: 8,
     stale: 1,
@@ -2604,6 +2771,7 @@ it('retains eight regional units under one criterion and repairs only the invali
     revision: 10,
     receiptId: 'same-scope-again'
   })?.inspectionId as string
+
   expect(() =>
     review.record({
       ...repair,
@@ -2625,6 +2793,7 @@ it('retains eight regional units under one criterion and repairs only the invali
   expect(() => review.record(repair)).not.toThrow()
   const foreign = review.inspect('other-tier', true, false, crop)
     ?.inspectionId as string
+
   expect(() =>
     review.record({
       ...repair,
@@ -2635,10 +2804,13 @@ it('retains eight regional units under one criterion and repairs only the invali
   const current = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.unitId === 'tier-2')
+
   if (!current) {
     throw new Error('Expected retained third-tier result')
   }
+
   const handoff = review.judgmentHandoff([foreign], 'visual')
+
   expect(handoff.next).toMatchObject({
     requiredInputs: ['bindChecks'],
     arguments: { phase: 'visual', inspectionIds: [foreign] }
@@ -2672,6 +2844,7 @@ it('retains eight regional units under one criterion and repairs only the invali
       }
     ]
   }
+
   expect(
     operationInputIssue(schemaReviewInput(replacement), designEvidenceSchema)
   ).toBeUndefined()
@@ -2679,9 +2852,11 @@ it('retains eight regional units under one criterion and repairs only the invali
   const updated = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.unitId === 'tier-2')
+
   if (!updated) {
     throw new Error('Expected replacement third-tier result')
   }
+
   expect(updated).toMatchObject({
     status: 'unverified',
     revision: current.revision + 1,
@@ -2727,6 +2902,7 @@ it('replays unchanged criteria with the retained source-fact acknowledgement', (
   const review = createLocalDesignReview()
   const declaration = { ...plan, facts: [sourceFact] }
   const first = review.record(declaration)
+
   review.mutate()
   expect(review.record(declaration)).toEqual(first)
 })
@@ -2745,6 +2921,7 @@ describe('declared regional acceptance', () => {
     structureCriteria: [],
     detailRequired: false
   }
+
   it('keeps regional declarations and sparse judgments aligned in canonical and native contracts', () => {
     const declaration = requireTestValue(
       designEvidenceDefinitions.find(
@@ -2754,6 +2931,7 @@ describe('declared regional acceptance', () => {
     const inspection = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
+
     expect(declaration.revision).toBe(5)
     expect(inspection.revision).toBe(16)
     const local = {
@@ -2769,11 +2947,13 @@ describe('declared regional acceptance', () => {
         }
       ]
     }
+
     for (const [definition, input] of [
       [declaration, specification],
       [inspection, local]
     ] as const) {
       const schema = nativeToolInputSchema(definition.inputSchema)
+
       expect(
         operationInputIssue(schemaReviewInput(input), definition.inputSchema)
       ).toBeUndefined()
@@ -2781,6 +2961,7 @@ describe('declared regional acceptance', () => {
         operationInputIssue(schemaReviewInput(input), schema)
       ).toBeUndefined()
     }
+
     const duplicate = {
       ...specification,
       criteria: {
@@ -2791,6 +2972,7 @@ describe('declared regional acceptance', () => {
         }
       }
     }
+
     expect(
       operationInputIssue(schemaReviewInput(duplicate), declaration.inputSchema)
     ).toBeDefined()
@@ -2807,8 +2989,10 @@ describe('declared regional acceptance', () => {
 
   const setup = () => {
     const review = createLocalDesignReview()
+
     review.record(specification)
     review.mutate()
+
     const capture = (id: string, revision = 1, overview = false) =>
       requireTestValue(
         review.inspect(
@@ -2820,6 +3004,7 @@ describe('declared regional acceptance', () => {
           { sessionId: 'regional', revision, receiptId: `${id}:${revision}` }
         )
       ).inspectionId
+
     const submit = (unitId: string, inspectionIds: string[], final = false) =>
       review.record({
         phase: 'visual',
@@ -2835,11 +3020,13 @@ describe('declared regional acceptance', () => {
           }
         ]
       })
+
     const overall = (id: string) =>
       review.record({
         phase: 'visual',
         ...wholeViewJudgments([id], [check('Overview')])
       })
+
     return { review, capture, submit, overall }
   }
 
@@ -2849,10 +3036,13 @@ describe('declared regional acceptance', () => {
     ).toBeUndefined()
     const { review, capture, submit, overall } = setup()
     const images = units.map((id) => capture(id))
+
     for (let i = 0; i < 7; i++) {
       submit(units[i], [images[i]])
     }
+
     const incomplete = submit('alignment', [images[2], images[3]], true)
+
     expect(incomplete).toMatchObject({
       accepted: false,
       coverage: {
@@ -2870,8 +3060,10 @@ describe('declared regional acceptance', () => {
     })
     expect(submit('tier-7', [images[7]], true).accepted).toBe(false)
     const whole = capture('building', 1, true)
+
     expect(overall(whole).accepted).toBe(true)
     const before = review.readChecks({ includePassed: true }).items
+
     review.mutate()
     review.invalidateInspections(
       [images[2], whole],
@@ -2879,6 +3071,7 @@ describe('declared regional acceptance', () => {
     )
     const replacement = capture(units[2], 2)
     const partial = submit(units[2], [replacement], true)
+
     expect(partial).toMatchObject({
       accepted: false,
       coverage: {
@@ -2898,11 +3091,13 @@ describe('declared regional acceptance', () => {
     )
     expect(overall(capture('building', 2, true)).accepted).toBe(true)
     const after = review.readChecks({ includePassed: true }).items
+
     for (const unitId of units.filter((id) => id !== units[2])) {
       expect(after.find((item) => item.unitId === unitId)).toEqual(
         before.find((item) => item.unitId === unitId)
       )
     }
+
     expect(review.evidenceEntries().map((entry) => entry.id)).not.toContain(
       whole
     )
@@ -2933,11 +3128,14 @@ describe('declared regional acceptance', () => {
   it('cannot use a regional judgment overview to approve a whole criterion judged only from a crop', () => {
     const { capture, submit, overall } = setup()
     const whole = capture('building', 1, true)
+
     for (const unit of [...units, 'alignment']) {
       submit(unit, [whole])
     }
+
     const crop = capture('small-detail')
     const result = overall(crop)
+
     expect(result.accepted).toBe(false)
     expect(result.coverage.pending).toEqual(
       expect.arrayContaining([
@@ -2973,8 +3171,10 @@ describe('declared regional acceptance', () => {
         }
       }
     ]
+
     for (const value of invalid) {
       const review = createLocalDesignReview()
+
       expect(() => review.record(value)).toThrow()
       expect(review.readChecks({ includePassed: true }).items).toEqual([])
     }
@@ -2982,6 +3182,7 @@ describe('declared regional acceptance', () => {
 
   it('replaces only unjudged pre-drawing obligations without retaining phantom pending results', () => {
     const review = createLocalDesignReview()
+
     review.record(specification)
     review.record({
       ...plan,
@@ -3000,16 +3201,20 @@ describe('declared regional acceptance', () => {
 
   it('allows the first declaration after drawing and cannot reset existing judgments', () => {
     const review = createLocalDesignReview()
+
     review.mutate()
     review.record(specification)
     const before = review.readChecks({ includePassed: true })
+
     review.record(specification)
     expect(review.readChecks({ includePassed: true })).toEqual(before)
     const first = createLocalDesignReview()
+
     first.record(specification)
     const id = requireTestValue(
       first.inspect('tier', true, false, undefined, true)
     ).inspectionId
+
     first.record({
       phase: 'visual',
       final: false,
@@ -3023,6 +3228,7 @@ describe('declared regional acceptance', () => {
       ]
     })
     const after = first.readChecks({ includePassed: true })
+
     first.record(specification)
     expect(first.readChecks({ includePassed: true })).toEqual(after)
     expect(() =>
@@ -3041,16 +3247,19 @@ describe('declared regional acceptance', () => {
 
   it('locks declarations after structure judgments before changing reference requirements', () => {
     const review = createLocalDesignReview()
+
     review.record(plan)
     const id = requireTestValue(
       review.inspect('building', true, true)
     ).inspectionId
+
     review.record({
       phase: 'structure',
       ...wholeViewJudgments([id], [check('Viewpoint')])
     })
     const before = review.readChecks({ includePassed: true })
     const context = review.preparationContext()
+
     expect(() =>
       review.record({
         ...plan,
@@ -3065,8 +3274,10 @@ describe('declared regional acceptance', () => {
   it('records valid local work without detail but rejects a malformed submission atomically', () => {
     const { review, capture, submit } = setup()
     const id = capture('tier-0')
+
     submit('tier-0', [id], true)
     const before = review.readChecks({ includePassed: true })
+
     expect(() =>
       review.record({
         phase: 'visual',
@@ -3080,6 +3291,7 @@ describe('declared regional acceptance', () => {
     ).toThrow(/declared/)
     expect(review.readChecks({ includePassed: true })).toEqual(before)
     const detailed = createLocalDesignReview()
+
     detailed.record({ ...plan, structureCriteria: [] })
     detailed.mutate()
     const overview = requireTestValue(
@@ -3089,6 +3301,7 @@ describe('declared regional acceptance', () => {
       phase: 'visual',
       ...wholeViewJudgments([overview], [check('Finish')])
     })
+
     expect(result.accepted).toBe(false)
     expect(detailed.readChecks({ includePassed: true }).items).toEqual(
       expect.arrayContaining([
@@ -3100,6 +3313,7 @@ describe('declared regional acceptance', () => {
 
 it('accumulates deferred decisions before completion and reopens only changed dependencies', () => {
   const r = createLocalDesignReview()
+
   r.record({
     ...plan,
     detailRequired: false,
@@ -3116,6 +3330,7 @@ it('accumulates deferred decisions before completion and reopens only changed de
       { id: 'roof', description: 'Roof railing', reason: 'Check visibility' }
     ]
   })
+
   const capture = (target: string, revision = 1) =>
     requireTestValue(
       r.inspect(target, true, target === 'root', undefined, target !== 'root', {
@@ -3124,9 +3339,11 @@ it('accumulates deferred decisions before completion and reopens only changed de
         receiptId: `${target}:${revision}`
       })
     ).inspectionId
+
   const rear = capture('rear')
   const roof = capture('roof')
   const root = capture('root')
+
   const submit = (id: string, criterionId: string, extra = {}) =>
     r.record({
       phase: 'visual',
@@ -3142,6 +3359,7 @@ it('accumulates deferred decisions before completion and reopens only changed de
       ],
       ...extra
     })
+
   expect(
     submit(rear, 'Finish', {
       final: false,
@@ -3163,12 +3381,14 @@ it('accumulates deferred decisions before completion and reopens only changed de
     pendingDetails: []
   })
   const before = r.readChecks({ includePassed: true }).items
+
   r.mutate()
   r.invalidateInspections(
     [rear, root],
     'Only the rear and overall image changed'
   )
   const newRoot = capture('root', 2)
+
   expect(submit(newRoot, 'Viewpoint')).toMatchObject({
     accepted: false,
     pendingDetails: ['rear']
@@ -3194,6 +3414,7 @@ it('accumulates deferred decisions before completion and reopens only changed de
 it('never reports accepted with unresolved mechanical evidence and preserves visual work for recovery', () => {
   const results = createDesignCheckResults()
   const r = createLocalDesignReview({ results })
+
   r.record({ ...plan, detailRequired: false, structureCriteria: [] })
   const id = requireTestValue(r.inspect('root', true, true)).inspectionId
   const mechanical = {
@@ -3203,16 +3424,19 @@ it('never reports accepted with unresolved mechanical evidence and preserves vis
     evidence: 'Overlapping windows',
     dependencies: { target: '1' }
   }
+
   results.record(mechanical)
   const review = {
     phase: 'visual',
     ...wholeViewJudgments([id], [check('Viewpoint'), check('Finish')])
   }
+
   expect(r.record(review)).toMatchObject({ accepted: false })
   expect(r.isAccepted()).toBe(false)
   const before = results
     .read({ includePassed: true })
     .items.filter((item) => item.origin === 'main-agent')
+
   results.record({ ...mechanical, status: 'pass', evidence: 'No overlap' })
   expect(r.isAccepted()).toBe(true)
   expect(
@@ -3227,6 +3451,7 @@ it('never reports accepted with unresolved mechanical evidence and preserves vis
 
 it('reopens changed deferred definitions without dropping other decisions or publishing invalid candidates', () => {
   const r = createLocalDesignReview()
+
   r.record({
     ...plan,
     detailRequired: false,
@@ -3251,10 +3476,12 @@ it('reopens changed deferred definitions without dropping other decisions or pub
     status: 'omit',
     evidence: 'Current view excludes rear'
   }
+
   expect(r.record({ ...review, deferredChecks: [decision] }).accepted).toBe(
     true
   )
   const before = r.readChecks({ includePassed: true })
+
   r.record({ ...review, deferredChecks: [decision] })
   expect(r.readChecks({ includePassed: true })).toEqual(before)
   expect(() =>
@@ -3269,6 +3496,7 @@ it('reopens changed deferred definitions without dropping other decisions or pub
     description: 'Rear windows and ledge',
     reason: 'Also check the ledge'
   }
+
   expect(
     r.validateReview({ ...review, deferredDetails: [changed] })
   ).toMatchObject({ readyForCompletion: false })
@@ -3295,6 +3523,7 @@ it('reopens changed deferred definitions without dropping other decisions or pub
   const restored = r
     .readChecks({ includePassed: true })
     .items.find((item) => item.id === 'deferred:rear')
+
   r.record({ ...review, deferredChecks: [decision] })
   expect(
     r
@@ -3308,6 +3537,7 @@ it('reopens changed deferred definitions without dropping other decisions or pub
 
 it('replays the saved Taipei101 base judgment without inheriting the whole-building dependency', () => {
   const review = createLocalDesignReview()
+
   review.record({
     ...recordedReview.plan,
     criteria: {
@@ -3317,6 +3547,7 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
     }
   })
   const ids = new Map<string, string>()
+
   recordedReview.images.forEach((image, index) => {
     const capture = recordedReview.capture.inspections[index]
     const result = review.inspect(
@@ -3327,9 +3558,11 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
       capture.view === 'detail',
       image.evidence
     )
+
     if (!result) {
       throw new Error('Missing replay image')
     }
+
     ids.set(image.inspectionId, result.inspectionId)
   })
   const input = {
@@ -3345,6 +3578,7 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
     }))
   }
   const original = review.readChecks({ includePassed: true })
+
   expect(() => review.record(input, { validateOnly: true })).not.toThrow()
   expect(review.readChecks({ includePassed: true })).toEqual(original)
   const overview = input.inspectionIds[0]
@@ -3359,12 +3593,16 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
         : check
     )
   }
+
   review.record(local)
+
   const base = () =>
     review
       .readChecks({ includePassed: true })
       .items.find((item) => item.unitId === 'base')
+
   const passedBase = base()
+
   expect(passedBase?.status).toBe('pass')
   review.invalidateInspections(
     [overview, input.inspectionIds[1]],
@@ -3382,9 +3620,11 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
 
 it('preserves pending judgment evidence across partial correction and structure recovery', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.mutate()
   const inspectionIds = inspect(review)
+
   review.record({
     phase: 'visual',
     ...wholeViewJudgments(inspectionIds, [
@@ -3397,12 +3637,14 @@ it('preserves pending judgment evidence across partial correction and structure 
     final: false,
     ...wholeViewJudgments(inspectionIds, [check('Finish')])
   })
+
   expect(partial.correction).toMatchObject({
     checks: [{ criterionId: 'Viewpoint', evidence: 'Observed Viewpoint fail' }]
   })
   const finish = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.id === 'visual:Finish')
+
   review.record({
     phase: 'structure',
     ...wholeViewJudgments(inspectionIds, [check('Viewpoint')])
@@ -3424,9 +3666,11 @@ it('preserves pending judgment evidence across partial correction and structure 
 
 it('revokes final acceptance on a later structure failure and recovers without losing unrelated passes', () => {
   const review = createLocalDesignReview()
+
   review.record(plan)
   review.mutate()
   const inspectionIds = inspect(review)
+
   review.record({
     phase: 'visual',
     ...wholeViewJudgments(inspectionIds, [check('Viewpoint'), check('Finish')])
@@ -3437,6 +3681,7 @@ it('revokes final acceptance on a later structure failure and recovers without l
     phase: 'structure',
     ...wholeViewJudgments(inspectionIds, [check('Viewpoint', 'fail')])
   }
+
   review.validateReview(failure)
   expect(review.readChecks({ includePassed: true })).toEqual(before)
   expect(review.isAccepted()).toBe(true)
@@ -3448,6 +3693,7 @@ it('revokes final acceptance on a later structure failure and recovers without l
     checks: [{ criterionId: 'Viewpoint', evidence: 'Observed Viewpoint fail' }]
   })
   const failed = review.readChecks({ includePassed: true })
+
   expect(() =>
     review.record({ ...failure, checks: [check('Unknown')] })
   ).toThrow()
@@ -3475,8 +3721,10 @@ it.each(['structure', 'visual'])(
   'preserves a failed %s judgment of existing content without a preceding edit',
   (phase) => {
     const review = createLocalDesignReview()
+
     review.record(plan)
     const inspectionIds = inspect(review)
+
     expect(review.getIssue()).toBeUndefined()
     const failure = {
       phase,
@@ -3487,6 +3735,7 @@ it.each(['structure', 'visual'])(
           : [check('Viewpoint', 'fail'), check('Finish')]
       )
     }
+
     review.validateReview(failure)
     expect(review.getIssue()).toBeUndefined()
     review.record(failure)
@@ -3508,6 +3757,7 @@ it.each(['structure', 'visual'])(
 describe('recorded 101 scope admission', () => {
   it('rejects the original omitted-scope plan atomically before retaining criteria', () => {
     const review = createLocalDesignReview()
+
     expect(() => review.record(recordedScope.plan)).toThrow(/requiredUnits/)
     expect(review.readChecks({ includePassed: true }).items).toEqual([])
     expect(
@@ -3519,6 +3769,7 @@ describe('recorded 101 scope admission', () => {
   })
   it('rejects inherited image scope without replacing current checks', () => {
     const review = createLocalDesignReview()
+
     review.record({
       phase: 'plan',
       method: 'Explicit scope',
@@ -3537,6 +3788,7 @@ describe('recorded 101 scope admission', () => {
       review.inspect('building', true, true)
     ).inspectionId
     const before = review.readChecks({ includePassed: true })
+
     expect(() =>
       review.record({
         phase: 'visual',
@@ -3551,11 +3803,13 @@ describe('recorded 101 scope admission', () => {
 
 it('rejects undeclared units instead of silently adding obligations to a whole-view criterion', () => {
   const review = createLocalDesignReview()
+
   review.record(reviewPlanExample)
   const image = requireTestValue(
     review.inspect('building', true, true)
   ).inspectionId
   const before = review.readChecks({ includePassed: true })
+
   expect(() =>
     review.record({
       phase: 'visual',
@@ -3578,10 +3832,12 @@ it.each(['pass', 'fail', 'unverified'] as const)(
   'does not inherit unused retired images during sparse %s judgment recovery',
   (status) => {
     const review = createLocalDesignReview()
+
     review.record(reviewPlanExample)
     const retired = requireTestValue(
       review.inspect('old', true, true)
     ).inspectionId
+
     review.invalidateInspections([retired], 'The old target changed')
     const current = requireTestValue(
       review.inspect('current', true, true)
@@ -3598,8 +3854,10 @@ it.each(['pass', 'fail', 'unverified'] as const)(
         }
       ]
     })
+
     expect(result).toMatchObject({ accepted: status === 'pass' })
     const retained = review.readChecks({ includePassed: true })
+
     expect(() =>
       review.record({
         phase: 'visual',
@@ -3620,6 +3878,7 @@ it.each(['pass', 'fail', 'unverified'] as const)(
 
 it('keeps deferred-detail image dependencies when filtering the judgment menu', () => {
   const review = createLocalDesignReview()
+
   review.record({
     ...reviewPlanExample,
     deferredDetails: [
@@ -3633,11 +3892,13 @@ it('keeps deferred-detail image dependencies when filtering the judgment menu', 
   const retired = requireTestValue(
     review.inspect('old', true, true)
   ).inspectionId
+
   review.invalidateInspections([retired], 'The deferred evidence changed')
   const current = requireTestValue(
     review.inspect('current', true, true)
   ).inspectionId
   const before = review.readChecks({ includePassed: true })
+
   expect(() =>
     review.record({
       phase: 'visual',
@@ -3664,6 +3925,7 @@ it('keeps deferred-detail image dependencies when filtering the judgment menu', 
 
 it('replays recorded crown rejection and explicit local redesign from the delivered binding guide', () => {
   const review = createLocalDesignReview()
+
   // This replay isolates image binding; reference acquisition and facts are separate owners.
   review.record({
     ...recordedBindings.plan,
@@ -3671,11 +3933,13 @@ it('replays recorded crown rejection and explicit local redesign from the delive
     facts: []
   })
   const ids = new Map<string, string>()
+
   const capture = (index: number) => {
     const call = recordedBindings.calls[index]
     const input = call.input as {
       inspections: { elementId: string; view?: string; region?: unknown }[]
     }
+
     input.inspections.forEach((target, offset) => {
       const image = review.inspect(
         target.elementId,
@@ -3689,12 +3953,15 @@ it('replays recorded crown rejection and explicit local redesign from the delive
           receiptId: `${index}:${offset}`
         }
       )
+
       if (!image) {
         throw new Error('Expected delivered image')
       }
+
       ids.set(call.inspectionIds[offset], image.inspectionId)
     })
   }
+
   const judgment = (index: number) => {
     const input = structuredClone(recordedBindings.calls[index].input) as {
       inspectionIds: string[]
@@ -3705,6 +3972,7 @@ it('replays recorded crown rejection and explicit local redesign from the delive
         supersedes?: { revision: number; reason: string }
       }[]
     }
+
     input.inspectionIds = input.inspectionIds.map((id) =>
       requireTestValue(ids.get(id))
     )
@@ -3713,12 +3981,15 @@ it('replays recorded crown rejection and explicit local redesign from the delive
         requireTestValue(ids.get(id))
       )
     })
+
     return input
   }
+
   capture(0)
   review.record(judgment(1))
   capture(2)
   const before = review.readChecks({ includePassed: true })
+
   expect(() => review.record(judgment(3))).toThrow(/scope changed/)
   expect(() => review.record(judgment(4))).toThrow(/current result revision/)
   expect(review.readChecks({ includePassed: true })).toEqual(before)
@@ -3728,17 +3999,21 @@ it('replays recorded crown rejection and explicit local redesign from the delive
     ),
     'visual'
   )
+
   expect(handoff.next?.requiredInputs).toEqual(['bindChecks'])
   const corrected = judgment(5)
+
   for (const check of corrected.checks) {
     if (check.supersedes) {
       const prior = before.items.find(
         (item) =>
           item.criterionId === check.criterionId && item.unitId === check.unitId
       )
+
       check.supersedes.revision = requireTestValue(prior).revision
     }
   }
+
   review.record(corrected)
   expect(review.readChecks({ includePassed: true }).items).toContainEqual(
     expect.objectContaining({
@@ -3748,6 +4023,7 @@ it('replays recorded crown rejection and explicit local redesign from the delive
     })
   )
   const camera = before.items.find((item) => item.criterionId === 'camera')
+
   expect(review.readChecks({ includePassed: true }).items).toContainEqual(
     camera
   )
@@ -3756,6 +4032,7 @@ it('replays recorded crown rejection and explicit local redesign from the delive
 describe('explicit review binding handoff', () => {
   const setup = () => {
     const review = createLocalDesignReview()
+
     review.record({ ...plan, structureCriteria: [], detailRequired: false })
     const image = requireTestValue(
       review.inspect('root', true, true, undefined, false, {
@@ -3764,14 +4041,17 @@ describe('explicit review binding handoff', () => {
         receiptId: 'current-root'
       })
     ).inspectionId
+
     return { review, image }
   }
+
   it('binds exact delivered evidence before primary verdict and retains independent passes', () => {
     const { review, image } = setup()
     const bound = review.bindReview('visual', [
       { criterionId: 'Viewpoint', inspectionIds: [image] },
       { criterionId: 'Finish', inspectionIds: [image] }
     ])
+
     expect(bound.checks[0].binding).toMatchObject({
       requirementRevision: 1,
       checkRevision: 1
@@ -3790,6 +4070,7 @@ describe('explicit review binding handoff', () => {
       }))
     }
     const receipt = review.recordBoundReview({ ...submit, final: false })
+
     expect(receipt).toMatchObject({
       reviewOperation: 'record',
       accepted: false,
@@ -3815,11 +4096,13 @@ describe('explicit review binding handoff', () => {
     )
     review.recordBoundReview(submit)
     const before = review.readChecks({ includePassed: true })
+
     review.recordBoundReview(submit)
     expect(review.readChecks({ includePassed: true })).toEqual(before)
     const fresh = review.bindReview('visual', [
       { criterionId: 'Finish', inspectionIds: [image] }
     ])
+
     review.recordBoundReview({
       ...fresh,
       checks: fresh.checks.map((item) => ({
@@ -3849,6 +4132,7 @@ describe('explicit review binding handoff', () => {
         evidence: 'Observed.'
       }))
     }
+
     expect(() => setup().review.recordBoundReview(submit)).toThrow(/binding/)
     expect(() =>
       review.recordBoundReview({
@@ -3868,6 +4152,7 @@ describe('explicit review binding handoff', () => {
 
 it('admits recorded multiscale input without changing unrelated passes before local recovery', () => {
   const review = createLocalDesignReview()
+
   review.record({
     ...plan,
     structureCriteria: [],
@@ -3883,6 +4168,7 @@ it('admits recorded multiscale input without changing unrelated passes before lo
     }
   })
   const ids = new Map<string, string>()
+
   exactReviewBinding.captures.forEach((target, index) => {
     const image = requireTestValue(
       review.inspect(
@@ -3898,11 +4184,13 @@ it('admits recorded multiscale input without changing unrelated passes before lo
         }
       )
     )
+
     ids.set(
       exactReviewBinding.rejected.inspectionIds[index],
       image.inspectionId
     )
   })
+
   const select = (input: typeof exactReviewBinding.rejected) =>
     input.checks.map(({ status: _status, evidence: _evidence, ...check }) => ({
       ...check,
@@ -3910,9 +4198,11 @@ it('admits recorded multiscale input without changing unrelated passes before lo
         requireTestValue(ids.get(id))
       )
     }))
+
   const prior = review.bindReview('visual', [
     select(exactReviewBinding.corrected)[0]
   ])
+
   review.recordBoundReview({
     ...prior,
     checks: prior.checks.map((check) => ({
@@ -3922,6 +4212,7 @@ it('admits recorded multiscale input without changing unrelated passes before lo
     }))
   })
   const before = review.readChecks({ includePassed: true })
+
   expect(() =>
     review.bindReview('visual', select(exactReviewBinding.rejected))
   ).not.toThrow()
@@ -3930,6 +4221,7 @@ it('admits recorded multiscale input without changing unrelated passes before lo
     'visual',
     select(exactReviewBinding.corrected).slice(1)
   )
+
   review.recordBoundReview({
     ...corrected,
     checks: corrected.checks.map((check, index) => ({
@@ -3942,6 +4234,7 @@ it('admits recorded multiscale input without changing unrelated passes before lo
   const crown = requireTestValue(
     corrected.checks.find((check) => check.unitId === 'crown')
   )
+
   review.invalidateInspections(
     crown.inspectionIds,
     'Only the crown dependency changed'
@@ -3967,6 +4260,7 @@ it('admits recorded multiscale input without changing unrelated passes before lo
       inspectionIds: [image.inspectionId]
     }
   ])
+
   review.recordBoundReview({
     ...fresh,
     checks: fresh.checks.map((check) => ({
@@ -3985,10 +4279,12 @@ it('admits recorded multiscale input without changing unrelated passes before lo
 it('routes a mechanical blocker without demanding a new accepted visual judgment', () => {
   const results = createDesignCheckResults()
   const review = createLocalDesignReview({ results })
+
   review.record({ ...plan, detailRequired: false })
   const image = requireTestValue(
     review.inspect('root', true, true)
   ).inspectionId
+
   review.record({
     phase: 'visual',
     ...wholeViewJudgments([image], [check('Viewpoint'), check('Finish')])
@@ -4002,6 +4298,7 @@ it('routes a mechanical blocker without demanding a new accepted visual judgment
     dependencies: {}
   })
   const handoff = review.selectReferences([]).review
+
   expect(handoff).toMatchObject({
     accepted: false,
     requiresFreshReview: false,
@@ -4027,6 +4324,7 @@ it('routes a mechanical blocker without demanding a new accepted visual judgment
 
 it('delivers individual correction scopes across sparse reviews without inferring edit targets', () => {
   const review = createLocalDesignReview()
+
   review.record({
     ...plan,
     structureCriteria: [],
@@ -4039,13 +4337,17 @@ it('delivers individual correction scopes across sparse reviews without inferrin
       }
     }
   })
+
   const capture = (elementId: string, overview: boolean, region?: object) => {
     const image = review.inspect(elementId, true, overview, region)
+
     if (!image) {
       throw new Error('Missing image')
     }
+
     return image.inspectionId
   }
+
   const left = capture('assembly', false, { x: 0, y: 0, width: 20, height: 30 })
   const right = capture('assembly', false, {
     x: 20,
@@ -4054,6 +4356,7 @@ it('delivers individual correction scopes across sparse reviews without inferrin
     height: 30
   })
   const base = capture('base', false)
+
   const submit = (
     unitId: string,
     image: string,
@@ -4063,15 +4366,18 @@ it('delivers individual correction scopes across sparse reviews without inferrin
     const args = review.bindReview('visual', [
       { criterionId: 'Surface', unitId, inspectionIds: [image] }
     ])
+
     return review.recordBoundReview({
       ...args,
       checks: args.checks.map((check) => ({ ...check, status, evidence }))
     })
   }
+
   submit('left', left, 'fail', 'Left highlight is discontinuous')
   submit('right', right, 'unverified', 'Right reflection needs a closer view')
   const result = submit('base', base, 'pass', 'Base material agrees')
   const correction = result.correction
+
   expect(correction).not.toHaveProperty('criteria')
   expect(correction).toMatchObject({
     diagnosticOnly: true,
@@ -4124,6 +4430,7 @@ it('delivers individual correction scopes across sparse reviews without inferrin
     .readChecks({ includePassed: true })
     .items.find((item) => item.unitId === 'base')
   const unchanged = review.readChecks({ includePassed: true })
+
   expect(review.correctionContext()).toEqual(correction)
   expect(review.readChecks({ includePassed: true })).toEqual(unchanged)
   review.invalidateInspections([left], 'The left surface was edited')
@@ -4146,6 +4453,7 @@ it('delivers individual correction scopes across sparse reviews without inferrin
     width: 20,
     height: 30
   })
+
   submit('left', replacement, 'pass', 'Corrected highlight agrees')
   expect(
     review
@@ -4161,6 +4469,7 @@ it('delivers individual correction scopes across sparse reviews without inferrin
 
 it('replays the saved failed material judgment with complete correction evidence and no extra read', () => {
   const review = createLocalDesignReview()
+
   review.record(correctionFixture.plan)
   review.mutate()
   const observed = correctionFixture.judgment.checks[0]
@@ -4169,9 +4478,11 @@ it('replays the saved failed material judgment with complete correction evidence
     true,
     true
   )
+
   if (!image) {
     throw new Error('Missing current image')
   }
+
   const bound = review.bindReview('visual', [
     { criterionId: observed.criterionId, inspectionIds: [image.inspectionId] }
   ])
@@ -4183,8 +4494,10 @@ it('replays the saved failed material judgment with complete correction evidence
       evidence: observed.evidence
     }))
   })
+
   expect(result.accepted).toBe(false)
   const correction = result.correction
+
   expect(
     correction.checks.find(
       (check) => check.criterionId === observed.criterionId
@@ -4209,6 +4522,7 @@ it('replays the saved failed material judgment with complete correction evidence
     JSON.stringify({ view: 'details' }) +
     JSON.stringify(review.deliverChecks({ view: 'details' }))
   const currentExchange = JSON.stringify(result)
+
   expect(Buffer.byteLength(currentExchange)).toBeLessThan(
     Buffer.byteLength(priorExchange)
   )
@@ -4221,6 +4535,7 @@ it('replays the saved failed material judgment with complete correction evidence
 
 it('keeps fact targets on the exact correction unit and shares only explicitly cited image metadata', () => {
   const review = createLocalDesignReview()
+
   review.record({
     ...plan,
     structureCriteria: [],
@@ -4243,9 +4558,11 @@ it('keeps fact targets on the exact correction unit and shares only explicitly c
     ]
   })
   const image = review.inspect('assembly', true, true)
+
   if (!image) {
     throw new Error('Missing image')
   }
+
   const bound = review.bindReview(
     'visual',
     ['a', 'b'].map((unitId) => ({
@@ -4254,6 +4571,7 @@ it('keeps fact targets on the exact correction unit and shares only explicitly c
       inspectionIds: [image.inspectionId]
     }))
   )
+
   review.recordBoundReview({
     ...bound,
     checks: bound.checks.map((check) => ({
@@ -4275,6 +4593,7 @@ it('keeps fact targets on the exact correction unit and shares only explicitly c
     inspections: [{ inspectionId: image.inspectionId, elementId: 'assembly' }]
   })
   const before = review.readChecks({ includePassed: true })
+
   expect(() =>
     review.recordBoundReview({
       ...bound,

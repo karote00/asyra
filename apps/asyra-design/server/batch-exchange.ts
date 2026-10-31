@@ -40,6 +40,7 @@ export const requireBatchSuccess = (
       receipt
     )
   }
+
   return receipt
 }
 
@@ -50,9 +51,12 @@ const admitFailure = (
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false
   }
+
   const failure = value as Record<string, unknown>
+
   const duration = (value: unknown) =>
     typeof value === 'number' && Number.isFinite(value) && value >= 0
+
   return (
     Object.keys(failure).every((key) =>
       [
@@ -79,6 +83,7 @@ const admitFailure = (
 /** Pending delivery state only; tokens and artifacts are retired with the owning request. */
 export const createBatchExchange = () => {
   const pending = new Map<string, (receipt: unknown) => boolean>()
+
   return {
     execute: (
       batch: AiActionBatch,
@@ -89,15 +94,19 @@ export const createBatchExchange = () => {
         if (signal.aborted) {
           return reject(new Error('Request cancelled'))
         }
+
         const token = randomUUID()
+
         const cleanup = () => {
           pending.delete(token)
           signal.removeEventListener('abort', abort)
         }
+
         const abort = () => {
           cleanup()
           reject(new Error('Request cancelled'))
         }
+
         pending.set(token, (receipt) => {
           if (
             !receipt ||
@@ -106,6 +115,7 @@ export const createBatchExchange = () => {
           ) {
             return false
           }
+
           if ('batchFailure' in receipt) {
             if (
               Object.keys(receipt).length !== 1 ||
@@ -113,10 +123,13 @@ export const createBatchExchange = () => {
             ) {
               return false
             }
+
             cleanup()
             reject(new BrowserBatchExecutionError(receipt.batchFailure))
+
             return true
           }
+
           if (
             !('actionResults' in receipt) ||
             !Array.isArray(receipt.actionResults) ||
@@ -124,8 +137,10 @@ export const createBatchExchange = () => {
           ) {
             return false
           }
+
           cleanup()
           resolve(receipt as AiBatchReceipt)
+
           return true
         })
         signal.addEventListener('abort', abort, { once: true })
@@ -136,8 +151,10 @@ export const createBatchExchange = () => {
           reject(error)
         }
       }),
+
     accept: (token: string, receipt: unknown): boolean => {
       const settle = pending.get(token)
+
       // The HTTP owner has already bounded and parsed the request body.
       return settle?.(receipt) ?? false
     }

@@ -32,6 +32,7 @@ for (const id of [
         path: info.outputPath(`${id}-${view.toLowerCase()}.png`)
       })
     }
+
     await expect(page.getByRole('alert')).toHaveCount(0)
     await info.attach('review-state', {
       body: JSON.stringify({

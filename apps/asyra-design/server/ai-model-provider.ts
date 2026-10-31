@@ -20,6 +20,7 @@ export type AiModelBackendErrorCode =
 
 export class AiModelBackendError extends Error {
   readonly code: AiModelBackendErrorCode
+
   readonly status?: number
 
   constructor(
@@ -63,9 +64,11 @@ const requireSetting = (
   name: string
 ): string => {
   const value = environment[name]?.trim()
+
   if (!value) {
     return invalidConfiguration(`The Asyra Design AI backend requires ${name}.`)
   }
+
   return value
 }
 
@@ -83,6 +86,7 @@ export const resolveAiModelBackendConfiguration = (
   const apiKey = requireSetting(environment, 'AI_PROVIDER_API_KEY')
 
   let endpoint: URL
+
   try {
     endpoint = new URL(endpointValue)
   } catch {
@@ -90,6 +94,7 @@ export const resolveAiModelBackendConfiguration = (
       'AI_PROVIDER_ENDPOINT must be an absolute HTTP(S) URL.'
     )
   }
+
   if (
     (endpoint.protocol !== 'https:' &&
       !(endpoint.protocol === 'http:' && isLoopbackHost(endpoint.hostname))) ||
@@ -121,6 +126,7 @@ export const isActionBatchEnvelope = (
   ) {
     return false
   }
+
   return value.actions.every(
     (action) =>
       isRecord(action) &&
@@ -139,6 +145,7 @@ export const requestConfiguredAiActionBatch = async (
 ): Promise<AiActionBatch> => {
   const environment = options.environment ?? process.env
   const backend = environment.AI_PROVIDER_BACKEND?.trim() || 'http'
+
   if (backend === 'local-codex') {
     const model = requireSetting(environment, 'AI_PROVIDER_MODEL')
     const executable = environment.AI_PROVIDER_EXECUTABLE?.trim() || 'codex'
@@ -170,28 +177,34 @@ export const requestConfiguredAiActionBatch = async (
       onProgress: options.onProgress,
       executeBatch: options.executeBatch
     })
+
     if (options.signal?.aborted) {
       throw new AiModelBackendError(
         'AI_MODEL_BACKEND_ABORTED',
         'The local AI provider request was aborted.'
       )
     }
+
     if (!isActionBatchEnvelope(value)) {
       throw new AiModelBackendError(
         'AI_MODEL_BACKEND_INVALID_RESPONSE',
         'The local AI provider returned an invalid action batch.'
       )
     }
+
     return value
   }
+
   if (backend !== 'http') {
     return invalidConfiguration(
       'AI_PROVIDER_BACKEND must be http or local-codex.'
     )
   }
+
   const configuration = resolveAiModelBackendConfiguration(
     options.environment ?? process.env
   )
+
   if (options.signal?.aborted) {
     throw new AiModelBackendError(
       'AI_MODEL_BACKEND_ABORTED',
@@ -201,6 +214,7 @@ export const requestConfiguredAiActionBatch = async (
 
   const fetchImpl = options.fetch ?? globalThis.fetch
   let response: Response
+
   try {
     response = await fetchImpl(configuration.endpoint, {
       body: JSON.stringify({
@@ -229,6 +243,7 @@ export const requestConfiguredAiActionBatch = async (
         'The configured AI model request was aborted.'
       )
     }
+
     throw new AiModelBackendError(
       'AI_MODEL_BACKEND_TRANSPORT_FAILED',
       'The configured AI model request failed before a response was received.'
@@ -244,6 +259,7 @@ export const requestConfiguredAiActionBatch = async (
   }
 
   let value: unknown
+
   try {
     value = await response.json()
   } catch {
@@ -252,11 +268,13 @@ export const requestConfiguredAiActionBatch = async (
       'The configured AI model endpoint returned invalid JSON.'
     )
   }
+
   if (!isActionBatchEnvelope(value)) {
     throw new AiModelBackendError(
       'AI_MODEL_BACKEND_INVALID_RESPONSE',
       'The configured AI model endpoint returned an invalid action batch.'
     )
   }
+
   return value
 }

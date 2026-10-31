@@ -5,16 +5,21 @@ const { digest, nodeBinding } = require('./policy.cjs')
 const { admitProject } = require('./schema.cjs')
 const { openProject } = require('./store.cjs')
 const artifacts = require('./artifacts.cjs')
+
 const evidenceSummary = (text) =>
   text.length > 1200
     ? text.slice(0, 1150) + '\n[Full diagnostic in details]'
     : text
+
 const criterionId = (contract, candidate) =>
   'case-' + digest([contract.manifestPath, candidate.id]).slice(0, 24)
+
 function fromContracts(contracts, projectId) {
   const docs = new Map()
+
   for (const contract of contracts) {
     let doc = docs.get(contract.targetId)
+
     if (!doc) {
       doc = {
         schemaVersion: 1,
@@ -57,12 +62,15 @@ function fromContracts(contracts, projectId) {
     ) {
       throw new Error('Conflicting architecture for target')
     }
+
     for (const candidate of contract.cases) {
       const node = doc.definition.nodes.find((n) => n.id === candidate.stepId),
         id = criterionId(contract, candidate)
+
       if (node.criteria.some((c) => c.id === id)) {
         continue
       }
+
       node.criteria.push({
         id,
         title: candidate.testName,
@@ -109,6 +117,7 @@ function fromContracts(contracts, projectId) {
       })
     }
   }
+
   for (const doc of docs.values()) {
     for (const node of doc.definition.nodes) {
       if (!node.criteria.length) {
@@ -120,13 +129,18 @@ function fromContracts(contracts, projectId) {
       }
     }
   }
+
   const result = [...docs.values()]
+
   admitProject(result)
+
   return result
 }
+
 function capture(directory) {
   const snapshot = openProject(directory).snapshot(),
     project = admitProject(snapshot.documents)
+
   return {
     directory: path.resolve(directory),
     flows: Object.fromEntries(
@@ -144,8 +158,10 @@ function capture(directory) {
     )
   }
 }
+
 function participatingCases(record) {
   const intended = record.intent?.cases
+
   return record.cases.filter(
     (item) =>
       !(
@@ -160,10 +176,12 @@ function participatingCases(record) {
       )
   )
 }
+
 function updatesFor(record, documents, bindingFor) {
   const updates = new Map(
     documents.map((doc) => [doc.flowId, { values: [], warnings: [] }])
   )
+
   for (const item of record.cases) {
     if (
       item.resolution !== 'mapped' ||
@@ -172,20 +190,25 @@ function updatesFor(record, documents, bindingFor) {
     ) {
       continue
     }
+
     const location = item.locations[0],
       contract = record.contracts.find(
         (c) => c.digest === location.contractDigest
       ),
       candidate = contract?.cases.find((c) => c.id === location.caseId)
+
     if (!candidate) {
       continue
     }
+
     const doc = documents.find((d) => d.flowId === location.targetId),
       node = doc?.definition.nodes.find((n) => n.id === location.stepId),
       id = criterionId(contract, candidate)
+
     if (!node?.criteria.some((c) => c.id === id)) {
       throw new Error('Flow definition does not contain mapped criterion')
     }
+
     if (
       digest(doc.definition.architecture) !==
       digest(contract.architectureDefinition)
@@ -194,7 +217,9 @@ function updatesFor(record, documents, bindingFor) {
         'Mapped result architecture differs from current flow contract'
       )
     }
+
     const criterion = node.criteria.find((c) => c.id === id)
+
     if (
       criterion.selector?.producer !== contract.runner ||
       criterion.selector?.identity !==
@@ -208,6 +233,7 @@ function updatesFor(record, documents, bindingFor) {
         'Mapped result selector differs from current flow contract'
       )
     }
+
     updates.get(doc.flowId).values.push({
       nodeId: node.id,
       criterionId: id,
@@ -228,6 +254,7 @@ function updatesFor(record, documents, bindingFor) {
       at: record.finishedAt ?? record.startedAt
     })
   }
+
   const unresolved = participatingCases(record).filter(
     (i) =>
       i.resolution !== 'mapped' ||
@@ -246,9 +273,11 @@ function updatesFor(record, documents, bindingFor) {
   const coverageIssues = missing.map(
     (item) => 'Selected test result missing: ' + item.testName
   )
+
   if (!record.cases.length && !missing.length) {
     coverageIssues.push('No test results published')
   }
+
   if (
     coverageIssues.length ||
     record.issues.length ||
@@ -258,6 +287,7 @@ function updatesFor(record, documents, bindingFor) {
     const intended = record.intent?.cases ?? []
     const scopes = new Map()
     let unknown = !intended.length
+
     for (const identity of intended) {
       const matches = record.contracts.flatMap((contract) =>
         contract.cases
@@ -269,12 +299,15 @@ function updatesFor(record, documents, bindingFor) {
           )
           .map((candidate) => ({ contract, candidate }))
       )
+
       if (matches.length !== 1) {
         unknown = true
         continue
       }
+
       const { contract, candidate } = matches[0],
         key = contract.targetId + '/' + candidate.stepId
+
       if (!scopes.has(key)) {
         scopes.set(key, {
           flow: contract.targetId,
@@ -282,8 +315,10 @@ function updatesFor(record, documents, bindingFor) {
           criteria: []
         })
       }
+
       scopes.get(key).criteria.push(criterionId(contract, candidate))
     }
+
     const details = [
       ...coverageIssues,
       ...record.issues,
@@ -298,6 +333,7 @@ function updatesFor(record, documents, bindingFor) {
         ].join('\n')
       )
     ]
+
     if (unknown) {
       for (const doc of documents.filter((d) =>
         record.contracts.some((c) => c.targetId === d.flowId)
@@ -309,6 +345,7 @@ function updatesFor(record, documents, bindingFor) {
         })
       }
     }
+
     for (const scope of scopes.values()) {
       updates.get(scope.flow)?.warnings.push({
         id:
@@ -331,9 +368,11 @@ function updatesFor(record, documents, bindingFor) {
 
   return updates
 }
+
 function publish(record, captured, root) {
   const store = openProject(captured.directory),
     snapshot = store.snapshot()
+
   for (const doc of snapshot.documents) {
     if (
       record.contracts.some((c) => c.targetId === doc.flowId) &&
@@ -342,6 +381,7 @@ function publish(record, captured, root) {
       throw new Error('Document revision conflict')
     }
   }
+
   const updates = updatesFor(
     record,
     snapshot.documents,
@@ -350,16 +390,19 @@ function publish(record, captured, root) {
   const retained = record.retainedArtifacts?.length
     ? artifacts.retain(captured.directory, root, record.retainedArtifacts)
     : []
+
   try {
     for (const update of updates.values()) {
       for (const value of update.values) {
         value.attachments = retained
       }
     }
+
     for (const [flow, update] of updates) {
       if (!update.values.length && !update.warnings.length) {
         continue
       }
+
       store.update(flow, {
         expectedRevision: captured.flows[flow]?.revision,
         kind: 'producer',
@@ -382,6 +425,7 @@ function publish(record, captured, root) {
         warnings: update.warnings
       })
     }
+
     return store.snapshot().evaluation
   } finally {
     artifacts.prune(
@@ -391,20 +435,24 @@ function publish(record, captured, root) {
     )
   }
 }
+
 function migrate(root, directory, contracts, projectId) {
   if (fs.existsSync(directory) && fs.readdirSync(directory).length) {
     throw new Error('Migration destination must be empty')
   }
+
   const localization = require('../control-plane/localization.cjs'),
     reader = localization.createObservationReader(
       localization.observationDirectory(root)
     ),
     current = reader.list()
+
   if (current.issues.length) {
     throw new Error(
       'Old current projection is invalid: ' + current.issues.join('; ')
     )
   }
+
   const documents = fromContracts(contracts, projectId),
     project = admitProject(documents)
   const bindings = new Map(
@@ -421,14 +469,17 @@ function migrate(root, directory, contracts, projectId) {
   const records = current.runs.map((r) => reader.get(r.id)),
     selectedIds = new Set(current.currentCases.map((c) => c.id))
   const pendingArtifacts = []
+
   for (const record of records) {
     const warning = current.warningGroups.current.find(
       (g) => g.runId === record.id
     )
     const selected = record.cases.filter((c) => selectedIds.has(c.id))
+
     if (!selected.length && !warning) {
       continue
     }
+
     if (
       selected.length &&
       record.source &&
@@ -439,9 +490,11 @@ function migrate(root, directory, contracts, projectId) {
         'Current source differs from retained evidence; rerun before projection'
       )
     }
+
     if (selected.length && record.retainedArtifacts?.length) {
       pendingArtifacts.push(record)
     }
+
     const filtered = {
       ...record,
       cases: selected,
@@ -463,27 +516,34 @@ function migrate(root, directory, contracts, projectId) {
       documents,
       (flow, node) => bindings.get(flow)[node]
     )
+
     for (const doc of documents) {
       const update = updates.get(doc.flowId)
+
       for (const value of update.values) {
         const old = doc.current.observations.find(
           (o) =>
             o.nodeId === value.nodeId && o.criterionId === value.criterionId
         )
+
         if (old) {
           throw new Error(
             'Ambiguous old current evidence requires explicit resolution'
           )
         }
+
         doc.current.observations.push(value)
       }
+
       doc.current.warnings.push(...update.warnings)
     }
   }
+
   admitProject(documents)
   fs.mkdirSync(directory, { recursive: true })
   for (const record of pendingArtifacts) {
     const retained = artifacts.retain(directory, root, record.retainedArtifacts)
+
     for (const doc of documents) {
       for (const observation of doc.current.observations) {
         if (observation.executionId === record.id) {
@@ -492,6 +552,7 @@ function migrate(root, directory, contracts, projectId) {
       }
     }
   }
+
   admitProject(documents)
   for (const doc of documents) {
     fs.writeFileSync(
@@ -500,8 +561,10 @@ function migrate(root, directory, contracts, projectId) {
       { flag: 'wx' }
     )
   }
+
   return openProject(directory).snapshot()
 }
+
 module.exports = {
   fromContracts,
   capture,

@@ -4,9 +4,11 @@ test('a committed soil edit uses the platform history shortcut from a settled nu
   page
 }) => {
   const modifier = process.platform === 'darwin' ? 'Meta' : 'Control'
+
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const input = page.getByLabel('第 1 項寬度', { exact: true })
+
   await input.fill('1.1')
   await input.press('Enter')
   await input.focus()

@@ -26,12 +26,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
+
   defineFeature: (
     name: string,
     _event: unknown,
     definition: CapturedSessionDefinition
   ) => {
     mocks.definitions.set(name, definition)
+
     return { api: {}, dispose: vi.fn() }
   }
 }))
@@ -77,6 +79,7 @@ describe('Gradient canonical drag History', () => {
       'requestAnimationFrame',
       vi.fn((callback: FrameRequestCallback) => {
         scheduledFrame = callback
+
         return 1
       })
     )
@@ -153,12 +156,14 @@ describe('Gradient canonical drag History', () => {
         previousSelectedHandle: null,
         previousHoveredHandle: null
       }
+
       session?.onUpdate?.(
         { mouseDragging: true, mousePosition: { x: 25, y: 30 } },
         state
       )
       scheduledFrame?.(0)
       const updated = mocks.updateFillField.mock.calls[0]?.[3]
+
       expect(updated.gradientHandles).toEqual([
         { x: -0.25, y: -0.3 },
         { x: 1.25, y: 1.3 }

@@ -6,9 +6,12 @@ const test = require('node:test')
 const data = require('../asyra-website-platform-flow-inspector.data.cjs')
 
 const repoRoot = path.resolve(__dirname, '../../../..')
+
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Website Platform Inspector step: ${id}`)
+
   return value
 }
 
@@ -38,6 +41,7 @@ test('toolchain is exact and preserves the repository runtime', () => {
     yarn: '4.3.1'
   })
   const source = JSON.stringify(step('freeze-platform-contract'))
+
   assert.match(source, /without upgrading existing tools/i)
   assert.match(source, /unapproved dependency or hosted service/i)
 })
@@ -59,6 +63,7 @@ test('required route and failure cases are exact and unique', () => {
 
 test('site foundation owns web structure without downstream product meaning', () => {
   const source = JSON.stringify(step('establish-site-foundation'))
+
   assert.match(source, /server-first, keyboard ordered/i)
   assert.match(source, /localization resilient/i)
   assert.match(source, /warm paper/i)
@@ -84,6 +89,7 @@ test('the whole site extends the current Landing visual authority', () => {
 
 test('content adapter fails closed on drift and semantic rewrite', () => {
   const source = JSON.stringify(step('load-public-content'))
+
   assert.match(source, /All forty-one public pages resolve exactly once/i)
   assert.match(source, /cryptographic source and page digests/i)
   assert.match(source, /visibly provisional/i)
@@ -95,6 +101,7 @@ test('content adapter fails closed on drift and semantic rewrite', () => {
 test('documentation owns server reading and bounded browser enhancements', () => {
   const documentationStep = step('present-documentation')
   const source = JSON.stringify(documentationStep)
+
   assert.match(source, /renders without client JavaScript/i)
   assert.match(source, /stable page and heading ids/i)
   assert.match(source, /focus-contained, Escape-closeable/i)
@@ -136,6 +143,7 @@ test('documentation owns server reading and bounded browser enhancements', () =>
 
 test('supporting routes preserve App, release, and roadmap boundaries', () => {
   const source = JSON.stringify(step('present-supporting-routes'))
+
   assert.match(source, /reference product rather than the Framework owner/i)
   assert.match(source, /non-empty fileId/i)
   assert.match(source, /manifest-derived and visibly provisional/i)
@@ -152,6 +160,7 @@ test('supporting routes preserve App, release, and roadmap boundaries', () => {
 test('shared foundations stay independent from Landing and Atlas owners', () => {
   const sharedStep = step('expose-shared-foundations')
   const source = JSON.stringify(sharedStep)
+
   assert.match(source, /without inherited product story or runtime behavior/i)
   assert.match(source, /never fabricate output/i)
   assert.match(source, /Landing narrative implementation/i)
@@ -174,6 +183,7 @@ test('shared foundations stay independent from Landing and Atlas owners', () => 
 
 test('verification requires executable and synchronized evidence', () => {
   const source = JSON.stringify(step('verify-platform'))
+
   assert.match(source, /Strict typecheck, lint, focused tests/i)
   assert.match(source, /production build, and route smoke gates/i)
   assert.match(source, /synchronized visual cases/i)
@@ -187,6 +197,7 @@ test('routes, artifacts, failure owners, and cache boundaries resolve', () => {
   const artifactOwners = new Map(
     data.artifacts.map(({ id, ownerStepId }) => [id, ownerStepId])
   )
+
   assert.equal(stepIds.size, data.steps.length)
   assert.equal(artifactOwners.size, data.artifacts.length)
 
@@ -207,6 +218,7 @@ test('routes, artifacts, failure owners, and cache boundaries resolve', () => {
 
 test('global audience, semantic authority, and deployment boundaries persist', () => {
   const source = JSON.stringify(data.invariants)
+
   assert.match(source, /global non-engineer/i)
   assert.match(source, /never rewrites accepted content semantics/i)
   assert.match(source, /current Landing remains the visual authority/i)

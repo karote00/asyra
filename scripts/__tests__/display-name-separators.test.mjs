@@ -38,6 +38,7 @@ function separatorLines(source) {
   const pattern = /\s(?:·|\\u00b7|\\xB7|&middot;|&#0*183;|&#x0*b7;)(?=\s|\{)/giu
   const namedLiteral =
     /\b(?:name|title|label)\s*:\s*(?:'[^'\n]* [|/–—] |"[^"\n]* [|/–—] |`[^`\n]* [|/–—] )/gu
+
   return [
     ...new Set(
       [...source.matchAll(pattern), ...source.matchAll(namedLiteral)].map(
@@ -65,6 +66,7 @@ test('display-name guard detects literal, JSX, template and encoded middle-dot s
   ]) {
     assert.deepEqual(separatorLines(source), [1], source)
   }
+
   assert.deepEqual(separatorLines('first\nName · Version\nlast'), [2])
 })
 
@@ -104,8 +106,10 @@ test('project-authored display surfaces do not introduce middle-dot separators',
     .split('\0')
     .filter(Boolean)
   const violations = []
+
   for (const file of new Set(files)) {
     const segments = file.split('/')
+
     if (
       !roots.has(segments[0]) ||
       segments.some((part) => excluded.has(part)) ||
@@ -114,14 +118,18 @@ test('project-authored display surfaces do not introduce middle-dot separators',
     ) {
       continue
     }
+
     const fullPath = path.join(repositoryRoot, file)
+
     if (!fs.existsSync(fullPath)) {
       continue
     }
+
     for (const line of separatorLines(fs.readFileSync(fullPath, 'utf8'))) {
       violations.push(`${file}:${line}`)
     }
   }
+
   assert.deepEqual(
     violations,
     [],

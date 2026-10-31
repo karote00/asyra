@@ -9,6 +9,7 @@ const appRoot = fileURLToPath(new URL('../', import.meta.url))
 const temporary = fileURLToPath(
   new URL('../.artifacts/browser-tmp/', import.meta.url)
 )
+
 mkdirSync(temporary, { recursive: true })
 const command =
   process.argv.length === 2
@@ -23,9 +24,11 @@ const child = spawn(process.execPath, command, {
   env: { ...process.env, TMPDIR: temporary, TMP: temporary, TEMP: temporary },
   stdio: 'inherit'
 })
+
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => child.kill(signal))
 }
+
 child.on('error', (error) => {
   process.stderr.write(`${error.message}\n`)
   process.exitCode = 1

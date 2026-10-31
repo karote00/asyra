@@ -2049,13 +2049,16 @@
       }
     ]
   }
+
   const freeze = (value) => {
     if (value && typeof value === 'object') {
       Object.values(value).forEach(freeze)
       Object.freeze(value)
     }
+
     return value
   }
+
   globalThis.FLOW_INSPECTOR_DATA = freeze(data)
   if (typeof module !== 'undefined') {module.exports = data}
 })()

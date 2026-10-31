@@ -5,6 +5,7 @@ const { createHash } = require('node:crypto')
 const { safePath } = require('./snapshot.cjs')
 const localization = require('./localization.cjs')
 const manifestPath = 'apps/asyra-design/playwright-flow-contracts.json'
+
 const sourceManifestPaths = (source = 'functional') => {
   if (source === 'functional') {
     return [
@@ -12,16 +13,20 @@ const sourceManifestPaths = (source = 'functional') => {
       'apps/asyra-design/playwright-functional-flow-contracts.json'
     ]
   }
+
   if (source === 'collaboration') {
     return ['apps/asyra-design/playwright-collaboration-flow-contracts.json']
   }
+
   if (source === 'status') {
     return ['apps/asyra-design/playwright-status-flow-contracts.json']
   }
+
   throw new Error('Unsupported Design Playwright source')
 }
 
 const string = (value) => typeof value === 'string'
+
 const errorDetails = (error) =>
   Object.fromEntries(
     localization.FAILURE_DETAIL_FIELDS.filter((key) =>
@@ -51,24 +56,29 @@ function normalizeReport(root, context, original) {
   const testResults = []
   const expectedRoot = path.join(root, 'apps/asyra-design/e2e')
   let stale = original?.config?.rootDir !== expectedRoot
+
   if (stale) {
     errors.push(
       'Playwright report root does not match the observed Design checkout'
     )
   }
+
   const configurations = new Set(
     context.contracts.map((contract) => contract.configFile)
   )
   let expectedConfig = path.join(root, [...configurations][0] ?? '')
+
   if (context.executionConfig) {
     try {
       const binding = context.executionConfig
+
       if (
         binding.originalConfigFile !== [...configurations][0] ||
         typeof binding.digest !== 'string'
       ) {
         throw new Error('Invalid original config binding')
       }
+
       expectedConfig = safePath(root, binding.path)
       if (
         createHash('sha256')
@@ -82,6 +92,7 @@ function normalizeReport(root, context, original) {
       errors.push('Selected rerun execution config is unavailable or changed')
     }
   }
+
   if (
     configurations.size !== 1 ||
     original?.config?.configFile !== expectedConfig
@@ -91,60 +102,78 @@ function normalizeReport(root, context, original) {
       'Playwright configuration differs from the observed Design invocation'
     )
   }
+
   const start = Date.parse(original?.stats?.startTime)
+
   if (!Number.isFinite(start) || start < Date.parse(context.startedAt)) {
     stale = true
     errors.push(
       'Playwright report start is missing or predates the observation'
     )
   }
+
   if (!Array.isArray(original?.suites) || !Array.isArray(original?.errors)) {
     errors.push('Missing or malformed Playwright report')
   }
+
   for (const error of Array.isArray(original?.errors) ? original.errors : []) {
     errors.push(String(error?.stack ?? error?.message ?? error))
     executionFailureDetails.push(errorDetails(error))
   }
+
   let executionIncomplete = errors.length > 0
+
   const incompleteStructure = (message) => {
     executionIncomplete = true
     errors.push(message)
   }
+
   const walk = (suites, parents = [], depth = 0) => {
     if (depth > 64) {
       incompleteStructure(
         'Playwright suite nesting exceeds the observation limit'
       )
+
       return
     }
+
     if (!Array.isArray(suites)) {
       incompleteStructure('Malformed Playwright suites')
+
       return
     }
+
     for (const suite of suites) {
       if (!suite || typeof suite !== 'object') {
         incompleteStructure('Malformed Playwright suite')
         continue
       }
+
       if (!string(suite.title) || !Array.isArray(suite.specs)) {
         incompleteStructure('Malformed Playwright suite')
       }
+
       let titles = depth === 0 ? parents : [...parents, suite.title]
+
       if (!string(suite.title)) {
         titles = [...parents, '(unavailable suite)']
       }
+
       for (const spec of Array.isArray(suite.specs) ? suite.specs : []) {
         if (!spec || !Array.isArray(spec.tests) || !spec.tests.length) {
           incompleteStructure('Malformed Playwright spec')
           continue
         }
+
         if (!string(spec.title) || !string(spec.file)) {
           incompleteStructure('Malformed Playwright spec identity')
         }
+
         const title = string(spec.title)
           ? spec.title
           : '(unavailable test title)'
         let file
+
         try {
           file = safePath(
             root,
@@ -162,15 +191,18 @@ function normalizeReport(root, context, original) {
           // Preserve failures with an unmappable name, never discard their evidence.
           file = path.join(root, 'unresolved-playwright-test')
         }
+
         for (const [testIndex, item] of spec.tests.entries()) {
           if (!item || !Array.isArray(item.results)) {
             incompleteStructure('Malformed Playwright case: ' + spec.title)
             continue
           }
+
           const details = [],
             messages = []
           let malformed = !string(item.projectName),
             failed = false
+
           for (const result of item.results) {
             if (
               !result ||
@@ -188,10 +220,13 @@ function normalizeReport(root, context, original) {
             ) {
               malformed = true
             }
+
             if (['failed', 'timedOut'].includes(result?.status)) {
               failed = true
             }
+
             let received = Array.isArray(result?.errors) ? result.errors : []
+
             if (
               result?.error &&
               !received.some(
@@ -201,6 +236,7 @@ function normalizeReport(root, context, original) {
             ) {
               received = [...received, result.error]
             }
+
             for (const error of received) {
               details.push(errorDetails(error))
               messages.push(
@@ -209,9 +245,11 @@ function normalizeReport(root, context, original) {
               )
             }
           }
+
           if (malformed) {
             errors.push('Malformed Playwright result: ' + spec.title)
           }
+
           const selected = context.contracts.flatMap((contract) =>
             contract.cases.filter(
               (candidate) =>
@@ -221,11 +259,13 @@ function normalizeReport(root, context, original) {
                 candidate.projectName === item.projectName
             )
           )
+
           if (selected.some((candidate) => candidate.minimumParticipants)) {
             for (const result of item.results) {
               if (result?.status === 'skipped') {
                 continue
               }
+
               const participants = new Set()
               let valid = true
               const attachments = (
@@ -233,6 +273,7 @@ function normalizeReport(root, context, original) {
               ).filter(
                 (attachment) => attachment?.name === 'collaboration-participant'
               )
+
               for (const attachment of attachments) {
                 try {
                   if (
@@ -241,9 +282,11 @@ function normalizeReport(root, context, original) {
                   ) {
                     throw new Error('missing participant body')
                   }
+
                   const evidence = JSON.parse(
                     Buffer.from(attachment.body, 'base64').toString('utf8')
                   )
+
                   if (
                     evidence.observationId !== context.id ||
                     evidence.testId !== spec.id ||
@@ -257,11 +300,13 @@ function normalizeReport(root, context, original) {
                   ) {
                     throw new Error('foreign participant identity')
                   }
+
                   participants.add(evidence.identity.actorId)
                 } catch {
                   valid = false
                 }
               }
+
               if (
                 !valid ||
                 selected.some(
@@ -277,6 +322,7 @@ function normalizeReport(root, context, original) {
               }
             }
           }
+
           const clean =
             !malformed &&
             !executionIncomplete &&
@@ -287,23 +333,28 @@ function normalizeReport(root, context, original) {
               (r) => r.status === 'passed' && r.errors.length === 0 && !r.error
             )
           let status = 'unknown'
+
           if (
             item.results.length &&
             item.results.every((r) => r?.status === 'skipped')
           ) {
             status = 'skipped'
           }
+
           if (clean) {
             status = 'passed'
           }
+
           if (failed) {
             status = 'failed'
           }
+
           if (status === 'unknown') {
             errors.push(
               'Playwright case did not establish completion: ' + spec.title
             )
           }
+
           testResults.push({
             name: file,
             assertionResults: [
@@ -334,22 +385,27 @@ function normalizeReport(root, context, original) {
           ])
         }
       }
+
       if (suite.suites !== undefined) {
         walk(suite.suites, titles, depth + 1)
       }
     }
   }
+
   if (Array.isArray(original?.suites)) {
     walk(original.suites)
   }
+
   // Structural loss can hide a duplicate case, even after a clean case was read.
   // Only a completely traversable report can establish passing authority.
   if (executionIncomplete) {
     invalidatePassingResults({ testResults })
   }
+
   if (!testResults.length) {
     errors.push('No Playwright cases recorded')
   }
+
   return {
     report: {
       testResults,
@@ -374,6 +430,7 @@ function normalizeReport(root, context, original) {
     }
   }
 }
+
 function begin(
   root,
   reportPath,
@@ -384,22 +441,27 @@ function begin(
   request
 ) {
   const report = safePath(root, reportPath)
+
   if (fs.existsSync(report) || fs.existsSync(report + '.context.json')) {
     throw new Error('Use a fresh report path for each Playwright invocation')
   }
+
   let defaultCommand = { cwd: '.', argv: ['bash', 'scripts/run-e2e.sh'] }
+
   if (source === 'status') {
     defaultCommand = {
       cwd: 'apps/asyra-design',
       argv: ['yarn', 'test:e2e:status-toast']
     }
   }
+
   if (source === 'collaboration') {
     defaultCommand = {
       cwd: 'apps/asyra-design',
       argv: ['yarn', 'test:e2e:collaboration']
     }
   }
+
   const context = localization.beginObservation(root, {
     manifestPaths: sourceManifestPaths(source),
     executionConfig,
@@ -434,6 +496,7 @@ function begin(
       )
     }
   })
+
   fs.mkdirSync(path.dirname(report), { recursive: true })
   fs.writeFileSync(
     report + '.context.json',
@@ -448,8 +511,10 @@ function begin(
         : { id: context.id }
     )
   )
+
   return context
 }
+
 function complete(root, reportPath) {
   const report = safePath(root, reportPath)
   const reader = localization.createObservationReader(
@@ -457,10 +522,12 @@ function complete(root, reportPath) {
   )
   let context,
     unavailable = false
+
   try {
     const sidecar = JSON.parse(
       fs.readFileSync(report + '.context.json', 'utf8')
     )
+
     if (sidecar.context) {
       if (
         !sidecar.context.flowWrite ||
@@ -470,6 +537,7 @@ function complete(root, reportPath) {
       ) {
         throw new Error('Invalid current invocation context')
       }
+
       context = sidecar.context
     } else {
       context = reader.get(sidecar.id)
@@ -481,15 +549,18 @@ function complete(root, reportPath) {
     })
     context.issues.push('Pre-execution Playwright context unavailable')
   }
+
   if (context.phase === 'completed') {
     throw new Error('Playwright invocation was already completed')
   }
+
   const reportLimitMiB = context.contracts.some((contract) =>
     sourceManifestPaths('collaboration').includes(contract.manifestPath)
   )
     ? 32
     : 4
   let original = null
+
   try {
     if (
       !fs.statSync(report).isFile() ||
@@ -499,20 +570,24 @@ function complete(root, reportPath) {
         'Report exceeds the ' + reportLimitMiB + ' MiB observation limit'
       )
     }
+
     original = JSON.parse(fs.readFileSync(report, 'utf8'))
   } catch (error) {
     context.issues.push('Playwright report unavailable: ' + error.message)
   }
+
   const normalized = normalizeReport(root, context, original)
   // Archive ownership remains with the existing producer output directory.
   // Report references are evidence, never arbitrary paths to read or execute.
   const retainedArtifacts = []
   let retainedBytes = 0
   let attachmentsIncomplete = false
+
   const inspectAttachments = (suites, depth = 0) => {
     if (depth > 64) {
       return
     }
+
     for (const suite of Array.isArray(suites) ? suites : []) {
       for (const spec of Array.isArray(suite?.specs) ? suite.specs : []) {
         for (const item of Array.isArray(spec?.tests) ? spec.tests : []) {
@@ -525,25 +600,31 @@ function complete(root, reportPath) {
               if (typeof attachment?.body === 'string') {
                 continue
               }
+
               try {
                 if (typeof attachment?.path !== 'string') {
                   throw new Error('missing attachment path/body')
                 }
+
                 const file = safePath(root, attachment.path)
                 const output = path.join(root, 'apps/asyra-design/test-results')
+
                 if (
                   !file.startsWith(output + path.sep) ||
                   !fs.statSync(file).isFile()
                 ) {
                   throw new Error('outside retained output or unavailable')
                 }
+
                 const size = fs.statSync(file).size
+
                 if (
                   size > 64 * 1024 * 1024 ||
                   retainedBytes + size > 256 * 1024 * 1024
                 ) {
                   throw new Error('attachment retention limit exceeded')
                 }
+
                 const retainedPath = context.flowWrite
                   ? path.relative(root, file)
                   : 'tmp/flow-inspector/test-results/' +
@@ -551,11 +632,14 @@ function complete(root, reportPath) {
                     '/attachments/' +
                     retainedArtifacts.length
                 const destination = safePath(root, retainedPath)
+
                 if (!context.flowWrite) {
                   fs.mkdirSync(path.dirname(destination), { recursive: true })
                   fs.copyFileSync(file, destination, fs.constants.COPYFILE_EXCL)
                 }
+
                 const bytes = fs.readFileSync(destination)
+
                 retainedBytes += bytes.length
                 retainedArtifacts.push({
                   name: String(attachment.name ?? ''),
@@ -577,13 +661,16 @@ function complete(root, reportPath) {
           }
         }
       }
+
       inspectAttachments(suite?.suites, depth + 1)
     }
   }
+
   inspectAttachments(original?.suites)
   if (attachmentsIncomplete) {
     invalidatePassingResults(normalized.report)
   }
+
   const environment = context.command?.environment ?? {}
   const identityKeys = [
     'REPOSITORY',
@@ -593,6 +680,7 @@ function complete(root, reportPath) {
     'RUN',
     'ATTEMPT'
   ]
+
   if (
     identityKeys.some((key) => Object.hasOwn(environment, 'FLOW_RESULT_' + key))
   ) {
@@ -608,6 +696,7 @@ function complete(root, reportPath) {
       ['RUN', 'ATTEMPT'].every((key) =>
         /^[1-9][0-9]*$/.test(environment['FLOW_RESULT_' + key])
       )
+
     if (!valid) {
       unavailable = true
       normalized.options.errors.push(
@@ -615,26 +704,32 @@ function complete(root, reportPath) {
       )
     }
   }
+
   if (context.issues.length) {
     unavailable = true
   }
+
   const integration = context.command?.environment?.FLOW_RESULT_INTEGRATION
+
   if (integration && integration !== context.head) {
     unavailable = true
     normalized.options.errors.push(
       'CI integration revision differs from observed checkout'
     )
   }
+
   return localization.completeObservation(root, context, normalized.report, {
     ...normalized.options,
     retainedArtifacts,
     stale: unavailable || normalized.options.stale
   })
 }
+
 if (require.main === module) {
   try {
     const [action, reportPath, source = 'functional', ...extra] =
       process.argv.slice(2)
+
     if (
       !['begin', 'complete'].includes(action) ||
       !reportPath ||
@@ -645,16 +740,19 @@ if (require.main === module) {
         'Usage: playwright-results.cjs begin <fresh-report-path> [functional|status|collaboration] or complete <report-path>'
       )
     }
+
     const result =
       action === 'begin'
         ? begin(process.cwd(), reportPath, process.env, undefined, source)
         : complete(process.cwd(), reportPath)
+
     process.stdout.write('Flow Inspector observation: ' + result.id + '\n')
   } catch (error) {
     process.stderr.write(error.message + '\n')
     process.exitCode = 1
   }
 }
+
 module.exports = {
   normalizeReport,
   begin,

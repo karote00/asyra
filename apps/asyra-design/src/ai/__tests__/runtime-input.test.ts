@@ -21,6 +21,7 @@ it.each([
       inputSchema: { type: 'object' },
       execute
     })
+
     await expect(
       action.execute({}, { signal: new AbortController().signal })
     ).resolves.toMatchObject({ toolOutcome: { status, settlement } })
@@ -62,6 +63,7 @@ it('exposes the existing vector read, anchor and handle APIs without a dedicated
     }
   })
   const names = input.actionDefinitions.map((action) => action.name)
+
   expect(names).toContain('api_element_getVectorAnchorPoints')
   expect(names).toContain('api_element_updateVectorAnchorPointPosition')
   expect(names).toContain('api_element_updateVectorAnchorPointHandlePosition')
@@ -74,8 +76,10 @@ it('exposes document export instead of raw serializers that can overflow tool de
       requestActionBatch: async () => ({ batchId: 'empty', actions: [] })
     }
   })
+
   try {
     const names = input.actionDefinitions.map((action) => action.name)
+
     expect(names).toContain('export_document')
     expect(names).toContain('download_document_export')
     expect(names).toContain('release_document_export')
@@ -96,6 +100,7 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
   const originalObserve = core.observeSharedDataChannel
   const originalInspect = inspectionApis.inspect
   const originalMetadata = core.getElementMetadata
+
   core.getElementMetadata = vi.fn((id) => ({
     id,
     type: 'rect',
@@ -112,6 +117,7 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
     .mockReturnValue({ unsubscribe: stopComputed } as ReturnType<
       typeof coreEvents.subscribeToEventBatches
     >)
+
   core.observeSharedDataChannel = vi.fn(() => stop)
   inspectionApis.inspect = vi.fn(() => ({
     available: true,
@@ -130,14 +136,17 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
     (action) => action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
   )
   const context = { signal: new AbortController().signal } as never
+
   try {
     if (!inspect || !validate || !input.ownedResources) {
       throw new Error('Missing inspection ownership')
     }
+
     const result = (await inspect.execute(
       { elementId: 'drawing' },
       context
     )) as { evidence: unknown }
+
     expect(
       await validate.execute({ evidence: result.evidence }, context)
     ).toMatchObject({ current: true })
@@ -178,12 +187,15 @@ it('measures the real browser handler without treating its duration as server ex
     name: 'example',
     description: 'Read current data',
     inputSchema: {},
+
     execute: async () => {
       time = 35
+
       return { current: true }
     }
   }
   const observed = observeAiAction(definition, () => time)
+
   expect(
     await observed.execute({}, {
       signal: new AbortController().signal
@@ -196,10 +208,12 @@ it('measures the real browser handler without treating its duration as server ex
   const error = new Error('canonical failure')
   const failed = observeAiAction({
     ...definition,
+
     execute: async () => {
       throw error
     }
   })
+
   await expect(failed.execute({}, {} as never)).rejects.toBe(error)
 })
 
@@ -219,12 +233,14 @@ it('retains measured handler failure without replacing the original public error
     {
       ...definition,
       inputSchema: { type: 'object' },
+
       execute: async () => {
         throw error
       }
     },
     now
   )
+
   await expect(observed.execute({}, {} as never)).rejects.toBe(error)
   expect(describeBatchFailure(error, 'batch', 40)).toMatchObject({
     actionName: definition.name,
@@ -253,15 +269,18 @@ it.each([false, true])(
         if (failed) {
           throw new Error('failed')
         }
+
         return 42
       },
       { signal }
     )
+
     if (failed) {
       await expect(result).rejects.toThrow('failed')
     } else {
       await expect(result).resolves.toBe(42)
     }
+
     expect(release).toHaveBeenCalledExactlyOnceWith(signal)
     await Promise.all(
       (input.ownedResources ?? []).map((resource) => resource.dispose())
@@ -276,6 +295,7 @@ it('advertises one complete contract for every browser tool without exposing exe
     provider: { requestActionBatch: vi.fn() }
   })
   const registry = createAiActionRegistry()
+
   try {
     for (const action of input.actionDefinitions) {
       expect(action, action.name).toMatchObject({
@@ -289,9 +309,11 @@ it('advertises one complete contract for every browser tool without exposing exe
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
         expect(action.revision).toBe(5)
       }
+
       expect(action.lifecycle.retry).not.toBe('read-only')
       registry.register(action)
     }
+
     expect(registry.list()).toHaveLength(input.actionDefinitions.length)
     expect(
       registry
@@ -318,15 +340,18 @@ it('hands canonical flat contracts to the host provider and preserves request op
   const action = input.actionDefinitions.find(
     (item) => item.name === AiActionNames.READ_DESIGN_CONTEXT
   )
+
   if (!action) {
     throw new Error('Missing context action')
   }
+
   const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
   const options = {
     signal: new AbortController().signal,
     executeBatch: vi.fn(),
     onProgress: vi.fn()
   }
+
   await input.provider.requestActionBatch(
     {
       intent: 'Read context',
@@ -347,6 +372,7 @@ it('hands canonical flat contracts to the host provider and preserves request op
     options
   )
   const sent = provider.requestActionBatch.mock.calls[0][0]
+
   expect(sent.actions[0]).not.toHaveProperty('execute')
   expect(sent.actions[0]).not.toHaveProperty('contract')
   await expect(
@@ -383,6 +409,7 @@ it('rejects malformed successful output after one execution and retains its sett
     ),
     execute
   })
+
   await expect(
     action.execute({}, { signal: new AbortController().signal })
   ).rejects.toMatchObject({
@@ -412,6 +439,7 @@ it.each([null, false, [], 'invalid'])(
       inputSchema: { type: 'object' },
       execute
     })
+
     await expect(
       action.execute({}, { signal: new AbortController().signal })
     ).rejects.toMatchObject({
@@ -437,14 +465,18 @@ it.each(['frame', 'group', 'rectangle'] as const)(
       getPropertyOwnerElementIds: core.getPropertyOwnerElementIds
     }
     const listeners = new Map<string, Set<(value: unknown) => void>>()
+
     core.observeSharedDataChannel = vi.fn((channel, listener) => {
       const entries = listeners.get(channel) ?? new Set()
+
       entries.add(listener)
       listeners.set(channel, entries)
+
       return () => {
         entries.delete(listener)
       }
     })
+
     const metadata = (id: string) => ({
       id,
       type: id === 'root' ? rootType : 'rectangle',
@@ -454,6 +486,7 @@ it.each(['frame', 'group', 'rectangle'] as const)(
       lock: false,
       childCount: id === 'root' ? 2 : 0
     })
+
     core.getElementMetadata = vi.fn(metadata)
     core.getElementData = vi.fn((id) => ({
       ...metadata(id),
@@ -461,6 +494,7 @@ it.each(['frame', 'group', 'rectangle'] as const)(
     })) as typeof original.getElementData
     core.getElementChildren = vi.fn((id, offset = 0, limit = 50) => {
       const children = id === 'root' ? ['a', 'b'] : []
+
       return {
         available: true,
         elementIds: children.slice(offset, offset + limit),
@@ -469,6 +503,7 @@ it.each(['frame', 'group', 'rectangle'] as const)(
       }
     })
     let x = 0
+
     core.getElementComputedData = vi.fn((id) => ({
       x: id === 'a' ? x : 0,
       y: 0,
@@ -485,15 +520,18 @@ it.each(['frame', 'group', 'rectangle'] as const)(
       (action) => action.name === AiActionNames.REVIEW_DESIGN
     )
     const context = { signal: new AbortController().signal }
+
     const emit = (channel: string, value: unknown) => {
       for (const listener of listeners.get(channel) ?? []) {
         listener(value)
       }
     }
+
     try {
       if (!review) {
         throw new Error('Missing registered review')
       }
+
       expect(
         await review.execute({ elementId: 'root' }, context)
       ).toMatchObject({
@@ -578,6 +616,7 @@ it('labels invalid owner output without blaming arguments or replaying execution
     execute
   })
   const context = { signal: new AbortController().signal }
+
   await expect(action.execute({}, context)).rejects.toMatchObject({
     stage: 'output',
     message: 'output.elementIds: expected array',

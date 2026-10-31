@@ -209,6 +209,7 @@ export function useWorkbenchController() {
 
       const applied = direction === 'undo' ? 'Undo applied' : 'Redo applied'
       let before = 0
+
       void perform(
         async () => {
           before = runtime.getHistoryDepth()

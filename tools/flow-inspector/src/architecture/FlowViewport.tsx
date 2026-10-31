@@ -69,6 +69,7 @@ export function FlowViewport({
           availableWidth / bounds.width,
           availableHeight / bounds.height
         )
+
         setScale(nextScale)
         setOffset({
           x:
@@ -114,6 +115,7 @@ export function FlowViewport({
       const x = event.clientX - bounds.left
       const y = event.clientY - bounds.top
       const multiplier = event.deltaMode === 1 ? 16 : 1
+
       anchorRef.current = {
         x,
         y,

@@ -43,11 +43,17 @@ const activeSessions = new WeakMap<object, CanvasPipelineDebuggerController>()
 
 class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
   private readonly adapter: CanvasPipelineDebuggerAdapter
+
   private overlay: CanvasPipelineDebuggerOverlay | null = null
+
   private overlayVisible: boolean
+
   private enabled = false
+
   private disposed = false
+
   private faultCleanupQueued = false
+
   private faultCleanupGeneration = 0
 
   constructor(
@@ -59,6 +65,7 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
     this.adapter = createCanvasPipelineDebuggerAdapter(render, {
       traceCapacity: options.traceCapacity,
       focusedElementIds: options.overlay?.focusedElementIds,
+
       onFault: () => this.handleFault()
     })
   }
@@ -69,9 +76,11 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
       this.invalidatePendingFaultCleanup()
       this.disableActiveSession()
     }
+
     if (this.enabled) {
       return
     }
+
     this.adapter.enableObservation()
     this.enabled = true
     try {
@@ -93,6 +102,7 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
 
   isEnabled(): boolean {
     this.assertUsable()
+
     return this.enabled
   }
 
@@ -101,10 +111,13 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
     if (this.overlayVisible === visible) {
       return
     }
+
     if (!this.enabled) {
       this.overlayVisible = visible
+
       return
     }
+
     if (visible) {
       this.registerOverlay()
       this.overlayVisible = true
@@ -124,11 +137,13 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
 
   getSnapshot(): CanvasPipelineSnapshot {
     this.assertUsable()
+
     return this.adapter.getSnapshot()
   }
 
   getTrace(): readonly CanvasPipelineTraceEntry[] {
     this.assertUsable()
+
     return this.adapter.getTrace()
   }
 
@@ -141,18 +156,22 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
     if (this.disposed) {
       return
     }
+
     this.invalidatePendingFaultCleanup()
     const failures: unknown[] = []
+
     try {
       this.disableActiveSession()
     } catch (error) {
       failures.push(error)
     }
+
     try {
       this.adapter.dispose()
     } catch (error) {
       failures.push(error)
     }
+
     activeSessions.delete(this.render)
     this.disposed = true
     if (failures.length > 0) {
@@ -164,9 +183,11 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
     if (this.overlay) {
       return
     }
+
     const overlay = createCanvasPipelineDebuggerOverlay(this.adapter, {
       onFault: (error) => this.handleFault(error)
     })
+
     try {
       this.core.registerRenderLayer(overlay.registration)
       this.overlay = overlay
@@ -176,6 +197,7 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
       } catch {
         // Preserve the registration failure after best-effort local cleanup.
       }
+
       throw error
     }
   }
@@ -184,19 +206,24 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
     if (!this.overlay) {
       return
     }
+
     const overlay = this.overlay
+
     this.overlay = null
     const failures: unknown[] = []
+
     try {
       this.core.unregisterRenderLayer(overlay.registration.name)
     } catch (error) {
       failures.push(error)
     }
+
     try {
       overlay.destroy()
     } catch (error) {
       failures.push(error)
     }
+
     if (failures.length > 0) {
       throw failures[0]
     }
@@ -204,11 +231,13 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
 
   private disableActiveSession(): void {
     const failures: unknown[] = []
+
     try {
       this.unregisterOverlay()
     } catch (error) {
       failures.push(error)
     }
+
     try {
       if (this.adapter.isObserving()) {
         this.adapter.disableObservation()
@@ -216,6 +245,7 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
     } catch (error) {
       failures.push(error)
     }
+
     this.enabled = false
     if (failures.length > 0) {
       throw failures[0]
@@ -230,20 +260,25 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
         // Fault recording is diagnostic-only and cannot block session cleanup.
       }
     }
+
     this.enabled = false
     if (this.faultCleanupQueued || this.disposed) {
       return
     }
+
     this.faultCleanupQueued = true
     const generation = ++this.faultCleanupGeneration
+
     queueMicrotask(() => {
       if (generation !== this.faultCleanupGeneration) {
         return
       }
+
       this.faultCleanupQueued = false
       if (this.disposed) {
         return
       }
+
       try {
         this.disableActiveSession()
       } catch {
@@ -256,6 +291,7 @@ class CanvasPipelineDebuggerController implements CanvasPipelineDebugger {
     if (!this.faultCleanupQueued) {
       return
     }
+
     this.faultCleanupQueued = false
     this.faultCleanupGeneration += 1
   }
@@ -272,10 +308,13 @@ export const createCanvasPipelineDebugger = (
   options: CanvasPipelineDebuggerOptions = {}
 ): CanvasPipelineDebugger => {
   const render = core.deps.render
+
   if (activeSessions.has(render)) {
     throw new CanvasPipelineDebuggerAlreadyActiveError()
   }
+
   const controller = new CanvasPipelineDebuggerController(core, render, options)
+
   activeSessions.set(render, controller)
   if (options.enabled) {
     try {
@@ -286,9 +325,11 @@ export const createCanvasPipelineDebugger = (
       } catch {
         // Preserve the enable failure after best-effort session cleanup.
       }
+
       throw error
     }
   }
+
   return controller
 }
 

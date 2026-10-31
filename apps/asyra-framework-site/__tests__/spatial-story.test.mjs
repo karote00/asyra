@@ -8,10 +8,12 @@ import {
 
 test('the cumulative scene is finite, continuous and reversible at every sampled depth', () => {
   let previous = getStoryFrame(0, 0)
+
   for (let step = 0; step <= 6000; step++) {
     const time = step / 1000
     const chapter = Math.min(5, Math.floor(time))
     const frame = getStoryFrame(chapter, time - chapter)
+
     assert.ok(frame.camera.every(Number.isFinite))
     for (const [id, pose] of Object.entries(frame.layers)) {
       assert.ok(pose.every(Number.isFinite))
@@ -22,11 +24,15 @@ test('the cumulative scene is finite, continuous and reversible at every sampled
           `${id} jumps at ${time}`
         )
       }
+
       assert.match(layerTransform(pose), /rotateX/)
     }
+
     previous = frame
   }
+
   const a = getStoryFrame(3, 0.52)
+
   getStoryFrame(5, 0.9)
   assert.deepEqual(getStoryFrame(3, 0.52), a)
 })
@@ -44,29 +50,38 @@ function harness() {
   const driver = createScrollDriver({
     requestFrame: (callback) => {
       queue.set(++identifier, callback)
+
       return identifier
     },
+
     cancelFrame: (id) => queue.delete(id),
+
     render: (frame) => frames.push(frame)
   })
+
   return {
     driver,
     frames,
     queue,
+
     flush() {
       const callbacks = [...queue.values()]
+
       queue.clear()
       callbacks.forEach((f) => f())
     }
   }
 }
+
 test('one scene renders only the latest input once per frame, stays idle and retraces chapters', () => {
   const h = harness()
+
   h.driver.update(0, 0.2)
   h.flush()
   for (let i = 0; i < 100; i++) {
     h.driver.update(2, i / 100)
   }
+
   assert.equal(h.queue.size, 1)
   h.flush()
   assert.equal(h.frames.length, 2)
@@ -84,8 +99,10 @@ test('one scene renders only the latest input once per frame, stays idle and ret
 })
 test('retired drivers cancel pending work and reject late callbacks', () => {
   const h = harness()
+
   h.driver.update(0, 0.5)
   const late = [...h.queue.values()][0]
+
   h.driver.dispose()
   late()
   h.driver.update(1, 0.7)
@@ -95,6 +112,7 @@ test('retired drivers cancel pending work and reject late callbacks', () => {
 
 test('a shared boundary retains the visual pose while advancing the semantic chapter', () => {
   const h = harness()
+
   h.driver.update(2, 1)
   h.flush()
   h.driver.update(3, 0)

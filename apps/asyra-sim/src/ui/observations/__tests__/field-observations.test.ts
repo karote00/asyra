@@ -49,7 +49,9 @@ const access: ObservationAccess = {
       removeObservation: remove
     }
   },
+
   getObservations: () => notes,
+
   getObservationAttachment: vi.fn(() => new Uint8Array([97])),
   exportObservations: vi.fn(() => '{}')
 }
@@ -61,6 +63,7 @@ const render = (runId = 'run-a', retained = true) =>
       runtime: access,
       runId,
       retained,
+
       isCurrent: () => true
     })
   )
@@ -83,9 +86,12 @@ beforeEach(async () => {
       createdAt: previous?.createdAt ?? timestamp,
       updatedAt: timestamp
     }
+
     notes = [...notes.filter((note) => note.id !== id), next]
+
     return id
   }
+
   retain.mockImplementation(async (_receipt, intent) =>
     acknowledge(intent.draft, intent.edit?.id)
   )
@@ -152,6 +158,7 @@ async function commit() {
   const apply = [...host.querySelectorAll('button')].find(
     (node) => node.textContent === 'Apply attachments'
   )
+
   await act(async () => {
     if (apply) {
       apply.click()
@@ -443,6 +450,7 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
 
 it('automatically applies completed text edits to the same observation without a Save action', async () => {
   const timestamp = '2026-09-08T00:00:00.000Z'
+
   add.mockImplementation(async (_run, draft) => {
     notes = [
       {
@@ -454,6 +462,7 @@ it('automatically applies completed text edits to the same observation without a
         updatedAt: timestamp
       }
     ]
+
     return 'note'
   })
   update.mockImplementation(async (_run, id, revision, draft) => {
@@ -466,9 +475,11 @@ it('automatically applies completed text edits to the same observation without a
   const field = host.querySelector<HTMLTextAreaElement>(
     '[aria-label="Observation text"]'
   )
+
   if (!field) {
     throw new Error('Missing observation text')
   }
+
   await act(async () => {
     field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
   })
@@ -509,6 +520,7 @@ it('commits existing text and attachment removal while new files remain prepared
       }
     ]
   }
+
   prepare.mockResolvedValueOnce(next)
   await choose([file('next.txt')])
   update.mockClear()
@@ -551,9 +563,11 @@ it('commits a title on Enter with an incomplete body and replays clean fields au
   const title = host.querySelector<HTMLInputElement>(
     '[aria-label="Observation title"]'
   )
+
   if (!title) {
     throw new Error('Missing title input')
   }
+
   await act(() => title.focus())
   await act(() =>
     title.dispatchEvent(
@@ -566,6 +580,7 @@ it('commits a title on Enter with an incomplete body and replays clean fields au
     attachments: []
   })
   const saved = structuredClone(notes)
+
   notes = []
   await act(() => render())
   expect(title.value).toBe('')
@@ -587,6 +602,7 @@ it.each([false, true])(
   'serializes completed fields during pending creation, including editor closure %s',
   async (closeEditor) => {
     let finish: () => void = () => undefined
+
     add.mockImplementationOnce(async (_run, draft: ObservationDraft) => {
       await new Promise<void>((resolve) => {
         finish = resolve
@@ -601,6 +617,7 @@ it.each([false, true])(
           updatedAt: '2026-09-08T00:00:00.000Z'
         }
       ]
+
       return 'note'
     })
     await act(() => button('Add field observation').click())
@@ -620,6 +637,7 @@ it.each([false, true])(
     if (closeEditor) {
       await act(() => root.render(null))
     }
+
     await act(async () => finish())
     expect(update).toHaveBeenCalledWith('run-a', 'note', 1, {
       title: 'Gap',
@@ -640,17 +658,21 @@ it('reveals the requested editor without moving focus after its own acknowledgem
   const title = host.querySelector<HTMLInputElement>(
     '[aria-label="Observation title"]'
   )
+
   if (!title) {
     throw new Error('Missing observation title')
   }
+
   expect(document.activeElement).toBe(title)
   await fill('Observation title', 'Feedback review')
   const text = host.querySelector<HTMLTextAreaElement>(
     '[aria-label="Observation text"]'
   )
+
   if (!text) {
     throw new Error('Missing observation text')
   }
+
   await act(() => text.focus())
   await fill('Observation text', '25 mm')
   await commit()

@@ -68,30 +68,37 @@ export const createRetainedDesignContext = (
       abort: () => void
     }
   >()
+
   const releaseLease = (leaseId: string, signal?: AbortSignal) => {
     const lease = leases.get(leaseId)
+
     if (!lease) {
       return
     }
+
     if (signal !== undefined && lease.signal !== signal) {
       throw new RetainedQueryError('Retained query belongs to another request.')
     }
+
     lease.signal?.removeEventListener('abort', lease.abort)
     entries.get(lease.snapshotId)?.leases.delete(leaseId)
     leases.delete(leaseId)
   }
+
   const releaseFor = (signal: AbortSignal) => {
     for (const [id, lease] of leases) {
       if (lease.signal === signal) {
         releaseLease(id)
       }
     }
+
     for (const [id, entry] of entries) {
       if (entry.signal === signal) {
         release(id)
       }
     }
   }
+
   const acquire = (
     snapshotId: string,
     signal?: AbortSignal,
@@ -109,68 +116,91 @@ export const createRetainedDesignContext = (
         }
       }
     }
+
     const entry = entries.get(snapshotId)
+
     if (!entry) {
       throw new RetainedQueryError('Retained query missing.')
     }
+
     const id = crypto.randomUUID()
+
     const abort = () => releaseLease(id)
+
     leases.set(id, { snapshotId, signal, scope, abort })
     entry.leases.add(id)
     signal?.addEventListener('abort', abort, { once: true })
+
     return id
   }
+
   const keys = new Map<string, string>()
   const requestKeys = new WeakMap<AbortSignal, number>()
   let requestSequence = 0
+
   const requestKey = (signal?: AbortSignal) => {
     if (!signal) {
       return 0
     }
+
     let key = requestKeys.get(signal)
+
     if (key === undefined) {
       key = ++requestSequence
       requestKeys.set(signal, key)
     }
+
     return key
   }
+
   const assertRequest = (id: string, signal?: AbortSignal) => {
     const entry = entries.get(id)
+
     if (entry && entry.signal !== signal) {
       throw new RetainedQueryError('Retained query belongs to another request.')
     }
   }
+
   let stop: (() => void) | undefined
+
   const release = (id: string) => {
     const entry = entries.get(id)
+
     if (!entry) {
       return
     }
+
     for (const leaseId of entry.leases) {
       releaseLease(leaseId)
     }
+
     bytes -= entry.bytes
     entries.delete(id)
     if (keys.get(entry.key) === id) {
       keys.delete(entry.key)
     }
   }
+
   const get = (id: string, leaseId?: string, signal?: AbortSignal) => {
     signal?.throwIfAborted()
     if (signal !== undefined) {
       assertRequest(id, signal)
     }
+
     if (leaseId !== undefined && leases.get(leaseId)?.snapshotId !== id) {
       throw new RetainedQueryError(
         'Retained query lease is released or invalid.'
       )
     }
+
     const entry = entries.get(id)
+
     if (disposed || !entry) {
       throw new RetainedQueryError(
         'Retained query missing or evicted; read the current scope again.'
       )
     }
+
     if (
       entry.value.revision !== revision ||
       entry.value.workspaceId !== source.getCurrentWorkspaceId()
@@ -179,8 +209,10 @@ export const createRetainedDesignContext = (
         'Retained query stale; read the current scope again before editing.'
       )
     }
+
     return entry.value
   }
+
   const retain = (
     snapshot: RetainedDesignContext,
     key: string,
@@ -188,23 +220,28 @@ export const createRetainedDesignContext = (
   ) => {
     const size = new TextEncoder().encode(JSON.stringify(snapshot)).byteLength
     const maximum = options.maxBytes ?? 32 * 1024 * 1024
+
     if (size > maximum) {
       throw new RetainedQueryError(
         'Retained query capacity exceeded; narrow the requested scope or columns.'
       )
     }
+
     // All retained data shares one byte budget; small queries have no count quota.
     while (entries.size && bytes + size > maximum) {
       const oldest = [...entries].find(
         ([, entry]) => entry.leases.size === 0
       )?.[0]
+
       if (oldest === undefined) {
         throw new RetainedQueryError(
           'Retained query capacity reserved by pending consumers; consume or release references, or use a query mapping.'
         )
       }
+
       release(oldest)
     }
+
     bytes += size
     entries.set(snapshot.snapshotId, {
       value: snapshot,
@@ -217,12 +254,14 @@ export const createRetainedDesignContext = (
     })
     keys.set(key, snapshot.snapshotId)
   }
+
   const refine = (
     input: Extract<RetainedContextQuery, { scope: 'snapshot' }>,
     signal: AbortSignal | undefined,
     leaseScope: QueryLeaseScope
   ) => {
     const parent = get(input.snapshotId, undefined, signal)
+
     validateDesignContextFilter(input.filter)
     const key = JSON.stringify({
       snapshot: input.snapshotId,
@@ -235,20 +274,25 @@ export const createRetainedDesignContext = (
       string,
       ReturnType<DesignContextSource['getElementMetadata']>
     >()
+
     const readMetadata = (id: string) => {
       if (!metadata.has(id)) {
         metadata.set(id, source.getElementMetadata(id))
       }
+
       return metadata.get(id)
     }
+
     if (!snapshot) {
       const ids = parent.orderedIds.filter((id) =>
         matchesDesignContextFilter(id, input.filter, readMetadata)
       )
+
       assertDesignContextCount(ids.length, input.expectedCount)
       // A source mutation during metadata reads cannot produce a current subset.
       get(input.snapshotId, undefined, signal)
       const selected = new Set(ids)
+
       snapshot = {
         snapshotId: crypto.randomUUID(),
         revision: parent.revision,
@@ -277,6 +321,7 @@ export const createRetainedDesignContext = (
       }
       retain(snapshot, key, signal)
     }
+
     return {
       ...deliverPage(
         snapshot.snapshotId,
@@ -297,6 +342,7 @@ export const createRetainedDesignContext = (
       }
     }
   }
+
   // Consumer reads share retained rows but release only their own lease.
   const read = (
     input: RetainedContextQuery,
@@ -307,9 +353,11 @@ export const createRetainedDesignContext = (
     if (disposed) {
       throw new RetainedQueryError('Retained query owner is disposed.')
     }
+
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
       throw new RetainedQueryError('Invalid document context query.')
     }
+
     if (
       input.delivery !== undefined &&
       !['page', 'reference', 'columns', 'receipt', 'transient'].includes(
@@ -318,6 +366,7 @@ export const createRetainedDesignContext = (
     ) {
       throw new RetainedQueryError('Invalid document context delivery.')
     }
+
     if (
       input.delivery === 'transient' &&
       (input.scope !== 'region' ||
@@ -331,10 +380,13 @@ export const createRetainedDesignContext = (
         'Transient delivery requires complete region IDs without paging or fields.'
       )
     }
+
     if (input.scope !== 'snapshot') {
       const { delivery: _delivery, ...query } = input
+
       validateDesignContextQuery(query)
     }
+
     if (input.scope === 'snapshot') {
       if (
         Object.keys(input).some(
@@ -359,6 +411,7 @@ export const createRetainedDesignContext = (
           'Snapshot reads accept only snapshotId, pagination, delivery, filter, expectedCount and release.'
         )
       }
+
       if (
         typeof input.snapshotId !== 'string' ||
         !input.snapshotId.length ||
@@ -372,6 +425,7 @@ export const createRetainedDesignContext = (
           'Snapshot identity, offset and expectedCount must be valid before refinement.'
         )
       }
+
       validateDesignContextFilter(input.filter)
       assertRequest(input.snapshotId, signal)
       stop ??= observe(() => {
@@ -382,8 +436,11 @@ export const createRetainedDesignContext = (
         if (input.filter !== undefined || input.expectedCount !== undefined) {
           throw new RetainedQueryError('Release cannot refine a snapshot.')
         }
+
         const released = entries.has(input.snapshotId)
+
         release(input.snapshotId)
+
         return {
           available: true,
           released,
@@ -410,6 +467,7 @@ export const createRetainedDesignContext = (
           }
         }
       }
+
       if (input.delivery === 'receipt') {
         if (
           input.filter !== undefined ||
@@ -420,15 +478,19 @@ export const createRetainedDesignContext = (
             'Receipt recovery accepts snapshot identity, delivery and the exact text offset.'
           )
         }
+
         const entry = entries.get(input.snapshotId)
+
         if (!entry || entry.value.receiptText === undefined) {
           throw new RetainedQueryError(
             'Retained structural receipt unavailable; never replay a mutation for readback.'
           )
         }
+
         const value = entry.value
         const text = value.receiptText as string
         const offset = input.offset ?? 0
+
         if (
           !Number.isSafeInteger(offset) ||
           offset < 0 ||
@@ -438,8 +500,10 @@ export const createRetainedDesignContext = (
             'Receipt text offset is outside the immutable result.'
           )
         }
+
         const end = Math.min(text.length, offset + 8192)
         const paged = input.offset !== undefined || text.length > 8192
+
         return {
           available: true,
           scope: 'snapshot',
@@ -465,9 +529,11 @@ export const createRetainedDesignContext = (
             : { receipt: JSON.parse(text) as Record<string, unknown> })
         }
       }
+
       if (input.filter !== undefined) {
         return refine(input, signal, leaseScope)
       }
+
       assertDesignContextCount(
         get(input.snapshotId, undefined, signal).result.total,
         input.expectedCount
@@ -480,6 +546,7 @@ export const createRetainedDesignContext = (
         signal,
         leaseScope
       )
+
       return {
         ...result,
         observation: {
@@ -492,22 +559,27 @@ export const createRetainedDesignContext = (
         }
       }
     }
+
     if (input.delivery === 'receipt') {
       throw new RetainedQueryError('Receipt recovery requires scope=snapshot.')
     }
+
     stop ??= observe(() => {
       revision++
       keys.clear()
     })
     const { delivery, ...query } = input
+
     if (disposed) {
       throw new RetainedQueryError('Retained query owner is disposed.')
     }
+
     const {
       offset = 0,
       limit = query.scope === 'ids' ? (query.elementIds?.length ?? 50) : 50,
       ...selector
     } = query
+
     if (
       !Number.isSafeInteger(offset) ||
       offset < 0 ||
@@ -517,6 +589,7 @@ export const createRetainedDesignContext = (
     ) {
       throw new RetainedQueryError('Invalid document context page.')
     }
+
     const key = JSON.stringify(
       {
         ...selector,
@@ -543,6 +616,7 @@ export const createRetainedDesignContext = (
       metadataReadCount: 0,
       computedReadCount: 0
     }
+
     if (!snapshot) {
       const capturedRevision = revision
       const workspaceId = source.getCurrentWorkspaceId()
@@ -552,14 +626,17 @@ export const createRetainedDesignContext = (
       >()
       const cachedSource: DesignContextSource = {
         ...source,
+
         getElementMetadata: (id) => {
           if (!metadata.has(id)) {
             work.metadataReadCount++
             metadata.set(id, source.getElementMetadata(id))
           }
+
           return metadata.get(id)
         }
       }
+
       // Methods on Core are prototype methods: retain their receiver explicitly.
       for (const method of [
         'getCurrentWorkspaceId',
@@ -570,19 +647,26 @@ export const createRetainedDesignContext = (
       ] as const) {
         Object.assign(cachedSource, { [method]: source[method].bind(source) })
       }
+
       cachedSource.getElementIdsInBounds = (bounds) => {
         const candidates = source.getElementIdsInBounds(bounds)
+
         work.candidateCount += candidates.length
+
         return candidates
       }
+
       cachedSource.getElementComputedData = (id, fields) => {
         work.computedReadCount++
+
         return source.getElementComputedData(id, fields)
       }
+
       const reader = createDesignContextReader(cachedSource)
       let selected: string[]
       let available = true
       let parentId: string | null = null
+
       if (query.scope === 'region') {
         selected =
           reader({ ...selector, fields: [], result: 'ids', allMatches: true })
@@ -592,6 +676,7 @@ export const createRetainedDesignContext = (
         const children = parentId
           ? source.getElementChildren(parentId, 0, Number.MAX_SAFE_INTEGER)
           : undefined
+
         available = Boolean(children?.available)
         selected = children?.elementIds ?? []
       } else if (query.scope === 'selection') {
@@ -601,9 +686,11 @@ export const createRetainedDesignContext = (
       } else {
         throw new RetainedQueryError('Invalid document context scope.')
       }
+
       if (query.scope !== 'region') {
         work.candidateCount = selected.length
       }
+
       assertDesignContextCount(selected.length, query.expectedCount)
       const result = selected.length
         ? reader({
@@ -624,6 +711,7 @@ export const createRetainedDesignContext = (
             missingIds: [],
             elementIds: []
           }
+
       if (
         revision !== capturedRevision ||
         source.getCurrentWorkspaceId() !== workspaceId
@@ -632,6 +720,7 @@ export const createRetainedDesignContext = (
           'Retained query changed while being read; read the current scope again.'
         )
       }
+
       snapshot = {
         snapshotId: crypto.randomUUID(),
         revision: capturedRevision,
@@ -645,6 +734,7 @@ export const createRetainedDesignContext = (
         retain(snapshot, key, signal)
       }
     }
+
     signal?.throwIfAborted()
     if (delivery === 'transient') {
       return {
@@ -663,6 +753,7 @@ export const createRetainedDesignContext = (
         }
       }
     }
+
     return {
       ...deliverPage(
         snapshot.snapshotId,
@@ -682,8 +773,10 @@ export const createRetainedDesignContext = (
       }
     }
   }
+
   const page = (id: string, offset = 0, limit = 50) => {
     const value = get(id)
+
     if (
       !Number.isSafeInteger(offset) ||
       offset < 0 ||
@@ -692,12 +785,15 @@ export const createRetainedDesignContext = (
     ) {
       throw new RetainedQueryError('Invalid retained page.')
     }
+
     const result = value.result
     const ids = value.orderedIds.slice(offset, offset + limit)
     const entry = entries.get(id)
+
     if (!entry) {
       throw new RetainedQueryError('Retained query missing.')
     }
+
     return structuredClone({
       ...result,
       snapshotId: id,
@@ -710,6 +806,7 @@ export const createRetainedDesignContext = (
       missingIds: ids.filter((id) => entry.missing.has(id)),
       elements: ids.flatMap((id) => {
         const row = entry.rows.get(id)
+
         return row ? [row] : []
       }),
       ...(result.elementIds
@@ -717,6 +814,7 @@ export const createRetainedDesignContext = (
         : {})
     })
   }
+
   const deliverPage = (
     id: string,
     offset = 0,
@@ -727,6 +825,7 @@ export const createRetainedDesignContext = (
   ) => {
     if (delivery === 'reference') {
       const value = get(id)
+
       return {
         available:
           value.result.available && value.result.missingIds.length === 0,
@@ -747,10 +846,12 @@ export const createRetainedDesignContext = (
         leaseId: acquire(id, signal, leaseScope)
       }
     }
+
     const result = {
       ...page(id, offset, limit),
       leaseId: acquire(id, signal, leaseScope)
     }
+
     if (delivery === 'columns') {
       return {
         ...result,
@@ -762,8 +863,10 @@ export const createRetainedDesignContext = (
         }))
       }
     }
+
     return result
   }
+
   const retainReceipt = (
     ids: readonly string[],
     receipt: unknown,
@@ -773,6 +876,7 @@ export const createRetainedDesignContext = (
     if (disposed) {
       throw new RetainedQueryError('Retained query owner is disposed.')
     }
+
     stop ??= observe(() => {
       revision++
       keys.clear()
@@ -785,7 +889,9 @@ export const createRetainedDesignContext = (
         'Structural targets require unique ordered identities.'
       )
     }
+
     const snapshotId = crypto.randomUUID()
+
     retain(
       {
         snapshotId,
@@ -811,12 +917,14 @@ export const createRetainedDesignContext = (
       snapshotId,
       signal
     )
+
     return {
       snapshotId,
       leaseId: acquire(snapshotId, signal),
       total: ids.length
     }
   }
+
   return {
     retainReceipt,
     read,
@@ -825,15 +933,18 @@ export const createRetainedDesignContext = (
     release,
     releaseLease,
     releaseFor,
+
     dispose: () => {
       if (disposed) {
         return
       }
+
       disposed = true
       stop?.()
       for (const id of leases.keys()) {
         releaseLease(id)
       }
+
       entries.clear()
       keys.clear()
       bytes = 0

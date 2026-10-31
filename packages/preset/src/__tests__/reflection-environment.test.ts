@@ -9,14 +9,17 @@ it('creates one shared reflection resource, refreshes intensity and reuses it af
   const owner = new ReflectionEnvironment(create)
   const first = new THREE.MeshStandardMaterial()
   const second = new THREE.MeshStandardMaterial()
+
   owner.apply(first, 0, {})
   expect(create).not.toHaveBeenCalled()
   expect(first.envMap).toBeNull()
   owner.apply(first, 0.8, {})
   const version = first.version
+
   for (let i = 0; i < 20; i++) {
     owner.apply(first, 1.2, {})
   }
+
   owner.apply(second, 0.6, {})
   expect(create).toHaveBeenCalledOnce()
   expect(first.envMap).toBe(target.texture)
@@ -42,6 +45,7 @@ it('does not replace material state after failed environment construction', () =
   })
   const owner = new ReflectionEnvironment(create)
   const material = new THREE.MeshStandardMaterial()
+
   expect(() => owner.apply(material, 1, {})).toThrow('GPU unavailable')
   expect(material.envMap).toBeNull()
   expect(material.envMapIntensity).toBe(1)
@@ -52,6 +56,7 @@ it('does not replace material state after failed environment construction', () =
 it('rejects unsupported drivers instead of silently dropping requested reflections', () => {
   const owner = new ReflectionEnvironment()
   const material = new THREE.MeshStandardMaterial()
+
   expect(() => owner.apply(material, 1, {})).toThrow(
     /requires a WebGL renderer/
   )

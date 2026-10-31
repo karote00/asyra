@@ -31,15 +31,19 @@ export interface SourceUpper {
   upper: number
 }
 const ops = poseOperations(intervalAlgebra)
+
 const finiteInterval = (value: Interval) =>
   Number.isFinite(value[0]) && Number.isFinite(value[1]) && value[0] <= value[1]
+
 const immutableMesh = (shape: ConvexShape) =>
   shape.geometry.kind === 'mesh' &&
   Object.isFrozen(shape.geometry) &&
   Object.isFrozen(shape.geometry.positions) &&
   Object.isFrozen(shape.geometry.indices)
+
 const copyInterval = (value: Interval): Interval =>
   Object.freeze([value[0], value[1]])
+
 function copyShape(shape: ConvexShape): ConvexShape {
   return Object.freeze({
     geometry: shape.geometry,
@@ -53,9 +57,11 @@ function copyShape(shape: ConvexShape): ConvexShape {
     })
   })
 }
+
 /** Unexported runtime brand; only a sampler's completed solve can mint a source. */
 class FreshSource {
   #scope: object
+
   constructor(
     scope: object,
     readonly origin: Readonly<StaticSampleOrigin>,
@@ -67,6 +73,7 @@ class FreshSource {
     this.#scope = scope
     Object.freeze(this)
   }
+
   static belongs(value: unknown, scope: object): value is FreshSource {
     return (
       typeof value === 'object' &&
@@ -89,10 +96,13 @@ export function createFreshStaticSampler(
   exhausted: (error: unknown) => boolean
 ): StaticSampler {
   const scope = {}
+
   const sample: StaticSampler = (a, b, origin, previous) => {
     let evidence: DistanceEvidence | undefined
+
     try {
       let seed: SourceUpper | undefined
+
       if (previous !== undefined) {
         tick()
         if (
@@ -119,25 +129,31 @@ export function createFreshStaticSampler(
         ) {
           tick()
           const localA = localPoint(previous.shapes[0].pose, previous.a)
+
           tick()
           const localB = localPoint(previous.shapes[1].pose, previous.b)
+
           tick()
           const wa = ops.add(
             a.pose.position,
             ops.rotate(a.pose.rotation, localA)
           )
+
           tick()
           const wb = ops.add(
             b.pose.position,
             ops.rotate(b.pose.rotation, localB)
           )
+
           tick()
           const upper = ops.norm(ops.sub(wa, wb))[1]
+
           if (Number.isFinite(upper)) {
             seed = { a: wa, b: wb, upper }
           }
         }
       }
+
       evidence = solve(a, b, seed)
       if (
         origin.capture &&
@@ -173,16 +189,20 @@ export function createFreshStaticSampler(
             evidence.witnessB.map(copyInterval)
           ) as DistanceEvidence['witnessB']
         )
+
         return { evidence, source }
       }
+
       return { evidence }
     } catch (error) {
       if (!exhausted(error)) {
         throw error
       }
+
       return evidence ? { evidence, exhausted: true } : null
     }
   }
+
   sample.publishBoundary = (source) => {
     try {
       tick()
@@ -195,6 +215,7 @@ export function createFreshStaticSampler(
       ) {
         return undefined
       }
+
       return new FreshSource(
         scope,
         source.origin,
@@ -207,8 +228,10 @@ export function createFreshStaticSampler(
       if (!exhausted(error)) {
         throw error
       }
+
       return null
     }
   }
+
   return sample
 }

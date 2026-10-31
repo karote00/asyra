@@ -17,6 +17,7 @@ export const AiToolLibraryPanel = () => {
     async (change?: Exclude<ToolLibraryRequest, { operation: 'list' }>) => {
       active.current?.abort()
       const request = new AbortController()
+
       active.current = request
       setBusy(true)
       setIssue(undefined)
@@ -24,7 +25,9 @@ export const AiToolLibraryPanel = () => {
         if (change) {
           await updateToolLibrary(change, request.signal)
         }
+
         const next = await readToolLibrary(request.signal)
+
         if (!request.signal.aborted) {
           setInventory(next)
         }
@@ -44,12 +47,15 @@ export const AiToolLibraryPanel = () => {
     },
     []
   )
+
   useEffect(() => {
     if (open) {
       void refresh()
     }
+
     return () => active.current?.abort()
   }, [open, refresh])
+
   return (
     <div className="relative">
       <button

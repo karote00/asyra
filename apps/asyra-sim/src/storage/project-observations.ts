@@ -31,17 +31,21 @@ export function validateProjectObservationReferences(snapshot: {
     ? validateObservationSources(snapshot.observationSources)
     : []
   const byId = new Map(sources.map((source) => [source.sourceId, source]))
+
   for (const reference of projectObservationAttachments(snapshot)) {
     const source = byId.get(reference.sourceId)
+
     if (!source) {
       throw new Error(
         'Missing observation attachment source in portable project'
       )
     }
+
     if (source.byteLength !== reference.byteLength) {
       throw new Error('Observation attachment byte length mismatch')
     }
   }
+
   return sources
 }
 
@@ -62,11 +66,15 @@ export function exportObservationBundle(
   archive: ObservationAttachmentArchive
 ): string {
   const record = validateRunRecord(run)
+
   if (!validFieldObservations(observations)) {
     throw new Error('Invalid field observations for export')
   }
+
   const references = observations.flatMap((note) => note.attachments)
+
   archive.resolve(references)
+
   return collectReportText([
     JSON.stringify({
       format: StorageFormats.OBSERVATIONS,

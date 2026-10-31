@@ -9,14 +9,18 @@ import './styles.css'
 import './ui/office.css'
 
 const host = document.getElementById('root')
+
 if (!host) {
   throw new Error('Missing application root')
 }
+
 const review = new URLSearchParams(location.search).get('review')
 let content = <OfficeScene />
+
 if (review === 'wall') {
   content = <AssetPreview />
 } else if (review && Object.hasOwn(REVIEW_ASSETS, review)) {
   content = <AssetPreview asset={review as ReviewAsset} />
 }
+
 createRoot(host).render(content)

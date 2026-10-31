@@ -7,6 +7,7 @@ export interface FrameScheduler {
 /** Transient wall-clock playback; never owns geometry, analysis or history. */
 export class PlaybackClock {
   private handle: number | null = null
+
   private generation = 0
 
   constructor(private readonly scheduler: FrameScheduler) {}

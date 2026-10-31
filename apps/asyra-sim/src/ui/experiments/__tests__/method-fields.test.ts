@@ -40,11 +40,13 @@ async function setup(methods = INSTALLED_METHOD_CATALOG.descriptors) {
 
   const inputs = () => ({
     draft,
+
     onChange: (next: ExperimentDraft) => {
       draft = next
 
       source.publish(inputs())
     },
+
     exclusions: '',
     onExclusions: vi.fn(),
     workcell: example.workcell,
@@ -55,7 +57,11 @@ async function setup(methods = INSTALLED_METHOD_CATALOG.descriptors) {
 
   await act(() => root.render(createElement(ExperimentFields, { source })))
 
-  return { original, draft: () => draft }
+  return {
+    original,
+
+    draft: () => draft
+  }
 }
 
 async function select(value: string) {

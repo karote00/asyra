@@ -19,6 +19,7 @@ import {
 
 export class ViewportLayer {
   layer: RenderContainer
+
   private renderLayer: RenderLayer
 
   constructor() {
@@ -39,10 +40,13 @@ export class ViewportLayer {
   /** Snapshot-only resolution; workspace is not an ordinary scene element. */
   getSnapshotTarget(elementId: string) {
     const workspace = this.renderLayer.view
+
     if (elementId && workspace.label === elementId) {
       return { node: workspace, workspace: true }
     }
+
     const node = this.getElementById(elementId)
+
     if (node) {
       return { node, workspace: false }
     }
@@ -120,6 +124,7 @@ export class ViewportLayer {
       const elementsBounds = this.renderLayer.getAllElementsBounds(
         this.renderLayer.view
       )
+
       this.fitBounds(elementsBounds, rectToBounds(uiBounds))
     } else {
       this.panTo(
@@ -191,6 +196,7 @@ export class ViewportLayer {
       viewportBounds: uiBounds,
       padding
     })
+
     this.panTo(position.x, position.y)
     this.zoomTo(scale)
   }

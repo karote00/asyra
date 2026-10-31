@@ -18,13 +18,16 @@ interface TraceEvent {
  * never private model computation. Payloads remain separately retained references. */
 export const exportExecutionTrace = (run: ParsedExecution) => {
   const traceEvents: TraceEvent[] = []
+
   for (const step of run.steps) {
     if (step.startedMs === null) {
       continue
     }
+
     const attribution = step.diagnostics?.attribution
     const details =
       attribution && typeof attribution === 'object' ? attribution : {}
+
     traceEvents.push({
       name: step.tool ?? step.callId,
       cat: step.kind,
@@ -43,6 +46,7 @@ export const exportExecutionTrace = (run: ParsedExecution) => {
       }
     })
   }
+
   for (const record of run.records) {
     if (
       typeof record.elapsedMs !== 'number' ||
@@ -50,6 +54,7 @@ export const exportExecutionTrace = (run: ParsedExecution) => {
     ) {
       continue
     }
+
     traceEvents.push({
       name: String(record.stage ?? record.event),
       cat: 'observed-event',
@@ -65,7 +70,9 @@ export const exportExecutionTrace = (run: ParsedExecution) => {
       }
     })
   }
+
   traceEvents.sort((a, b) => a.ts - b.ts)
+
   return {
     displayTimeUnit: 'ms',
     traceEvents,

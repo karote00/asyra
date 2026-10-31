@@ -15,6 +15,7 @@ import { consumerPortableFiles } from './consumer-contract.mjs'
 const copyTree = (source, target) => {
   for (const file of distributionFiles(source)) {
     const destination = path.join(target, file)
+
     mkdirSync(path.dirname(destination), { recursive: true })
     cpSync(path.join(source, file), destination, {
       errorOnExist: true,
@@ -32,6 +33,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
   ) {
     throw new Error('Assembly requires passing exact-source consumer evidence.')
   }
+
   const sourceApp = path.join(snapshot, 'apps/asyra-sim')
   const staging = mkdtempSync(path.join(output, 'tmp/distribution-'))
   const productSlug = 'asyra-sim'
@@ -39,13 +41,17 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
     staging,
     `${productSlug}-${report.appVersion}-${report.sourceCommit.slice(0, 12)}`
   )
+
   mkdirSync(destination)
   copyTree(path.join(consumer, 'dist'), path.join(destination, 'site'))
+
   const copy = (source, target) => {
     const filename = path.join(destination, target)
+
     mkdirSync(path.dirname(filename), { recursive: true })
     cpSync(source, filename, { errorOnExist: true, force: false })
   }
+
   for (const [source, target] of [
     ['local-server.mjs', 'server.mjs'],
     ['verify-files.mjs', 'verify-files.mjs'],
@@ -53,12 +59,15 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
   ]) {
     copy(path.join(sourceApp, 'scripts', source), target)
   }
+
   copy(path.join(snapshot, 'LICENSE'), 'LICENSE')
 
   const sdk = path.join(destination, 'sdk/app')
+
   for (const folder of ['src', 'samples', 'e2e']) {
     copyTree(path.join(consumer, folder), path.join(sdk, folder))
   }
+
   for (const file of [
     'package.json',
     'yarn.lock',
@@ -76,6 +85,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
   ]) {
     copy(path.join(consumer, file), `sdk/app/${file}`)
   }
+
   copy(
     path.join(sourceApp, 'scripts/run-e2e.mjs'),
     'sdk/app/scripts/run-e2e.mjs'
@@ -83,6 +93,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
   for (const file of consumerPortableFiles) {
     copy(path.join(consumer, file), `sdk/app/${file}`)
   }
+
   mkdirSync(path.join(sdk, '.build-evidence'), { recursive: true })
   writeFileSync(path.join(sdk, '.build-evidence/.keep'), '')
   copyTree(
@@ -97,6 +108,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
       `docs/${file}`
     ])
   )
+
   targets.set('apps/asyra-sim/README.md', 'USER_GUIDE.md')
   targets.set(`${docsRoot}/release/LOCAL_CANDIDATE.md`, 'README.md')
   targets.set(
@@ -105,6 +117,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
   )
   for (const [source, target] of targets) {
     const filename = path.join(snapshot, source)
+
     if (!source.endsWith('.md')) {
       copy(filename, target)
     } else {
@@ -116,6 +129,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
         report.sourceCommit
       )
       const filenameOut = path.join(destination, target)
+
       mkdirSync(path.dirname(filenameOut), { recursive: true })
       writeFileSync(filenameOut, text, { flag: 'wx' })
     }
@@ -125,6 +139,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
     consumer,
     path.join(sourceApp, 'scripts/notices')
   )
+
   writeFileSync(
     path.join(destination, 'DEPENDENCIES.json'),
     JSON.stringify(
@@ -163,5 +178,6 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
   )
   writeFileSync(path.join(destination, 'SHA256SUMS'), checksumText(destination))
   verifyDistribution(destination)
+
   return destination
 }

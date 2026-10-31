@@ -33,8 +33,10 @@ const fixture = () => {
     ),
     apply: vi.fn()
   }
+
   return { arrange: createDesignArranger(apis), apis, records, geometry }
 }
+
 describe('native design arrangement', () => {
   it.each([
     ['horizontal', 'start', 10, 10],
@@ -55,6 +57,7 @@ describe('native design arrangement', () => {
       })
       const key = axis === 'horizontal' ? 'x' : 'y'
       const patches = apis.apply.mock.calls[0]?.[0] ?? []
+
       expect(result.positions.find((p) => p.elementId === 'a')?.[key]).toBe(a)
       expect(result.positions.find((p) => p.elementId === 'b')?.[key]).toBe(b)
       for (const patch of patches) {
@@ -64,6 +67,7 @@ describe('native design arrangement', () => {
   )
   it('distributes unequal widths in spatial order with fixed outer edges', () => {
     const { arrange, apis } = fixture()
+
     expect(
       arrange({
         operation: 'distribute',
@@ -93,6 +97,7 @@ describe('native design arrangement', () => {
       gap: 12,
       elementIds: ['a', 'b', 'c']
     } as const
+
     expect(arrange(request).positions).toEqual([
       { elementId: 'a', y: 20 },
       { elementId: 'b', y: 62 },
@@ -103,6 +108,7 @@ describe('native design arrangement', () => {
   })
   it('uses actual projected bounds for rotated shapes', () => {
     const { arrange, apis } = fixture()
+
     apis.corner.mockImplementation((id, _parent, p) =>
       id === 'a' ? { x: 40 - p.y, y: 20 + p.x } : { x: 70 + p.x, y: 80 + p.y }
     )
@@ -117,6 +123,7 @@ describe('native design arrangement', () => {
   })
   it('does not write unchanged alignment', () => {
     const { arrange, apis, geometry } = fixture()
+
     geometry.b.x = geometry.a.x
     expect(
       arrange({
@@ -150,6 +157,7 @@ describe('native design arrangement', () => {
     'rejects invalid arguments before observations or writes: %j',
     (request) => {
       const { arrange, apis } = fixture()
+
       expect(() => arrange(request as never)).toThrow()
       expect(apis.read).not.toHaveBeenCalled()
       expect(apis.apply).not.toHaveBeenCalled()
@@ -164,24 +172,31 @@ describe('native design arrangement', () => {
     'negative-gap'
   ] as const)('rejects %s before any write', (reason) => {
     const { arrange, apis, records, geometry } = fixture()
+
     if (reason === 'locked') {
       records.f.lock = true
     }
+
     if (reason === 'missing') {
       delete records.b
     }
+
     if (reason === 'different-parent') {
       records.b.parentId = 'w'
     }
+
     if (reason === 'bad-geometry') {
       geometry.b.width = NaN
     }
+
     if (reason === 'bad-projection') {
       apis.corner.mockReturnValue({ x: Infinity, y: 0 })
     }
+
     if (reason === 'negative-gap') {
       geometry.b.x = 11
     }
+
     expect(() =>
       arrange({
         operation: 'distribute',
@@ -196,10 +211,12 @@ describe('native design arrangement', () => {
 it('aligns more than 200 siblings in one canonical patch batch', () => {
   const { arrange, records, geometry, apis } = fixture()
   const ids = Array.from({ length: 250 }, (_, i) => `item-${i}`)
+
   for (const [i, id] of ids.entries()) {
     records[id] = { type: 'rect', parentId: 'f' }
     geometry[id] = { x: i, y: 0, width: 10, height: 10 }
   }
+
   arrange({
     operation: 'align',
     axis: 'horizontal',

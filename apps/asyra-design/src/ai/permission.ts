@@ -30,6 +30,7 @@ export const createAiPermissionPolicy = (
     }
 
     const descriptor = Object.getOwnPropertyDescriptor(rules, key)
+
     if (
       !descriptor?.enumerable ||
       !('value' in descriptor) ||
@@ -38,6 +39,7 @@ export const createAiPermissionPolicy = (
     ) {
       throw new AiPermissionConfigurationError()
     }
+
     decisions.set(key, descriptor.value)
   }
 

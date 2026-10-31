@@ -39,6 +39,7 @@ const WARMUP_FRAMES = 12
 const DENSE_POINT_COUNT = 56
 const DENSE_TRANSFORM_POINT_COUNT = 7_001
 const SELF_INTERSECTION_STEP = 3
+
 test.describe('Render delta correctness and work contracts', () => {
   test.beforeEach(async ({ page }) => {
     captureBrowserErrors(page)
@@ -60,6 +61,7 @@ test.describe('Render delta correctness and work contracts', () => {
     const session = await page.context().newCDPSession(page)
     const traceEvents: unknown[] = []
     const traceEnabled = process.env.E2E_RENDER_PERFORMANCE_TRACE === 'true'
+
     if (traceEnabled) {
       session.on('Tracing.dataCollected', ({ value }) =>
         traceEvents.push(...value)
@@ -70,6 +72,7 @@ test.describe('Render delta correctness and work contracts', () => {
         transferMode: 'ReportEvents'
       })
     }
+
     await session.send('Performance.enable')
     const metricsBefore = await session.send('Performance.getMetrics')
     const rawProfile = await page.evaluate(
@@ -83,6 +86,7 @@ test.describe('Render delta correctness and work contracts', () => {
           subscribeToBrowserDragPhases,
           subscribeToDiagnosticCounters
         } = await import('../src/testing/runtime-access')
+
         if (!core || !elementApis) {
           throw new Error('Asyra Design E2E runtime is unavailable')
         }
@@ -97,6 +101,7 @@ test.describe('Render delta correctness and work contracts', () => {
           { length: pointCount },
           (_, index) => pointIds[(index * intersectionStep) % pointCount]
         )
+
         if (new Set(traversalIds).size !== pointCount) {
           throw new Error('Dense vector traversal must visit every point once')
         }
@@ -104,6 +109,7 @@ test.describe('Render delta correctness and work contracts', () => {
         const points = Object.fromEntries(
           pointIds.map((id, index) => {
             const angle = (Math.PI * 2 * index) / pointCount
+
             return [
               id,
               {
@@ -120,6 +126,7 @@ test.describe('Render delta correctness and work contracts', () => {
           traversalIds.map((pointId, index) => {
             const nextPointId = traversalIds[(index + 1) % traversalIds.length]
             const segmentId = `dense-segment-${index}`
+
             return [
               segmentId,
               {
@@ -153,9 +160,11 @@ test.describe('Render delta correctness and work contracts', () => {
           },
           { undoable: false }
         )
+
         if (!elementId) {
           throw new Error('Failed to create dense vector profiling fixture')
         }
+
         elementApis.patchElementProperties(
           [
             {
@@ -182,11 +191,13 @@ test.describe('Render delta correctness and work contracts', () => {
         )
 
         const collaboration = getActiveCollaborationHandle()
+
         if (!collaboration) {
           throw new Error(
             'Collaboration runtime is unavailable for isolated profiling'
           )
         }
+
         await collaboration.whenIdle()
         if (collaboration.getStatus() !== 'connected') {
           throw new Error(
@@ -202,6 +213,7 @@ test.describe('Render delta correctness and work contracts', () => {
         const render = core.deps?.render
         const engine = render?.getEngine?.()
         const element = sceneTree?.getElementById?.(elementId)
+
         if (!sceneTree || !render || !engine || !element) {
           throw new Error('Composed owner runtime is unavailable for profiling')
         }
@@ -212,6 +224,7 @@ test.describe('Render delta correctness and work contracts', () => {
           durationMs: number
           endMs: number
         }[] = []
+
         const pushSample = (phaseName: string, durationMs: number) => {
           phaseTimeline.push({
             name: phaseName,
@@ -219,6 +232,7 @@ test.describe('Render delta correctness and work contracts', () => {
             endMs: performance.timeOrigin + performance.now()
           })
           const samples = phaseSamples.get(phaseName) ?? []
+
           samples.push(durationMs)
           phaseSamples.set(phaseName, samples)
         }
@@ -250,33 +264,42 @@ test.describe('Render delta correctness and work contracts', () => {
 
         sceneTree.patchLocalComputedData = (...args: unknown[]) => {
           const start = performance.now()
+
           try {
             return originalPatchLocalComputedData(...args)
           } finally {
             sceneTreeSamples.push(performance.now() - start)
           }
         }
+
         engine.execute = (...args: unknown[]) => {
           const start = performance.now()
+
           try {
             return originalEngineExecute(...args)
           } finally {
             engineSamples.push(performance.now() - start)
           }
         }
+
         element.save = (...args: unknown[]) => {
           elementSaveCallsDuringDelta += 1
+
           return originalElementSave(...args)
         }
+
         element.getAllComputedData = (...args: unknown[]) => {
           computedSnapshotCallsDuringDelta += 1
+
           return originalGetAllComputedData(...args)
         }
 
         let warmupStrategySamples: number[] = []
+
         try {
           const movingPointId = traversalIds[1]
           const movingPoint = points[movingPointId]
+
           for (let index = -warmupFrames; index < sampleFrames; index += 1) {
             if (index === 0) {
               warmupStrategySamples = [
@@ -291,10 +314,12 @@ test.describe('Render delta correctness and work contracts', () => {
               elementSaveCallsDuringDelta = 0
               computedSnapshotCallsDuringDelta = 0
             }
+
             const angle = (Math.PI * 2 * index) / sampleFrames
             const engineSampleStart = engineSamples.length
             const strategySampleStart =
               phaseSamples.get('render-layer:strategy:vector')?.length ?? 0
+
             elementApis.updateVectorAnchorPointPosition(
               elementId,
               movingPointId,
@@ -310,13 +335,17 @@ test.describe('Render delta correctness and work contracts', () => {
             )
             await new Promise<void>((resolve, reject) => {
               let remainingFrames = 4
+
               const waitForStrategy = () => {
                 const strategySampleCount =
                   phaseSamples.get('render-layer:strategy:vector')?.length ?? 0
+
                 if (strategySampleCount > strategySampleStart) {
                   resolve()
+
                   return
                 }
+
                 remainingFrames -= 1
                 if (remainingFrames === 0) {
                   reject(
@@ -324,10 +353,13 @@ test.describe('Render delta correctness and work contracts', () => {
                       `Render strategy did not consume delta sample ${index + 1}`
                     )
                   )
+
                   return
                 }
+
                 requestAnimationFrame(waitForStrategy)
               }
+
               requestAnimationFrame(waitForStrategy)
             })
             engineFrameSamples.push(
@@ -336,6 +368,7 @@ test.describe('Render delta correctness and work contracts', () => {
                 .reduce((total, sample) => total + sample, 0)
             )
           }
+
           await new Promise<void>((resolve) =>
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
           )
@@ -352,9 +385,11 @@ test.describe('Render delta correctness and work contracts', () => {
         }
 
         const fullRehydrateReference: number[] = []
+
         for (let index = 0; index < sampleFrames; index += 1) {
           const referenceIterations = 32
           const start = performance.now()
+
           for (
             let referenceIndex = 0;
             referenceIndex < referenceIterations;
@@ -363,6 +398,7 @@ test.describe('Render delta correctness and work contracts', () => {
             originalElementSave()
             originalGetAllComputedData()
           }
+
           fullRehydrateReference.push(
             (performance.now() - start) / referenceIterations
           )
@@ -398,21 +434,26 @@ test.describe('Render delta correctness and work contracts', () => {
     )
 
     const metricsAfter = await session.send('Performance.getMetrics')
+
     if (traceEnabled) {
       const complete = new Promise<void>((resolve) =>
         session.once('Tracing.tracingComplete', () => resolve())
       )
+
       await session.send('Tracing.end')
       await complete
       const tracePath = testInfo.outputPath('render-runtime-trace.json')
+
       await writeFile(tracePath, JSON.stringify({ traceEvents }))
       await testInfo.attach('render-runtime-trace', {
         path: tracePath,
         contentType: 'application/json'
       })
     }
+
     await session.detach()
     const profilePath = testInfo.outputPath('render-profile-samples.json')
+
     await writeFile(
       profilePath,
       JSON.stringify({
@@ -555,6 +596,7 @@ test.describe('Render delta correctness and work contracts', () => {
     expect(visualReviewState.mouseDragging).toBe(false)
 
     const screenshotPath = testInfo.outputPath('dense-vector-final.png')
+
     await page.screenshot({
       path: screenshotPath,
       fullPage: true,
@@ -567,6 +609,7 @@ test.describe('Render delta correctness and work contracts', () => {
     const screenshotCropPath = testInfo.outputPath(
       'dense-vector-final-crop.png'
     )
+
     await page.screenshot({
       path: screenshotCropPath,
       clip: visualReviewState.screenshotClip,
@@ -602,6 +645,7 @@ test.describe('Render delta correctness and work contracts', () => {
     const fixture = await page.evaluate(async (pointCount) => {
       const { core, elementApis } =
         await import('../src/testing/runtime-access')
+
       if (!core || !elementApis) {
         throw new Error('Asyra Design E2E runtime is unavailable')
       }
@@ -615,6 +659,7 @@ test.describe('Render delta correctness and work contracts', () => {
       const points = Object.fromEntries(
         pointIds.map((id, index) => {
           const angle = (Math.PI * 2 * index) / pointCount
+
           return [
             id,
             {
@@ -630,6 +675,7 @@ test.describe('Render delta correctness and work contracts', () => {
       const segments = Object.fromEntries(
         pointIds.map((pointId, index) => {
           const id = `dense-transform-segment-${index}`
+
           return [
             id,
             {
@@ -662,6 +708,7 @@ test.describe('Render delta correctness and work contracts', () => {
         },
         { undoable: false }
       )
+
       if (!elementId) {
         throw new Error('Failed to create dense Vector transform fixture')
       }
@@ -704,6 +751,7 @@ test.describe('Render delta correctness and work contracts', () => {
         x: 0,
         y: 0
       }
+
       return {
         elementId,
         pointCount: Object.keys(computed.points ?? {}).length,
@@ -720,6 +768,7 @@ test.describe('Render delta correctness and work contracts', () => {
 
     const captureStage = async (label: string) => {
       const screenshotPath = testInfo.outputPath(`dense-transform-${label}.png`)
+
       await page.screenshot({
         path: screenshotPath,
         fullPage: true,
@@ -735,6 +784,7 @@ test.describe('Render delta correctness and work contracts', () => {
 
     await page.evaluate(async (elementId) => {
       const { core } = await import('../src/testing/runtime-access')
+
       core.selectElements?.([elementId], { undoable: false })
     }, fixture.elementId)
     await page.waitForTimeout(100)
@@ -753,6 +803,7 @@ test.describe('Render delta correctness and work contracts', () => {
       const unsubscribe = subscribeToBrowserDragPhases((name, durationMs) => {
         phases.push({ name, durationMs })
       })
+
       startSharedPublicationCapture('dense-transform-publications')
       testRuntimeState.set('dense-transform-probe', {
         beforePoints: computed.points,
@@ -785,9 +836,11 @@ test.describe('Render delta correctness and work contracts', () => {
         phases: { name: string; durationMs: number }[]
         unsubscribe: () => void
       }>('dense-transform-probe')
+
       if (!probe) {
         throw new Error('Dense transform probe was not installed')
       }
+
       probe.unsubscribe()
 
       const publications = readTestCapture(
@@ -795,17 +848,22 @@ test.describe('Render delta correctness and work contracts', () => {
       ) as readonly unknown[]
       const canonicalPropertyKeys = new Set<string>()
       const canonicalRecordTypes = new Set<string>()
+
       const visit = (value: unknown): void => {
         if (Array.isArray(value)) {
           value.forEach(visit)
+
           return
         }
+
         if (!value || typeof value !== 'object') {
           return
         }
+
         const record = value as Record<string, unknown>
         const eventName =
           typeof record.eventName === 'string' ? record.eventName : record.type
+
         if (
           eventName === 'addProperty' ||
           eventName === 'removeProperty' ||
@@ -815,18 +873,22 @@ test.describe('Render delta correctness and work contracts', () => {
             record.payload && typeof record.payload === 'object'
               ? (record.payload as Record<string, unknown>)
               : {}
+
           if (typeof payload.key === 'string') {
             canonicalPropertyKeys.add(payload.key)
           }
+
           if (
             eventName === 'updateProperty' &&
             typeof payload.id === 'string'
           ) {
             const propertyType = payload.propertyType
+
             if (typeof propertyType === 'string') {
               canonicalRecordTypes.add(propertyType)
             }
           }
+
           if (Array.isArray(payload.data)) {
             payload.data.forEach((entry) => {
               if (
@@ -839,8 +901,10 @@ test.describe('Render delta correctness and work contracts', () => {
             })
           }
         }
+
         Object.values(record).forEach(visit)
       }
+
       publications.forEach(visit)
 
       const computed =
@@ -915,6 +979,7 @@ test.describe('Render delta correctness and work contracts', () => {
         core.deps?.sceneTree
           ?.getElementById?.(elementId)
           ?.getAllComputedData?.() ?? {}
+
       elementApis.changeElementGeometry(
         elementId,
         {
@@ -930,6 +995,7 @@ test.describe('Render delta correctness and work contracts', () => {
 
     await page.evaluate(async (elementId) => {
       const { core } = await import('../src/testing/runtime-access')
+
       core.setSystemProperty?.('pathEditingVectorId', elementId)
       core.setSystemProperty?.('pathEditingMode', true)
     }, fixture.elementId)
@@ -950,6 +1016,7 @@ test.describe('Render delta correctness and work contracts', () => {
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
       const factory = core?.deps?.factory
+
       if (
         !core ||
         !elementApis ||
@@ -963,6 +1030,7 @@ test.describe('Render delta correctness and work contracts', () => {
         new Promise<void>((resolve) =>
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
+
       const initialPoints = {
         A: {
           id: 'A',
@@ -1025,28 +1093,36 @@ test.describe('Render delta correctness and work contracts', () => {
         },
         { undoable: false }
       )
+
       if (!elementId) {
         throw new Error('Failed to create replay equivalence fixture')
       }
+
       await waitForStableFrame()
 
       const clone = (value: unknown) =>
         JSON.parse(JSON.stringify(value)) as Record<string, unknown>
+
       const capture = (phase: string) => {
         const element = core.deps.sceneTree.getElementById(elementId)
         const renderElement = core.deps.render.getElementById(elementId)
+
         if (!element || !renderElement) {
           throw new Error(`Missing projection during ${phase}`)
         }
+
         const fresh = {
           ...element.save(),
           ...element.getAllComputedData()
         }
         const rendered = renderElement.__renderDataSnapshot
+
         if (!rendered) {
           throw new Error(`Missing strategy snapshot during ${phase}`)
         }
+
         const normalizedFresh = clone(fresh)
+
         return {
           phase,
           pointAX: Number(

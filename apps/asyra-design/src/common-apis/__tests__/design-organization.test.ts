@@ -31,11 +31,14 @@ const fixture = () => {
     })),
     rename: vi.fn()
   }
+
   return { organize: createDesignOrganizer(apis), apis, records }
 }
+
 describe('canonical design organization', () => {
   it('groups in canonical order and reads each shared ancestor only once', () => {
     const { organize, apis } = fixture()
+
     expect(
       organize({ operation: 'group', elementIds: ['b', 'a'], name: 'Heading' })
     ).toMatchObject({
@@ -50,6 +53,7 @@ describe('canonical design organization', () => {
   })
   it('reorders using the remaining-sibling insertion index without geometry writes', () => {
     const { organize, apis } = fixture()
+
     organize({ operation: 'reorder', elementIds: ['a'], index: 2 })
     expect(apis.move).toHaveBeenCalledExactlyOnceWith({
       elementIds: ['a'],
@@ -61,6 +65,7 @@ describe('canonical design organization', () => {
   })
   it('ungroups only an official Group and checks child locks before the owner runs', () => {
     const { organize, records, apis } = fixture()
+
     records.g = { type: 'group', parentId: 'frame', children: ['a', 'b'] }
     records.frame.children = ['g', 'c']
     records.a.parentId = records.b.parentId = 'g'
@@ -93,6 +98,7 @@ describe('canonical design organization', () => {
     { operation: 'group', elementIds: ['a'], extra: true }
   ])('rejects invalid operation without writes: %j', (request) => {
     const { organize, apis } = fixture()
+
     expect(() => organize(request as never)).toThrow()
     for (const fn of [apis.group, apis.ungroup, apis.move, apis.rename]) {
       expect(fn).not.toHaveBeenCalled()
@@ -100,6 +106,7 @@ describe('canonical design organization', () => {
   })
   it('rechecks locks on later calls and rejects inconsistent parent membership', () => {
     const { organize, records, apis } = fixture()
+
     organize({ operation: 'group', elementIds: ['a'] })
     apis.group.mockClear()
     records.frame.lock = true
@@ -118,10 +125,12 @@ describe('canonical design organization', () => {
 it('groups a complete known sibling set in one native operation rather than making artificial groups of 200', () => {
   const { organize, records, apis } = fixture()
   const ids = Array.from({ length: 250 }, (_, i) => `item-${i}`)
+
   records.frame.children = ids
   for (const id of ids) {
     records[id] = { type: 'rect', parentId: 'frame' }
   }
+
   expect(organize({ operation: 'group', elementIds: ids }).elementIds).toEqual(
     ids
   )

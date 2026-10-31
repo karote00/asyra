@@ -52,6 +52,7 @@ export function useRunLibrary({
     if (comparisonRequest.current) {
       return
     }
+
     comparisonRequest.current = comparisonRuns
     setPendingComparison(comparisonRuns)
     setComparisonState(null)
@@ -70,6 +71,7 @@ export function useRunLibrary({
         if (comparisonRequest.current !== pendingComparison) {
           return
         }
+
         try {
           setComparisonState({
             value: compareRuns(pendingComparison),
@@ -83,6 +85,7 @@ export function useRunLibrary({
         }
       })
     })
+
     return () => cancelAnimationFrame(frame)
   }, [pendingComparison])
 
@@ -91,10 +94,12 @@ export function useRunLibrary({
       comparisonRequest.current = null
       setPendingComparison(null)
     }
+
     setComparisonIds((current) => {
       const retained = current.filter((id) =>
         runs.some((run) => run.result.runId === id)
       )
+
       return retained.length === current.length ? current : retained
     })
     setComparisonState((current) =>

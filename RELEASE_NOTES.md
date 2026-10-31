@@ -1,5 +1,26 @@
 # Asyra Release Notes
 
+## Pending - Readability spacing enforcement
+
+```update-note
+{
+  "change": "readability-spacing-enforcement",
+  "owner": "Repository code quality",
+  "summary": "Enable statement, class-member and object-function spacing rules and apply their automatic layout fixes across maintained source.",
+  "reason": "Consistent blank lines separate declarations, implementation and scopes while preserving overload adjacency, comment ownership, generated template exclusions and frozen historical evidence.",
+  "impact": "no-action",
+  "sources": [
+    "eslint.config.js",
+    "scripts/eslint-readability.mjs",
+    "scripts/__tests__/eslint-readability.test.mjs",
+    "scripts/ci-relationships.json",
+    "package.json",
+    "docs/ai/framework/CODING_STANDARDS.md"
+  ],
+  "guides": []
+}
+```
+
 ## Pending - Prepared delivery history verification
 
 ```update-note

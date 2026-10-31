@@ -63,13 +63,16 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
   ) {
     throw new Error('Expected a concrete supported schema type')
   }
+
   const type = value.type as keyof typeof keysByType
   const keys = [...commonKeys, ...keysByType[type]]
+
   if (Object.keys(value).some((key) => !keys.includes(key))) {
     throw new Error(
       'Schema keyword is outside the supported composition subset'
     )
   }
+
   if (
     value['x-runtime-value'] !== undefined &&
     !['request', 'request-artifact', 'document', 'secret'].includes(
@@ -78,17 +81,20 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
   ) {
     throw new Error('Unknown runtime value annotation')
   }
+
   if (
     value.enum !== undefined &&
     (!Array.isArray(value.enum) || value.enum.length === 0)
   ) {
     throw new Error('Expected a nonempty enum')
   }
+
   if (value.enum !== undefined && (type === 'object' || type === 'array')) {
     throw new Error(
       'Structural enums are outside the supported composition subset'
     )
   }
+
   for (const [min, max] of [
     ['minimum', 'maximum'],
     ['minLength', 'maxLength'],
@@ -96,6 +102,7 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
   ]) {
     for (const key of [min, max]) {
       const bound = value[key]
+
       if (
         bound !== undefined &&
         (typeof bound !== 'number' ||
@@ -107,6 +114,7 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
         throw new Error('Invalid schema bound')
       }
     }
+
     if (
       value[min] !== undefined &&
       value[max] !== undefined &&
@@ -115,6 +123,7 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
       throw new Error('Contradictory schema bounds')
     }
   }
+
   if (type === 'object') {
     if (
       !recipeRecord(value.properties) ||
@@ -125,7 +134,9 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
         'Composition objects require properties, required and additionalProperties false'
       )
     }
+
     const properties = value.properties
+
     if (
       value.required.some(
         (key) => typeof key !== 'string' || !recipeOwn(properties, key)
@@ -134,10 +145,12 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
     ) {
       throw new Error('Invalid required property names')
     }
+
     Object.values(value.properties).forEach((child) =>
       readRecipeSchema(child, depth + 1)
     )
   }
+
   if (type === 'array') {
     if (
       value.uniqueItems !== undefined &&
@@ -145,8 +158,10 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
     ) {
       throw new Error('Expected boolean uniqueItems')
     }
+
     readRecipeSchema(value.items, depth + 1)
   }
+
   return { ...value, raw: value } as unknown as RecipeSchema
 }
 
@@ -155,13 +170,17 @@ const intersectRegistered = (left: unknown, right: unknown): unknown => {
   if (left === false || right === false) {
     return false
   }
+
   if (!recipeRecord(left)) {
     return right
   }
+
   if (!recipeRecord(right)) {
     return left
   }
+
   const result: Record<string, unknown> = { ...left }
+
   for (const [key, value] of Object.entries(right)) {
     if (
       !recipeOwn(result, key) ||
@@ -180,6 +199,7 @@ const intersectRegistered = (left: unknown, right: unknown): unknown => {
       recipeRecord(value)
     ) {
       const properties = { ...result[key] }
+
       for (const [name, child] of Object.entries(value)) {
         if (recipeOwn(properties, name)) {
           properties[name] = intersectRegistered(properties[name], child)
@@ -187,6 +207,7 @@ const intersectRegistered = (left: unknown, right: unknown): unknown => {
           properties[name] = left.additionalProperties === false ? false : child
         }
       }
+
       if (right.additionalProperties === false) {
         for (const name of Object.keys(properties)) {
           if (!recipeOwn(value, name)) {
@@ -194,6 +215,7 @@ const intersectRegistered = (left: unknown, right: unknown): unknown => {
           }
         }
       }
+
       result[key] = properties
     } else if (
       key === 'additionalProperties' &&
@@ -213,12 +235,15 @@ const intersectRegistered = (left: unknown, right: unknown): unknown => {
       return { allOf: [left, right] }
     }
   }
+
   if (recipeRecord(result.properties)) {
     for (const closed of [left, right]) {
       if (closed.additionalProperties !== false) {
         continue
       }
+
       const allowed = recipeRecord(closed.properties) ? closed.properties : {}
+
       for (const name of Object.keys(result.properties)) {
         if (!recipeOwn(allowed, name)) {
           result.properties[name] = false
@@ -226,6 +251,7 @@ const intersectRegistered = (left: unknown, right: unknown): unknown => {
       }
     }
   }
+
   return result
 }
 
@@ -233,26 +259,35 @@ const intersectRegistered = (left: unknown, right: unknown): unknown => {
 export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
   const references = new Map<string, RecipeSchema>()
   const parsed = new WeakMap<object, RecipeSchema>()
+
   const read = (value: unknown, depth = 0): RecipeSchema => {
     if (depth > 32) {
       throw new Error('Schema nesting exceeds the proof budget')
     }
+
     const raw =
       recipeRecord(value) && recipeRecord(root) && root.$defs
         ? ({ ...value, $defs: root.$defs } as unknown as AiJsonValue)
         : (value as AiJsonValue)
+
     const opaque = (): RecipeSchema => ({ type: 'opaque', raw })
+
     if (value === false) {
       return { type: 'never', raw: false }
     }
+
     if (!recipeRecord(value)) {
       return opaque()
     }
+
     const known = parsed.get(value)
+
     if (known) {
       return known
     }
+
     const annotation = value['x-runtime-value']
+
     if (
       annotation !== undefined &&
       !['request', 'request-artifact', 'document', 'secret'].includes(
@@ -261,12 +296,14 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
     ) {
       throw new Error('Unknown runtime value annotation')
     }
+
     const metadata = annotation
       ? {
           'x-runtime-value': annotation as RecipeConstraints['x-runtime-value']
         }
       : {}
     const normalized = { ...value }
+
     for (const key of [
       '$defs',
       '$schema',
@@ -277,8 +314,10 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
     ]) {
       Reflect.deleteProperty(normalized, key)
     }
+
     if (typeof normalized.$ref === 'string') {
       const pointer = normalized.$ref
+
       if (
         Object.keys(normalized).some(
           (key) => !['$ref', 'x-runtime-value'].includes(key)
@@ -287,34 +326,46 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
       ) {
         return opaque()
       }
+
       let resolved = references.get(pointer)
+
       if (!resolved) {
         let target: unknown = root
+
         for (const key of recipePointer(pointer.slice(1))) {
           target =
             recipeRecord(target) && recipeOwn(target, key)
               ? target[key]
               : undefined
         }
+
         if (target === undefined) {
           return opaque()
         }
+
         const valueAtReference = target
+
         resolved = {
           type: 'reference',
           raw,
+
           resolve: () => read(valueAtReference)
         }
         references.set(pointer, resolved)
       }
+
       return { ...resolved, ...metadata, raw }
     }
+
     const mode = recipeOwn(normalized, 'oneOf') ? 'oneOf' : 'anyOf'
+
     if (recipeOwn(normalized, mode)) {
       const variants = normalized[mode]
+
       if (!Array.isArray(variants) || variants.length === 0) {
         return opaque()
       }
+
       Reflect.deleteProperty(normalized, mode)
       const result: RecipeSchema = {
         type: 'union',
@@ -325,34 +376,44 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
           read(intersectRegistered(normalized, child), depth + 1)
         )
       }
+
       parsed.set(value, result)
+
       return result
     }
+
     if (recipeOwn(normalized, 'const')) {
       if (normalized.const !== null && typeof normalized.const === 'object') {
         return opaque()
       }
+
       if (
         Array.isArray(normalized.enum) &&
         !normalized.enum.includes(normalized.const)
       ) {
         return { type: 'never', raw }
       }
+
       normalized.enum = [normalized.const]
       delete normalized.const
     }
+
     if (normalized.type === undefined && Array.isArray(normalized.enum)) {
       const types = new Set(
         normalized.enum.map((item) => (item === null ? 'null' : typeof item))
       )
+
       if (types.size === 1) {
         normalized.type = [...types][0]
       }
     }
+
     const type = normalized.type
+
     if (typeof type !== 'string' || !recipeOwn(keysByType, type)) {
       return opaque()
     }
+
     const keys = [
       ...commonKeys,
       ...keysByType[type as keyof typeof keysByType],
@@ -362,9 +423,11 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
         : []),
       ...(type === 'string' ? ['pattern'] : [])
     ]
+
     if (Object.keys(normalized).some((key) => !keys.includes(key))) {
       return opaque()
     }
+
     if (type === 'object') {
       normalized.properties ??= {}
       normalized.required ??= []
@@ -383,6 +446,7 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
       ) {
         return opaque()
       }
+
       const result = {
         ...normalized,
         ...metadata,
@@ -394,9 +458,12 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
           ])
         )
       } as unknown as RecipeSchema
+
       parsed.set(value, result)
+
       return result
     }
+
     if (type === 'array') {
       if (
         (normalized.uniqueItems !== undefined &&
@@ -406,10 +473,12 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
       ) {
         return opaque()
       }
+
       const bounds: Record<string, unknown> = {
         ...normalized,
         items: { type: 'null' }
       }
+
       delete bounds.uniqueItems
       delete bounds.prefixItems
       try {
@@ -417,6 +486,7 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
       } catch {
         return opaque()
       }
+
       const result = {
         ...normalized,
         ...metadata,
@@ -430,10 +500,14 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
           : {}),
         items: read(normalized.items ?? true, depth + 1)
       } as unknown as RecipeSchema
+
       parsed.set(value, result)
+
       return result
     }
+
     const primitive = { ...normalized }
+
     for (const key of ['exclusiveMinimum', 'exclusiveMaximum']) {
       if (
         primitive[key] !== undefined &&
@@ -441,30 +515,39 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
       ) {
         return opaque()
       }
+
       Reflect.deleteProperty(primitive, key)
     }
+
     if (primitive.pattern !== undefined) {
       if (typeof primitive.pattern !== 'string') {
         return opaque()
       }
+
       try {
         new RegExp(primitive.pattern, 'u')
       } catch {
         return opaque()
       }
+
       delete primitive.pattern
     }
+
     try {
       readRecipeSchema(primitive)
     } catch {
       return opaque()
     }
+
     return { ...normalized, ...metadata, raw } as unknown as RecipeSchema
   }
+
   const result = read(root)
+
   if (result.type === 'opaque') {
     throw new Error('Expected a supported dependency schema')
   }
+
   return result
 }
 
@@ -472,10 +555,12 @@ export const recipeResolve = (schema: RecipeSchema): RecipeSchema => {
   const visited = new Set<RecipeSchema>()
   let current = schema
   let lifetime = schema['x-runtime-value']
+
   while (current.type === 'reference') {
     if (visited.has(current) || visited.size >= 32) {
       return { type: 'opaque', raw: schema.raw }
     }
+
     visited.add(current)
     current = current.resolve()
     if (
@@ -485,8 +570,10 @@ export const recipeResolve = (schema: RecipeSchema): RecipeSchema => {
     ) {
       return { type: 'opaque', raw: schema.raw }
     }
+
     lifetime ??= current['x-runtime-value']
   }
+
   return lifetime ? { ...current, 'x-runtime-value': lifetime } : current
 }
 
@@ -497,9 +584,11 @@ export const recipePointer = (path: string): readonly string[] => {
   if (path === '') {
     return []
   }
+
   if (!path.startsWith('/') || /~(?![01])/u.test(path)) {
     throw new Error('Expected an RFC 6901 JSON Pointer')
   }
+
   return path
     .slice(1)
     .split('/')
@@ -517,6 +606,7 @@ export const recipeSchemaAt = (
   ): RecipeSchema => {
     current = recipeResolve(current)
     const lifetime = inherited ?? current['x-runtime-value']
+
     if (current.type === 'union') {
       return {
         ...current,
@@ -525,10 +615,13 @@ export const recipeSchemaAt = (
         )
       }
     }
+
     if (!keys.length) {
       return lifetime ? { ...current, 'x-runtime-value': lifetime } : current
     }
+
     const [key, ...rest] = keys
+
     if (
       current.type === 'object' &&
       current.required.includes(key) &&
@@ -536,6 +629,7 @@ export const recipeSchemaAt = (
     ) {
       return visit(current.properties[key], rest, lifetime)
     }
+
     if (
       current.type === 'array' &&
       /^(0|[1-9][0-9]*)$/u.test(key) &&
@@ -547,8 +641,10 @@ export const recipeSchemaAt = (
         lifetime
       )
     }
+
     throw new Error('Source path is absent or not guaranteed to exist')
   }
+
   return visit(schema, recipePointer(path))
 }
 
@@ -561,25 +657,30 @@ export const recipeDisjoint = (
   if (depth > 64) {
     return false
   }
+
   source = recipeResolve(source)
   target = recipeResolve(target)
   if (source.type === 'never' || target.type === 'never') {
     return true
   }
+
   if (source.type === 'union') {
     return source.variants.every((item) =>
       recipeDisjoint(item, target, depth + 1)
     )
   }
+
   if (target.type === 'union') {
     return target.variants.every((item) =>
       recipeDisjoint(source, item, depth + 1)
     )
   }
+
   if (source.type === 'opaque' || target.type === 'opaque') {
     const known = source.type === 'opaque' ? target : source
     const opaque = source.type === 'opaque' ? source : target
     const raw = opaque.raw
+
     if (
       known.type !== 'object' ||
       !recipeRecord(raw) ||
@@ -587,7 +688,9 @@ export const recipeDisjoint = (
     ) {
       return false
     }
+
     const properties = raw.properties
+
     // Root properties constrain every object containing that field, even when
     // another constraint is outside the implication subset. This proves only
     // non-overlap; it never converts an opaque branch into an admissible one.
@@ -595,19 +698,23 @@ export const recipeDisjoint = (
       if (!recipeOwn(known.properties, key) || !recipeOwn(properties, key)) {
         return false
       }
+
       const constraint = properties[key]
+
       try {
         const necessary = readRegisteredRecipeSchema(
           recipeRecord(constraint) && recipeRecord(raw.$defs)
             ? { ...constraint, $defs: raw.$defs }
             : constraint
         )
+
         return recipeDisjoint(known.properties[key], necessary, depth + 1)
       } catch {
         return false
       }
     })
   }
+
   if (
     source.type !== target.type &&
     !(
@@ -617,7 +724,9 @@ export const recipeDisjoint = (
   ) {
     return true
   }
+
   const targetEnum = target.enum
+
   if (
     source.enum &&
     targetEnum &&
@@ -625,6 +734,7 @@ export const recipeDisjoint = (
   ) {
     return true
   }
+
   if (source.type === 'object' && target.type === 'object') {
     if (
       source.required.some(
@@ -634,6 +744,7 @@ export const recipeDisjoint = (
     ) {
       return true
     }
+
     if (
       target.required.some(
         (key) =>
@@ -642,6 +753,7 @@ export const recipeDisjoint = (
     ) {
       return true
     }
+
     return source.required.some(
       (key) =>
         target.required.includes(key) &&
@@ -654,6 +766,7 @@ export const recipeDisjoint = (
         )
     )
   }
+
   return false
 }
 
@@ -665,9 +778,11 @@ export const recipeSelectVariant = (
   if (target.type !== 'union') {
     return target
   }
+
   const candidates = target.variants.filter(
     (item) => !recipeDisjoint(source, item)
   )
+
   return candidates.length === 1 ? candidates[0] : undefined
 }
 
@@ -676,6 +791,7 @@ const lower = (
   target: number | undefined,
   fallback: number
 ) => target === undefined || (source ?? fallback) >= target
+
 const upper = (source: number | undefined, target: number | undefined) =>
   target === undefined || (source ?? Infinity) <= target
 
@@ -695,19 +811,23 @@ export const recipeAssignable = (
   if (depth > 64) {
     return false
   }
+
   source = recipeResolve(source)
   target = recipeResolve(target)
   if (source.type === 'never' || target.type === 'never') {
     return false
   }
+
   if (source.type === 'opaque' || target.type === 'opaque') {
     return false
   }
+
   if (source.type === 'union') {
     return source.variants.every((item) =>
       recipeAssignable(inheritRecipeLifetime(item, source), target, depth + 1)
     )
   }
+
   if (target.type === 'union') {
     return target.variants.some(
       (item, index) =>
@@ -723,15 +843,18 @@ export const recipeAssignable = (
           ))
     )
   }
+
   if (
     source.type !== target.type &&
     !(source.type === 'integer' && target.type === 'number')
   ) {
     return false
   }
+
   if (source['x-runtime-value'] !== target['x-runtime-value']) {
     return false
   }
+
   if (
     target.exclusiveMinimum !== undefined &&
     !(
@@ -743,6 +866,7 @@ export const recipeAssignable = (
   ) {
     return false
   }
+
   if (
     target.exclusiveMaximum !== undefined &&
     !(
@@ -754,6 +878,7 @@ export const recipeAssignable = (
   ) {
     return false
   }
+
   if (
     target.pattern &&
     source.pattern !== target.pattern &&
@@ -768,13 +893,16 @@ export const recipeAssignable = (
   ) {
     return false
   }
+
   const targetEnum = target.enum
+
   if (
     targetEnum &&
     (!source.enum || !source.enum.every((value) => targetEnum.includes(value)))
   ) {
     return false
   }
+
   if (
     !lower(source.minimum, target.minimum, -Infinity) ||
     !upper(source.maximum, target.maximum) ||
@@ -785,10 +913,12 @@ export const recipeAssignable = (
   ) {
     return false
   }
+
   if (source.type === 'object' && target.type === 'object') {
     if (source.additionalProperties && !target.additionalProperties) {
       return false
     }
+
     if (
       source.additionalProperties &&
       Object.keys(target.properties).some(
@@ -797,23 +927,28 @@ export const recipeAssignable = (
     ) {
       return false
     }
+
     if (!target.required.every((key) => source.required.includes(key))) {
       return false
     }
+
     return Object.entries(source.properties).every(([key, child]) =>
       recipeOwn(target.properties, key)
         ? recipeAssignable(child, target.properties[key], depth + 1)
         : target.additionalProperties && !recipeHasRuntimeValue(child)
     )
   }
+
   if (source.type === 'array' && target.type === 'array') {
     if (target.uniqueItems && !source.uniqueItems) {
       return false
     }
+
     const prefixLength = Math.max(
       source.prefixItems?.length ?? 0,
       target.prefixItems?.length ?? 0
     )
+
     for (
       let index = 0;
       index < Math.min(prefixLength, source.maxItems ?? Infinity);
@@ -829,11 +964,13 @@ export const recipeAssignable = (
         return false
       }
     }
+
     return (
       (source.maxItems ?? Infinity) <= prefixLength ||
       recipeAssignable(source.items, target.items, depth + 1)
     )
   }
+
   return true
 }
 
@@ -845,18 +982,22 @@ export const recipeCapturesValue = (
   if (depth > 64) {
     return true
   }
+
   schema = recipeResolve(schema)
   if (schema['x-runtime-value'] || schema.type === 'opaque') {
     return true
   }
+
   if (schema.type === 'never') {
     return false
   }
+
   if (schema.type === 'union') {
     return schema.variants
       .filter((item) => !recipeDisjoint(recipeLiteralShape(value), item))
       .some((item) => recipeCapturesValue(value, item, depth + 1))
   }
+
   if (schema.type === 'object' && recipeRecord(value)) {
     return Object.entries(value).some(
       ([key, child]) =>
@@ -864,6 +1005,7 @@ export const recipeCapturesValue = (
         recipeCapturesValue(child, schema.properties[key], depth + 1)
     )
   }
+
   if (schema.type === 'array' && Array.isArray(value)) {
     return value.some((child, index) =>
       recipeCapturesValue(
@@ -873,6 +1015,7 @@ export const recipeCapturesValue = (
       )
     )
   }
+
   return false
 }
 
@@ -884,20 +1027,27 @@ const recipeHasRuntimeValue = (
   if (schema['x-runtime-value'] || schema.type === 'opaque') {
     return true
   }
+
   if (seen.has(schema)) {
     return false
   }
+
   seen.add(schema)
+
   const visit = (child: RecipeSchema) => recipeHasRuntimeValue(child, seen)
+
   if (schema.type === 'union') {
     return schema.variants.some(visit)
   }
+
   if (schema.type === 'object') {
     return Object.values(schema.properties).some(visit)
   }
+
   if (schema.type === 'array') {
     return visit(schema.items) || !!schema.prefixItems?.some(visit)
   }
+
   return false
 }
 
@@ -916,12 +1066,15 @@ export const recipeLiteralShape = (value: unknown): RecipeSchema => {
       )
     }
   }
+
   if (Array.isArray(value)) {
     return { type: 'array', items: { type: 'opaque' } }
   }
+
   if (value === null) {
     return { type: 'null', enum: [null] }
   }
+
   if (
     typeof value === 'string' ||
     typeof value === 'number' ||
@@ -932,5 +1085,6 @@ export const recipeLiteralShape = (value: unknown): RecipeSchema => {
       enum: [value]
     }
   }
+
   return { type: 'opaque' }
 }

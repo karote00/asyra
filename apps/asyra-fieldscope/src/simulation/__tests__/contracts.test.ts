@@ -27,8 +27,10 @@ const report = assessRobotDesign(
 )
 let receipt: CanonicalMission
 let current = true
+
 beforeAll(() => {
   const scene = geometry.prepareScene(farm, buildSiteMeshes(farm, geometry))
+
   projection.update(report)
   receipt = Object.freeze({
     revision: 1,
@@ -40,9 +42,11 @@ beforeAll(() => {
 })
 const owners = {
   isCurrentMission: (value: CanonicalMission) => current && value === receipt,
+
   isCurrentScene: geometry.isCurrentScene.bind(geometry),
   isCurrentRobot: projection.isCurrentSource.bind(projection)
 }
+
 const evidence = (): DispatchEvidence => ({
   id: 'dispatch-1',
   source: 'synthetic',
@@ -90,6 +94,7 @@ const evidence = (): DispatchEvidence => ({
     return: { from: 10, until: 20 }
   }
 })
+
 const clear = (requests: readonly MovementRequest[]): MovementResult[] =>
   requests.map((request) => ({
     request,
@@ -103,11 +108,13 @@ it('assesses fresh synthetic dispatch against completed B and actual C products 
   const generation = vi.spyOn(crops, 'createCropModels')
   const robotGeneration = vi.spyOn(robotModels, 'createRobotModel')
   const laneAssessment = vi.spyOn(lanes, 'assessHarvestLane')
+
   try {
     const mission = prepareMission(receipt, owners)
     const input = evidence()
     const query = vi.fn(clear)
     const result = admitDispatch(mission, input, 0, owners, query)
+
     expect(result.accepted).toBe(true)
     expect(result.lane?.status).toBe('screened')
     expect(result.energy?.action).toBe('continue-screening')
@@ -117,6 +124,7 @@ it('assesses fresh synthetic dispatch against completed B and actual C products 
     expect(query).toHaveBeenCalledTimes(1)
     expect(laneAssessment).toHaveBeenCalledTimes(1)
     const requests = query.mock.calls[0][0]
+
     expect(requests.map((request) => request.purpose)).toEqual([
       'dispatch',
       'return'
@@ -152,15 +160,25 @@ it('assesses fresh synthetic dispatch against completed B and actual C products 
 
 it('rejects stale or forged canonical and C handles before downstream work', async () => {
   const { prepareMission, admitDispatch } = await import('../contracts')
+
   expect(() => prepareMission({ ...receipt }, owners)).toThrow()
   expect(() =>
-    prepareMission(receipt, { ...owners, isCurrentScene: () => false })
+    prepareMission(receipt, {
+      ...owners,
+
+      isCurrentScene: () => false
+    })
   ).toThrow()
   expect(() =>
-    prepareMission(receipt, { ...owners, isCurrentRobot: () => false })
+    prepareMission(receipt, {
+      ...owners,
+
+      isCurrentRobot: () => false
+    })
   ).toThrow()
   const mission = prepareMission(receipt, owners)
   const query = vi.fn(clear)
+
   current = false
   try {
     expect(() => admitDispatch(mission, evidence(), 0, owners, query)).toThrow()
@@ -173,6 +191,7 @@ it('rejects stale or forged canonical and C handles before downstream work', asy
 it('enforces half-open observation validity and rejects wrong revisions or nonfinite time atomically', async () => {
   const { prepareMission, admitDispatch } = await import('../contracts')
   const mission = prepareMission(receipt, owners)
+
   for (const patch of [
     { id: '' },
     { source: 'hardware' },
@@ -185,6 +204,7 @@ it('enforces half-open observation validity and rejects wrong revisions or nonfi
     { validUntil: Infinity }
   ]) {
     const query = vi.fn(clear)
+
     expect(() =>
       admitDispatch(
         mission,
@@ -196,12 +216,15 @@ it('enforces half-open observation validity and rejects wrong revisions or nonfi
     ).toThrow()
     expect(query).not.toHaveBeenCalled()
   }
+
   for (const time of [-1, NaN, Infinity, 100]) {
     expect(() =>
       admitDispatch(mission, evidence(), time, owners, clear)
     ).toThrow()
   }
+
   const input = evidence()
+
   input.validUntil = 21
   expect(admitDispatch(mission, input, 0, owners, clear).accepted).toBe(true)
   input.intervals.return.until = 21
@@ -211,6 +234,7 @@ it('enforces half-open observation validity and rejects wrong revisions or nonfi
 it('holds incomplete evidence, insufficient budgets and unsupported posture instead of defaulting to clear', async () => {
   const { prepareMission, admitDispatch } = await import('../contracts')
   const mission = prepareMission(receipt, owners)
+
   for (const change of [
     (input: DispatchEvidence) => {
       input.survey.ground = 'unknown'
@@ -248,6 +272,7 @@ it('holds incomplete evidence, insufficient budgets and unsupported posture inst
     }
   ]) {
     const input = evidence()
+
     change(input)
     expect(admitDispatch(mission, input, 0, owners, clear).accepted).toBe(false)
   }
@@ -256,6 +281,7 @@ it('holds incomplete evidence, insufficient budgets and unsupported posture inst
 it('requires complete exact request coverage and never trusts an unrelated clear result', async () => {
   const { prepareMission, admitDispatch } = await import('../contracts')
   const mission = prepareMission(receipt, owners)
+
   for (const query of [
     () => [],
     (requests: readonly MovementRequest[]) => clear(requests).slice(0, 1),
@@ -288,6 +314,7 @@ it('requires complete exact request coverage and never trusts an unrelated clear
       false
     )
   }
+
   expect(admitDispatch(mission, evidence(), 0, owners, clear)).toEqual(
     admitDispatch(mission, evidence(), 0, owners, clear)
   )
@@ -297,6 +324,7 @@ it('rejects forged prepared missions', async () => {
   const { prepareMission, admitDispatch } = await import('../contracts')
   const mission = prepareMission(receipt, owners)
   const query = vi.fn(clear)
+
   for (const forged of [
     { ...mission },
     { ...mission, revision: 2 },
@@ -306,6 +334,7 @@ it('rejects forged prepared missions', async () => {
   ]) {
     expect(() => admitDispatch(forged, evidence(), 0, owners, query)).toThrow()
   }
+
   expect(query).not.toHaveBeenCalled()
 })
 
@@ -319,6 +348,7 @@ it('preserves movement fault evidence', async () => {
       reasons: ['net-contact']
     }))
   )
+
   expect(result.accepted).toBe(false)
   expect(result.movements[0]?.reasons).toEqual(['net-contact'])
   expect(result.reasons).toContain('net-contact')
@@ -328,16 +358,20 @@ it('detaches canonical caller data and rejects a source retired during a query',
   const { prepareMission, admitDispatch } = await import('../contracts')
   const mission = prepareMission(receipt, owners)
   const length = farm.length
+
   farm.length = 20
   try {
     expect(mission.farm.length).toBe(length)
   } finally {
     farm.length = length
   }
+
   const query = (requests: readonly MovementRequest[]) => {
     current = false
+
     return clear(requests)
   }
+
   try {
     expect(() => admitDispatch(mission, evidence(), 0, owners, query)).toThrow()
   } finally {
@@ -348,13 +382,16 @@ it('detaches canonical caller data and rejects a source retired during a query',
 it('rejects overlapping or reversed required dispatch and return intervals', async () => {
   const { prepareMission, admitDispatch } = await import('../contracts')
   const mission = prepareMission(receipt, owners)
+
   for (const interval of [
     { from: 0, until: 5 },
     { from: 9, until: 20 }
   ]) {
     const input = evidence()
+
     input.intervals.return = interval
     const query = vi.fn(clear)
+
     expect(() => admitDispatch(mission, input, 0, owners, query)).toThrow()
     expect(query).not.toHaveBeenCalled()
   }
@@ -369,17 +406,22 @@ it('rejects the real unavailable C rig before any dispatch query', async () => {
     { ...report.settings, height: 0.6 },
     farm
   )
+
   owner.update(shortReport)
   const robot = owner.getSource()
+
   expect(robot.rig).toBeNull()
   expect(robot.unavailable).toBe('unsupported-lift')
   const shortReceipt = Object.freeze({ ...receipt, report: shortReport, robot })
   const shortOwners = {
     ...owners,
+
     isCurrentMission: (value: CanonicalMission) => value === shortReceipt,
+
     isCurrentRobot: owner.isCurrentSource.bind(owner)
   }
   const query = vi.fn(clear)
+
   expect(() =>
     admitDispatch(
       prepareMission(shortReceipt, shortOwners),

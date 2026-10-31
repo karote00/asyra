@@ -17,6 +17,7 @@ if (
 } else {
   try {
     const target = new URL(rawUrl)
+
     if (!['http:', 'https:'].includes(target.protocol)) {
       throw new Error('URL must use HTTP or HTTPS')
     }
@@ -26,11 +27,13 @@ if (
 
     while (!ready && Date.now() < deadline) {
       const remainingMs = deadline - Date.now()
+
       try {
         const response = await globalThis.fetch(target, {
           method,
           signal: globalThis.AbortSignal.timeout(Math.min(5000, remainingMs))
         })
+
         ready = response.status >= 200 && response.status < 300
         if (method !== 'HEAD') {
           await response.body?.cancel()
@@ -41,6 +44,7 @@ if (
 
       if (!ready) {
         const delayMs = deadline - Date.now()
+
         if (delayMs > 0) {
           await new Promise((resolve) =>
             setTimeout(resolve, Math.min(250, delayMs))

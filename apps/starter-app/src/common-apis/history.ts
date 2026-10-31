@@ -8,6 +8,7 @@ export const createHistoryApis = (isActive: () => boolean) => ({
       await undoWithRenderPolicy({ mode: 'atomic' })
     }
   },
+
   async redo(): Promise<void> {
     if (isActive()) {
       await redoWithRenderPolicy({ mode: 'atomic' })

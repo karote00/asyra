@@ -18,13 +18,17 @@ import {
 ;(
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true
+
 const settle = async (): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 0))
 }
+
 const memoryStorage = () => {
   const values = new Map<string, string>()
+
   return {
     getItem: (key: string) => values.get(key) ?? null,
+
     setItem: (key: string, value: string) => {
       values.set(key, value)
     }
@@ -36,35 +40,45 @@ describe('App property and entity update boundaries', () => {
     const app = initApp({ storage: memoryStorage() })
     const host = document.createElement('div')
     const root = createRoot(host)
+
     try {
       await app.start(document.createElement('div'))
       const ids = Array.from({ length: 30 }, (_, index) =>
         app.itemActions.addItem({ title: 'Item ' + index })
       )
+
       await settle()
       const first = ids[0] as string
       const other = ids[29] as string
       const renders = { first: 0, other: 0, list: 0, status: 0 }
+
       const Row = ({ id, count }: { id: string; count: 'first' | 'other' }) => {
         const item = useItem(id)
         const selected = useIsSelected(id)
+
         renders[count]++
+
         return (
           <span data-id={id}>
             {item?.title}:{String(selected)}
           </span>
         )
       }
+
       const List = () => {
         useItemIds()
         renders.list++
+
         return null
       }
+
       const Status = () => {
         useStatus()
         renders.status++
+
         return null
       }
+
       await act(async () => {
         root.render(
           <AppContext.Provider value={app}>
@@ -86,8 +100,10 @@ describe('App property and entity update boundaries', () => {
         UIProperties.itemIds,
         listNotified
       )
+
       listNotified.mockClear()
       const before = { ...renders }
+
       await act(async () => {
         app.itemActions.editItem(first, { title: 'Localized edit' })
         await settle()
@@ -139,6 +155,7 @@ describe('App property and entity update boundaries', () => {
         root.unmount()
       })
       const stale = vi.fn()
+
       app.projection.subscribeItem(first, stale)
       await app.dispose()
       await settle()
@@ -154,9 +171,11 @@ describe('App property and entity update boundaries', () => {
 
   it('keeps canonical redo after invalid/no-op edits, and branches after a localized successful edit', async () => {
     const app = initApp({ storage: memoryStorage() })
+
     try {
       await app.start(document.createElement('div'))
       const id = app.itemActions.addItem({ title: 'Original' })
+
       await settle()
       app.itemActions.editItem(id, { title: 'Second' })
       await settle()
@@ -191,13 +210,16 @@ describe('App property and entity update boundaries', () => {
   it('replaces removed Items and selection after accepted reload; rejects invalid data without notification', async () => {
     const storage = memoryStorage()
     const app = initApp({ storage })
+
     try {
       await app.start(document.createElement('div'))
       await app.storageApis.save()
       const id = app.itemActions.addItem({ title: 'Temporary' })
+
       await settle()
       app.controller.selectItem(id)
       const changed = vi.fn()
+
       app.projection.subscribeItem(id, changed)
       await app.storageApis.reload()
       expect(app.projection.getItem(id)).toBeUndefined()
@@ -220,17 +242,22 @@ describe('App property and entity update boundaries', () => {
 
   it('suppresses late storage completion and starts the next App with fresh UI state', async () => {
     const app = initApp({ storage: memoryStorage() })
+
     await app.start(document.createElement('div'))
+
     let resolveSave: (value: { ok: true; message: string }) => void = () =>
       undefined
+
     app.storageApis.save = () =>
       new Promise((resolve) => {
         resolveSave = resolve
       })
     const saving = app.controller.save()
+
     expect(app.core.getUIProperty(UIProperties.pending)).toBe(true)
     await app.dispose()
     const next = initApp({ storage: memoryStorage() })
+
     try {
       await next.start(document.createElement('div'))
       resolveSave({ ok: true, message: 'Old lifetime completion' })

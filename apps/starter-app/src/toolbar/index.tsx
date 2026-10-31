@@ -7,6 +7,7 @@ export const Toolbar = () => {
   const ready = useReady()
   const pending = usePending()
   const disabled = !ready || pending
+
   return (
     <div className="canvas-toolbar">
       <div className="canvas-heading">

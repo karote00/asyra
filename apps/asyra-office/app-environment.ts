@@ -10,10 +10,13 @@ export function resolveAppEnvironment(
   const source = existsSync(path) ? readFileSync(path, 'utf8') : ''
   const configured =
     environment.APP_URL ?? source.match(/^APP_URL\s*=\s*(.+)$/m)?.[1]?.trim()
+
   if (!configured) {
     throw new Error('Set APP_URL in apps/asyra-office/.env (see .env.example)')
   }
+
   const url = new URL(configured)
+
   if (
     url.protocol !== 'http:' ||
     !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
@@ -27,6 +30,7 @@ export function resolveAppEnvironment(
       'APP_URL must be a local HTTP origin without credentials, path, query or fragment'
     )
   }
+
   return Object.freeze({
     url: url.origin,
     host: url.hostname,

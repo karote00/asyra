@@ -32,6 +32,7 @@ interface BodyPart {
   radius?: number
   surfaceOffset?: number
 }
+
 export function puppet(
   profile: 'man' | 'woman',
   shirt = 0xf3ead9,
@@ -41,6 +42,7 @@ export function puppet(
   const spec = profile === 'man' ? male : female,
     p: AssetPart[] = [],
     head = spec.defaultDimensions
+
   const faceY = (x: number, z: number, offset = 0.002) =>
     (-head.skinHeadSize[1] / 2) *
       Math.sqrt(
@@ -52,14 +54,17 @@ export function puppet(
         )
       ) -
     offset
+
   const materials: Record<string, number> = Object.fromEntries(
     Object.entries(spec.materials).map(([id, material]) => [
       id,
       parseInt(material.baseColorSRGB.slice(1), 16)
     ])
   )
+
   for (const c of spec.bodyAndFaceParts as BodyPart[]) {
     let mesh = emptyMesh()
+
     if (c.recipe === 'ellipsoid') {
       append(mesh, ellipsoid(vec(c.radii ?? [])), vec(c.centre ?? []))
     } else if (c.recipe === 'z-loft') {
@@ -73,6 +78,7 @@ export function puppet(
     } else if (c.recipe === 'face-ellipse' || c.recipe === 'face-ellipsoid') {
       const [x, z] = c.centreXZ ?? [0, 0],
         r = c.radii ?? [(c.radiiXZ ?? [])[0], 0.004, (c.radiiXZ ?? [])[1]]
+
       if (c.recipe === 'face-ellipse') {
         mesh = ellipsoid(vec(r), 16, 10)
         for (let i = 0; i < mesh.positions.length; i += 3) {
@@ -103,6 +109,7 @@ export function puppet(
     } else {
       throw new Error(`Unsupported puppet part ${c.id}`)
     }
+
     p.push(
       part(
         c.id,
@@ -111,19 +118,23 @@ export function puppet(
       )
     )
   }
+
   const hair = spec.hair,
     cap = emptyMesh(),
     rows = 16,
     columns = 40
+
   const scalp = (theta: number, phi: number): Vec => {
     const t = (theta * Math.PI) / 180,
       f = (phi * Math.PI) / 180
+
     return [
       hair.scalpCentre[0] + hair.scalpRadii[0] * Math.sin(t) * Math.sin(f),
       hair.scalpCentre[1] - hair.scalpRadii[1] * Math.sin(t) * Math.cos(f),
       hair.scalpCentre[2] + hair.scalpRadii[2] * Math.cos(t)
     ]
   }
+
   for (let j = 0; j <= rows; j++) {
     for (let i = 0; i <= columns; i++) {
       const phi = -180 + (i / columns) * 360,
@@ -136,23 +147,29 @@ export function puppet(
           : limits.side +
             (limits.back - limits.side) *
               (((a - 90) / 90) ** 2 * (3 - (2 * (a - 90)) / 90))
+
       cap.positions.push(...scalp((j / rows) * limit, phi))
       cap.uvs.push(i / columns, j / rows)
     }
   }
+
   for (let j = 0; j < rows; j++) {
     for (let i = 0; i < columns; i++) {
       const a = j * (columns + 1) + i,
         b = a + 1,
         c = a + columns + 1,
         d = c + 1
+
       cap.indices.push(a, c, d, a, d, b)
     }
   }
+
   const hairColor = profile === 'man' ? 0x403026 : 0x292c2a
+
   p.push(part('hair-cap', cap, hairColor))
   for (const lock of hair.locks) {
     let points: Vec[]
+
     if ('controlAnglesDegrees' in lock && lock.controlAnglesDegrees) {
       points = bezier(
         lock.controlAnglesDegrees.map((a) => [a[0], a[1], 0]),
@@ -163,8 +180,10 @@ export function puppet(
     } else {
       throw new Error('Missing hair lock path')
     }
+
     const m = emptyMesh(),
       sections = 8
+
     for (let j = 0; j < points.length; j++) {
       const t = j / (points.length - 1),
         table = hair.leafProfile.widthSamples
@@ -205,8 +224,10 @@ export function puppet(
         centre = free
           ? points[j]
           : add(points[j], mul(normal, depth - hair.leafProfile.rootInset))
+
       for (let i = 0; i <= sections; i++) {
         const a = (i / sections) * Math.PI * 2
+
         m.positions.push(
           ...add(
             centre,
@@ -216,18 +237,23 @@ export function puppet(
         m.uvs.push(i / sections, t)
       }
     }
+
     for (let j = 0; j < points.length - 1; j++) {
       for (let i = 0; i < sections; i++) {
         const a = j * (sections + 1) + i,
           b = a + 1,
           c = a + sections + 1,
           d = c + 1
+
         m.indices.push(a, b, d, a, d, c)
       }
     }
+
     p.push(part(lock.id, m, hairColor))
   }
+
   const clothing = spec.clothing
+
   p.push(
     part(
       'shirt',
@@ -239,6 +265,7 @@ export function puppet(
   for (const s of clothing.shirt.sleeves) {
     p.push(part(s.id, loft(smoothRows(s.rings)), shirt, 'fabric'))
   }
+
   p.push(
     part(
       'trousers-pelvis',
@@ -250,12 +277,15 @@ export function puppet(
   for (const leg of clothing.trousers.legs) {
     p.push(part(leg.id, loft(smoothRows(leg.rings)), 0x756f5c, 'fabric'))
   }
+
   for (const shoe of clothing.shoes) {
     p.push(part(shoe.id, loft(smoothRows(shoe.outerRings)), 0x584333, 'wood'))
   }
+
   p.push(...garmentDetails(clothing.shirt, shirt, materials))
   if (eyewear) {
     const g = male.glasses
+
     g.templePaths.forEach((path, i) =>
       p.push(
         part(
@@ -284,6 +314,7 @@ export function puppet(
         )
       )
     }
+
     p.push(
       part(
         'bridge',
@@ -293,10 +324,12 @@ export function puppet(
       )
     )
   }
+
   if (seatHeight !== undefined) {
     if (!Number.isFinite(seatHeight) || seatHeight <= 0) {
       throw new Error('Invalid seat height')
     }
+
     const body = spec.bodyAndFaceParts as BodyPart[],
       thigh = requiredSpecValue(
         body.find((c) => c.id === 'thigh-left'),
@@ -312,31 +345,38 @@ export function puppet(
         "body.find((c) => c.id === 'upper-arm-left')"
       ),
       shoulder = requiredSpecValue(upperArm.start, 'upperArm.start')[2]
+
     for (const piece of p) {
       const leg =
         /^(thigh|shin|foot|trouser-|shoe)/.test(piece.id) &&
         piece.id !== 'trousers-pelvis'
       const arm = /^(upper-arm|forearm|hand|sleeve|cuff)/.test(piece.id)
+
       for (let i = 0; i < piece.mesh.positions.length; i += 3) {
         const y = piece.mesh.positions[i + 1],
           z = piece.mesh.positions[i + 2]
+
         if (leg) {
           const t = Math.max(0, Math.min(1, (z - knee + 0.04) / 0.08)),
             weight = t * t * (3 - 2 * t)
+
           piece.mesh.positions[i + 1] =
             (z - hip) * weight + (y - (hip - knee)) * (1 - weight)
           piece.mesh.positions[i + 2] =
             (hip - y) * weight + (z + hip - knee) * (1 - weight)
         } else if (arm) {
           const angle = -Math.PI / 4
+
           piece.mesh.positions[i + 1] =
             y * Math.cos(angle) - (z - shoulder) * Math.sin(angle)
           piece.mesh.positions[i + 2] =
             y * Math.sin(angle) + (z - shoulder) * Math.cos(angle) + shoulder
         }
+
         piece.mesh.positions[i + 2] += lift
       }
     }
   }
+
   return p
 }

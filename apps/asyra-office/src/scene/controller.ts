@@ -63,10 +63,12 @@ export const DEMO_LOGS = [
   },
   { time: '10:32', agent: 'Leo', text: 'sat down to plan the next sprint' }
 ] as const
+
 export function overviewCamera(aspect = 1): SpatialCamera {
   const framing = Math.max(1, 845 / 756 / aspect)
   const target = renderPosition(OFFICE_STRUCTURE.camera.target as Vec)
   const position = renderPosition(OFFICE_STRUCTURE.camera.position as Vec)
+
   return readSpatialCamera({
     kind: 'camera',
     position: position.map(
@@ -78,6 +80,7 @@ export function overviewCamera(aspect = 1): SpatialCamera {
     far: Math.max(90, OFFICE_STRUCTURE.parameters.distance * 2)
   })
 }
+
 export function createSceneController(
   layer: Pick<SpatialLayer, 'submitCamera'>,
   aspect = 1
@@ -86,10 +89,12 @@ export function createSceneController(
     snapshot: Readonly<{ view: string }> = Object.freeze({ view: 'Overview' }),
     disposed = false
   const listeners = new Set<() => void>()
+
   const publish = (next: SpatialCamera, view: string) => {
     if (disposed) {
       throw new Error('Scene disposed')
     }
+
     camera = next
     layer.submitCamera(camera)
     if (view !== snapshot.view) {
@@ -97,26 +102,37 @@ export function createSceneController(
       listeners.forEach((fn) => fn())
     }
   }
+
   return {
     getSnapshot: () => snapshot,
+
     getCamera: () => camera,
+
     subscribe: (fn: () => void) => {
       listeners.add(fn)
+
       return () => {
         listeners.delete(fn)
       }
     },
+
     overview: () => publish(overviewCamera(aspect), 'Overview'),
+
     focusPlace: (id: string) => {
       const place = PLACES.find((p) => p.id === id)
+
       if (!place) {
         throw new Error('Unknown place')
       }
+
       if (id === 'office') {
         publish(overviewCamera(aspect), 'Overview')
+
         return
       }
+
       const target = renderPosition(place.target)
+
       publish(
         readSpatialCamera({
           kind: 'camera',
@@ -129,11 +145,14 @@ export function createSceneController(
         place.name
       )
     },
+
     follow: (id: string) => {
       const agent = ACTORS.find((a) => a.id === id)
+
       if (!agent) {
         throw new Error('Agent has no scene representation')
       }
+
       const p = agent.position,
         angle = (agent.rotation * Math.PI) / 180,
         behind: Vec = [
@@ -141,6 +160,7 @@ export function createSceneController(
           p[1] + Math.cos(angle) * 1.25 + Math.sin(angle) * 0.65,
           p[2] + 2.6
         ]
+
       publish(
         readSpatialCamera({
           kind: 'camera',
@@ -157,15 +177,18 @@ export function createSceneController(
         `Following ${agent.name}`
       )
     },
+
     orbit: (dx: number, dy: number) =>
       publish(
         orbitSpatialCamera(camera, dx, dy, { minPolar: 0.18, maxPolar: 1.4 }),
         'Free view'
       ),
+
     move: (right: number, forward: number, fast = false) => {
       if (!Number.isFinite(right) || !Number.isFinite(forward)) {
         throw new Error('Invalid camera movement')
       }
+
       const distance = spatialCameraDistance(camera)
       const horizontal = Math.hypot(
         camera.position[0] - camera.target[0],
@@ -176,6 +199,7 @@ export function createSceneController(
       // Resolve ground-plane motion through the public camera-relative basis.
       // Its up and forward components cancel vertical movement at any pitch.
       const rise = (camera.position[1] - camera.target[1]) / distance
+
       publish(
         moveSpatialCamera(
           camera,
@@ -186,6 +210,7 @@ export function createSceneController(
         'Free view'
       )
     },
+
     zoom: (factor: number) =>
       publish(
         dollySpatialCamera(
@@ -194,16 +219,19 @@ export function createSceneController(
         ),
         'Free view'
       ),
+
     resize: (nextAspect: number) => {
       aspect = nextAspect
       if (snapshot.view === 'Overview') {
         publish(overviewCamera(aspect), 'Overview')
       }
     },
+
     dispose: () => {
       disposed = true
       listeners.clear()
     }
   }
 }
+
 export type SceneController = ReturnType<typeof createSceneController>

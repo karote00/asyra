@@ -5,12 +5,15 @@ import type { InspectionEvidenceStamp } from '../../ai/inspection-evidence'
 import type { InspectionDependencyChange } from '../inspection-dependencies'
 import recordedGroup from '../../../server/__tests__/fixtures/recorded-101/group-containment-20261019.json'
 import { prepareDesign } from '../../../server/design-preparation'
+
 const requiredEvidence = (result: { evidence?: InspectionEvidenceStamp }) => {
   if (!result.evidence) {
     throw new Error('Expected a coherent mechanical receipt')
   }
+
   return result.evidence
 }
+
 const fixture = () => {
   const data: Record<
     string,
@@ -30,8 +33,10 @@ const fixture = () => {
       { elementId: 't', bounds: { x: 0, y: 0, width: 90, height: 60 } }
     ])
   }
+
   return { review: createDesignReviewer(apis), apis, data, geometry }
 }
+
 it('checks recorded incremental groups without treating snapshot dimensions as containment', async () => {
   const base = prepareDesign(recordedGroup.calls[0].input.draft, 'fresh-base')
   const upper = prepareDesign(recordedGroup.calls[1].input.draft, 'fresh-upper')
@@ -51,32 +56,40 @@ it('checks recorded incremental groups without treating snapshot dimensions as c
   const geometry = new Map(
     entries.map(({ descriptor }) => [descriptor.id, descriptor])
   )
+
   for (const [id, node] of data) {
     if (node.parentId) {
       data.get(node.parentId)?.children.push(id)
     }
   }
+
   expect(Number(geometry.get(upperId)?.y)).toBeLessThan(0)
   const before = JSON.stringify([...geometry])
   const reviewer = createDesignReviewer(
     {
       read: (id) => data.get(id),
+
       computed: (id) => geometry.get(id),
+
       measure: () => [],
+
       observeChanges: () => () => undefined
     },
     async () => undefined,
     true
   )
   const result = await reviewer.capture(rootId)
+
   expect(result.complete).toBe(true)
   expect(result.findings).toEqual([])
   const coverage = await reviewer.reconcile(requiredEvidence(result), [upperId])
+
   expect(coverage).toMatchObject({
     current: true,
     measurements: [{ elementId: upperId, available: true, findings: [] }]
   })
   const repeated = await reviewer.capture(rootId)
+
   expect(repeated.evidence).toEqual(result.evidence)
   expect(repeated.observation).toMatchObject({
     metadataReads: 0,
@@ -101,9 +114,12 @@ it('checks actual nested group content against a Frame without trusting Group sn
   }
   const reviewer = createDesignReviewer({
     read: (id) => data[id as keyof typeof data],
+
     computed: (id) => geometry[id as keyof typeof geometry],
+
     measure: () => []
   })
+
   expect((await reviewer('frame')).findings).toEqual([])
   geometry.shape.x = 80
   expect((await reviewer('frame')).findings).toEqual([
@@ -119,6 +135,7 @@ it('checks actual nested group content against a Frame without trusting Group sn
 
 it('does not infer containment constraints for undeclared custom containers', async () => {
   const { apis, data, geometry } = fixture()
+
   data.f.type = 'custom-container'
   geometry.t.x = 500
   apis.measure.mockReturnValue([])
@@ -128,16 +145,23 @@ it('does not infer containment constraints for undeclared custom containers', as
 
 it('retains Group ancestry when root-first cached children are reconciled from their parent', async () => {
   const { apis, data, geometry } = fixture()
+
   data.f.type = 'group'
   data.t.type = 'vector'
   geometry.t.x = -40
   const reviewer = createDesignReviewer(
-    { ...apis, observeChanges: () => () => undefined },
+    {
+      ...apis,
+
+      observeChanges: () => () => undefined
+    },
     async () => undefined,
     true
   )
+
   await reviewer.capture('t')
   const root = await reviewer.capture('f')
+
   expect(await reviewer.reconcile(requiredEvidence(root), ['t'])).toMatchObject(
     {
       current: true,
@@ -149,6 +173,7 @@ it('retains Group ancestry when root-first cached children are reconciled from t
 
 it('does not require hidden descendant geometry to certify visible Group content', async () => {
   const { apis, data, geometry } = fixture()
+
   data.f.type = 'group'
   data.t.visible = false
   geometry.t.width = undefined
@@ -160,6 +185,7 @@ it('does not require hidden descendant geometry to certify visible Group content
 })
 it('reports actual text overflow from one measurement batch and selected reads', async () => {
   const { review, apis } = fixture()
+
   expect(await review('f')).toMatchObject({
     complete: true,
     checkedElements: 2,
@@ -178,6 +204,7 @@ it('reports actual text overflow from one measurement batch and selected reads',
 })
 it('reports child overflow and remeasures fresh results after corrections', async () => {
   const { review, geometry, apis } = fixture()
+
   geometry.t.x = 250
   expect((await review('f')).findings).toContainEqual(
     expect.objectContaining({
@@ -193,11 +220,13 @@ it('reports child overflow and remeasures fresh results after corrections', asyn
 })
 it('does not mistake unavailable or rotated checks for full verification', async () => {
   const { review, geometry, apis } = fixture()
+
   geometry.t.rotation = 30
   apis.measure.mockImplementation(() => {
     throw new Error('not supported')
   })
   const result = await review('f')
+
   expect(result.complete).toBe(false)
   expect(result.findings.map((f) => f.kind)).toEqual(
     expect.arrayContaining([
@@ -208,11 +237,14 @@ it('does not mistake unavailable or rotated checks for full verification', async
 })
 it('completes traversal beyond 200 elements without measuring hidden text', async () => {
   const { review, apis, data } = fixture()
+
   data.f.children = Array.from({ length: 250 }, (_, i) => `t${i}`)
   for (const id of data.f.children) {
     data[id] = { type: 'text', parentId: 'f', visible: false }
   }
+
   const result = await review('f')
+
   expect(result.complete).toBe(true)
   expect(result.truncated).toBe(false)
   expect(apis.read).toHaveBeenCalledTimes(251)
@@ -220,6 +252,7 @@ it('completes traversal beyond 200 elements without measuring hidden text', asyn
 })
 it('rejects invalid targets before reading', async () => {
   const { review, apis } = fixture()
+
   await expect(review('')).rejects.toThrow()
   await expect(review(null as never)).rejects.toThrow()
   expect(apis.read).not.toHaveBeenCalled()
@@ -227,16 +260,19 @@ it('rejects invalid targets before reading', async () => {
 
 it('yields during complete traversal and cancels before subsequent reads', async () => {
   const { apis, data, geometry } = fixture()
+
   data.f.children = Array.from({ length: 600 }, (_, i) => `v${i}`)
   for (const id of data.f.children) {
     data[id] = { type: 'vector', parentId: 'f' }
     geometry[id] = { x: 0, y: 0, width: 10, height: 10, rotation: 0 }
   }
+
   const controller = new AbortController()
   const yieldToHost = vi.fn(async () => {
     controller.abort()
   })
   const review = createDesignReviewer(apis, yieldToHost)
+
   await expect(review('f', controller.signal)).rejects.toThrow()
   expect(yieldToHost).toHaveBeenCalledTimes(1)
   expect(apis.read.mock.calls.length).toBeLessThan(601)
@@ -244,13 +280,16 @@ it('yields during complete traversal and cancels before subsequent reads', async
 })
 it('finds overflow beyond the first two hundred objects', async () => {
   const { apis, data, geometry } = fixture()
+
   data.f.children = Array.from({ length: 300 }, (_, i) => `v${i}`).concat('t')
   for (const id of data.f.children.slice(0, -1)) {
     data[id] = { type: 'vector', parentId: 'f' }
     geometry[id] = { x: 0, y: 0, width: 10, height: 10, rotation: 0 }
   }
+
   const yieldToHost = vi.fn(async () => undefined)
   const result = await createDesignReviewer(apis, yieldToHost)('f')
+
   expect(result).toMatchObject({ complete: true, checkedElements: 302 })
   expect(result.findings).toContainEqual(
     expect.objectContaining({ kind: 'text-overflow', elementId: 't' })
@@ -261,18 +300,22 @@ it('finds overflow beyond the first two hundred objects', async () => {
 
 it('rejects a mixed document snapshot when canonical data changes during a cooperative yield', async () => {
   const { apis, data, geometry } = fixture()
+
   data.f.children = Array.from({ length: 201 }, (_, i) => `child-${i}`)
   for (const id of data.f.children) {
     data[id] = { type: 'rectangle', parentId: 'f' }
     geometry[id] = { x: 0, y: 0, width: 1, height: 1 }
   }
+
   let changed: () => void = vi.fn()
   const dispose = vi.fn()
   const review = createDesignReviewer(
     {
       ...apis,
+
       observeChanges: (listener: () => void) => {
         changed = listener
+
         return dispose
       }
     },
@@ -280,6 +323,7 @@ it('rejects a mixed document snapshot when canonical data changes during a coope
       changed()
     }
   )
+
   expect(await review('f')).toMatchObject({
     complete: false,
     findings: expect.arrayContaining([
@@ -299,6 +343,7 @@ it('retains deterministic verdicts for unchanged regions with exact canonical wo
   >()
   const observedApis = {
     ...apis,
+
     observeChanges: (
       listener: (change?: {
         elementIds: readonly string[]
@@ -306,11 +351,13 @@ it('retains deterministic verdicts for unchanged regions with exact canonical wo
       }) => void
     ) => {
       listeners.add(listener)
+
       return () => {
         listeners.delete(listener)
       }
     }
   }
+
   data.f.children = Array.from({ length: 8 }, (_, index) => `tier-${index}`)
   for (const tier of data.f.children) {
     data[tier] = {
@@ -324,8 +371,10 @@ it('retains deterministic verdicts for unchanged regions with exact canonical wo
       geometry[id] = { x: 0, y: 0, width: 1, height: 1, rotation: 0 }
     }
   }
+
   const review = createDesignReviewer(observedApis, async () => undefined, true)
   const first = await review('f')
+
   expect(first).toMatchObject({
     complete: true,
     checkedElements: 1609,
@@ -337,7 +386,9 @@ it('retains deterministic verdicts for unchanged regions with exact canonical wo
   for (const notify of listeners) {
     notify({ elementIds: ['tier-2-window-0'] })
   }
+
   const changed = await review('f')
+
   expect(changed).toMatchObject({
     complete: true,
     checkedElements: 1609,
@@ -354,6 +405,7 @@ it('retains deterministic verdicts for unchanged regions with exact canonical wo
   apis.read.mockClear()
   apis.computed.mockClear()
   const repeated = await review('f')
+
   expect(repeated).toEqual({
     ...changed,
     observation: {
@@ -367,6 +419,7 @@ it('retains deterministic verdicts for unchanged regions with exact canonical wo
   expect(apis.read).not.toHaveBeenCalled()
   expect(apis.computed).not.toHaveBeenCalled()
   const uncached = await createDesignReviewer(apis, async () => undefined)('f')
+
   expect(changed).toEqual({ ...uncached, observation: changed.observation })
   expect(changed.observation).toMatchObject({
     evaluatedNodes: 3,
@@ -382,28 +435,36 @@ const retainedFixture = (
   yieldToHost: () => Promise<void> = async () => undefined
 ) => {
   const base = fixture()
+
   let notify: (change?: InspectionDependencyChange) => void = () => undefined
+
   const stop = vi.fn()
   const review = createDesignReviewer(
     {
       ...base.apis,
+
       observeChanges: (listener) => {
         notify = listener
+
         return stop
       }
     },
     yieldToHost,
     true
   )
+
   return {
     ...base,
     review,
     stop,
+
     change: (value?: InspectionDependencyChange) => notify(value)
   }
 }
+
 it('retains text verdicts, replaces corrected findings and invalidates shared owners', async () => {
   const { review, apis, geometry, change } = retainedFixture()
+
   expect((await review('f')).findings).toHaveLength(1)
   apis.measure.mockClear()
   expect((await review('f')).findings).toHaveLength(1)
@@ -428,6 +489,7 @@ it('retains text verdicts, replaces corrected findings and invalidates shared ow
 })
 it('reevaluates parent dimensions and inherited visibility without retaining stale text conclusions', async () => {
   const { review, data, geometry, change } = retainedFixture()
+
   await review('f')
   geometry.f.width = 20
   change({ elementIds: ['f'] })
@@ -458,6 +520,7 @@ it('reevaluates parent dimensions and inherited visibility without retaining sta
 })
 it('updates membership through removal, replacement, reparenting and restored identities', async () => {
   const { review, data, geometry, change, apis } = retainedFixture()
+
   await review('f')
   data.f.children = ['g']
   data.g = { type: 'frame', parentId: 'f', children: ['t'] }
@@ -484,6 +547,7 @@ it('updates membership through removal, replacement, reparenting and restored id
   geometry.t = { x: 0, y: 0, width: 1, height: 1 }
   change({ elementIds: ['t'], parentIds: ['g'] })
   const restored = await review('f')
+
   expect(restored).toMatchObject({
     checkedElements: 3,
     findings: [],
@@ -491,11 +555,13 @@ it('updates membership through removal, replacement, reparenting and restored id
     observation: { evaluatedNodes: 3 }
   })
   const uncached = await createDesignReviewer(apis)('f')
+
   expect(restored).toEqual({ ...uncached, observation: restored.observation })
   review.dispose()
 })
 it('does not retain incomplete text measurements or unavailable geometry', async () => {
   const { review, apis } = retainedFixture()
+
   apis.measure.mockImplementationOnce(() => [])
   expect((await review('f')).complete).toBe(false)
   expect(await review('f')).toMatchObject({
@@ -504,6 +570,7 @@ it('does not retain incomplete text measurements or unavailable geometry', async
   })
   review.dispose()
   const next = retainedFixture()
+
   next.geometry.t.width = undefined
   expect((await next.review('f')).complete).toBe(false)
   next.geometry.t.width = 100
@@ -521,11 +588,13 @@ it('does not publish work interrupted by cancellation or document replacement', 
       controller.abort()
     }
   })
+
   state.data.f.children = Array.from({ length: 201 }, (_, i) => `v${i}`)
   for (const id of state.data.f.children) {
     state.data[id] = { type: 'rectangle', parentId: 'f' }
     state.geometry[id] = { x: 0, y: 0, width: 1, height: 1 }
   }
+
   await expect(state.review('f', controller.signal)).rejects.toThrow()
   interrupt = false
   expect(await state.review('f')).toMatchObject({
@@ -542,17 +611,20 @@ it('rejects an in-flight result after the owning runtime is disposed', async () 
   const state = retainedFixture(async () => {
     state.review.dispose()
   })
+
   state.data.f.children = Array.from({ length: 201 }, (_, i) => `v${i}`)
   for (const id of state.data.f.children) {
     state.data[id] = { type: 'rectangle', parentId: 'f' }
     state.geometry[id] = { x: 0, y: 0, width: 1, height: 1 }
   }
+
   await expect(state.review('f')).rejects.toThrow(/disposed/)
   expect(state.stop).toHaveBeenCalledOnce()
 })
 
 it('batches initial text measurements and remeasures only a changed text owner', async () => {
   const state = retainedFixture()
+
   state.data.f.children = Array.from(
     { length: 401 },
     (_, index) => `text-${index}`
@@ -561,25 +633,31 @@ it('batches initial text measurements and remeasures only a changed text owner',
     state.data[id] = { type: 'text', parentId: 'f' }
     state.geometry[id] = { x: 0, y: 0, width: 10, height: 10 }
   }
+
   const measure = vi.fn((ids: readonly string[]) =>
     ids.map((elementId) => ({
       elementId,
       bounds: { x: 0, y: 0, width: 9, height: 9 }
     }))
   )
+
   let notify: (change?: InspectionDependencyChange) => void = () => undefined
+
   const review = createDesignReviewer(
     {
       ...state.apis,
       measure,
+
       observeChanges: (listener) => {
         notify = listener
+
         return () => undefined
       }
     },
     async () => undefined,
     true
   )
+
   expect(await review('f')).toMatchObject({
     complete: true,
     measuredTextCount: 401,
@@ -590,6 +668,7 @@ it('batches initial text measurements and remeasures only a changed text owner',
   state.geometry['text-300'].height = 5
   notify({ elementIds: ['text-300'] })
   const corrected = await review('f')
+
   expect(corrected).toMatchObject({
     complete: true,
     measuredTextCount: 401,
@@ -608,12 +687,16 @@ it('batches initial text measurements and remeasures only a changed text owner',
 
 it('keeps mechanical evidence only for equal supported inputs and exact traversal context', async () => {
   const { apis, geometry, data } = fixture()
+
   let changed: (change?: InspectionDependencyChange) => void = () => undefined
+
   const review = createDesignReviewer(
     {
       ...apis,
+
       observeChanges(listener) {
         changed = listener
+
         return () => undefined
       }
     },
@@ -621,9 +704,11 @@ it('keeps mechanical evidence only for equal supported inputs and exact traversa
     true
   )
   const first = await review.capture('f')
+
   expect(first.available).toBe(true)
   expect(first.evidence).toBeDefined()
   const original = requiredEvidence(first)
+
   apis.read.mockClear()
   apis.computed.mockClear()
   expect(await review.validate(original)).toMatchObject({
@@ -641,6 +726,7 @@ it('keeps mechanical evidence only for equal supported inputs and exact traversa
   changed({ elementIds: ['t'] }) // Paint-only notification, same mechanical inputs.
   expect(await review.validate(original)).toMatchObject({ current: true })
   const standalone = await review.capture('t')
+
   expect(await review.validate(original)).toMatchObject({ current: true })
   expect(await review.validate(requiredEvidence(standalone))).toMatchObject({
     current: true
@@ -656,6 +742,7 @@ it('keeps mechanical evidence only for equal supported inputs and exact traversa
     current: true
   })
   const corrected = await review.capture('f')
+
   expect(corrected.findings.length).toBeGreaterThan(0)
   data.f.visible = false
   changed({ elementIds: ['f'] })
@@ -676,18 +763,24 @@ it('keeps mechanical evidence only for equal supported inputs and exact traversa
 
 it('retains exact supported coverage and recovers after incomplete and cancelled mechanical capture', async () => {
   const { apis, data, geometry } = fixture()
+
   let changed: (value?: InspectionDependencyChange) => void = () => undefined
+
   let duringYield: () => void = () => undefined
+
   data.f.children = Array.from({ length: 205 }, (_, i) => `c${i}`)
   for (const id of data.f.children) {
     data[id] = { type: 'rect', parentId: 'f' }
     geometry[id] = { x: 0, y: 0, width: 1, height: 1 }
   }
+
   const review = createDesignReviewer(
     {
       ...apis,
+
       observeChanges(listener) {
         changed = listener
+
         return () => undefined
       }
     },
@@ -698,6 +791,7 @@ it('retains exact supported coverage and recovers after incomplete and cancelled
   )
   const initial = await review.capture('f')
   const coverage = await review.coverage(requiredEvidence(initial))
+
   expect(coverage?.checks).toHaveLength(206)
   expect(coverage?.checks[0]).toMatchObject({
     elementId: 'f',
@@ -710,6 +804,7 @@ it('retains exact supported coverage and recovers after incomplete and cancelled
     parentHeight: 200
   })
   const controller = new AbortController()
+
   duringYield = () => controller.abort()
   await expect(review.capture('f', controller.signal)).rejects.toThrow()
   duringYield = () => changed({ elementIds: ['c204'] })
@@ -720,6 +815,7 @@ it('retains exact supported coverage and recovers after incomplete and cancelled
   })
   duringYield = () => undefined
   const recovered = await review.capture('f')
+
   expect(recovered.available).toBe(true)
   geometry.c204.rotation = 30
   changed({ elementIds: ['c204'] })
@@ -735,6 +831,7 @@ it('retains exact supported coverage and recovers after incomplete and cancelled
   changed({ elementIds: ['c204'] })
   expect((await review.capture('f')).available).toBe(true)
   const aborted = new AbortController()
+
   aborted.abort()
   await expect(
     review.validate(requiredEvidence(initial), aborted.signal)
@@ -747,15 +844,20 @@ it('retains exact supported coverage and recovers after incomplete and cancelled
 
 it('invalidates text metrics and membership while preserving order-only mechanical coverage', async () => {
   const { apis, data, geometry } = fixture()
+
   data.f.children = ['t', 'other']
   data.other = { type: 'rect', parentId: 'f' }
   geometry.other = { x: 120, y: 0, width: 10, height: 10 }
+
   let changed: (value?: InspectionDependencyChange) => void = () => undefined
+
   const reviewer = createDesignReviewer(
     {
       ...apis,
+
       observeChanges(listener) {
         changed = listener
+
         return () => undefined
       }
     },
@@ -763,6 +865,7 @@ it('invalidates text metrics and membership while preserving order-only mechanic
     true
   )
   const first = await reviewer.capture('f')
+
   data.f.children.reverse()
   changed({ elementIds: [], parentIds: ['f'] })
   expect(await reviewer.validate(requiredEvidence(first))).toMatchObject({
@@ -778,6 +881,7 @@ it('invalidates text metrics and membership while preserving order-only mechanic
     changedInputs: ['text']
   })
   const updated = await reviewer.capture('f')
+
   expect(updated.findings).toEqual([])
   data.f.children = ['other']
   changed({ elementIds: ['t'], parentIds: ['f'] })
@@ -787,18 +891,21 @@ it('invalidates text metrics and membership while preserving order-only mechanic
     changedInputs: ['children']
   })
   const removed = await reviewer.capture('f')
+
   expect(removed.checkedElements).toBe(2)
   reviewer.dispose()
 })
 
 it('projects complete subtree evidence into independently reusable target obligations', async () => {
   const f = retainedFixture()
+
   f.data.s = { type: 'rectangle', parentId: 'f' }
   f.data.f.children = ['t', 's']
   f.geometry.s = { x: 150, y: 0, width: 30, height: 30, rotation: 0 }
   const whole = requiredEvidence(await f.review.capture('f'))
   const reads = f.apis.read.mock.calls.length
   const projected = await f.review.reconcile(whole, ['t', 's', 'outside'])
+
   expect(f.apis.read).toHaveBeenCalledTimes(reads)
   expect(projected.measurements).toMatchObject([
     {
@@ -812,6 +919,7 @@ it('projects complete subtree evidence into independently reusable target obliga
   ])
   const text = requiredEvidence(projected.measurements[0])
   const sibling = requiredEvidence(projected.measurements[1])
+
   f.geometry.s.width = 40
   f.change({ elementIds: ['s'] })
   expect(await f.review.validate(text)).toMatchObject({ current: true })
@@ -825,8 +933,10 @@ it('projects complete subtree evidence into independently reusable target obliga
 
 it('does not promote inherited hidden coverage or a projection outside its subtree', async () => {
   const f = retainedFixture()
+
   f.data.f.visible = false
   const hidden = requiredEvidence(await f.review.capture('f'))
+
   expect(
     (await f.review.reconcile(hidden, ['t'])).measurements[0]
   ).toMatchObject({ available: false })
@@ -836,10 +946,12 @@ it('does not promote inherited hidden coverage or a projection outside its subtr
   const child = requiredEvidence(
     (await f.review.reconcile(visible, ['t'])).measurements[0]
   )
+
   expect(
     (await f.review.reconcile(child, ['f'])).measurements[0]
   ).toMatchObject({ available: false })
   const aborted = new AbortController()
+
   aborted.abort()
   await expect(
     f.review.reconcile(visible, ['t'], aborted.signal)
@@ -856,6 +968,7 @@ it('selects only requested covered targets without extra geometry work or implie
   const before = await f.review.capture('f')
   const reads = f.apis.read.mock.calls.length
   const selected = await f.review.capture('f', undefined, ['t', 'outside', 't'])
+
   expect(selected).toMatchObject({
     coveredMeasurementTargets: ['t'],
     evidence: before.evidence
@@ -874,6 +987,7 @@ it('selects only requested covered targets without extra geometry work or implie
   f.data.f.visible = false
   f.change({ elementIds: ['f'] })
   const hidden = await f.review.capture('f', undefined, ['t'])
+
   expect(hidden).toMatchObject({ coveredMeasurementTargets: ['t'] })
   expect(
     (await f.review.reconcile(requiredEvidence(hidden), ['t'])).measurements[0]
@@ -889,16 +1003,19 @@ it('selects only requested covered targets without extra geometry work or implie
 
 it('preserves the exact receipt identity of unaffected obligations during broader reconciliation', async () => {
   const f = retainedFixture()
+
   f.data.s = { type: 'rectangle', parentId: 'f' }
   f.data.f.children = ['t', 's']
   f.geometry.s = { x: 150, y: 0, width: 30, height: 30, rotation: 0 }
   const root = requiredEvidence(await f.review.capture('f'))
   const before = await f.review.reconcile(root, ['t', 's'])
+
   f.geometry.s.width = 40
   f.change({ elementIds: ['s'] })
   const current = requiredEvidence(await f.review.capture('f'))
   const reads = f.apis.read.mock.calls.length
   const after = await f.review.reconcile(current, ['t', 's'])
+
   expect(requiredEvidence(after.measurements[0])).toEqual(
     requiredEvidence(before.measurements[0])
   )
@@ -913,6 +1030,7 @@ it.each(['f', 't'])(
   'preserves projected %s evidence through explicit capture and reverse acquisition without hiding changes',
   async (target) => {
     const f = retainedFixture()
+
     f.data.outer = { type: 'frame', children: ['f'] }
     f.data.f.parentId = 'outer'
     f.geometry.outer = { x: 0, y: 0, width: 1000, height: 1000, rotation: 0 }
@@ -921,6 +1039,7 @@ it.each(['f', 't'])(
       (await f.review.reconcile(root, [target])).measurements[0]
     )
     const explicit = requiredEvidence(await f.review.capture(target))
+
     expect(explicit).toEqual(projected)
     expect(await f.review.validate(projected)).toMatchObject({ current: true })
     expect(
@@ -931,9 +1050,11 @@ it.each(['f', 't'])(
     f.geometry.t.width = 120
     f.change({ elementIds: ['t'] })
     const changed = requiredEvidence(await f.review.capture(target))
+
     expect(changed).not.toEqual(explicit)
     expect(await f.review.validate(explicit)).toMatchObject({ current: false })
     const refreshed = requiredEvidence(await f.review.capture('outer'))
+
     expect(
       requiredEvidence(
         (await f.review.reconcile(refreshed, [target])).measurements[0]
@@ -945,14 +1066,17 @@ it.each(['f', 't'])(
 
 it('checks rotated oval extents without bypassing frame overflow or unsupported rotated shapes', async () => {
   const f = retainedFixture()
+
   f.data.t = { type: 'oval', parentId: 'f' }
   f.geometry.t = { x: 10, y: 20, width: 20, height: 10, rotation: Math.PI / 4 }
   const inside = await f.review.capture('f')
+
   expect(inside.complete).toBe(true)
   expect(inside.findings).toEqual([])
   f.geometry.t.x = 299
   f.change({ elementIds: ['t'] })
   const outside = await f.review.capture('f')
+
   expect(outside.complete).toBe(true)
   expect(outside.findings.some((f) => f.kind === 'container-overflow')).toBe(
     true
@@ -960,6 +1084,7 @@ it('checks rotated oval extents without bypassing frame overflow or unsupported 
   f.data.t.type = 'rectangle'
   f.change({ elementIds: ['t'] })
   const unsupported = await f.review.capture('f')
+
   expect(unsupported.complete).toBe(false)
   expect(
     unsupported.findings.some((f) => f.kind === 'rotated-bounds-unchecked')
@@ -968,12 +1093,15 @@ it('checks rotated oval extents without bypassing frame overflow or unsupported 
 
 it('selects completed descendants without caller candidates and preserves explicit scope', async () => {
   const f = retainedFixture()
+
   f.data.f.children?.push('leaf')
   f.data.leaf = { type: 'rectangle', parentId: 'f' }
   f.geometry.leaf = { x: 0, y: 0, width: 5, height: 5, rotation: 0 }
   const selected = await f.review.capture('f', undefined, 'descendants')
+
   expect(selected.coveredMeasurementTargets).toEqual(['t', 'leaf'])
   const reads = f.apis.read.mock.calls.length
+
   expect(await f.review.capture('f', undefined, [])).toMatchObject({
     evidence: selected.evidence,
     coveredMeasurementTargets: []
@@ -992,25 +1120,32 @@ it('selects completed descendants without caller candidates and preserves explic
 
 it('reviews non-geometric workspace descendants without masking real findings', async () => {
   const { apis, data, geometry } = fixture()
+
   data.scene = { type: 'workspace', children: ['f', 'hidden'] }
   data.hidden = { type: 'rect', visible: false }
   geometry.scene = {}
+
   let changed: (value?: InspectionDependencyChange) => void = () => undefined
+
   const reviewer = createDesignReviewer(
     {
       ...apis,
+
       observeChanges(listener) {
         changed = listener
+
         return () => undefined
       }
     },
     async () => undefined,
     true
   )
+
   apis.measure.mockReturnValue([
     { elementId: 't', bounds: { x: 0, y: 0, width: 90, height: 20 } }
   ])
   const first = await reviewer.capture('scene', undefined, 'descendants')
+
   expect(first).toMatchObject({
     complete: true,
     available: true,
@@ -1019,6 +1154,7 @@ it('reviews non-geometric workspace descendants without masking real findings', 
   })
   expect(apis.computed.mock.calls.some(([id]) => id === 'scene')).toBe(false)
   const stamp = requiredEvidence(first)
+
   expect(
     (await reviewer.coverage(stamp))?.checks.find(
       (check) => check.elementId === 'scene'
@@ -1026,6 +1162,7 @@ it('reviews non-geometric workspace descendants without masking real findings', 
   ).toMatchObject({ geometry: false, containment: false })
   expect((await reviewer.capture('scene')).observation.evaluatedNodes).toBe(0)
   const local = requiredEvidence(await reviewer.capture('f'))
+
   data.scene.children = ['hidden', 'f']
   changed({ elementIds: ['scene'] })
   // Painter order remains a visual dependency, not a changed mechanical rule.
@@ -1052,6 +1189,7 @@ it('reviews non-geometric workspace descendants without masking real findings', 
   changed({ elementIds: ['t'] })
   expect((await reviewer.validate(stamp)).current).toBe(false)
   const overflow = await reviewer.capture('scene')
+
   expect(overflow.findings).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ kind: 'container-overflow', elementId: 't' })
@@ -1078,6 +1216,7 @@ it('reviews non-geometric workspace descendants without masking real findings', 
     findings: [{ kind: 'missing-element', elementId: 'missing' }]
   })
   const abort = new AbortController()
+
   abort.abort()
   await expect(reviewer.capture('scene', abort.signal)).rejects.toThrow()
   changed()

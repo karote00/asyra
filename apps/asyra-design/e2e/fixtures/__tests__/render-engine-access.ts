@@ -9,5 +9,6 @@ export const requireEngineObject = (
   if (!result.object) {
     throw new Error('Expected an engine object handle')
   }
+
   return result.object
 }

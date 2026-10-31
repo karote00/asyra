@@ -1,6 +1,7 @@
 import { EventTypes } from '@asyra/core/contracts'
 import { PROPS_ACTIONS, SharedDataChannelNames } from '@asyra/utils'
 import type { JournalEntry } from '../publication-journal'
+
 export function journalFixture(id = crypto.randomUUID()): JournalEntry {
   return {
     version: 1,

@@ -19,6 +19,7 @@ it.each([
   'fits all scene bounds with at least 24px on each side at %sx%s',
   (width, height) => {
     const bounds = measureScene(buildSiteMeshes())
+
     for (const mode of ['overview', 'front', 'top', 'inside'] as const) {
       const fitted = fitScene(cameraPreset(mode), bounds, width, height)
       const projected = fitCamera(fitted, width / height)
@@ -28,6 +29,7 @@ it.each([
         projected.near,
         projected.far
       )
+
       camera.position.fromArray(projected.position)
       camera.lookAt(...projected.target)
       camera.updateMatrixWorld(true)
@@ -37,6 +39,7 @@ it.each([
             const point = new Vector3(x, y, z).project(camera)
             const px = ((point.x + 1) * width) / 2,
               py = ((1 - point.y) * height) / 2
+
             expect(px).toBeGreaterThanOrEqual(24)
             expect(px).toBeLessThanOrEqual(width - 24)
             expect(py).toBeGreaterThanOrEqual(24)
@@ -53,11 +56,13 @@ it.each([
 it('pans by screen pixels without rotating or zooming, and restores 100% while preserving pan', () => {
   const original = cameraPreset('overview')
   const moved = panCamera(original, 90, -40, 1090, 610)
+
   expect(cameraDistance(moved)).toBeCloseTo(cameraDistance(original))
   expect(moved.target).not.toEqual(original.target)
   const originalDirection = original.position.map(
     (value, i) => value - original.target[i]
   )
+
   moved.position.forEach((value, i) =>
     expect(value - moved.target[i]).toBeCloseTo(originalDirection[i])
   )
@@ -67,14 +72,17 @@ it('pans by screen pixels without rotating or zooming, and restores 100% while p
     original.near,
     original.far
   )
+
   camera.position.fromArray(moved.position)
   camera.lookAt(...moved.target)
   camera.updateMatrixWorld(true)
   const point = new Vector3(...original.target).project(camera)
+
   expect(((point.x + 1) * 1090) / 2).toBeCloseTo(1090 / 2 + 90)
   expect(((1 - point.y) * 610) / 2).toBeCloseTo(610 / 2 - 40)
   const zoomed = setCameraDistance(moved, 20)
   const restored = setCameraDistance(zoomed, cameraDistance(original))
+
   expect(cameraDistance(restored)).toBeCloseTo(cameraDistance(original))
   expect(restored.target).toEqual(moved.target)
 })
@@ -86,6 +94,7 @@ it('fits translated and rotated instances while reading model vertices only once
       if (typeof key === 'string' && /^\d+$/.test(key)) {
         reads++
       }
+
       return Reflect.get(target, key, receiver)
     }
   })
@@ -109,6 +118,7 @@ it('fits translated and rotated instances while reading model vertices only once
       }
     }
   ])
+
   expect(bounds.min[0]).toBeCloseTo(10)
   expect(bounds.min[2]).toBeCloseTo(18)
   expect(bounds.max).toEqual([13, 1000, 20])
@@ -123,6 +133,7 @@ it('matches explicit box corners for arbitrary instance yaw and translations', (
   }))
   const offset = [6, -4, 8] as const
   const corners: Vector3[] = []
+
   for (const instance of instances) {
     for (const x of [-2, 4]) {
       for (const y of [-1, 5]) {
@@ -137,6 +148,7 @@ it('matches explicit box corners for arbitrary instance yaw and translations', (
       }
     }
   }
+
   const bounds = measureScene([
     {
       id: 'rotated',
@@ -154,6 +166,7 @@ it('matches explicit box corners for arbitrary instance yaw and translations', (
       }
     }
   ])
+
   for (let axis = 0; axis < 3; axis++) {
     expect(bounds.min[axis]).toBeCloseTo(
       Math.min(...corners.map((p) => p.getComponent(axis))),
@@ -173,6 +186,7 @@ it('reuses immutable model extrema across placement edits while invalidating cha
       if (typeof key === 'string' && /^\d+$/.test(key)) {
         reads++
       }
+
       return Reflect.get(target, key, receiver)
     }
   })
@@ -196,9 +210,11 @@ it('reuses immutable model extrema across placement edits while invalidating cha
   }
   const cache = new SpatialBoundsOwner()
   const admitted = readSpatialDescriptor(mesh.descriptor)
+
   if (admitted.kind !== 'mesh') {
     throw new Error('Expected mesh')
   }
+
   mesh.descriptor = admitted as typeof mesh.descriptor
   measureScene([mesh], cache)
   expect(reads).toBe(9)
@@ -206,6 +222,7 @@ it('reuses immutable model extrema across placement edits while invalidating cha
     ...mesh,
     descriptor: { ...mesh.descriptor, position: [4, 0, 0] as const }
   }
+
   expect(measureScene([moved], cache)).toEqual({
     min: [4, 0, 0],
     max: [6, 1, 3]
@@ -221,6 +238,7 @@ it('reuses immutable model extrema across placement edits while invalidating cha
       }
     }
   }
+
   expect(measureScene([resized], cache)).toEqual(measureScene([resized]))
   resized.descriptor.shape.positions[3] = 10
   expect(measureScene([resized], cache).max[0]).toBe(14)
@@ -229,6 +247,7 @@ it('reuses immutable model extrema across placement edits while invalidating cha
 
 it('retains the site policy that dolly distance exceeds the near plane', () => {
   const camera = cameraPreset('overview')
+
   expect(() => setCameraDistance(camera, camera.near)).toThrow(
     'Invalid camera distance'
   )

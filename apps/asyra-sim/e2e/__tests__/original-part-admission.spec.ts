@@ -6,6 +6,7 @@ test('runs complete original parts with one geometry display and rejects surroga
 }, info) => {
   const errors: string[] = [],
     workers: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -14,6 +15,7 @@ test('runs complete original parts with one geometry display and rejects surroga
   )
   page.on('worker', (worker) => workers.push(worker.url()))
   const history = await page.getByTestId('history-depth').textContent()
+
   await expect(page.getByLabel('Visuals', { exact: true })).toHaveCount(0)
   await expect(page.getByLabel('Proxies', { exact: true })).toHaveCount(0)
   await page.getByLabel('Wireframe', { exact: true }).check()
@@ -22,10 +24,12 @@ test('runs complete original parts with one geometry display and rejects surroga
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   const report = page.getByTestId('preflight-report')
+
   await expect(report).toContainText('Ready for formal local analysis')
 
   await viewResults(page)
   const result = page.getByTestId('analysis-result')
+
   await expect(result).toBeVisible({ timeout: 20000 })
   await expect(result).toContainText('completed')
   await expect(result).toContainText('Original-part continuous clearance')
@@ -50,6 +54,7 @@ test('runs complete original parts with one geometry display and rejects surroga
     )
     expect(workers.length).toBe(1)
   }
+
   expect(errors).toEqual([])
   await info.attach('original-part-review', {
     contentType: 'application/json',

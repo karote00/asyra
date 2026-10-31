@@ -16,6 +16,7 @@ it('does no further static source traversal after certifying the entire keyframe
     ...snapshot,
     pairs: snapshot.pairs.slice(0, 1)
   })
+
   expect(evidence.coverage).toBe('complete')
   expect(evidence.pairs[0].evidence.leaves).toHaveLength(199)
   expect(
@@ -47,6 +48,7 @@ const clearWitness: DistanceEvidence = {
 async function scheduled(kernel: PairQueryKernel) {
   const snapshot = await representativeSnapshot(0)
   const pair = snapshot.pairs[0]
+
   return queryContinuousPair(
     {
       workcell: snapshot.workcell,
@@ -72,14 +74,19 @@ it('keeps the non-opted-in kernel sample order unchanged', async () => {
   const result = await scheduled({
     distance: () => {
       order.push('distance')
+
       return clearWitness
     },
+
     lower: () => {
       order.push('lower')
+
       return 1
     },
+
     exhaustionReason: 'budget'
   })
+
   expect(order).toEqual(['distance', 'distance', 'distance', 'lower'])
   expect(result.coverage).toBe('complete')
 })
@@ -89,9 +96,12 @@ it('keeps established first evidence but cannot claim clearance when early inter
   const result = await scheduled({
     certifyClearBeforeResampling: true,
     distance,
+
     lower: () => null,
+
     exhaustionReason: 'budget'
   })
+
   expect(distance).toHaveBeenCalledTimes(1)
   expect(result.coverage).toBe('partial')
   expect(result.leaves[0]).toMatchObject({
@@ -117,6 +127,7 @@ it('continues to the later penetration witness after an unsuccessful interval ce
     lower,
     exhaustionReason: 'budget'
   })
+
   expect(distance).toHaveBeenCalledTimes(2)
   expect(lower).toHaveBeenCalledTimes(2)
   expect(result.leaves[0]).toMatchObject({
@@ -141,6 +152,7 @@ it('preserves a first penetration witness even when the final interval query exh
     lower,
     exhaustionReason: 'budget'
   })
+
   expect(distance).toHaveBeenCalledTimes(1)
   expect(lower).toHaveBeenCalledTimes(1)
   expect(result.leaves[0]).toMatchObject({

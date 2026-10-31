@@ -24,6 +24,7 @@ export const isGroupEntity = (type: string): boolean => {
   }
 
   const registration = componentRegistry.get(type)
+
   return registration?.isContainer ?? false
 }
 
@@ -43,9 +44,11 @@ export const createElement = (
 
   // Check registry first for custom components
   const registration = componentRegistry.get(elementType)
+
   if (registration) {
     const EntityClass = registration.constructor
     const constructorData = { ...elementData }
+
     delete constructorData.type
 
     return runWithSceneTreePropsManager(
@@ -66,7 +69,9 @@ export const createWorkspace = (
   }
 
   const newWorkspace = new Workspace(registry)
+
   newWorkspace.load(workspaceData)
+
   return newWorkspace
 }
 

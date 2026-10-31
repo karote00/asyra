@@ -26,6 +26,7 @@ const createCore = ({
     if (providerFailure) {
       throw providerFailure
     }
+
     return providerCleanup
   })
   const core = {
@@ -38,6 +39,7 @@ const createCore = ({
     hasSystemProperty: vi.fn(() => false),
     unregisterSystemProperty: vi.fn(() => false)
   }
+
   return { core: core as never, providerCleanup, setRenderEngineProvider }
 }
 
@@ -47,6 +49,7 @@ const captureApplyError = (run: () => unknown): PresetApplyError => {
     throw new Error('Expected PresetApplyError')
   } catch (error) {
     expect(error).toBeInstanceOf(PresetApplyError)
+
     return error as PresetApplyError
   }
 }
@@ -147,6 +150,7 @@ describe('applyPreset', () => {
         profile: PresetProfiles['3D'],
         defaults: selected
       })
+
       expect(result).toEqual({
         profile: PresetProfiles['3D'],
         presetEngineId: '@asyra/preset/spatial-engine',
@@ -168,11 +172,13 @@ describe('applyPreset', () => {
       const error = captureApplyError(() =>
         applyPreset(core, { profile: PresetProfiles['3D'], defaults: [id] })
       )
+
       expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
       expect(error.message).toContain(id)
       if (id === PresetDefaults.UI_CONTEXT) {
         expect(error.message).toContain(PresetDefaults.SELECTION)
       }
+
       expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
       expect(setRenderEngineProvider).not.toHaveBeenCalled()
     }
@@ -183,10 +189,12 @@ describe('applyPreset', () => {
     const error = captureApplyError(() =>
       applyPreset(core, { profile: PresetProfiles['3D'] })
     )
+
     expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
     for (const id of allDefaults.filter((id) => id !== PresetDefaults.INPUT)) {
       expect(error.message).toContain(id)
     }
+
     expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
     expect(setRenderEngineProvider).not.toHaveBeenCalled()
   })
@@ -199,6 +207,7 @@ describe('applyPreset', () => {
         defaults: [PresetDefaults.INPUT]
       })
     )
+
     expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.ENGINE_PROVIDER_CONFLICT)
     expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
     expect(setRenderEngineProvider).not.toHaveBeenCalled()
@@ -219,6 +228,7 @@ describe('applyPreset', () => {
         ...options
       } as never)
     )
+
     expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
     expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
     expect(setRenderEngineProvider).not.toHaveBeenCalled()
@@ -235,6 +245,7 @@ describe('applyPreset', () => {
           spatial: {}
         } as never)
       )
+
       expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
       expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
     }
@@ -256,6 +267,7 @@ describe('applyPreset', () => {
         }
       }
     } as never)
+
     expect(result.appliedDefaults).toEqual([])
     expect(result.presetEngineId).toBe('@asyra/preset/spatial-engine')
     expect(setRenderEngineProvider).toHaveBeenCalledOnce()
@@ -263,6 +275,7 @@ describe('applyPreset', () => {
 
   it('rejects duplicate apply before a second mutation', () => {
     const { core, setRenderEngineProvider } = createCore()
+
     applyPreset(core)
 
     const error = captureApplyError(() => applyPreset(core))
@@ -279,6 +292,7 @@ describe('applyPreset', () => {
       PRESET_APPLY_ERROR_CODES.DEFAULT_INSTALL_FAILED,
       'module failed'
     )
+
     vi.mocked(defaults.installPresetDefaults).mockImplementation(
       ({ registerCleanup }) => {
         registerCleanup('first', () => order.push('first'))
@@ -297,6 +311,7 @@ describe('applyPreset', () => {
     const { core } = createCore()
     const order: string[] = []
     let failCleanup = true
+
     vi.mocked(defaults.installPresetDefaults).mockImplementationOnce(
       ({ registerCleanup }) => {
         registerCleanup('first', () => order.push('first'))
@@ -335,9 +350,11 @@ describe('applyPreset', () => {
     const providerFailure = new Error('provider failed')
     const { core } = createCore({ providerFailure })
     const cleanup = vi.fn()
+
     vi.mocked(defaults.installPresetDefaults).mockImplementation(
       ({ registerCleanup, appliedDefaults }) => {
         registerCleanup('installed-defaults', cleanup)
+
         return Object.freeze([...appliedDefaults])
       }
     )

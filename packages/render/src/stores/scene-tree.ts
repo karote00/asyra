@@ -64,7 +64,9 @@ const isArrayIndexKey = (key: PropertyKey): key is string => {
   if (typeof key !== 'string' || key === '') {
     return false
   }
+
   const index = Number(key)
+
   return (
     Number.isInteger(index) &&
     index >= 0 &&
@@ -78,15 +80,19 @@ const cloneArrayWithEnumerableProperties = <T>(
   entries: T[] = value.slice()
 ): T[] => {
   const clone = entries
+
   getEnumerableOwnKeys(value).forEach((key) => {
     if (isArrayIndexKey(key)) {
       return
     }
+
     const descriptor = Object.getOwnPropertyDescriptor(value, key)
+
     if (descriptor) {
       Object.defineProperty(clone, key, descriptor)
     }
   })
+
   return clone
 }
 
@@ -111,6 +117,7 @@ const composeCompleteRenderData = (
     ...rawDataSnapshot,
     ...computedDataSnapshot
   }
+
   if (
     renderDataSnapshot.id !== elementId ||
     typeof renderDataSnapshot.type !== 'string' ||
@@ -144,11 +151,14 @@ const rememberComparedPair = (
 ): 'new' | 'equal' | 'mismatch' => {
   const mappedRight = comparedPairs.leftToRight.get(left)
   const mappedLeft = comparedPairs.rightToLeft.get(right)
+
   if (mappedRight !== undefined || mappedLeft !== undefined) {
     return mappedRight === right && mappedLeft === left ? 'equal' : 'mismatch'
   }
+
   comparedPairs.leftToRight.set(left, right)
   comparedPairs.rightToLeft.set(right, left)
+
   return 'new'
 }
 
@@ -163,6 +173,7 @@ const isDataEqual = (
   if (Object.is(left, right)) {
     return true
   }
+
   if (Array.isArray(left) || Array.isArray(right)) {
     if (
       !Array.isArray(left) ||
@@ -171,36 +182,47 @@ const isDataEqual = (
     ) {
       return false
     }
+
     const pairStatus = rememberComparedPair(left, right, comparedPairs)
+
     if (pairStatus !== 'new') {
       return pairStatus === 'equal'
     }
+
     const leftKeys = getEnumerableOwnKeys(left)
     const rightKeys = getEnumerableOwnKeys(right)
+
     if (leftKeys.length !== rightKeys.length) {
       return false
     }
+
     const leftRecord = left as unknown as Record<PropertyKey, unknown>
     const rightRecord = right as unknown as Record<PropertyKey, unknown>
+
     return leftKeys.every(
       (key) =>
         hasOwn(rightRecord, key) &&
         isDataEqual(leftRecord[key], rightRecord[key], comparedPairs)
     )
   }
+
   if (!isRecord(left) || !isRecord(right)) {
     return false
   }
 
   const leftKeys = Object.keys(left)
   const rightKeys = Object.keys(right)
+
   if (leftKeys.length !== rightKeys.length) {
     return false
   }
+
   const pairStatus = rememberComparedPair(left, right, comparedPairs)
+
   if (pairStatus !== 'new') {
     return pairStatus === 'equal'
   }
+
   return leftKeys.every(
     (key) =>
       hasOwn(right, key) && isDataEqual(left[key], right[key], comparedPairs)
@@ -209,11 +231,14 @@ const isDataEqual = (
 
 class ComputedDataMirror {
   private entries = new Map<string, ComputedDataMirrorEntry>()
+
   private childIdsBySnapshot = new WeakMap<unknown[], Set<string>>()
 
   clear() {
     const clearedEntryCount = this.entries.size
+
     this.entries.clear()
+
     return clearedEntryCount
   }
 
@@ -227,20 +252,26 @@ class ComputedDataMirror {
 
   private getChildIdSet(children: unknown[]): Set<string> | null {
     const cached = this.childIdsBySnapshot.get(children)
+
     if (cached) {
       emitDiagnosticCounter('computed-mirror-child-id-cache-hit')
+
       return cached
     }
 
     const childIds = new Set<string>()
+
     for (const candidate of children) {
       if (typeof candidate !== 'string' || childIds.has(candidate)) {
         return null
       }
+
       childIds.add(candidate)
     }
+
     this.childIdsBySnapshot.set(children, childIds)
     emitDiagnosticCounter('computed-mirror-child-id-cache-miss')
+
     return childIds
   }
 
@@ -268,6 +299,7 @@ class ComputedDataMirror {
       rawDataSnapshot,
       computedDataSnapshot
     )
+
     if (!renderDataSnapshot) {
       throw new Error('Render snapshot identity is incomplete')
     }
@@ -277,9 +309,11 @@ class ComputedDataMirror {
       computedDataSnapshot,
       renderDataSnapshot
     }
+
     this.entries.set(elementId, entry)
     emitDiagnosticCounter('computed-mirror-seed')
     emitDiagnosticCounter(`computed-mirror-seed-${reason}`)
+
     return entry
   }
 
@@ -288,8 +322,10 @@ class ComputedDataMirror {
     reason: 'reload' | 'add' | 'resync' | 'hierarchy'
   ): ComputedDataMirrorEntry | null {
     const element = sceneTree.getElementById(elementId)
+
     if (!element) {
       this.delete(elementId)
+
       return null
     }
 
@@ -301,6 +337,7 @@ class ComputedDataMirror {
           computedData: element.getAllComputedData() as unknown
         })
       )
+
       return this.installSeed(elementId, rawData, computedData, reason)
     } catch (error) {
       this.delete(elementId)
@@ -314,8 +351,10 @@ class ComputedDataMirror {
     rawData: ElementRawData
   ): ComputedDataMirrorEntry | null {
     const element = sceneTree.getElementById(elementId)
+
     if (!element) {
       this.delete(elementId)
+
       return null
     }
 
@@ -335,12 +374,15 @@ class ComputedDataMirror {
 
   get(elementId: string): ComputedDataMirrorEntry | null {
     const entry = this.entries.get(elementId)
+
     if (entry) {
       emitDiagnosticCounter('computed-mirror-hit')
+
       return entry
     }
 
     emitDiagnosticCounter('computed-mirror-cache-miss')
+
     return null
   }
 
@@ -354,6 +396,7 @@ class ComputedDataMirror {
     index: number
   ): boolean {
     const children = this.entries.get(parentId)?.rawDataSnapshot.children
+
     return Array.isArray(children) && children[index] === childId
   }
 
@@ -367,6 +410,7 @@ class ComputedDataMirror {
       rawDataSnapshot,
       computedDataSnapshot
     )
+
     if (!renderDataSnapshot) {
       return false
     }
@@ -376,7 +420,9 @@ class ComputedDataMirror {
       computedDataSnapshot,
       renderDataSnapshot
     }
+
     this.entries.set(elementId, nextEntry)
+
     return true
   }
 
@@ -390,7 +436,9 @@ class ComputedDataMirror {
     if (!isSceneTreeDataOwner(owner)) {
       return null
     }
+
     const entry = this.get(elementId)
+
     if (!entry) {
       return null
     }
@@ -399,17 +447,20 @@ class ComputedDataMirror {
     const computedDataSnapshot = { ...entry.computedDataSnapshot }
     const ownerSnapshot =
       owner === 'raw' ? rawDataSnapshot : computedDataSnapshot
+
     if (
       !hasOwn(ownerSnapshot, key) ||
       !isDataEqual(ownerSnapshot[key], before)
     ) {
       return null
     }
+
     const effectiveBefore = getEffectiveValue(
       rawDataSnapshot,
       computedDataSnapshot,
       key
     )
+
     setOwn(ownerSnapshot, key, after)
     const effectiveAfter = getEffectiveValue(
       rawDataSnapshot,
@@ -422,7 +473,9 @@ class ComputedDataMirror {
     ) {
       return null
     }
+
     emitDiagnosticCounter('computed-mirror-staged-change-count')
+
     return {
       effectiveChanges: isDataEqual(effectiveBefore, effectiveAfter)
         ? []
@@ -446,6 +499,7 @@ class ComputedDataMirror {
     }[]
   ): TopLevelApplyResult | null {
     const entry = this.get(elementId)
+
     if (!entry) {
       return null
     }
@@ -453,29 +507,35 @@ class ComputedDataMirror {
     const rawDataSnapshot = { ...entry.rawDataSnapshot }
     const computedDataSnapshot = { ...entry.computedDataSnapshot }
     const effectiveChanges: EffectiveTopLevelChange[] = []
+
     for (const { owner, key, before, after } of changes) {
       if (!isSceneTreeDataOwner(owner)) {
         return null
       }
+
       const ownerSnapshot =
         owner === 'raw' ? rawDataSnapshot : computedDataSnapshot
+
       if (
         !hasOwn(ownerSnapshot, key) ||
         !isDataEqual(ownerSnapshot[key], before)
       ) {
         return null
       }
+
       const effectiveBefore = getEffectiveValue(
         rawDataSnapshot,
         computedDataSnapshot,
         key
       )
+
       setOwn(ownerSnapshot, key, after)
       const effectiveAfter = getEffectiveValue(
         rawDataSnapshot,
         computedDataSnapshot,
         key
       )
+
       if (!isDataEqual(effectiveBefore, effectiveAfter)) {
         effectiveChanges.push({
           key,
@@ -490,19 +550,23 @@ class ComputedDataMirror {
     ) {
       return null
     }
+
     emitDiagnosticCounter('computed-mirror-staged-change-count', changes.length)
     emitDiagnosticCounter('computed-mirror-batch-apply-count')
+
     return { effectiveChanges }
   }
 
   applyComputedPatch(elementId: string, patch: ComputedDataPatchChange) {
     const entry = this.get(elementId)
+
     if (!entry) {
       return false
     }
 
     const computedDataSnapshot = { ...entry.computedDataSnapshot }
     let changeCount = 0
+
     for (const [key, change] of Object.entries(patch.values ?? {})) {
       if (
         !hasOwn(computedDataSnapshot, key) ||
@@ -510,15 +574,18 @@ class ComputedDataMirror {
       ) {
         return false
       }
+
       setOwn(computedDataSnapshot, key, change.after)
       changeCount += 1
     }
 
     for (const [key, recordPatch] of Object.entries(patch.records ?? {})) {
       const currentRecord = computedDataSnapshot[key]
+
       if (!hasOwn(computedDataSnapshot, key) || !isRecord(currentRecord)) {
         return false
       }
+
       let nextRecord = {
         ...currentRecord
       } as Record<string, ComputedDataRecordValue>
@@ -529,6 +596,7 @@ class ComputedDataMirror {
           change,
           'before'
         )
+
         if (
           (hasOwnBefore &&
             (!recordExists ||
@@ -537,6 +605,7 @@ class ComputedDataMirror {
         ) {
           return false
         }
+
         setOwn(nextRecord, recordId, change.after)
         changeCount += 1
       }
@@ -550,7 +619,9 @@ class ComputedDataMirror {
         ) {
           return false
         }
+
         const { [recordId]: _removed, ...retainedRecord } = nextRecord
+
         nextRecord = retainedRecord
         changeCount += 1
       }
@@ -567,8 +638,10 @@ class ComputedDataMirror {
     ) {
       return false
     }
+
     emitDiagnosticCounter('computed-mirror-staged-change-count', changeCount)
     emitDiagnosticCounter('computed-mirror-patch-apply-count')
+
     return true
   }
 
@@ -580,6 +653,7 @@ class ComputedDataMirror {
   ): TopLevelApplyResult | null {
     const entry = this.get(elementId)
     const currentChildren = entry?.rawDataSnapshot.children
+
     if (
       !entry ||
       !Array.isArray(currentChildren) ||
@@ -591,10 +665,12 @@ class ComputedDataMirror {
     }
 
     const nextChildren = cloneArrayWithEnumerableProperties(currentChildren)
+
     if (action === 'add') {
       if (index > currentChildren.length || currentChildren.includes(childId)) {
         return null
       }
+
       nextChildren.splice(index, 0, childId)
     } else {
       if (
@@ -603,6 +679,7 @@ class ComputedDataMirror {
       ) {
         return null
       }
+
       nextChildren.splice(index, 1)
     }
 
@@ -621,21 +698,26 @@ class ComputedDataMirror {
   ): TopLevelApplyResult | null {
     const entry = this.get(elementId)
     const currentChildren = entry?.rawDataSnapshot.children
+
     if (!entry || !Array.isArray(currentChildren) || additions.length === 0) {
       return null
     }
 
     const currentChildIdSet = this.getChildIdSet(currentChildren)
+
     if (!currentChildIdSet) {
       return null
     }
+
     const insertedIds = new Set<string>()
     const insertionByFinalIndex = new Map<number, string>()
     const finalLength = currentChildren.length + additions.length
     const appendIds = new Array<string>(additions.length)
     let appendCount = 0
+
     for (const { data, index } of additions) {
       const childId = data.id
+
       if (
         typeof childId !== 'string' ||
         childId.length === 0 ||
@@ -648,9 +730,11 @@ class ComputedDataMirror {
       ) {
         return null
       }
+
       insertedIds.add(childId)
       insertionByFinalIndex.set(index, childId)
       const appendIndex = index - currentChildren.length
+
       if (appendIndex >= 0 && appendIndex < additions.length) {
         appendIds[appendIndex] = childId
         appendCount += 1
@@ -658,31 +742,39 @@ class ComputedDataMirror {
     }
 
     let finalChildren: string[]
+
     if (appendCount === additions.length) {
       finalChildren = currentChildren.concat(appendIds) as string[]
       emitDiagnosticCounter('computed-mirror-child-add-batch-append')
     } else {
       let currentIndex = 0
+
       finalChildren = []
       for (let index = 0; index < finalLength; index += 1) {
         const insertedId = insertionByFinalIndex.get(index)
+
         if (insertedId) {
           finalChildren.push(insertedId)
           continue
         }
+
         const retainedId = currentChildren[currentIndex]
+
         if (retainedId === undefined) {
           return null
         }
+
         finalChildren.push(retainedId)
         currentIndex += 1
       }
+
       if (currentIndex !== currentChildren.length) {
         return null
       }
     }
 
     const rawDataSnapshot = { ...entry.rawDataSnapshot }
+
     setOwn(rawDataSnapshot, 'children', finalChildren)
     if (
       !this.installSnapshot(
@@ -699,6 +791,7 @@ class ComputedDataMirror {
     this.childIdsBySnapshot.set(finalChildren, currentChildIdSet)
     emitDiagnosticCounter('computed-mirror-staged-change-count')
     emitDiagnosticCounter('computed-mirror-child-add-batch-apply')
+
     return {
       effectiveChanges: hasOwn(entry.computedDataSnapshot, 'children')
         ? []
@@ -718,6 +811,7 @@ class ComputedDataMirror {
   ): TopLevelApplyResult | null {
     const entry = this.get(elementId)
     const currentChildren = entry?.rawDataSnapshot.children
+
     if (
       !entry ||
       !Array.isArray(currentChildren) ||
@@ -729,6 +823,7 @@ class ComputedDataMirror {
 
     const removalIndexes = new Set<number>()
     const removalIds = new Set<string>()
+
     for (const { data, index } of removals) {
       if (
         typeof data.id !== 'string' ||
@@ -741,6 +836,7 @@ class ComputedDataMirror {
       ) {
         return null
       }
+
       removalIds.add(data.id)
       removalIndexes.add(index)
     }
@@ -759,14 +855,17 @@ class ComputedDataMirror {
       currentChildren,
       nextChildren
     )
+
     if (applyResult) {
       emitDiagnosticCounter('computed-mirror-child-remove-batch-apply')
     }
+
     return applyResult
   }
 
   composeRenderData(elementId: string): RenderElementData | null {
     const entry = this.get(elementId)
+
     if (!entry) {
       return null
     }
@@ -777,12 +876,19 @@ class ComputedDataMirror {
 
 class RenderSceneTree {
   private computedDataMirror = new ComputedDataMirror()
+
   private projectedElementIds = new Set<string>()
+
   private pendingElementUpdates = new Set<string>()
+
   private pendingFrameFlush = false
+
   private pendingFlush = false
+
   private frameAlignedFlush = false
+
   private flushingPendingChanges = false
+
   private runtimeGeneration = 0
 
   constructor() {
@@ -793,7 +899,9 @@ class RenderSceneTree {
     if (key === 'visible' || DIRECT_RENDER_PROPERTY_KEYS.has(key)) {
       return true
     }
+
     const type = this.computedDataMirror.get(elementId)?.renderDataSnapshot.type
+
     return (
       typeof type === 'string' &&
       renderStrategyRegistry.supportsDirectProperty(type, key)
@@ -811,12 +919,16 @@ class RenderSceneTree {
       roots: { elementId: string; siblingIndex?: number }[]
     ) => {
       const pending = [...roots].reverse()
+
       while (pending.length > 0) {
         const entry = pending.pop()
+
         if (!entry || visitedElementIds.has(entry.elementId)) {
           continue
         }
+
         const seededEntry = seededEntries.get(entry.elementId)
+
         if (!seededEntry) {
           continue
         }
@@ -824,9 +936,11 @@ class RenderSceneTree {
         visitedElementIds.add(entry.elementId)
         entries.push(entry)
         const children = seededEntry.rawDataSnapshot.children
+
         if (Array.isArray(children)) {
           for (let index = children.length - 1; index >= 0; index -= 1) {
             const childId = children[index]
+
             if (typeof childId === 'string') {
               pending.push({ elementId: childId, siblingIndex: index })
             }
@@ -873,12 +987,16 @@ class RenderSceneTree {
     // Rebuild parents before children and siblings in canonical hierarchy order.
     try {
       const seededEntries = new Map<string, ComputedDataMirrorEntry>()
+
       sceneTree.getAllElements().forEach((element) => {
         const elementId = element.get('id')
+
         if (element.get('type') === EntityTypes.WORKSPACE) {
           return
         }
+
         const entry = this.computedDataMirror.seed(elementId, 'reload')
+
         if (entry) {
           seededEntries.set(elementId, entry)
         }
@@ -890,6 +1008,7 @@ class RenderSceneTree {
       ).forEach(({ elementId, siblingIndex }) => {
         const renderElementData =
           seededEntries.get(elementId)?.renderDataSnapshot
+
         if (renderElementData) {
           this.addElement(renderElementData, siblingIndex)
         }
@@ -924,18 +1043,21 @@ class RenderSceneTree {
     this.computedDataMirror.delete(elementId)
 
     let entry: ComputedDataMirrorEntry | null
+
     try {
       entry = this.computedDataMirror.seed(elementId, 'resync')
     } catch {
       emitDiagnosticCounter('computed-mirror-resync-failed')
       this.releaseProjectedElement(elementId)
       this.computedDataMirror.delete(elementId)
+
       return this.projectionOutcome(elementId, 'failed')
     }
 
     if (!entry) {
       emitDiagnosticCounter('computed-mirror-resync-removed')
       this.releaseProjectedElement(elementId)
+
       return this.projectionOutcome(elementId, 'removed')
     }
 
@@ -945,10 +1067,12 @@ class RenderSceneTree {
       emitDiagnosticCounter('computed-mirror-resync-failed')
       this.releaseProjectedElement(elementId)
       this.computedDataMirror.delete(elementId)
+
       return this.projectionOutcome(elementId, 'failed')
     }
 
     emitDiagnosticCounter('computed-mirror-resync-success')
+
     return this.projectionOutcome(elementId, 'resynced')
   }
 
@@ -957,6 +1081,7 @@ class RenderSceneTree {
     index?: number
   ): RenderProjectionOutcome {
     let entry: ComputedDataMirrorEntry | null
+
     try {
       entry = this.computedDataMirror.seed(id, 'add')
     } catch {
@@ -964,23 +1089,27 @@ class RenderSceneTree {
       emitDiagnosticCounter('computed-mirror-add-seed-failed')
       this.releaseProjectedElement(id)
       this.computedDataMirror.delete(id)
+
       return this.projectionOutcome(id, 'failed')
     }
 
     if (!entry) {
       this.pendingElementUpdates.delete(id)
       this.releaseProjectedElement(id)
+
       return this.projectionOutcome(id, 'removed')
     }
 
     try {
       this.addElement(entry.renderDataSnapshot, index)
+
       return this.projectionOutcome(id, 'applied')
     } catch {
       this.pendingElementUpdates.delete(id)
       emitDiagnosticCounter('computed-mirror-add-seed-failed')
       this.releaseProjectedElement(id)
       this.computedDataMirror.delete(id)
+
       return this.projectionOutcome(id, 'failed')
     }
   }
@@ -991,6 +1120,7 @@ class RenderSceneTree {
   ): RenderProjectionOutcome {
     const { id } = data
     let entry: ComputedDataMirrorEntry | null
+
     try {
       entry = this.computedDataMirror.seedFromRawData(id, data)
     } catch {
@@ -998,23 +1128,27 @@ class RenderSceneTree {
       emitDiagnosticCounter('computed-mirror-add-seed-failed')
       this.releaseProjectedElement(id)
       this.computedDataMirror.delete(id)
+
       return this.projectionOutcome(id, 'failed')
     }
 
     if (!entry) {
       this.pendingElementUpdates.delete(id)
       this.releaseProjectedElement(id)
+
       return this.projectionOutcome(id, 'removed')
     }
 
     try {
       this.addElement(entry.renderDataSnapshot, index)
+
       return this.projectionOutcome(id, 'applied')
     } catch {
       this.pendingElementUpdates.delete(id)
       emitDiagnosticCounter('computed-mirror-add-seed-failed')
       this.releaseProjectedElement(id)
       this.computedDataMirror.delete(id)
+
       return this.projectionOutcome(id, 'failed')
     }
   }
@@ -1023,6 +1157,7 @@ class RenderSceneTree {
     this.pendingElementUpdates.delete(elementId)
     this.releaseProjectedElement(elementId)
     this.computedDataMirror.delete(elementId)
+
     return this.projectionOutcome(elementId, 'failed')
   }
 
@@ -1034,12 +1169,14 @@ class RenderSceneTree {
     if (outcome.status !== 'applied') {
       return outcome
     }
+
     const parentOutcome = this.synchronizeParentMembership(
       parentId,
       outcome.elementId,
       index,
       'add'
     )
+
     if (
       parentOutcome?.status !== 'failed' &&
       parentOutcome?.status !== 'removed'
@@ -1050,6 +1187,7 @@ class RenderSceneTree {
     this.pendingElementUpdates.delete(outcome.elementId)
     this.releaseProjectedElement(outcome.elementId)
     this.computedDataMirror.delete(outcome.elementId)
+
     return this.projectionOutcome(outcome.elementId, 'failed')
   }
 
@@ -1069,6 +1207,7 @@ class RenderSceneTree {
     }
 
     const elementIds = entries.map(({ data }) => data.id)
+
     if (
       new Set(elementIds).size !== elementIds.length ||
       entries.some(
@@ -1091,8 +1230,10 @@ class RenderSceneTree {
       string,
       { entry: AddRemoveElementEntry; inputIndex: number }[]
     >()
+
     entries.forEach((entry, inputIndex) => {
       const parentEntries = indexedEntriesByParent.get(entry.parentId) ?? []
+
       parentEntries.push({ entry, inputIndex })
       indexedEntriesByParent.set(entry.parentId, parentEntries)
     })
@@ -1100,13 +1241,16 @@ class RenderSceneTree {
     const outcomes = entries.map(({ data }) =>
       this.projectionOutcome(data.id, 'failed')
     )
+
     indexedEntriesByParent.forEach((indexedEntries, parentId) => {
       if (!sceneTree.getElementById(parentId)) {
         return
       }
+
       const sortedEntries = [...indexedEntries].sort(
         (left, right) => left.entry.index - right.entry.index
       )
+
       sortedEntries.forEach(({ entry, inputIndex }) => {
         outcomes[inputIndex] = this.projectAddedElementFromRawData(
           entry.data,
@@ -1123,6 +1267,7 @@ class RenderSceneTree {
             parentId,
             sortedEntries.map(({ entry }) => entry)
           )
+
       if (
         parentOutcome?.status !== 'failed' &&
         parentOutcome?.status !== 'removed'
@@ -1136,6 +1281,7 @@ class RenderSceneTree {
         }
       })
     })
+
     return outcomes
   }
 
@@ -1145,9 +1291,11 @@ class RenderSceneTree {
       siblingIndex === undefined
         ? render.addElement(data)
         : render.addElement(data, siblingIndex)
+
     if (!element) {
       throw new Error(`Render failed to rebuild element ${data.id}`)
     }
+
     return element
   }
 
@@ -1163,6 +1311,7 @@ class RenderSceneTree {
       index,
       'remove'
     )
+
     return parentOutcome?.status === 'failed'
       ? this.projectionOutcome(data.id, 'failed')
       : this.projectionOutcome(data.id, 'removed')
@@ -1174,7 +1323,9 @@ class RenderSceneTree {
     if (entries.length === 0) {
       return []
     }
+
     const elementIds = entries.map(({ data }) => data.id)
+
     if (
       new Set(elementIds).size !== elementIds.length ||
       entries.some(
@@ -1194,31 +1345,39 @@ class RenderSceneTree {
     }
 
     const entriesByParent = new Map<string, AddRemoveElementEntry[]>()
+
     entries.forEach((entry) => {
       const parentEntries = entriesByParent.get(entry.parentId) ?? []
+
       parentEntries.push(entry)
       entriesByParent.set(entry.parentId, parentEntries)
     })
 
     const renderDataByElementId = new Map<string, RenderElementData>()
+
     for (const { data } of entries) {
       const renderData = this._getRenderData(data.id)
+
       if (!renderData) {
         return entries.map(({ data: failedData }) =>
           this.projectionOutcome(failedData.id, 'failed')
         )
       }
+
       renderDataByElementId.set(data.id, renderData)
     }
+
     const appliedParentRemovals: {
       parentId: string
       entries: readonly AddRemoveElementEntry[]
     }[] = []
+
     for (const [parentId, parentEntries] of entriesByParent) {
       const parentOutcome = this.synchronizeParentRemovalBatch(
         parentId,
         parentEntries
       )
+
       if (
         parentOutcome?.status === 'failed' ||
         parentOutcome?.status === 'removed'
@@ -1235,10 +1394,12 @@ class RenderSceneTree {
             )
           }
         }
+
         return entries.map(({ data }) =>
           this.projectionOutcome(data.id, 'failed')
         )
       }
+
       if (parentOutcome?.status === 'applied') {
         appliedParentRemovals.push({
           parentId,
@@ -1248,6 +1409,7 @@ class RenderSceneTree {
     }
 
     const visuallyRemovedEntries: AddRemoveElementEntry[] = []
+
     try {
       for (const entry of entries) {
         this.pendingElementUpdates.delete(entry.data.id)
@@ -1264,9 +1426,12 @@ class RenderSceneTree {
           )
         }
       }
+
       const restoreEntriesByParent = new Map<string, AddRemoveElementEntry[]>()
+
       visuallyRemovedEntries.forEach((entry) => {
         const parentEntries = restoreEntriesByParent.get(entry.parentId) ?? []
+
         parentEntries.push(entry)
         restoreEntriesByParent.set(entry.parentId, parentEntries)
       })
@@ -1275,14 +1440,17 @@ class RenderSceneTree {
           (left, right) => left.index - right.index
         )) {
           const renderData = renderDataByElementId.get(entry.data.id)
+
           if (!renderData) {
             throw new Error(
               `Render lost removal compensation for ${entry.data.id}`
             )
           }
+
           this.addElement(renderData, entry.index)
         }
       }
+
       throw error
     }
 
@@ -1291,11 +1459,13 @@ class RenderSceneTree {
       this.projectedElementIds.delete(data.id)
       this.computedDataMirror.delete(data.id)
     })
+
     return entries.map(({ data }) => this.projectionOutcome(data.id, 'removed'))
   }
 
   moveElements(moves: readonly HierarchyMove[]): RenderProjectionOutcome {
     const elementId = moves[0]?.elementId ?? ''
+
     if (
       !Array.isArray(moves) ||
       moves.length === 0 ||
@@ -1315,15 +1485,19 @@ class RenderSceneTree {
 
     for (const parentId of affectedParentIds) {
       const parent = sceneTree.getElementById(parentId)
+
       if (!parent && parentId !== targetParentId) {
         continue
       }
+
       const parentData = parent?.save() as
         (ElementRawData & { children?: unknown }) | undefined
       const children = parentData?.children
+
       if (!parent || !Array.isArray(children)) {
         return this.projectionOutcome(elementId, 'failed')
       }
+
       canonicalParents.set(parentId, [...children])
     }
 
@@ -1336,7 +1510,9 @@ class RenderSceneTree {
       ) {
         return false
       }
+
       const source = sceneTree.getElementById(move.before.parentId)
+
       return (
         source?.get('type') === EntityTypes.WORKSPACE ||
         this.computedDataMirror.matchesParentChild(
@@ -1359,13 +1535,16 @@ class RenderSceneTree {
         canonicalParents.get(move.after.parentId)?.includes(move.elementId) ===
           true
     )
+
     if ((!mirrorsMatchBefore && !mirrorsMatchAfter) || !canonicalMatchesAfter) {
       return this.projectionOutcome(elementId, 'failed')
     }
 
     const affectedElementIds = new Set(moves.map((move) => move.elementId))
+
     affectedParentIds.forEach((parentId) => {
       const parent = sceneTree.getElementById(parentId)
+
       if (parent && parent.get('type') !== EntityTypes.WORKSPACE) {
         affectedElementIds.add(parentId)
       }
@@ -1382,6 +1561,7 @@ class RenderSceneTree {
       canonicalParents.forEach((childIds, parentId) => {
         render.projectHierarchy(parentId, childIds)
       })
+
       return this.projectionOutcome(elementId, 'applied')
     } catch {
       return this.projectionOutcome(elementId, 'failed')
@@ -1395,9 +1575,11 @@ class RenderSceneTree {
 
     if (change.action === SCENE_TREE_ACTIONS.REMOVE_SUBTREE) {
       let failed = false
+
       change.removed.forEach(({ data, parentId, index }) => {
         failed ||= this.removeElement(data, parentId, index).status === 'failed'
       })
+
       return this.projectionOutcome(
         change.elementId,
         failed ? 'failed' : 'removed'
@@ -1408,10 +1590,13 @@ class RenderSceneTree {
       const rootEntry = change.removed.find(
         ({ elementId }) => elementId === change.elementId
       )
+
       if (!rootEntry) {
         return this.projectionOutcome(change.elementId, 'failed')
       }
+
       const externalParent = sceneTree.getElementById(rootEntry.parentId)
+
       if (
         externalParent &&
         externalParent.get('type') !== EntityTypes.WORKSPACE &&
@@ -1423,13 +1608,16 @@ class RenderSceneTree {
       try {
         for (const { elementId, index } of [...change.removed].reverse()) {
           const entry = this.computedDataMirror.seed(elementId, 'hierarchy')
+
           if (!entry) {
             throw new Error(
               `Render subtree snapshot is missing for ${elementId}`
             )
           }
+
           this.addElement(entry.renderDataSnapshot, index)
         }
+
         return this.projectionOutcome(change.elementId, 'applied')
       } catch {
         return this.projectionOutcome(change.elementId, 'failed')
@@ -1448,7 +1636,9 @@ class RenderSceneTree {
     if (!parentId) {
       return null
     }
+
     const parent = sceneTree.getElementById(parentId)
+
     if (!parent || parent.get('type') === EntityTypes.WORKSPACE) {
       return null
     }
@@ -1460,6 +1650,7 @@ class RenderSceneTree {
       this.computedDataMirror.matchesParentChild(parentId, childId, index)
     ) {
       emitDiagnosticCounter('computed-mirror-add-parent-already-synchronized')
+
       return this.projectionOutcome(parentId, 'applied')
     }
 
@@ -1469,6 +1660,7 @@ class RenderSceneTree {
       index,
       action
     )
+
     if (!applyResult) {
       return this.resyncElement(parentId)
     }
@@ -1480,6 +1672,7 @@ class RenderSceneTree {
     )
     this.pendingElementUpdates.add(parentId)
     this.scheduleFlush()
+
     return this.projectionOutcome(parentId, 'applied')
   }
 
@@ -1488,9 +1681,11 @@ class RenderSceneTree {
     additions: readonly AddRemoveElementEntry[]
   ): RenderProjectionOutcome | null {
     const parent = sceneTree.getElementById(parentId)
+
     if (!parent) {
       return this.projectionOutcome(parentId, 'failed')
     }
+
     if (parent.get('type') === EntityTypes.WORKSPACE) {
       return null
     }
@@ -1500,13 +1695,16 @@ class RenderSceneTree {
         this.computedDataMirror.matchesElementParent(data.id, parentId) &&
         this.computedDataMirror.matchesParentChild(parentId, data.id, index)
     )
+
     if (alreadySynchronized) {
       emitDiagnosticCounter(
         'computed-mirror-add-parent-already-synchronized',
         additions.length
       )
+
       return this.projectionOutcome(parentId, 'applied')
     }
+
     if (
       additions.some(
         ({ data }) =>
@@ -1520,9 +1718,11 @@ class RenderSceneTree {
       parentId,
       additions
     )
+
     if (!applyResult) {
       return this.projectionOutcome(parentId, 'failed')
     }
+
     return this.projectionOutcome(parentId, 'applied')
   }
 
@@ -1531,6 +1731,7 @@ class RenderSceneTree {
     removals: readonly AddRemoveElementEntry[]
   ): RenderProjectionOutcome | null {
     const parent = sceneTree.getElementById(parentId)
+
     if (parent?.get('type') === EntityTypes.WORKSPACE) {
       return null
     }
@@ -1539,9 +1740,11 @@ class RenderSceneTree {
       parentId,
       removals
     )
+
     if (!applyResult) {
       return this.projectionOutcome(parentId, 'failed')
     }
+
     if (!parent) {
       return this.projectionOutcome(parentId, 'applied')
     }
@@ -1553,6 +1756,7 @@ class RenderSceneTree {
     )
     this.pendingElementUpdates.add(parentId)
     this.scheduleFlush()
+
     return this.projectionOutcome(parentId, 'applied')
   }
 
@@ -1564,10 +1768,12 @@ class RenderSceneTree {
       parentId,
       removals
     )
+
     if (!applyResult) {
       emitDiagnosticCounter(
         'computed-mirror-child-remove-batch-compensation-failed'
       )
+
       return false
     }
 
@@ -1579,6 +1785,7 @@ class RenderSceneTree {
     )
     this.pendingElementUpdates.add(parentId)
     this.scheduleFlush()
+
     return true
   }
 
@@ -1597,11 +1804,13 @@ class RenderSceneTree {
       before,
       after
     )
+
     if (!applyResult) {
       return this.resyncElement(elementId)
     }
 
     const [effectiveChange] = applyResult.effectiveChanges
+
     if (!effectiveChange) {
       return this.projectionOutcome(elementId, 'applied')
     }
@@ -1618,6 +1827,7 @@ class RenderSceneTree {
       )
       this.pendingFrameFlush = true
       this.scheduleFlush()
+
       return this.projectionOutcome(elementId, 'applied')
     }
 
@@ -1629,6 +1839,7 @@ class RenderSceneTree {
     )
     this.pendingElementUpdates.add(elementId)
     this.scheduleFlush()
+
     return this.projectionOutcome(elementId, 'applied')
   }
 
@@ -1638,16 +1849,21 @@ class RenderSceneTree {
   ) {
     const entry = this.computedDataMirror.get(elementId)
     const before = entry?.rawDataSnapshot.props
+
     if (!isRecord(before)) {
       return this.resyncElement(elementId)
     }
+
     const after = { ...before }
+
     for (const change of changes) {
       if (after[change.key] !== change.before) {
         return this.resyncElement(elementId)
       }
+
       after[change.key] = change.after
     }
+
     return this.updateElementBatch(elementId, [
       {
         owner: 'raw',
@@ -1672,11 +1888,13 @@ class RenderSceneTree {
       elementId,
       changes
     )
+
     if (!applyResult) {
       return this.resyncElement(elementId)
     }
 
     const { effectiveChanges } = applyResult
+
     if (effectiveChanges.length === 0) {
       return this.projectionOutcome(elementId, 'applied')
     }
@@ -1709,7 +1927,9 @@ class RenderSceneTree {
     if (hasComputedFullUpdate) {
       this.pendingElementUpdates.add(elementId)
     }
+
     this.scheduleFlush()
+
     return this.projectionOutcome(elementId, 'applied')
   }
 
@@ -1728,6 +1948,7 @@ class RenderSceneTree {
       'render-scene-tree:apply-computed-patch',
       () => this.computedDataMirror.applyComputedPatch(elementId, patch)
     )
+
     if (!didStage) {
       return this.resyncElement(elementId)
     }
@@ -1773,7 +1994,9 @@ class RenderSceneTree {
     if (hasComputedFullUpdate) {
       this.pendingElementUpdates.add(elementId)
     }
+
     this.scheduleFlush()
+
     return this.projectionOutcome(elementId, 'applied')
   }
 
@@ -1790,6 +2013,7 @@ class RenderSceneTree {
     if (didCoalesce) {
       emitDiagnosticCounter('dirty-change-coalesced-count', changeCount)
     }
+
     if (!this.pendingElementUpdates.has(elementId)) {
       emitDiagnosticCounter('dirty-element-count')
     }
@@ -1802,6 +2026,7 @@ class RenderSceneTree {
 
     if (this.pendingFlush) {
       emitDiagnosticCounter('render-scene-tree-flush-coalesced')
+
       return
     }
 
@@ -1809,6 +2034,7 @@ class RenderSceneTree {
     if (this.frameAlignedFlush) {
       emitDiagnosticCounter('render-scene-tree-frame-aligned-flush')
       render.requestRender()
+
       return
     }
 
@@ -1820,10 +2046,12 @@ class RenderSceneTree {
           }
 
     const generation = this.runtimeGeneration
+
     schedule(() => {
       if (generation !== this.runtimeGeneration) {
         return
       }
+
       this.flushPendingChanges()
     })
   }
@@ -1838,6 +2066,7 @@ class RenderSceneTree {
 
   resetProjection() {
     const clearedEntryCount = this.computedDataMirror.clear()
+
     this.pendingElementUpdates.clear()
     this.pendingFrameFlush = false
     this.pendingFlush = false
@@ -1857,6 +2086,7 @@ class RenderSceneTree {
         'Shared Render reset requires idle, released projection ownership'
       )
     }
+
     this.runtimeGeneration += 1
     this.resetProjection()
     this.frameAlignedFlush = false
@@ -1870,6 +2100,7 @@ class RenderSceneTree {
     if (activeRenderSceneTree !== null && activeRenderSceneTree !== this) {
       throw new Error('Another store owns shared Render projection')
     }
+
     this.frameAlignedFlush = installPendingRenderLayer(this)
   }
 
@@ -1878,11 +2109,13 @@ class RenderSceneTree {
       ...this.projectedElementIds,
       ...this.computedDataMirror.elementIds
     ])
+
     this.pendingElementUpdates.clear()
     this.pendingFrameFlush = false
     this.pendingFlush = false
     let releasedEntryCount = 0
     let firstFailure: unknown
+
     projectedElementIds.forEach((elementId) => {
       try {
         this.releaseProjectedElement(elementId)
@@ -1897,6 +2130,7 @@ class RenderSceneTree {
     } catch (error) {
       firstFailure ??= error
     }
+
     emitDiagnosticCounter(
       'computed-mirror-reset-entry-count',
       releasedEntryCount
@@ -1909,10 +2143,12 @@ class RenderSceneTree {
   private flushPendingChanges() {
     if (this.flushingPendingChanges) {
       emitDiagnosticCounter('render-scene-tree-flush-reentrant-skipped')
+
       return
     }
 
     const didFlush = this.applyPendingChanges()
+
     if (didFlush) {
       render.flushFrame()
     }
@@ -1925,26 +2161,31 @@ class RenderSceneTree {
   private applyPendingChanges() {
     if (this.flushingPendingChanges) {
       emitDiagnosticCounter('render-scene-tree-flush-reentrant-skipped')
+
       return false
     }
 
     if (!this.pendingFrameFlush && this.pendingElementUpdates.size === 0) {
       this.pendingFlush = false
+
       return false
     }
 
     return measureBrowserDragPhase('render-scene-tree:flush', () => {
       this.flushingPendingChanges = true
       const hadPendingFrameFlush = this.pendingFrameFlush
+
       try {
         this.pendingFlush = false
         emitDiagnosticCounter('computed-mirror-commit-count')
         this.pendingFrameFlush = false
         const ids = Array.from(this.pendingElementUpdates)
+
         emitDiagnosticCounter('product-render-per-render-frame', ids.length)
         ids.forEach((id) => {
           this.pendingElementUpdates.delete(id)
           const data = this._getRenderData(id)
+
           if (data) {
             try {
               measureBrowserDragPhase('render-scene-tree:update-element', () =>
@@ -1964,6 +2205,7 @@ class RenderSceneTree {
             }
           }
         })
+
         return true
       } catch (error) {
         this.pendingFrameFlush ||= hadPendingFrameFlush
@@ -1982,6 +2224,7 @@ let pendingRenderRuntimeToken = Symbol('render-projection-runtime')
 
 const installPendingRenderLayer = (store: RenderSceneTree) => {
   const token = pendingRenderRuntimeToken
+
   activeRenderSceneTree = store
   const renderWithLayer = render as typeof render & {
     registerLayer?: (
@@ -1997,6 +2240,7 @@ const installPendingRenderLayer = (store: RenderSceneTree) => {
   const renderWithLifecycle = render as typeof render & {
     registerTeardownCleanup?: (cleanup: () => void) => () => void
   }
+
   if (
     !pendingRenderTeardownInstalled &&
     typeof renderWithLifecycle.registerTeardownCleanup === 'function'
@@ -2005,6 +2249,7 @@ const installPendingRenderLayer = (store: RenderSceneTree) => {
       if (token !== pendingRenderRuntimeToken) {
         return
       }
+
       activeRenderSceneTree?.clearProjection()
     })
     pendingRenderTeardownInstalled = true
@@ -2014,9 +2259,11 @@ const installPendingRenderLayer = (store: RenderSceneTree) => {
     renderWithLayer.registerLayer({
       name: SCENE_TREE_PENDING_RENDER_LAYER,
       layer: {},
+
       shouldUpdate: () =>
         token === pendingRenderRuntimeToken &&
         (activeRenderSceneTree?.hasPendingChanges() ?? false),
+
       update: () =>
         token === pendingRenderRuntimeToken &&
         (activeRenderSceneTree?.flushPendingChangesForFrame() ?? false)
@@ -2030,4 +2277,5 @@ const installPendingRenderLayer = (store: RenderSceneTree) => {
 export { RenderSceneTree }
 
 const renderSceneTree = new RenderSceneTree()
+
 export default renderSceneTree

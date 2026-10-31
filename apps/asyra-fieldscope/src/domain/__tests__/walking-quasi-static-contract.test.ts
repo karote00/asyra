@@ -5,6 +5,7 @@ import { WalkingRobotSourceOwner } from '../walking-robot-source'
 import type { WalkingMotionAdmission } from '../../simulation/walking-motion'
 
 const evidence = { kind: 'synthetic', id: 'test', label: 'test - synthetic' }
+
 function fixture() {
   const source = new WalkingRobotSourceOwner().prepare(
     createSyntheticWalkingRobotDefinition({ definitionId: 'mechanics' })
@@ -51,6 +52,7 @@ function fixture() {
       carried: []
     }
   }
+
   return { motion, raw }
 }
 
@@ -58,6 +60,7 @@ describe('walking quasi-static request admission', () => {
   it('detaches, deeply freezes and binds admission to the exact W3 identity', () => {
     const { raw, motion } = fixture()
     const request = readWalkingQuasiStaticRequest(raw, motion)
+
     raw.support.plane.frame.position[0] = 5
     expect(request.support.plane).toMatchObject({
       frame: { position: [0, 0, 0] }
@@ -137,8 +140,10 @@ describe('walking quasi-static request admission', () => {
         ])
       }
     ]
+
     for (const mutate of mutations) {
       const { raw, motion } = fixture()
+
       mutate(raw)
       expect(() => readWalkingQuasiStaticRequest(raw, motion)).toThrow()
     }
@@ -156,6 +161,7 @@ describe('walking quasi-static request admission', () => {
       },
       motion
     )
+
     expect(request.support.lineOfActionReserve).toEqual({ kind: 'unknown' })
     expect(request.loadMasses.crate).toEqual({ kind: 'unknown' })
   })
@@ -245,6 +251,7 @@ describe('walking quasi-static request admission', () => {
         ]
       }
     }
+
     expect(
       readWalkingQuasiStaticRequest(input, bound).loadMasses.carried
     ).toHaveLength(2)
@@ -290,17 +297,22 @@ describe('walking quasi-static request admission', () => {
       },
       (r: typeof input) => {
         const centre = r.loadMasses.carried[0].properties.localCoM
+
         if (!centre) {
           throw Error('Expected known fixture mass')
         }
+
         centre[1] = NaN
       }
     ]
+
     for (const mutate of mutations) {
       const copy = structuredClone(input)
+
       mutate(copy)
       expect(() => readWalkingQuasiStaticRequest(copy, bound)).toThrow()
     }
+
     for (const changed of [
       { ...contact, pathId: 'wrong' },
       { ...contact, loadCaseId: 'wrong' },

@@ -30,7 +30,9 @@ export const saveCoreDocument = (
   try {
     const wrapper = createStarterDocumentWrapper(core)
     const serialized = JSON.stringify(wrapper)
+
     storage.setItem(STARTER_STORAGE_SLOT, serialized)
+
     return {
       ok: true,
       message: `Saved at ${wrapper.savedAt}`,
@@ -49,11 +51,13 @@ export const readSavedCoreDocument = (
   itemField?: ItemFieldExtension
 ): { readonly core: CoreRawData; readonly savedAt: string } | LoadResult => {
   const serialized = storage.getItem(STARTER_STORAGE_SLOT)
+
   if (serialized === null) {
     return { ok: false, message: 'Nothing saved yet.' }
   }
 
   const wrapper = parseStarterDocumentWrapper(serialized, itemField)
+
   return {
     core: wrapper.core,
     savedAt: wrapper.savedAt

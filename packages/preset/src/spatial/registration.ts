@@ -22,11 +22,13 @@ type SpatialRegistrationCore = Pick<
   | 'getPropertySchema'
   | 'getPropertyComponent'
 >
+
 /** Optional ordinary Core registrations. Core owns successful runtime teardown. */
 export function registerSpatialMesh(core: SpatialRegistrationCore): () => void {
   if (!core.isCompositionOpen()) {
     throw new Error('Spatial registration requires open composition')
   }
+
   if (
     core.getPropertySchema(SPATIAL_MESH_PROPERTY) ||
     core.getPropertyComponent(SPATIAL_MESH_PROPERTY) ||
@@ -38,9 +40,12 @@ export function registerSpatialMesh(core: SpatialRegistrationCore): () => void {
   ) {
     throw new Error('Spatial model already registered')
   }
+
   const cleanups: (() => void)[] = []
+
   const cleanup = () => {
     const failures: unknown[] = []
+
     for (let i = cleanups.length - 1; i >= 0; i--) {
       try {
         cleanups[i]()
@@ -49,17 +54,20 @@ export function registerSpatialMesh(core: SpatialRegistrationCore): () => void {
         failures.push(error)
       }
     }
+
     if (failures.length) {
       throw Object.assign(new Error('Spatial registration cleanup failed'), {
         errors: failures
       })
     }
   }
+
   const owned = (
     kind: 'property' | 'component' | 'render-strategy',
     key: string
   ) => {
     const owner = core.getRegistration({ kind, key })?.owner
+
     return (
       owner?.name === SPATIAL_MODEL_REGISTRATION.owner.name &&
       owner?.packageName === SPATIAL_MODEL_REGISTRATION.owner.packageName
@@ -111,7 +119,9 @@ export function registerSpatialMesh(core: SpatialRegistrationCore): () => void {
         errors: [error, cleanupError]
       })
     }
+
     throw error
   }
+
   return cleanup
 }

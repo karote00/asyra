@@ -7,6 +7,7 @@ import { validateTrajectory } from '../workcell'
 it('provides six distinct, valid studies that include every workcell part', () => {
   const example = createSyntheticExample('sample-test')
   const presets = createSyntheticExperimentPresets(example)
+
   expect(presets.map((preset) => preset.name)).toEqual([
     'Synthetic clearance study',
     'Shoulder reach study',
@@ -35,6 +36,7 @@ it('provides six distinct, valid studies that include every workcell part', () =
       revision: 1,
       rule: { ...draft.rule, revision: 1 }
     })
+
     expect(preflight.blockers).toEqual([])
     expect(preflight.pairs.length).toBeGreaterThan(0)
     const included = new Set([
@@ -62,6 +64,7 @@ it('keeps all preset drafts independent without mutating the source example', ()
   const original = structuredClone(example)
   const presets = createSyntheticExperimentPresets(example)
   const otherDrafts = structuredClone(presets.slice(1))
+
   Object.assign(presets[0].draft.trajectory.keyframes[0].joints, {
     'example:joint-1': 99
   })

@@ -12,6 +12,7 @@ const siteRoot = path.resolve(
 )
 const outputRoot = path.join(siteRoot, 'out')
 const headers = siteSecurityHeaders({ ...process.env, NODE_ENV: 'production' })
+
 await writeFile(
   path.join(outputRoot, '_headers'),
   [
@@ -34,6 +35,7 @@ const files = await readdir(outputRoot, {
   withFileTypes: true
 })
 const assets = files.filter((entry) => entry.isFile())
+
 assert.ok(
   assets.length <= 1000,
   'Pages dashboard upload supports at most 1,000 files'
@@ -53,4 +55,5 @@ for (const entry of assets) {
       25 * 1024 * 1024
   )
 }
+
 console.log(`Static deployment ready: ${assets.length} assets in ${outputRoot}`)

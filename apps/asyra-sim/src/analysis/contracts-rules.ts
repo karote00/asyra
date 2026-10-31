@@ -16,6 +16,7 @@ export function validateAcceptanceExpression(
 ): asserts input is AcceptanceExpression {
   const ancestors = new Set<object>()
   let nodes = 0
+
   const visit = (value: unknown, depth: number): void => {
     if (
       !isPlainRecord(value) ||
@@ -25,6 +26,7 @@ export function validateAcceptanceExpression(
     ) {
       throw new Error('Invalid or over-budget acceptance expression')
     }
+
     if (value.kind === 'clearance') {
       if (
         !hasExactOwnKeys(value, ['kind', 'operator', 'value']) ||
@@ -52,14 +54,17 @@ export function validateAcceptanceExpression(
       ) {
         throw new Error('Invalid acceptance group')
       }
+
       ancestors.add(value)
       for (const child of value.conditions) {
         visit(child, depth + 1)
       }
+
       ancestors.delete(value)
     } else {
       throw new Error('Unsupported acceptance predicate')
     }
   }
+
   visit(input, 1)
 }

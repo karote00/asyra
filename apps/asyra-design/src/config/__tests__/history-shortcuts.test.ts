@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   undo: vi.fn(),
   redo: vi.fn()
 }))
+
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
   defineFeature: mocks.defineFeature
@@ -33,9 +34,11 @@ const definition = mocks.defineFeature.mock.calls.find(
   exclusive: boolean
   execution: (snapshot: SystemContextSnapshotWithDetail) => Promise<unknown>
 }
+
 if (!definition) {
   throw new Error('Missing history feature')
 }
+
 const snapshot = (detail: Record<string, unknown>, keyShift: boolean) =>
   ({ detail, keyShift }) as SystemContextSnapshotWithDetail
 
@@ -51,9 +54,11 @@ describe('history shortcut intent handoff', () => {
         const combo = keyCombinations[
           InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
         ].find((item) => item.modifiers.includes(modifier))
+
         if (!combo) {
           throw new Error('Missing history shortcut')
         }
+
         const raw = {
           type: InputType.KEYBOARD,
           keys: ['z'],
@@ -65,6 +70,7 @@ describe('history shortcut intent handoff', () => {
           },
           detail: { unrelated: 'preserved' }
         } as RawInputEvent
+
         combo.callback(raw)
         expect(raw.detail).toEqual({
           unrelated: 'preserved',
@@ -77,6 +83,7 @@ describe('history shortcut intent handoff', () => {
       })
     }
   }
+
   for (const direction of [undefined, '', 'other', true]) {
     it(`does not infer missing or invalid direction from live Shift - ${String(direction)}`, async () => {
       expect(
@@ -88,20 +95,24 @@ describe('history shortcut intent handoff', () => {
       expect(mocks.redo).not.toHaveBeenCalled()
     })
   }
+
   for (const modifier of [ModifierKey.META, ModifierKey.CTRL]) {
     for (const shift of [false, true]) {
       it(`rejects busy ${modifier} history input with Shift=${shift} before dispatch`, () => {
         const combo = keyCombinations[
           InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
         ].find((item) => item.modifiers.includes(modifier))
+
         if (!combo) {
           throw new Error('Missing shortcut')
         }
+
         const raw = {
           type: InputType.KEYBOARD,
           keys: ['z'],
           modifiers: { shift, meta: true, ctrl: false, alt: false }
         } as RawInputEvent
+
         mocks.isInUndoRedo.mockReturnValue(true)
         expect(combo.callback(raw)).toBe(false)
         expect(raw.detail).toBeUndefined()
@@ -113,8 +124,10 @@ describe('history shortcut intent handoff', () => {
       })
     }
   }
+
   it('propagates history failure without executing the opposite command', async () => {
     const failure = new Error('History owner rejected the replay')
+
     mocks.redo.mockRejectedValueOnce(failure)
     await expect(
       definition.execution(snapshot({ historyDirection: 'redo' }, false))

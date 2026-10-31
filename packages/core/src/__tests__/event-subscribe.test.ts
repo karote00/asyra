@@ -14,9 +14,13 @@ const createCoreForTest = () =>
     props: {} as never,
     render: {
       init: async () => ({ canvas: null }),
+
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1,
+
       registerLayer: vi.fn(),
+
       unregisterLayer: () => true
     } as never,
     sceneTree: {} as never,
@@ -42,6 +46,7 @@ describe('Core subscribeEvent', () => {
     const core = createCoreForTest()
     const event = defineEvent<{ id: number }>('test.registered')
     const registration = core.registerEvent(event)
+
     const handler = (payload?: { id: number }) => payload
 
     const spyCalls: ({ id: number } | undefined)[] = []

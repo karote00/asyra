@@ -17,16 +17,19 @@ const starterCliPath = path.join(
 
 const makeTempDirectory = (prefix) => {
   fs.mkdirSync(path.join(repositoryRoot, 'tmp'), { recursive: true })
+
   return fs.mkdtempSync(path.join(repositoryRoot, 'tmp', prefix))
 }
 
 const createFakePackageManagers = (testDirectory) => {
   const fakeBinDirectory = path.join(testDirectory, 'bin')
   const logPath = path.join(testDirectory, 'package-manager-log.jsonl')
+
   fs.mkdirSync(fakeBinDirectory)
 
   for (const name of ['yarn', 'npm']) {
     const executable = path.join(fakeBinDirectory, name)
+
     fs.writeFileSync(
       executable,
       `#!/usr/bin/env node
@@ -47,6 +50,7 @@ if (${JSON.stringify(name)} === 'npm') fs.writeFileSync(path.join(process.cwd(),
 
   return {
     fakeBinDirectory,
+
     readLog: () =>
       fs
         .readFileSync(logPath, 'utf8')
@@ -90,6 +94,7 @@ test('the successor create-asyra-app surfaces replace retired starter assertions
   const rootReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), {
     encoding: 'utf8'
   })
+
   assert.match(rootReadme, /npm install @asyra\/core/u)
   assert.match(rootReadme, /npx create-asyra-design-app my-product/u)
 })
@@ -113,6 +118,7 @@ for (const packageManager of ['yarn', 'npm']) {
       assert.equal(result.status, 0, result.stderr)
       const projectDirectory = path.join(testDirectory, projectName)
       const log = readLog()
+
       assert.equal(log.length, 1)
       assert.equal(log[0].name, packageManager)
       assert.equal(log[0].cwd, projectDirectory)
@@ -140,6 +146,7 @@ for (const packageManager of ['yarn', 'npm']) {
         'docs/PRIORITY_EXERCISE.md'
       ]) {
         const guidePath = path.join(projectDirectory, guide)
+
         assert.equal(fs.existsSync(guidePath), true, guide)
         assert.doesNotMatch(
           fs.readFileSync(guidePath, 'utf8'),
@@ -147,6 +154,7 @@ for (const packageManager of ['yarn', 'npm']) {
           guide
         )
       }
+
       for (const guide of [
         'AGENTS.md',
         'docs/ONBOARDING.md',
@@ -158,6 +166,7 @@ for (const packageManager of ['yarn', 'npm']) {
           `${guide} must use the generated project's package manager`
         )
       }
+
       const agentGuide = fs.readFileSync(
         path.join(projectDirectory, 'AGENTS.md'),
         'utf8'
@@ -165,6 +174,7 @@ for (const packageManager of ['yarn', 'npm']) {
       const generatedManifest = JSON.parse(
         fs.readFileSync(path.join(projectDirectory, 'package.json'), 'utf8')
       )
+
       assert.equal(
         agentGuide,
         fs.readFileSync(
@@ -174,15 +184,18 @@ for (const packageManager of ['yarn', 'npm']) {
         'generated products retain the canonical project instructions'
       )
       const guideLinks = [...agentGuide.matchAll(/\[[^\]]+\]\(([^)]+)\)/gu)]
+
       assert.ok(
         guideLinks.length > 0,
         'project entry links to maintained guides'
       )
       for (const [, relative] of guideLinks) {
         const target = path.resolve(projectDirectory, relative)
+
         assert.ok(target.startsWith(`${projectDirectory}${path.sep}`), relative)
         assert.ok(fs.statSync(target).isFile(), relative)
       }
+
       assert.doesNotMatch(agentGuide, /\.codex\/plugins\/cache|\/Users\//u)
       for (const script of ['test', 'typecheck', 'lint', 'react:build']) {
         assert.equal(typeof generatedManifest.scripts[script], 'string', script)
@@ -190,6 +203,7 @@ for (const packageManager of ['yarn', 'npm']) {
         assert.match(agentGuide, new RegExp(`yarn ${script}`, 'u'))
         assert.match(agentGuide, new RegExp(`npm run ${script}`, 'u'))
       }
+
       assert.equal(
         fs.existsSync(
           path.join(
@@ -212,6 +226,7 @@ for (const packageManager of ['yarn', 'npm']) {
       const manifest = JSON.parse(
         fs.readFileSync(path.join(projectDirectory, 'package.json'), 'utf8')
       )
+
       assert.equal(
         manifest.scripts['react:build'],
         {
@@ -224,6 +239,7 @@ for (const packageManager of ['yarn', 'npm']) {
       } else {
         assert.equal(manifest.packageManager, 'npm@10.8.2')
       }
+
       assert.doesNotMatch(
         JSON.stringify(manifest),
         /workspace:|(?:link|portal|patch):/
@@ -232,6 +248,7 @@ for (const packageManager of ['yarn', 'npm']) {
         path.join(projectDirectory, 'README.md'),
         'utf8'
       )
+
       assert.doesNotMatch(readme, /pnpm/u)
       for (const command of {
         yarn: [
@@ -253,17 +270,20 @@ for (const packageManager of ['yarn', 'npm']) {
       }[packageManager]) {
         assert.match(readme, new RegExp(command.replaceAll(' ', '\\s+'), 'u'))
       }
+
       if (packageManager !== 'yarn') {
         const versionResult = runRealPackageManagerVersion({
           cwd: projectDirectory,
           packageManager
         })
+
         assert.equal(
           versionResult.status,
           0,
           `${packageManager} --version failed:\n${versionResult.stderr}`
         )
       }
+
       assert.match(result.stdout, new RegExp(`cd ${projectName}`, 'u'))
       assert.match(
         result.stdout,
@@ -284,8 +304,10 @@ for (const packageManager of ['yarn', 'npm']) {
 
 test('create-asyra-app rejects pnpm before creating a project', () => {
   const testDirectory = makeTempDirectory('starter-cli-pnpm-unsupported-')
+
   try {
     const help = runCli({ cwd: testDirectory, args: ['--help'] })
+
     assert.equal(help.status, 0, help.stderr)
     assert.match(help.stdout, /--package-manager=yarn\|npm/u)
     assert.doesNotMatch(help.stdout, /pnpm/u)
@@ -293,6 +315,7 @@ test('create-asyra-app rejects pnpm before creating a project', () => {
       path.join(repositoryRoot, 'create-app/starter-app/README.md'),
       'utf8'
     )
+
     assert.match(cliReadme, /`yarn` and `npm`/u)
     assert.doesNotMatch(cliReadme, /pnpm/u)
 
@@ -300,6 +323,7 @@ test('create-asyra-app rejects pnpm before creating a project', () => {
       cwd: testDirectory,
       args: ['starter', '--package-manager=pnpm']
     })
+
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /Unsupported package manager "pnpm"/u)
     assert.match(result.stderr, /Choose yarn or npm/u)
@@ -311,12 +335,14 @@ test('create-asyra-app rejects pnpm before creating a project', () => {
 
 test('create-asyra-app rejects unsafe names before creating files', () => {
   const emptyNameDirectory = makeTempDirectory('starter-cli-empty-name-')
+
   try {
     const result = spawnSync(process.execPath, [starterCliPath], {
       cwd: emptyNameDirectory,
       encoding: 'utf8',
       input: '\n'
     })
+
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /project name/u)
     assert.deepEqual(fs.readdirSync(emptyNameDirectory), [])
@@ -328,11 +354,13 @@ test('create-asyra-app rejects unsafe names before creating files', () => {
 
   for (const invalidName of invalidNames) {
     const testDirectory = makeTempDirectory('starter-cli-invalid-')
+
     try {
       const result = runCli({
         cwd: testDirectory,
         args: [invalidName, '--package-manager=yarn']
       })
+
       assert.notEqual(result.status, 0, invalidName)
       assert.match(result.stderr, /project name/u)
       assert.deepEqual(fs.readdirSync(testDirectory), [])
@@ -342,6 +370,7 @@ test('create-asyra-app rejects unsafe names before creating files', () => {
   }
 
   const absoluteNameDirectory = makeTempDirectory('starter-cli-absolute-name-')
+
   try {
     const result = runCli({
       cwd: absoluteNameDirectory,
@@ -350,6 +379,7 @@ test('create-asyra-app rejects unsafe names before creating files', () => {
         '--package-manager=yarn'
       ]
     })
+
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /project name/u)
     assert.deepEqual(fs.readdirSync(absoluteNameDirectory), [])
@@ -437,11 +467,13 @@ test('create-asyra-app cleans up only its owned reservation after copy failures'
 
 test('create-asyra-app reports unsupported package managers and install failures', () => {
   const unsupportedDirectory = makeTempDirectory('starter-cli-unsupported-')
+
   try {
     const result = runCli({
       cwd: unsupportedDirectory,
       args: ['starter', '--package-manager=bun']
     })
+
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /Unsupported package manager/u)
     assert.equal(
@@ -454,6 +486,7 @@ test('create-asyra-app reports unsupported package managers and install failures
 
   const installDirectory = makeTempDirectory('starter-cli-install-fails-')
   const fakeBinDirectory = path.join(installDirectory, 'bin')
+
   fs.mkdirSync(fakeBinDirectory)
   fs.writeFileSync(
     path.join(fakeBinDirectory, 'yarn'),
@@ -468,6 +501,7 @@ test('create-asyra-app reports unsupported package managers and install failures
         PATH: `${fakeBinDirectory}${path.delimiter}${process.env.PATH ?? ''}`
       }
     })
+
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /failed to install dependencies/u)
     assert.match(result.stderr, /yarn install/u)
@@ -493,6 +527,7 @@ test('create-asyra-app reports a missing bundled template', () => {
         encoding: 'utf8'
       }
     )
+
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /template directory not found/u)
     assert.equal(fs.existsSync(path.join(testDirectory, 'starter')), false)
@@ -527,8 +562,10 @@ test('packed create-asyra-app restores the packable gitignore asset', () => {
         encoding: 'utf8'
       }
     )
+
     assert.equal(packResult.status, 0, packResult.stderr)
     const [packRecord] = JSON.parse(packResult.stdout)
+
     assert.ok(
       packRecord.files.some((file) => file.path === 'template/gitignore')
     )
@@ -553,6 +590,7 @@ test('packed create-asyra-app restores the packable gitignore asset', () => {
         encoding: 'utf8'
       }
     )
+
     assert.equal(tarResult.status, 0, tarResult.stderr)
 
     const packedCliPath = path.join(extractDirectory, 'package/bin/index.js')
@@ -568,9 +606,11 @@ test('packed create-asyra-app restores the packable gitignore asset', () => {
         }
       }
     )
+
     assert.equal(result.status, 0, result.stderr)
 
     const generatedProject = path.join(generateDirectory, 'packed-starter')
+
     assert.equal(
       fs.readFileSync(path.join(generatedProject, '.gitignore'), 'utf8'),
       fs.readFileSync(

@@ -14,6 +14,7 @@ test('reuses incremental membership after loading the saved large document', asy
   )
   test.setTimeout(240_000)
   const { identity, manifest } = await prepareLargeNavigationDocument(baseURL)
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   const report = await page.evaluate(async () => {
@@ -21,16 +22,20 @@ test('reuses incremental membership after loading the saved large document', asy
       await import('../src/testing/runtime-access')
     const { UI_PROPERTIES } = await import('../src/constants')
     const { historyApis } = await import('../src/common-apis/history')
+
     const flat = () =>
       core.getUIProperty<string[]>(UI_PROPERTIES.FLATTENED_ELEMENT_IDS) ?? []
+
     const initial = [...flat()]
     const before = JSON.stringify(await core.save())
     const stages: Record<string, Record<string, number>> = {}
     let stage = 'cold'
     const unsubscribe = subscribeToDiagnosticCounters((name, value) => {
       const counters = (stages[stage] ??= {})
+
       counters[name] = (counters[name] ?? 0) + value
     })
+
     try {
       const create = (x: number) =>
         elementApis.createElement(
@@ -42,22 +47,30 @@ test('reuses incremental membership after loading the saved large document', asy
           },
           { undoable: true }
         )
+
       const first = create(400)
+
       stage = 'repeat'
       const second = create(420)
+
       if (!first || !second) {
         throw new Error('Large-document edit did not create both elements')
       }
+
       const created = [...flat()]
+
       stage = 'undo'
       await historyApis.undo()
       const undone = [...flat()]
+
       stage = 'redo'
       await historyApis.redo()
       const redone = [...flat()]
+
       stage = 'restore'
       await historyApis.undo()
       await historyApis.undo()
+
       return {
         stages,
         count: initial.length,
@@ -74,6 +87,7 @@ test('reuses incremental membership after loading the saved large document', asy
       unsubscribe()
     }
   })
+
   await writeFile(
     testInfo.outputPath('large-membership.json'),
     JSON.stringify(report, null, 2)
@@ -106,14 +120,17 @@ test('preserves the full document while profiling navigation work', async ({
 
   await page.setViewportSize({ width: 1440, height: 1000 })
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   const cdp = await page.context().newCDPSession(page)
+
   await cdp.send('Profiler.enable')
   await installNavigationWorkProbe(page)
   await page.goto(identity.url)
   await waitForAppReady(page)
   await page.evaluate(async () => {
     const { viewportApis } = await import('../src/common-apis/viewport')
+
     viewportApis.zoomFit()
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -135,34 +152,42 @@ test('preserves the full document while profiling navigation work', async ({
     const unsubscribePublication = core.subscribeToSharedPublication(() => {
       publications += 1
     })
+
     const settle = () =>
       new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       )
+
     const origin = viewportApis.getPosition()
     const scale = viewportApis.getScale()
+
     window.navigationGpuWork = {
       draws: 0,
       vertexUploadBytes: 0,
       uniformMatrices: 0
     }
     const samples: { phase: string; durationMs: number }[] = []
+
     try {
       for (const phase of ['pan', 'zoom'] as const) {
         for (let index = 0; index < 12; index++) {
           const start = performance.now()
+
           if (phase === 'pan') {
             viewportApis.panTo(origin.x + index * 8, origin.y + index * 3)
           } else {
             viewportApis.zoomToCenter(scale * (1 + index * 0.025), 800, 500)
           }
+
           await settle()
           samples.push({ phase, durationMs: performance.now() - start })
         }
       }
+
       viewportApis.zoomFit()
       await settle()
       const after = JSON.stringify(await core.save())
+
       return {
         samples,
         gpuWork: { ...window.navigationGpuWork },
@@ -179,6 +204,7 @@ test('preserves the full document while profiling navigation work', async ({
     }
   })
   const profile = await cdp.send('Profiler.stop')
+
   await writeFile(
     testInfo.outputPath('navigation.cpuprofile'),
     JSON.stringify(profile.profile)
@@ -196,15 +222,19 @@ test('preserves the full document while profiling navigation work', async ({
   const bounds = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
     const result = core.getAllElementsBounds()
+
     if (!result) {
       throw new Error('Loaded fixture has no bounds')
     }
+
     return result
   })
+
   for (const fraction of [0.15, 0.5, 0.85]) {
     await page.evaluate(
       async ({ bounds, fraction }) => {
         const { viewportApis } = await import('../src/common-apis/viewport')
+
         viewportApis.zoomToCenter(1, 800, 500)
         viewportApis.panTo(
           800 - (bounds.minX + bounds.maxX) / 2,
@@ -220,9 +250,11 @@ test('preserves the full document while profiling navigation work', async ({
       path: testInfo.outputPath(`native-detail-${fraction}.png`)
     })
   }
+
   const zoomBefore = await page.evaluate(async () =>
     (await import('../src/common-apis/viewport')).viewportApis.getScale()
   )
+
   await page.mouse.move(800, 500)
   await page.keyboard.down('Meta')
   await page.mouse.wheel(0, -100)

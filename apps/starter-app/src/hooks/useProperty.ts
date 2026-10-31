@@ -13,5 +13,6 @@ export const useProperty = <T>(key: string | null): T | undefined => {
     () => (key ? (core.getUIProperty(key) as T | undefined) : undefined),
     [core, key]
   )
+
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 }

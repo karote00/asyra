@@ -39,6 +39,7 @@ test('the sitemap includes every independently checked public page', async ({
   request
 }) => {
   const sitemapResponse = await request.get('/sitemap.xml')
+
   expect(sitemapResponse.status()).toBe(200)
   const sitemap = await sitemapResponse.text()
   const routes = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
@@ -54,6 +55,7 @@ for (const source of publicRoutes) {
     request
   }) => {
     const response = await request.get(source)
+
     expect(response.status(), source).toBe(200)
     const body = await response.text()
     const routeBodies = new Map([[source, body]])
@@ -65,12 +67,14 @@ for (const source of publicRoutes) {
 
     for (const anchor of anchors) {
       const rawHref = anchor.match(/\bhref="([^"]+)"/)?.[1]
+
       if (!rawHref) {
         continue
       }
 
       const href = rawHref.replaceAll('&amp;', '&')
       const destination = new URL(href, new URL(source, siteOrigin))
+
       if (destination.origin !== siteOrigin) {
         externalOrigins.add(destination.origin)
         externalUrls.add(destination.href)
@@ -93,6 +97,7 @@ for (const source of publicRoutes) {
             destination.pathname.slice(githubBlobPrefix.length)
           )
           const localPath = path.resolve(repositoryRoot, sourcePath)
+
           expect(localPath.startsWith(`${repositoryRoot}${path.sep}`)).toBe(
             true
           )
@@ -101,20 +106,25 @@ for (const source of publicRoutes) {
             `${source} -> ${destination.href}`
           ).resolves.toBeUndefined()
         }
+
         continue
       }
 
       const destinationRoute = destination.pathname
+
       // Each known route has its own HTTP assertion above. Fetch additional
       // bodies only for fragment targets or routes outside the sitemap.
       if (!destination.hash && publicRoutes.includes(destinationRoute)) {
         continue
       }
+
       let destinationBody = routeBodies.get(destinationRoute)
+
       if (!destinationBody) {
         const response = await request.get(
           `${destinationRoute}${destination.search}`
         )
+
         expect(
           response.status(),
           `${source} -> ${destination.pathname}${destination.search}`
@@ -128,11 +138,13 @@ for (const source of publicRoutes) {
       }
 
       const id = decodeURIComponent(destination.hash.slice(1))
+
       expect(
         destinationBody,
         `${source} -> ${destination.pathname}${destination.hash}`
       ).toMatch(new RegExp(`\\bid="${escapePattern(id)}"`))
     }
+
     if (source === '/') {
       for (const origin of [
         'https://asyra-design.pages.dev',
@@ -142,11 +154,13 @@ for (const source of publicRoutes) {
       ]) {
         expect(externalOrigins).toContain(origin)
       }
+
       expect(externalUrls).toContain(
         'https://asyra-design.pages.dev/?fileId=demo'
       )
       expect(externalUrls).toContain('https://asyra-sim.pages.dev/')
     }
+
     if (source === '/docs') {
       expect(externalUrls).toContain(
         'https://www.npmjs.com/package/create-asyra-app'

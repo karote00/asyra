@@ -10,6 +10,7 @@ const markTarget = (
   target: (typeof AiDocumentInteractionTargets)[keyof typeof AiDocumentInteractionTargets]
 ): HTMLElement => {
   element.setAttribute(AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE, target)
+
   return element
 }
 
@@ -24,20 +25,25 @@ describe('Asyra Design AI document interaction lock', () => {
       AiDocumentInteractionTargets.VIEWPORT_NAVIGATION
     )
     const canvas = document.createElement('canvas')
+
     viewport.append(canvas)
     const panel = markTarget(
       document.createElement('div'),
       AiDocumentInteractionTargets.AGENT_INTERFACE
     )
     const composer = document.createElement('textarea')
+
     panel.append(composer)
     document.body.append(viewport, panel)
     composer.focus()
     const edit = vi.fn()
+
     canvas.addEventListener('mousedown', edit)
     const navigation = vi.fn()
+
     document.body.addEventListener('keydown', navigation)
     const release = createDocumentInteractionLock().acquire()
+
     try {
       canvas.dispatchEvent(
         new MouseEvent('mousedown', { bubbles: true, cancelable: true })
@@ -54,6 +60,7 @@ describe('Asyra Design AI document interaction lock', () => {
           })
         )
       }
+
       expect(navigation).toHaveBeenCalledTimes(2)
       document.body.dispatchEvent(
         new KeyboardEvent('keydown', {
@@ -75,12 +82,14 @@ describe('Asyra Design AI document interaction lock', () => {
       AiDocumentInteractionTargets.VIEWPORT_NAVIGATION
     )
     const canvas = document.createElement('canvas')
+
     viewport.append(canvas)
     const cancel = markTarget(
       document.createElement('button'),
       AiDocumentInteractionTargets.AGENT_CANCEL
     )
     const edit = document.createElement('button')
+
     document.body.append(viewport, cancel, edit)
 
     const navigationReceived = vi.fn()
@@ -90,13 +99,16 @@ describe('Asyra Design AI document interaction lock', () => {
     const cancelWheelReceived = vi.fn()
     const editReceived = vi.fn()
     const shortcutReceived = vi.fn()
+
     canvas.addEventListener('wheel', navigationReceived)
     cancel.addEventListener('click', cancelReceived)
     cancel.addEventListener('keydown', (event) => {
       if (event.code === 'Enter') {
         cancelActivationReceived(event)
+
         return
       }
+
       cancelShortcutReceived(event)
     })
     cancel.addEventListener('pointerdown', cancelActivationReceived)
@@ -180,6 +192,7 @@ describe('Asyra Design AI document interaction lock', () => {
         bubbles: true,
         cancelable: true
       })
+
       edit.dispatchEvent(unlockedClick)
       expect(editReceived).toHaveBeenCalledOnce()
       expect(lock.isActive()).toBe(false)
@@ -190,15 +203,19 @@ describe('Asyra Design AI document interaction lock', () => {
 
   it('keeps Agent panel controls, scrolling and typing available while document edits remain locked', () => {
     const panel = document.createElement('aside')
+
     panel.setAttribute(
       AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE,
       AiDocumentInteractionTargets.AGENT_INTERFACE
     )
     const control = document.createElement('button')
+
     panel.append(control)
     const canvasControl = document.createElement('button')
+
     document.body.append(panel, canvasControl)
     const release = createDocumentInteractionLock().acquire()
+
     try {
       for (const type of [
         'click',
@@ -208,9 +225,11 @@ describe('Asyra Design AI document interaction lock', () => {
         'input'
       ]) {
         const allowed = new Event(type, { bubbles: true, cancelable: true })
+
         control.dispatchEvent(allowed)
         expect(allowed.defaultPrevented).toBe(false)
         const blocked = new Event(type, { bubbles: true, cancelable: true })
+
         canvasControl.dispatchEvent(blocked)
         expect(blocked.defaultPrevented).toBe(true)
       }
@@ -221,8 +240,10 @@ describe('Asyra Design AI document interaction lock', () => {
 
   it('keeps nested acquisition active until the final idempotent release', () => {
     const edit = document.createElement('button')
+
     document.body.append(edit)
     const received = vi.fn()
+
     edit.addEventListener('click', received)
     const lock = createDocumentInteractionLock()
     const releaseOuter = lock.acquire()
@@ -236,6 +257,7 @@ describe('Asyra Design AI document interaction lock', () => {
         bubbles: true,
         cancelable: true
       })
+
       edit.dispatchEvent(lockedClick)
       expect(lockedClick.defaultPrevented).toBe(true)
       expect(received).not.toHaveBeenCalled()

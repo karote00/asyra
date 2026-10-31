@@ -43,9 +43,11 @@ type WorkspaceObservation = WalkingActionVolumeObservation & {
     readonly motion?: WalkingSelectedChainMotion
   }
 }
+
 function currentMotion(binding: WalkingSelectedObservationBinding) {
   try {
     keys(binding, ['owner', 'cycle', 'motion'])
+
     return (
       binding.motion.cycle === binding.cycle &&
       binding.owner.read(binding.motion.source, binding.cycle.recipe) ===
@@ -57,6 +59,7 @@ function currentMotion(binding: WalkingSelectedObservationBinding) {
     return false
   }
 }
+
 function sameOrientation(
   motion: WalkingSelectedChainMotion,
   rotation: WalkingRigidTransform['rotation']
@@ -71,14 +74,17 @@ function sameOrientation(
     zz = z * z,
     ww = w * w,
     norm = xx + yy + zz + ww
+
   if (norm <= 0n) {
     return false
   }
+
   const matrix = [
     [ww + xx - yy - zz, 2n * (x * y - z * w), 2n * (x * z + y * w)],
     [2n * (x * y + z * w), ww + yy - xx - zz, 2n * (y * z - x * w)],
     [2n * (x * z - y * w), 2n * (y * z + x * w), ww + zz - xx - yy]
   ]
+
   return motion.root.matrix.every((row, i) =>
     row.every((v, j) => v.numerator * norm === matrix[i][j] * v.denominator)
   )
@@ -126,11 +132,14 @@ const freeze = <T>(value: T): T => {
     Object.values(value).forEach(freeze)
     Object.freeze(value)
   }
+
   return value
 }
+
 const invalid = (): never => {
   throw new Error('Invalid walking observation scenario')
 }
+
 function keys(value: object, expected: readonly string[]) {
   if (
     !value ||
@@ -142,15 +151,19 @@ function keys(value: object, expected: readonly string[]) {
     invalid()
   }
 }
+
 const finite = (v: number) => Number.isFinite(v)
+
 const point = (v: readonly number[], size: number) =>
   Array.isArray(v) &&
   v.length === size &&
   Array.from({ length: size }, (_, i) => v[i]).every(finite)
+
 function readScenario(
   raw: WalkingObservationScenario
 ): WalkingObservationScenario {
   const value = structuredClone(raw)
+
   keys(value, [
     'format',
     'id',
@@ -178,7 +191,9 @@ function readScenario(
   ) {
     invalid()
   }
+
   const camera = value.camera
+
   keys(camera, [
     'bodyId',
     'localPose',
@@ -199,7 +214,9 @@ function readScenario(
   ) {
     invalid()
   }
+
   const unit = (v: number) => finite(v) && v >= 0 && v <= 1
+
   keys(value.optics, [
     'illumination',
     'filmTransmission',
@@ -210,6 +227,7 @@ function readScenario(
   if (Object.values(value.optics).some((v) => v !== null && !unit(v))) {
     invalid()
   }
+
   keys(value.model, [
     'format',
     'minSignal',
@@ -231,14 +249,17 @@ function readScenario(
   ) {
     invalid()
   }
+
   return freeze(value)
 }
+
 function mountCamera(
   parent: WalkingRigidTransform,
   local: WalkingRigidTransform
 ): WalkingRigidTransform {
   const a = parent.rotation,
     b = local.rotation
+
   return freeze({
     position: transformRobotPoint(parent, local.position),
     rotation: [
@@ -271,11 +292,13 @@ export function createWalkingObservationWorkspace(owners: {
   let latest: WalkingActionVolumeObservation | undefined
   let dynamics: SyntheticDynamicSceneOwner | undefined =
     new SyntheticDynamicSceneOwner()
+
   const live = () => {
     if (closed) {
       throw new Error('Walking observation workspace is closed')
     }
   }
+
   const currentReceipt = (value: WalkingObservationGeometryReceipt) =>
     !closed &&
     receipt === value &&
@@ -285,18 +308,22 @@ export function createWalkingObservationWorkspace(owners: {
     owners.isCurrentDemand(value.demand) &&
     (() => {
       const report = owners.getOperating()
+
       return (
         report.status !== 'legacy-view' &&
         report.source === value.source &&
         owners.isCurrentOperating(report)
       )
     })()
+
   const geometry = new QueryGeometry({
     isCurrentWalkingReceipt: currentReceipt,
     isCurrentScene: owners.isCurrentScene,
     isCurrentDemand: owners.isCurrentDemand,
+
     isCurrentWalkingSource: (source) => {
       const report = owners.getOperating()
+
       return (
         !closed &&
         report.status !== 'legacy-view' &&
@@ -310,8 +337,10 @@ export function createWalkingObservationWorkspace(owners: {
     WalkingActionObservationContext,
     WalkingSelectedObservationBinding
   >()
+
   const currentContext = (context: WalkingActionObservationContext) => {
     const binding = selectedContexts.get(context)
+
     return (
       !closed &&
       contexts.has(context) &&
@@ -330,6 +359,7 @@ export function createWalkingObservationWorkspace(owners: {
       now < scenario.validUntil
     )
   }
+
   let observations: WalkingActionObservations | undefined =
     new WalkingActionObservations(geometry, {
       prepareObservationSpace: owners.prepareObservationSpace,
@@ -338,14 +368,17 @@ export function createWalkingObservationWorkspace(owners: {
       screen: owners.screen,
       dynamics
     })
+
   const isCurrent = (value: WalkingActionVolumeObservation) =>
     !closed && !!observations?.isCurrent(value) && now < value.input.validUntil
+
   const observe = (
     raw: WalkingObservationAction,
     binding?: WalkingSelectedObservationBinding
   ): WalkingObservationResult => {
     live()
     const action = structuredClone(raw)
+
     keys(action, ['actionId', 'actionBounds', 'now', 'validUntil'])
     keys(action.actionBounds, ['min', 'max'])
     if (
@@ -361,13 +394,17 @@ export function createWalkingObservationWorkspace(owners: {
     ) {
       invalid()
     }
+
     now = action.now
     latest = undefined
+
     const unavailable = (reason: string): WalkingObservationResult =>
       Object.freeze({ status: 'unavailable', reason })
+
     if (!scenario || !observations) {
       return unavailable('missing-walking-observation-scenario')
     }
+
     if (
       now < scenario.validFrom ||
       now >= scenario.validUntil ||
@@ -375,12 +412,15 @@ export function createWalkingObservationWorkspace(owners: {
     ) {
       return unavailable('outside-walking-observation-scenario-time')
     }
+
     const report = owners.getOperating(),
       demand = owners.getDemand(),
       scene = owners.getScene()
+
     if (report.status === 'legacy-view') {
       return unavailable('walking-selection-required')
     }
+
     if (
       !owners.isCurrentOperating(report) ||
       report.demand !== demand ||
@@ -390,26 +430,35 @@ export function createWalkingObservationWorkspace(owners: {
     ) {
       return unavailable('stale-walking-observation-source')
     }
+
     if (!demand.route) {
       return unavailable('missing-walking-observation-route')
     }
+
     let bodyFrameVisits = 0
     const base = report.stowedPoseResult.bodyTransforms.find((body) => {
       bodyFrameVisits++
+
       return body.id === 'base'
     })
+
     if (!base || report.stowedPoseResult.source !== report.source) {
       return unavailable('missing-walking-base-frame')
     }
+
     let cameraParent = base.transform
+
     if (binding) {
       if (!currentMotion(binding) || binding.motion.source !== report.source) {
         return unavailable('stale-or-foreign-selected-observation-motion')
       }
+
       if (!sameOrientation(binding.motion, base.transform.rotation)) {
         return unavailable('unsupported-selected-observation-orientation')
       }
+
       const origin = binding.motion.root.origin
+
       cameraParent = {
         rotation: base.transform.rotation,
         position: [
@@ -431,8 +480,10 @@ export function createWalkingObservationWorkspace(owners: {
         ]
       }
     }
+
     const before = geometry.work.membershipBuilds
     const sourceBefore = owners.getSourceWork()
+
     if (
       !receipt ||
       receipt.scene !== scene ||
@@ -446,6 +497,7 @@ export function createWalkingObservationWorkspace(owners: {
         source: report.source
       })
     }
+
     const source = geometry.prepareWalking(receipt)
     const context: WalkingActionObservationContext = Object.freeze({
       report,
@@ -458,10 +510,12 @@ export function createWalkingObservationWorkspace(owners: {
       sensorIdentity: scenario,
       ...(binding ? { motion: binding.motion } : {})
     })
+
     contexts.add(context)
     if (binding) {
       selectedContexts.set(context, Object.freeze({ ...binding }))
     }
+
     const observation = observations.observeActionVolume(context, {
       id: action.actionId,
       source: 'synthetic-action-volume/1',
@@ -484,6 +538,7 @@ export function createWalkingObservationWorkspace(owners: {
       optics: scenario.optics,
       model: scenario.model
     })
+
     latest = observation
     const sourceAfter = owners.getSourceWork()
     const sourcePreparation = Object.freeze(
@@ -495,6 +550,7 @@ export function createWalkingObservationWorkspace(owners: {
         ])
       )
     ) as unknown as SceneDemandSourceWork
+
     return Object.freeze({
       status: 'available',
       observation,
@@ -506,6 +562,7 @@ export function createWalkingObservationWorkspace(owners: {
       })
     })
   }
+
   return {
     configure: (
       raw: WalkingObservationScenario,
@@ -513,30 +570,40 @@ export function createWalkingObservationWorkspace(owners: {
     ) => {
       live()
       const admitted = readScenario(raw)
+
       if (!dynamics) {
         throw new Error('Missing dynamic owner')
       }
+
       dynamics.prepare(definition)
       scenario = admitted
       generation++
       latest = undefined
     },
+
     observe: (raw: WalkingObservationAction) => observe(raw),
+
     observeSelectedAction: (raw: WalkingSelectedObservationAction) => {
       live()
       keys(raw, ['actionId', 'actionBounds', 'now', 'validUntil', 'binding'])
       const { binding, ...action } = raw
+
       if (!currentMotion(binding)) {
         latest = undefined
+
         return Object.freeze({
           status: 'unavailable' as const,
           reason: 'stale-or-foreign-selected-observation-motion'
         })
       }
+
       return observe(action, binding)
     },
+
     get: () => (latest && isCurrent(latest) ? latest : undefined),
+
     isCurrent,
+
     close: () => {
       closed = true
       observations?.close()

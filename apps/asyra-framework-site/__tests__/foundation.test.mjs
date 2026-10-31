@@ -4,6 +4,7 @@ import path from 'node:path'
 import test from 'node:test'
 
 const siteRoot = path.resolve(import.meta.dirname, '..')
+
 const readSiteFile = (file) => readFile(path.join(siteRoot, file), 'utf8')
 
 test('site-wide design tokens have one canonical stylesheet owner', async () => {
@@ -38,6 +39,7 @@ test('site-wide design tokens have one canonical stylesheet owner', async () => 
     assert.doesNotMatch(globals, new RegExp(`${token}:`))
     assert.doesNotMatch(foundation, new RegExp(`${token}:`))
   }
+
   assert.doesNotMatch(`${tokens}\n${globals}\n${foundation}`, /--light:/)
   assert.doesNotMatch(
     `${globals}\n${foundation}\n${docs}\n${support}\n${atlas}`,
@@ -108,6 +110,7 @@ test('supporting routes share an accessible product navigation shell', async () 
       new RegExp(`['"]${destination.replaceAll('/', '\\/')}['"]`)
     )
   }
+
   assert.match(header, /useModalDialog\(\)/)
   assert.match(modalDialog, /showModal\(\)/)
   assert.match(header, /aria-label="Open navigation"/)

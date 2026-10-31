@@ -21,25 +21,35 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
   const runtime = {
     subscribeConfiguration: (listener: () => void) => {
       listeners.add(listener)
+
       return () => listeners.delete(listener)
     },
+
     getConfiguration: () => config,
+
     getUndoDepth: () => 0,
+
     getRedoDepth: () => 0,
+
     setConfiguration
   } as unknown as FarmRuntime
   const host = document.createElement('div'),
     root = createRoot(host)
+
   document.body.append(host)
+
   const button = (label: string) => {
     const value = host.querySelector<HTMLButtonElement>(
       `button[aria-label="${label}"]`
     )
+
     if (!value) {
       throw new Error(`Missing ${label}`)
     }
+
     return value
   }
+
   try {
     await act(async () =>
       root.render(<ConfigurationEditor runtime={runtime} />)
@@ -51,10 +61,13 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
           ?.textContent
       ).toBe('m')
     }
+
     const row = button('上移第 1 項').parentElement
+
     if (!row) {
       throw new Error('Missing strip actions')
     }
+
     expect(row.querySelectorAll('button').length).toBe(3)
     expect(
       [...row.querySelectorAll('button')].map((b) =>
@@ -66,6 +79,7 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
       expect(svg.getAttribute('width')).toBe('24')
       expect(svg.getAttribute('height')).toBe('24')
     }
+
     expect(button('上移第 1 項').disabled).toBe(true)
     expect(button('下移第 7 項').disabled).toBe(true)
     expect(button('刪除第 1 項').className).toContain('text-red-700')
@@ -88,9 +102,11 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
     const width = host.querySelector<HTMLInputElement>(
       'input[aria-label="單棟寬度"]'
     )
+
     if (!length || !width) {
       throw new Error('Missing dimension fields')
     }
+
     await act(async () => {
       length.value = '41'
       length.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))

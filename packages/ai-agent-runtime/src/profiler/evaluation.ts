@@ -7,6 +7,7 @@ const lastMatching = <T>(
       return items[index]
     }
   }
+
   return undefined
 }
 
@@ -20,25 +21,32 @@ import type { ExecutionRecord } from './records.js'
 import { parseExecutionRecord } from './records.js'
 
 type ParsedExecution = ReturnType<typeof parseExecutionRecord>
+
 const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {}
+
 const count = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
     ? value
     : null
+
 const text = (value: unknown) => (typeof value === 'string' ? value : null)
+
 // The writer summarizes arrays as {count, items, truncated}; only fully retained
 // arrays can be recovered. Never reconstruct omitted members.
 const retainedValue = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map(retainedValue)
   }
+
   if (value === null || typeof value !== 'object') {
     return value
   }
+
   const entry = object(value)
+
   if (
     entry.truncated === false &&
     Array.isArray(entry.items) &&
@@ -50,34 +58,42 @@ const retainedValue = (value: unknown): unknown => {
   ) {
     return entry.items.map(retainedValue)
   }
+
   return Object.fromEntries(
     Object.entries(entry).map(([key, child]) => [key, retainedValue(child)])
   )
 }
+
 const stable = (value: unknown): string => {
   if (Array.isArray(value)) {
     return `[${value.map(stable).join(',')}]`
   }
+
   if (value !== null && typeof value === 'object') {
     return `{${Object.entries(value)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, entry]) => `${JSON.stringify(key)}:${stable(entry)}`)
       .join(',')}}`
   }
+
   return JSON.stringify(value) ?? 'null'
 }
+
 const omitted = (value: unknown): boolean => {
   if (typeof value === 'string') {
     return /\[(?:truncated|.*omitted|evidence budget exhausted)\]/.test(value)
   }
+
   if (Array.isArray(value)) {
     return value.some(omitted)
   }
+
   if (value !== null && typeof value === 'object') {
     return (
       object(value).truncated === true || Object.values(value).some(omitted)
     )
   }
+
   return false
 }
 
@@ -117,13 +133,16 @@ const selectorKeys = new Set([
   'items',
   'truncated'
 ])
+
 const querySelectors = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map(querySelectors)
   }
+
   if (value === null || typeof value !== 'object') {
     return value
   }
+
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => selectorKeys.has(key))
@@ -156,12 +175,15 @@ export const evaluateExecution = (
 ) => {
   const findings: ExecutionFinding[] = []
   const byCall = new Map<string, ExecutionRecord[]>()
+
   for (const entry of run.records) {
     if (typeof entry.callId === 'string') {
       const entries = byCall.get(entry.callId) ?? []
+
       entries.push(entry)
       byCall.set(entry.callId, entries)
     }
+
     if (entry.stage === 'protocol_rejected') {
       findings.push({
         requestId: run.requestId,
@@ -175,6 +197,7 @@ export const evaluateExecution = (
       })
     }
   }
+
   const exactReads = new Map<string, string>()
   const readTools = new Set<string>(options.policy?.readTools ?? [])
   const toolCalls = run.steps
@@ -202,6 +225,7 @@ export const evaluateExecution = (
       // Retain unknown for older/omitted replies instead of inventing success.
       let executionStatus:
         'usable' | 'partial' | 'rejected' | 'failed' | 'unknown' = 'unknown'
+
       if (outcome.status === 'partial' || result.status === 'partial') {
         executionStatus = 'partial'
       } else if (
@@ -219,7 +243,9 @@ export const evaluateExecution = (
       } else if (outcome.status === 'success' || outcome.status === 'usable') {
         executionStatus = 'usable'
       }
+
       const execution = object(object(step.diagnostics?.output).execution)
+
       if (
         ['usable', 'partial', 'rejected', 'failed', 'unknown'].includes(
           String(execution.status)
@@ -227,10 +253,13 @@ export const evaluateExecution = (
       ) {
         executionStatus = execution.status as typeof executionStatus
       }
+
       if (step.status === 'failed') {
         executionStatus = 'failed'
       }
+
       const metadata = Object.keys(execution).length ? execution : result
+
       if (
         step.status === 'completed' &&
         step.tool === options.policy?.reviewTool &&
@@ -250,6 +279,7 @@ export const evaluateExecution = (
               : input !== null &&
                 typeof input === 'object' &&
                 Object.keys(input).length > 0
+
           return (
             nonempty &&
             output !== undefined &&
@@ -258,6 +288,7 @@ export const evaluateExecution = (
             stable(input) === stable(output)
           )
         })
+
         if (repeatedFields.length) {
           findings.push({
             ...identity,
@@ -271,6 +302,7 @@ export const evaluateExecution = (
           })
         }
       }
+
       if (
         step.status === 'completed' &&
         ['partial', 'rejected', 'failed'].includes(executionStatus)
@@ -285,6 +317,7 @@ export const evaluateExecution = (
             'Inspect the retained recovery advice and subsequent calls; do not count transport completion as successful work.'
         })
       }
+
       if (step.status !== 'completed') {
         findings.push({
           ...identity,
@@ -300,7 +333,9 @@ export const evaluateExecution = (
               : 'Check interruption or missing diagnostics before drawing conclusions.'
         })
       }
+
       const revision = result.revision ?? args.revision
+
       if (
         step.status === 'completed' &&
         step.tool &&
@@ -313,6 +348,7 @@ export const evaluateExecution = (
       ) {
         const key = stable({ tool: step.tool, args, revision })
         const previous = exactReads.get(key)
+
         if (previous) {
           findings.push({
             ...identity,
@@ -328,6 +364,7 @@ export const evaluateExecution = (
           exactReads.set(key, step.callId)
         }
       }
+
       return {
         ...identity,
         execution: {
@@ -384,6 +421,7 @@ export const evaluateExecution = (
       const events = byCall.get(step.callId) ?? []
       const start = events.find((entry) => entry.stage === 'tool_started')
       const end = events.find((entry) => entry.stage === 'tool_completed')
+
       return {
         callId: step.callId,
         endedMs: step.endedMs,
@@ -404,6 +442,7 @@ export const evaluateExecution = (
     run.records,
     (entry) => entry.event === 'ai_request_usage'
   )
+
   return {
     requestId: run.requestId,
     metadata: run.metadata,
@@ -419,6 +458,7 @@ export const evaluateExecution = (
     toolOutcomes: toolCalls.reduce(
       (counts, call) => {
         counts[call.execution.status]++
+
         return counts
       },
       { usable: 0, partial: 0, rejected: 0, failed: 0, unknown: 0 }
@@ -435,6 +475,7 @@ export const evaluateExecution = (
         ...new Set(
           run.records.flatMap((entry) => {
             const id = text(object(entry.evidence).nativeTurnId)
+
             return id ? [id] : []
           })
         )
@@ -506,40 +547,51 @@ export const createExecutionPeriodReport = (
     options.from === undefined
       ? to - 7 * 24 * 60 * 60 * 1000
       : Date.parse(options.from)
+
   if (!Number.isFinite(from) || !Number.isFinite(to) || from >= to) {
     throw new Error('Invalid period: require finite from < to.')
   }
+
   const identities = new Map<string, number>()
+
   for (const run of records) {
     if (run.requestId) {
       identities.set(run.requestId, (identities.get(run.requestId) ?? 0) + 1)
     }
   }
+
   const excluded: { requestId: string | null; reason: string }[] = []
   const duplicateIds = new Set<string>()
   const runs: ReturnType<typeof evaluateExecution>[] = []
   let outsidePeriod = 0
+
   for (const run of records) {
     if (!run.requestId) {
       excluded.push({ requestId: null, reason: 'unknown-request' })
       continue
     }
+
     if ((identities.get(run.requestId) ?? 0) > 1) {
       if (!duplicateIds.has(run.requestId)) {
         excluded.push({ requestId: run.requestId, reason: 'duplicate-request' })
       }
+
       duplicateIds.add(run.requestId)
       continue
     }
+
     const startedAt = Date.parse(String(run.metadata.startedAt ?? ''))
+
     if (!Number.isFinite(startedAt)) {
       excluded.push({ requestId: run.requestId, reason: 'unknown-date' })
       continue
     }
+
     if (startedAt < from || startedAt >= to) {
       outsidePeriod++
       continue
     }
+
     runs.push(
       evaluateExecution(run, {
         feedback: options.feedback?.[run.requestId],
@@ -547,10 +599,12 @@ export const createExecutionPeriodReport = (
       })
     )
   }
+
   const groups = new Map<
     string,
     { configuration: Record<string, string | null>; requestIds: string[] }
   >()
+
   const configurationFor = (run: (typeof runs)[number]) =>
     Object.fromEntries(
       [
@@ -562,15 +616,19 @@ export const createExecutionPeriodReport = (
         'purpose'
       ].map((key) => [key, text(run.metadata[key])])
     )
+
   for (const run of runs) {
     const configuration = configurationFor(run)
     const key = stable(configuration)
     const group = groups.get(key) ?? { configuration, requestIds: [] }
+
     if (run.requestId) {
       group.requestIds.push(run.requestId)
     }
+
     groups.set(key, group)
   }
+
   const frequencies = new Map<
     string,
     { kind: string; occurrences: number; requestIds: Set<string> }
@@ -594,9 +652,11 @@ export const createExecutionPeriodReport = (
       possibleRemedy: string
     }
   >()
+
   for (const run of runs) {
     const configuration = configurationFor(run)
     const calls = new Map(run.toolCalls.map((call) => [call.callId, call]))
+
     for (const finding of run.findings) {
       const call = finding.callId ? calls.get(finding.callId) : undefined
       const identity = {
@@ -615,10 +675,12 @@ export const createExecutionPeriodReport = (
         evidence: [],
         possibleRemedy: finding.possibleRemedy
       }
+
       target.occurrences++
       if (run.requestId) {
         target.requestIds.add(run.requestId)
       }
+
       target.evidence.push({
         requestId: finding.requestId,
         callId: finding.callId,
@@ -627,6 +689,7 @@ export const createExecutionPeriodReport = (
       investigationTargets.set(key, target)
     }
   }
+
   for (const run of runs) {
     for (const finding of run.findings) {
       const entry = frequencies.get(finding.kind) ?? {
@@ -634,13 +697,16 @@ export const createExecutionPeriodReport = (
         occurrences: 0,
         requestIds: new Set<string>()
       }
+
       entry.occurrences++
       if (run.requestId) {
         entry.requestIds.add(run.requestId)
       }
+
       frequencies.set(finding.kind, entry)
     }
   }
+
   return {
     from: new Date(from).toISOString(),
     to: new Date(to).toISOString(),

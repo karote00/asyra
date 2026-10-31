@@ -23,7 +23,9 @@ const readPlan = (script, args = []) => {
     cwd: repositoryRoot,
     encoding: 'utf8'
   })
+
   assert.equal(result.status, 0, result.stderr || result.stdout)
+
   return JSON.parse(result.stdout)
 }
 
@@ -31,12 +33,14 @@ test('development and release artifact checks have separate entrypoints', () => 
   const { scripts } = JSON.parse(
     readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
   )
+
   assert.equal(
     scripts['test:release-artifacts'],
     'node --test scripts/__tests__/release-template-artifacts.test.mjs'
   )
   assert.doesNotMatch(scripts['test:scripts'], /release-template-artifacts/)
   const plan = readPlan('scripts/release-validate.js', ['--prod=asyra-design'])
+
   assert.ok(plan.includes('yarn test:release-artifacts'))
   assert.ok(
     plan.indexOf('yarn test:release-artifacts') >
@@ -247,6 +251,7 @@ test('release template cleanup handles ignored files and directories', () => {
     path.join(repositoryRoot, 'scripts/release-template.js'),
     'utf8'
   )
+
   assert.match(releaseTemplate, /\{\s+nodir: true,\s+dot: true\s+\}/)
   assert.match(releaseTemplate, /\{\s+onlyDirectories: true,\s+dot: true\s+\}/)
   assert.match(
@@ -263,6 +268,7 @@ test('Asyra Design release template retains only active drawing fixtures', () =>
       'utf8'
     )
   )
+
   assert.equal(config.cleanFiles.includes('visual-review-records'), true)
 
   for (const requiredPath of [
@@ -289,6 +295,7 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
     repositoryRoot,
     'apps/asyra-design/samples/crdt-7076/action-batch.json'
   )
+
   assert.equal(existsSync(canonicalFixture), true)
   assert.deepEqual(config.removeScripts, [
     'generate:crdt-7076-document',
@@ -379,6 +386,7 @@ test('canonical app environment remains private with a public example', () => {
     ['ls-files', '--', 'apps/asyra-design/.env'],
     { cwd: repositoryRoot, encoding: 'utf8' }
   )
+
   assert.equal(trackedEnvironment.status, 0)
   assert.equal(trackedEnvironment.stdout.trim(), '')
   assert.equal(
@@ -517,6 +525,7 @@ test('root and Core metadata identify the searchable product category', () => {
     assert.ok(rootManifest.keywords.includes(keyword), keyword)
     assert.ok(coreManifest.keywords.includes(keyword), keyword)
   }
+
   assert.deepEqual(coreManifest.repository, {
     type: 'git',
     url: 'git+https://github.com/karote00/asyra.git',
@@ -534,11 +543,13 @@ test('every public Framework package identifies its repository location', () => 
     }
 
     const manifestPath = path.join(packagesRoot, entry.name, 'package.json')
+
     if (!existsSync(manifestPath)) {
       continue
     }
 
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+
     if (manifest.private === true) {
       continue
     }
@@ -588,10 +599,12 @@ test('Asyra Design keeps build and test tooling out of production dependencies',
     assert.equal(manifest.dependencies?.[retiredPackage], undefined)
     assert.equal(manifest.devDependencies?.[retiredPackage], undefined)
   }
+
   const retiredSetupPath = path.join(
     repositoryRoot,
     'apps/asyra-design/src/setupTests.ts'
   )
+
   assert.equal(existsSync(retiredSetupPath), false)
 })
 
@@ -645,10 +658,12 @@ test('template generation pins the selected Framework set and detects fixture dr
       )
 
     const generated = runGenerator()
+
     assert.equal(generated.status, 0, generated.stderr || generated.stdout)
 
     const manifestPath = path.join(template, 'package.json')
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+
     assert.equal(manifest.dependencies['@asyra/core'], '1.2.4')
     assert.deepEqual(manifest.engines, { node: '24.x' })
     assert.equal(manifest.packageManager, 'yarn@4.3.1')
@@ -667,12 +682,14 @@ test('template generation pins the selected Framework set and detects fixture dr
     const frameworkManifest = JSON.parse(
       readFileSync(frameworkManifestPath, 'utf8')
     )
+
     frameworkManifest.version = '1.2.5'
     writeFileSync(
       frameworkManifestPath,
       `${JSON.stringify(frameworkManifest, null, 2)}\n`
     )
     const priorStageManifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+
     assert.equal(priorStageManifest.dependencies['@asyra/core'], '1.2.4')
     assert.match(
       priorStageManifest.dependencies['@asyra/core'],
@@ -687,6 +704,7 @@ test('template generation pins the selected Framework set and detects fixture dr
     )
 
     const priorStageCheck = runGenerator(true)
+
     assert.notEqual(priorStageCheck.status, 0)
     assert.match(
       priorStageCheck.stderr + priorStageCheck.stdout,
@@ -694,6 +712,7 @@ test('template generation pins the selected Framework set and detects fixture dr
     )
 
     const synchronized = runGenerator()
+
     assert.equal(
       synchronized.status,
       0,
@@ -706,6 +725,7 @@ test('template generation pins the selected Framework set and detects fixture dr
       '1.2.5'
     )
     const synchronizedCheck = runGenerator(true)
+
     assert.equal(
       synchronizedCheck.status,
       0,
@@ -715,6 +735,7 @@ test('template generation pins the selected Framework set and detects fixture dr
     manifest.dependencies['@asyra/core'] = '1.2.3'
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
     const stale = runGenerator(true)
+
     assert.notEqual(stale.status, 0)
     assert.match(stale.stderr + stale.stdout, /Generated template is stale/u)
   } finally {
@@ -737,6 +758,7 @@ test('canonical Asyra Design source uses workspace Framework dependencies during
   for (const [packageName, version] of frameworkDependencies) {
     assert.equal(version, 'workspace:*', packageName)
   }
+
   assert.equal(
     manifest.scripts?.typecheck,
     'tsc -p tsconfig.typecheck.json && tsc -p tsconfig.ai-server.json && tsc -p tsconfig.flow-proof.json'
@@ -748,6 +770,7 @@ test('canonical Asyra Design source uses workspace Framework dependencies during
       'utf8'
     )
   )
+
   assert.equal(typecheckConfig.extends, './tsconfig.json')
   assert.ok(typecheckConfig.exclude.includes('src/**/__tests__/**'))
   assert.ok(typecheckConfig.exclude.includes('src/**/*.test.*'))
@@ -776,6 +799,7 @@ test('create-app installs once and hands the selected package manager a runnable
     path.join(repositoryRoot, 'create-app/asyra-design/README.md'),
     'utf8'
   )
+
   assert.match(readme, /Node\.js 24\.x/)
   assert.doesNotMatch(readme, /yarn install/)
   assert.doesNotMatch(readme, /npm install/)
@@ -804,6 +828,7 @@ test('create-app supports deterministic package-manager selection and rejects un
     path.join(repositoryRoot, 'tmp', 'create-app-target-test-')
   )
   const invocationRoot = path.join(testRoot, 'invocation')
+
   mkdirSync(invocationRoot)
 
   try {
@@ -843,6 +868,7 @@ test('create-app supports deterministic package-manager selection and rejects un
 test('release validation copies only repository source into an isolated workspace', async () => {
   const { createReleaseValidationWorkspace, removeReleaseValidationWorkspace } =
     await import('../release-validation-workspace.js')
+
   mkdirSync(path.join(repositoryRoot, 'tmp'), { recursive: true })
   const testRoot = mkdtempSync(
     path.join(repositoryRoot, 'tmp', 'release-validation-test-')
@@ -866,6 +892,7 @@ test('release validation copies only repository source into an isolated workspac
   writeFileSync(path.join(sourceRoot, '.env.example'), 'PUBLIC=example')
 
   let validationRoot
+
   try {
     validationRoot = createReleaseValidationWorkspace({
       sourceRoot,
@@ -910,6 +937,7 @@ test('release validation copies only repository source into an isolated workspac
     if (validationRoot) {
       removeReleaseValidationWorkspace(validationRoot, validationParent)
     }
+
     rmSync(testRoot, { recursive: true, force: true })
   }
 })

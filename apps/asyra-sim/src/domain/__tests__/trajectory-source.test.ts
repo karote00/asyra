@@ -67,6 +67,7 @@ const source = (): TrajectorySource => ({
 describe('M2 explicit trajectory source normalization', () => {
   it('rejects an excessive frame count before inspecting or converting frames', () => {
     const keyframes = Array.from({ length: 2001 }, () => null)
+
     expect(() =>
       normalizeTrajectorySource(workcell(), { ...source(), keyframes })
     ).toThrow('Trajectory must contain 1 to 2000 keyframes')
@@ -80,6 +81,7 @@ describe('M2 explicit trajectory source normalization', () => {
       time,
       joints: { turn: 0, slide: 0 }
     }))
+
     expect(
       normalizeTrajectorySource(workcell(), { ...source(), keyframes })
         .trajectory.keyframes
@@ -107,9 +109,11 @@ describe('M2 explicit trajectory source normalization', () => {
       input.keyframes[1]?.joints
     )
     const sourceFrame = input.keyframes[1]
+
     if (!sourceFrame) {
       throw new Error('Expected the second source frame')
     }
+
     ;(sourceFrame.joints as Record<string, number>).turn = 180
     expect(normalized.trajectory.keyframes[1]?.joints.turn).toBeCloseTo(
       Math.PI * 2.5,
@@ -152,6 +156,7 @@ describe('M2 explicit trajectory source normalization', () => {
 
   it('rejects missing, unknown, or inherited joint columns', () => {
     const inherited = Object.create({ turn: 0 }) as Record<string, number>
+
     inherited.slide = 0
 
     for (const joints of [
@@ -188,6 +193,7 @@ describe('M2 explicit trajectory source normalization', () => {
 
   it('does not accept inherited canonical joint values during direct validation', () => {
     const joints = Object.create({ turn: 0 }) as Record<string, number>
+
     joints.slide = 0
     joints.ghost = 0
     expect(() =>

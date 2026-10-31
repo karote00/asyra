@@ -30,9 +30,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing measured source pair')
         }
+
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -46,18 +48,24 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           maxIntervals: snapshot.budget.maxIntervals
         }
         const triangles = new WeakMap<Bounds, MeshTriangle>()
+
         const remember = (node: MeshNode) => {
           for (const triangle of node.triangles) {
             triangles.set(triangle.bounds, triangle)
           }
+
           for (const child of node.children ?? []) {
             remember(child)
           }
         }
+
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation((...args) => {
           const index = build(...args)
+
           remember(index.root)
+
           return index
         })
         let axes = 0,
@@ -67,8 +75,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const distance = convex.convexDistance,
           project = projection.projectedBoundsGap,
           world = meshIndex.worldBounds
+
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
           convexCalls++
+
           return distance(...args)
         })
         vi.spyOn(projection, 'projectedBoundsGap').mockImplementation(
@@ -83,10 +93,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             if (!triangles.has(bounds)) {
               return world(bounds, pose)
             }
+
             boundsCalls++
             const time = performance.now()
             const result = world(bounds, pose)
+
             boundsMs += performance.now() - time
+
             return result
           }
         )
@@ -104,6 +117,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           boundsCalls,
           boundsMs: Math.round(boundsMs)
         }
+
         axes = 0
         convexCalls = 0
         boundsCalls = 0
@@ -111,9 +125,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
             const triangle = triangles.get(bounds)
+
             if (!triangle) {
               return world(bounds, pose)
             }
+
             boundsCalls++
             const time = performance.now()
             const vertices = triangle.vertices.map((vertex) =>
@@ -123,7 +139,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               Math.min(...vertices.map((vertex) => vertex[axis][0])),
               Math.max(...vertices.map((vertex) => vertex[axis][1]))
             ]) as unknown as Bounds
+
             boundsMs += performance.now() - time
+
             return result
           }
         )
@@ -134,6 +152,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           candidateContext
         )
+
         // eslint-disable-next-line no-console -- bounded triangle enclosure replacement feasibility, no product geometry substitution
         console.info(
           JSON.stringify({

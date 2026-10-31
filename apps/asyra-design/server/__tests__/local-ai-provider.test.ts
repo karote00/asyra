@@ -32,6 +32,7 @@ import recordedPurpose from './fixtures/recorded-101/purpose-20261017.json'
 import sharp from 'sharp'
 import { createHash } from 'node:crypto'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
+
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
@@ -44,6 +45,7 @@ const reviewCriteria = (names: readonly string[]) =>
       }
     ])
   )
+
 import { designPreparationExamples } from '../design-preparation-examples'
 import type {
   AiProviderInput,
@@ -85,6 +87,7 @@ const { spawn, retainedRecords, retainedPayloads } = vi.hoisted(() => ({
   retainedRecords: [] as unknown[],
   retainedPayloads: [] as { callId: string; value: unknown }[]
 }))
+
 vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
   captureAiSourceIdentity: vi.fn(async () => ({
@@ -92,8 +95,10 @@ vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
     sourceFingerprint: 'f'.repeat(64),
     sourceIdentityStatus: 'captured'
   })),
+
   createExecutionRecordSink: () => ({
     write: (record: unknown) => retainedRecords.push(record),
+
     writePayload: (
       _requestId: string,
       callId: string,
@@ -101,11 +106,13 @@ vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
       value: unknown
     ) => {
       retainedPayloads.push({ callId, value })
+
       return {
         status: 'queued',
         path: `fixture-${retainedPayloads.length - 1}.json`
       }
     },
+
     flush: async () => ({ status: 'saved', path: null })
   })
 }))
@@ -113,10 +120,13 @@ vi.mock('../local-tool-store', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../local-tool-store')>()),
   createLocalToolStore: vi.fn(async () => ({
     read: async () => undefined,
+
     list: async () => [],
+
     write: async () => {
       throw new Error('No durable fixture configured')
     },
+
     close: vi.fn()
   }))
 }))
@@ -134,6 +144,7 @@ const rasterAttachment = async () => {
   })
     .png()
     .toBuffer()
+
   return {
     dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
     mediaType: 'image/png',
@@ -175,6 +186,7 @@ interface Packet {
   method: string
   params: Record<string, unknown>
 }
+
 const nativeToolDefinitions = (thread?: Record<string, unknown>) =>
   (
     thread?.dynamicTools as {
@@ -231,6 +243,7 @@ const fakeServer = (
   const fragments = new Map<number, string>()
   let analysisReplies = 0
   let imageReplies = 0
+
   const send = (packet: unknown) => {
     const request = packet as {
       method?: string
@@ -241,12 +254,15 @@ const fakeServer = (
       }
     }
     let call = request.method === 'item/tool/call' ? request.params : undefined
+
     if (request.params?.item?.type === 'dynamicToolCall') {
       call = request.params.item
     }
+
     if (call) {
       const groups = packets.find(({ method }) => method === 'thread/start')
         ?.params.dynamicTools as { name: string; tools?: { name: string }[] }[]
+
       call.namespace =
         options.toolNamespace === undefined
           ? groups?.find(({ tools }) =>
@@ -254,18 +270,23 @@ const fakeServer = (
             )?.name
           : options.toolNamespace
     }
+
     return child.stdout.write(JSON.stringify(packet) + '\n')
   }
+
   const notify = (method: string, params: Record<string, unknown>) =>
     send({
       method,
       params: { threadId: 'thread-1', turnId: 'turn-1', ...params }
     })
+
   let finished = false
+
   const finish = () => {
     if (finished) {
       return
     }
+
     finished = true
     notify('item/started', {
       item: { id: 'public-purpose', type: 'agentMessage', phase: 'commentary' }
@@ -289,12 +310,14 @@ const fakeServer = (
       turn: { id: 'turn-1', status: options.status ?? 'completed' }
     })
   }
+
   child.stdout = new PassThrough()
   child.stderr = new PassThrough()
   child.kill = vi.fn(() => {
     if (!options.delayedClose) {
       queueMicrotask(() => child.emit('close', null, 'SIGKILL'))
     }
+
     return true
   })
   child.stdin = new Writable({
@@ -304,10 +327,13 @@ const fakeServer = (
         { contentItems?: { text: string }[] } | undefined
       const text = result?.contentItems?.[0]?.text
       const fragment = text ? JSON.parse(text).contentDelivery : undefined
+
       if (fragment && packet.id !== undefined && result?.contentItems) {
         const previous = fragments.get(packet.id) ?? ''
+
         expect(fragment.startByte).toBe(Buffer.byteLength(previous))
         const complete = previous + fragment.text
+
         fragments.set(packet.id, complete)
         if (!fragment.lastPage) {
           queueMicrotask(() =>
@@ -324,18 +350,22 @@ const fakeServer = (
             })
           )
           done()
+
           return
         }
+
         expect(Buffer.byteLength(complete)).toBe(fragment.totalBytes)
         result.contentItems[0].text = complete
         fragments.delete(packet.id)
       }
+
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
           if (options.manualToolReplies) {
             return
           }
+
           if (
             options.repeatedImageCalls &&
             ++imageReplies < options.repeatedImageCalls
@@ -359,8 +389,10 @@ const fakeServer = (
                 }
               })
             )
+
             return
           }
+
           if (options.followupTool && packet.id === 99) {
             const response = packet.result as {
               contentItems: { text: string }[]
@@ -368,6 +400,7 @@ const fakeServer = (
             const followup = options.followupTool(
               JSON.parse(response.contentItems[0].text)
             )
+
             setImmediate(() =>
               send({
                 id: 100,
@@ -381,13 +414,16 @@ const fakeServer = (
                 }
               })
             )
+
             return
           }
+
           if (options.analyzeComponents && packet.id === 99) {
             const response = packet.result as {
               contentItems: { text: string }[]
             }
             const summary = JSON.parse(response.contentItems[0].text)
+
             setImmediate(() => {
               for (
                 let index = 0;
@@ -409,6 +445,7 @@ const fakeServer = (
                   }
                 })
               }
+
               if (options.overlapTool) {
                 send({
                   id: 500,
@@ -430,8 +467,10 @@ const fakeServer = (
                 })
               }
             })
+
             return
           }
+
           if (
             options.parallelAnalyses &&
             packet.id !== undefined &&
@@ -442,14 +481,17 @@ const fakeServer = (
               return
             }
           }
+
           if (options.toolResultOutput) {
             const response = packet.result as {
               contentItems: { text: string }[]
             }
+
             options.output = options.toolResultOutput(
               JSON.parse(response.contentItems[0].text)
             )
           }
+
           notify('item/completed', {
             item: {
               type: 'dynamicToolCall',
@@ -462,23 +504,31 @@ const fakeServer = (
             }
           })
           finish()
+
           return
         }
+
         if (packet.id === undefined) {
           return
         }
+
         options.onRequest?.(packet)
         if (packet.method === options.holdMethod) {
           return
         }
+
         if (packet.method === options.responseError?.method) {
           send({ id: packet.id, error: options.responseError.error })
+
           return
         }
+
         let result: unknown = {}
+
         if (packet.method === 'config/read') {
           result = options.effectiveConfig ?? { config: {} }
         }
+
         if (packet.method === 'account/read') {
           result = {
             account:
@@ -487,6 +537,7 @@ const fakeServer = (
                 : options.account
           }
         }
+
         if (packet.method === 'thread/start') {
           result = {
             thread: { id: 'thread-1' },
@@ -499,9 +550,11 @@ const fakeServer = (
             runtimeWorkspaceRoots: []
           }
         }
+
         if (packet.method === 'turn/start') {
           result = { turn: { id: 'turn-1' } }
         }
+
         send({ id: packet.id, result })
         if (packet.method === 'turn/start' && !options.hold) {
           if (options.commentary) {
@@ -514,6 +567,7 @@ const fakeServer = (
               }
             })
           }
+
           if (options.research) {
             notify('item/started', {
               item: {
@@ -532,6 +586,7 @@ const fakeServer = (
               }
             })
           }
+
           if (options.toolCall) {
             send({
               id: 99,
@@ -559,8 +614,10 @@ const fakeServer = (
     }
   })
   spawn.mockReturnValueOnce(child)
+
   return { child, packets, send, notify, finish }
 }
+
 const untilTurn = async (packets: Packet[]) => {
   await vi.waitFor(() =>
     expect(packets.some(({ method }) => method === 'turn/start')).toBe(true)
@@ -621,11 +678,13 @@ describe('local subscription AI backend', () => {
     const transport = createServerActionBatchProvider({
       fetch: async (_url, init) => {
         const input = JSON.parse(String(init.body)) as AiProviderInput
+
         posted.push(input)
         const result = await requestConfiguredAiActionBatch(input, {
           environment,
           signal: init.signal
         })
+
         return new Response(JSON.stringify(result), {
           status: 200,
           headers: { 'content-type': 'application/json' }
@@ -633,9 +692,11 @@ describe('local subscription AI backend', () => {
       }
     })
     const hadWindow = typeof window !== 'undefined'
+
     if (!hadWindow) {
       vi.stubGlobal('window', {})
     }
+
     const { createAiActions } = await import('../../src/ai/actions')
     const report = createAiActions(undefined, {
       confirmPersistence: async () => ({
@@ -646,9 +707,11 @@ describe('local subscription AI backend', () => {
         durableSequence: 0
       })
     }).find((action) => action.name === AiActionNames.REPORT_OUTCOME)
+
     if (!report) {
       throw new Error('Missing canonical report action')
     }
+
     const runtime = createAiAgentRuntime({
       provider: transport,
       actionDefinitions: [report],
@@ -657,25 +720,34 @@ describe('local subscription AI backend', () => {
       confirmationHandler: { confirm: async () => true },
       transactionRunner: { run: async (_label, work) => work() }
     })
+
     registerAiAgentFeature(runtime)
     const feature = getFeature(FeatureNames.AI_AGENT) as AiAgentFeatureApi
     const controller = createAiConversationController({
       feature,
+
       getElementType: () => undefined
     })
+
     try {
       const first = await controller.submit(firstIntent)
+
       expect(first.outcome).toBe('no-change')
       const second = await controller.submit(nextIntent)
+
       expect(second.outcome).toBe('no-change')
+
       const nativeInput = (server: ReturnType<typeof fakeServer>) => {
         const starts = server.packets.filter(
           (packet) => packet.method === 'turn/start'
         )
+
         expect(starts).toHaveLength(1)
         const items = starts[0].params.input as { text: string }[]
+
         return JSON.parse(items[0].text).input
       }
+
       expect(nativeInput(firstServer).metadata).not.toHaveProperty(
         'conversationHistory'
       )
@@ -690,6 +762,7 @@ describe('local subscription AI backend', () => {
           }
         ]
       }
+
       expect(nativeInput(secondServer).metadata.conversationHistory).toEqual(
         expected
       )
@@ -706,10 +779,13 @@ describe('local subscription AI backend', () => {
         const started = server.packets.find(
           (packet) => packet.method === 'thread/start'
         )
+
         if (!started) {
           throw new Error('Missing native thread start')
         }
+
         const thread = started.params
+
         expect(thread.ephemeral).toBe(true)
         if (server === secondServer) {
           expect(thread.baseInstructions).toContain(
@@ -723,11 +799,14 @@ describe('local subscription AI backend', () => {
             'metadata.conversationHistory'
           )
         }
+
         expect(
           server.packets.some((packet) => packet.method === 'item/tool/call')
         ).toBe(false)
       }
+
       const wire = JSON.stringify(expected)
+
       for (const excluded of [
         'actionResults',
         'progress',
@@ -738,6 +817,7 @@ describe('local subscription AI backend', () => {
       ]) {
         expect(wire).not.toContain(excluded)
       }
+
       expect(Buffer.byteLength(wire)).toBeLessThanOrEqual(
         AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
       )
@@ -755,22 +835,29 @@ describe('local subscription AI backend', () => {
   it('authors, saves, discovers and reuses a real preparation recipe across provider requests', async () => {
     const entries = new Map<string, AiToolStoreEntry>()
     let version = 0
+
     vi.mocked(toolStorage.createLocalToolStore).mockImplementation(
       async () => ({
         read: async (key) => entries.get(key),
+
         list: async () => [...entries.values()],
+
         write: async (value) => {
           if (entries.get(value.key)?.version !== value.expectedVersion) {
             throw new Error('Conflict')
           }
+
           const entry = {
             key: value.key,
             version: String(++version),
             record: structuredClone(value.record)
           }
+
           entries.set(value.key, entry)
+
           return structuredClone(entry)
         },
+
         close: vi.fn()
       })
     )
@@ -784,7 +871,9 @@ describe('local subscription AI backend', () => {
         }
       ]
     }
+
     const literal = (value: unknown) => ({ kind: 'literal', value })
+
     const proposal = {
       format: 1,
       name: 'prepare-part',
@@ -824,6 +913,7 @@ describe('local subscription AI backend', () => {
       ],
       output: { kind: 'step', step: 'prepare', path: '/artifactId' }
     }
+
     const run = async (width: number, submit: boolean) => {
       const recordOffset = retainedRecords.length
       const projection = createAiActivityProjection()
@@ -843,14 +933,17 @@ describe('local subscription AI backend', () => {
           streamController = controller
         }
       })
+
       const deliver = (value: unknown) => {
         if (!streamController) {
           throw new Error('Missing transport stream')
         }
+
         streamController.enqueue(
           new TextEncoder().encode(JSON.stringify(value) + '\n')
         )
       }
+
       const transport = createServerActionBatchProvider({
         fetch: async () =>
           new Response(stream, {
@@ -859,6 +952,7 @@ describe('local subscription AI backend', () => {
       })
       const received = transport.requestActionBatch(providerInput, {
         signal: new AbortController().signal,
+
         onProgress: (event) => {
           projection.append({
             attempt: 1,
@@ -886,13 +980,18 @@ describe('local subscription AI backend', () => {
       const request = requestLocalAiActionBatch(providerInput, {
         model: 'selected-model',
         executable: 'codex',
+
         executeBatch: async () => ({ actionResults: [], context: {} }),
+
         onProgress: (event) => deliver({ type: 'activity', ...event })
       })
+
       await untilTurn(server.packets)
       let id = 100
+
       const call = async (tool: string, args: unknown, success = true) => {
         const current = ++id
+
         server.send({
           id: current,
           method: 'item/tool/call',
@@ -915,9 +1014,12 @@ describe('local subscription AI backend', () => {
           result: { success: boolean; contentItems: { text: string }[] }
         }
         const value = JSON.parse(packet.result.contentItems[0].text)
+
         expect(packet.result.success, JSON.stringify(value)).toBe(success)
+
         return value
       }
+
       try {
         if (submit) {
           const contract = await call('describe_design_apis', {
@@ -926,6 +1028,7 @@ describe('local subscription AI backend', () => {
               'tool_library.submit_tool'
             ]
           })
+
           expect(contract.tools).toEqual(
             expect.arrayContaining([
               expect.objectContaining({
@@ -951,6 +1054,7 @@ describe('local subscription AI backend', () => {
             },
             false
           )
+
           expect(rejected, JSON.stringify(rejected)).toMatchObject({
             ok: false,
             code: 'admission',
@@ -968,14 +1072,17 @@ describe('local subscription AI backend', () => {
             )
           ).toBe(false)
         }
+
         if (submit) {
           expect(
             await call('submit_tool', { submissionId: 'prepare', proposal })
           ).toMatchObject({ ok: true })
         }
+
         const found = await call('describe_design_apis', {
           names: ['prepare-part', 'design_preparation.prepare_design']
         })
+
         expect(found.tools).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -1003,18 +1110,21 @@ describe('local subscription AI backend', () => {
             refresh: true,
             refreshReason: 'context-loss'
           })
+
           expect(restored.tools).toHaveLength(1)
           expect(restored.tools[0]).toMatchObject({
             composition: 'allowed',
             definition: { availableInResponse: true, coverage: 'full' }
           })
         }
+
         const result = await call('invoke_tool', {
           name: 'prepare-part',
           revision: 1,
           input: width,
           message: 'Prepare the editable facade panel'
         })
+
         expect(result).toMatchObject({
           execution: { status: 'success' },
           storage: { status: 'saved' }
@@ -1030,16 +1140,19 @@ describe('local subscription AI backend', () => {
           )
         ).toBe(true)
         const started = new Set<string>()
+
         for (const event of activity) {
           if (event.status === 'running') {
             started.add(event.id)
           } else if (event.parent) {
             expect(started.has(event.id), JSON.stringify(event)).toBe(true)
           }
+
           if (event.parent && event.status === 'running') {
             expect(event.message).toBe('Prepare the editable facade panel')
           }
         }
+
         expect(projection.result().current).toEqual({
           label: 'Completed operation',
           message: 'Prepare the editable facade panel'
@@ -1047,11 +1160,14 @@ describe('local subscription AI backend', () => {
         const target = await call('retain_design_targets', {
           targets: [{ artifactId: result.execution.value, keys: ['surface'] }]
         })
+
         expect(target).toMatchObject({ targets: [{ count: 1 }] })
+
         return result.execution.value
       } finally {
         server.finish()
         const batch = await request
+
         deliver({ type: 'result', batch })
         streamController?.close()
         await received
@@ -1062,17 +1178,21 @@ describe('local subscription AI backend', () => {
             .map((record) => JSON.stringify(record))
             .join('\n')
         )
+
         expect(recorded.complete, JSON.stringify(recorded.issues)).toBe(true)
         expect(recorded.timing.unattributedMs).toBe(0)
       }
     }
+
     const first = await run(17, true)
     const second = await run(23, false)
+
     expect(first).not.toBe(second)
     const records = retainedRecords as {
       stage?: string
       evidence?: Record<string, unknown>
     }[]
+
     expect(
       records.some(
         (record) =>
@@ -1121,6 +1241,7 @@ describe('local subscription AI backend', () => {
     ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION' })
     const store = await vi.mocked(toolStorage.createLocalToolStore).mock
       .results[0].value
+
     expect(store.close).toHaveBeenCalledOnce()
   })
   it.each(['tool-host', 'tool-store'] as const)(
@@ -1129,31 +1250,39 @@ describe('local subscription AI backend', () => {
       fakeServer({ output: JSON.stringify(batch) })
       const store = {
         read: async () => undefined,
+
         list: async () => [],
+
         write: async () => {
           throw new Error('No save expected')
         },
+
         close: vi.fn(() => {
           if (component === 'tool-store') {
             throw new Error('Teardown unavailable')
           }
         })
       }
+
       vi.mocked(toolStorage.createLocalToolStore).mockResolvedValueOnce(store)
       if (component === 'tool-host') {
         const create = toolHosts.createLocalToolHost
+
         vi.spyOn(toolHosts, 'createLocalToolHost').mockImplementationOnce(
           (options) => {
             const host = create(options)
             const dispose = host.dispose
+
             host.dispose = async () => {
               await dispose()
               throw new Error('Teardown unavailable')
             }
+
             return host
           }
         )
       }
+
       await expect(
         requestLocalAiActionBatch(input, {
           model: 'selected-model',
@@ -1186,10 +1315,13 @@ describe('local subscription AI backend', () => {
     fakeServer({ output: 'invalid JSON' })
     vi.mocked(toolStorage.createLocalToolStore).mockResolvedValueOnce({
       read: async () => undefined,
+
       list: async () => [],
+
       write: async () => {
         throw new Error('No save expected')
       },
+
       close: vi.fn(() => {
         throw new Error('Close failed')
       })
@@ -1217,6 +1349,7 @@ describe('local subscription AI backend', () => {
 
   it('advertises reusable tool controls through the drawing provider', async () => {
     const server = fakeServer()
+
     await requestLocalAiActionBatch(input, {
       model: 'selected-model',
       executable: 'codex'
@@ -1224,6 +1357,7 @@ describe('local subscription AI backend', () => {
     const thread = server.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
+
     expect(nativeToolDefinitions(thread).map(({ name }) => name)).toEqual(
       expect.arrayContaining([
         'submit_tool',
@@ -1235,6 +1369,7 @@ describe('local subscription AI backend', () => {
     expect(toolStorage.createLocalToolStore).toHaveBeenCalledTimes(1)
     const result = await vi.mocked(toolStorage.createLocalToolStore).mock
       .results[0].value
+
     expect(result.close).toHaveBeenCalledTimes(1)
   })
   it('keeps canonical basic recipe dependencies out of native function exposure', async () => {
@@ -1242,9 +1377,11 @@ describe('local subscription AI backend', () => {
     const action = basicApiContracts.find(
       (item) => item.name === 'api_element_createElements'
     )
+
     if (!action) {
       throw new Error('Missing canonical creation contract')
     }
+
     await requestLocalAiActionBatch(
       {
         ...input,
@@ -1271,6 +1408,7 @@ describe('local subscription AI backend', () => {
       ({ method }) => method === 'thread/start'
     )?.params
     const names = nativeToolDefinitions(thread).map(({ name }) => name)
+
     expect(names).toContain('execute_design_batch')
     expect(names).toContain('invoke_tool')
     expect(names).not.toContain(action.name)
@@ -1280,6 +1418,7 @@ describe('local subscription AI backend', () => {
       new Error('Local directory unavailable')
     )
     const server = fakeServer()
+
     expect(
       await requestLocalAiActionBatch(input, {
         model: 'selected-model',
@@ -1303,6 +1442,7 @@ describe('local subscription AI backend', () => {
     'rejects unexpected tool activity in an assessment: %j',
     async (activity) => {
       const server = fakeServer(activity)
+
       spawn.mockReturnValue(server.child)
       await expect(
         requestLocalAiAssessment(
@@ -1319,6 +1459,7 @@ describe('local subscription AI backend', () => {
       .mockImplementation(() => undefined)
     const result = { overall: 'No visual proof supplied', findings: [] }
     const server = fakeServer({ output: JSON.stringify(result) })
+
     spawn.mockReturnValue(server.child)
     const assessment = await requestLocalAiAssessment(
       {
@@ -1331,6 +1472,7 @@ describe('local subscription AI backend', () => {
         executable: 'codex'
       }
     )
+
     expect(assessment.value).toEqual(result)
     expect(stdout).not.toHaveBeenCalled()
     expect(stderr.mock.calls.map(([line]) => JSON.parse(line))).toEqual(
@@ -1342,6 +1484,7 @@ describe('local subscription AI backend', () => {
     const params = server.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
+
     expect(params?.dynamicTools).toEqual([])
     expect(params?.config).toMatchObject({
       web_search: 'disabled',
@@ -1366,16 +1509,21 @@ describe('local subscription AI backend', () => {
     })
     const create = designTools.createLocalDesignTools
     let preparations = 0
+
     vi.spyOn(designTools, 'createLocalDesignTools').mockImplementation(
       (...args) => {
         const owner = create(...args)
+
         return {
           ...owner,
+
           call: async (...params) => {
             const result = await owner.call(...params)
+
             preparations++
             signalEntered()
             await release
+
             return result
           }
         }
@@ -1401,6 +1549,7 @@ describe('local subscription AI backend', () => {
       },
       { environment, executeBatch }
     )
+
     try {
       await untilTurn(server.packets)
       server.send({
@@ -1472,6 +1621,7 @@ describe('local subscription AI backend', () => {
       const requests: Packet[] = []
       const notifications: string[] = []
       let nativeIsolation: unknown
+
       spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
         const child = native.spawn(
           args[0],
@@ -1490,26 +1640,35 @@ describe('local subscription AI backend', () => {
           ],
           args[2]
         )
+
         if (!child.stdin || !child.stdout) {
           throw new Error('Missing native protocol pipes')
         }
+
         const stdin = child.stdin
         const stdout = child.stdout
         const write = stdin.write.bind(stdin)
+
         stdin.write = ((chunk: string, ...rest: unknown[]) => {
           requests.push(JSON.parse(String(chunk)))
+
           return write(chunk, ...(rest as []))
         }) as typeof stdin.write
         let buffer = ''
+
         stdout.on('data', (chunk: Buffer) => {
           buffer += chunk.toString()
           let index: number
+
           while ((index = buffer.indexOf('\n')) >= 0) {
             const packet = JSON.parse(buffer.slice(0, index))
+
             buffer = buffer.slice(index + 1)
             const request = requests.find(({ id }) => id === packet.id)
+
             if (packet.id !== undefined && request?.method === 'config/read') {
               const config = packet.result?.config
+
               nativeIsolation = {
                 hooksDisabled: config?.features?.hooks === false,
                 agentsDisabled: config?.features?.multi_agent === false,
@@ -1518,19 +1677,23 @@ describe('local subscription AI backend', () => {
                   Array.isArray(config?.notify) && config.notify.length === 0
               }
             }
+
             if (packet.method === 'mcpServer/startupStatus/updated') {
               notifications.push(packet.params.name)
             }
           }
         })
         children.push(child)
+
         return child
       })
       try {
         const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
+
         if (!executable) {
           throw new Error('Missing native registration probe configuration')
         }
+
         await checkLocalAiProvider({
           model: 'gpt-6-astra',
           executable,
@@ -1541,6 +1704,7 @@ describe('local subscription AI backend', () => {
         )
         const config = requests.find(({ method }) => method === 'thread/start')
           ?.params.config as Record<string, unknown>
+
         expect(config.mcp_servers).toMatchObject({
           startup_probe: { enabled: false }
         })
@@ -1583,22 +1747,26 @@ describe('local subscription AI backend', () => {
       description: 'Report',
       inputSchema: { type: 'object' }
     }
+
     await requestConfiguredAiActionBatch(
       { ...input, actions: [action, control] },
       {
         environment,
+
         executeBatch: async () => ({ actionResults: [], context: {} })
       }
     )
     const definitions = nativeToolDefinitions(
       server.packets.find(({ method }) => method === 'thread/start')?.params
     )
+
     expect(
       definitions.filter(({ name }) => name === 'select_elements')
     ).toHaveLength(1)
     const items = server.packets.find(({ method }) => method === 'turn/start')
       ?.params.input as { text: string }[]
     const payload = JSON.parse(items[0].text)
+
     expect(payload).not.toHaveProperty('imageTools')
     expect(payload.input.actions).toEqual([control])
     expect(payload.input.intent).toBe(input.intent)
@@ -1617,15 +1785,18 @@ describe('local subscription AI backend', () => {
         ['request']
       )
     }
+
     await requestConfiguredAiActionBatch(
       { ...input, actions: [action] },
       {
         environment,
+
         executeBatch: async () => ({ actionResults: [], context: {} })
       }
     )
     const items = server.packets.find(({ method }) => method === 'turn/start')
       ?.params.input as { text: string }[]
+
     expect(JSON.parse(items[0].text).input.actions).toEqual([
       {
         name: action.name,
@@ -1640,10 +1811,13 @@ describe('local subscription AI backend', () => {
     const server = fakeServer()
     const intent =
       '畫「很醜」的塔頂，只要 2 層；1 cm = 1 px。Keep the left ornament; no background.'
+
     await requestConfiguredAiActionBatch({ ...input, intent }, { environment })
     const turns = server.packets.filter(({ method }) => method === 'turn/start')
+
     expect(turns).toHaveLength(1)
     const items = turns[0].params.input as { text: string }[]
+
     expect(JSON.parse(items[0].text).input.intent).toBe(intent)
   })
 
@@ -1663,6 +1837,7 @@ describe('local subscription AI backend', () => {
       { name: 'report_outcome', description: 'Report', inputSchema: {} },
       { name: 'request_clarification', description: 'Ask', inputSchema: {} }
     ]
+
     await requestConfiguredAiActionBatch(
       {
         ...input,
@@ -1671,6 +1846,7 @@ describe('local subscription AI backend', () => {
       },
       {
         environment,
+
         executeBatch: async () => ({ actionResults: [], context: {} })
       }
     )
@@ -1678,6 +1854,7 @@ describe('local subscription AI backend', () => {
       ({ method }) => method === 'thread/start'
     )?.params
     const definitions = nativeToolDefinitions(thread)
+
     expect(definitions.map(({ name }) => name)).not.toContain(
       'search_reference_images'
     )
@@ -1691,8 +1868,10 @@ describe('local subscription AI backend', () => {
       ])
     )
     const preparedTools = definitions
+
     for (const name of ['prepare_design', 'prepare_and_apply_design']) {
       const definition = preparedTools.find((tool) => tool.name === name)
+
       for (const example of designPreparationExamples) {
         expect(definition?.inputSchema).toHaveProperty(
           'examples',
@@ -1700,7 +1879,9 @@ describe('local subscription AI backend', () => {
         )
       }
     }
+
     const instructions = thread?.developerInstructions as string
+
     expect(instructions).toContain(
       'Call registered tools directly with their JSON arguments'
     )
@@ -1709,6 +1890,7 @@ describe('local subscription AI backend', () => {
       instructions,
       definitions
     })
+
     for (const obsolete of [
       'Code Mode',
       'code-mode',
@@ -1719,8 +1901,10 @@ describe('local subscription AI backend', () => {
     ]) {
       expect(delivered).not.toContain(obsolete)
     }
+
     expect(thread?.config).toMatchObject({})
     const base = String(thread?.baseInstructions)
+
     expect(base).toContain('First frame is optional')
     expect(base).toContain('not a deadline or completion gate')
     expect(base).toContain('research may come first')
@@ -1749,14 +1933,18 @@ describe('local subscription AI backend', () => {
     for (const example of designPreparationExamples) {
       expect(base).not.toContain(JSON.stringify(example))
     }
+
     const scopeLine = base
       .split('\n')
       .find((line) => line.startsWith('Main tool scope: '))
+
     expect(scopeLine).toBeDefined()
     if (!scopeLine) {
       throw new Error('Missing startup scope guidance')
     }
+
     const scope = JSON.parse(scopeLine.slice('Main tool scope: '.length))
+
     expect(scope.inputScopes.operations).toEqual(['draft', 'repair', 'parts'])
     expect(scope.operationUsage.draft).toContain('10000 expanded objects')
     expect(scope.operationUsage.parts).toContain('each part artifact fits')
@@ -1779,6 +1967,7 @@ describe('local subscription AI backend', () => {
       'x-design-input-scope': { selection: string }
     }
     const selection = canonical['x-design-input-scope'].selection
+
     expect(scope.inputScopes.selection).toBe(selection)
     expect(selection).toContain('component contents')
     expect(selection).toContain('Component order:')
@@ -1804,6 +1993,7 @@ describe('local subscription AI backend', () => {
         scope.example.arguments
       )
     )
+
     expect(selected.tools[0].usageGuide).toBeDefined()
     expect(selected.tools[0].execution.tool).toBe('prepare_and_apply_design')
 
@@ -1814,6 +2004,7 @@ describe('local subscription AI backend', () => {
     ]) {
       expect(base).toContain(name)
     }
+
     expect(base).toContain('returned requestId/checks')
     expect(instructions).not.toContain(
       'Discover the relevant tools before composing calls'
@@ -1847,6 +2038,7 @@ describe('local subscription AI backend', () => {
     })
     const items = server.packets.find(({ method }) => method === 'turn/start')
       ?.params.input as { text: string }[]
+
     expect(
       JSON.parse(items[0].text).input.actions.map(
         (action: { name: string }) => action.name
@@ -1871,6 +2063,7 @@ describe('local subscription AI backend', () => {
       },
       { environment }
     )
+
     await untilTurn(server.packets)
     const total = {
       inputTokens: 100,
@@ -1879,6 +2072,7 @@ describe('local subscription AI backend', () => {
       reasoningOutputTokens: 10,
       totalTokens: 120
     }
+
     server.notify('thread/tokenUsage/updated', {
       tokenUsage: { total, last: total }
     })
@@ -1890,8 +2084,10 @@ describe('local subscription AI backend', () => {
     const records = log.mock.calls
       .map(([value]) => JSON.parse(String(value)))
       .filter((value) => value.event === 'ai_request_usage')
+
     expect(records).toHaveLength(1)
     const record = records[0]
+
     expect(record).toMatchObject({
       event: 'ai_request_usage',
       provider: 'local-codex',
@@ -1910,6 +2106,7 @@ describe('local subscription AI backend', () => {
 
   it('does not count connection probes as drawing requests', async () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     fakeServer()
     await checkLocalAiProvider({ model: 'selected-model', executable: 'codex' })
     expect(log).not.toHaveBeenCalled()
@@ -1926,6 +2123,7 @@ describe('local subscription AI backend', () => {
     const checked = expect(pending).rejects.toMatchObject({
       code: 'AI_MODEL_BACKEND_ABORTED'
     })
+
     await untilTurn(server.packets)
     const total = {
       inputTokens: 100,
@@ -1934,6 +2132,7 @@ describe('local subscription AI backend', () => {
       reasoningOutputTokens: 10,
       totalTokens: 120
     }
+
     server.notify('thread/tokenUsage/updated', { tokenUsage: { total } })
     server.notify('thread/tokenUsage/updated', {
       threadId: 'other-thread',
@@ -1948,6 +2147,7 @@ describe('local subscription AI backend', () => {
     const records = log.mock.calls
       .map(([value]) => JSON.parse(String(value)))
       .filter((value) => value.event === 'ai_request_usage')
+
     expect(records).toHaveLength(1)
     expect(records[0]).toMatchObject({
       outcome: 'cancelled',
@@ -1959,6 +2159,7 @@ describe('local subscription AI backend', () => {
   it('resolves a compact tool reference before the prepared batch reaches the caller', async () => {
     const server = fakeServer({
       toolCall: true,
+
       toolResultOutput: (summary) =>
         JSON.stringify({
           batchId: 'prepared',
@@ -1993,6 +2194,7 @@ describe('local subscription AI backend', () => {
       },
       { environment }
     )
+
     expect(result.actions[0].arguments).toMatchObject({
       artifactVersion: 1,
       elementCount: 1,
@@ -2009,6 +2211,7 @@ describe('local subscription AI backend', () => {
     const server = fakeServer({
       toolCall: true,
       analyzeComponents: true,
+
       toolResultOutput: (summary) =>
         JSON.stringify({
           batchId: 'analyzed',
@@ -2045,6 +2248,7 @@ describe('local subscription AI backend', () => {
       },
       { environment }
     )
+
     expect(result.actions[0].arguments).toMatchObject({
       slices: [
         {
@@ -2072,6 +2276,7 @@ describe('local subscription AI backend', () => {
         parallelAnalyses: count
       })
       const progress: string[] = []
+
       await expect(
         requestConfiguredAiActionBatch(
           {
@@ -2082,6 +2287,7 @@ describe('local subscription AI backend', () => {
           },
           {
             environment,
+
             onProgress: (event) => {
               if (
                 event.tool === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
@@ -2105,9 +2311,12 @@ describe('local subscription AI backend', () => {
             }
           ).result
           const report = JSON.parse(response.contentItems[0].text)
+
           expect(report.paths[0].pathId).toBe(`path-${Number(packet.id) - 99}`)
+
           return report.analysisId
         })
+
       expect(receipts).toHaveLength(count)
       expect(new Set(receipts).size).toBe(count)
       expect(server.child.kill).toHaveBeenCalledOnce()
@@ -2119,6 +2328,7 @@ describe('local subscription AI backend', () => {
       analyzeComponents: true,
       overlapTool: AiImageToolIds.VTRACER
     })
+
     await expect(
       requestConfiguredAiActionBatch(
         {
@@ -2158,6 +2368,7 @@ describe('local subscription AI backend', () => {
       },
       { environment }
     )
+
     expect(result).toEqual(batch)
     expect(
       server.packets.some((packet) => packet.id === 99 && 'result' in packet)
@@ -2166,6 +2377,7 @@ describe('local subscription AI backend', () => {
 
   it('checks login and protocol without starting a model turn', async () => {
     const server = fakeServer()
+
     await expect(
       checkLocalAiProvider({ model: 'selected-model', executable: 'codex' })
     ).resolves.toBeUndefined()
@@ -2177,6 +2389,7 @@ describe('local subscription AI backend', () => {
 
   it('pins medium effort on both thread configuration and the model turn', async () => {
     const server = fakeServer()
+
     await requestConfiguredAiActionBatch(input, { environment })
     expect(
       server.packets.find(({ method }) => method === 'thread/start')?.params
@@ -2200,6 +2413,7 @@ describe('local subscription AI backend', () => {
         actionResults: [],
         context: {}
       }))
+
       await expect(
         requestConfiguredAiActionBatch(
           {
@@ -2226,6 +2440,7 @@ describe('local subscription AI backend', () => {
     'rejects native effort %s before starting a model turn',
     async (reasoningEffort) => {
       const server = fakeServer({ reasoningEffort })
+
       await expect(
         requestConfiguredAiActionBatch(input, { environment })
       ).rejects.toMatchObject({
@@ -2245,6 +2460,7 @@ describe('local subscription AI backend', () => {
         process.env.CODEX_HOME || join(homedir(), '.codex'),
         file
       )
+
       fakeServer({ instructionSources: [source] })
       await expect(
         requestConfiguredAiActionBatch(input, { environment })
@@ -2261,14 +2477,17 @@ describe('local subscription AI backend', () => {
 
   it('keeps initial instructions bounded when unrelated deferred tools grow', async () => {
     const baseline = fakeServer()
+
     await requestConfiguredAiActionBatch(input, { environment })
     const before = baseline.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
     const create = referenceTools.createLocalReferenceTools
+
     vi.spyOn(referenceTools, 'createLocalReferenceTools').mockImplementation(
       (...args) => {
         const owner = create(...args)
+
         return {
           ...owner,
           definitions: [
@@ -2284,10 +2503,12 @@ describe('local subscription AI backend', () => {
       }
     )
     const expanded = fakeServer()
+
     await requestConfiguredAiActionBatch(input, { environment })
     const after = expanded.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
+
     expect(after?.developerInstructions).toEqual(before?.developerInstructions)
     expect(after?.baseInstructions).toEqual(before?.baseInstructions)
     expect(nativeToolDefinitions(after).length).toBe(
@@ -2305,6 +2526,7 @@ describe('local subscription AI backend', () => {
       environment,
       fetch
     })
+
     expect(result).toEqual(batch)
     expect(fetch).not.toHaveBeenCalled()
     expect(spawn).toHaveBeenCalledTimes(1)
@@ -2316,6 +2538,7 @@ describe('local subscription AI backend', () => {
     const thread = server.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
+
     expect(thread).toMatchObject({
       model: 'selected-model',
       ephemeral: true,
@@ -2349,6 +2572,7 @@ describe('local subscription AI backend', () => {
         inputSchema: expect.any(Object)
       })
     }
+
     expect(thread?.developerInstructions).toContain(
       'Return the prepared action batch without invoking backend operation tools'
     )
@@ -2367,6 +2591,7 @@ describe('local subscription AI backend', () => {
 
   it('isolates inherited lifecycle commands and all agent variants before launch and thread creation', async () => {
     const server = fakeServer()
+
     await requestConfiguredAiActionBatch(input, { environment })
     const args = spawn.mock.calls[0][1] as string[]
     const launchConfig = Object.fromEntries(
@@ -2374,8 +2599,10 @@ describe('local subscription AI backend', () => {
         if (arg !== '-c') {
           return []
         }
+
         const entry = args[index + 1]
         const split = entry.indexOf('=')
+
         return [[entry.slice(0, split), JSON.parse(entry.slice(split + 1))]]
       })
     )
@@ -2391,6 +2618,7 @@ describe('local subscription AI backend', () => {
       'features.shell_snapshot': false,
       notify: []
     }
+
     expect(launchConfig).toMatchObject(isolation)
     expect(threadConfig).toMatchObject(isolation)
   })
@@ -2411,8 +2639,10 @@ describe('local subscription AI backend', () => {
         }
       }
     })
+
     await requestConfiguredAiActionBatch(input, { environment })
     const methods = server.packets.map(({ method }) => method)
+
     expect(methods.filter((method) => method === 'config/read')).toHaveLength(1)
     expect(methods.indexOf('config/read')).toBeLessThan(
       methods.indexOf('thread/start')
@@ -2421,6 +2651,7 @@ describe('local subscription AI backend', () => {
     const config = server.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params.config
+
     expect(config).toMatchObject({
       mcp_servers: {
         'personal.viewer': { command: 'secret-command', enabled: false },
@@ -2436,6 +2667,7 @@ describe('local subscription AI backend', () => {
     'rejects unreadable MCP configuration before inference: %j',
     async (effectiveConfig) => {
       const server = fakeServer({ effectiveConfig })
+
       await expect(
         requestConfiguredAiActionBatch(input, { environment })
       ).rejects.toMatchObject({
@@ -2450,6 +2682,7 @@ describe('local subscription AI backend', () => {
   it('retains process and thread startup diagnostics without copying private text', async () => {
     const server = fakeServer({
       hold: true,
+
       onRequest: ({ method }) => {
         if (method === 'initialize') {
           server.send({
@@ -2463,6 +2696,7 @@ describe('local subscription AI backend', () => {
       }
     })
     const completion = requestConfiguredAiActionBatch(input, { environment })
+
     await untilTurn(server.packets)
     server.notify('mcpServer/startupStatus/updated', {
       name: 'personal.viewer',
@@ -2502,6 +2736,7 @@ describe('local subscription AI backend', () => {
       ])
     )
     const evidence = JSON.stringify(retainedRecords)
+
     for (const secret of [
       'private-secret',
       'private@example.test',
@@ -2515,6 +2750,7 @@ describe('local subscription AI backend', () => {
   it('records native retry reasons while allowing successful recovery without replay', async () => {
     const server = fakeServer({ hold: true })
     const promise = requestConfiguredAiActionBatch(input, { environment })
+
     await untilTurn(server.packets)
     server.notify('error', {
       willRetry: true,
@@ -2572,6 +2808,7 @@ describe('local subscription AI backend', () => {
       const checked = expect(promise).rejects.toMatchObject({
         code: 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
       })
+
       await untilTurn(server.packets)
       server.notify('turn/completed', {
         turn: {
@@ -2616,6 +2853,7 @@ describe('local subscription AI backend', () => {
         }
       }
     })
+
     await expect(
       requestConfiguredAiActionBatch(input, { environment })
     ).rejects.toMatchObject({
@@ -2656,6 +2894,7 @@ describe('local subscription AI backend', () => {
     const checked = expect(promise).rejects.toMatchObject({
       code: 'AI_MODEL_BACKEND_ABORTED'
     })
+
     await vi.waitFor(() =>
       expect(server.packets.some((packet) => packet.method === method)).toBe(
         true
@@ -2699,6 +2938,7 @@ describe('local subscription AI backend', () => {
     'rejects absent or API-key authentication before a model turn',
     async (account) => {
       const server = fakeServer({ account })
+
       await expect(
         requestConfiguredAiActionBatch(input, { environment })
       ).rejects.toMatchObject({
@@ -2753,6 +2993,7 @@ describe('local subscription AI backend', () => {
     const checked = expect(promise).rejects.toMatchObject({
       code: 'AI_MODEL_BACKEND_ABORTED'
     })
+
     void promise.catch(() => {
       settled = true
     })
@@ -2776,6 +3017,7 @@ describe('local subscription AI backend', () => {
     const checked = expect(promise).rejects.toMatchObject({
       code: 'AI_MODEL_BACKEND_ABORTED'
     })
+
     await vi.waitFor(() => expect(server.child.kill).toHaveBeenCalledOnce())
     controller.abort()
     server.child.emit('close')
@@ -2807,6 +3049,7 @@ describe('local subscription AI backend', () => {
         (value) => ({ value }),
         (error: Error & { code: string }) => ({ code: error.code })
       )
+
       try {
         await vi.waitFor(() =>
           expect(
@@ -2859,6 +3102,7 @@ describe('local subscription AI backend', () => {
           throw new Error('private observer exception')
         }
       })
+
       await expect(
         requestConfiguredAiActionBatch(
           {
@@ -2895,11 +3139,14 @@ describe('local subscription AI backend', () => {
     async (mode) => {
       const server = fakeServer({
         holdMethod: 'turn/start',
+
         onRequest: (packet) => {
           if (packet.method !== 'turn/start') {
             return
           }
+
           const frames: unknown[] = []
+
           if (mode !== 'missing-ack') {
             frames.push({
               id: packet.id,
@@ -2909,6 +3156,7 @@ describe('local subscription AI backend', () => {
                   : { turn: { id: 'turn-1' } }
             })
           }
+
           frames.push({
             id: 99,
             method: 'item/tool/call',
@@ -2943,6 +3191,7 @@ describe('local subscription AI backend', () => {
         (value) => ({ value }),
         (error: Error & { code: string }) => ({ code: error.code })
       )
+
       try {
         await untilTurn(server.packets)
         if (mode === 'matching-turn') {
@@ -2977,6 +3226,7 @@ describe('local subscription AI backend', () => {
         }
       }
     })
+
     await expect(
       checkLocalAiProvider({ executable: 'codex', model: 'selected-model' })
     ).resolves.toBeUndefined()
@@ -2997,6 +3247,7 @@ describe('local subscription AI backend', () => {
         (value) => ({ value }),
         (error: Error & { code: string }) => ({ code: error.code })
       )
+
       try {
         await untilTurn(server.packets)
         server.child.stdin.emit(event, new Error('private stdin exception'))
@@ -3033,6 +3284,7 @@ describe('local subscription AI backend', () => {
       const server = fakeServer({ hold: true })
       const result = requestConfiguredAiActionBatch(input, { environment })
       const checked = expect(result).resolves.toEqual(batch)
+
       await untilTurn(server.packets)
       server.finish()
       if (event === 'process-close') {
@@ -3043,6 +3295,7 @@ describe('local subscription AI backend', () => {
           new Error('private stdin exception')
         )
       }
+
       await checked
     }
   )
@@ -3057,6 +3310,7 @@ describe('local subscription AI backend', () => {
       (value) => ({ value }),
       () => ({ failed: true })
     )
+
     try {
       await untilTurn(server.packets)
       expect(() =>
@@ -3094,6 +3348,7 @@ describe('local subscription AI backend', () => {
     async (event) => {
       const server = fakeServer({ hold: true, delayedClose: true })
       const result = requestConfiguredAiActionBatch(input, { environment })
+
       await untilTurn(server.packets)
       server.finish()
       server.child.stdout.emit(event, new Error('private-stream-credential'))
@@ -3111,6 +3366,7 @@ describe('local subscription AI backend', () => {
       (error: Error & { code: string }) => error.code
     )
     const successful = requestConfiguredAiActionBatch(input, { environment })
+
     await Promise.all([untilTurn(broken.packets), untilTurn(peer.packets)])
     broken.child.stdout.emit('end')
     await expect(failed).resolves.toBe('AI_MODEL_BACKEND_TRANSPORT_FAILED')
@@ -3143,6 +3399,7 @@ describe('local subscription AI backend', () => {
     const checked = expect(promise).rejects.toMatchObject({
       code: 'AI_MODEL_BACKEND_ABORTED'
     })
+
     await untilTurn(server.packets)
     await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
     expect(server.child.kill).not.toHaveBeenCalled()
@@ -3158,6 +3415,7 @@ describe('local subscription AI backend', () => {
       const server = fakeServer({ hold: true })
       const promise = requestConfiguredAiActionBatch(input, { environment })
       const checked = expect(promise).rejects.toThrow(/^The local AI provider/)
+
       await untilTurn(server.packets)
       server.child.stderr.write('private@example.test Bearer sensitive-token')
       if (kind === 'request') {
@@ -3167,21 +3425,27 @@ describe('local subscription AI backend', () => {
           params: { secret: 'sensitive-token' }
         })
       }
+
       if (kind === 'tool') {
         server.notify('item/completed', { item: { type: 'commandExecution' } })
       }
+
       if (kind === 'malformed') {
         server.child.stdout.write('sensitive-token\n')
       }
+
       if (kind === 'oversized') {
         server.child.stdout.write('x'.repeat(32 * 1024 * 1024 + 1))
       }
+
       if (kind === 'exit') {
         server.child.emit('close')
       }
+
       if (kind === 'spawn-error') {
         server.child.emit('error', new Error('sensitive-token'))
       }
+
       await checked
       expect(server.child.kill).toHaveBeenCalledOnce()
     }
@@ -3198,6 +3462,7 @@ describe('local subscription AI backend', () => {
     const checked = expect(pending).rejects.toMatchObject({
       code: 'AI_MODEL_BACKEND_ABORTED'
     })
+
     await untilTurn(first.packets)
     const imageInput = {
       ...input,
@@ -3211,11 +3476,13 @@ describe('local subscription AI backend', () => {
         ]
       }
     }
+
     await expect(
       requestConfiguredAiActionBatch(imageInput, { environment })
     ).resolves.toEqual(batch)
     const items = second.packets.find(({ method }) => method === 'turn/start')
       ?.params.input as { type: string; text?: string; url?: string }[]
+
     expect(items[0].text).not.toContain('YQ==')
     expect(JSON.parse(items[0].text ?? '{}').input.actions).toEqual(
       imageInput.actions
@@ -3246,6 +3513,7 @@ it('waits for a canonical operation receipt before continuing the native model',
       message: 'Hiding the separate mark'
     }
   })
+
   spawn.mockReturnValue(child.child)
   const onProgress = vi.fn()
   const executeBatch = vi.fn(async (prepared) => {
@@ -3253,6 +3521,7 @@ it('waits for a canonical operation receipt before continuing the native model',
       elementId: 'actual-id',
       visible: false
     })
+
     return {
       actionResults: [
         {
@@ -3264,6 +3533,7 @@ it('waits for a canonical operation receipt before continuing the native model',
       context: { selectedIds: ['actual-id'] }
     }
   })
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -3302,6 +3572,7 @@ it('waits for a canonical operation receipt before continuing the native model',
   const response = child.packets.find(
     (packet) => 'result' in packet
   ) as unknown as { result: { contentItems: { text: string }[] } }
+
   expect(
     JSON.parse(response.result.contentItems[0].text).actionResults[0].result
       .appliedElementIds
@@ -3311,6 +3582,7 @@ it('waits for a canonical operation receipt before continuing the native model',
 it('correlates bounded diagnostic evidence with usage without logging credentials or image payloads', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const usage = createAiExecutionProfiler(input, 'selected-model')
+
   usage.trace('tool_started', {
     tool: 'import_reference_image',
     callId: 'call-1',
@@ -3338,6 +3610,7 @@ it('correlates bounded diagnostic evidence with usage without logging credential
   usage.finish('completed')
   usage.trace('tool_completed', {})
   const records = log.mock.calls.map(([value]) => JSON.parse(String(value)))
+
   expect(records).toHaveLength(3)
   expect(records[0]).toMatchObject({
     event: 'ai_request_trace',
@@ -3360,10 +3633,12 @@ it('correlates bounded diagnostic evidence with usage without logging credential
   })
   expect(records[0].requestId).toBe(records[2].requestId)
   const serialized = JSON.stringify(records)
+
   expect(serialized).toContain('https://example.com/logo.png')
   for (const secret of ['secret', 'private-key', 'private prompt', 'base64']) {
     expect(serialized).not.toContain(secret)
   }
+
   log.mockRestore()
 })
 
@@ -3375,11 +3650,14 @@ describe('local AI usage accounting', () => {
     reasoningOutputTokens: 10,
     totalTokens: 120
   }
+
   it('keeps the latest cumulative snapshot, ignores older snapshots, and finishes once', () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     const usage = createAiExecutionProfiler(input, 'selected-model')
+
     usage.update({ total, last: total })
     const next = { ...total, inputTokens: 200, totalTokens: 220 }
+
     usage.update({ total: next, last: total })
     usage.update({ total })
     usage.finish('completed')
@@ -3393,6 +3671,7 @@ describe('local AI usage accounting', () => {
     (outcome) => {
       const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
       const usage = createAiExecutionProfiler(input, 'selected-model')
+
       usage.update({ total })
       usage.finish(outcome)
       expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
@@ -3406,10 +3685,12 @@ describe('local AI usage accounting', () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     const first = createAiExecutionProfiler(input, 'selected-model')
     const second = createAiExecutionProfiler(input, 'selected-model')
+
     first.update({ total })
     second.finish('completed')
     first.finish('completed')
     const records = log.mock.calls.map(([line]) => JSON.parse(line))
+
     expect(records[0]).toMatchObject({
       tokens: null,
       usageStatus: 'unavailable'
@@ -3428,6 +3709,7 @@ describe('local AI usage accounting', () => {
   ])('rejects invalid usage without corrupting earlier evidence', (invalid) => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     const usage = createAiExecutionProfiler(input, 'selected-model')
+
     usage.update({ total })
     usage.update({ total: invalid })
     usage.finish('completed')
@@ -3457,13 +3739,16 @@ describe('local AI usage accounting', () => {
       },
       'selected-model'
     )
+
     usage.update({ total: { ...total, secret: 'Bearer private' } })
     usage.finish('completed')
     const serialized = log.mock.calls[0][0]
     const record = JSON.parse(serialized)
+
     for (const key of ['metadata', 'conversationId', 'turnId', 'secret']) {
       expect(record).not.toHaveProperty(key)
     }
+
     expect(record.tokens).toEqual(total)
     for (const value of [
       'private@example.test',
@@ -3487,6 +3772,7 @@ it.each([
       toolCall: true,
       toolName,
       toolArguments: { attachmentIndex: 0 },
+
       toolResultOutput: () => JSON.stringify(batch)
     })
     const result = await requestConfiguredAiActionBatch(
@@ -3504,10 +3790,12 @@ it.each([
       },
       { environment, signal: new AbortController().signal }
     )
+
     expect(result).toEqual(batch)
     const reply = server.packets.find(
       (packet) => packet.id === 99 && 'result' in packet
     )
+
     expect(reply).toMatchObject({
       result: {
         success: false,
@@ -3523,12 +3811,14 @@ it.each([
 
 it('allows native conceptual research without an image and exposes only safe activity', async () => {
   const child = fakeServer({ research: true })
+
   spawn.mockReturnValue(child.child)
   const onProgress = vi.fn()
   const result = await requestConfiguredAiActionBatch(input, {
     environment,
     onProgress
   })
+
   expect(result).toEqual(batch)
   expect(
     child.packets.find((packet) => packet.method === 'thread/start')?.params
@@ -3589,11 +3879,13 @@ describe('native semantic design handoff', () => {
       }
     ]
   }
+
   it('prepares without an image, applies only the receipt and reviews canonical output', async () => {
     const child = fakeServer({
       toolCall: true,
       toolName: 'prepare_design',
       toolArguments: { draft },
+
       followupTool: (receipt) => ({
         name: 'apply_prepared_design',
         args: {
@@ -3601,6 +3893,7 @@ describe('native semantic design handoff', () => {
           message: 'Create the design'
         }
       }),
+
       output: JSON.stringify({
         batchId: 'done',
         actions: [
@@ -3613,14 +3906,17 @@ describe('native semantic design handoff', () => {
         ]
       })
     })
+
     spawn.mockReturnValue(child.child)
     const executeBatch = vi.fn(async (prepared) => {
       const a = prepared.actions[0]
+
       if (a.name === 'apply_prepared_design') {
         expect(a.arguments.design.entries[1].descriptor.text).toBe(
           'A fresh idea'
         )
         expect(a.arguments).not.toHaveProperty('artifactId')
+
         return {
           actionResults: [
             {
@@ -3632,6 +3928,7 @@ describe('native semantic design handoff', () => {
           context: {}
         }
       }
+
       expect(a.arguments).toEqual({ elementId: 'actual-root' })
       if (a.name === 'review_design') {
         return {
@@ -3650,6 +3947,7 @@ describe('native semantic design handoff', () => {
           context: {}
         }
       }
+
       return {
         actionResults: [
           {
@@ -3669,6 +3967,7 @@ describe('native semantic design handoff', () => {
         context: {}
       }
     })
+
     await expect(
       requestConfiguredAiActionBatch(
         { ...input, actions },
@@ -3681,16 +3980,19 @@ describe('native semantic design handoff', () => {
     const thread = child.packets.find(
       (p) => p.method === 'thread/start'
     )?.params
+
     expect(nativeToolDefinitions(thread)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'prepare_design' })
       ])
     )
     const advertised = JSON.stringify(thread?.dynamicTools)
+
     expect(advertised).not.toContain('"properties":{"design":')
     const preparedReply = child.packets.find(
       (p) => p.id === 99 && 'result' in p
     )
+
     expect(JSON.stringify(preparedReply)).not.toMatch(/descriptor|points|props/)
   })
   it('reports invalid design references as tool failures without executing a batch or ending transport', async () => {
@@ -3713,8 +4015,10 @@ describe('native semantic design handoff', () => {
         ]
       })
     })
+
     spawn.mockReturnValue(child.child)
     const executeBatch = vi.fn()
+
     await expect(
       requestConfiguredAiActionBatch(
         { ...input, actions },
@@ -3731,6 +4035,7 @@ describe('native semantic design handoff', () => {
       toolCall: true,
       toolName: 'prepare_design',
       toolArguments: { draft },
+
       toolResultOutput: (summary) =>
         JSON.stringify({
           batchId: 'prepared',
@@ -3747,11 +4052,13 @@ describe('native semantic design handoff', () => {
           ]
         })
     })
+
     spawn.mockReturnValue(child.child)
     const result = await requestConfiguredAiActionBatch(
       { ...input, actions },
       { environment }
     )
+
     expect(result.actions[0].arguments).toMatchObject({
       design: {
         version: PREPARED_DESIGN_DELIVERY_VERSION,
@@ -3759,10 +4066,12 @@ describe('native semantic design handoff', () => {
       }
     })
     const { design } = result.actions[0].arguments as { design: unknown }
+
     expect(design).not.toHaveProperty('keyToId')
     const admitted = admitPreparedDesignDelivery(
       JSON.parse(JSON.stringify(design))
     )
+
     expect(admitted.entries).toHaveLength(2)
     expect(admitted.entries[0].descriptor).toMatchObject({
       type: draft.type,
@@ -3788,6 +4097,7 @@ it('returns invalid vector preparation to the model for correction before any ca
     toolArguments: { arguments: { imageArtifactId: 'unknown' } }
   })
   const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+
   await expect(
     requestConfiguredAiActionBatch(
       {
@@ -3806,6 +4116,7 @@ it('returns invalid vector preparation to the model for correction before any ca
   const reply = server.packets.find(
     (packet) => packet.id === 99 && 'result' in packet
   )
+
   expect(reply).toMatchObject({ result: { success: false } })
   expect(executeBatch).not.toHaveBeenCalled()
 })
@@ -3822,6 +4133,7 @@ it.each([
   async (toolName, toolArguments) => {
     const server = fakeServer({ toolCall: true, toolName, toolArguments })
     const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+
     await expect(
       requestConfiguredAiActionBatch(
         {
@@ -3841,6 +4153,7 @@ it.each([
     const reply = server.packets.find(
       (packet) => packet.id === 99 && 'result' in packet
     )
+
     expect(reply).toMatchObject({ result: { success: false } })
     expect(JSON.stringify(reply)).toContain('recoverable')
     expect(executeBatch).not.toHaveBeenCalled()
@@ -3855,6 +4168,7 @@ it('reports returned unavailable preparation as unsuccessful rather than usable 
       draft: { type: 'frame', name: 'Invalid size', width: -1, height: 10 }
     }
   })
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -3867,6 +4181,7 @@ it('reports returned unavailable preparation as unsuccessful rather than usable 
   const reply = server.packets.find(
     (packet) => packet.id === 99 && 'result' in packet
   )
+
   expect(reply).toMatchObject({ result: { success: false } })
 })
 
@@ -3887,6 +4202,7 @@ it('continues serial image tools beyond former image, operation and total-call c
     },
     { environment }
   )
+
   expect(result.batchId).toBe('batch-1')
   expect(server.packets.filter((p) => 'result' in p)).toHaveLength(170)
   expect(server.child.kill).toHaveBeenCalledOnce()
@@ -3900,6 +4216,7 @@ it('accepts cumulative protocol traffic beyond 32 MiB while bounding each messag
     (value) => ({ value }),
     (error) => ({ error })
   )
+
   await untilTurn(server.packets)
   for (let index = 0; index < 34; index++) {
     server.notify('item/completed', {
@@ -3907,6 +4224,7 @@ it('accepts cumulative protocol traffic beyond 32 MiB while bounding each messag
     })
     server.child.stderr.write('x'.repeat(1024 * 1024))
   }
+
   server.finish()
   expect(await result).toEqual({ value: batch })
   expect(server.child.kill).toHaveBeenCalledOnce()
@@ -3918,8 +4236,10 @@ it('keeps a registered review tool available after rejected input and accepts a 
     toolCall: true,
     toolName: 'define_design_criteria',
     toolArguments: { phase: 'plan' },
+
     followupTool: (reply) => {
       failures.push(reply)
+
       return {
         name: 'define_design_criteria',
         args: {
@@ -3932,8 +4252,10 @@ it('keeps a registered review tool available after rejected input and accepts a 
       }
     }
   })
+
   spawn.mockReturnValue(server.child)
   const executeBatch = vi.fn()
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -4006,10 +4328,13 @@ it('runs prepared checks through the provider without opening another model requ
       executeBatch
     }
   )
+
   await untilTurn(server.packets)
   let id = 200
+
   const call = async (tool: string, args: unknown) => {
     const current = ++id
+
     server.send({
       id: current,
       method: 'item/tool/call',
@@ -4030,9 +4355,12 @@ it('runs prepared checks through the provider without opening another model requ
       result: { success: boolean; contentItems: { text: string }[] }
     }
     const value = JSON.parse(packet.result.contentItems[0].text)
+
     expect(packet.result.success, JSON.stringify(value)).toBe(true)
+
     return value
   }
+
   try {
     await call('define_design_criteria', {
       phase: 'plan',
@@ -4058,6 +4386,7 @@ it('runs prepared checks through the provider without opening another model requ
         ]
       }
     })
+
     expect(
       await call('review_prepared_design', { artifactId: source.artifactId })
     ).toMatchObject({ status: 'pass', appearance: 'unverified', reused: false })
@@ -4107,6 +4436,7 @@ it('exposes review planning to the model and traces the operation without certif
       criteria: reviewCriteria(['Intentionally ugly face']),
       detailRequired: false
     },
+
     followupTool: () => ({
       name: 'execute_design_batch',
       args: {
@@ -4118,8 +4448,10 @@ it('exposes review planning to the model and traces the operation without certif
         ]
       }
     }),
+
     output: JSON.stringify(outcome)
   })
+
   spawn.mockReturnValue(server.child)
   const result = await requestConfiguredAiActionBatch(
     {
@@ -4133,6 +4465,7 @@ it('exposes review planning to the model and traces the operation without certif
     },
     {
       environment,
+
       executeBatch: async (batch) => ({
         context: {},
         actionResults: batch.actions.map(
@@ -4163,6 +4496,7 @@ it('exposes review planning to the model and traces the operation without certif
       })
     }
   )
+
   expect(result).toMatchObject({
     actions: [
       {
@@ -4175,11 +4509,13 @@ it('exposes review planning to the model and traces the operation without certif
   })
   const records = log.mock.calls.map(([value]) => JSON.parse(String(value)))
   const trace = records.filter((entry) => entry.event === 'ai_request_trace')
+
   for (const entry of trace.filter((event) =>
     event.stage.startsWith('provider_request_')
   )) {
     expect(entry.callId).toEqual(expect.any(String))
   }
+
   expect(
     trace
       .filter(
@@ -4208,8 +4544,10 @@ it('exposes review planning to the model and traces the operation without certif
     expect(entry.evidence.queueMs).toBeGreaterThanOrEqual(0)
     expect(entry.evidence.executionMs).toBeGreaterThanOrEqual(0)
   }
+
   expect(new Set(records.map((entry) => entry.requestId)).size).toBe(1)
   const evidence = JSON.stringify(trace)
+
   expect(evidence).toContain('Intentionally ugly face')
   expect(
     evidence,
@@ -4228,6 +4566,7 @@ it('exposes review planning to the model and traces the operation without certif
 it('bounds trace records and never lets a broken diagnostic sink stop the request', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const usage = createAiExecutionProfiler(input, 'selected-model')
+
   usage.trace('tool_completed', {
     tool: 'prepare_design',
     callId: 'bounded-call',
@@ -4257,6 +4596,7 @@ it('rejects unregistered interpreter and environment output', async () => {
   const firstRejected = expect(promise).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
   })
+
   await untilTurn(server.packets)
   server.notify('item/completed', {
     item: {
@@ -4273,6 +4613,7 @@ it('rejects unregistered interpreter and environment output', async () => {
   const rejected = expect(next).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
   })
+
   await untilTurn(forbidden.packets)
   forbidden.notify('item/completed', {
     item: {
@@ -4296,6 +4637,7 @@ it('returns executor failure and continues queued calls without replaying the fa
           rejectWrite = reject
         })
       }
+
       return {
         context: {},
         actionResults: value.actions.map((action) => ({
@@ -4320,6 +4662,7 @@ it('returns executor failure and continues queued calls without replaying the fa
     { environment, executeBatch }
   )
   const completed = expect(promise).resolves.toEqual(batch)
+
   await untilTurn(server.packets)
   for (let i = 0; i < 2; i++) {
     server.send({
@@ -4334,6 +4677,7 @@ it('returns executor failure and continues queued calls without replaying the fa
       }
     })
   }
+
   await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledTimes(1))
   rejectWrite(new Error('Canonical execution failed'))
   await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledTimes(2))
@@ -4343,6 +4687,7 @@ it('returns executor failure and continues queued calls without replaying the fa
     ).toHaveLength(2)
   )
   const replies = server.packets.filter((p) => p.id === 90 || p.id === 91)
+
   expect(replies).toMatchObject([
     { result: { success: false } },
     { result: { success: true } }
@@ -4360,6 +4705,7 @@ it('accepts native sleep lifecycle without executing actions or completing the t
   })
   const completed = expect(promise).resolves.toEqual(batch)
   let settled = false
+
   void promise.then(
     () => {
       settled = true
@@ -4374,6 +4720,7 @@ it('accepts native sleep lifecycle without executing actions or completing the t
       item: { type: 'sleep', id: 'native-pause', durationMs: 1000 }
     })
   }
+
   await new Promise((resolve) => setImmediate(resolve))
   expect(settled).toBe(false)
   expect(executeBatch).not.toHaveBeenCalled()
@@ -4392,6 +4739,7 @@ it.each([
   const rejected = expect(promise).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
   })
+
   await untilTurn(server.packets)
   server.notify('item/completed', { item: { type: 'sleep', ...fields } })
   await rejected
@@ -4403,6 +4751,7 @@ it('rejects unregistered interpreter output with an omitted namespace', async ()
   const completed = expect(promise).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
   })
+
   await untilTurn(server.packets)
   server.notify('item/completed', {
     item: {
@@ -4421,6 +4770,7 @@ it.each(['list_mcp_resources', 'list_mcp_resource_templates'])(
     const server = fakeServer({ hold: true })
     const promise = requestConfiguredAiActionBatch(input, { environment })
     const completed = expect(promise).resolves.toEqual(batch)
+
     await untilTurn(server.packets)
     server.notify('item/completed', {
       item: {
@@ -4447,6 +4797,7 @@ it.each([
   const rejected = expect(promise).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
   })
+
   await untilTurn(server.packets)
   server.notify('item/completed', {
     item: {
@@ -4463,9 +4814,11 @@ it.each([
 it('attributes overlapping tool intervals once and leaves provider gaps unattributed', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const clock = vi.spyOn(performance, 'now')
+
   try {
     clock.mockReturnValue(0)
     const usage = createAiExecutionProfiler(input, 'selected-model')
+
     clock.mockReturnValue(100)
     usage.trace('tool_started', { callId: 'a', tool: 'prepare_design' })
     clock.mockReturnValue(120)
@@ -4477,6 +4830,7 @@ it('attributes overlapping tool intervals once and leaves provider gaps unattrib
     clock.mockReturnValue(500)
     usage.finish('completed')
     const report = JSON.parse(String(log.mock.calls.at(-1)?.[0]))
+
     expect(report.timing).toEqual({
       observedToolAndResearchMs: 100,
       outsideToolAndResearchMs: 400
@@ -4490,8 +4844,10 @@ it('attributes overlapping tool intervals once and leaves provider gaps unattrib
 it('retains public activity from native notifications through the recorder into an ordered timeline', async () => {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({ hold: true })
+
   spawn.mockReturnValue(server.child)
   const completion = requestConfiguredAiActionBatch(input, { environment })
+
   await untilTurn(server.packets)
   server.notify('item/started', {
     item: { id: 'public-message', type: 'agentMessage' }
@@ -4502,6 +4858,7 @@ it('retains public activity from native notifications through the recorder into 
       delta
     })
   }
+
   server.notify('item/completed', {
     item: {
       id: 'public-message',
@@ -4563,6 +4920,7 @@ it('retains public activity from native notifications through the recorder into 
   for (let i = 0; i < 128; i++) {
     server.notify('item/agentMessage/delta', { itemId: 'partial', delta: 'x' })
   }
+
   server.finish()
   await expect(completion).resolves.toMatchObject(batch)
   const payloads = retainedPayloads
@@ -4571,6 +4929,7 @@ it('retains public activity from native notifications through the recorder into 
       (v): v is Record<string, unknown> =>
         !!v && (v as Record<string, unknown>).stage === 'native-public-activity'
     )
+
   expect(payloads).toContainEqual(
     expect.objectContaining({
       method: 'turn/plan/updated',
@@ -4598,6 +4957,7 @@ it('retains public activity from native notifications through the recorder into 
   )
   expect(JSON.stringify(payloads)).not.toMatch(/PRIVATE_CONTENT|FOREIGN_TEXT/)
   const deltas = payloads.filter((p) => p.itemId === 'partial')
+
   expect(deltas).toHaveLength(128)
   expect(deltas.reduce((n, p) => n + String(p.delta).length, 0)).toBe(128)
   const module = new URL(
@@ -4610,6 +4970,7 @@ it('retains public activity from native notifications through the recorder into 
     (ref: { path: string }) =>
       retainedPayloads[Number(ref.path.match(/fixture-(\d+)/)?.[1])].value
   )
+
   expect(
     timeline.activities.find(
       (p: { itemId: string; method: string }) =>
@@ -4629,6 +4990,7 @@ it('retains public activity from native notifications through the recorder into 
 it('rejects foreign-turn activity without retaining its content or replaying a tool', async () => {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({ hold: true })
+
   spawn.mockReturnValue(server.child)
   const executeBatch = vi.fn()
   const completion = requestConfiguredAiActionBatch(input, {
@@ -4638,6 +5000,7 @@ it('rejects foreign-turn activity without retaining its content or replaying a t
   const rejected = expect(completion).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
   })
+
   await untilTurn(server.packets)
   server.notify('item/agentMessage/delta', {
     turnId: 'foreign-turn',
@@ -4652,9 +5015,11 @@ it('rejects foreign-turn activity without retaining its content or replaying a t
 it('records reported provider item intervals without retaining reasoning content', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({ hold: true })
+
   spawn.mockReturnValue(server.child)
   try {
     const completion = requestConfiguredAiActionBatch(input, { environment })
+
     await untilTurn(server.packets)
     for (const method of ['item/started', 'item/completed']) {
       server.notify(method, {
@@ -4666,9 +5031,11 @@ it('records reported provider item intervals without retaining reasoning content
         }
       })
     }
+
     server.finish()
     await completion
     const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+
     expect(
       records.filter(
         (entry) =>
@@ -4696,9 +5063,11 @@ it('records reported provider item intervals without retaining reasoning content
 it('records native discovery lifecycle metadata without private output', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({ hold: true })
+
   spawn.mockReturnValue(server.child)
   try {
     const completion = requestConfiguredAiActionBatch(input, { environment })
+
     await untilTurn(server.packets)
     for (const method of ['item/started', 'item/completed']) {
       server.notify(method, {
@@ -4712,6 +5081,7 @@ it('records native discovery lifecycle metadata without private output', async (
         }
       })
     }
+
     server.finish()
     await completion
     const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
@@ -4720,6 +5090,7 @@ it('records native discovery lifecycle metadata without private output', async (
         entry.stage?.startsWith('provider_item_') &&
         entry.evidence?.kind === 'mcpToolCall'
     )
+
     expect(events).toHaveLength(2)
     expect(events[0]).toMatchObject({
       tool: 'list_mcp_resources',
@@ -4737,6 +5108,7 @@ it('records native discovery lifecycle metadata without private output', async (
 
 it('retains exact bounded discovery and field selectors for execution diagnosis', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     createAiExecutionProfiler(input, 'selected-model').trace('tool_started', {
       callId: 'query',
@@ -4748,6 +5120,7 @@ it('retains exact bounded discovery and field selectors for execution diagnosis'
       }
     })
     const record = JSON.parse(log.mock.calls[0][0])
+
     expect(record.evidence.arguments.names.items).toEqual([
       'api_core_getElementComputedData'
     ])
@@ -4760,6 +5133,7 @@ it('retains exact bounded discovery and field selectors for execution diagnosis'
 
 it('keeps batch work counts in diagnostics without retaining arbitrary input data', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   createAiExecutionProfiler(input, 'selected-model').trace('tool_completed', {
     tool: 'execute_design_batch',
     result: {
@@ -4768,6 +5142,7 @@ it('keeps batch work counts in diagnostics without retaining arbitrary input dat
     }
   })
   const record = JSON.parse(log.mock.calls[0][0])
+
   expect(record.evidence.result.batchSummary).toEqual({
     operationCount: 2,
     actionCount: 47
@@ -4777,6 +5152,7 @@ it('keeps batch work counts in diagnostics without retaining arbitrary input dat
 
 it('retains compact deferred review evidence without retaining geometry', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     createAiExecutionProfiler(input, 'selected-model').trace('tool_completed', {
       tool: 'review_drawing',
@@ -4792,6 +5168,7 @@ it('retains compact deferred review evidence without retaining geometry', () => 
       }
     })
     const report = JSON.parse(log.mock.calls[0][0])
+
     expect(report.evidence.result.pendingDetails).toBeDefined()
     expect(JSON.stringify(report)).toContain('Rear detail')
     expect(JSON.stringify(report)).not.toContain('do not retain')
@@ -4803,9 +5180,11 @@ it('retains compact deferred review evidence without retaining geometry', () => 
 it('records native discovery lifecycle and counts unseen notifications without retaining their bodies', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({ hold: true })
+
   spawn.mockReturnValue(server.child)
   try {
     const completion = requestConfiguredAiActionBatch(input, { environment })
+
     await untilTurn(server.packets)
     for (const method of ['item/started', 'item/completed']) {
       server.notify(method, {
@@ -4819,10 +5198,12 @@ it('records native discovery lifecycle and counts unseen notifications without r
         }
       })
     }
+
     server.notify('item/newPublicEvent', { content: 'PRIVATE_BODY' })
     server.finish()
     await completion
     const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+
     expect(records).toContainEqual(
       expect.objectContaining({
         stage: 'provider_item_started',
@@ -4854,6 +5235,7 @@ it('binds the call digest to the schema actually advertised to native discovery'
     toolName: 'describe_design_apis',
     toolArguments: { query: 'fill' }
   })
+
   spawn.mockReturnValue(server.child)
   try {
     await requestConfiguredAiActionBatch(
@@ -4867,6 +5249,7 @@ it('binds the call digest to the schema actually advertised to native discovery'
       },
       {
         environment,
+
         executeBatch: async () => ({ context: {}, actionResults: [] })
       }
     )
@@ -4878,6 +5261,7 @@ it('binds the call digest to the schema actually advertised to native discovery'
     const definition = advertised
       .flatMap((group) => group.tools)
       .find((tool) => tool.name === call.tool)
+
     expect(call.diagnostic.attribution.contractDigest).toBe(
       toolContractDigest(definition)
     )
@@ -4891,12 +5275,14 @@ it.each(['completed', 'cancelled'] as const)(
   async (outcome) => {
     const controller = new AbortController()
     const server = fakeServer({ hold: outcome === 'cancelled' })
+
     spawn.mockReturnValue(server.child)
     const request = requestLocalAiActionBatch(input, {
       model: 'selected-model',
       executable: 'codex',
       signal: controller.signal
     })
+
     if (outcome === 'cancelled') {
       await vi.waitFor(() =>
         expect(
@@ -4908,9 +5294,11 @@ it.each(['completed', 'cancelled'] as const)(
     } else {
       await request
     }
+
     const run = parseExecutionRecord(
       retainedRecords.map((record) => JSON.stringify(record)).join('\n')
     )
+
     expect(run.complete).toBe(true)
     expect(run.outcome).toBe(outcome)
     expect(run.timing.unattributedMs).toBe(0)
@@ -4957,11 +5345,15 @@ it.each(['execution', 'delivery'] as const)(
         if (stage === 'execution') {
           throw new Error('Reference decode failed')
         }
+
         const broken = structuredClone(receipt)
+
         broken.actionResults[0].result.image.dataUrl = 'broken'
+
         return JSON.stringify(broken)
       })
       .mockResolvedValue(JSON.stringify(receipt))
+
     vi.spyOn(referenceTools, 'createLocalReferenceTools').mockReturnValue({
       ...original,
       call
@@ -4983,6 +5375,7 @@ it.each(['execution', 'delivery'] as const)(
         })
         expect(receipt.message).toContain('Do not replay mutations')
       }
+
       return { name: 'import_reference_image', args }
     })
     const server = fakeServer({
@@ -4991,6 +5384,7 @@ it.each(['execution', 'delivery'] as const)(
       toolArguments: args,
       followupTool: followup
     })
+
     await expect(
       requestLocalAiActionBatch(input, {
         model: 'selected-model',
@@ -5005,12 +5399,14 @@ it.each(['execution', 'delivery'] as const)(
       .filter((event) =>
         ['tool_completed', 'tool_failed'].includes(event.stage)
       )
+
     expect(new Set(terminalEvents.map((event) => event.callId)).size).toBe(
       terminalEvents.length
     )
     const responses = server.packets.filter(
       (packet) => 'result' in packet
     ) as unknown as { result: { success: boolean; contentItems: unknown[] } }[]
+
     expect(responses[0].result.success).toBe(false)
     expect(responses[1].result).toMatchObject({
       success: true,
@@ -5028,7 +5424,9 @@ function createAiExecutionProfiler(
     provider: 'local-codex',
     effort: 'medium',
     purpose: 'drawing',
+
     log: (line) => console.info(line),
+
     ...options
   })
 }
@@ -5039,16 +5437,20 @@ it('publishes registered operation intent with explicit provenance', async () =>
     toolName: 'vtracer',
     toolArguments: { plan: { strategy: 'separate-background' } }
   })
+
   spawn.mockReturnValue(child.child)
   const onProgress = vi.fn()
+
   await requestConfiguredAiActionBatch(input, {
     environment,
     onProgress,
+
     executeBatch: async () => ({ actionResults: [], context: {} })
   })
   const running = onProgress.mock.calls
     .map(([event]) => event)
     .find((event) => event.tool === 'vtracer' && event.status === 'running')
+
   expect(running).toMatchObject({
     message: 'Separating drawing layers',
     activity: { kind: 'system', callId: 'call-1', sequence: expect.any(Number) }
@@ -5071,6 +5473,7 @@ it('retires authored stage context at root dispatch without claiming objective e
       }
     }
   })
+
   spawn.mockReturnValue(child.child)
   const projection = createAiActivityProjection({
     purpose: 'Original full request'
@@ -5081,6 +5484,7 @@ it('retires authored stage context at root dispatch without claiming objective e
     message?: string
     phase?: string
   }[] = []
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -5091,6 +5495,7 @@ it('retires authored stage context at root dispatch without claiming objective e
     {
       environment,
       executeBatch: vi.fn(),
+
       onProgress: (event) => {
         projection.append({
           attempt: 1,
@@ -5120,11 +5525,13 @@ it('retires authored stage context at root dispatch without claiming objective e
         : undefined
     )
     let label = 'Preparing the design'
+
     if (entry.status === 'completed') {
       label = 'Failed operation'
     } else if (['queued', 'admission'].includes(entry.phase ?? '')) {
       label = 'Processing your request'
     }
+
     expect(entry.label).toBe(label)
   }
 })
@@ -5133,6 +5540,7 @@ it.each(['success', 'failure'] as const)(
   'retires recorded commentary on principal dispatch and preserves concurrent ownership on %s',
   async (outcome) => {
     const server = fakeServer({ hold: true, manualToolReplies: true })
+
     spawn.mockReturnValue(server.child)
     const releases: (() => void)[] = []
     const executeBatch = vi.fn(
@@ -5141,6 +5549,7 @@ it.each(['success', 'failure'] as const)(
         if (outcome === 'failure') {
           throw new Error('Recorded operation failed')
         }
+
         return {
           context: {},
           actionResults: batch.actions.map((action) => ({
@@ -5173,6 +5582,7 @@ it.each(['success', 'failure'] as const)(
       {
         environment,
         executeBatch,
+
         onProgress: (event) => {
           events.push(event)
           projection.append({
@@ -5187,8 +5597,10 @@ it.each(['success', 'failure'] as const)(
         }
       }
     )
+
     await untilTurn(server.packets)
     server.notify('item/completed', { item: recordedPurpose.item })
+
     const call = (id: number) =>
       server.send({
         id,
@@ -5201,6 +5613,7 @@ it.each(['success', 'failure'] as const)(
           arguments: { arguments: { elementIds: ['shape'] } }
         }
       })
+
     call(801)
     call(802)
     server.notify('item/started', {
@@ -5227,6 +5640,7 @@ it.each(['success', 'failure'] as const)(
       id: 'next-stage',
       text: 'Inspect the corrected crown'
     }
+
     server.notify('item/completed', { item: next })
     await vi.waitFor(() => expect(releases).toHaveLength(2))
     releases[1]()
@@ -5241,6 +5655,7 @@ it.each(['success', 'failure'] as const)(
         result: { success: outcome === 'success' }
       })
     }
+
     server.notify('item/completed', {
       item: {
         id: 'overlapping-research',
@@ -5277,6 +5692,7 @@ it.each(['success', 'failure'] as const)(
         )
       ).toHaveLength(1)
     }
+
     expect(projection.result().current).toEqual({
       label: outcome === 'success' ? 'Completed operation' : 'Failed operation',
       message: 'Selecting elements'
@@ -5288,6 +5704,7 @@ it.each(['success', 'failure'] as const)(
 
 it('retires superseded commentary between native research and App calls without reopening closed research', async () => {
   const server = fakeServer({ hold: true, manualToolReplies: true })
+
   spawn.mockReturnValue(server.child)
   const projection = createAiActivityProjection({ purpose: 'Draw Taipei101' })
   const events: { tool: string; status: string }[] = []
@@ -5301,6 +5718,7 @@ it('retires superseded commentary between native research and App calls without 
     {
       environment,
       executeBatch: vi.fn(),
+
       onProgress: (event) => {
         events.push(event)
         projection.append({
@@ -5315,8 +5733,10 @@ it('retires superseded commentary between native research and App calls without 
       }
     }
   )
+
   await untilTurn(server.packets)
   server.notify('item/completed', { item: recordedPurpose.item })
+
   const research = (id: string, status: 'started' | 'completed') =>
     server.notify(`item/${status}`, {
       item: {
@@ -5326,6 +5746,7 @@ it('retires superseded commentary between native research and App calls without 
         action: { type: 'search', query: 'Taipei101' }
       }
     })
+
   research('research-a', 'started')
   research('research-b', 'started')
   research('research-a', 'completed')
@@ -5393,8 +5814,10 @@ it('records registered review intent without declaring a new authored stage', as
     toolName: 'review_drawing',
     toolArguments: {}
   })
+
   spawn.mockReturnValue(child.child)
   const onProgress = vi.fn()
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -5411,6 +5834,7 @@ it('records registered review intent without declaring a new authored stage', as
       (event) =>
         event.tool === 'review_drawing' && event.activity?.phase === 'queued'
     )
+
   expect(review).toMatchObject({
     activity: { kind: 'system' },
     message: 'Checking the requested details'
@@ -5424,6 +5848,7 @@ it('records registered review intent without declaring a new authored stage', as
       record.evidence?.tool === 'review_drawing' &&
       (record.evidence?.activity as { phase?: string })?.phase === 'queued'
   )?.evidence
+
   expect(recorded).toMatchObject({
     activity: review.activity,
     purpose: null,
@@ -5446,6 +5871,7 @@ it.each(['active', 'settled'] as const)(
         if (phase === 'active') {
           await held
         }
+
         return {
           context: {},
           actionResults: value.actions.map((action) => ({
@@ -5472,6 +5898,7 @@ it.each(['active', 'settled'] as const)(
     const rejected = expect(promise).rejects.toMatchObject({
       code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
     })
+
     await untilTurn(server.packets)
     const params = {
       threadId: 'thread-1',
@@ -5480,6 +5907,7 @@ it.each(['active', 'settled'] as const)(
       tool: 'select_elements',
       arguments: { arguments: { elementIds: ['shape'] } }
     }
+
     server.send({ id: 190, method: 'item/tool/call', params: { ...params } })
     await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledOnce())
     if (phase === 'settled') {
@@ -5487,6 +5915,7 @@ it.each(['active', 'settled'] as const)(
         expect(server.packets.some((packet) => packet.id === 190)).toBe(true)
       )
     }
+
     server.send({ id: 191, method: 'item/tool/call', params: { ...params } })
     release()
     await rejected
@@ -5503,6 +5932,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
       .toBuffer()
   ).toString('base64')}`
   const server = fakeServer({ hold: true, manualToolReplies: true })
+
   spawn.mockReturnValue(server.child)
   const running = requestConfiguredAiActionBatch(
     {
@@ -5529,6 +5959,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
     },
     {
       environment,
+
       executeBatch: async (request) => ({
         context: {},
         actionResults: request.actions.map(
@@ -5557,13 +5988,16 @@ it('delivers attachment identity and prepares selected uses before capture and c
       })
     }
   )
+
   await untilTurn(server.packets)
   let id = 200
   let discoveryBytes = 0
   let discoveryCalls = 0
   const stats = vi.spyOn(sharp.prototype, 'stats')
+
   const call = async (tool: string, args: unknown) => {
     const current = ++id
+
     server.send({
       id: current,
       method: 'item/tool/call',
@@ -5584,15 +6018,20 @@ it('delivers attachment identity and prepares selected uses before capture and c
       result: { success: boolean; contentItems: { text: string }[] }
     }
     const text = packet.result.contentItems[0].text
+
     if (tool === 'describe_design_apis') {
       discoveryCalls++
       discoveryBytes +=
         Buffer.byteLength(JSON.stringify(args)) + Buffer.byteLength(text)
     }
+
     const value = JSON.parse(text)
+
     expect(packet.result.success, JSON.stringify(value)).toBe(true)
+
     return value
   }
+
   try {
     for (const previous of recordedAttachmentHandoff.calls.slice(0, 2)) {
       const query = {
@@ -5602,6 +6041,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
         )
       }
       const delivered = await call('describe_design_apis', query)
+
       expect(
         delivered.tools.some(
           (tool: { name: string }) => tool.name === 'select_design_references'
@@ -5611,6 +6051,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
         'No prior validation call is required'
       )
     }
+
     await call('define_design_criteria', {
       phase: 'plan',
       method: 'Compare selected region',
@@ -5619,19 +6060,24 @@ it('delivers attachment identity and prepares selected uses before capture and c
       detailRequired: false
     })
     const turn = server.packets.find((packet) => packet.method === 'turn/start')
+
     if (!turn) {
       throw new Error('Missing initial turn')
     }
+
     const items = turn.params.input as {
       type: string
       text?: string
       url?: string
     }[]
+
     if (!items[0].text) {
       throw new Error('Missing initial text')
     }
+
     const attachment = JSON.parse(items[0].text).input.metadata
       .imageAttachments[0]
+
     expect(attachment.referenceId).toBe(
       `reference:${createHash('sha256')
         .update(Buffer.from(png.split(',')[1], 'base64'))
@@ -5643,27 +6089,34 @@ it('delivers attachment identity and prepares selected uses before capture and c
       .imageAttachments as Record<string, unknown>[]
     const metadataDelta = attachments.reduce((bytes, item) => {
       const { referenceId: _identity, validation: _validation, ...prior } = item
+
       return (
         bytes +
         Buffer.byteLength(JSON.stringify(item)) -
         Buffer.byteLength(JSON.stringify(prior))
       )
     }, 0)
+
     expect(items[1]).toEqual({ type: 'image', url: png })
     const thread = server.packets.find(
       (packet) => packet.method === 'thread/start'
     )
+
     if (!thread) {
       throw new Error('Missing thread instructions')
     }
+
     const instructions = thread.params.baseInstructions as string
+
     expect(instructions).toContain('select_design_references prepares')
     const guidance = instructions
       .split('\n')
       .find((line) => line.startsWith('Attachment metadata already'))
+
     if (!guidance) {
       throw new Error('Missing attachment guidance')
     }
+
     const baselineBytes = recordedAttachmentHandoff.calls.reduce(
       (bytes, call) => bytes + call.input.bytes + call.output.bytes,
       0
@@ -5673,6 +6126,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
       metadataDelta +
       Buffer.byteLength(guidance) -
       Buffer.byteLength(recordedAttachmentHandoff.priorGuidance)
+
     expect(discoveryCalls).toBe(2)
     // Compare mechanical preparation with its saved equivalent, separately from
     // newly complete tool contracts. Report the full acquisition cost below.
@@ -5681,6 +6135,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
       Buffer.byteLength(guidance) -
       Buffer.byteLength(recordedAttachmentHandoff.priorGuidance)
     const priorValidation = recordedAttachmentHandoff.calls[2]
+
     expect(preparationBytes).toBeLessThan(
       priorValidation.input.bytes + priorValidation.output.bytes
     )
@@ -5716,6 +6171,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
         }
       ]
     })
+
     expect(stats).toHaveBeenCalledOnce()
     expect(selected.referenceDecisions[0].uses[0].pixels).toEqual({
       width: 4,
@@ -5736,6 +6192,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
       channelTolerance: 0,
       maxDifferentFraction: 0
     })
+
     expect(result).toMatchObject({
       checkId: 'surface',
       resultId: 'image:surface',
@@ -5775,12 +6232,14 @@ it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
         ]
       }
     })
+
     spawn.mockReturnValue(child.child)
     const projection = createAiActivityProjection()
     const dispatched: unknown[] = []
     const executeBatch = vi.fn(
       async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
         dispatched.push(projection.result().current)
+
         return {
           actionResults: batch.actions.map((action) => ({
             actionId: action.id,
@@ -5791,6 +6250,7 @@ it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
         }
       }
     )
+
     await requestConfiguredAiActionBatch(
       {
         ...input,
@@ -5814,6 +6274,7 @@ it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
       {
         environment,
         executeBatch,
+
         onProgress: (event) => {
           projection.append({
             attempt: 1,
@@ -5834,6 +6295,7 @@ it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
       mixed: 'Running mixed operations',
       unknown: 'Running planned operations'
     }
+
     expect(dispatched).toEqual([
       { label: labels[effect], message: 'Inspect the prepared crown' }
     ])
@@ -5850,6 +6312,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     executable: 'codex',
     executeBatch
   })
+
   await untilTurn(server.packets)
   const groups = server.packets.find(
     (packet) => packet.method === 'thread/start'
@@ -5860,6 +6323,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   const thread = server.packets.find(
     (packet) => packet.method === 'thread/start'
   )?.params
+
   expect(thread?.baseInstructions).toContain('discover_knowledge')
   expect(thread?.baseInstructions).toContain(
     'Select the sufficient parent or child directly'
@@ -5871,6 +6335,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     'Known-value edits can proceed without a lookup'
   )
   const knowledge = groups.find((group) => group.name === 'design_knowledge')
+
   expect(knowledge?.tools.map((tool) => tool.name)).toEqual([
     'discover_knowledge',
     'read_knowledge'
@@ -5880,8 +6345,10 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     knowledge?.tools.find((tool) => tool.name === 'read_knowledge')?.description
   ).toContain('Do not read all siblings')
   let id = 800
+
   const call = async (tool: string, args: unknown, success = true) => {
     const current = ++id
+
     server.send({
       id: current,
       method: 'item/tool/call',
@@ -5901,9 +6368,12 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     ) as unknown as {
       result: { success: boolean; contentItems: { text: string }[] }
     }
+
     expect(packet.result.success).toBe(success)
+
     return JSON.parse(packet.result.contentItems[0].text)
   }
+
   try {
     const architecture = {
       ids: ['design.architectural-illustration'],
@@ -5914,22 +6384,26 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
       { contexts: ['invented-context'] },
       false
     )
+
     expect(invalid.recoverable).toBe(true)
     const missing = await call(
       'read_knowledge',
       { ids: ['missing.advice'] },
       false
     )
+
     expect(JSON.stringify(missing)).toContain('KNOWLEDGE_NOT_FOUND')
     const unrelated = await call(
       'read_knowledge',
       { ...architecture, contexts: ['docs-page'] },
       false
     )
+
     expect(JSON.stringify(unrelated)).toContain('KNOWLEDGE_NOT_APPLICABLE')
     const architecturalCatalog = await call('discover_knowledge', {
       contexts: architecture.contexts
     })
+
     expect(
       architecturalCatalog.entries.some(
         (entry: { id: string }) => entry.id === architecture.ids[0]
@@ -5942,6 +6416,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     const detail = architecturalCatalog.entries.find(
       (entry: { id: string }) => entry.id === method.children[0]
     )
+
     expect(method.description).toMatch(/without.*parameter walkthrough/i)
     expect(detail.description).toMatch(
       /only when.*local-coordinate conversion.*worked example/i
@@ -5957,10 +6432,12 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
         entry.id ===
         directory.children.find((child: string) => child.endsWith('.materials'))
     )
+
     architecture.ids = [
       materials.children.find((child: string) => child.endsWith('.correction'))
     ]
     const architecturalRead = await call('read_knowledge', architecture)
+
     expect(architecturalRead.alreadyDelivered).toBe(false)
     expect(
       architecturalRead.documents.map((doc: { target: string }) => doc.target)
@@ -5984,10 +6461,12 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
       ...architecture,
       rehydrate: true
     })
+
     expect(architecturalRestored.documents).toEqual(architecturalRead.documents)
     const metadata = await call('discover_knowledge', {
       contexts: ['docs-page']
     })
+
     expect(
       metadata.entries.some(
         (entry: { id: string }) => entry.id === 'design.docs-page'
@@ -6001,6 +6480,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
       ids: ['design.landing-page'],
       contexts: ['landing-page']
     })
+
     expect(JSON.stringify(docs)).toContain('copy actions near their examples')
     expect(JSON.stringify(landing)).toContain('Identify the audience')
     expect(
@@ -6047,6 +6527,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
       ids: ['design.docs-page'],
       contexts: ['docs-page']
     })
+
     expect(restored.alreadyDelivered).toBe(false)
     expect(JSON.stringify(restored)).toContain(
       'copy actions near their examples'
@@ -6072,6 +6553,7 @@ it('preserves an App completion failure after a valid final response without rep
       validateCompletion: validation
     }))
   const executeBatch = vi.fn()
+
   try {
     fakeServer()
     await expect(
@@ -6096,7 +6578,9 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
       actionResults: batch.actions.map((action) => {
         expect(action.name).toBe(AiActionNames.APPLY_PREPARED_DESIGN)
         const root = `part-${applied.length + 1}`
+
         applied.push(root)
+
         return {
           actionId: action.id,
           actionName: action.name,
@@ -6122,10 +6606,13 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
     },
     { model: 'selected-model', executable: 'codex', executeBatch }
   )
+
   await untilTurn(server.packets)
   let id = 800
+
   const call = async (args: unknown) => {
     const current = ++id
+
     server.send({
       id: current,
       method: 'item/tool/call',
@@ -6143,13 +6630,16 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
     const packet = server.packets.find((p) => p.id === current) as unknown as {
       result: { success: boolean; contentItems: { text: string }[] }
     }
+
     return {
       success: packet.result.success,
       value: JSON.parse(packet.result.contentItems[0].text)
     }
   }
+
   try {
     const failed = await call(recorded.input)
+
     expect(applied).toEqual(['part-1'])
     expect(failed.success).toBe(false)
     expect(failed.value, JSON.stringify(failed.value)).toMatchObject({
@@ -6158,6 +6648,7 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
       failedPart: 'base-details'
     })
     const rejected = failed.value.parts[1]
+
     expect(rejected.message).toContain('buttress-y0.vertices')
     expect(rejected.message).toContain('nonplanar face')
     expect(rejected, JSON.stringify(rejected)).toMatchObject({
@@ -6173,6 +6664,7 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
       },
       inspection: 'defer'
     })
+
     expect(failedRepair.success).toBe(false)
     expect(failedRepair.value).toMatchObject({
       recovery: 'correct_input',
@@ -6187,7 +6679,9 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
         if (child.type !== 'projected-face' || !('vertices' in child)) {
           return [child]
         }
+
         const vertices = child.vertices as { x: number; y: number; z: number }[]
+
         return vertices.slice(2).map((vertex, index) => ({
           ...child,
           key: `${child.key}-triangle-${index}`,
@@ -6208,6 +6702,7 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
       ],
       inspection: 'defer'
     })
+
     expect(repaired.success).toBe(false)
     expect(repaired.value.toolOutcome).toMatchObject({
       status: 'partial',
@@ -6235,16 +6730,19 @@ it.each(['malformed', 'unavailable'] as const)(
       tool?: string
       activity?: { callId?: string; parentCallId?: string }
     }[] = []
+
     const executeBatch = async (
       batch: AiActionBatch
     ): Promise<AiBatchReceipt> => {
       const action = batch.actions[0]
+
       actionIds.push(action.id)
       if (actionIds.length === 1) {
         await held
       } else if (mode === 'unavailable') {
         throw new Error('Second write receipt unavailable')
       }
+
       return {
         context: {},
         actionResults: [
@@ -6263,6 +6761,7 @@ it.each(['malformed', 'unavailable'] as const)(
         ]
       }
     }
+
     const request = requestLocalAiActionBatch(
       {
         ...input,
@@ -6278,10 +6777,13 @@ it.each(['malformed', 'unavailable'] as const)(
         model: 'selected-model',
         executable: 'codex',
         executeBatch,
+
         onProgress: (event) => progress.push(event)
       }
     )
+
     await untilTurn(server.packets)
+
     const sendCall = (id: number, tool: string, args: unknown) =>
       server.send({
         id,
@@ -6294,6 +6796,7 @@ it.each(['malformed', 'unavailable'] as const)(
           arguments: args
         }
       })
+
     const read = async (id: number) => {
       await vi.waitFor(() =>
         expect(server.packets.some((p) => p.id === id)).toBe(true)
@@ -6301,8 +6804,10 @@ it.each(['malformed', 'unavailable'] as const)(
       const packet = server.packets.find((p) => p.id === id) as unknown as {
         result: { contentItems: { text: string }[] }
       }
+
       return JSON.parse(packet.result.contentItems[0].text)
     }
+
     const draft = {
       type: 'group',
       name: 'Part',
@@ -6310,6 +6815,7 @@ it.each(['malformed', 'unavailable'] as const)(
         { type: 'rect', key: 'face', name: 'Face', width: 10, height: 10 }
       ]
     }
+
     try {
       sendCall(850, 'prepare_and_apply_design', {
         parts: [
@@ -6325,6 +6831,7 @@ it.each(['malformed', 'unavailable'] as const)(
       expect(server.packets.some((p) => p.id === 851)).toBe(false)
       release()
       const rejected = await read(851)
+
       expect(rejected, JSON.stringify(rejected)).toMatchObject({
         available: false,
         recovery: 'correct_input',
@@ -6332,6 +6839,7 @@ it.each(['malformed', 'unavailable'] as const)(
       })
       expect(rejected.executionResult?.batches ?? []).toEqual([])
       const result = await read(850)
+
       expect(result).toMatchObject({ status: 'partial', settlement: 'unknown' })
       expect(result.parts[1].code).toBe(
         mode === 'malformed'
@@ -6342,6 +6850,7 @@ it.each(['malformed', 'unavailable'] as const)(
         const receiptIds = result.parts[1].executionResult.batches.flatMap(
           (b: AiBatchReceipt) => b.actionResults.map((a) => a.actionId)
         )
+
         expect(receiptIds).toEqual([actionIds[1]])
       } else {
         expect(result.parts[1].executionResult).toBeUndefined()
@@ -6350,10 +6859,12 @@ it.each(['malformed', 'unavailable'] as const)(
         )
         expect(result.parts[1].settlement).toBe('unknown')
       }
+
       expect(JSON.stringify(result.parts[1])).not.toContain(actionIds[0])
       const batches = progress.filter(
         (e) => e.tool === 'app-batch' && e.activity?.parentCallId
       )
+
       expect(batches.length).toBeGreaterThan(0)
       expect(
         batches.every((e) => e.activity?.parentCallId !== 'concurrent-850')
@@ -6413,6 +6924,7 @@ it('retains the actual provider prefix on cancellation without dispatching the n
       executable: 'codex',
       executeBatch,
       signal: controller.signal,
+
       onProgress: (event) => {
         progress.push(event)
         if (event.tool === 'app-batch' && event.status === 'completed') {
@@ -6424,6 +6936,7 @@ it('retains the actual provider prefix on cancellation without dispatching the n
   const checked = expect(request).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_ABORTED'
   })
+
   await untilTurn(server.packets)
   const draft = {
     type: 'group',
@@ -6432,6 +6945,7 @@ it('retains the actual provider prefix on cancellation without dispatching the n
       { type: 'rect', key: 'face', name: 'Face', width: 10, height: 10 }
     ]
   }
+
   server.send({
     id: 880,
     method: 'item/tool/call',
@@ -6458,6 +6972,7 @@ it('retains the actual provider prefix on cancellation without dispatching the n
   const applied = progress.find(
     (event) => event.tool === 'app-batch' && event.status === 'completed'
   )
+
   expect(applied?.activity?.parentCallId).toEqual(expect.any(String))
   expect(applied?.activity?.parentCallId).not.toBe('cancelled-coordinator')
   expect(progress).toEqual(
@@ -6486,6 +7001,7 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
   const firstWrites = vi.fn(
     async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
       await held
+
       return {
         context: {},
         actionResults: batch.actions.map((action) => ({
@@ -6515,6 +7031,7 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
     executable: 'codex',
     executeBatch: firstWrites,
     signal: controller.signal,
+
     onProgress: (event) => {
       if (event.tool === 'app-batch' && event.status === 'completed') {
         controller.abort()
@@ -6524,13 +7041,16 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
   const cancelled = expect(firstRequest).rejects.toMatchObject({
     code: 'AI_MODEL_BACKEND_ABORTED'
   })
+
   await untilTurn(first.packets)
   const secondRequest = requestLocalAiActionBatch(requestInput, {
     model: 'selected-model',
     executable: 'codex',
     executeBatch: secondWrites
   })
+
   await untilTurn(second.packets)
+
   const send = (
     server: typeof first,
     id: number,
@@ -6548,6 +7068,7 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
         arguments: args
       }
     })
+
   const read = async (id: number) => {
     await vi.waitFor(() =>
       expect(second.packets.some((p) => p.id === id)).toBe(true)
@@ -6555,11 +7076,13 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
     const packet = second.packets.find((p) => p.id === id) as unknown as {
       result: { success: boolean; contentItems: { text: string }[] }
     }
+
     return {
       success: packet.result.success,
       value: JSON.parse(packet.result.contentItems[0].text)
     }
   }
+
   try {
     send(first, 900, 'prepare_and_apply_design', {
       parts: [
@@ -6573,6 +7096,7 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
       draft: recorded.input.parts[1].draft
     })
     const rejected = await read(900)
+
     expect(rejected.success).toBe(false)
     expect(rejected.value, JSON.stringify(rejected.value)).toMatchObject({
       recovery: 'correct_input',
@@ -6607,6 +7131,7 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
       }
     })
     const repaired = await read(901)
+
     expect(repaired.success).toBe(true)
     expect(repaired.value).toMatchObject({
       available: true,
@@ -6641,14 +7166,19 @@ it('rejects the recorded context selector at provider admission and preserves ex
   const store = createRetainedDesignContext(
     {
       getCurrentWorkspaceId: () => 'workspace',
+
       getSelectedElementIds: () => [],
+
       getElementChildren: children,
+
       getElementIdsInBounds: () => [],
+
       getElementMetadata: (id) => ({
         name: id,
         type: 'group',
         parentId: 'workspace'
       }),
+
       getElementComputedData: () => ({})
     },
     () => () => undefined
@@ -6689,10 +7219,13 @@ it('rejects the recorded context selector at provider admission and preserves ex
       executeBatch
     }
   )
+
   await untilTurn(server.packets)
   let id = 1200
+
   const call = async (args: unknown, success: boolean) => {
     const current = ++id
+
     server.send({
       id: current,
       method: 'item/tool/call',
@@ -6713,17 +7246,22 @@ it('rejects the recorded context selector at provider admission and preserves ex
       result: { success: boolean; contentItems: { text: string }[] }
     }
     const result = JSON.parse(packet.result.contentItems[0].text)
+
     expect(packet.result.success, JSON.stringify(result)).toBe(success)
+
     return result
   }
+
   try {
     const rejected = await call(recorded, false)
+
     expect(JSON.stringify(rejected)).toContain('filter')
     expect(JSON.stringify(rejected)).toContain('allowed fields:')
     expect(executeBatch).not.toHaveBeenCalled()
     expect(children).not.toHaveBeenCalled()
     const parent = await call({ scope: 'children' }, true)
     const serialized = JSON.stringify(parent)
+
     expect(serialized).toContain('snapshotId')
     const captured = await executeBatch.mock.results[0].value
     const reference = captured.actionResults[0].result as { snapshotId: string }
@@ -6736,6 +7274,7 @@ it('rejects the recorded context selector at provider admission and preserves ex
       },
       true
     )
+
     expect(JSON.stringify(refined)).toContain('base')
     expect(children).toHaveBeenCalledTimes(1)
     await call(recorded, false)
@@ -6755,9 +7294,11 @@ it('delivers canonical compact usage through the provider and consumes its actua
   const action = basicApiContracts.find(
     (item) => item.operation === 'hierarchy.moveElementsRelative'
   )
+
   if (!action) {
     throw new Error('Missing canonical anchor operation')
   }
+
   const followup = vi.fn((reply: Record<string, unknown>) => {
     const usage = (
       reply.apis as {
@@ -6765,6 +7306,7 @@ it('delivers canonical compact usage through the provider and consumes its actua
         usageGuide: { operationParameters: Record<string, unknown> }
       }[]
     )[0]
+
     expect(usage.usageGuide.operationParameters).toEqual(
       workflowUsageParameters(action.inputSchema)
     )
@@ -6774,6 +7316,7 @@ it('delivers canonical compact usage through the provider and consumes its actua
     expect(JSON.stringify(usage.usageGuide.operationParameters)).toContain(
       '"x-design-element-binding":"one"'
     )
+
     return {
       name: usage.invocationExample.invocation.tool,
       args: usage.invocationExample.invocation.arguments
@@ -6785,6 +7328,7 @@ it('delivers canonical compact usage through the provider and consumes its actua
     toolArguments: { names: [action.name], view: 'usage' },
     followupTool: followup
   })
+
   spawn.mockReturnValue(server.child)
   const executeBatch = vi.fn(async (value: AiActionBatch) => ({
     context: {},
@@ -6802,6 +7346,7 @@ it('delivers canonical compact usage through the provider and consumes its actua
     status: string
     activity?: { callId: string; outcome?: unknown }
   }[] = []
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -6815,7 +7360,12 @@ it('delivers canonical compact usage through the provider and consumes its actua
         })
       ]
     },
-    { environment, executeBatch, onProgress: (event) => progress.push(event) }
+    {
+      environment,
+      executeBatch,
+
+      onProgress: (event) => progress.push(event)
+    }
   )
   expect(
     progress.filter(
@@ -6857,6 +7407,7 @@ it.each([
       toolCall: true,
       toolName: 'describe_design_apis',
       toolArguments: { names: [name], view: 'usage' },
+
       followupTool: (reply) => {
         const usage = (
           reply.tools as {
@@ -6867,12 +7418,15 @@ it.each([
             inputFields: string[]
           }[]
         )[0]
+
         expect(usage.invocationExample.illustrative).toBe(true)
         const invocation = usage.invocationExample.invocation
+
         expect(invocation.tool).toBe(name)
         if (name !== 'define_design_criteria') {
           expect(usage.inputFields).toContain('/properties/draft')
         }
+
         return {
           name: invocation.tool,
           args: {
@@ -6884,12 +7438,14 @@ it.each([
         }
       }
     })
+
     spawn.mockReturnValue(server.child)
     const executeBatch = vi.fn(async (value: AiActionBatch) => ({
       context: {},
       actionResults: value.actions.map((action) => {
         expect(action.name).toBe(AiActionNames.APPLY_PREPARED_DESIGN)
         expect(action.arguments).toHaveProperty('design.entries')
+
         return {
           actionId: action.id,
           actionName: action.name,
@@ -6897,6 +7453,7 @@ it.each([
         }
       })
     }))
+
     await requestConfiguredAiActionBatch(
       {
         ...input,
@@ -6918,11 +7475,13 @@ it.each([
     const thread = server.packets.find(
       (packet) => packet.method === 'thread/start'
     )?.params
+
     expect(String(thread?.baseInstructions)).toContain('schemaPaths')
     const description =
       nativeToolDefinitions(thread).find(
         (tool) => tool.name === 'describe_design_apis'
       )?.description ?? ''
+
     expect(String(thread?.developerInstructions)).toContain(
       'Read bounded tool results directly'
     )
@@ -6946,10 +7505,12 @@ it.each([
       ) as unknown as {
         result: { contentItems: { text: string }[] }
       }
+
       expect(
         JSON.parse(packet.result.contentItems[0].text).toolOutcome
       ).toMatchObject({ status: 'partial', settlement: 'completed' })
     }
+
     expect(executeBatch).toHaveBeenCalledTimes(
       name === 'prepare_and_apply_design' ? 1 : 0
     )
@@ -6963,12 +7524,14 @@ it('replays saved full discovery and delivery recovery through the provider with
     toolCall: true,
     toolName: 'describe_design_apis',
     toolArguments: recordedDiscoveryDelivery.calls[0].input,
+
     followupTool: (reply) => {
       const tools = reply.tools as {
         name: string
         inputSchema: unknown
         definition: { coverage: string }
       }[]
+
       expect(tools.map((tool) => tool.name)).toEqual(
         recordedDiscoveryDelivery.calls[0].input.names
       )
@@ -6976,14 +7539,17 @@ it('replays saved full discovery and delivery recovery through the provider with
         true
       )
       firstSchema = tools[0].inputSchema
+
       return {
         name: 'describe_design_apis',
         args: recordedDiscoveryDelivery.calls[1].input
       }
     }
   })
+
   spawn.mockReturnValue(server.child)
   const executeBatch = vi.fn()
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -7007,8 +7573,10 @@ it('replays saved full discovery and delivery recovery through the provider with
   ) as unknown as {
     result: { success: boolean; contentItems: { text: string }[] }
   }
+
   expect(reply.result.success).toBe(true)
   const recovered = JSON.parse(reply.result.contentItems[0].text).tools[0]
+
   expect(recovered.inputSchema).toEqual(firstSchema)
   expect(recovered.definition).toMatchObject({
     coverage: 'full',
@@ -7073,6 +7641,7 @@ it.each([
       },
       { environment, executeBatch }
     )
+
     await untilTurn(server.packets)
     server.send({
       id: 99,
@@ -7101,6 +7670,7 @@ it.each([
     server.finish()
     await request
     const saved = retainedPayloads.find((p) => p.callId === 'item:delivery-1')
+
     expect(saved?.value).toMatchObject({
       stage: 'native-completed-result',
       status,
@@ -7120,9 +7690,11 @@ it.each([
         ]
       })
     }
+
     if (_name === 'invalid-text') {
       expect(JSON.stringify(saved)).not.toContain('opaque secret text')
     }
+
     expect(executeBatch).not.toHaveBeenCalled()
   }
 )
@@ -7149,6 +7721,7 @@ it('correlates interleaved native delivery results with their original calls and
     },
     { environment, executeBatch }
   )
+
   await untilTurn(server.packets)
   for (const [id, tool, args] of [
     [91, 'describe_design_apis', recordedDiscoveryDelivery.calls[0].input],
@@ -7173,6 +7746,7 @@ it('correlates interleaved native delivery results with their original calls and
       }
     })
   }
+
   await vi.waitFor(() =>
     expect(
       server.packets.filter((p) => p.id === 91 || p.id === 92)
@@ -7185,6 +7759,7 @@ it('correlates interleaved native delivery results with their original calls and
     const response = server.packets.find((p) => p.id === id) as unknown as {
       result: { contentItems: { type: string; text: string }[] }
     }
+
     server.notify('item/completed', {
       item: {
         type: 'dynamicToolCall',
@@ -7196,6 +7771,7 @@ it('correlates interleaved native delivery results with their original calls and
       }
     })
   }
+
   server.finish()
   await request
   for (const id of [91, 92]) {
@@ -7205,6 +7781,7 @@ it('correlates interleaved native delivery results with their original calls and
     const saved = retainedPayloads.find(
       (p) => p.callId === `item:delivery-${id}`
     )
+
     expect(saved?.value).toMatchObject({
       toolCallId: `delivery-${id}`,
       nativeThreadId: 'thread-1',
@@ -7212,6 +7789,7 @@ it('correlates interleaved native delivery results with their original calls and
       content: [{ value: JSON.parse(response.result.contentItems[0].text) }]
     })
   }
+
   expect(executeBatch).not.toHaveBeenCalled()
 })
 
@@ -7228,7 +7806,9 @@ it.each(['complete', 'abort', 'disconnect'] as const)(
       (value) => ({ value }),
       (error) => ({ code: error.code })
     )
+
     await untilTurn(server.packets)
+
     const line = (
       thread: string,
       turn: string,
@@ -7236,7 +7816,9 @@ it.each(['complete', 'abort', 'disconnect'] as const)(
       completed = false
     ) =>
       `2026-10-21T15:16:25.904Z DEBUG codex_core::stream_events_utils: session_loop{thread_id=${thread}}:turn{turn.id="${turn}"}:${completed ? 'handle_output_item_done:' : ''} Output item item_type="custom_tool_call" item_id="${id}"\n`
+
     const started = line('thread-1', 'turn-1', 'ctc_pending')
+
     server.child.stderr.write(started.slice(0, 71))
     server.child.stderr.write(started.slice(71))
     server.child.stderr.write(line('other-thread', 'turn-1', 'ctc_wrong'))
@@ -7251,7 +7833,9 @@ it.each(['complete', 'abort', 'disconnect'] as const)(
     } else {
       server.child.stdout.end()
     }
+
     const outcome = await result
+
     if (ending === 'complete') {
       expect(outcome).toEqual({ value: batch })
     } else {
@@ -7259,13 +7843,16 @@ it.each(['complete', 'abort', 'disconnect'] as const)(
         ending === 'abort'
           ? 'AI_MODEL_BACKEND_ABORTED'
           : 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+
       expect(outcome).toEqual({ code })
     }
+
     server.child.stderr.write(line('thread-1', 'turn-1', 'ctc_late'))
     const records = retainedRecords as {
       stage: string
       evidence: Record<string, unknown>
     }[]
+
     expect(
       records.filter((r) => r.stage === 'provider_output_item')
     ).toHaveLength(0)
@@ -7302,6 +7889,7 @@ it('delivers failed inspection lookup and successful narrow recovery through nat
     toolCall: true,
     toolName: 'describe_design_apis',
     toolArguments: inspectionDiscovery.query,
+
     followupTool: (reply) => {
       expect(reply.toolOutcome).toMatchObject({
         status: 'failed',
@@ -7312,14 +7900,17 @@ it('delivers failed inspection lookup and successful narrow recovery through nat
           narrowerQuery: { tool: string; arguments: unknown }
         }
       }[]
+
       return {
         name: tools[0].schemaResolution.narrowerQuery.tool,
         args: tools[0].schemaResolution.narrowerQuery.arguments
       }
     }
   })
+
   spawn.mockReturnValue(server.child)
   const executeBatch = vi.fn()
+
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -7339,12 +7930,14 @@ it('delivers failed inspection lookup and successful narrow recovery through nat
         result: { success: boolean; contentItems: { text: string }[] }
       }
   )
+
   expect(replies.map((r) => r.result.success)).toEqual([false, true])
   expect(
     JSON.parse(replies[1].result.contentItems[0].text).tools[0]
       .schemaFragments[0].path
   ).toBe('/properties/inspections')
   const thread = server.packets.find((p) => p.method === 'thread/start')?.params
+
   expect(
     nativeToolDefinitions(thread).find((t) => t.name === 'describe_design_apis')
       ?.description
@@ -7361,9 +7954,11 @@ describe('bounded evaluation reporting', () => {
           if (entry.callId === 'evaluation-report') {
             throw new Error('Storage unavailable')
           }
+
           return Array.prototype.push.call(retainedPayloads, entry)
         })
       }
+
       const controller = new AbortController()
       const executeBatch = vi.fn()
       const report = {
@@ -7386,10 +7981,12 @@ describe('bounded evaluation reporting', () => {
         hold: true,
         holdMethod: 'turn/start',
         manualToolReplies: true,
+
         onRequest(packet) {
           if (packet.method === 'turn/start') {
             turns++
             const turnId = turns === 1 ? 'turn-1' : 'report-turn'
+
             server.send({ id: packet.id, result: { turn: { id: turnId } } })
             if (turns === 2) {
               server.send({
@@ -7417,6 +8014,7 @@ describe('bounded evaluation reporting', () => {
               })
             }
           }
+
           if (packet.method === 'turn/interrupt') {
             queueMicrotask(() =>
               server.notify('turn/completed', {
@@ -7443,10 +8041,12 @@ describe('bounded evaluation reporting', () => {
           signal: controller.signal
         }
       )
+
       void result.catch(() => undefined)
       try {
         await vi.waitFor(() => expect(turns).toBe(2), { timeout: 1000 })
         const value = await result
+
         expect(value).toMatchObject({ actions: report.actions })
         expect(executeBatch).not.toHaveBeenCalled()
         expect(
@@ -7509,10 +8109,12 @@ it.each([
     const server = fakeServer({
       hold: true,
       holdMethod: mode === 'startup-timeout' ? 'initialize' : 'turn/start',
+
       onRequest(packet) {
         if (packet.method === 'turn/start') {
           turns++
           const turnId = turns === 1 ? 'turn-1' : 'report-turn'
+
           server.send({ id: packet.id, result: { turn: { id: turnId } } })
           if (turns === 1 && mode === 'early-completion') {
             server.finish()
@@ -7540,6 +8142,7 @@ it.each([
                       }
                     ]
                   }
+
             server.notify('item/completed', {
               turnId,
               item: {
@@ -7554,6 +8157,7 @@ it.each([
             })
           }
         }
+
         if (
           packet.method === 'turn/interrupt' &&
           mode !== 'interrupt-timeout'
@@ -7584,6 +8188,7 @@ it.each([
         signal: controller.signal
       }
     )
+
     if (mode === 'early-completion') {
       expect(await result).toMatchObject({
         explanation: 'Evaluation self-report - not artwork acceptance'
@@ -7593,14 +8198,18 @@ it.each([
       )
     } else {
       let code = 'AI_MODEL_BACKEND_TIMEOUT'
+
       if (mode === 'invalid-report') {
         code = 'AI_MODEL_BACKEND_INVALID_RESPONSE'
       }
+
       if (mode === 'cancel-report') {
         code = 'AI_MODEL_BACKEND_ABORTED'
       }
+
       await expect(result).rejects.toMatchObject({ code })
     }
+
     expect(executeBatch).not.toHaveBeenCalled()
     expect(server.child.kill).toHaveBeenCalled()
   }
@@ -7608,6 +8217,7 @@ it.each([
 
 it('does not begin inference for an expired evaluation window', async () => {
   const server = fakeServer({ hold: true })
+
   await expect(
     requestLocalAiActionBatch(
       {
@@ -7651,6 +8261,7 @@ it('delivers the request-local evaluation budget through actual native discovery
     }
   )
   const settled = request.catch((error) => error)
+
   try {
     await untilTurn(server.packets)
     server.send({
@@ -7674,6 +8285,7 @@ it('delivers the request-local evaluation budget through actual native discovery
     const text = JSON.stringify(
       server.packets.find((p) => p.id === 199)?.result
     )
+
     expect(text).toContain('2000 expanded objects')
     expect(text).not.toContain('10000 expanded objects')
   } finally {
@@ -7705,18 +8317,21 @@ it.each([
       toolCall: true,
       toolName: 'prepare_and_apply_design',
       toolArguments: scenario.arguments,
+
       followupTool: (reply) => {
         firstReply = reply
         sourceId = (
           reply.parts as
             { preparationInput?: { draftId?: string } }[] | undefined
         )?.[0]?.preparationInput?.draftId
+
         return {
           name: 'prepare_design',
           args: { repair: { draftId: sourceId, partition: 0 } }
         }
       }
     })
+
     spawn.mockReturnValue(server.child)
     const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
       context: {},
@@ -7726,6 +8341,7 @@ it.each([
             const { design } = action.arguments as {
               design: { entries: { descriptor: { id: string } }[] }
             }
+
             return {
               actionId: action.id,
               actionName: action.name,
@@ -7738,6 +8354,7 @@ it.each([
               }
             }
           }
+
           return {
             actionId: action.id,
             actionName: action.name,
@@ -7751,6 +8368,7 @@ it.each([
         }
       )
     }))
+
     await requestConfiguredAiActionBatch(
       {
         ...input,
@@ -7783,6 +8401,7 @@ it.each([
     ) as unknown as {
       result: { success: boolean; contentItems: { text: string }[] }
     }
+
     expect(firstReply, JSON.stringify(firstReply)).toMatchObject({
       status: scenario.captureUnavailable ? 'partial' : 'complete',
       toolOutcome: {
@@ -7810,6 +8429,7 @@ it.each([
     expect(sourceId).toEqual(expect.any(String))
     expect(packet.result.success, JSON.stringify(packet.result)).toBe(true)
     const prepared = JSON.parse(packet.result.contentItems[0].text)
+
     expect(prepared.preparationInput.draftId).toBe(sourceId)
     expect(prepared.elementCount).toBe(scenario.count)
     expect(prepared.applicable).toBe(true)
@@ -7847,6 +8467,7 @@ it.each([1, 40])(
     const executeBatch = vi.fn(async (batch: AiActionBatch) => {
       calls++
       await interrupted
+
       return {
         context: {},
         actionResults: batch.actions.map((action) => ({
@@ -7878,10 +8499,12 @@ it.each([1, 40])(
       hold: true,
       holdMethod: 'turn/start',
       manualToolReplies: true,
+
       onRequest(packet) {
         if (packet.method === 'turn/start') {
           turns++
           const turnId = turns === 1 ? 'turn-1' : 'report-turn'
+
           server.send({ id: packet.id, result: { turn: { id: turnId } } })
           if (turns === 1) {
             server.send({
@@ -7915,6 +8538,7 @@ it.each([1, 40])(
             })
           }
         }
+
         if (packet.method === 'turn/interrupt') {
           queueMicrotask(() => {
             server.notify('turn/completed', {
@@ -7925,6 +8549,7 @@ it.each([1, 40])(
         }
       }
     })
+
     spawn.mockReturnValue(server.child)
     await requestLocalAiActionBatch(
       {
@@ -7967,6 +8592,7 @@ it.each([1, 40])(
     const reportInput = server.packets.filter(
       (p) => p.method === 'turn/start'
     )[1].params.input
+
     expect(JSON.stringify(reportInput)).toContain('appliedElementCount')
     expect(JSON.stringify(reportInput)).toContain('33')
     expect(JSON.stringify(reportInput)).toContain('root')
@@ -7974,6 +8600,7 @@ it.each([1, 40])(
     expect(JSON.stringify(reportInput)).not.toContain('UNTRUSTED_OWNER_TEXT')
     const factText = (reportInput as { text: string }[])[1].text
     const facts = JSON.parse(factText.slice(factText.indexOf('{')))
+
     expect(facts.actionResultCount).toBe(actionCount)
     expect(facts.actionResults).toHaveLength(Math.min(32, actionCount))
     expect(facts.omittedActionResults).toBe(Math.max(0, actionCount - 32))
@@ -8003,6 +8630,7 @@ it('delivers real interrupted Core results through Runtime and the native report
   const { createAiActions } = await import('../../src/ai/actions')
   const { createAiTransactionRunner } = await import('../../src/ai/transaction')
   const { observeAiAction } = await import('../../src/ai/runtime-input')
+
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [
@@ -8031,13 +8659,16 @@ it('delivers real interrupted Core results through Runtime and the native report
       }
     }
   }
+
   core.load(initial)
   factory.transact.reset()
+
   const snapshot = () => ({
     version: '1.0.0',
     props: props.save(),
     sceneTree: scene.save()
   })
+
   let releaseOwner!: () => void
   const interrupted = new Promise<void>((resolve) => {
     releaseOwner = resolve
@@ -8053,9 +8684,11 @@ it('delivers real interrupted Core results through Runtime and the native report
   const reportAction = createAiActions().find(
     (entry) => entry.name === AiActionNames.REPORT_OUTCOME
   )
+
   if (!reportAction) {
     throw new Error('Missing report owner')
   }
+
   let turns = 0
   let ownerReceipt: AiBatchReceipt | undefined
   let dispatchedBatches = 0
@@ -8075,9 +8708,11 @@ it('delivers real interrupted Core results through Runtime and the native report
     hold: true,
     holdMethod: 'turn/start',
     manualToolReplies: true,
+
     onRequest(packet) {
       if (packet.method === 'turn/start') {
         const turnId = ++turns === 1 ? 'turn-1' : 'report-turn'
+
         server.send({ id: packet.id, result: { turn: { id: turnId } } })
         if (turns === 1) {
           server.send({
@@ -8110,6 +8745,7 @@ it('delivers real interrupted Core results through Runtime and the native report
           })
         } else {
           const evidence = (packet.params.input as { text: string }[])[1].text
+
           facts = JSON.parse(evidence.slice(evidence.indexOf('{')))
           reportSnapshot = snapshot()
           // The protocol peer echoes supplied facts; it is not a model and does
@@ -8141,6 +8777,7 @@ it('delivers real interrupted Core results through Runtime and the native report
           })
         }
       }
+
       if (packet.method === 'turn/interrupt') {
         server.notify('turn/completed', {
           turn: { id: 'turn-1', status: 'interrupted' }
@@ -8149,6 +8786,7 @@ it('delivers real interrupted Core results through Runtime and the native report
       }
     }
   })
+
   spawn.mockReturnValue(server.child)
   const deadline = Date.now() + 1500
   const runtime = createAiAgentRuntime({
@@ -8168,13 +8806,17 @@ it('delivers real interrupted Core results through Runtime and the native report
             model: 'selected-model',
             executable: 'codex',
             signal: options.signal,
+
             executeBatch: async (batch) => {
               dispatchedBatches++
               if (!options.executeBatch) {
                 throw new Error('Missing Runtime dispatcher')
               }
+
               const receipt = await options.executeBatch(batch)
+
               ownerReceipt = receipt as AiBatchReceipt
+
               return ownerReceipt
             }
           }
@@ -8188,11 +8830,13 @@ it('delivers real interrupted Core results through Runtime and the native report
       getMutationDeadline: () => deadline
     })
   })
+
   try {
     const result = await runtime.run({
       intent: 'Build facade',
       signal: new AbortController().signal
     })
+
     expect(ownerReceipt).toMatchObject({
       failure: { settlement: 'partial' },
       actionResults: [
@@ -8209,9 +8853,11 @@ it('delivers real interrupted Core results through Runtime and the native report
     if (!ownerReceipt) {
       throw new Error('Missing owner receipt')
     }
+
     const owner = ownerReceipt.actionResults[0].result as {
       compositionId: string
     }
+
     expect(facts?.actionResults).toEqual([
       expect.objectContaining({
         actionId: ownerReceipt.actionResults[0].actionId,
@@ -8248,12 +8894,14 @@ it('delivers real interrupted Core results through Runtime and the native report
 it('cancels attachment identity preparation before starting the native provider', async () => {
   fakeServer({})
   const controller = new AbortController()
+
   await expect(
     requestConfiguredAiActionBatch(
       { ...input, metadata: { imageAttachments: [await rasterAttachment()] } },
       {
         environment,
         signal: controller.signal,
+
         onProgress: (event) => {
           if (
             event.tool === 'reference_attachment_context' &&

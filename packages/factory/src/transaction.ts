@@ -47,7 +47,9 @@ export class TransactionRollbackError extends Error {
 
 export class TransactionValidationError extends Error {
   readonly validatorName: string
+
   readonly code: string
+
   readonly validationCause?: unknown
 
   constructor(

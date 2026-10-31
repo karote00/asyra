@@ -43,37 +43,49 @@ const fixture = () =>
     },
     'application'
   )
+
 const apis = (): PreparedDesignApis => ({
   getWorkspaceId: () => 'workspace',
+
   getElementMetadata: (id) =>
     id === 'existing'
       ? { type: 'custom-container', parentId: 'workspace' }
       : undefined,
+
   isContainerType: (type) => type === 'custom-container',
+
   isLocked: () => false,
+
   getElementType: () => undefined,
+
   create: vi.fn((entries) => entries.map((d) => d.id)),
   select: vi.fn()
 })
+
 const context = () => ({ signal: new AbortController().signal }) as never
+
 const mutable = () =>
   JSON.parse(JSON.stringify(deliverPreparedDesign(fixture())))
 
 describe('prepared editable design application', () => {
   it('records canonical phase work only during its own creation callbacks', async () => {
     const api = apis()
+
     api.create = (entries) => {
       emitBrowserDragPhase('scene-tree:element-batch:materialize', 4)
       emitDiagnosticCounter(
         'scene-tree:membership:inserted-items',
         entries.length
       )
+
       return entries.map((entry) => entry.id)
     }
+
     const result = await createPreparedDesignAction(api, async () => {
       emitBrowserDragPhase('scene-tree:element-batch:materialize', 1000)
       emitDiagnosticCounter('scene-tree:membership:inserted-items', 1000)
     }).execute({ design: deliverPreparedDesign(fixture()) }, context())
+
     expect(result).toMatchObject({
       timing: {
         canonicalWork: {
@@ -90,8 +102,10 @@ describe('prepared editable design application', () => {
     const api = apis()
     let inMutation = false
     let members = 0
+
     api.create = vi.fn((entries) => {
       expect(inMutation).toBe(true)
+
       return entries.map((d) => d.id)
     })
     api.select = vi.fn(() => expect(inMutation).toBe(true))
@@ -101,12 +115,15 @@ describe('prepared editable design application', () => {
       { design: deliverPreparedDesign(fixture()) },
       {
         signal: new AbortController().signal,
+
         runMutation: async (mutate, settled) => {
           members++
           inMutation = true
           try {
             const value = mutate()
+
             settled?.(value)
+
             return value
           } finally {
             inMutation = false
@@ -125,6 +142,7 @@ describe('prepared editable design application', () => {
       { design: deliverPreparedDesign(design) },
       context()
     )
+
     expect(api.create).toHaveBeenNthCalledWith(
       1,
       [design.entries[0].descriptor],
@@ -190,11 +208,13 @@ describe('prepared editable design application', () => {
       { design: deliverPreparedDesign(design) },
       context()
     )
+
     expect(result).toMatchObject({
       status: 'complete',
       timing: { elementCount: 1201, sliceCount: 39 }
     })
     const calls = vi.mocked(api.create).mock.calls
+
     expect(calls.flatMap(([entries]) => entries.map((e) => e.id))).toEqual(
       design.entries.map((e) => e.descriptor.id)
     )
@@ -232,8 +252,10 @@ describe('prepared editable design application', () => {
     }
   ])('rejects malformed whole artifacts before writing', async (change) => {
     const design = mutable()
+
     change(design)
     const api = apis()
+
     await expect(
       createPreparedDesignAction(api).execute({ design }, context())
     ).rejects.toThrow()
@@ -268,8 +290,10 @@ describe('prepared editable design application', () => {
           })
         )
       )
+
     const api = apis(),
       action = createPreparedDesignAction(api, async () => undefined)
+
     await expect(
       action.execute({ design: deliverPreparedDesign(make()) }, context())
     ).resolves.toMatchObject({ status: 'complete' })
@@ -277,6 +301,7 @@ describe('prepared editable design application', () => {
     const broken = make(),
       d = broken.entries[1].descriptor
     const segment = Object.keys(d.segments)[0]
+
     d.segments[segment].inControlId = 'foreign-control'
     await expect(
       action.execute({ design: deliverPreparedDesign(broken) }, context())
@@ -289,15 +314,18 @@ describe('prepared editable design application', () => {
     const paint = vi.fn(async () => {
       source.entries[2].descriptor.text = 'tampered'
     })
+
     await createPreparedDesignAction(api, paint).execute(
       { design: source },
       context()
     )
     expect(vi.mocked(api.create).mock.calls[2][0][0].text).toBe('Editable 世界')
     vi.mocked(api.create).mockClear()
+
     const switchWorkspace = async () => {
       api.getWorkspaceId = () => 'other-workspace'
     }
+
     await expect(
       createPreparedDesignAction(api, switchWorkspace).execute(
         { design: deliverPreparedDesign(fixture()) },
@@ -309,6 +337,7 @@ describe('prepared editable design application', () => {
   it('rejects collisions and locked workspaces before creating anything', async () => {
     const api = apis(),
       design = fixture()
+
     api.getElementType = () => 'rect'
     await expect(
       createPreparedDesignAction(api).execute(
@@ -329,6 +358,7 @@ describe('prepared editable design application', () => {
   it('does not remove completed work when a later creation fails', async () => {
     const api = apis(),
       design = fixture()
+
     api.create = vi
       .fn()
       .mockReturnValueOnce([design.rootId])
@@ -351,6 +381,7 @@ describe('prepared editable design application', () => {
     const action = createPreparedDesignAction(api, async () =>
       controller.abort()
     )
+
     await expect(
       action.execute({ design: deliverPreparedDesign(design) }, {
         signal: controller.signal
@@ -382,6 +413,7 @@ describe('prepared editable design application', () => {
         fill: '#ffffff'
       }))
     })
+
     await createPreparedDesignAction(api, paint).execute(
       { design: deliverPreparedDesign(design) },
       context()
@@ -399,6 +431,7 @@ it('registers prepared application with the conversation runtime', async () => {
     provider: { requestActionBatch: vi.fn() },
     permissionRules: { apply_prepared_design: 'allow' }
   })
+
   expect(
     input.actionDefinitions.some((a) => a.name === 'apply_prepared_design')
   ).toBe(true)
@@ -442,6 +475,7 @@ describe('mixed container prepared application', () => {
             ]
       })
       const api = apis()
+
       await createPreparedDesignAction(api, async () => undefined).execute(
         { design: deliverPreparedDesign(design) },
         context()
@@ -454,6 +488,7 @@ describe('mixed container prepared application', () => {
     const design = JSON.parse(
       JSON.stringify(prepareDesign({ type: 'group', name: 'Empty' }))
     )
+
     design.entries[0].descriptor.fills = [
       {
         id: `${design.rootId}-fill`,
@@ -468,6 +503,7 @@ describe('mixed container prepared application', () => {
       }
     ]
     const api = apis()
+
     await expect(
       createPreparedDesignAction(api).execute(
         { design: deliverPreparedDesign(design) },
@@ -481,8 +517,10 @@ describe('mixed container prepared application', () => {
 it('measures canonical creation separately from cooperative paint waits', async () => {
   let clock = 0
   const api = apis()
+
   api.create = vi.fn((entries) => {
     clock += 3
+
     return entries.map((d) => d.id)
   })
   const paint = vi.fn(async () => {
@@ -493,6 +531,7 @@ it('measures canonical creation separately from cooperative paint waits', async 
     { design: deliverPreparedDesign(fixture()) },
     context()
   )
+
   expect(result).toMatchObject({
     timing: {
       admissionMs: 0,
@@ -512,9 +551,11 @@ it('measures canonical creation separately from cooperative paint waits', async 
 it('yields to the host without requiring animation frames between prepared batches', async () => {
   const frame = vi.fn((callback: FrameRequestCallback) => {
     callback(0)
+
     return 1
   })
   const yieldToHost = vi.fn(async () => undefined)
+
   vi.stubGlobal('requestAnimationFrame', frame)
   vi.stubGlobal('scheduler', { yield: yieldToHost })
   try {
@@ -537,6 +578,7 @@ it('returns compact identity evidence without constructing full mapping receipts
     { design: deliverPreparedDesign(fixture()), response: 'compact' },
     context()
   )
+
   expect(result).toMatchObject({
     status: 'complete',
     compositionId: fixture().rootId,
@@ -558,6 +600,7 @@ it.each(['frame', 'group'])(
       children: []
     })
     const api = apis()
+
     await createPreparedDesignAction(api).execute(
       { design: deliverPreparedDesign(design) },
       context()
@@ -572,8 +615,10 @@ it.each(['frame', 'group'])(
 
 it('rejects a forged root identity before any canonical write', async () => {
   const design = mutable()
+
   design.rootId = 'not-the-created-element'
   const api = apis()
+
   await expect(
     createPreparedDesignAction(api).execute({ design }, context())
   ).rejects.toThrow()
@@ -594,6 +639,7 @@ it('appends a ready part to an existing custom container without recreating earl
     },
     context()
   )
+
   expect(api.create).toHaveBeenNthCalledWith(
     1,
     [part.entries[0].descriptor],
@@ -614,12 +660,15 @@ it.each(['missing', 'leaf', 'outside', 'locked', 'cycle'])(
   async (kind) => {
     const api = apis()
     let parentId = 'workspace'
+
     if (kind === 'outside') {
       parentId = 'other'
     }
+
     if (kind === 'cycle') {
       parentId = 'existing'
     }
+
     api.getElementMetadata = (id) =>
       id === 'existing' && kind !== 'missing'
         ? {
@@ -639,6 +688,7 @@ it.each(['missing', 'leaf', 'outside', 'locked', 'cycle'])(
 )
 it('rechecks a continuation parent after each cooperative slice', async () => {
   const api = apis()
+
   await expect(
     createPreparedDesignAction(api, async () => {
       api.getElementMetadata = () => undefined
@@ -676,11 +726,14 @@ const sharedDesign = () => {
       }
     ]
   })
+
   return session.resolve(receipt.artifactId)
 }
+
 it('applies prepared shared child IDs without expanding or redefining them', async () => {
   const design = sharedDesign(),
     api = apis()
+
   await createPreparedDesignAction(api, async () => undefined).execute(
     { design: deliverPreparedDesign(design) },
     context()
@@ -696,20 +749,26 @@ it.each(['missing', 'element', 'forward', 'duplicate'])(
     const design = JSON.parse(JSON.stringify(sharedDesign()))
     const first = design.entries[1].descriptor,
       second = design.entries[2].descriptor
+
     if (kind === 'missing') {
       second.fills = ['unknown-fill']
     }
+
     if (kind === 'element') {
       second.fills = [design.rootId]
     }
+
     if (kind === 'forward') {
       second.fills = [{ ...first.fills[0], id: second.id + '-fill' }]
       first.fills = [second.id + '-fill']
     }
+
     if (kind === 'duplicate') {
       second.fills = structuredClone(first.fills)
     }
+
     const api = apis()
+
     await expect(
       createPreparedDesignAction(api).execute(
         { design: deliverPreparedDesign(design) },
@@ -747,11 +806,15 @@ it.each([false, true])(
           for (const entry of entries) {
             records.set(entry.id, { type: entry.type, parentId, childCount: 0 })
           }
+
           const parent = records.get(parentId)
+
           if (!parent) {
             throw new Error('Missing canonical parent')
           }
+
           parent.childCount += entries.length
+
           return entries.map((entry) => entry.id)
         })
     ]
@@ -759,13 +822,16 @@ it.each([false, true])(
       throw new Error('Full growing parent snapshot is not an admission input')
     })
     let yields = 0
+
     try {
       const promise = createPreparedDesignAction(undefined, async () => {
         yields++
         const parent = records.get('existing')
+
         if (!parent) {
           throw new Error('Missing canonical parent')
         }
+
         if (lockDuringYield) {
           parent.lock = true
         }
@@ -773,6 +839,7 @@ it.each([false, true])(
         { design: deliverPreparedDesign(fixture()), parentId: 'existing' },
         context()
       )
+
       if (lockDuringYield) {
         await expect(promise).rejects.toMatchObject({
           receipt: { settlement: 'partial' }
@@ -780,6 +847,7 @@ it.each([false, true])(
       } else {
         expect(await promise).toMatchObject({ status: 'complete' })
       }
+
       expect(yields).toBeGreaterThan(0)
       expect(snapshot).not.toHaveBeenCalled()
     } finally {
@@ -803,6 +871,7 @@ it('rejects changed reviewed attachment evidence at browser admission before any
     () => 0,
     evidence
   )
+
   await expect(
     action.execute(
       { design: deliverPreparedDesign(fixture()), attachmentEvidence },
@@ -831,6 +900,7 @@ it('rejects changed reviewed attachment evidence at browser admission before any
   expect(api.create).not.toHaveBeenCalled()
   api.create = vi.fn((entries) => {
     evidence.isCurrent.mockReturnValue(false)
+
     return entries.map((entry) => entry.id)
   })
   evidence.isCurrent.mockReturnValue(true)
@@ -852,6 +922,7 @@ it('checks reviewed evidence inside the mutation callback after queue admission'
     () => 0,
     { isCurrent: () => current }
   )
+
   await expect(
     action.execute(
       {
@@ -864,8 +935,10 @@ it('checks reviewed evidence inside the mutation callback after queue admission'
       },
       {
         signal: new AbortController().signal,
+
         runMutation: async (mutate) => {
           current = false
+
           return mutate()
         }
       }
@@ -877,9 +950,11 @@ it('checks reviewed evidence inside the mutation callback after queue admission'
 it('continues budget partitions in one canonical root and refuses duplicate application', async () => {
   const session = createDesignPreparationSession()
   const draftId = session.retainRejectedDraft(recoveryFixture.input.draft)
+
   if (!draftId) {
     throw new Error('Missing retained source')
   }
+
   const signal = new AbortController().signal
   const firstRepair = { draftId, partition: 0 }
   const first = await session.prepareAsync(
@@ -904,13 +979,18 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
   const parents = new Map<string, string>()
   const api: PreparedDesignApis = {
     ...apis(),
+
     getElementType: (id) => entries.get(id)?.type,
+
     getElementMetadata: (id) =>
       entries.has(id)
         ? { type: entries.get(id)?.type, parentId: parents.get(id) }
         : undefined,
+
     getPlacement: (id) => entries.get(id),
+
     isContainerType: (type) => type === 'group',
+
     create: (ds, parent) => {
       for (const d of ds) {
         entries.set(d.id, {
@@ -920,6 +1000,7 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
         })
         parents.set(d.id, parent)
       }
+
       return ds.map((d) => d.id)
     }
   }
@@ -931,6 +1012,7 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
     undefined,
     { capture }
   )
+
   await action.execute(
     { design: deliverPreparedDesign(session.resolve(first.artifactId)) },
     context()
@@ -938,28 +1020,36 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
   const rootId = session.resolve(first.artifactId).rootId
   // Model canonical Group bounds normalization, not a user translation.
   const root = entries.get(rootId)
+
   if (!root) {
     throw new Error('Missing root')
   }
+
   root.x -= 200
   root.y -= 100
   for (const [id, parent] of parents) {
     if (parent === rootId) {
       const member = entries.get(id)
+
       if (!member) {
         throw new Error('Missing member')
       }
+
       member.x += 200
       member.y += 100
     }
   }
+
   const expectedSize = entries.size
   const anchorId = session.resolve(later.artifactId).continuation?.anchor.id
   const anchor = anchorId ? entries.get(anchorId) : undefined
+
   if (!anchor) {
     throw new Error('Missing continuation anchor')
   }
+
   const originalRotation = anchor.rotation
+
   anchor.rotation = (originalRotation ?? 0) + 0.1
   await expect(
     action.execute(
@@ -998,6 +1088,7 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
     { design: deliverPreparedDesign(session.resolve(later.artifactId)) },
     context()
   )
+
   expect(result.compositionId).toBe(rootId)
   expect(capture).toHaveBeenCalledWith(
     rootId,
@@ -1037,14 +1128,18 @@ it.each(['compact', 'full'] as const)(
         { design: deliverPreparedDesign(design), response },
         {
           signal: controller.signal,
+
           runMutation: async (write, settled) => {
             const result = write()
+
             settled?.(result)
+
             return result
           }
         }
       )
       .catch((error: unknown) => error)
+
     expect(failure).toMatchObject({
       receipt: {
         settlement: 'partial',
@@ -1072,6 +1167,7 @@ it.each(['compact', 'full'] as const)(
 
 it('retains all acknowledged writes when final selection fails without marking delivery complete', async () => {
   const api = apis()
+
   api.select = vi.fn(() => {
     throw new Error('Selection interrupted')
   })

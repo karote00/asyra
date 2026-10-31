@@ -33,11 +33,14 @@ const fixture = () => {
     fill: vi.fn(() => true),
     stroke: vi.fn(() => true)
   }
+
   return { edit: createDesignElementEditor(apis), apis, records, computed }
 }
+
 describe('targeted canonical design edits', () => {
   it('updates literal native text and geometry only on the requested object', () => {
     const { edit, apis } = fixture()
+
     expect(
       edit({
         elementId: 'title',
@@ -57,6 +60,7 @@ describe('targeted canonical design edits', () => {
   })
   it('omits unchanged values and routes name and primary fill to canonical owners', () => {
     const { edit, apis } = fixture()
+
     edit({
       elementId: 'title',
       name: 'Heading',
@@ -81,6 +85,7 @@ describe('targeted canonical design edits', () => {
     { unexpected: true }
   ])('rejects the complete invalid request before writing: %j', (patch) => {
     const { edit, apis } = fixture()
+
     expect(() => edit({ elementId: 'title', ...patch } as never)).toThrow()
     for (const fn of [apis.properties, apis.rename, apis.fill, apis.stroke]) {
       expect(fn).not.toHaveBeenCalled()
@@ -88,6 +93,7 @@ describe('targeted canonical design edits', () => {
   })
   it('checks inherited locks and missing ancestors', () => {
     const { edit, records, apis } = fixture()
+
     records.group.lock = true
     expect(() => edit({ elementId: 'title', name: 'Changed' })).toThrow(
       'locked'
@@ -100,6 +106,7 @@ describe('targeted canonical design edits', () => {
   })
   it('does not claim an unsupported typography field on a shape', () => {
     const { edit, records, apis } = fixture()
+
     records.title.type = 'rect'
     expect(() =>
       edit({ elementId: 'title', properties: { text: 'No' } })
@@ -108,6 +115,7 @@ describe('targeted canonical design edits', () => {
   })
   it('preserves completed canonical writes when a later owner fails', () => {
     const { edit, apis } = fixture()
+
     apis.fill.mockImplementation(() => {
       throw new Error('style failed')
     })

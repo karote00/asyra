@@ -95,6 +95,7 @@ describe('vector render strategy', () => {
     expect(points.end).toMatchObject({ x: 100, y: 70 })
 
     const retainedLocalStart = getVectorRenderLocalPoint(graphic, points.start)
+
     expect(retainedLocalStart).toEqual({ x: 0, y: 0 })
     expect(graphic.sourceToLocal(points.start)).toEqual({ x: 0, y: 0 })
     expect(graphic.localToSource({ x: 0, y: 0 })).toEqual({
@@ -104,6 +105,7 @@ describe('vector render strategy', () => {
     if (!retainedLocalStart) {
       throw new Error('The retained render must expose the projected point')
     }
+
     expect(getVectorRenderWorkspacePoint(graphic, retainedLocalStart)).toEqual({
       x: points.start.x,
       y: points.start.y
@@ -113,6 +115,7 @@ describe('vector render strategy', () => {
     expect(graphic.toGlobal(retainedLocalStart)).toEqual({ x: 220, y: 130 })
 
     const freshGraphic = new RenderGraphics()
+
     VECTOR_RENDER_STRATEGY(freshGraphic, {
       ...data,
       x: 220,
@@ -122,10 +125,12 @@ describe('vector render strategy', () => {
       freshGraphic,
       points.start
     )
+
     expect(freshLocalStart).toEqual(retainedLocalStart)
     if (!freshLocalStart) {
       throw new Error('The rebuilt render must expose the projected point')
     }
+
     expect(freshGraphic.toGlobal(freshLocalStart)).toEqual({
       x: 220,
       y: 130
@@ -286,6 +291,7 @@ describe('vector render strategy', () => {
     } as never)
 
     const localBounds = getElementGeometryLocalBounds(graphic)
+
     expect(localBounds.x).toBe(0)
     expect(localBounds.y).toBe(0)
     expect(localBounds.width).toBe(200)
@@ -462,6 +468,7 @@ describe('vector render strategy', () => {
 
   it('projects stable Render-local points through the Vector and Group transforms', () => {
     const group = new RenderContainer({ x: 142, y: 158 })
+
     ;(
       group as RenderContainer & {
         __renderElementType?: string
@@ -568,6 +575,7 @@ describe('vector render strategy', () => {
       segments: 0,
       networks: 0
     }
+
     const trackOwnKeys = <T extends object>(
       value: T,
       key: keyof typeof ownKeyReads
@@ -575,9 +583,11 @@ describe('vector render strategy', () => {
       new Proxy(value, {
         ownKeys: (target) => {
           ownKeyReads[key] += 1
+
           return Reflect.ownKeys(target)
         }
       })
+
     const graphic = new RenderGraphics()
 
     VECTOR_RENDER_STRATEGY(graphic, {
@@ -763,16 +773,20 @@ describe('vector render strategy', () => {
     const render = new Render({ engine })
     const app = await render.init(320, 240, 0xffffff)
     const appRender = vi.fn()
+
     app.render = appRender
     render.flushFrame()
     appRender.mockClear()
 
     const vectorType = VECTOR_COMPONENT_DEFINITION.type
     const previousStrategy = renderStrategyRegistry.get(vectorType)
+
     if (previousStrategy) {
       renderStrategyRegistry.unregister(vectorType)
     }
+
     const strategy = vi.fn(VECTOR_RENDER_STRATEGY)
+
     renderStrategyRegistry.register(vectorType, strategy)
 
     const createVector = (
@@ -843,6 +857,7 @@ describe('vector render strategy', () => {
         createVector('slice-b', 30),
         createVector('slice-c', 60)
       ]
+
       firstSlice.forEach((vector) => render.addElement(vector))
       expect(strategy.mock.calls.map(([, data]) => data)).toEqual(firstSlice)
 
@@ -856,6 +871,7 @@ describe('vector render strategy', () => {
         createVector('slice-d', 90),
         createVector('slice-e', 120)
       ]
+
       secondSlice.forEach((vector) => render.addElement(vector))
       expect(strategy.mock.calls.map(([, data]) => data)).toEqual([
         ...firstSlice,
@@ -872,6 +888,7 @@ describe('vector render strategy', () => {
       if (previousStrategy) {
         renderStrategyRegistry.register(vectorType, previousStrategy)
       }
+
       render.dispose()
     }
   })

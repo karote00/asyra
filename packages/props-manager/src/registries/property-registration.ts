@@ -54,8 +54,11 @@ export type PropertyRegistrationUnregisterResult =
 
 export class PropertyRegistrationError extends Error {
   readonly code: PropertyRegistrationErrorCode
+
   readonly type: string
+
   readonly propertyIds: readonly string[]
+
   readonly result: PropertyRegistrationInUseFailure
 
   constructor(result: PropertyRegistrationInUseFailure) {
@@ -96,6 +99,7 @@ export const unregisterPropertyRegistration = (
   }
 
   const propertyIds = manager.getPropertyIdsByType(type)
+
   if (propertyIds.length > 0) {
     throw new PropertyRegistrationError({
       ok: false,

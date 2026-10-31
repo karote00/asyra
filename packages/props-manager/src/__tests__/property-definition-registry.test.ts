@@ -11,6 +11,7 @@ describe('ElementPropertyRegistry', () => {
       }
     ).registry
     const allProps = Array.from(registry.entries())
+
     allProps.forEach(([, registered]) => {
       Array.from(registered.componentTypes).forEach((type) => {
         elementPropertyRegistry.unregisterComponent(type)
@@ -29,6 +30,7 @@ describe('ElementPropertyRegistry', () => {
 
     expect(elementPropertyRegistry.has('count')).toBe(true)
     const properties = elementPropertyRegistry.getPropertiesForComponent('star')
+
     expect(properties).toHaveLength(1)
     expect(properties[0].name).toBe('count')
   })
@@ -100,6 +102,7 @@ describe('ElementPropertyRegistry', () => {
     elementPropertyRegistry.register(propDef, 'polygon')
 
     const retrieved = elementPropertyRegistry.get('sides')
+
     expect(retrieved).toBeDefined()
     expect(retrieved?.name).toBe('sides')
     expect(retrieved?.defaultValue).toBe(6)
@@ -119,6 +122,7 @@ describe('ElementPropertyRegistry', () => {
 
     const properties =
       elementPropertyRegistry.getPropertiesForComponent('circle')
+
     expect(properties).toHaveLength(0)
     expect(elementPropertyRegistry.has('radius')).toBe(false)
   })
@@ -137,6 +141,7 @@ describe('ElementPropertyRegistry', () => {
 
     expect(elementPropertyRegistry.has('dimension')).toBe(true)
     const ovalProps = elementPropertyRegistry.getPropertiesForComponent('oval')
+
     expect(ovalProps).toHaveLength(1)
   })
 
@@ -159,6 +164,7 @@ describe('ElementPropertyRegistry', () => {
     elementPropertyRegistry.register(prop3, 'star')
 
     const properties = elementPropertyRegistry.getPropertiesForComponent('star')
+
     expect(properties).toHaveLength(3)
   })
 

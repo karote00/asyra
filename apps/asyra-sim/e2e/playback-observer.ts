@@ -27,12 +27,14 @@ export async function observePlaybackFeedback(
         if (!notice || !checked || !slider) {
           return
         }
+
         if (
           expected.kind &&
           notice.getAttribute('data-kind') !== expected.kind
         ) {
           return
         }
+
         if (
           expected.time !== undefined &&
           Number(checked[1]) !== expected.time
@@ -48,7 +50,9 @@ export async function observePlaybackFeedback(
           text: notice.textContent ?? ''
         })
       }
+
       const observer = new MutationObserver(read)
+
       observer.observe(document.body, {
         subtree: true,
         childList: true,
@@ -58,6 +62,7 @@ export async function observePlaybackFeedback(
       })
       read()
     })
+
     Object.assign(window, { playbackFeedbackObservation: observation })
   }, expected)
 

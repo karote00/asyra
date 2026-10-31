@@ -10,6 +10,7 @@ const identity = () => ({
   position: [0, 0, 0] as const,
   rotation: [0, 0, 0, 1] as const
 })
+
 function fixture() {
   const sourceOwner = new WalkingRobotSourceOwner()
   const source = sourceOwner.prepare(
@@ -19,7 +20,9 @@ function fixture() {
     })
   )
   const mountOwner = new WalkingMountedCrateOwner(sourceOwner)
+
   const evidence = (id: string) => ({ kind: 'synthetic', id, label: id })
+
   let crate: ReturnType<typeof mountOwner.prepare> | undefined =
     mountOwner.prepare(source, {
       format: 'walking-mounted-crate-request/1',
@@ -34,6 +37,7 @@ function fixture() {
     })
   const owner = new WalkingRobotEnvelopeOwner(sourceOwner, {
     owner: mountOwner,
+
     getCurrent: () => crate
   })
   const request = {
@@ -42,6 +46,7 @@ function fixture() {
     crate: { kind: 'mounted' as const, product: crate },
     load: { kind: 'empty' as const, id: 'empty' }
   }
+
   return {
     sourceOwner,
     source,
@@ -49,13 +54,16 @@ function fixture() {
     crate,
     owner,
     request,
+
     removeCrate: () => {
       crate = undefined
     }
   }
 }
+
 function sum(a: Dyadic, b: Dyadic): Dyadic {
   const exponent = Math.min(a.exponent, b.exponent)
+
   return {
     significand:
       (a.significand << BigInt(a.exponent - exponent)) +
@@ -63,12 +71,16 @@ function sum(a: Dyadic, b: Dyadic): Dyadic {
     exponent
   }
 }
+
 const negative = (a: Dyadic): Dyadic => ({ ...a, significand: -a.significand })
+
 const product = (a: Dyadic, b: Dyadic): Dyadic => ({
   significand: a.significand * b.significand,
   exponent: a.exponent + b.exponent
 })
+
 const compare = (a: Dyadic, b: Dyadic) => sum(a, negative(b)).significand
+
 // Independent exact quaternion polynomial, retaining source binary64 coefficients.
 function placed(f: WalkingRigidTransform, p: readonly Dyadic[]): Dyadic[] {
   const [x, y, z, w] = f.rotation.map(dyadic),
@@ -76,6 +88,7 @@ function placed(f: WalkingRigidTransform, p: readonly Dyadic[]): Dyadic[] {
   const tx = product(dyadic(2), sum(product(y, c), negative(product(z, b))))
   const ty = product(dyadic(2), sum(product(z, a), negative(product(x, c))))
   const tz = product(dyadic(2), sum(product(x, b), negative(product(y, a))))
+
   return [
     sum(
       dyadic(f.position[0]),
@@ -91,6 +104,7 @@ function placed(f: WalkingRigidTransform, p: readonly Dyadic[]): Dyadic[] {
     )
   ]
 }
+
 const loadPart = () => ({
   id: 'declared-load',
   shape: {
@@ -103,13 +117,16 @@ const loadPart = () => ({
   ],
   localFrame: { position: [2, 0, 0] as const, rotation: [0, 0, 0, 1] as const }
 })
+
 it('includes every original robot and mounted crate vertex and retains contributor bounds', () => {
   const f = fixture(),
     result = f.owner.prepare(f.source, f.request)
+
   expect(result.status).toBe('complete')
   if (result.status !== 'complete') {
     throw new Error(result.reason)
   }
+
   expect(result.contributors.filter((c) => c.kind === 'crate')).toHaveLength(11)
   const canonical = f.sourceOwner.evaluate(f.source, {
     base: identity(),
@@ -120,24 +137,31 @@ it('includes every original robot and mounted crate vertex and retains contribut
   )
   let robotVertices = 0,
     crateVertices = 0
+
   for (const c of result.contributors) {
     for (let offset = 0; offset < c.part.shape.positions.length; offset += 3) {
       let p = c.part.shape.positions.slice(offset, offset + 3).map(dyadic)
+
       if (c.kind === 'robot') {
         const part = f.source.parts.find((p) => p === c.part)
+
         if (!part) {
           throw new Error('Missing original part')
         }
+
         const body = transforms.get(part.bodyId)
+
         if (!body) {
           throw new Error('Missing original body frame')
         }
+
         p = placed(body, placed(part.localFrame, p))
         robotVertices++
       } else {
         p = p.map((v, k) => sum(v, f.crate.placement.translation[k]))
         crateVertices++
       }
+
       p = placed(result.request.pose.base, p)
       p.forEach((v, k) => {
         expect(compare(v, dyadic(c.bounds.min[k])) >= 0n).toBe(true)
@@ -147,6 +171,7 @@ it('includes every original robot and mounted crate vertex and retains contribut
       })
     }
   }
+
   expect(result.work.sourceVertices).toBe(robotVertices)
   expect(result.work.attachmentVertices).toBe(crateVertices)
   expect(result.work.fk).toBe(1)
@@ -159,6 +184,7 @@ it('includes every original robot and mounted crate vertex and retains contribut
       Math.max(...result.contributors.map((c) => c.bounds.max[k]))
     )
   }
+
   expect(Object.isFrozen(result.contributors[0].bounds)).toBe(true)
   expect('collision' in result || 'route' in result || 'clear' in result).toBe(
     false
@@ -167,10 +193,13 @@ it('includes every original robot and mounted crate vertex and retains contribut
 it('invalidates for source, pose, mounted identity and declared load without omitting geometry', () => {
   const f = fixture(),
     first = f.owner.prepare(f.source, f.request)
+
   if (first.status !== 'complete') {
     throw new Error(first.reason)
   }
+
   const before = { ...f.owner.work }
+
   expect(f.owner.read(f.source, first.request)).toBe(first)
   expect(f.owner.prepare(f.source, first.request)).toBe(first)
   expect(f.owner.work).toEqual(before)
@@ -182,9 +211,11 @@ it('invalidates for source, pose, mounted identity and declared load without omi
     parts: [loadPart()]
   }
   const second = f.owner.prepare(f.source, { ...first.request, load })
+
   if (second.status !== 'complete') {
     throw new Error(second.reason)
   }
+
   expect(second.bounds.max[0]).toBeGreaterThan(first.bounds.max[0])
   expect(second.work.fk).toBe(1)
   expect(second.contributors.filter((c) => c.kind === 'load')).toHaveLength(1)
@@ -197,20 +228,25 @@ it('invalidates for source, pose, mounted identity and declared load without omi
       base: { ...identity(), position: [1, 0, 0] }
     }
   })
+
   if (third.status !== 'complete') {
     throw new Error(third.reason)
   }
+
   expect(third.bounds.min[0]).toBeCloseTo(second.bounds.min[0] + 1, 12)
   const unknown = f.owner.prepare(f.source, {
     ...third.request,
     load: { kind: 'unknown', id: 'unknown-load' }
   })
+
   expect(unknown.status).toBe('unavailable')
   expect(f.owner.read(f.source, third.request)).toBeUndefined()
   const replaced = f.owner.prepare(f.source, f.request)
+
   if (replaced.status !== 'complete') {
     throw new Error(replaced.reason)
   }
+
   f.removeCrate()
   expect(f.owner.read(f.source, replaced.request)).toBeUndefined()
   f.sourceOwner.clear()
@@ -258,9 +294,11 @@ it('rejects omitted, foreign, partial and nonfinite contributors without mutatin
       pose: { ...f.request.pose, joints: { ...f.source.rig.presets.stowed } }
     }
   ]
+
   for (const request of bad) {
     expect(f.owner.prepare(f.source, request).status).toBe('unavailable')
   }
+
   expect(Object.isFrozen(fake)).toBe(false)
   expect(f.owner.prepare({ ...f.source }, f.request).status).toBe('unavailable')
 })
@@ -286,6 +324,7 @@ it('checks actual fixed source housings rather than only the declared chassis sc
   }
   const source = sourceOwner.prepare(readWalkingRobotDefinition(raw))
   const owner = new WalkingRobotEnvelopeOwner(sourceOwner)
+
   expect(
     owner.prepare(source, {
       format: 'walking-stowed-envelope-request/1',
@@ -318,14 +357,17 @@ it('publishes the complete stowed envelope separately from active body width', (
     crate: { kind: 'none' },
     load: { kind: 'empty', id: 'empty-load' }
   })
+
   expect(result.status).toBe('complete')
   if (result.status !== 'complete') {
     throw new Error(result.reason)
   }
+
   expect(result.bodyBounds.size[0]).toBeLessThanOrEqual(0.8)
   expect(result.bounds.size[0]).toBeCloseTo(0.94625, 12)
   expect(result.contributors).toHaveLength(source.parts.length)
   const before = { ...owner.work }
+
   expect(owner.prepare(source, result.request)).toBe(result)
   expect(owner.read(source, result.request)).toBe(result)
   expect(owner.work).toEqual(before)

@@ -65,6 +65,7 @@ const freezeCatalog = (
   })
   Object.freeze(catalog.profiles)
   Object.freeze(catalog.defaults)
+
   return Object.freeze(catalog)
 }
 

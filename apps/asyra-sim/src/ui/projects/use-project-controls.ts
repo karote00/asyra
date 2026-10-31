@@ -37,11 +37,14 @@ export function useProjectControls({
     if (actionPending.current) {
       return false
     }
+
     actionPending.current = true
     setPendingAction(action)
     setProblem('')
+
     return true
   }
+
   const endAction = () => {
     actionPending.current = false
     setPendingAction(null)
@@ -95,6 +98,7 @@ export function useProjectControls({
     if (!beginAction({ kind: 'copy' })) {
       return
     }
+
     try {
       await session.start()
       await session.copy(`${state.project?.name ?? name} - Copy`)
@@ -115,6 +119,7 @@ export function useProjectControls({
     if (actionPending.current) {
       return
     }
+
     if (
       !window.confirm(
         `Open “${project.name}”? This starts a new document with empty Undo/Redo. ${unsavedRunCount} unretained results will be lost.`
@@ -126,6 +131,7 @@ export function useProjectControls({
     if (!beginAction({ kind: 'open', projectId: project.id })) {
       return
     }
+
     try {
       await session.start()
       await session.open(project.id, true)
@@ -170,6 +176,7 @@ export function useProjectControls({
     if (!beginAction({ kind: 'retry' })) {
       return
     }
+
     try {
       if (!session.getState().project) {
         await session.start(
@@ -179,6 +186,7 @@ export function useProjectControls({
       } else {
         await session.flush()
       }
+
       setProblem('')
     } catch (error) {
       setProblem(errorMessage(error))

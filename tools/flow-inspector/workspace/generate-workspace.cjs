@@ -12,6 +12,7 @@ const toPosix = (value) => value.split(path.sep).join('/')
 const walk = (root) =>
   fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(root, entry.name)
+
     if (entry.isDirectory()) {
       return walk(entryPath)
     }
@@ -21,7 +22,9 @@ const walk = (root) =>
 
 const loadSource = (sourcePath) => {
   const resolved = require.resolve(sourcePath)
+
   Reflect.deleteProperty(require.cache, resolved)
+
   return require(resolved)
 }
 
@@ -39,6 +42,7 @@ const schemaKind = (data, sourcePath) => {
   if (data?.schema?.id === 'flow-inspector' && data.schema.version === 2) {
     return 'flow-v2'
   }
+
   if (catalogPolicy.contractDocuments.includes(path.basename(sourcePath))) {
     return 'contract-document'
   }
@@ -50,17 +54,21 @@ const schemaKind = (data, sourcePath) => {
 
 const ownerMetadata = (repoPath, id) => {
   const override = catalogPolicy.groupOverrides[id]
+
   if (override) {
     return override
   }
+
   if (/(release|website|public-package|public-readme|runtime-atlas)/.test(id)) {
     return { group: 'Release', subgroup: 'Website and Distribution' }
   }
+
   return { group: 'Framework', subgroup: 'Architecture and Runtime' }
 }
 
 const lifecycleFor = (data) => {
   const specPath = data?.authority?.specPath || ''
+
   return specPath.includes('/completed/') ? 'retained' : 'current'
 }
 
@@ -76,6 +84,7 @@ const candidates = catalogPolicy.discoveryRoots
 const duplicateCandidate = candidates.find(
   (candidate, index) => candidates.indexOf(candidate) !== index
 )
+
 if (duplicateCandidate) {
   throw new Error(
     `Duplicate Inspector discovery candidate: ${duplicateCandidate}`
@@ -106,9 +115,11 @@ const entries = candidates
     const derivedId = idFromPath(repoPath)
     const id = data?.target?.id || derivedId
     const owner = ownerMetadata(repoPath, id)
+
     if (kind === 'flow-v2' && id !== data.target.id) {
       throw new Error(`Flow v2 catalog id mismatch: ${repoPath}`)
     }
+
     return {
       id,
       slug: Object.hasOwn(catalogPolicy.routeSlugs, id)
@@ -133,6 +144,7 @@ const entries = candidates
 const ids = new Set()
 const slugs = new Set()
 const reservedSlugs = new Set(['api', 'tools', 'docs', 'apps'])
+
 for (const entry of entries) {
   if (ids.has(entry.id)) {
     throw new Error(`Duplicate workspace catalog id: ${entry.id}`)
@@ -147,12 +159,14 @@ for (const entry of entries) {
   ) {
     throw new Error(`Invalid or reserved workspace slug: ${entry.slug}`)
   }
+
   if (slugs.has(entry.slug)) {
     throw new Error(`Duplicate workspace slug: ${entry.slug}`)
   }
 
   slugs.add(entry.slug)
 }
+
 for (const id of Object.keys(catalogPolicy.routeSlugs)) {
   if (!ids.has(id)) {
     throw new Error(`Workspace slug has no included Inspector: ${id}`)

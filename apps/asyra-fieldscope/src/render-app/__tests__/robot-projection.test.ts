@@ -17,6 +17,7 @@ it('shares definition work across mission edits and moves the dock without rebui
   )
   const first = owner.update(report)
   const bounds = owner.bounds(2.45, -1.8)
+
   expect(bounds.min[2]).toBeLessThan(-2.8)
   expect(bounds.max[1]).toBeCloseTo(1.2)
   expect(bounds.max[0]).toBeGreaterThan(3.7)
@@ -26,6 +27,7 @@ it('shares definition work across mission edits and moves the dock without rebui
       DEFAULT_CONFIGURATION
     )
   )
+
   expect(build).toHaveBeenCalledTimes(1)
   expect(moved.find((m) => m.id === 'robot.chassis')?.descriptor.shape).toBe(
     first.find((m) => m.id === 'robot.chassis')?.descriptor.shape
@@ -44,6 +46,7 @@ it('shares definition work across mission edits and moves the dock without rebui
   )
   expect(build).toHaveBeenCalledTimes(2)
   const invalid = owner.update({ ...report, lane: null })
+
   expect(invalid.some((m) => m.id === 'robot.route')).toBe(false)
   expect(invalid.some((m) => m.id === 'robot.chassis')).toBe(true)
   owner.clear()
@@ -52,6 +55,7 @@ it('shares definition work across mission edits and moves the dock without rebui
 
 it('owns one immutable rig source and rejects retired pose inputs without geometry work', () => {
   const build = vi.spyOn(model, 'createRobotModel')
+
   try {
     const owner = new RobotProjection()
     const report = assessRobotDesign(
@@ -60,13 +64,16 @@ it('owns one immutable rig source and rejects retired pose inputs without geomet
     )
     const meshes = owner.update(report)
     const source = owner.getSource()
+
     expect(source.parts[0].shape).toBe(meshes[0].descriptor.shape)
     expect(source.rig?.parts[0].source).toBe(source.parts[0])
     const joints = { lift: 0, yaw: 0, shoulder: 0, elbow: 0, wrist: 0 }
+
     for (let i = 0; i < 10; i++) {
       expect(owner.getSource()).toBe(source)
       owner.evaluatePose(source, joints)
     }
+
     owner.update(
       assessRobotDesign(
         validateRobot({ ...DEFAULT_ROBOT, dockX: 3, patrolMinutes: 40 }),
@@ -85,6 +92,7 @@ it('owns one immutable rig source and rejects retired pose inputs without geomet
     expect(() => owner.evaluatePose(source, joints)).toThrow()
     expect(build).toHaveBeenCalledTimes(2)
     const current = owner.getSource()
+
     owner.clear()
     expect(() => owner.getSource()).toThrow()
     expect(() => owner.evaluatePose(current, joints)).toThrow()
@@ -104,6 +112,7 @@ it('retains parked source while an unsupported full lift stroke remains unavaila
     settings: { ...report.settings, height: 0.6 }
   })
   const source = owner.getSource()
+
   expect(meshes.some((mesh) => mesh.id === 'robot.chassis')).toBe(true)
   expect(source.rig).toBeNull()
   expect(source.unavailable).toBe('unsupported-lift')
@@ -122,6 +131,7 @@ it('retains parked source while an unsupported full lift stroke remains unavaila
 it('shares the exact installed station product and retires placement without regenerating shapes', () => {
   const expected = model.createDockModel()
   const build = vi.spyOn(model, 'createDockModel')
+
   try {
     const owner = new RobotProjection()
     const report = assessRobotDesign(
@@ -130,6 +140,7 @@ it('shares the exact installed station product and retires placement without reg
     )
     const meshes = owner.update(report)
     const source = owner.getDockSource()
+
     expect(Object.isFrozen(source)).toBe(true)
     expect(Object.isFrozen(source.meshes)).toBe(true)
     expect(source.meshes.map((mesh) => mesh.id)).toEqual(
@@ -146,6 +157,7 @@ it('shares the exact installed station product and retires placement without reg
         DEFAULT_ROBOT.dockZ
       ])
     }
+
     expect(owner.isCurrentDockSource({ ...source })).toBe(false)
     owner.update({
       ...report,
@@ -157,6 +169,7 @@ it('shares the exact installed station product and retires placement without reg
       settings: { ...report.settings, dockX: 10 }
     })
     const moved = owner.getDockSource()
+
     expect(moved.revision).not.toBe(source.revision)
     expect(owner.isCurrentDockSource(source)).toBe(false)
     for (const [index, mesh] of moved.meshes.entries()) {
@@ -168,9 +181,11 @@ it('shares the exact installed station product and retires placement without reg
       )
       expect(mesh.descriptor.position).toEqual([10, 0, DEFAULT_ROBOT.dockZ])
     }
+
     for (let i = 0; i < 5; i++) {
       expect(owner.getDockSource() === moved).toBe(true)
     }
+
     expect(build).toHaveBeenCalledTimes(1)
     owner.clear()
     expect(owner.isCurrentDockSource(moved)).toBe(false)

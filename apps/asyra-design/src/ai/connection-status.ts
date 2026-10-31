@@ -10,6 +10,7 @@ export const AI_CONNECTION_MESSAGES = Object.freeze({
   unavailable:
     'AI server unavailable. Start the App with yarn start, then retry.'
 })
+
 export type AiConnectionState = keyof typeof AI_CONNECTION_MESSAGES
 
 export const checkAiConnection = async (
@@ -22,14 +23,19 @@ export const checkAiConnection = async (
       body: '{}',
       signal
     })
+
     if (!response.ok) {
       return 'unavailable'
     }
+
     const result: unknown = await response.json()
+
     if (typeof result !== 'object' || result === null || !('state' in result)) {
       return 'unavailable'
     }
+
     const state = result.state
+
     if (
       state === 'ready' ||
       state === 'configured' ||
@@ -38,6 +44,7 @@ export const checkAiConnection = async (
     ) {
       return state
     }
+
     return 'unavailable'
   } catch {
     return 'unavailable'

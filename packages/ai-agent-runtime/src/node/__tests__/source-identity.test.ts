@@ -6,11 +6,14 @@ import { captureAiSourceIdentity } from '../source-identity.js'
 
 it('captures clean, dirty and untracked source without including unrelated files', async () => {
   const parent = join(process.cwd(), 'tmp')
+
   await mkdir(parent, { recursive: true })
   const directory = await mkdtemp(join(parent, 'source-identity-'))
+
   try {
     const git = (...args: string[]) =>
       execFileSync('git', args, { cwd: directory, encoding: 'utf8' }).trim()
+
     git('init', '-q')
     await mkdir(join(directory, 'src'))
     await writeFile(join(directory, 'src/input.ts'), 'export const value = 1\n')
@@ -24,8 +27,11 @@ it('captures clean, dirty and untracked source without including unrelated files
       '-qm',
       'Fixture'
     )
+
     const read = () => captureAiSourceIdentity({ directory, paths: ['src'] })
+
     const clean = await read()
+
     expect(clean).toMatchObject({
       sourceRevision: git('rev-parse', 'HEAD'),
       sourceIdentityStatus: 'captured'
@@ -36,6 +42,7 @@ it('captures clean, dirty and untracked source without including unrelated files
     expect(await read()).toEqual(clean)
     await writeFile(join(directory, 'src/input.ts'), 'export const value = 2\n')
     const dirty = await read()
+
     expect(dirty.sourceRevision).toBe(clean.sourceRevision)
     expect(dirty.sourceFingerprint).not.toBe(clean.sourceFingerprint)
     await writeFile(
@@ -46,10 +53,12 @@ it('captures clean, dirty and untracked source without including unrelated files
     git('add', 'src')
     // Staging the same bytes must not change source identity.
     const staged = await read()
+
     git('reset', '-q', 'HEAD', '--', 'src/new.ts')
     expect((await read()).sourceFingerprint).toBe(staged.sourceFingerprint)
     await rm(join(directory, 'src/input.ts'))
     const deleted = await read()
+
     git('add', '-u')
     expect(await read()).toEqual(deleted)
     expect(

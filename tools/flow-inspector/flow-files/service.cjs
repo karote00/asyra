@@ -7,6 +7,7 @@ const { openProject } = require('./store.cjs')
 const { digest } = require('./policy.cjs')
 const { fingerprintPaths } = require('../control-plane/localization.cjs')
 const { runProcess } = require('../control-plane/runner.cjs')
+
 function createFlowService(
   root,
   directory,
@@ -16,37 +17,49 @@ function createFlowService(
     store = openProject(directory)
   let active = null,
     closed = false
+
   const snapshot = () => {
     const value = store.snapshot()
+
     if (projectId && value.evaluation.projectId !== projectId) {
       throw new Error('Wrong project identity')
     }
+
     return value
   }
+
   const context = (flowId, nodeId) => {
     const flow = snapshot().evaluation.flows.find((f) => f.id === flowId)
     const node =
       nodeId === 'integration'
         ? flow?.integration
         : flow?.nodes.find((n) => n.id === nodeId)
+
     if (!node) {
       throw new Error('Unknown flow or node')
     }
+
     return node.context
   }
+
   const preview = (flowId, nodeId, actionId) => {
     const current = context(flowId, nodeId),
       action = current.actions.find((a) => a.id === actionId)
+
     if (!action || action.kind !== 'command') {
       throw new Error('No executable action selected')
     }
+
     const cwd = path.resolve(projectRoot, action.cwd)
+
     if (cwd !== projectRoot && !cwd.startsWith(projectRoot + path.sep)) {
       throw new Error('Action cwd escapes project')
     }
+
     if (fs.realpathSync(cwd) !== cwd || !fs.statSync(cwd).isDirectory()) {
       throw new Error('Invalid action cwd')
     }
+
     const value = {
       flowId,
       nodeId,
@@ -60,19 +73,25 @@ function createFlowService(
         : null,
       criterionIds: action.criterionIds
     }
+
     return { ...value, digest: digest(value) }
   }
+
   async function rerun(request) {
     if (closed || active) {
       throw new Error('Execution is unavailable or busy')
     }
+
     const selected = preview(request.flowId, request.nodeId, request.actionId)
+
     if (request.confirm !== true || request.digest !== selected.digest) {
       throw new Error('Preview is stale or confirmation missing')
     }
+
     const controller = new AbortController(),
       executionId = randomUUID()
     const task = { controller, pid: null, promise: null }
+
     active = task
     task.promise = (async () => {
       const result = await execute({
@@ -92,6 +111,7 @@ function createFlowService(
         signal: controller.signal,
         timeoutMs: 120000,
         maxOutputBytes: 262144,
+
         onSpawn: (pid) => {
           task.pid = pid
         }
@@ -119,6 +139,7 @@ function createFlowService(
         )
       const warningId =
         'action-' + digest([selected.nodeId, selected.actionId]).slice(0, 24)
+
       if (
         (!covered || failedExecution) &&
         context(selected.flowId, selected.nodeId).binding === selected.binding
@@ -156,6 +177,7 @@ function createFlowService(
           )
         })
       }
+
       return {
         executionId,
         ...result,
@@ -169,24 +191,30 @@ function createFlowService(
       active = null
     }
   }
+
   return {
     snapshot,
     context,
     preview,
     rerun,
+
     update: (flowId, request) => {
       if (closed) {
         throw new Error('Service is closed')
       }
+
       snapshot()
+
       return store.update(flowId, request)
     },
+
     cancel: async () => {
       if (active) {
         active.controller.abort()
         await active.promise
       }
     },
+
     close: async () => {
       closed = true
       if (active) {
@@ -196,4 +224,5 @@ function createFlowService(
     }
   }
 }
+
 module.exports = { createFlowService }

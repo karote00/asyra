@@ -14,16 +14,21 @@ const readManifest = (relativePath) =>
   JSON.parse(fs.readFileSync(path.join(repositoryRoot, relativePath), 'utf8'))
 
 const versionFamilyOf = (version) => version.split('.').slice(0, 2).join('.')
+
 const identityOf = ({ name, version }) => ({ name, version })
+
 const compareVersions = (left, right) => {
   const leftParts = left.split('.').map(Number)
   const rightParts = right.split('.').map(Number)
+
   for (let index = 0; index < leftParts.length; index += 1) {
     const difference = leftParts[index] - rightParts[index]
+
     if (difference !== 0) {
       return difference
     }
   }
+
   return 0
 }
 
@@ -69,6 +74,7 @@ test('release records derive Framework and excluded-owner versions from manifest
 test('public release docs link current support while release records derive manifest-owned candidates', () => {
   const read = (relativePath) =>
     fs.readFileSync(path.join(repositoryRoot, relativePath), 'utf8')
+
   const readme = read('README.md')
   const releaseNotes = read('RELEASE_NOTES.md')
   const support = read('docs/ai/framework/RELEASE_SUPPORT.md')

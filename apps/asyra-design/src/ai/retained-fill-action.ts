@@ -34,8 +34,10 @@ interface FillMapping {
   outside: 'clamp' | 'reject'
   stops: { at: number; color: string; opacity?: number }[]
 }
+
 const finite = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
+
 const colorChannels = (color: string) =>
   [1, 3, 5].map((start) => parseInt(color.slice(start, start + 2), 16))
 
@@ -70,6 +72,7 @@ export const createRetainedFillAction = (
     update: typeof fillApis.updateFillFieldsBatch
   } = {
     metadata: (id: string) => core.getElementMetadata(id),
+
     targets: fillApis.getFillTargetsAtIndex,
     update: fillApis.updateFillFieldsBatch
   }
@@ -185,32 +188,41 @@ export const createRetainedFillAction = (
       }
     }
   },
+
   execute: async ({ mappings }, context) => {
     const consumedLeases = new Set<string>()
+
     try {
       return await runAiMutation(context, () => {
         const ids: string[] = []
         const patches: FillPatch[] = []
         const unique = new Set<string>()
         const checkedAncestors = new Set<string>()
+
         const assertUnlocked = (elementId: string) => {
           const visited = new Set<string>()
           let id: string | undefined = elementId
+
           while (id && !checkedAncestors.has(id)) {
             if (visited.has(id)) {
               throw new Error('Target hierarchy contains a cycle.')
             }
+
             visited.add(id)
             const data = apis.metadata(id)
+
             if (!data || data.lock) {
               throw new Error('Target or parent is unavailable or locked.')
             }
+
             id = data.parentId
           }
+
           for (const ancestor of visited) {
             checkedAncestors.add(ancestor)
           }
         }
+
         if (
           !Array.isArray(mappings) ||
           !mappings.length ||
@@ -218,7 +230,9 @@ export const createRetainedFillAction = (
         ) {
           throw new Error('A bounded mappings array is required.')
         }
+
         const index = mappings[0].index
+
         for (const mapping of mappings) {
           if (
             !mapping ||
@@ -238,7 +252,9 @@ export const createRetainedFillAction = (
               'Use one fill index and a finite increasing domain in declared parent-local coordinates.'
             )
           }
+
           const stops = mapping.stops
+
           if (
             !Array.isArray(stops) ||
             stops.length < 2 ||
@@ -265,6 +281,7 @@ export const createRetainedFillAction = (
               'Provide ordered color stops from 0 to 1; opacity must be specified for all stops or none.'
             )
           }
+
           if (
             Boolean(mapping.query) === Boolean(mapping.snapshotId) ||
             (mapping.query && mapping.leaseId)
@@ -273,8 +290,10 @@ export const createRetainedFillAction = (
               'Provide either a query or a retained snapshot and its lease.'
             )
           }
+
           let snapshotId = mapping.snapshotId
           let leaseId = mapping.leaseId
+
           if (mapping.query) {
             const receipt = queries.read(
               {
@@ -285,16 +304,20 @@ export const createRetainedFillAction = (
               context.signal,
               'consumer'
             )
+
             snapshotId = receipt.snapshotId
             leaseId = receipt.leaseId
             if (leaseId) {
               consumedLeases.add(leaseId)
             }
           }
+
           if (!snapshotId) {
             throw new Error('Mapping has no retained snapshot identity')
           }
+
           const snapshot = queries.get(snapshotId, leaseId, context.signal)
+
           if (
             snapshot.coordinateSpace !== mapping.coordinateSpace ||
             !snapshot.fields.includes(mapping.axis) ||
@@ -304,7 +327,9 @@ export const createRetainedFillAction = (
               'Retained query lacks complete targets or the required position column; read the scope again.'
             )
           }
+
           const channels = stops.map((stop) => colorChannels(stop.color))
+
           for (const element of snapshot.result.elements) {
             assertUnlocked(element.id)
             if (unique.has(element.id)) {
@@ -312,13 +337,17 @@ export const createRetainedFillAction = (
                 'Targets must exist, be unlocked and occur once across all mappings.'
               )
             }
+
             const position = element.properties[mapping.axis]
+
             if (!finite(position)) {
               throw new Error('Retained position is unavailable or non-finite.')
             }
+
             let normalized =
               (position - mapping.domain[0]) /
               (mapping.domain[1] - mapping.domain[0])
+
             if (
               !finite(normalized) ||
               (mapping.outside === 'reject' &&
@@ -328,6 +357,7 @@ export const createRetainedFillAction = (
                 'Position lies outside the explicit mapping domain.'
               )
             }
+
             normalized = Math.min(1, Math.max(0, normalized))
             const right = Math.max(
               1,
@@ -336,7 +366,9 @@ export const createRetainedFillAction = (
             const left = right - 1
             const ratio =
               (normalized - stops[left].at) / (stops[right].at - stops[left].at)
+
             const interpolate = (a: number, b: number) => a + (b - a) * ratio
+
             patches.push({
               color:
                 '#' +
@@ -359,11 +391,13 @@ export const createRetainedFillAction = (
             unique.add(element.id)
             ids.push(element.id)
           }
+
           if (leaseId && consumedLeases.has(leaseId)) {
             queries.releaseLease(leaseId, context.signal)
             consumedLeases.delete(leaseId)
           }
         }
+
         const targets = apis.targets(ids, index)
         const mutation = requireMutationReceipt(
           apis.update(
@@ -397,18 +431,21 @@ export const createRetainedFillAction = (
           appliedCount: receipt.appliedCount,
           coordinateSpace: receipt.coordinateSpace
         }
+
         try {
           const retained = queries.retainReceipt(
             mutation.acceptedIds,
             receipt,
             context.signal
           )
+
           return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {
           const delivery = {
             status: 'unavailable',
             message: `${error instanceof Error ? error.message : 'Receipt retention failed.'} The write already settled; do not replay it.`
           }
+
           return {
             ...receipt,
             delivery,
@@ -428,6 +465,7 @@ export const createRetainedFillAction = (
       ) {
         throw error
       }
+
       throw new AiActionExecutionError(
         error instanceof Error ? error.message : 'Retained fill mapping failed.'
       )

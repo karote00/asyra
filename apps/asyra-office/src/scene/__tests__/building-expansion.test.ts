@@ -7,19 +7,24 @@ import type { AssetPart } from '../../assets/catalog'
 
 const parts = new Map<string, AssetPart[]>()
 const referenceSceneFixture = useReferenceSceneFixture()
+
 beforeAll(() => {
   const scene = referenceSceneFixture()
   let offset = 0
+
   for (const a of scene.assemblies) {
     parts.set(a.id, scene.parts.slice(offset, offset + a.parts.length))
     offset += a.parts.length
   }
 })
+
 const bounds = (id: string) => {
   const value = parts.get(id)
+
   if (!value) {
     throw new Error('Missing assembly: ' + id)
   }
+
   return meshBounds(value)
 }
 
@@ -28,6 +33,7 @@ it('adds exactly half a metre of clear depth to all four room zones', () => {
     const p = s.parameters
     const front = s.shell.frontY + s.shell.facadeThickness / 2
     const rear = p.rearY - s.shell.exteriorThickness / 2
+
     return [
       p.creamY - 0.08 - front,
       rear - p.creamY - 0.08,
@@ -35,7 +41,9 @@ it('adds exactly half a metre of clear depth to all four room zones', () => {
       rear - p.loungeY - 0.07
     ]
   }
+
   const previous = depths(baseline.structure as typeof structure)
+
   depths(structure).forEach((value, i) =>
     expect(value - previous[i]).toBeCloseTo(0.5, 10)
   )
@@ -49,9 +57,11 @@ it('adds exactly half a metre of clear depth to all four room zones', () => {
 it('retains frontage and stepped heights while extending every connected wall run', () => {
   for (const old of baseline.structure.walls) {
     const current = structure.walls.find((w) => w.id === old.id)
+
     if (!current) {
       throw new Error('Missing wall: ' + old.id)
     }
+
     for (const key of [
       'top',
       'endTop',
@@ -62,6 +72,7 @@ it('retains frontage and stepped heights while extending every connected wall ru
     ] as const) {
       expect(current[key], old.id + ' ' + key).toEqual(old[key])
     }
+
     if (
       [
         'front-thin-wall',
@@ -73,13 +84,17 @@ it('retains frontage and stepped heights while extending every connected wall ru
       expect(current).toEqual(old)
     }
   }
+
   const wall = (id: string) => {
     const value = structure.walls.find((w) => w.id === id)
+
     if (!value) {
       throw new Error('Missing wall: ' + id)
     }
+
     return value
   }
+
   expect(wall('left-wall').end).toBe(wall('discussion-left-wall').start)
   expect(wall('discussion-left-wall').end).toBe(structure.parameters.rearY)
   expect(wall('pantry-divider').end).toBe(structure.parameters.rearY)
@@ -101,12 +116,14 @@ it('retains frontage and stepped heights while extending every connected wall ru
 it('recesses the full dispenser within the extended wall without entering the fridge opening', () => {
   const dispenser = bounds('water-dispenser'),
     fridge = bounds('fridge')
+
   expect(dispenser[1][0]).toBeGreaterThan(bounds('pantry-divider')[1][0])
   expect(dispenser[1][0]).toBeCloseTo(1.816, 6)
   expect(fridge[1][0]).toBeCloseTo(2.820149517721014, 6)
   const clearance =
     Math.hypot(fridge[0][1] - dispenser[0][1], fridge[1][0] - dispenser[1][1]) -
     0.752
+
   expect(clearance).toBeGreaterThan(0.05)
   expect(bounds('sink')[1][1]).toBeCloseTo(structure.parameters.rearY - 0.08, 8)
 })

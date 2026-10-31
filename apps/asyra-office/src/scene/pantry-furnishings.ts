@@ -30,6 +30,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
     end = 1.9,
     count = 18,
     stripe = (end - left) / count
+
   for (let i = 0; i < count; i++) {
     block(
       'pantry-wallpaper-' + i,
@@ -44,6 +45,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
       0
     )
   }
+
   addPrint(
     c,
     'pantry-print',
@@ -55,6 +57,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
     fridgeScale = 1.35,
     fridgeY = layout.fridge.y + 0.297 * fridgeScale,
     fridgeX = layout.fridge.x + layout.fridge.w / 2
+
   add(
     'fridge',
     'pantry-fridge',
@@ -105,6 +108,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
       0
     )
   }
+
   add(
     'pantry-fridge-magnet',
     'round-magnet',
@@ -121,11 +125,13 @@ export function addPantryFurnishings(c: OfficeComposer) {
   const sinkX = layout.mainSink.x + layout.mainSink.w / 2,
     sinkShift = sinkX - 2.34
   const positions = COUNTERTOP_REFERENCE.placement
+
   const position = (key: keyof typeof positions): [number, number, number] => [
     positions[key][0] + sinkShift,
     rear - positions[key][1],
     counterTop
   ]
+
   block(
     'coffee-counter-body',
     [counterBodyWidth, counterDepth - 0.04, 0.745],
@@ -182,9 +188,11 @@ export function addPantryFurnishings(c: OfficeComposer) {
           roughness: 0.85
         }
       }
+
       if (part.id === 'door--1') {
         return { ...part, color: 0x65594d }
       }
+
       return part
     }),
     [sinkX, rear - 0.3125, floor],
@@ -211,18 +219,22 @@ export function addPantryFurnishings(c: OfficeComposer) {
       footprint: layout.counterObjects.tumbler
     }
   ]
+
   for (const item of group) {
     const bounds = meshBounds(item.parts)
     const x = item.footprint.x - bounds[0][0]
     const y = item.footprint.y - bounds[1][0]
+
     add(item.id, item.asset, item.parts, [x, y, counterTop])
   }
+
   add('pantry-counter-bottle', 'counter-green-bottle', pantryCounterBottle(), [
     layout.counterBottleCenter[0],
     layout.counterBottleCenter[1],
     counterTop
   ])
   const shelf = layout.shelf
+
   block(
     'pantry-shelf',
     [shelf.w, shelf.d, 0.033],
@@ -259,8 +271,10 @@ export function addPantryFurnishings(c: OfficeComposer) {
     }
   ]
   let shelfLeft = shelf.x + shelf.endMargin
+
   for (const item of retained) {
     const bounds = meshBounds(item.parts)
+
     add(item.id, item.asset, item.parts, [
       shelfLeft - bounds[0][0],
       shelf.y + shelf.d / 2 - (bounds[1][0] + bounds[1][1]) / 2,
@@ -268,6 +282,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
     ])
     shelfLeft += bounds[0][1] - bounds[0][0] + shelf.gap
   }
+
   add(
     'pantry-sink-plant',
     'plant-lanceolate',
@@ -275,6 +290,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
     position('sinkPlant')
   )
   const cup = COUNTERTOP_REFERENCE.sinkCup
+
   add(
     'pantry-sink-mug',
     'ceramic-mug',

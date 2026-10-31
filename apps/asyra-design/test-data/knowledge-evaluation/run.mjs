@@ -21,6 +21,7 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const app = path.resolve(here, '../..')
 const root = path.resolve(app, '../..')
 const [arm, caseId] = process.argv.slice(2)
+
 if (
   ![
     'baseline',
@@ -35,20 +36,24 @@ if (
     'Expected baseline, candidate, transfer or diagnostic and a case ID'
   )
 }
+
 const cases = JSON.parse(fs.readFileSync(path.join(here, 'cases.json')))
 const quality = arm.startsWith('quality-')
 let selected = cases[arm === 'transfer' ? 'transfer' : 'development'].find(
   (value) => value.id === caseId
 )
+
 if (quality) {
   selected = qualityScenario(
     JSON.parse(fs.readFileSync(path.join(here, 'quality-cases.json'))),
     caseId
   )
 }
+
 if (!selected) {
   throw new Error('Unknown evaluation case')
 }
+
 const scenario = {
   ...selected,
   prompt:
@@ -63,6 +68,7 @@ const services = JSON.parse(
   fs.readFileSync(path.join(root, 'tmp/knowledge-services.json'))
 )
 const vite = services.find((value) => value.name === 'vite')
+
 if (
   !vite ||
   !execFileSync('lsof', ['-a', '-p', String(vite.pid), '-d', 'cwd', '-Fn'], {
@@ -71,8 +77,10 @@ if (
 ) {
   throw new Error('Vite process ownership unavailable')
 }
+
 const id = `knowledge-${arm}-${caseId}-${Date.now()}`
 const directory = path.join(root, 'tmp/knowledge-evaluation', id)
+
 fs.mkdirSync(directory, { recursive: true })
 const meta = {
   id,
@@ -90,6 +98,7 @@ const meta = {
   errors: [],
   statuses: []
 }
+
 meta.sources = Object.fromEntries(
   [
     'server/ai-domain-prompt.ts',
@@ -107,11 +116,13 @@ meta.sources = Object.fromEntries(
       .digest('hex')
   ])
 )
+
 const save = () =>
   fs.writeFileSync(
     path.join(directory, 'run.json'),
     JSON.stringify(meta, null, 2)
   )
+
 const snapshot = async (page) =>
   page.evaluate(async () => {
     const { core, getActiveCollaborationHandle } =
@@ -122,17 +133,21 @@ const snapshot = async (page) =>
         core.getElementData(id)
       ])
     )
+
     return {
       elements,
       document: await core.save(),
       session: getActiveCollaborationHandle()?.getSessionState()
     }
   })
+
 let ownedBrowser, context, deadline
+
 try {
   ownedBrowser = await launchCaptureBrowser({
     chromium,
     evidencePath: path.join(directory, 'cleanup-stop.json'),
+
     record: (event) => {
       ;(meta.browserLifecycle ??= []).push(event)
       save()
@@ -145,6 +160,7 @@ try {
   })
   const page = await context.newPage()
   let unexpectedNavigation
+
   page.on('framenavigated', (frame) => {
     if (frame === page.mainFrame() && meta.sentAt) {
       unexpectedNavigation = frame.url()
@@ -160,6 +176,7 @@ try {
     async () => {
       const { getActiveCollaborationHandle } =
         await import('/src/testing/runtime-access.ts')
+
       return getActiveCollaborationHandle()?.getStatus() === 'connected'
     },
     null,
@@ -169,6 +186,7 @@ try {
     async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
       const id = core.getCurrentWorkspaceId()
+
       return Boolean(id && core.getElementData(id))
     },
     null,
@@ -178,6 +196,7 @@ try {
     meta.seed = await page.evaluate(async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
       const { transactionApis } = await import('/src/common-apis')
+
       return transactionApis.runTransaction(() =>
         core.createElementsInParent(
           ['Keep Left', 'Target', 'Keep Right'].map((name, i) => ({
@@ -193,6 +212,7 @@ try {
       )
     })
   }
+
   fs.writeFileSync(
     path.join(directory, 'before.json'),
     JSON.stringify(await snapshot(page))
@@ -215,14 +235,17 @@ try {
   await page.getByRole('button', { name: 'Send', exact: true }).click()
   let previous,
     first = false
+
   while (Date.now() - Date.parse(meta.sentAt) < limitMs) {
     if (unexpectedNavigation) {
       throw new Error(
         'Unexpected navigation during evaluation: ' + unexpectedNavigation
       )
     }
+
     const state = await page.evaluate(async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
+
       return {
         outcome: [
           ...document.querySelectorAll('[data-testid="ai-agent-message"]')
@@ -236,14 +259,17 @@ try {
           0
       }
     })
+
     if (!first && state.count > (scenario.seed ? 3 : 0)) {
       first = true
       meta.firstContentMs = Date.now() - Date.parse(meta.sentAt)
     }
+
     if (state.status !== previous) {
       previous = state.status
       meta.statuses.push({ at: new Date().toISOString(), text: state.status })
     }
+
     if (
       ['success', 'failed', 'partial', 'cancelled', 'no-change'].includes(
         state.outcome
@@ -252,14 +278,18 @@ try {
       meta.outcome = state.outcome
       break
     }
+
     save()
     await page.waitForTimeout(1000)
   }
+
   const limit = await deadline.finish()
+
   meta.deadline = limit
   if (limit.status !== 'finished' || !meta.outcome) {
     throw new Error('Evaluation deadline exceeded')
   }
+
   meta.elapsedMs = Date.now() - Date.parse(meta.sentAt)
   await page.keyboard.press('Meta+1')
   await page.screenshot({ path: path.join(directory, 'final.png') })
@@ -269,6 +299,7 @@ try {
       const bounds = document
         .getElementById('viewport-anchor')
         .getBoundingClientRect()
+
       viewportApis.zoomToCenter(
         1,
         bounds.x + bounds.width / 2,
@@ -279,6 +310,7 @@ try {
     await page.screenshot({ path: path.join(directory, 'actual-size.png') })
     await page.keyboard.press('Meta+1')
   }
+
   meta.conversation = await page
     .getByTestId('ai-agent-message')
     .allTextContents()
@@ -290,7 +322,9 @@ try {
     const { getActiveCollaborationHandle } =
       await import('/src/testing/runtime-access.ts')
     const handle = getActiveCollaborationHandle()
+
     await handle.whenIdle()
+
     return handle.confirmPersistence(AbortSignal.timeout(30000))
   })
   await page.waitForTimeout(10000)
@@ -319,6 +353,7 @@ try {
       }
     }
   }
+
   meta.failure = error.message
   save()
   console.error(JSON.stringify({ directory, failure: error.message }))
@@ -327,6 +362,7 @@ try {
   if (deadline) {
     await deadline.finish()
   }
+
   await context?.close()
   await ownedBrowser?.close()
   save()

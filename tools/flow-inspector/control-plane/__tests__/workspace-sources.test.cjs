@@ -24,7 +24,9 @@ function fixture(t) {
   fs.mkdirSync(parent, { recursive: true })
   const root = fs.mkdtempSync(path.join(parent, 'source-'))
   const runDirectory = path.join(root, 'tmp', randomUUID())
+
   t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+
   const write = (file, content) => {
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
     fs.writeFileSync(
@@ -32,6 +34,7 @@ function fixture(t) {
       typeof content === 'string' ? content : JSON.stringify(content)
     )
   }
+
   write('package.json', {
     private: true,
     workspaces: ['apps/*', 'packages/*', 'tools/*']
@@ -61,6 +64,7 @@ function fixture(t) {
   write('apps/studio/server/session.test.ts', 'excluded test\n')
   write('tools/unrelated/src/index.ts', 'excluded runtime\n')
   const manifest = structuredClone(originalManifest)
+
   Object.assign(manifest, {
     manifestPath: 'verification/flow-contracts.json',
     architecturePath: 'verification/architecture.cjs',
@@ -73,6 +77,7 @@ function fixture(t) {
   })
   const architecture = structuredClone(originalArchitecture)
   const selected = new Set(manifest.flows.flatMap((flow) => flow.stepIds))
+
   for (const [index, step] of architecture.steps
     .filter((step) => selected.has(step.id))
     .entries()) {
@@ -83,22 +88,27 @@ function fixture(t) {
         : 'apps/studio/server/session.ts'
     ]
   }
+
   for (const scenario of manifest.scenarios) {
     if (scenario.mutation) {
       scenario.mutation.file = 'apps/studio/server/session.ts'
     }
   }
+
   write(manifest.specPath, '# Source fixture\n')
   write(manifest.testFile, 'export {}\n')
   write(manifest.configFile, 'export default {}\n')
+
   const contract = () => {
     write(manifest.manifestPath, manifest)
     write(
       manifest.architecturePath,
       'module.exports = ' + JSON.stringify(architecture)
     )
+
     return admitContract(manifest, architecture)
   }
+
   return {
     root,
     runDirectory,
@@ -106,6 +116,7 @@ function fixture(t) {
     manifest,
     architecture,
     contract,
+
     capture: () => captureSource(root, runDirectory, contract())
   }
 }
@@ -114,18 +125,23 @@ test('private App and package integration capture actual workspace identities an
   const input = fixture(t)
   const reads = new Map()
   const originalRead = fs.readFileSync
+
   fs.readFileSync = (file, ...args) => {
     if (typeof file === 'string' && file.startsWith(input.root + path.sep)) {
       reads.set(file, (reads.get(file) ?? 0) + 1)
     }
+
     return originalRead(file, ...args)
   }
+
   let snapshot
+
   try {
     snapshot = input.capture()
   } finally {
     fs.readFileSync = originalRead
   }
+
   assert.equal(snapshot.runtimeAuthority.format, 2)
   assert.deepEqual(snapshot.runtimeAuthority.packageNames, [
     '@example/editor',
@@ -149,6 +165,7 @@ test('private App and package integration capture actual workspace identities an
   for (const [file, count] of reads) {
     assert.equal(count, 1, file)
   }
+
   assert.equal(snapshot.readCount, reads.size)
   assert.doesNotThrow(() => validateSourceSnapshot(snapshot, input.contract()))
   assert.doesNotThrow(() =>
@@ -187,8 +204,10 @@ test('workspace source capture rejects missing, ambiguous, escaped, unused and o
         dependencies: { '@example/editor': 'workspace:*' }
       })
   ]
+
   for (const change of cases) {
     const input = fixture(t)
+
     change(input)
     assert.throws(() => input.capture())
     assert.equal(fs.existsSync(path.join(input.runDirectory, 'source')), false)
@@ -199,6 +218,7 @@ test('workspace retained source verifies transitive bytes and admits ordinary co
   const input = fixture(t)
   const contract = input.contract()
   const snapshot = input.capture()
+
   // These APIs receive trusted source locations separately from saved descriptors.
   assert.doesNotThrow(() =>
     admitRuntimeAuthoritySource(snapshot.sourceRoot, snapshot, contract)
@@ -217,6 +237,7 @@ test('workspace retained source verifies transitive bytes and admits ordinary co
       ...validateSourceSnapshot(snapshot, contract)
     }
   }
+
   assert.doesNotThrow(() =>
     verifyRetainedSource(input.root, retained, contract)
   )
@@ -227,12 +248,14 @@ test('workspace retained source verifies transitive bytes and admits ordinary co
     retained,
     contract
   )
+
   assert.deepEqual(composed.runtimeSource, snapshot.runtimeSource)
   assert.deepEqual(composed.runtimeAuthority, snapshot.runtimeAuthority)
   const dependency = path.join(
     snapshot.sourceRoot,
     'packages/support/src/index.ts'
   )
+
   fs.chmodSync(dependency, 0o644)
   fs.writeFileSync(dependency, 'export const value = 2\n')
   assert.throws(
@@ -255,6 +278,7 @@ test('workspace retained source verifies transitive bytes and admits ordinary co
 test('a tool workspace can derive execution without writing into its runtime roots', (t) => {
   const input = fixture(t)
   const source = require('../snapshot.cjs')
+
   fs.renameSync(
     path.join(input.root, 'apps/studio'),
     path.join(input.root, 'tools/flow-inspector')
@@ -269,17 +293,20 @@ test('a tool workspace can derive execution without writing into its runtime roo
       file.replace('apps/studio/server', 'tools/flow-inspector/control-plane')
     )
   }
+
   for (const scenario of input.manifest.scenarios) {
     if (scenario.mutation) {
       scenario.mutation.file = 'tools/flow-inspector/control-plane/session.ts'
     }
   }
+
   const snapshot = input.capture()
   const generated = source.createDerivedExecution({
     sourceRoot: snapshot.sourceRoot,
     verificationSource: snapshot.verificationSource,
     runtimeAuthority: snapshot.runtimeAuthority
   })
+
   assert.ok(
     generated.files.every(
       (file) => !file.path.startsWith('tools/flow-inspector/')
@@ -290,6 +317,7 @@ test('a tool workspace can derive execution without writing into its runtime roo
 function retain(input, contract) {
   const runDirectory = path.join(input.root, 'tmp', randomUUID())
   const snapshot = captureSource(input.root, runDirectory, contract)
+
   return {
     snapshot,
     sourceRoot: snapshot.sourceRoot,
@@ -315,11 +343,13 @@ function transferredOwner(t) {
   const moved = input.architecture.steps.find(
     (step) => selected.has(step.id) && step.ownerPackage === '@example/editor'
   )
+
   moved.ownerPackage = '@example/shared'
   moved.implementationBoundary = ['packages/support/src/index.ts']
   input.write('packages/support/src/index.ts', 'export const value = 2\n')
   const currentContract = input.contract()
   const current = retain(input, currentContract)
+
   return { input, previousContract, previous, currentContract, current }
 }
 
@@ -328,13 +358,17 @@ for (const method of ['composeSource', 'composeDerivedSource']) {
     const { input, previousContract, previous, current } = transferredOwner(t)
     const reads = new Map()
     const originalRead = fs.readFileSync
+
     fs.readFileSync = (file, ...args) => {
       if (typeof file === 'string' && file.startsWith(input.root + path.sep)) {
         reads.set(file, (reads.get(file) ?? 0) + 1)
       }
+
       return originalRead(file, ...args)
     }
+
     let composed
+
     try {
       composed = require('../snapshot.cjs')[method](
         input.root,
@@ -346,6 +380,7 @@ for (const method of ['composeSource', 'composeDerivedSource']) {
     } finally {
       fs.readFileSync = originalRead
     }
+
     assert.deepEqual(composed.runtimeSource, current.snapshot.runtimeSource)
     assert.deepEqual(
       composed.verificationSource,
@@ -370,6 +405,7 @@ for (const method of ['composeSource', 'composeDerivedSource']) {
     for (const [file, count] of reads) {
       assert.equal(count, 1, file)
     }
+
     assert.equal(composed.readCount, reads.size)
     assert.equal(
       fs.readFileSync(
@@ -398,6 +434,7 @@ test('owner transfer rejects unavailable owners, different runtime inputs and ch
     const { input, previousContract, previous, current } = transferredOwner(t)
     let verifier = previous,
       contract = previousContract
+
     if (change === 'owner') {
       input.architecture.steps.find(
         (step) => step.ownerPackage === '@example/shared'
@@ -413,12 +450,15 @@ test('owner transfer rejects unavailable owners, different runtime inputs and ch
         current.sourceRoot,
         'packages/support/src/index.ts'
       )
+
       fs.chmodSync(file, 0o644)
       fs.writeFileSync(file, 'export const value = 999\n')
     } else {
       delete verifier.admission.runtimeAuthority
     }
+
     const destination = path.join(input.root, 'tmp', randomUUID())
+
     assert.throws(() =>
       composeSource(input.root, destination, current, verifier, contract)
     )
@@ -456,6 +496,7 @@ test('owner transfer validates a derived runtime against its original authority 
     previous,
     previousContract
   )
+
   assert.deepEqual(composed.runtimeSource, current.snapshot.runtimeSource)
   assert.notEqual(
     composed.executionSource.runtimeAuthorityDigest,
@@ -475,6 +516,7 @@ test('owner transfer validates a derived runtime against its original authority 
     runtimeAuthorityDigest: composed.runtimeAuthority.digest
   }
   const destination = path.join(input.root, 'tmp', randomUUID())
+
   assert.throws(
     () =>
       composeDerivedSource(
@@ -491,6 +533,7 @@ test('owner transfer validates a derived runtime against its original authority 
 
 test('flat content-only dependencies are captured without a runtime entry and remain fingerprinted', (t) => {
   const input = fixture(t)
+
   input.write('package.json', {
     private: true,
     workspaces: ['apps/*', 'packages/*', 'tools/*', 'knowledge']
@@ -516,6 +559,7 @@ test('flat content-only dependencies are captured without a runtime entry and re
   const entry = snapshot.runtimeAuthority.packages.find(
     ({ name }) => name === '@example/knowledge'
   )
+
   assert.equal(entry.entryPath, null)
   assert.deepEqual(entry.sourceInputs, ['button.md'])
   assert.ok(

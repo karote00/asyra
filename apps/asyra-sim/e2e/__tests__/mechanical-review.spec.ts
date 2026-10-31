@@ -14,6 +14,7 @@ test('mechanical main bodies remain articulated during playback and report frame
     name: 'Play trajectory',
     exact: true
   })
+
   await expect(play).toBeInViewport()
   await page.screenshot({ path: info.outputPath('mechanical-overview.png') })
   await play.click()
@@ -25,16 +26,20 @@ test('mechanical main bodies remain articulated during playback and report frame
         let previous = 0
         let warmup = 15
         let frameRequestId = 0
+
         const finish = () => {
           window.clearTimeout(deadline)
           window.cancelAnimationFrame(frameRequestId)
           resolve(samples)
         }
+
         const deadline = window.setTimeout(finish, samplingWindowMs)
+
         const frame = (now: number) => {
           if (previous && warmup-- <= 0) {
             samples.push(now - previous)
           }
+
           previous = now
           if (samples.length >= 90) {
             finish()
@@ -42,10 +47,12 @@ test('mechanical main bodies remain articulated during playback and report frame
             frameRequestId = requestAnimationFrame(frame)
           }
         }
+
         frameRequestId = requestAnimationFrame(frame)
       }),
     samplingWindowMs
   )
+
   await page
     .getByRole('button', { name: 'Pause trajectory', exact: true })
     .click()
@@ -57,6 +64,7 @@ test('mechanical main bodies remain articulated during playback and report frame
     maxMs: sorted.at(-1) ?? null,
     frames: deltas.length
   }
+
   await info.attach('frame-timing.json', {
     contentType: 'application/json',
     body: JSON.stringify({
@@ -71,6 +79,7 @@ test('mechanical main bodies remain articulated during playback and report frame
     })
   })
   const slider = page.getByLabel('Sampled trajectory preview time')
+
   for (const [time, key] of [
     [0, 'Home'],
     [4, null],
@@ -82,13 +91,16 @@ test('mechanical main bodies remain articulated during playback and report frame
     } else {
       await slider.fill('4')
     }
+
     await page.screenshot({
       path: info.outputPath(`mechanical-pose-${time}.png`)
     })
   }
+
   await page.getByRole('button', { name: 'Return to editing pose' }).click()
   await page.getByRole('button', { name: 'Reset view' }).click()
   const canvas = page.locator('canvas')
+
   await canvas.hover()
   // Exercise the browser's explicit pinch-zoom signal for the close-up.
   await page.keyboard.down('Control')
@@ -97,5 +109,6 @@ test('mechanical main bodies remain articulated during playback and report frame
   } finally {
     await page.keyboard.up('Control')
   }
+
   await page.screenshot({ path: info.outputPath('mechanical-closeup.png') })
 })

@@ -37,6 +37,7 @@ function intervalEvidence(
     evaluations: input.pairs.length,
     pairs: input.pairs.map((pair, index) => {
       const pairState = state === 'finding' && index > 0 ? 'unresolved' : state
+
       return {
         pairId: pair.id,
         evidence: {
@@ -127,9 +128,11 @@ it('joins adjacent certified interval leaves but a finding remains usable only a
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
 
   const first = intervalEvidence(input, 0, 4, 'finding', 2)
+
   expect(owner.recordInterval(input, [0, 4], first)).toBe(true)
   expect(owner.recordInterval(input, [0, 4], structuredClone(first))).toBe(
     false
@@ -171,6 +174,7 @@ it('fills unknown exact-sample pairs from an interval while preserving accepted 
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
   const unknownPoint = intervalEvidence(input, 6, 6, 'unresolved')
   const clearPoint = intervalEvidence(input, 6, 6, 'clear')
@@ -181,10 +185,12 @@ it('fills unknown exact-sample pairs from an interval while preserving accepted 
     complete: false,
     error: 'some pairs remain unknown'
   }
+
   records.record(input, exact)
   owner.recordInterval(input, [4, 8], intervalEvidence(input, 4, 8, 'clear'))
 
   const merged = records.getAt(6)
+
   expect(merged).toMatchObject({
     complete: true,
     error: null,
@@ -198,6 +204,7 @@ it('keeps an interval gap unknown when bounded interval work cannot certify it',
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
 
   expect(
@@ -214,6 +221,7 @@ it('accepts a consistent partial interval refinement that overlaps unresolved ev
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
 
   expect(
@@ -233,6 +241,7 @@ it('rejects a conflicting proven claim inside overlapping interval evidence', ()
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
   owner.recordInterval(input, [0, 4], intervalEvidence(input, 0, 4, 'clear'))
 
@@ -249,6 +258,7 @@ it('rejects adjacent intervals whose per-pair boundary evidence conflicts', () =
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
   owner.recordInterval(
     input,
@@ -270,12 +280,14 @@ it('caps retained background intervals at the per-input work limit', () => {
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
   const step = 8 / (LIVE_LIMITS.maxBackgroundIntervals + 1)
 
   for (let index = 0; index < LIVE_LIMITS.maxBackgroundIntervals; index++) {
     const start = index * step
     const end = (index + 1) * step
+
     expect(
       owner.recordInterval(
         input,
@@ -286,6 +298,7 @@ it('caps retained background intervals at the per-input work limit', () => {
   }
 
   const start = LIVE_LIMITS.maxBackgroundIntervals * step
+
   expect(
     owner.recordInterval(
       input,
@@ -300,6 +313,7 @@ it('bounds live interval and leaf reads across different target times', () => {
   const records = new LiveEvidenceRecords()
   const input = liveFixture()
   const owner = records as unknown as IntervalEvidenceRecordsContract
+
   records.replace(input, 'current')
   const step = 8 / LIVE_LIMITS.maxBackgroundIntervals
   const leavesPerPair = 64
@@ -308,18 +322,22 @@ it('bounds live interval and leaf reads across different target times', () => {
     const start = index * step
     const end = (index + 1) * step
     const evidence = intervalEvidence(input, start, end, 'clear')
+
     for (const pair of evidence.pairs) {
       const leaf = pair.evidence.leaves[0]
+
       pair.evidence.leaves = Array.from(
         { length: leavesPerPair },
         (_, leafIndex) => {
           const leafStart = start + ((end - start) * leafIndex) / leavesPerPair
           const leafEnd =
             start + ((end - start) * (leafIndex + 1)) / leavesPerPair
+
           return { ...leaf, start: leafStart, end: leafEnd }
         }
       )
     }
+
     expect(owner.recordInterval(input, [start, end], evidence)).toBe(true)
   }
 
@@ -334,25 +352,31 @@ it('bounds live interval and leaf reads across different target times', () => {
       }
     >
   }
+
   for (const [intervalIndex, interval] of [
     ...recordsInternals.intervals.values()
   ].entries()) {
     const rangeStart = intervalIndex * step
     const rangeEnd = (intervalIndex + 1) * step
+
     Object.defineProperties(interval, {
       start: {
         configurable: true,
         enumerable: true,
+
         get: () => {
           rangeBoundReads++
+
           return rangeStart
         }
       },
       end: {
         configurable: true,
         enumerable: true,
+
         get: () => {
           rangeBoundReads++
+
           return rangeEnd
         }
       }
@@ -360,26 +384,33 @@ it('bounds live interval and leaf reads across different target times', () => {
   }
 
   let leafBoundReads = 0
+
   for (const interval of recordsInternals.intervals.values()) {
     const rangeStart = interval.start
+
     for (const pair of interval.pairs) {
       for (const [leafIndex, leaf] of pair.evidence.leaves.entries()) {
         const leafStart = rangeStart + leafIndex * (step / leavesPerPair)
         const leafEnd = rangeStart + (leafIndex + 1) * (step / leavesPerPair)
+
         Object.defineProperties(leaf, {
           start: {
             configurable: true,
             enumerable: true,
+
             get: () => {
               leafBoundReads++
+
               return leafStart
             }
           },
           end: {
             configurable: true,
             enumerable: true,
+
             get: () => {
               leafBoundReads++
+
               return leafEnd
             }
           }
@@ -391,9 +422,11 @@ it('bounds live interval and leaf reads across different target times', () => {
   rangeBoundReads = 0
   leafBoundReads = 0
   const queryCount = 100
+
   for (let query = 0; query < queryCount; query++) {
     const intervalIndex = query % LIVE_LIMITS.maxBackgroundIntervals
     const leafIndex = query % leavesPerPair
+
     records.evidenceAt(
       (intervalIndex + (leafIndex + 0.5) / leavesPerPair) * step
     )

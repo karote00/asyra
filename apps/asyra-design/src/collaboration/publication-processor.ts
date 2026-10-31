@@ -28,18 +28,22 @@ export const createPublicationProcessor =
       'collaboration:remote-policy',
       () => decideRemotePublication(publication)
     )
+
     if (acceptedPublication === false) {
       return false
     }
+
     const canonicalSlices = measureBrowserDragPhase(
       'collaboration:remote-canonical-validate',
       () => readDocumentPublicationSlices(acceptedPublication)
     )
+
     canonicalSlices.forEach((canonicalChanges) => {
       canonicalChanges.forEach((change) => {
         if (change.kind !== 'element-creation') {
           return
         }
+
         emitDiagnosticCounter('collaboration:remote-add-element-batch-count')
         emitDiagnosticCounter(
           'collaboration:remote-add-element-batch-size',
@@ -55,5 +59,6 @@ export const createPublicationProcessor =
           slices: canonicalSlices
         })
     )
+
     return settlement instanceof Promise ? settlement.then(() => true) : true
   }

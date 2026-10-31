@@ -31,10 +31,13 @@ export function encodeVisualBytes(bytes: Uint8Array): string {
   if (!bytes.byteLength || bytes.byteLength > VISUAL_SOURCE_PROFILE.maxBytes) {
     throw new Error('Visual source byte limit exceeded')
   }
+
   const parts: string[] = []
+
   for (let offset = 0; offset < bytes.length; offset += 32768) {
     parts.push(String.fromCharCode(...bytes.subarray(offset, offset + 32768)))
   }
+
   return btoa(parts.join(''))
 }
 
@@ -60,18 +63,22 @@ export function validateVisualSource(input: unknown): VisualSourceRecord {
   ) {
     throw new Error('Invalid visual source envelope or byte limit')
   }
+
   let padding = 0
+
   if (input.base64.endsWith('==')) {
     padding = 2
   } else if (input.base64.endsWith('=')) {
     padding = 1
   }
+
   if (
     (input.base64.length / 4) * 3 - padding !== input.byteLength ||
     btoa(atob(input.base64.slice(-4))) !== input.base64.slice(-4)
   ) {
     throw new Error('Noncanonical visual source Base64 or byte length')
   }
+
   return Object.freeze({
     version: 1,
     assetId: input.assetId,
@@ -90,26 +97,33 @@ export function validateVisualSources(
   ) {
     throw new Error('Invalid visual source collection or count')
   }
+
   const ids = new Set<string>(),
     sources: VisualSourceRecord[] = []
   let byteLength = 0
+
   for (const value of input) {
     const source = validateVisualSource(value)
+
     if (ids.has(source.assetId)) {
       throw new Error('Duplicate visual source identity')
     }
+
     ids.add(source.assetId)
     byteLength += source.byteLength
     if (byteLength > VISUAL_SOURCE_PROFILE.maxArchiveBytes) {
       throw new Error('Visual sources exceed the aggregate byte limit')
     }
+
     sources.push(source)
   }
+
   return Object.freeze(sources)
 }
 
 export function visualSourceBytes(input: VisualSourceRecord): Uint8Array {
   const source = validateVisualSource(input),
     binary = atob(source.base64)
+
   return Uint8Array.from(binary, (character) => character.charCodeAt(0))
 }

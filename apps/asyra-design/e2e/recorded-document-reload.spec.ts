@@ -30,6 +30,7 @@ const canonicalDigest = async (page: Page) =>
       'SHA-256',
       new TextEncoder().encode(serialized)
     )
+
     return [...new Uint8Array(hash)]
       .map((byte) => byte.toString(16).padStart(2, '0'))
       .join('')
@@ -48,6 +49,7 @@ for (const recoverInitialFailure of [false, true]) {
     if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL) {
       throw new Error('Isolated test endpoints are required')
     }
+
     expect(new URL(baseURL).port).not.toBe('3000')
     expect(new URL(process.env.E2E_DOCUMENT_BACKEND_URL).port).not.toBe('4201')
     const root = resolve('e2e/fixtures/recorded-101')
@@ -57,12 +59,14 @@ for (const recoverInitialFailure of [false, true]) {
     const bytes = gunzipSync(
       await readFile(resolve(root, 'document.fixture.gz'))
     )
+
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(
       manifest.sha256
     )
     const document = JSON.parse(bytes.toString())
     const identity = createTestDocumentIdentity()
     const storage = resolve('test-results/document-backend')
+
     await mkdir(storage, { recursive: true })
     const storedPath = resolve(
       storage,
@@ -79,12 +83,14 @@ for (const recoverInitialFailure of [false, true]) {
         batches: {}
       }
     })
+
     // A truncated backend read fails the real handshake; restoring the exact
     // checkpoint must let the same App session recover through its socket owner.
     await writeFile(storedPath, recoverInitialFailure ? '{' : storedRecord)
     let beforeReloadTimings: unknown
     const initialErrors: string[] = []
     const errors: string[] = []
+
     page.on('console', (message) => {
       if (message.type() === 'error') {
         errors.push(message.text())
@@ -93,8 +99,10 @@ for (const recoverInitialFailure of [false, true]) {
     page.on('pageerror', (error) => errors.push(error.message))
     await page.addInitScript(() => {
       const timings: unknown[] = []
+
       Object.assign(window, { recordedBootstrapTimings: timings })
       const NativeWorker = window.Worker
+
       window.Worker = class extends NativeWorker {
         constructor(url: string | URL, options?: WorkerOptions) {
           super(url, options)
@@ -111,6 +119,7 @@ for (const recoverInitialFailure of [false, true]) {
       }
     })
     const started = Date.now()
+
     try {
       await page.goto(identity.url)
       await waitForAppReady(page)
@@ -145,18 +154,22 @@ for (const recoverInitialFailure of [false, true]) {
           const session = (
             await import('../src/testing/runtime-access')
           ).getActiveCollaborationHandle()
+
           if (!session) {
             throw new Error('Missing failed document session')
           }
+
           await session.reconnect()
         })
       }
+
       await expect
         .poll(
           () =>
             page.evaluate(async () => {
               const { core, getActiveCollaborationHandle } =
                 await import('../src/testing/runtime-access')
+
               return {
                 count: core.deps.sceneTree.getAllElements().size,
                 status: getActiveCollaborationHandle()?.getStatus()
@@ -184,46 +197,60 @@ for (const recoverInitialFailure of [false, true]) {
         const owner = createInspectionEvidence()
         const action = createAiInspectionAction(undefined, owner)
         const signal = new AbortController().signal
+
         const capture = async (index: number) => {
           const result = (await action.execute(inspections[index], {
             signal
           } as never)) as { available: boolean; evidence?: unknown }
+
           if (!result.available || !result.evidence) {
             throw new Error('Recorded scope capture unavailable')
           }
+
           return result.evidence
         }
+
         try {
           const captured = []
+
           for (let index = 0; index < inspections.length; index++) {
             captured.push(await capture(index))
           }
+
           const [whole, crown, , , base] = captured
           const crownId = inspections[1].elementId
           const child = core.getElementData(crownId)?.children?.[0]
+
           if (!child) {
             throw new Error('Recorded crown child is missing')
           }
+
           fillApis.updatePrimaryFillColor(child, '#ee3355')
           const afterCrown = {
             whole: owner.isCurrent(whole),
             crown: owner.isCurrent(crown),
             base: owner.isCurrent(base)
           }
+
           viewportApis.panTo(900, 900)
           viewportApis.zoomToCenter(0.25, 0, 0)
           const afterViewport = owner.isCurrent(base)
+
           await historyApis.undo()
           const afterUndo = owner.isCurrent(base)
+
           await historyApis.redo()
           const afterRedo = owner.isCurrent(base)
           const session = getActiveCollaborationHandle()
+
           if (!session) {
             throw new Error('Missing document session')
           }
+
           const receipt = await session.confirmPersistence(
             AbortSignal.timeout(15000)
           )
+
           return {
             afterCrown,
             afterViewport,
@@ -238,6 +265,7 @@ for (const recoverInitialFailure of [false, true]) {
           owner.dispose()
         }
       }, review.capture.inspections)
+
       expect(result.afterCrown).toEqual({
         whole: false,
         crown: false,
@@ -252,6 +280,7 @@ for (const recoverInitialFailure of [false, true]) {
       // Feed actual browser receipts into the production review-result owner.
       // Visual verdicts here are caller fixtures, not automated visual certification.
       const retained = createLocalDesignReview()
+
       retained.record({
         ...review.plan,
         criteria: {
@@ -260,6 +289,7 @@ for (const recoverInitialFailure of [false, true]) {
           view: { ...review.plan.criteria.view, requiredUnits: [] }
         }
       })
+
       const publish = (index: number, stamp: unknown) => {
         const input = review.capture.inspections[index]
         const image = retained.inspect(
@@ -270,11 +300,14 @@ for (const recoverInitialFailure of [false, true]) {
           input.view === 'detail',
           stamp as Parameters<typeof retained.inspect>[5]
         )
+
         if (!image) {
           throw new Error('Missing delivered evidence')
         }
+
         return image.inspectionId
       }
+
       const ids = result.captured.map((stamp, index) => publish(index, stamp))
       const originalIds = review.judgment.inspectionIds as string[]
       const checks = review.judgment.checks.map(
@@ -286,6 +319,7 @@ for (const recoverInitialFailure of [false, true]) {
         })
       )
       const bound = retained.bindReview('visual', checks)
+
       retained.recordBoundReview({
         ...bound,
         final: false,
@@ -298,6 +332,7 @@ for (const recoverInitialFailure of [false, true]) {
       const passedBase = retained
         .readChecks({ includePassed: true })
         .items.find((item) => item.unitId === 'base')
+
       expect(passedBase?.status).toBe('pass')
       expect(result.current).toEqual([false, false, true, true, true])
       retained.invalidateInspections(
@@ -321,8 +356,10 @@ for (const recoverInitialFailure of [false, true]) {
           evidence: 'Caller fixture accepts the corrected crown.'
         }))
       })
+
       expect(correction.accepted).toBe(false)
       const accumulated = retained.readChecks({ includePassed: true }).items
+
       expect(accumulated.find((item) => item.unitId === 'base')).toEqual(
         passedBase
       )
@@ -333,6 +370,7 @@ for (const recoverInitialFailure of [false, true]) {
         accumulated.find((item) => item.criterionId === 'whole')?.status
       ).toBe('stale')
       const changed = await canonicalDigest(page)
+
       expect(changed).not.toBe(manifest.canonicalSha256)
       beforeReloadTimings = await page.evaluate(() =>
         Reflect.get(window, 'recordedBootstrapTimings')
@@ -358,6 +396,7 @@ for (const recoverInitialFailure of [false, true]) {
       })
     } finally {
       const diagnosticsPath = testInfo.outputPath('recorded-reload.json')
+
       await writeFile(
         diagnosticsPath,
         JSON.stringify({
@@ -391,10 +430,12 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
     await readFile(resolve(root, 'manifest.json'), 'utf8')
   )
   const bytes = gunzipSync(await readFile(resolve(root, 'document.fixture.gz')))
+
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(manifest.sha256)
   const document = JSON.parse(bytes.toString())
   const identity = createTestDocumentIdentity()
   const storage = resolve('test-results/document-backend')
+
   await mkdir(storage, { recursive: true })
   await writeFile(
     resolve(
@@ -424,6 +465,7 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
         { type: 'module' }
       )
       const timings: unknown[] = []
+
       try {
         return await new Promise<{
           elapsedMs: number
@@ -434,12 +476,15 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
             () => reject(new Error('Bootstrap transport did not settle')),
             30000
           )
+
           worker.onerror = (error) => {
             clearTimeout(timeout)
             reject(new Error(error.message))
           }
+
           worker.onmessage = (event) => {
             const message = event.data
+
             if (
               message.type === 'timing' ||
               message.type === 'diagnostic-counter' ||
@@ -447,10 +492,12 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
             ) {
               timings.push({ ...message, atMs: performance.now() - started })
             }
+
             if (message.type === 'failure') {
               clearTimeout(timeout)
               reject(new Error(message.message))
             }
+
             if (message.type === 'connected') {
               clearTimeout(timeout)
               resolve({
@@ -462,6 +509,7 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
               })
             }
           }
+
           worker.postMessage({
             type: 'connect',
             generation: 1,
@@ -483,6 +531,7 @@ test('profiles the recorded checkpoint at the real transport worker boundary', a
       endpoint: process.env.VITE_COLLABORATION_WS_URL ?? ''
     }
   )
+
   expect(evidence.elements).toBe(manifest.elements)
   console.info(JSON.stringify(evidence))
   await testInfo.attach('transport-timings', {
@@ -503,6 +552,7 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
   if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL) {
     throw new Error('Isolated test endpoints are required')
   }
+
   expect(new URL(baseURL).port).not.toBe('3000')
   expect(new URL(process.env.E2E_DOCUMENT_BACKEND_URL).port).not.toBe('4201')
   const root = resolve('e2e/fixtures/recorded-101')
@@ -510,9 +560,11 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
     await readFile(resolve(root, 'manifest.json'), 'utf8')
   )
   const bytes = gunzipSync(await readFile(resolve(root, 'document.fixture.gz')))
+
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(manifest.sha256)
   const identity = createTestDocumentIdentity()
   const storage = resolve('test-results/document-backend')
+
   await mkdir(storage, { recursive: true })
   await writeFile(
     resolve(
@@ -537,6 +589,7 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
       'utf8'
     )
   )
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   await expect
@@ -545,6 +598,7 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
         page.evaluate(async () => {
           const { getActiveCollaborationHandle } =
             await import('../src/testing/runtime-access')
+
           return getActiveCollaborationHandle()?.getStatus()
         }),
       { timeout: 30000 }
@@ -561,24 +615,32 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
     const reviewer = createDesignReviewer(
       {
         observeChanges: observeInspectionChanges,
+
         read: (id) => {
           counts.reads++
+
           return core.getElementData(id)
         },
+
         computed: (id, fields) => {
           counts.computed++
+
           return core.getElementComputedData(id, fields)
         },
+
         measure: (ids) => {
           counts.measurements += ids.length
+
           return core.measureElementContentBounds(ids)
         }
       },
       undefined,
       true
     )
+
     try {
       const captured = await reviewer.capture(rootId)
+
       if (!captured.complete || !captured.evidence) {
         throw new Error(
           JSON.stringify({
@@ -587,10 +649,13 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
           })
         )
       }
+
       const coverage = await reviewer.coverage(captured.evidence)
+
       if (!coverage) {
         throw new Error('Missing complete coverage')
       }
+
       const ids = coverage.checks
         .filter((check) => check.elementId !== rootId && check.inherited)
         .slice(0, 128)
@@ -598,18 +663,22 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
       const before = { ...counts }
       const first = []
       const second = []
+
       for (const output of [first, second]) {
         for (let offset = 0; offset < ids.length; offset += 64) {
           const result = await reviewer.reconcile(
             captured.evidence,
             ids.slice(offset, offset + 64)
           )
+
           if (!result.current) {
             throw new Error('Coverage lost currency')
           }
+
           output.push(...result.measurements)
         }
       }
+
       return {
         before,
         after: counts,
@@ -622,6 +691,7 @@ test('reuses saved Taipei101 mechanical coverage without per-target canonical re
       reviewer.dispose()
     }
   }, recorded.capture.inspections[0].elementId)
+
   expect(work.targets).toBe(128)
   expect(work.before.reads).toBeGreaterThan(work.targets)
   expect(work.after).toEqual(work.before)

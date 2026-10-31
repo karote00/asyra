@@ -16,12 +16,14 @@ const source = requiredSpecValue(
   specification.modules.find((m) => m.moduleId === 'park-bench'),
   'park-bench'
 )
+
 function component<T>(id: string): T {
   return requiredSpecValue(
     source.components.find((c) => c.partId === id),
     id
   ) as T
 }
+
 /** Slats and swept frame use the current approved construction coordinates. */
 export function bench(): AssetPart[] {
   const pieces: AssetPart[] = []
@@ -30,6 +32,7 @@ export function bench(): AssetPart[] {
     specification.materials.metal.baseColorSRGB.slice(1),
     16
   )
+
   const addBox = (
     id: string,
     size: Vec,
@@ -39,11 +42,13 @@ export function bench(): AssetPart[] {
     isWood = true
   ) => {
     const mesh = emptyMesh()
+
     append(mesh, box(size, radius), position, rotation)
     pieces.push(
       part(id, mesh, isWood ? wood : metal, isWood ? 'wood' : 'metal')
     )
   }
+
   const seat = component<{
     size: number[]
     centresY: number[]
@@ -51,6 +56,7 @@ export function bench(): AssetPart[] {
     centreZ: number
     bevel: number
   }>('seat-slats')
+
   seat.centresY.forEach((y, i) =>
     addBox(
       `seat-slat-${i}`,
@@ -69,6 +75,7 @@ export function bench(): AssetPart[] {
     rearPostSetbackY: number
   }>('back-slats')
   const angle = (back.inclinationDegrees * Math.PI) / 180
+
   back.centresZ.forEach((z, i) =>
     addBox(
       `back-slat-${i}`,
@@ -82,6 +89,7 @@ export function bench(): AssetPart[] {
     instances: { size: number[]; centre: number[] }[]
     bevel: number
   }>('seat-crossrails')
+
   rails.instances.forEach((rail, i) =>
     addBox(
       `crossrail-${i}`,
@@ -97,8 +105,10 @@ export function bench(): AssetPart[] {
     sizeWidthLengthHeight: number[]
     bevel: number
   }>('seat-supports')
+
   supports.centrelineEndpoints.forEach(([a, b], i) => {
     const rotation = (Math.atan2(-(b[0] - a[0]), b[1] - a[1]) * 180) / Math.PI
+
     addBox(
       `seat-support-${i}`,
       vec(supports.sizeWidthLengthHeight),
@@ -115,6 +125,7 @@ export function bench(): AssetPart[] {
     zMax: number
     radialSegments: number
   }>('front-legs')
+
   fronts.centresXY.forEach(([x, y], i) =>
     pieces.push(
       ...placeParts(
@@ -141,6 +152,7 @@ export function bench(): AssetPart[] {
     radius: number
     radialSegments: number
   }>('rear-posts')
+
   rear.xValues.forEach((x, i) =>
     pieces.push(
       part(
@@ -161,6 +173,7 @@ export function bench(): AssetPart[] {
     radius: number
     radialSegments: number
   }>('arms')
+
   for (const side of [-1, 1]) {
     const path = arms.controlSegmentsRightXYZ.flatMap((points, i) =>
       bezier(
@@ -168,6 +181,7 @@ export function bench(): AssetPart[] {
         arms.pathIntervalsPerSegment
       ).slice(i ? 1 : 0)
     )
+
     pieces.push(
       part(
         `arm-${side}`,
@@ -177,6 +191,7 @@ export function bench(): AssetPart[] {
       )
     )
   }
+
   return placeParts(
     pieces,
     vec(

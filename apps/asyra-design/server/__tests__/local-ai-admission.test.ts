@@ -26,6 +26,7 @@ const batch = {
     }
   ]
 }
+
 afterEach(() => vi.unstubAllEnvs())
 
 describe('local subscription endpoint admission', () => {
@@ -44,6 +45,7 @@ describe('local subscription endpoint admission', () => {
     const server = createServer((request, response) => {
       void middleware(request, response, () => response.end())
     })
+
     try {
       await new Promise<void>((resolve) =>
         server.listen(0, '127.0.0.1', resolve)
@@ -52,25 +54,32 @@ describe('local subscription endpoint admission', () => {
       const headers: Record<string, string> = {
         'content-type': 'application/json'
       }
+
       if (kind === 'same-origin') {
         headers.origin = origin
         headers['sec-fetch-site'] = 'same-origin'
       }
+
       if (kind === 'foreign-origin') {
         headers.origin = 'https://attacker.example'
       }
+
       if (kind === 'null-origin') {
         headers.origin = 'null'
       }
+
       if (kind === 'foreign-host') {
         headers.host = 'attacker.example'
       }
+
       if (kind === 'form') {
         headers['content-type'] = 'text/plain'
       }
+
       if (kind === 'cross-site') {
         headers['sec-fetch-site'] = 'cross-site'
       }
+
       const response = await new Promise<{
         status: number | undefined
         body: unknown
@@ -80,6 +89,7 @@ describe('local subscription endpoint admission', () => {
           { method: 'POST', headers },
           (response) => {
             let source = ''
+
             response.setEncoding('utf8')
             response.on('data', (chunk) => {
               source += chunk
@@ -89,10 +99,12 @@ describe('local subscription endpoint admission', () => {
             )
           }
         )
+
         request.on('error', reject)
         request.end(JSON.stringify(input))
       })
       const accepted = ['same-origin', 'no-origin'].includes(kind)
+
       expect(response.status).toBe(accepted ? 200 : 403)
       expect(response.body).toEqual(
         accepted ? batch : { code: 'ACTION_BATCH_LOCAL_PROVIDER_FORBIDDEN' }
@@ -109,6 +121,7 @@ describe('local subscription endpoint admission', () => {
     vi.stubEnv('AI_PROVIDER_BACKEND', 'local-codex')
     const requestModelActionBatch = vi.fn(async () => batch)
     const response = { setHeader: vi.fn(), end: vi.fn(), statusCode: 0 }
+
     await createActionBatchMiddleware({ requestModelActionBatch })(
       {
         url: ACTION_BATCH_ENDPOINT,

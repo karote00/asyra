@@ -42,6 +42,7 @@ function timeInSeconds(value: number, unit: TrajectoryTimeUnit): number {
   if (!Number.isFinite(value)) {
     throw new Error('Time must be finite')
   }
+
   return unit === 'ms' ? value / 1000 : value
 }
 
@@ -53,13 +54,17 @@ export function normalizeTrajectorySource(
   if (!hasExactOwnKeys(input, sourceFields) || input.version !== 1) {
     throw new Error('Invalid trajectory source data or unit declaration')
   }
+
   const timeUnit = input.timeUnit
+
   if (timeUnit !== 'ms' && timeUnit !== 's') {
     throw new Error('An explicit supported time unit is required')
   }
+
   if (!Array.isArray(input.keyframes)) {
     throw new Error('Trajectory keyframes must be an array')
   }
+
   if (
     !input.keyframes.length ||
     input.keyframes.length > GEOMETRY_PROFILE.maxKeyframes
@@ -71,22 +76,27 @@ export function normalizeTrajectorySource(
 
   const actuated = workcell.bodies.filter((body) => body.joint.kind !== 'fixed')
   const jointIds = actuated.map((body) => body.id)
+
   if (!hasExactOwnKeys(input.jointUnits, jointIds)) {
     throw new Error('Every actuated joint requires one explicit unit')
   }
 
   const units: Record<string, TrajectoryJointUnit> = {}
+
   for (const body of actuated) {
     const unit = input.jointUnits[body.id]
+
     if (body.joint.kind === 'revolute') {
       if (unit !== 'deg' && unit !== 'rad') {
         throw new Error(`Invalid unit for joint ${body.id}`)
       }
+
       units[body.id] = unit
     } else if (body.joint.kind === 'prismatic') {
       if (unit !== 'mm' && unit !== 'm') {
         throw new Error(`Invalid unit for joint ${body.id}`)
       }
+
       units[body.id] = unit
     } else {
       throw new Error(`Invalid actuated joint ${body.id}`)
@@ -97,22 +107,27 @@ export function normalizeTrajectorySource(
     if (!hasExactOwnKeys(unknownFrame, frameFields)) {
       throw new Error('Invalid trajectory keyframe data')
     }
+
     if (!hasExactOwnKeys(unknownFrame.joints, jointIds)) {
       throw new Error('Every actuated joint column must be explicit')
     }
 
     const joints: Record<string, number> = {}
+
     for (const body of actuated) {
       const value = unknownFrame.joints[body.id]
       const unit = units[body.id]
+
       if (typeof value !== 'number' || !unit) {
         throw new Error(`Missing joint value ${body.id}`)
       }
+
       joints[body.id] =
         body.joint.kind === 'revolute'
           ? angleInRadians(value, unit as RevoluteJointUnit)
           : lengthInMeters(value, unit as PrismaticJointUnit)
     }
+
     return {
       time: timeInSeconds(unknownFrame.time as number, timeUnit),
       joints
@@ -120,7 +135,9 @@ export function normalizeTrajectorySource(
   })
 
   const trajectory: Trajectory = { version: 1, keyframes }
+
   validateTrajectory(workcell, trajectory)
+
   return {
     trajectory,
     sourceUnits: { time: timeUnit, joints: { ...units } }

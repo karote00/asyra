@@ -53,6 +53,7 @@ export const TEXT_RENDER_STRATEGY: EngineNeutralRenderStrategy<
   TextData & { fills: FillAttrs[] }
 > = (graphic, data) => {
   const bounds = { x: 0, y: 0, width: data.width, height: data.height }
+
   graphic.clear()
   setElementGeometryLocalBounds(
     graphic as Parameters<typeof setElementGeometryLocalBounds>[0],
@@ -78,6 +79,7 @@ export const TEXT_RENDER_STRATEGY: EngineNeutralRenderStrategy<
         : fill.style
     )
   }
+
   graphic.x = data.x
   graphic.y = data.y
   graphic.rotation = data.rotation ?? 0

@@ -28,6 +28,7 @@ it('mounted crate consumer keeps real other-base material intersections blocked'
   const chassis = nonlinearRequired(
     f.source.parts.find((p) => p.id === 'chassis')
   )
+
   expect(
     chassis.regions.some((region) =>
       f.crate.geometry.parts.some((part) =>

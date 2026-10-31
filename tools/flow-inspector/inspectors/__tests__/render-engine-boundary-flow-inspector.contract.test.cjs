@@ -14,6 +14,7 @@ const assertImplementationBoundary = (owner, implementationFile, label) => {
   const concretePath = implementationFile.endsWith('/**')
     ? implementationFile.slice(0, -3)
     : implementationFile
+
   assert.ok(
     fs.existsSync(path.resolve(repoRoot, concretePath)),
     `${label} implementation boundary does not resolve: ${implementationFile}`
@@ -22,13 +23,17 @@ const assertImplementationBoundary = (owner, implementationFile, label) => {
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
 const route = (id) => {
   const value = data.routes.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector route: ${id}`)
+
   return value
 }
 
@@ -180,6 +185,7 @@ test('architecture documentation sync stays with the matching owner steps', () =
 
   documentationByOwner.forEach((documentationFiles, ownerStepId) => {
     const owner = step(ownerStepId)
+
     documentationFiles.forEach((documentationFile) => {
       assert.ok(
         owner.implementationBoundary.includes(documentationFile),
@@ -192,6 +198,7 @@ test('architecture documentation sync stays with the matching owner steps', () =
     path.resolve(__dirname, '../../../../docs/ai/framework/ARCHITECTURE.md'),
     'utf8'
   )
+
   assert.match(architecture, /preset -->\|selects 2D provider\| pixi/)
   assert.doesNotMatch(architecture, /preset -->\|constructs default\| pixi/)
 })

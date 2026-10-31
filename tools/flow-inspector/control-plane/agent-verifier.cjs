@@ -16,6 +16,7 @@ const {
 } = require('./snapshot.cjs')
 const { assessSourceEvidence } = require('./evidence.cjs')
 const { writeAtomic } = require('./store.cjs')
+
 async function produceCandidateProof({
   repositoryRoot,
   directory,
@@ -31,9 +32,11 @@ async function produceCandidateProof({
   if (!containmentAvailable()) {
     throw new Error('OS containment unavailable; candidate execution denied')
   }
+
   if (!/^[a-zA-Z0-9-]+$/.test(attemptId)) {
     throw new Error('Invalid verification attempt')
   }
+
   if (
     snapshot.digest !== sha256(JSON.stringify(snapshot.files)) ||
     snapshot.contractDigest !== contract.digest ||
@@ -42,6 +45,7 @@ async function produceCandidateProof({
   ) {
     throw new Error('Baseline source identity mismatch')
   }
+
   const runDirectory = safePath(
     repositoryRoot,
     path.relative(
@@ -53,21 +57,26 @@ async function produceCandidateProof({
     ? admitRuntimeAuthoritySource(snapshot.sourceRoot, snapshot, contract)
     : null
   const runtimeAuthority = runtimeAdmission?.runtimeAuthority
+
   fs.mkdirSync(runDirectory, { recursive: true })
   const sourceRoot = path.join(runDirectory, 'source')
   const files = []
+
   for (const entry of snapshot.files) {
     const original = safePath(snapshot.sourceRoot, entry.path)
     const admittedBytes = runtimeAdmission?.bytesByPath.get(entry.path)
     const originalBytes = admittedBytes ?? fs.readFileSync(original)
+
     if (!admittedBytes && sha256(originalBytes) !== entry.digest) {
       throw new Error('Baseline source changed')
     }
+
     const candidateOwned = allowedFiles.includes(entry.path)
     const bytes = candidateOwned
       ? fs.readFileSync(safePath(candidateRoot, entry.path))
       : originalBytes
     const destination = path.join(sourceRoot, entry.path)
+
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.writeFileSync(destination, bytes, { flag: 'wx', mode: 0o444 })
     files.push({
@@ -76,6 +85,7 @@ async function produceCandidateProof({
       digest: candidateOwned ? sha256(bytes) : entry.digest
     })
   }
+
   const verificationSource = Object.hasOwn(snapshot, 'verificationSource')
     ? structuredClone(snapshot.verificationSource)
     : createVerificationSource(snapshot.files, contract, runtimeAuthority)
@@ -84,16 +94,20 @@ async function produceCandidateProof({
     verificationSource,
     ...(runtimeAuthority ? { runtimeAuthority } : {})
   })
+
   for (const { path: file, content } of generated.files) {
     const destination = path.join(sourceRoot, file)
+
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.writeFileSync(destination, content, { flag: 'wx', mode: 0o444 })
     files.push({
       ...generated.executionSource.files.find((entry) => entry.path === file)
     })
   }
+
   files.sort((a, b) => a.path.localeCompare(b.path))
   const manifestPath = path.join(runDirectory, 'source-manifest.json')
+
   fs.writeFileSync(manifestPath, JSON.stringify(files), {
     flag: 'wx',
     mode: 0o444
@@ -132,6 +146,7 @@ async function produceCandidateProof({
   )
   const evidence = assessed.evidence
   let source = assessed.source
+
   if (
     files.some((entry) => {
       try {
@@ -150,6 +165,7 @@ async function produceCandidateProof({
       'Frozen verification source was modified during execution'
     )
   }
+
   const verdict = {
     evidence,
     sourceDigest: candidate.digest,
@@ -165,12 +181,16 @@ async function produceCandidateProof({
     containment: 'macos-sandbox-no-fork',
     deliveryStatus: 'not-delivered'
   }
+
   writeAtomic(path.join(runDirectory, 'verdict.json'), verdict)
+
   return { verdict, source }
 }
+
 async function verifyCandidate(options) {
   return (await produceCandidateProof(options)).verdict
 }
+
 module.exports = {
   containmentAvailable,
   containedProcess,

@@ -125,19 +125,24 @@ interface Batch {
   }[]
 }
 const batches = [furniture, architecture, pantry, storage] as unknown as Batch[]
+
 const materialKind = (name: string): SurfaceKind => {
   if (/oak|wood/.test(name)) {
     return 'wood'
   }
+
   if (/sage|orange/.test(name)) {
     return 'fabric'
   }
+
   if (/plaster|cap/.test(name)) {
     return 'plaster'
   }
+
   if (/iron|frame|grey/.test(name)) {
     return 'metal'
   }
+
   return 'plain'
 }
 
@@ -149,8 +154,10 @@ function carvedBox(
   radius: number
 ): Mesh {
   let result = box(size, radius)
+
   for (const cut of cuts) {
     const cutter = emptyMesh()
+
     append(
       cutter,
       box(vec(cut.size), cut.radius ?? 0),
@@ -158,14 +165,17 @@ function carvedBox(
     )
     result = subtractSolid(result, cutter)
   }
+
   return result
 }
+
 function componentMesh(c: Component, components: Component[]): Mesh {
   const size = c.size ?? c.sizeMetres,
     centre = vec(c.centre ?? c.centreMetres ?? [0, 0, 0]),
     shape = c.primitive ?? c.shape
   let m: Mesh,
     position = centre
+
   if (c.profileVerticesXZMetres && c.extrusionYMetres) {
     m = extrudeProfile(
       c.profileVerticesXZMetres.map(([x, z]) => [z, x]),
@@ -203,6 +213,7 @@ function componentMesh(c: Component, components: Component[]): Mesh {
             48
           )
     const oriented = emptyMesh()
+
     append(
       oriented,
       m,
@@ -216,11 +227,13 @@ function componentMesh(c: Component, components: Component[]): Mesh {
     const b = vec(c.bottomCentre ?? []),
       t = vec(c.topCentre ?? []),
       h = t[2] - b[2]
+
     m = box([c.topWidth ?? 0.03, c.topWidth ?? 0.03, h], c.radius ?? 0)
     position = [(t[0] + b[0]) / 2, (t[1] + b[1]) / 2, (t[2] + b[2]) / 2]
   } else if (shape === 'tapered-round-leg') {
     const b = vec(c.bottomCentre ?? []),
       t = vec(c.topCentre ?? [])
+
     m = roundedTaper(
       b,
       t,
@@ -231,6 +244,7 @@ function componentMesh(c: Component, components: Component[]): Mesh {
     position = [0, 0, 0]
   } else if (shape === 'lathe-fill') {
     const source = components.find((part) => part.partId === c.sourcePartId)
+
     if (
       !source?.profileZR ||
       c.fillRatio === undefined ||
@@ -238,6 +252,7 @@ function componentMesh(c: Component, components: Component[]): Mesh {
     ) {
       throw new Error(`Missing liquid cavity specification: ${c.partId}`)
     }
+
     m = bottleContents(
       source.profileZR,
       source.rings,
@@ -262,15 +277,19 @@ function componentMesh(c: Component, components: Component[]): Mesh {
   } else {
     throw new Error(`Unsupported catalog component: ${c.partId} (${shape})`)
   }
+
   const placed = emptyMesh()
+
   append(placed, m, position, [c.rotationXDegrees ?? 0, 0, 0])
   if (c.grooves) {
     return cutTrayGrooves(placed, centre, vec(size ?? []), c.grooves)
   }
+
   if (c.panelRecess) {
     if (!size) {
       throw new Error('Door field requires source size')
     }
+
     return recessPanel(placed, centre[1] - size[1] / 2, [
       {
         x: centre[0],
@@ -282,16 +301,21 @@ function componentMesh(c: Component, components: Component[]): Mesh {
       }
     ])
   }
+
   return placed
 }
+
 export function catalogAsset(id: string): AssetPart[] {
   for (const batch of batches) {
     const module = batch.modules.find((m) => m.moduleId === id)
+
     if (!module) {
       continue
     }
+
     const back = module.normalizeBackAssembly
     const translation: Vec = [0, 0, 0]
+
     if (back) {
       const maxima = module.components
         .filter((c) => back.parts.includes(c.partId))
@@ -299,33 +323,41 @@ export function catalogAsset(id: string): AssetPart[] {
           const size = c.size,
             centre = c.centre,
             r = c.radius
+
           if (!size || !centre || r === undefined) {
             throw new Error('Back placement requires rounded dimensions')
           }
+
           const angle = ((c.rotationXDegrees ?? 0) * Math.PI) / 180,
             cs = Math.abs(Math.cos(angle)),
             sn = Math.abs(Math.sin(angle))
           const hy = size[1] / 2 - r,
             hz = size[2] / 2 - r
+
           return [
             centre[1] + cs * hy + sn * hz + r,
             centre[2] + sn * hy + cs * hz + r
           ]
         })
+
       translation[1] = back.targetRearY - Math.max(...maxima.map((p) => p[0]))
       translation[2] = back.targetTopZ - Math.max(...maxima.map((p) => p[1]))
     }
+
     return module.components.map((c) => {
       const mat = batch.materials[c.material]
+
       if (!mat) {
         throw new Error(`Missing material ${c.material}`)
       }
+
       const prepared =
         id === 'lounge-armchair' &&
         (c.partId === 'left-arm' || c.partId === 'right-arm')
           ? armchairPanels.panels[c.partId]
           : undefined
       let mesh = prepared?.mesh ?? componentMesh(c, module.components)
+
       if (back?.parts.includes(c.partId)) {
         for (let i = 0; i < mesh.positions.length; i += 3) {
           for (let k = 0; k < 3; k++) {
@@ -333,13 +365,16 @@ export function catalogAsset(id: string): AssetPart[] {
           }
         }
       }
+
       if (module.insetFields?.owner === c.partId) {
         const inset = module.insetFields,
           size = c.size ?? c.sizeMetres,
           centre = c.centre ?? c.centreMetres
+
         if (!size || !centre) {
           throw new Error('Inset owner requires size and centre')
         }
+
         mesh = recessPanel(
           mesh,
           centre[1] - size[1] / 2,
@@ -353,6 +388,7 @@ export function catalogAsset(id: string): AssetPart[] {
           }))
         )
       }
+
       return {
         id: c.partId,
         mesh,
@@ -366,8 +402,10 @@ export function catalogAsset(id: string): AssetPart[] {
       }
     })
   }
+
   throw new Error(`Unknown catalog asset: ${id}`)
 }
+
 export const part = (
   id: string,
   mesh: Mesh,
@@ -375,6 +413,7 @@ export const part = (
   material: SurfaceKind = 'plain',
   roughness = 0.85
 ): AssetPart => ({ id, mesh, color, material, roughness })
+
 export function placeParts(
   parts: readonly AssetPart[],
   position: Vec,
@@ -384,21 +423,27 @@ export function placeParts(
   if (scale.some((n) => !Number.isFinite(n) || n <= 0)) {
     throw new Error('Invalid assembly scale')
   }
+
   return parts.map((p) => {
     if (p.instances) {
       return { ...p, placement: { position, rotation, scale } }
     }
+
     const mesh = emptyMesh()
+
     append(mesh, p.mesh, position, [0, 0, rotation], scale)
     let distant: AssetPart['distant']
+
     if (p.distant) {
       const reduced = emptyMesh()
+
       append(reduced, p.distant.mesh, position, [0, 0, rotation], scale)
       distant = {
         mesh: reduced,
         maxError: p.distant.maxError * Math.max(...scale)
       }
     }
+
     return { ...p, mesh, distant }
   })
 }

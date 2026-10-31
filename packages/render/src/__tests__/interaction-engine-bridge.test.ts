@@ -38,6 +38,7 @@ describe('engine interaction bridge', () => {
   it('maps normalized engine hover events through the opaque target handle', async () => {
     const engine = new RecordingRenderEngine({ name: 'interaction-engine' })
     const render = new Render({ engine })
+
     await render.init(100, 100, 0, {})
     const element = render.addElement({
       id: 'element-1',
@@ -60,6 +61,7 @@ describe('engine interaction bridge', () => {
   it('bypasses normalized events without a mapped target', async () => {
     const engine = new RecordingRenderEngine({ name: 'unmapped-interaction' })
     const render = new Render({ engine })
+
     await render.init(100, 100, 0, {})
 
     engine.emitInteraction(createInteraction('pointerover', null))
@@ -73,14 +75,17 @@ describe('engine interaction bridge', () => {
     const engine = new RecordingRenderEngine({ name: 'interaction-cleanup' })
     const unsubscribe = vi.fn()
     const subscribe = engine.subscribeToInteraction.bind(engine)
+
     engine.subscribeToInteraction = vi.fn((listener) => {
       const unsubscribeEngine = subscribe(listener)
+
       return () => {
         unsubscribeEngine()
         unsubscribe()
       }
     })
     const render = new Render({ engine })
+
     await render.init(100, 100, 0, {})
 
     render.dispose()

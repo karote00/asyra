@@ -32,6 +32,7 @@ describe('common tool contracts', () => {
       ...definition(),
       delivery
     } as AiToolContractInput)
+
     expect(contract).toMatchObject({
       outputSchema: { type: 'boolean' },
       delivery
@@ -91,6 +92,7 @@ describe('common tool contracts', () => {
         options: { anyOf: [{ $ref: '#/$defs/handle' }, { type: 'number' }] }
       }
     } as const
+
     expect(embedAiToolSchema(schema, '#/properties/value')).toMatchObject({
       properties: {
         handle: { $ref: '#/properties/value/$defs/handle' },
@@ -114,14 +116,17 @@ describe('common tool contracts', () => {
         ...definition(),
         recoveryOutputSchema
       })
+
       const inspect = (value: unknown) =>
         inspectAiToolResult(contract, value, {
           outcome: { status, settlement: 'unknown' },
+
           validate: (value, schema) =>
             typeof value === (schema as { type: string }).type
               ? undefined
               : 'Wrong recovery type'
         })
+
       expect(inspect('repair-reference')).toMatchObject({
         status,
         settlement: 'unknown'
@@ -143,15 +148,19 @@ describe('common tool contracts', () => {
       ...definition(),
       partialOutputSchema
     })
+
     const validate = (value: unknown, schema: unknown) => {
       const type = (schema as { type: string }).type
+
       return typeof value === type ? undefined : `Expected ${type}`
     }
+
     const inspect = (status: 'success' | 'partial', value: unknown) =>
       inspectAiToolResult(contract, value, {
         outcome: { status, settlement: 'partial' },
         validate
       })
+
     expect(inspect('partial', 'Three writes completed')).toMatchObject({
       status: 'partial',
       settlement: 'partial'
@@ -190,14 +199,17 @@ describe('common tool contracts', () => {
       middleware: [
         createAiToolMiddleware({
           resolve: () => contract,
+
           validate: (value, schema) =>
             schema === contract.outputSchema && typeof value !== 'boolean'
               ? 'result: expected boolean'
               : undefined,
+
           classify: () => ({ status: 'success', settlement: 'completed' })
         })
       ]
     })
+
     await expect(
       invoke.invoke({ name: contract.name, input: {} })
     ).rejects.toMatchObject({
@@ -222,11 +234,14 @@ describe('common tool contracts', () => {
       middleware: [
         createAiToolMiddleware({
           resolve: (name) => (name === contract.name ? contract : undefined),
+
           validate: () => 'arguments.value: expected number',
+
           classify: () => ({ status: 'success', settlement: 'completed' })
         })
       ]
     })
+
     await expect(
       invoke.invoke({ name: 'missing', input: {} })
     ).rejects.toMatchObject({ stage: 'registration' })
@@ -241,19 +256,24 @@ describe('common tool contracts', () => {
     const output = { interrupted: true }
     const invoke = createAiInvoker({
       execute: async () => output,
+
       middleware: [
         createAiToolMiddleware({
           resolve: () => contract,
+
           validate: () => undefined,
+
           classify: () => ({ status: 'unknown', settlement: 'unknown' })
         })
       ]
     })
+
     expect(await invoke.invoke({ name: contract.name, input: {} })).toBe(output)
   })
   it('owns an immutable descriptor while keeping provider delivery compact', () => {
     const input = definition()
     const contract = createAiToolContract(input)
+
     ;(input.outputSchema as { type: string }).type = 'string'
     ;(input.resources as string[]).push('network')
     expect(createAiToolContract(contract)).toBe(contract)
@@ -293,6 +313,7 @@ describe('common tool contracts', () => {
 
   it('rejects cyclic and executable schema values', () => {
     const cycle: Record<string, unknown> = {}
+
     cycle.self = cycle
     for (const outputSchema of [cycle, { parse: () => true }, new Date()]) {
       expect(() =>
@@ -308,6 +329,7 @@ describe('common tool contracts', () => {
       outcome: { status: 'success', settlement: 'completed' },
       validate
     })
+
     expect(result).toEqual({
       status: 'success',
       settlement: 'completed',
@@ -327,9 +349,11 @@ describe('common tool contracts', () => {
       value,
       {
         outcome: { status: 'partial', settlement: 'partial' },
+
         validate: () => '$.remaining: expected an array of identities'
       }
     )
+
     expect(result).toEqual({
       status: 'invalid',
       settlement: 'partial',
@@ -345,6 +369,7 @@ describe('common tool contracts', () => {
       const validate = vi.fn(() => 'not a success value')
       const value = { reason: 'Delivery interrupted' }
       const outcome = { status, settlement: 'unknown' as const }
+
       expect(
         inspectAiToolResult(createAiToolContract(definition()), value, {
           outcome,
@@ -361,11 +386,13 @@ describe('common tool contracts', () => {
       true,
       {
         outcome: { status: 'success', settlement: 'completed' },
+
         validate: () => {
           throw new Error('Validator unavailable')
         }
       }
     )
+
     expect(result).toMatchObject({
       status: 'invalid',
       settlement: 'completed',
@@ -380,9 +407,11 @@ describe('common tool contracts', () => {
       true,
       {
         outcome: { status: 'approved', settlement: 'completed' } as never,
+
         validate: () => undefined
       }
     )
+
     expect(result).toMatchObject({
       status: 'invalid',
       settlement: 'completed',
@@ -407,13 +436,16 @@ it('preserves a classified output rejection and its settlement without replay', 
     middleware: [
       createAiToolMiddleware({
         resolve: () => contract,
+
         validate: () => undefined,
+
         classify: () => {
           throw error
         }
       })
     ]
   })
+
   await expect(invoker.invoke({ name: contract.name, input: {} })).rejects.toBe(
     error
   )
@@ -438,15 +470,20 @@ it('validates the explicit value projection of a host receipt without changing i
   )
   const invoker = createAiInvoker({
     execute: async () => receipt,
+
     middleware: [
       createAiToolMiddleware({
         resolve: () => contract,
+
         validate,
+
         classify: (value) => value,
+
         selectValue: (value) => value.value
       })
     ]
   })
+
   expect(await invoker.invoke({ name: contract.name, input: {} })).toBe(receipt)
   expect(validate).toHaveBeenLastCalledWith(7, contract.outputSchema, {
     stage: 'output'
@@ -460,6 +497,7 @@ it('retains immutable domain verification metadata and rejects non-check owners'
     effect: 'read',
     verification
   })
+
   verification.statusPath = '/changed'
   expect(contract.verification).toEqual({
     statusPath: '/status',
@@ -479,6 +517,7 @@ it('retains immutable domain verification metadata and rejects non-check owners'
       })
     ).toThrow()
   }
+
   expect(() =>
     createAiToolContract({ ...definition(), verification })
   ).toThrow()
@@ -494,16 +533,20 @@ it('supplies validation stage while retaining rejected output without executing 
     middleware: [
       createAiToolMiddleware({
         resolve: () => contract,
+
         validate: (_value, _schema, context?: { stage: string }) => {
           stages.push(context?.stage)
+
           return context?.stage === 'output'
             ? 'output: expected boolean'
             : undefined
         },
+
         classify: () => ({ status: 'success', settlement: 'completed' })
       })
     ]
   })
+
   await expect(
     invoker.invoke({ name: contract.name, input: {} })
   ).rejects.toMatchObject({

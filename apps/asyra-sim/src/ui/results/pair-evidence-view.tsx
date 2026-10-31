@@ -8,12 +8,15 @@ function intervalLabel(interval: IntervalEvidence): string {
   if (interval.penetration) {
     return 'Collision - established penetration'
   }
+
   if (interval.state === 'finding') {
     return 'Clearance violation'
   }
+
   if (interval.state === 'unresolved') {
     return 'Unresolved'
   }
+
   return 'No issue within interval'
 }
 

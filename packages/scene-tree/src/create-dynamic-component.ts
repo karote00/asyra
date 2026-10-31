@@ -42,12 +42,15 @@ export function createDynamicComponent(
       if (!data) {
         return
       }
+
       super.load(data) // Load base properties (including children for Group)
 
       // Load added custom properties
       const dataObj = data as Record<string, unknown>
+
       Object.keys(defaults).forEach((key) => {
         const value = dataObj[key]
+
         if (value !== undefined) {
           this.data[key] = value
         }
@@ -59,6 +62,7 @@ export function createDynamicComponent(
       initialOwnerValues?: Readonly<Record<string, unknown>>
     ) {
       const elementId = this.get('id')
+
       if (this.data.type !== 'workspace') {
         this.computedPropertyNames = properties.map((p) => p.name)
 

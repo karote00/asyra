@@ -84,8 +84,11 @@ export interface WalkingRuntimeMonitor {
     geometryVisits: number
   }>
 }
+
 const text = (v: unknown): v is string => typeof v === 'string' && !!v.trim()
+
 const finite = (v: number) => Number.isFinite(v)
+
 function keys(v: object, expected: readonly string[]) {
   if (
     !v ||
@@ -97,17 +100,21 @@ function keys(v: object, expected: readonly string[]) {
     throw new Error('invalid-monitor-fields')
   }
 }
+
 function freeze<T>(v: T): T {
   if (v && typeof v === 'object' && !Object.isFrozen(v)) {
     Object.values(v).forEach(freeze)
     Object.freeze(v)
   }
+
   return v
 }
+
 function readProfile(
   raw: WalkingRuntimeMonitorProfile
 ): WalkingRuntimeMonitorProfile {
   const p = structuredClone(raw)
+
   keys(p, [
     'format',
     'id',
@@ -142,19 +149,24 @@ function readProfile(
   ) {
     throw new Error('invalid-synthetic-monitor-profile')
   }
+
   return freeze(p)
 }
 
 /** Bounded synthetic sensor evidence only; no terrain or physical fall certificate. */
 export class WalkingRuntimeMonitorOwner {
   private profile?: WalkingRuntimeMonitorProfile
+
   private latest?: WalkingRuntimeMonitor
+
   private closed = false
+
   constructor(
     private readonly isCurrentContext: (
       context: WalkingRuntimeMonitorContext
     ) => boolean
   ) {}
+
   private current(context: WalkingRuntimeMonitorContext) {
     return (
       !this.closed &&
@@ -170,13 +182,16 @@ export class WalkingRuntimeMonitorOwner {
       context.now >= 0
     )
   }
+
   configure(raw: WalkingRuntimeMonitorProfile) {
     if (this.closed) {
       throw new Error('Walking runtime monitor is closed')
     }
+
     this.profile = readProfile(raw)
     this.latest = undefined
   }
+
   read(context: WalkingRuntimeMonitorContext, result: WalkingRuntimeMonitor) {
     return this.latest === result &&
       this.current(context) &&
@@ -190,6 +205,7 @@ export class WalkingRuntimeMonitorOwner {
       ? result
       : undefined
   }
+
   evaluate(
     context: WalkingRuntimeMonitorContext,
     raw: WalkingRuntimeMonitorSample
@@ -197,6 +213,7 @@ export class WalkingRuntimeMonitorOwner {
     if (this.closed) {
       throw new Error('Walking runtime monitor is closed')
     }
+
     const work = {
       orientationSamples: 0,
       stanceContacts: 0,
@@ -220,33 +237,46 @@ export class WalkingRuntimeMonitorOwner {
     }
     let status: WalkingRuntimeMonitor['status'] = 'unknown'
     const p = this.profile
+
     const op = <T extends unknown[]>(
       fn: (...args: T) => Interval,
       ...args: T
     ) => {
       work.arithmeticOperations++
+
       return fn(...args)
     }
+
     const plus = (a: Interval, b: Interval) => op(add, a, b)
+
     const minus = (a: Interval, b: Interval) => op(subtract, a, b)
+
     const times = (a: Interval, b: Interval) => op(multiply, a, b)
+
     const over = (a: Interval, b: Interval) => op(divide, a, b)
+
     const root = (v: Interval) =>
       op(squareRoot, { low: Math.max(0, v.low), high: Math.max(0, v.high) })
+
     const squared = (v: Interval) => {
       const result = times(v, v)
+
       return { low: Math.max(0, result.low), high: result.high }
     }
+
     try {
       if (!this.current(context)) {
         throw new Error('stale-monitor-source-load-or-cycle')
       }
+
       if (!p) {
         throw new Error('missing-synthetic-monitor-profile')
       }
+
       if (context.now < p.validFrom || context.now >= p.validUntil) {
         throw new Error('expired-synthetic-monitor-profile')
       }
+
       keys(raw, ['format', 'assumption', 'orientations', 'contacts'])
       if (
         raw.format !== 'synthetic-walking-runtime-sample/1' ||
@@ -256,11 +286,13 @@ export class WalkingRuntimeMonitorOwner {
       ) {
         throw new Error('missing-orientation-samples')
       }
+
       const samples = raw.orientations.map((sample) => {
         work.orientationSamples++
         keys(sample, ['at', 'rotation'])
         const at = sample.at,
           q: unknown[] = Array.from(sample.rotation)
+
         if (
           !finite(at) ||
           at < p.validFrom ||
@@ -274,18 +306,22 @@ export class WalkingRuntimeMonitorOwner {
         ) {
           throw new Error('invalid-orientation-sample')
         }
+
         const coordinates = q.map(interval)
         const norm = coordinates.reduce(
           (sum, v) => plus(sum, squared(v)),
           interval(0)
         )
+
         if (norm.low <= 0) {
           throw new Error('unknown-orientation-norm')
         }
+
         return { at, coordinates, norm }
       })
       const [first, last] = samples
       const elapsed = minus(interval(last.at), interval(first.at))
+
       if (
         last.at !== context.now ||
         elapsed.low <= 0 ||
@@ -293,6 +329,7 @@ export class WalkingRuntimeMonitorOwner {
       ) {
         throw new Error('orientation-time-gap')
       }
+
       // For theta in [0, pi], theta <= pi*sin(theta/2) < 4*sin(theta/2).
       // Quaternion norms are retained in the arithmetic, including sensor rounding.
       const tiltSine = root(
@@ -301,6 +338,7 @@ export class WalkingRuntimeMonitorOwner {
           last.norm
         )
       )
+
       values.tilt = {
         low: 0,
         high: plus(
@@ -319,8 +357,10 @@ export class WalkingRuntimeMonitorOwner {
         times(interval(4), relativeSine),
         times(interval(2), interval(p.uncertainty.orientationRadians))
       )
+
       values.angularRate = { low: 0, high: over(angle, elapsed).high }
       const support = context.cycle.recipe.groups[context.phase]
+
       if (
         !Array.isArray(raw.contacts) ||
         raw.contacts.length !== 3 ||
@@ -328,7 +368,9 @@ export class WalkingRuntimeMonitorOwner {
       ) {
         throw new Error('missing-stance-contacts')
       }
+
       const matched = new Set<string>()
+
       for (const sample of raw.contacts) {
         work.stanceContacts++
         keys(sample, ['part', 'patch', 'force'])
@@ -339,11 +381,14 @@ export class WalkingRuntimeMonitorOwner {
             a.patch === sample.patch &&
             support.includes(a.chainId)
         )
+
         if (!anchor || matched.has(anchor.chainId)) {
           throw new Error('foreign-or-duplicate-stance-contact')
         }
+
         matched.add(anchor.chainId)
         const force = { low: sample.force.low, high: sample.force.high }
+
         if (
           !finite(force.low) ||
           !finite(force.high) ||
@@ -351,6 +396,7 @@ export class WalkingRuntimeMonitorOwner {
         ) {
           throw new Error('invalid-contact-force')
         }
+
         values.contacts.push({
           part: anchor.part,
           patch: anchor.patch,
@@ -360,15 +406,19 @@ export class WalkingRuntimeMonitorOwner {
           })
         })
       }
+
       if (!finite(values.tilt.high) || !finite(values.angularRate.high)) {
         throw new Error('unresolved-monitor-arithmetic')
       }
+
       if (values.tilt.high > p.limits.maxTiltRadians) {
         reasons.push('synthetic-tilt-bound-not-within-profile')
       }
+
       if (values.angularRate.high > p.limits.maxAngularRateRadiansPerSecond) {
         reasons.push('synthetic-rate-bound-not-within-profile')
       }
+
       if (
         values.contacts.some(
           (c) =>
@@ -379,12 +429,14 @@ export class WalkingRuntimeMonitorOwner {
       ) {
         reasons.push('synthetic-contact-force-not-within-profile')
       }
+
       status = reasons.length ? 'hold' : 'within-synthetic-profile'
     } catch (error) {
       reasons.push(
         error instanceof Error ? error.message : 'unknown-monitor-input'
       )
     }
+
     const result: WalkingRuntimeMonitor = Object.freeze({
       format: 'walking-runtime-monitor/1',
       identity: Object.freeze({}),
@@ -400,9 +452,12 @@ export class WalkingRuntimeMonitorOwner {
       reasons: Object.freeze(reasons),
       work: Object.freeze(work)
     })
+
     this.latest = result
+
     return result
   }
+
   close() {
     this.closed = true
     this.latest = undefined

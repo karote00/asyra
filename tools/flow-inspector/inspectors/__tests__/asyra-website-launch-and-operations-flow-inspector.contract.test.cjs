@@ -6,9 +6,12 @@ const test = require('node:test')
 const data = require('../asyra-website-launch-and-operations-flow-inspector.data.cjs')
 
 const repoRoot = path.resolve(__dirname, '../../../..')
+
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Launch Inspector step: ${id}`)
+
   return value
 }
 
@@ -23,6 +26,7 @@ test('retired launch history delegates current hosting to the manual Cloudflare 
   assert.equal(data.authority.currentHostingWorkflowPath, '.github/workflows/site-cloudflare.yml')
   assert.equal(Object.hasOwn(data.authority, 'rootHostingConfigPath'), false)
   const workflow = fs.readFileSync(path.join(repoRoot, data.authority.currentHostingWorkflowPath), 'utf8')
+
   assert.match(workflow, /workflow_dispatch:/)
   assert.doesNotMatch(workflow, /^ {2}(push|pull_request|workflow_run|schedule):/m)
   assert.equal(fs.existsSync(path.join(repoRoot, 'vercel.json')), false)
@@ -42,6 +46,7 @@ test('Launch owns six exact and unique public release cases', () => {
 
 test('contract freezes a dedicated target, immutable source, exclusions, and failure behavior', () => {
   const source = JSON.stringify(step('freeze-launch-contract'))
+
   assert.match(source, /dedicated Vercel project/i)
   assert.match(source, /never mutates the existing Asyra Design project/i)
   assert.match(source, /One exact source commit/i)
@@ -55,6 +60,7 @@ test('contract freezes a dedicated target, immutable source, exclusions, and fai
 test('accepted Preview owns every tracked launch input before its commit is frozen', () => {
   const preview = step('accept-integrated-preview')
   const source = JSON.stringify(preview)
+
   assert.match(source, /clean, pushed, immutable/i)
   assert.match(
     source,
@@ -77,6 +83,7 @@ test('accepted Preview owns every tracked launch input before its commit is froz
 test('dedicated target configuration owns reviewed Git deployment selection', () => {
   const target = step('configure-vercel-target')
   const source = JSON.stringify(target)
+
   assert.match(source, /org and project ids differ/i)
   assert.match(source, /NEXT_PUBLIC_SITE_INDEXING=true.*only.*production/i)
   assert.match(source, /No token, secret, or provider credential/i)
@@ -95,6 +102,7 @@ test('dedicated target configuration owns reviewed Git deployment selection', ()
 
 test('deployment uses accepted Git commits, the stable alias, and a real rollback path', () => {
   const source = JSON.stringify(step('deploy-accepted-candidate'))
+
   assert.match(
     source,
     /Preview deployments use pull request commits and Production deployments use accepted main-branch commits/i
@@ -108,6 +116,7 @@ test('deployment uses accepted Git commits, the stable alias, and a real rollbac
 
 test('production verification is anonymous, indexed, complete, and fail closed', () => {
   const source = JSON.stringify(step('verify-production'))
+
   assert.match(source, /stable alias and immutable deployment use TLS/i)
   assert.match(source, /Robots permits production indexing/i)
   assert.match(
@@ -127,6 +136,7 @@ test('production verification is anonymous, indexed, complete, and fail closed',
 
 test('operations record remains exact without inventing excluded monitoring', () => {
   const source = JSON.stringify(step('record-launch-operations'))
+
   assert.match(source, /public URL and source commit are exact/i)
   assert.match(source, /Rollback uses recorded provider deployment identity/i)
   assert.match(source, /No analytics or monitoring ownership is implied/i)
@@ -158,6 +168,7 @@ test('Launch routes, artifacts, failures, and cache boundaries resolve', () => {
 
 test('Launch invariants preserve project separation, indexing, secrets, rollback, and exclusions', () => {
   const source = JSON.stringify(data.invariants)
+
   assert.match(
     source,
     /Framework site project and Asyra Design project remain distinct/i

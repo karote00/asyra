@@ -36,10 +36,13 @@ const TOTAL_CREATION_FLOW_TIMEOUT_MS = 45_000
 const MAXIMUM_DETAIL_TIMEOUT_MS = 300_000
 const ENDPOINT_HEARTBEAT_INTERVAL_MS = 5_000
 const RESOURCE_GUARD_PHASE_BOUNDARY_TIMEOUT_MS = 7_000
+
 const remainingActorACreationTimeoutMs = (startedAtMs: number): number =>
   Math.max(1, startedAtMs + ACTOR_A_CREATION_TIMEOUT_MS - Date.now())
+
 const remainingActorBCreationTimeoutMs = (startedAtMs: number): number =>
   Math.max(1, startedAtMs + ACTOR_B_CREATION_TIMEOUT_MS - Date.now())
+
 const exactCatOnlyPrompt =
   'Draw only the cat from the reference image. Exclude the original background and place the cat on a pure white background canvas with exactly the same width and height as the uploaded photo.'
 const requiredAttributionPhaseNames = [
@@ -61,11 +64,13 @@ const guardLauncherPath = fileURLToPath(
 
 const requireEnvironment = (name: string): string => {
   const value = process.env[name]?.trim()
+
   if (!value) {
     throw new Error(
       `Endpoint performance resource guard requires non-empty ${name}`
     )
   }
+
   return value
 }
 
@@ -113,12 +118,15 @@ interface CpuProfile {
 const summarizeCpuProfile = (profile: CpuProfile) => {
   const nodes = new Map(profile.nodes.map((node) => [node.id, node]))
   const selfSamples = new Map<number, number>()
+
   profile.samples?.forEach((nodeId) => {
     selfSamples.set(nodeId, (selfSamples.get(nodeId) ?? 0) + 1)
   })
+
   return [...selfSamples]
     .map(([nodeId, samples]) => {
       const node = nodes.get(nodeId)
+
       return {
         columnNumber: node?.callFrame.columnNumber ?? -1,
         functionName: node?.callFrame.functionName || '(anonymous)',
@@ -149,39 +157,47 @@ const startRotatingCpuProfileDiagnostic = async (
       if (!active) {
         break
       }
+
       const { profile } = (await session.send('Profiler.stop')) as {
         profile: CpuProfile
       }
+
       profileActive = false
       const summary = {
         samples: profile.samples?.length ?? 0,
         top: summarizeCpuProfile(profile)
       }
+
       // Diagnostic output is intentionally bounded and no profile file exists.
       // eslint-disable-next-line no-console
       console.log(`CPU_PROFILE_SLICE ${JSON.stringify(summary)}`)
       if (!active) {
         break
       }
+
       await session.send('Profiler.start')
       profileActive = true
     }
   })()
 
   let disposed = false
+
   return async () => {
     if (disposed) {
       return
     }
+
     disposed = true
     active = false
     await rotation.catch(() => undefined)
     if (profileActive) {
       await session.send('Profiler.stop').catch(() => undefined)
     }
+
     await session.send('Profiler.disable').catch(() => undefined)
   }
 }
+
 const guardURL = endpointGuardEnabled
   ? requireEnvironment('ENDPOINT_GUARD_URL').replace(/\/+$/, '')
   : 'http://127.0.0.1'
@@ -617,6 +633,7 @@ const postHeartbeat = async (
     accepted?: boolean
     reason?: string
   }
+
   if (!response.ok || result.accepted !== true) {
     throw new Error(
       `Endpoint performance resource guard rejected ${kind} heartbeat: ${
@@ -624,9 +641,11 @@ const postHeartbeat = async (
       }`
     )
   }
+
   // Keep runner output bounded and never print the guard token.
   // eslint-disable-next-line no-console
   console.log(`ENDPOINT_HEARTBEAT ${JSON.stringify({ heartbeat, kind })}`)
+
   return result
 }
 
@@ -635,6 +654,7 @@ const waitForBootstrapCpuSettled = async (
 ): Promise<void> => {
   const deadlineMs = Date.now() + 20_000
   let previousSettledSampleAtMs: number | null = null
+
   while (Date.now() < deadlineMs) {
     const response = await fetch(`${guardURL}/resource-status`, {
       body: JSON.stringify({
@@ -651,9 +671,11 @@ const waitForBootstrapCpuSettled = async (
       sampledAtMs?: number | null
       settled?: boolean
     }
+
     if (!response.ok || result.accepted !== true) {
       throw new Error('Endpoint bootstrap resource status was rejected')
     }
+
     if (
       result.settled === true &&
       typeof result.sampledAtMs === 'number' &&
@@ -662,12 +684,15 @@ const waitForBootstrapCpuSettled = async (
       if (previousSettledSampleAtMs !== null) {
         return
       }
+
       previousSettledSampleAtMs = result.sampledAtMs
     } else if (result.settled !== true) {
       previousSettledSampleAtMs = null
     }
+
     await delay(250)
   }
+
   throw new Error('Endpoint bootstrap CPU did not settle within 20 seconds')
 }
 
@@ -692,6 +717,7 @@ const postPhaseBoundary = async (
     accepted?: boolean
     reason?: string
   }
+
   if (!response.ok || result.accepted !== true) {
     throw new Error(
       `Endpoint performance resource guard rejected ${kind} boundary for ${phase}: ${
@@ -706,20 +732,25 @@ const waitForGuardReady = async (
 ): Promise<void> => {
   const deadline = Date.now() + 10_000
   let lastError: unknown
+
   while (Date.now() < deadline) {
     try {
       const response = await postHeartbeat('ready', heartbeat)
+
       if (response.accepted === true) {
         return
       }
+
       lastError = new Error(
         'Endpoint performance resource guard has not sampled the process yet'
       )
     } catch (error) {
       lastError = error
     }
+
     await delay(250)
   }
+
   throw new Error(
     `Endpoint performance resource guard did not accept readiness within 10 seconds: ${
       lastError instanceof Error ? lastError.message : String(lastError)
@@ -732,6 +763,7 @@ const collaborationURL = (fileId: string) =>
 
 const singleActorAppURL = (fileId: string) =>
   `/?fileId=${encodeURIComponent(fileId)}`
+
 const profiledSingleActorAppURL = (fileId: string) =>
   `${singleActorAppURL(fileId)}&aiPerformance=profile`
 
@@ -755,6 +787,7 @@ const requestRuntimeDiagnostic = <T>(
         args: operationArgs,
         operation: operationName
       }
+
       document.dispatchEvent(
         new CustomEvent(eventName, {
           detail
@@ -763,6 +796,7 @@ const requestRuntimeDiagnostic = <T>(
       if (detail.error) {
         throw new Error(detail.error)
       }
+
       return detail.response as T
     },
     {
@@ -787,10 +821,12 @@ const requestLocalInteractionProbe = <T>(
         args: operationArgs,
         operation: operationName
       }
+
       document.dispatchEvent(new CustomEvent(eventName, { detail }))
       if (!detail.promise) {
         throw new Error('Local interaction probe is unavailable')
       }
+
       return (await detail.promise) as T
     },
     {
@@ -820,6 +856,7 @@ const waitForCollaboration = async (
     const browserErrors = getCapturedBrowserErrors(page)
       .slice(-4)
       .map((message) => message.slice(0, 300))
+
     throw new Error(
       `${actor} collaboration did not connect; status=${status}; browserErrors=${JSON.stringify(
         browserErrors
@@ -959,10 +996,13 @@ const createHeartbeatController = (
   let unchangedActorBProgressSamples = 0
   let stalledOwnerEvidence: EndpointOwnerEvidence | null = null
   let latest: EndpointHeartbeat | null = null
+
   let rejectFailure: (error: Error) => void = () => undefined
+
   const failure = new Promise<never>((_resolve, reject) => {
     rejectFailure = reject
   })
+
   void failure.catch(() => undefined)
 
   const sample = async (): Promise<EndpointHeartbeat> => {
@@ -970,6 +1010,7 @@ const createHeartbeatController = (
       readActorSample(actorA),
       readActorSample(actorB)
     ])
+
     if (actorASample.nonSuccessfulTurnCount > 0) {
       throw new Error(
         `Actor A AI turn settled without success: ${JSON.stringify({
@@ -978,6 +1019,7 @@ const createHeartbeatController = (
         })}`
       )
     }
+
     if (actorASample.failed + actorBSample.failed > 0) {
       throw new Error(
         `Collaboration publication failed: ${JSON.stringify({
@@ -986,6 +1028,7 @@ const createHeartbeatController = (
         })}`
       )
     }
+
     const elapsedMs =
       creationStartedAtMs === null ? null : Date.now() - creationStartedAtMs
     const actorARendered = actorASample.renderProjectionElements
@@ -1008,6 +1051,7 @@ const createHeartbeatController = (
       actorBSample.renderProjectionElements,
       actorBSample.remoteProcessed
     ].join(':')
+
     if (
       proofKind === 'endpoint' &&
       creationStartedAtMs !== null &&
@@ -1020,6 +1064,7 @@ const createHeartbeatController = (
         previousActorBProgress = actorBProgress
         unchangedActorBProgressSamples = 0
       }
+
       if (
         unchangedActorBProgressSamples >= 2 &&
         stalledOwnerEvidence === null
@@ -1032,6 +1077,7 @@ const createHeartbeatController = (
             ),
             settleFailureEvidenceWithin(readFinalDiagnostics(actorB), 1_500)
           ])
+
         stalledOwnerEvidence = {
           actorA:
             actorAFinalDiagnostics.status === 'available'
@@ -1053,6 +1099,7 @@ const createHeartbeatController = (
       previousActorBProgress = null
       unchangedActorBProgressSamples = 0
     }
+
     if (
       elapsedMs !== null &&
       actorARendered > 0 &&
@@ -1060,6 +1107,7 @@ const createHeartbeatController = (
     ) {
       actorAFirstVisibleAtMs = elapsedMs
     }
+
     if (
       elapsedMs !== null &&
       actorBRendered > 0 &&
@@ -1067,12 +1115,15 @@ const createHeartbeatController = (
     ) {
       actorBFirstVisibleAtMs = elapsedMs
     }
+
     if (elapsedMs !== null && actorAComplete && actorACompleteAtMs === null) {
       actorACompleteAtMs = elapsedMs
     }
+
     if (elapsedMs !== null && actorBComplete && actorBCompleteAtMs === null) {
       actorBCompleteAtMs = elapsedMs
     }
+
     latest = {
       activePhase: activeHeartbeatPhase,
       actorA: {
@@ -1116,6 +1167,7 @@ const createHeartbeatController = (
         failed: actorASample.failed + actorBSample.failed
       }
     }
+
     return latest
   }
 
@@ -1125,64 +1177,84 @@ const createHeartbeatController = (
       if (!active) {
         return
       }
+
       try {
         await postHeartbeat('progress', await sample())
       } catch (error) {
         active = false
         rejectFailure(error instanceof Error ? error : new Error(String(error)))
+
         return
       }
     }
   }
+
   let loop: Promise<void> | null = null
 
   return {
     assertGuarded: <T>(operation: Promise<T>): Promise<T> =>
       Promise.race([operation, failure]),
+
     begin: () => {
       active = true
       loop = run()
     },
+
     markCreationStarted: (startedAtMs: number) => {
       creationStartedAtMs = startedAtMs
     },
+
     completePhase: (phase: string) => {
       latestCompletedPhase = phase
       activeHeartbeatPhase = null
     },
+
     readLatest: () => latest,
+
     sample,
+
     startPhase: (phase: string) => {
       activeHeartbeatPhase = phase
     },
+
     stop: async () => {
       active = false
       await loop
     },
+
     waitForActorAComplete: async (
       timeoutMs: number
     ): Promise<EndpointHeartbeat> => {
       const deadline = Date.now() + timeoutMs
+
       while (Date.now() < deadline) {
         const heartbeat = latest
+
         if (heartbeat?.actorA.complete) {
           return heartbeat
         }
+
         await Promise.race([delay(100), failure])
       }
+
       throw new Error(`Actor A timed out at ${JSON.stringify(latest)}`)
     },
+
     waitForBothComplete: async (
       timeoutMs: number
     ): Promise<EndpointHeartbeat> => {
       const deadline = Date.now() + timeoutMs
+
       while (Date.now() < deadline) {
         const heartbeat = latest
+
         if (heartbeat?.actorA.complete && heartbeat.actorB.complete) {
           return heartbeat
         }
+
         await Promise.race([delay(100), failure])
       }
+
       throw new Error(
         `Actor convergence timed out at ${JSON.stringify(latest)}`
       )
@@ -1201,14 +1273,18 @@ const createLocalAttributionHeartbeatController = (
   let firstVisibleAtMs: number | null = null
   let completeAtMs: number | null = null
   let latest: EndpointHeartbeat | null = null
+
   let rejectFailure: (error: Error) => void = () => undefined
+
   const failure = new Promise<never>((_resolve, reject) => {
     rejectFailure = reject
   })
+
   void failure.catch(() => undefined)
 
   const sample = async (): Promise<EndpointHeartbeat> => {
     const actorASample = await readActorSample(actorA)
+
     if (actorASample.nonSuccessfulTurnCount > 0) {
       throw new Error(
         `Actor A AI turn settled without success: ${JSON.stringify({
@@ -1217,6 +1293,7 @@ const createLocalAttributionHeartbeatController = (
         })}`
       )
     }
+
     const elapsedMs =
       creationStartedAtMs === null ? null : Date.now() - creationStartedAtMs
     const rendered = actorASample.renderProjectionElements
@@ -1224,12 +1301,15 @@ const createLocalAttributionHeartbeatController = (
       actorASample.canonicalElements === expectedTotal &&
       rendered === expectedTotal &&
       actorASample.successfulTurnCount === 1
+
     if (elapsedMs !== null && rendered > 0 && firstVisibleAtMs === null) {
       firstVisibleAtMs = elapsedMs
     }
+
     if (elapsedMs !== null && complete && completeAtMs === null) {
       completeAtMs = elapsedMs
     }
+
     latest = {
       activePhase: activeHeartbeatPhase,
       actorA: {
@@ -1272,6 +1352,7 @@ const createLocalAttributionHeartbeatController = (
         failed: actorASample.failed
       }
     }
+
     return latest
   }
 
@@ -1281,48 +1362,62 @@ const createLocalAttributionHeartbeatController = (
       if (!active) {
         return
       }
+
       try {
         await postHeartbeat('progress', await sample())
       } catch (error) {
         active = false
         rejectFailure(error instanceof Error ? error : new Error(String(error)))
+
         return
       }
     }
   }
+
   let loop: Promise<void> | null = null
 
   return {
     assertGuarded: <T>(operation: Promise<T>): Promise<T> =>
       Promise.race([operation, failure]),
+
     begin: () => {
       active = true
       loop = run()
     },
+
     markCreationStarted: (startedAtMs: number) => {
       creationStartedAtMs = startedAtMs
     },
+
     completePhase: (phase: string) => {
       latestCompletedPhase = phase
       activeHeartbeatPhase = null
     },
+
     readLatest: () => latest,
+
     sample,
+
     startPhase: (phase: string) => {
       activeHeartbeatPhase = phase
     },
+
     stop: async () => {
       active = false
       await loop
     },
+
     waitForComplete: async (timeoutMs: number): Promise<EndpointHeartbeat> => {
       const deadline = Date.now() + timeoutMs
+
       while (Date.now() < deadline) {
         if (latest?.actorA.complete) {
           return latest
         }
+
         await Promise.race([delay(100), failure])
       }
+
       throw new Error(
         `Local attribution timed out at ${JSON.stringify(latest)}`
       )
@@ -1342,23 +1437,28 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
         args: [],
         operation: 'profile:readCanonicalElements'
       }
+
       document.dispatchEvent(new CustomEvent(eventName, { detail }))
       if (detail.error) {
         throw new Error(detail.error)
       }
+
       const normalize = (value: unknown): unknown => {
         if (Array.isArray(value)) {
           return value.map(normalize)
         }
+
         if (!value || typeof value !== 'object') {
           return value
         }
+
         return Object.fromEntries(
           Object.entries(value)
             .sort(([left], [right]) => left.localeCompare(right))
             .map(([key, child]) => [key, normalize(child)])
         )
       }
+
       const canonicalElements = (
         detail.response as readonly {
           computed: unknown
@@ -1383,6 +1483,7 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
       let pointCount = 0
       let renderedCount = 0
       let vectorCount = 0
+
       for (const element of canonicalElements) {
         const raw = element.raw as {
           children?: unknown
@@ -1394,6 +1495,7 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
             )
           : []
         const parentId = typeof raw.parentId === 'string' ? raw.parentId : null
+
         hierarchy.push({
           children,
           id: element.id,
@@ -1404,15 +1506,18 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
         if (element.rendered) {
           renderedCount += 1
         }
+
         if (element.type === 'group') {
           groupCount += 1
           groupChildren = children
           groupId = element.id
           continue
         }
+
         if (element.type !== 'vector') {
           continue
         }
+
         vectorCount += 1
         const computed = element.computed as {
           fills?: readonly { color?: string }[]
@@ -1420,6 +1525,7 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
           points?: Record<string, unknown>
           width?: number
         }
+
         pointCount += Object.keys(computed.points ?? {}).length
         if (
           computed.fills?.[0]?.color === '#FFFFFF' &&
@@ -1433,6 +1539,7 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
           })
         }
       }
+
       const vectorIds = canonicalElements
         .filter(({ type }) => type === 'vector')
         .map(({ id }) => id)
@@ -1454,18 +1561,22 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
           type
         })
       )
+
       const digest = async (value: unknown): Promise<string> => {
         const bytes = new TextEncoder().encode(JSON.stringify(value))
         const hash = await crypto.subtle.digest('SHA-256', bytes)
+
         return [...new Uint8Array(hash)]
           .map((byte) => byte.toString(16).padStart(2, '0'))
           .join('')
       }
+
       const [canonicalSha256, hierarchySha256, idsSha256] = await Promise.all([
         digest(canonical),
         digest(hierarchy),
         digest(ids)
       ])
+
       return {
         canonicalSha256,
         firstId: ids[0] ?? null,
@@ -1507,12 +1618,15 @@ const readFinalDiagnostics = async (
           operation: string
           response?: unknown
         } = { args, operation }
+
         document.dispatchEvent(new CustomEvent(eventName, { detail }))
         if (detail.error) {
           throw new Error(detail.error)
         }
+
         return detail.response as T
       }
+
       const endpointDiagnostics = request<EndpointDiagnostics>(
         'collaboration:read-outcomes'
       )
@@ -1531,6 +1645,7 @@ const readFinalDiagnostics = async (
         { atMs: number; durationMs: number; name: string }
       >()
       const canonicalWorkUnitDurations: number[] = []
+
       for (const phase of snapshot.phases) {
         phaseTotals.set(
           phase.name,
@@ -1546,10 +1661,12 @@ const readFinalDiagnostics = async (
             name: phase.name
           })
         }
+
         if (phase.name === 'ai-app:create-composition-batch') {
           canonicalWorkUnitDurations.push(phase.durationMs)
         }
       }
+
       const drawingCounters = snapshot.counters.filter(({ name }) =>
         name.startsWith('ai-drawing:')
       )
@@ -1571,12 +1688,16 @@ const readFinalDiagnostics = async (
         const relativeIndex = visibleElementSamples
           .slice(minimumSampleIndex)
           .findIndex(({ value }) => value >= target)
+
         if (relativeIndex < 0) {
           return []
         }
+
         const sampleIndex = minimumSampleIndex + relativeIndex
         const sample = visibleElementSamples[sampleIndex]
+
         minimumSampleIndex = sampleIndex + 1
+
         return sample
           ? [
               {
@@ -1596,6 +1717,7 @@ const readFinalDiagnostics = async (
           name === 'core:persistence-capture' ||
           name === 'core:persistence-save'
       ).length
+
       return {
         attributionPhaseCounts: Object.fromEntries(
           requiredPhaseNames.map((name) => [
@@ -1661,6 +1783,7 @@ const readFinalDiagnostics = async (
       requiredPhaseNames: requiredAttributionPhaseNames
     }
   )
+
   return {
     ...diagnostics,
     visibleWorkerTargets: visibleWorkerTargets(page)
@@ -1686,6 +1809,7 @@ const installLocalInteractionProbe = async (
   const canvasHost = page.getByTestId('canvas-host')
   const rectangleTool = page.getByTestId('tool-rectangle')
   const selectTool = page.getByTestId('tool-select')
+
   await expect(canvasHost).toBeVisible()
   await expect(rectangleTool).toBeVisible()
   await expect(selectTool).toHaveAttribute('data-active', 'true')
@@ -1694,6 +1818,7 @@ const installLocalInteractionProbe = async (
     rectangleTool.boundingBox(),
     selectTool.boundingBox()
   ])
+
   if (!canvasBounds || !rectangleBounds || !selectBounds) {
     throw new Error('Local interaction control bounds are unavailable')
   }
@@ -1713,10 +1838,12 @@ const installLocalInteractionProbe = async (
           args,
           operation: `profile:${method}`
         }
+
         document.dispatchEvent(new CustomEvent(diagnosticEvent, { detail }))
         if (detail.error) {
           throw new Error(detail.error)
         }
+
         return detail.response as T
       }
 
@@ -1743,7 +1870,9 @@ const installLocalInteractionProbe = async (
         rectangleShortcut: 0
       }
       let requestSubmissionClickCount = 0
+
       type DocumentActionName = keyof LocalDocumentEventCounts
+
       const recordAttempt = (
         action: DocumentActionName,
         event: Event
@@ -1755,15 +1884,18 @@ const installLocalInteractionProbe = async (
           }
         })
       }
+
       const rectangleControl = document.querySelector<HTMLElement>(
         '[data-testid="tool-rectangle"]'
       )
       const preparedSend = document.querySelector<HTMLElement>(
         '[data-endpoint-prepared-ai-submit="true"]'
       )
+
       if (!rectangleControl || !preparedSend) {
         throw new Error('Local interaction controls are unavailable')
       }
+
       preparedSend.addEventListener(
         'click',
         () => {
@@ -1862,6 +1994,7 @@ const installLocalInteractionProbe = async (
           readProfile<EndpointTurnSettlementEvidence | null>(
             'readLatestTurnSettlement'
           )
+
         if (
           indicator?.isConnected &&
           canonicalElements === 0 &&
@@ -1878,6 +2011,7 @@ const installLocalInteractionProbe = async (
           const projectedTop = Number.parseFloat(indicator.style.top)
           const projectedWidth = Number.parseFloat(indicator.style.width)
           const projectedHeight = Number.parseFloat(indicator.style.height)
+
           loadingAtZero = {
             canonicalElements,
             connected: true,
@@ -1896,6 +2030,7 @@ const installLocalInteractionProbe = async (
             }
           }
         }
+
         return {
           canonicalElements,
           documentEventAttempts: { ...documentEventAttempts },
@@ -1917,6 +2052,7 @@ const installLocalInteractionProbe = async (
           zoom: readProfile('readZoom')
         }
       }
+
       const targetReached = (
         target: LocalInteractionProbeTarget,
         snapshot: LocalInteractionProbeSnapshot,
@@ -1960,22 +2096,29 @@ const installLocalInteractionProbe = async (
       const probeRoot = document.querySelector<HTMLElement>(
         '[data-testid="canvas-host"]'
       )
+
       if (!probeRoot) {
         throw new Error('Local interaction probe root is unavailable')
       }
+
       const waitForBoundedProbeFrames = (frameCount: number): Promise<number> =>
         new Promise((resolve) => {
           let observedFrames = 0
+
           const advance = (): void => {
             observedFrames += 1
             if (observedFrames >= frameCount) {
               resolve(observedFrames)
+
               return
             }
+
             requestAnimationFrame(advance)
           }
+
           requestAnimationFrame(advance)
         })
+
       const assertTurnRemainsActive = (
         target: LocalInteractionProbeTarget,
         snapshot: LocalInteractionProbeSnapshot
@@ -1997,6 +2140,7 @@ const installLocalInteractionProbe = async (
           )
         }
       }
+
       const waitForLoadingTarget = (
         target: 'first-visible' | 'loading-at-zero',
         timeoutMs: number,
@@ -2008,6 +2152,7 @@ const installLocalInteractionProbe = async (
           let observedFrames = 0
           let stableLoadingFrameCount = 0
           let observer: MutationObserver | null = null
+
           const finish = (
             result:
               { snapshot: LocalInteractionProbeSnapshot } | { error: Error }
@@ -2015,6 +2160,7 @@ const installLocalInteractionProbe = async (
             if (settled) {
               return
             }
+
             settled = true
             globalThis.clearTimeout(timeoutId)
             observer?.disconnect()
@@ -2024,21 +2170,26 @@ const installLocalInteractionProbe = async (
               resolve(result.snapshot)
             }
           }
+
           const inspectLoadingMutation = (): void => {
             frameScheduled = false
             if (settled) {
               return
             }
+
             observedFrames += 1
             const snapshot = read()
+
             try {
               assertTurnRemainsActive(target, snapshot)
             } catch (error) {
               finish({
                 error: error instanceof Error ? error : new Error(String(error))
               })
+
               return
             }
+
             const targetStable =
               target === 'loading-at-zero'
                 ? snapshot.loadingConnected &&
@@ -2049,11 +2200,13 @@ const installLocalInteractionProbe = async (
                   snapshot.canonicalElements > 0 &&
                   snapshot.turnAccepted &&
                   snapshot.turnOutcome === null
+
             if (targetStable) {
               stableLoadingFrameCount += 1
             } else {
               stableLoadingFrameCount = 0
             }
+
             if (
               targetReached(
                 target,
@@ -2064,22 +2217,28 @@ const installLocalInteractionProbe = async (
               )
             ) {
               finish({ snapshot })
+
               return
             }
+
             if (stableLoadingFrameCount === 1) {
               scheduleLoadingInspection()
             }
           }
+
           const scheduleLoadingInspection = (): void => {
             if (settled || frameScheduled) {
               return
             }
+
             frameScheduled = true
             requestAnimationFrame(inspectLoadingMutation)
           }
+
           const timeoutId = globalThis.setTimeout(() => {
             const snapshot = read()
             let message = 'Agent did not accept the dispatched request.'
+
             if (snapshot.requestSubmissionClickCount === 0) {
               message =
                 'Prepared request click did not reach the armed Send control.'
@@ -2088,10 +2247,12 @@ const installLocalInteractionProbe = async (
                 snapshot
               )}`
             }
+
             finish({
               error: new Error(message)
             })
           }, timeoutMs)
+
           observer = new MutationObserver(scheduleLoadingInspection)
           observer.observe(document.body, {
             attributes: true,
@@ -2100,6 +2261,7 @@ const installLocalInteractionProbe = async (
           })
           scheduleLoadingInspection()
         })
+
       const waitForCanonicalProgress = (
         minimumCanonicalElements: number,
         timeoutMs: number
@@ -2110,12 +2272,15 @@ const installLocalInteractionProbe = async (
             minimumCanonicalElements <= 0
           ) {
             reject(new Error('Invalid local canonical progress target'))
+
             return
           }
+
           let settled = false
           let frameScheduled = false
           let stableProgressFrames = 0
           let observer: MutationObserver | null = null
+
           const finish = (
             result:
               { snapshot: LocalInteractionProbeSnapshot } | { error: Error }
@@ -2123,6 +2288,7 @@ const installLocalInteractionProbe = async (
             if (settled) {
               return
             }
+
             settled = true
             globalThis.clearTimeout(timeoutId)
             observer?.disconnect()
@@ -2132,12 +2298,15 @@ const installLocalInteractionProbe = async (
               resolve(result.snapshot)
             }
           }
+
           const inspectProgressMutation = (): void => {
             frameScheduled = false
             if (settled) {
               return
             }
+
             const snapshot = read()
+
             if (
               snapshot.turnOutcome !== null ||
               !snapshot.turnAccepted ||
@@ -2155,30 +2324,39 @@ const installLocalInteractionProbe = async (
                   })}`
                 )
               })
+
               return
             }
+
             if (snapshot.canonicalElements >= minimumCanonicalElements) {
               stableProgressFrames += 1
             } else {
               stableProgressFrames = 0
             }
+
             if (stableProgressFrames >= 2) {
               finish({ snapshot })
+
               return
             }
+
             if (stableProgressFrames === 1) {
               scheduleProgressInspection()
             }
           }
+
           const scheduleProgressInspection = (): void => {
             if (settled || frameScheduled) {
               return
             }
+
             frameScheduled = true
             requestAnimationFrame(inspectProgressMutation)
           }
+
           const timeoutId = globalThis.setTimeout(() => {
             const snapshot = read()
+
             finish({
               error: new Error(
                 `Local canonical progress ${String(
@@ -2187,6 +2365,7 @@ const installLocalInteractionProbe = async (
               )
             })
           }, timeoutMs)
+
           observer = new MutationObserver(scheduleProgressInspection)
           observer.observe(document.body, {
             attributes: true,
@@ -2195,23 +2374,30 @@ const installLocalInteractionProbe = async (
           })
           scheduleProgressInspection()
         })
+
       const probe: LocalInteractionProbe = {
         focusKeyboardTarget: () => {
           probeRoot.focus({ preventScroll: true })
+
           return read()
         },
+
         read,
         waitForCanonicalProgress,
+
         waitFor: async (target, timeoutMs, baseline) => {
           const navigationBaseline = baseline ?? {
             viewport: initialViewport,
             zoom: initialZoom
           }
+
           if (target === 'loading-at-zero' || target === 'first-visible') {
             return waitForLoadingTarget(target, timeoutMs, navigationBaseline)
           }
+
           const observedFrames = await waitForBoundedProbeFrames(2)
           const snapshot = read()
+
           assertTurnRemainsActive(target, snapshot)
           if (
             !targetReached(
@@ -2228,9 +2414,11 @@ const installLocalInteractionProbe = async (
               )}`
             )
           }
+
           return snapshot
         }
       }
+
       document.addEventListener(probeEvent, (event) => {
         const detail = (
           event as CustomEvent<{
@@ -2239,9 +2427,11 @@ const installLocalInteractionProbe = async (
             promise?: Promise<unknown>
           }>
         ).detail
+
         if (!detail) {
           return
         }
+
         detail.promise = Promise.resolve().then(() => {
           switch (detail.operation) {
             case 'focus':
@@ -2266,6 +2456,7 @@ const installLocalInteractionProbe = async (
           }
         })
       })
+
       return read()
     },
     {
@@ -2324,18 +2515,23 @@ const prepareAiTurn = async (
   prompt: string
 ): Promise<PreparedAiTurn> => {
   const input = page.getByLabel('Message Agent')
+
   await expect(input).toBeEnabled()
   await input.fill(prompt)
   const send = page.getByRole('button', { name: 'Send' })
+
   await expect(send).toBeEnabled()
   await send.click({ trial: true })
   const bounds = await send.boundingBox()
+
   if (!bounds) {
     throw new Error('Prepared AI Send button bounds are unavailable')
   }
+
   await send.evaluate(async (element) => {
     element.setAttribute('data-endpoint-prepared-ai-submit', 'true')
   })
+
   return {
     page,
     sendCenter: {
@@ -2356,8 +2552,10 @@ const assertPreparedAiTurnSettled = async (
 ): Promise<void> => {
   const { page } = prepared
   const settledTurns = page.getByTestId('ai-agent-message')
+
   await expect(settledTurns).toHaveCount(1, { timeout: 120_000 })
   const turn = settledTurns.last()
+
   await expect(turn).toHaveAttribute('data-outcome', 'success', {
     timeout: 120_000
   })
@@ -2380,9 +2578,12 @@ const createActor = async (
     reducedMotion: options.reducedMotion,
     viewport: { height: 900, width: 1440 }
   })
+
   try {
     const page = await context.newPage()
+
     captureBrowserErrors(page)
+
     return { context, page }
   } catch (error) {
     await context.close().catch(() => undefined)
@@ -2396,6 +2597,7 @@ const launchTrackedActorBBrowser = async (): Promise<Browser> => {
       (entry): entry is [string, string] => typeof entry[1] === 'string'
     )
   )
+
   return await chromium.launch({
     channel: 'chrome',
     env: {
@@ -2432,6 +2634,7 @@ const prepareEndpointActorsSequentially = async ({
 }> => {
   const contexts: BrowserContext[] = []
   let actorBBrowser: Browser | null = null
+
   try {
     await postHeartbeat(
       'progress',
@@ -2442,18 +2645,22 @@ const prepareEndpointActorsSequentially = async ({
       )
     )
     const actorA = await createActor(browser, baseURL)
+
     contexts.push(actorA.context)
 
     const preparedResponse = getPreparedServerResponseVariant(
       serverResponseItemCount
     )
+
     if (fileId !== preparedResponse.fileId) {
       throw new Error(
         'Endpoint actor fileId must match its prepared server response.'
       )
     }
+
     let actionBatchInterceptor:
       PreparedActionBatchInterceptorMetrics | undefined
+
     await waitForConnectivityCpuSample(
       'actor-a-action-batch-interceptor',
       async () => {
@@ -2473,6 +2680,7 @@ const prepareEndpointActorsSequentially = async ({
         'Prepared action-batch interceptor metrics are unavailable.'
       )
     }
+
     await waitForConnectivityCpuSample(
       'actor-a-blank-idle',
       undefined,
@@ -2504,6 +2712,7 @@ const prepareEndpointActorsSequentially = async ({
     )
     actorBBrowser = await launchTrackedActorBBrowser()
     const actorB = await createActor(actorBBrowser, baseURL)
+
     contexts.push(actorB.context)
 
     await waitForConnectivityCpuSample(
@@ -2550,17 +2759,21 @@ test('empty-document two-Actor endpoint connectivity', async ({
     'The focused connectivity case runs only when explicitly selected'
   )
   const baseURL = String(testInfo.project.use.baseURL ?? '')
+
   if (!baseURL) {
     throw new Error('Endpoint performance App URL is unavailable')
   }
+
   const fileId = `connectivity-${endpointOwner}-${Date.now()}`
   const contexts: BrowserContext[] = []
   let actorBBrowser: Browser | null = null
+
   try {
     actorBBrowser = await launchTrackedActorBBrowser()
     await waitForGuardReady(createConnectivityHeartbeat('browser-launched'))
     await delay(750)
     const ordinarySingleActor = await createActor(browser, baseURL)
+
     contexts.push(ordinarySingleActor.context)
     await waitForConnectivityCpuSample('single-a-ordinary-blank-idle')
     await waitForConnectivityCpuSample('single-a-ordinary-navigation', () =>
@@ -2580,6 +2793,7 @@ test('empty-document two-Actor endpoint connectivity', async ({
     await ordinarySingleActor.context.close()
 
     const profiledSingleActor = await createActor(browser, baseURL)
+
     contexts.push(profiledSingleActor.context)
     await waitForConnectivityCpuSample('single-a-profiled-blank-idle')
     await waitForConnectivityCpuSample('single-a-profiled-navigation', () =>
@@ -2599,6 +2813,7 @@ test('empty-document two-Actor endpoint connectivity', async ({
     await profiledSingleActor.context.close()
 
     const actorA = await createActor(browser, baseURL)
+
     contexts.push(actorA.context)
     await waitForConnectivityCpuSample('actor-a-blank-idle')
     await waitForConnectivityCpuSample('actor-a-navigation', () =>
@@ -2611,6 +2826,7 @@ test('empty-document two-Actor endpoint connectivity', async ({
       waitForCollaboration(actorA.page, 'Actor A')
     )
     const actorB = await createActor(actorBBrowser, baseURL)
+
     contexts.push(actorB.context)
     await waitForConnectivityCpuSample('actor-b-blank-idle')
     await waitForConnectivityCpuSample('actor-b-navigation', () =>
@@ -2649,24 +2865,30 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
     'The local attribution case runs only in its dedicated fresh invocation'
   )
   const baseURL = String(testInfo.project.use.baseURL ?? '')
+
   if (!baseURL) {
     throw new Error('Endpoint performance App URL is unavailable')
   }
+
   let requestedItems: ServerResponseItemCount = 16
+
   if (endpointAttributionCase === '27471-maximum') {
     requestedItems = 27_471
   } else if (endpointAttributionCase === '1280') {
     requestedItems = 1280
   }
+
   const preparedResponse = getPreparedServerResponseVariant(requestedItems)
   const expectedTotal = requestedItems + 1
   const fileId = preparedResponse.fileId
   let prompt = 'create the fast CRDT performance fixture'
+
   if (requestedItems === 27_471) {
     prompt = 'create the maximum-detail performance fixture'
   } else if (requestedItems === 1280) {
     prompt = 'create the 1280-item CRDT performance fixture'
   }
+
   const actor = await createActor(browser, baseURL, {
     reducedMotion:
       endpointAttributionCase === '16-reduced-motion'
@@ -2678,13 +2900,17 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
     expectedTotal
   )
   const actorSession = await actor.context.newCDPSession(actor.page)
+
   let stopCpuProfileDiagnostic = async () => undefined
+
   const testStartedAtMs = Date.now()
+
   const startGuardPhase = async (phase: string): Promise<void> => {
     heartbeat.startPhase(phase)
     await postHeartbeat('progress', await heartbeat.sample())
     await postPhaseBoundary('start', phase)
   }
+
   const endGuardPhase = async (phase: string): Promise<void> => {
     await postPhaseBoundary('end', phase)
     heartbeat.completePhase(phase)
@@ -2693,6 +2919,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
   try {
     let actionBatchInterceptor:
       PreparedActionBatchInterceptorMetrics | undefined
+
     await waitForConnectivityCpuSample(
       'local-action-batch-interceptor',
       async () => {
@@ -2712,6 +2939,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
         'Prepared action-batch interceptor metrics are unavailable.'
       )
     }
+
     await waitForConnectivityCpuSample(
       'local-app-and-collaboration-ready',
       async () => {
@@ -2725,6 +2953,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
     await openAgent(actor.page)
     await actorSession.send('Performance.enable', { timeDomain: 'threadTicks' })
     let preparedTurn: PreparedAiTurn | null = null
+
     await waitForConnectivityCpuSample(
       'local-request-prepared',
       async () => {
@@ -2735,11 +2964,13 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
     if (!preparedTurn) {
       throw new Error('Local attribution AI turn was not prepared')
     }
+
     await waitForGuardReady(
       createConnectivityHeartbeat('local-request-ready', 'local-attribution')
     )
 
     const initialHeartbeat = await heartbeat.sample()
+
     expect(initialHeartbeat.actorA.canonicalElements).toBe(0)
     expect(initialHeartbeat.actorA.renderProjectionElements).toBe(0)
     await postHeartbeat('progress', initialHeartbeat)
@@ -2748,6 +2979,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
       await startRotatingCpuProfileDiagnostic(actorSession)
     const operationStart = await actorSession.send('Performance.getMetrics')
     const creationStartedAtMs = Date.now()
+
     heartbeat.markCreationStarted(creationStartedAtMs)
     heartbeat.begin()
     await startGuardPhase('local-request')
@@ -2764,6 +2996,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
       operationStart,
       operationEnd
     ) as RendererPerformanceWindow
+
     await endGuardPhase('local-request')
     await stopCpuProfileDiagnostic()
     await heartbeat.stop()
@@ -2783,6 +3016,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
       actor.page,
       requestedItems
     )
+
     expect(actorADiagnostics.runtime).toBe('production')
     expect(actorADiagnostics.localSentCount).toBe(
       completed.publications.actorALocalSent
@@ -2797,6 +3031,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
     for (const name of requiredAttributionPhaseNames) {
       expect(actorADiagnostics.attributionPhaseCounts[name]).toBeGreaterThan(0)
     }
+
     expect(
       actorADiagnostics.phaseTimeline.every(
         ({ atMs }, index, timeline) =>
@@ -2834,6 +3069,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
       actionBatchInterceptor,
       status: 'complete'
     }
+
     await postHeartbeat('complete', {
       ...finalHeartbeat,
       report
@@ -2848,6 +3084,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
         'local-attribution-failed',
         'local-attribution'
       )
+
     await postHeartbeat('failed', {
       ...latest,
       error:
@@ -2873,24 +3110,30 @@ test('two-Actor operation and idle attribution', async ({
     'The two-Actor activity diagnostic runs only in its dedicated invocation'
   )
   const baseURL = String(testInfo.project.use.baseURL ?? '')
+
   if (!baseURL) {
     throw new Error('Endpoint performance App URL is unavailable')
   }
+
   let requestedItems = 16
+
   if (endpointAttributionCase === '1280-two-actor-attribution') {
     requestedItems = 1280
   } else if (endpointAttributionCase === '320-two-actor-attribution') {
     requestedItems = 320
   }
+
   const preparedResponse = getPreparedServerResponseVariant(requestedItems)
   const expectedTotal = requestedItems + 1
   const fileId = preparedResponse.fileId
   let prompt = 'create the fast CRDT performance fixture'
+
   if (requestedItems === 1280) {
     prompt = 'create the 1280-item CRDT performance fixture'
   } else if (requestedItems === 320) {
     prompt = 'create the 320-item CRDT performance fixture'
   }
+
   const { actorA, actorB, actorBBrowser, actionBatchInterceptor, contexts } =
     await prepareEndpointActorsSequentially({
       baseURL,
@@ -2907,15 +3150,18 @@ test('two-Actor operation and idle attribution', async ({
   )
   const actorASession = await contexts[0].newCDPSession(actorA)
   const actorBSession = await contexts[1].newCDPSession(actorB)
+
   const startGuardPhase = async (phase: string): Promise<void> => {
     heartbeat.startPhase(phase)
     await postHeartbeat('progress', await heartbeat.sample())
     await postPhaseBoundary('start', phase)
   }
+
   const endGuardPhase = async (phase: string): Promise<void> => {
     await postPhaseBoundary('end', phase)
     heartbeat.completePhase(phase)
   }
+
   const testStartedAtMs = Date.now()
   let heartbeatStop: Promise<void> | null = null
 
@@ -2928,6 +3174,7 @@ test('two-Actor operation and idle attribution', async ({
     ])
     await openAgent(actorA)
     let preparedTurn: PreparedAiTurn | null = null
+
     await waitForConnectivityCpuSample(
       'two-actor-request-prepared',
       async () => {
@@ -2938,11 +3185,13 @@ test('two-Actor operation and idle attribution', async ({
     if (!preparedTurn) {
       throw new Error('Two-Actor AI turn was not prepared')
     }
+
     await waitForGuardReady(
       createConnectivityHeartbeat('request-ready', 'collaboration-attribution')
     )
 
     const initialHeartbeat = await heartbeat.sample()
+
     expect(initialHeartbeat.actorA.canonicalElements).toBe(0)
     expect(initialHeartbeat.actorB.canonicalElements).toBe(0)
     await postHeartbeat('progress', initialHeartbeat)
@@ -2952,6 +3201,7 @@ test('two-Actor operation and idle attribution', async ({
       actorBSession.send('Performance.getMetrics')
     ])
     const operationStartedAtMs = Date.now()
+
     heartbeat.markCreationStarted(operationStartedAtMs)
     heartbeat.begin()
     await startGuardPhase('operation')
@@ -2959,6 +3209,7 @@ test('two-Actor operation and idle attribution', async ({
     const completed = await heartbeat.assertGuarded(
       heartbeat.waitForBothComplete(TOTAL_CREATION_FLOW_TIMEOUT_MS)
     )
+
     heartbeatStop = heartbeat.stop()
     const operationCompletedAtMs = Date.now()
     const [actorAOperationEnd, actorBOperationEnd] = await Promise.all([
@@ -2973,6 +3224,7 @@ test('two-Actor operation and idle attribution', async ({
       actorBOperationStart,
       actorBOperationEnd
     ) as RendererPerformanceWindow
+
     await endGuardPhase('operation')
 
     heartbeat.startPhase('post-completion-idle')
@@ -2987,6 +3239,7 @@ test('two-Actor operation and idle attribution', async ({
       actorBSession.send('Performance.getMetrics')
     ])
     const idleStartedAtMs = Date.now()
+
     await Promise.all([
       delay(10_000),
       delay(5_000).then(() =>
@@ -3011,6 +3264,7 @@ test('two-Actor operation and idle attribution', async ({
       actorBIdleStart,
       actorBIdleEnd
     ) as RendererPerformanceWindow
+
     heartbeat.completePhase('post-completion-idle')
     await heartbeatStop
     await assertPreparedAiTurnSettled(preparedTurn)
@@ -3030,6 +3284,7 @@ test('two-Actor operation and idle attribution', async ({
       readFinalDiagnostics(actorA, requestedItems),
       readFinalDiagnostics(actorB)
     ])
+
     expect(
       actorADiagnostics.historyDepth - initialHeartbeat.actorA.undoDepth
     ).toBe(1)
@@ -3074,6 +3329,7 @@ test('two-Actor operation and idle attribution', async ({
       totalCount: expectedTotal,
       visibleWorkerTargetCount: workerTargetCount
     })
+
     const finalHeartbeat: EndpointHeartbeat = {
       ...completed,
       activePhase: null,
@@ -3115,6 +3371,7 @@ test('two-Actor operation and idle attribution', async ({
       actionBatchInterceptor,
       status: 'complete'
     }
+
     await postHeartbeat('complete', {
       ...finalHeartbeat,
       report
@@ -3129,6 +3386,7 @@ test('two-Actor operation and idle attribution', async ({
         'two-actor-activity-failed',
         'collaboration-attribution'
       )
+
     await postHeartbeat('failed', {
       ...latest,
       error:
@@ -3158,9 +3416,11 @@ test('creation-only high-detail endpoint proof', async ({
     'The focused connectivity case must never create the high-detail fixture'
   )
   const baseURL = String(testInfo.project.use.baseURL ?? '')
+
   if (!baseURL) {
     throw new Error('Endpoint performance App URL is unavailable')
   }
+
   const preparedResponse = getPreparedServerResponseVariant(7075)
   const fileId = preparedResponse.fileId
   const { actorA, actorB, actorBBrowser, actionBatchInterceptor, contexts } =
@@ -3182,22 +3442,28 @@ test('creation-only high-detail endpoint proof', async ({
       installBoundedDiagnostics(actorB)
     )
     let totalCreationPreparationMs = 0
+
     await waitForConnectivityCpuSample('reference-ready', async () => {
       const preparationStartedAtMs = Date.now()
+
       await openAgentAndAttachReference(actorA)
       totalCreationPreparationMs += Date.now() - preparationStartedAtMs
     })
     let preparedTurn: PreparedAiTurn | null = null
+
     await waitForConnectivityCpuSample('request-prepared', async () => {
       const preparationStartedAtMs = Date.now()
+
       preparedTurn = await prepareAiTurn(actorA, exactCatOnlyPrompt)
       totalCreationPreparationMs += Date.now() - preparationStartedAtMs
     })
     if (!preparedTurn) {
       throw new Error('High-detail AI turn was not prepared')
     }
+
     const initialHeartbeat = await heartbeat.sample()
     const localInteraction = await installLocalInteractionProbe(actorA)
+
     expect(localInteraction.initial.canonicalElements).toBe(0)
     expect(localInteraction.initial.rectangleActive).toBe(false)
     await waitForGuardReady(createConnectivityHeartbeat('request-ready'))
@@ -3208,17 +3474,21 @@ test('creation-only high-detail endpoint proof', async ({
       createConnectivityHeartbeat('actors-ready', 'endpoint', 'creation')
     )
     const creationStartedAtMs = Date.now()
+
     heartbeat.markCreationStarted(creationStartedAtMs)
     heartbeat.begin()
     const loadingAtZeroPromise = heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'loading-at-zero')
     )
+
     await heartbeat.assertGuarded(triggerPreparedAiTurn(preparedTurn))
     const loadingState = await loadingAtZeroPromise
     const loadingAtZero = loadingState.loadingAtZero
+
     if (!loadingAtZero) {
       throw new Error('Connected loading evidence at zero elements is missing')
     }
+
     expect(loadingAtZero.connected).toBe(true)
     expect(loadingAtZero.canonicalElements).toBe(0)
     expect(['preparing', 'drawing']).toContain(loadingAtZero.phase)
@@ -3236,6 +3506,7 @@ test('creation-only high-detail endpoint proof', async ({
     const firstVisibleState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'first-visible')
     )
+
     expect(firstVisibleState.canonicalElements).toBeGreaterThan(0)
     expect(firstVisibleState.canonicalElements).toBeLessThan(7076)
     expect(firstVisibleState.loadingConnected).toBe(true)
@@ -3252,6 +3523,7 @@ test('creation-only high-detail endpoint proof', async ({
     const pannedState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'pan-changed', 10_000, loadingState)
     )
+
     expect(pannedState.viewport).not.toEqual(loadingState.viewport)
     expect(pannedState.loadingConnected).toBe(true)
     expect(pannedState.canonicalElements).toBeLessThan(7076)
@@ -3262,6 +3534,7 @@ test('creation-only high-detail endpoint proof', async ({
         Math.ceil(expectedFixture.vectorCount * 0.25)
       )
     )
+
     expect(quarterProgressState.loadingConnected).toBe(true)
     expect(quarterProgressState.canonicalElements).toBeLessThan(7076)
     expect(quarterProgressState.turnAccepted).toBe(true)
@@ -3273,6 +3546,7 @@ test('creation-only high-detail endpoint proof', async ({
     const zoomedState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'zoom-changed', 10_000, pannedState)
     )
+
     expect(zoomedState.zoom).not.toBe(pannedState.zoom)
     expect(zoomedState.loadingConnected).toBe(true)
     expect(zoomedState.canonicalElements).toBeLessThan(7076)
@@ -3283,6 +3557,7 @@ test('creation-only high-detail endpoint proof', async ({
         Math.ceil(expectedFixture.vectorCount * 0.5)
       )
     )
+
     expect(halfProgressState.loadingConnected).toBe(true)
     expect(halfProgressState.canonicalElements).toBeLessThan(7076)
     expect(halfProgressState.turnAccepted).toBe(true)
@@ -3291,6 +3566,7 @@ test('creation-only high-detail endpoint proof', async ({
     const keyboardTargetState = await heartbeat.assertGuarded(
       focusLocalInteractionKeyboardTarget(actorA)
     )
+
     expect(keyboardTargetState.keyboardTargetActive).toBe(true)
     expect(keyboardTargetState.loadingConnected).toBe(true)
     expect(keyboardTargetState.canonicalElements).toBeLessThan(7076)
@@ -3310,6 +3586,7 @@ test('creation-only high-detail endpoint proof', async ({
         Math.ceil(expectedFixture.vectorCount * 0.75)
       )
     )
+
     expect(threeQuarterProgressState.loadingConnected).toBe(true)
     expect(threeQuarterProgressState.canonicalElements).toBeLessThan(7076)
     expect(threeQuarterProgressState.turnAccepted).toBe(true)
@@ -3320,6 +3597,7 @@ test('creation-only high-detail endpoint proof', async ({
     const blockedState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'interaction-frame')
     )
+
     expect(blockedState.rectangleActive).toBe(false)
     expect(blockedState.documentEventAttempts).toEqual({
       deleteKey: 1,
@@ -3350,15 +3628,18 @@ test('creation-only high-detail endpoint proof', async ({
       )
     )
     const actorACompleteMs = actorACompleted.actorA.completeAtMs
+
     if (actorACompleteMs === null) {
       throw new Error('Actor A completion timing is unavailable')
     }
+
     expect(actorACompleteMs).toBeLessThanOrEqual(ACTOR_A_CREATION_TIMEOUT_MS)
     heartbeat.completePhase('creation')
     heartbeat.startPhase('peer-convergence')
     const peerConvergenceHeartbeat = await heartbeat.assertGuarded(
       heartbeat.sample()
     )
+
     await heartbeat.assertGuarded(
       postHeartbeat('progress', peerConvergenceHeartbeat)
     )
@@ -3368,11 +3649,14 @@ test('creation-only high-detail endpoint proof', async ({
       )
     )
     const convergedMs = completed.actorB.completeAtMs
+
     if (convergedMs === null) {
       throw new Error('Actor B completion timing is unavailable')
     }
+
     expect(convergedMs).toBeLessThanOrEqual(ACTOR_B_CREATION_TIMEOUT_MS)
     const totalCreationFlowMs = totalCreationPreparationMs + convergedMs
+
     expect(totalCreationFlowMs).toBeLessThanOrEqual(
       TOTAL_CREATION_FLOW_TIMEOUT_MS
     )
@@ -3382,6 +3666,7 @@ test('creation-only high-detail endpoint proof', async ({
     const loadingRemovedState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'loading-removed')
     )
+
     expect(loadingRemovedState.loadingConnected).toBe(false)
     await heartbeat.assertGuarded(
       actorA.mouse.click(
@@ -3392,6 +3677,7 @@ test('creation-only high-detail endpoint proof', async ({
     const releasedState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'rectangle-active')
     )
+
     expect(releasedState.rectangleActive).toBe(true)
     expect(releasedState.documentEventAttempts.rectangleButton).toBe(2)
     expect(releasedState.documentEventDeliveries.rectangleButton).toBe(1)
@@ -3405,15 +3691,18 @@ test('creation-only high-detail endpoint proof', async ({
     const selectedState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'interaction-frame')
     )
+
     expect(selectedState.rectangleActive).toBe(false)
     const releasedKeyboardTargetState = await heartbeat.assertGuarded(
       focusLocalInteractionKeyboardTarget(actorA)
     )
+
     expect(releasedKeyboardTargetState.keyboardTargetActive).toBe(true)
     await heartbeat.assertGuarded(actorA.keyboard.press('r'))
     const keyboardReleasedState = await heartbeat.assertGuarded(
       waitForLocalInteractionProbe(actorA, 'rectangle-active')
     )
+
     expect(keyboardReleasedState.documentEventAttempts.rectangleShortcut).toBe(
       2
     )
@@ -3429,6 +3718,7 @@ test('creation-only high-detail endpoint proof', async ({
     const actorASummary = await heartbeat.assertGuarded(
       readCanonicalSummary(actorA)
     )
+
     heartbeat.completePhase('canonical-summary-a')
     const receiverConvergenceSummary: ReceiverConvergenceSummary = {
       canonicalElements: completed.actorB.canonicalElements,
@@ -3464,6 +3754,7 @@ test('creation-only high-detail endpoint proof', async ({
     const initialBUndoDepth = initialHeartbeat.actorB.undoDepth
     const actorAHistoryActionCount =
       actorADiagnostics.historyDepth - initialAUndoDepth
+
     expect(actorADiagnostics.runtime).toBe('production')
     expect(actorBDiagnostics.runtime).toBe('production')
     expect(actorAHistoryActionCount).toBe(1)
@@ -3479,6 +3770,7 @@ test('creation-only high-detail endpoint proof', async ({
       resynced: 0
     })
     const drawingProgress = actorADiagnostics.drawingProgress
+
     expect(drawingProgress.loadingFrameVisibleCount).toBe(1)
     expect(drawingProgress.strictlyIncreasing).toBe(true)
     expect(drawingProgress.visibleElementSampleCount).toBeGreaterThanOrEqual(5)
@@ -3587,6 +3879,7 @@ test('creation-only high-detail endpoint proof', async ({
     }
     await heartbeat.stop()
     const finalHeartbeat = await heartbeat.sample()
+
     expect(finalHeartbeat.actorA.complete).toBe(true)
     expect(finalHeartbeat.actorB.complete).toBe(true)
     await postHeartbeat('complete', {
@@ -3644,21 +3937,26 @@ test('creation-only high-detail endpoint proof', async ({
     }
     let failureTimeEvidence: LocalInteractionProbeSnapshot | null = null
     let failureOwnerEvidence: EndpointHeartbeatFailure['ownerEvidence'] = null
+
     if (heartbeatStopped.status === 'available') {
       const freshHeartbeat = await settleFailureEvidenceWithin(
         heartbeat.sample(),
         1_000
       )
+
       if (freshHeartbeat.status === 'available') {
         latest = freshHeartbeat.value
       }
+
       const freshFailureEvidence = await settleFailureEvidenceWithin(
         readLocalInteractionProbe(actorA),
         1_000
       )
+
       if (freshFailureEvidence.status === 'available') {
         failureTimeEvidence = freshFailureEvidence.value
       }
+
       const [actorAFinalDiagnostics, actorBFinalDiagnostics] =
         await Promise.all([
           settleFailureEvidenceWithin(
@@ -3667,6 +3965,7 @@ test('creation-only high-detail endpoint proof', async ({
           ),
           settleFailureEvidenceWithin(readFinalDiagnostics(actorB), 1_500)
         ])
+
       failureOwnerEvidence = {
         actorA:
           actorAFinalDiagnostics.status === 'available'
@@ -3684,6 +3983,7 @@ test('creation-only high-detail endpoint proof', async ({
             : null
       }
     }
+
     const browserErrors = {
       actorA: getCapturedBrowserErrors(actorA)
         .slice(-4)
@@ -3700,6 +4000,7 @@ test('creation-only high-detail endpoint proof', async ({
       name: error instanceof Error ? error.name.slice(0, 80) : 'Error',
       ownerEvidence: failureOwnerEvidence
     }
+
     await postHeartbeat('failed', {
       ...latest,
       browserErrors,

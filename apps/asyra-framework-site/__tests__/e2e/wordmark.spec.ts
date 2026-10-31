@@ -6,6 +6,7 @@ for (const width of [320, 394, 1440]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     let reference: unknown
+
     for (const route of [
       '/',
       '/docs',
@@ -21,6 +22,7 @@ for (const width of [320, 394, 1440]) {
           .first()
           .locator('a')
           .filter({ hasText: /^ASYRA$/ })
+
         await expect(logo).toHaveCount(1)
         await expect
           .soft(logo)
@@ -30,6 +32,7 @@ for (const width of [320, 394, 1440]) {
           )
         const style = await logo.evaluate((el) => {
           const css = getComputedStyle(el)
+
           return {
             fontFamily: css.fontFamily,
             fontSize: css.fontSize,
@@ -38,9 +41,11 @@ for (const width of [320, 394, 1440]) {
             lineHeight: css.lineHeight
           }
         })
+
         if (!reference) {
           reference = style
         }
+
         expect.soft(style, `${route} ${region}`).toEqual(reference)
         await logo.screenshot({
           path: testInfo.outputPath(

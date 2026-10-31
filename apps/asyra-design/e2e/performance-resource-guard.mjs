@@ -103,6 +103,7 @@ const normalizeRequiredProcessRoles = (value) => {
   if (!Array.isArray(value)) {
     return []
   }
+
   return [
     ...new Set(
       value.filter(
@@ -220,6 +221,7 @@ export const resolveEndpointBrowserExecutablePath = ({
         'Maximum-detail performance requires the Playwright Chrome for Testing executable'
       )
     }
+
     return bundledChromiumExecutablePath
   }
 
@@ -227,11 +229,13 @@ export const resolveEndpointBrowserExecutablePath = ({
     googleChromeExecutablePath ??
     GOOGLE_CHROME_EXECUTABLE_PATH_BY_PLATFORM[platform] ??
     ''
+
   if (!isEndpointGuardAbsolutePath(executablePath)) {
     throw new Error(
       `Endpoint performance requires an absolute ${GOOGLE_CHROME_EXECUTABLE_PATH_ENV}`
     )
   }
+
   return executablePath
 }
 
@@ -279,16 +283,20 @@ export const parseCpuTimeToMilliseconds = (value) => {
   if (typeof value !== 'string') {
     throw new TypeError('Process CPU time must be a string')
   }
+
   const match = value
     .trim()
     .match(/^(?:(\d+)-)?(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)$/u)
+
   if (!match) {
     throw new TypeError(`Invalid process CPU time: ${String(value)}`)
   }
+
   const days = Number(match[1] ?? 0)
   const hours = Number(match[2] ?? 0)
   const minutes = Number(match[3])
   const seconds = Number(match[4])
+
   if (
     ![days, hours, minutes, seconds].every(Number.isFinite) ||
     seconds >= 60 ||
@@ -297,6 +305,7 @@ export const parseCpuTimeToMilliseconds = (value) => {
   ) {
     throw new TypeError(`Invalid process CPU time: ${value}`)
   }
+
   return Math.round(
     (((days * 24 + hours) * 60 + minutes) * 60 + seconds) * 1_000
   )
@@ -306,31 +315,39 @@ const classifyBrowserProcessType = (lowerCommand) => {
   if (lowerCommand.includes('--type=gpu-process')) {
     return 'gpu-process'
   }
+
   if (lowerCommand.includes('--type=renderer')) {
     return 'renderer-or-worker'
   }
+
   if (lowerCommand.includes('--type=utility')) {
     return 'utility'
   }
+
   if (!lowerCommand.includes('--type=')) {
     return 'root-browser'
   }
+
   return 'other-browser'
 }
 
 const classifyProcessCommand = (command) => {
   const lowerCommand = command.toLowerCase()
+
   if (
     lowerCommand.includes('dist/collaboration-server/collaboration-server.js')
   ) {
     return { executable: 'node', role: 'websocket-server' }
   }
+
   if (lowerCommand.includes('dist/document-backend/document-backend.js')) {
     return { executable: 'node', role: 'document-backend' }
   }
+
   if (lowerCommand.includes('vite') && lowerCommand.includes('preview')) {
     return { executable: 'node', role: 'app-server' }
   }
+
   if (
     lowerCommand.includes('chrome-headless-shell') ||
     lowerCommand.includes('chromium')
@@ -341,6 +358,7 @@ const classifyProcessCommand = (command) => {
       role: 'client-a-browser'
     }
   }
+
   if (
     lowerCommand.includes('playwright') ||
     lowerCommand.includes('vitest') ||
@@ -352,14 +370,18 @@ const classifyProcessCommand = (command) => {
     /(^|\s)yarn(\s|$)/u.test(lowerCommand)
   ) {
     let executable = 'node'
+
     if (lowerCommand.includes('esbuild')) {
       executable = 'esbuild'
     } else if (lowerCommand.includes('yarn')) {
       executable = 'yarn'
     }
+
     return { executable, role: 'test-harness' }
   }
+
   const firstToken = command.trim().split(/\s+/u)[0] ?? 'unknown'
+
   return {
     executable: (firstToken.split('/').at(-1) || 'unknown').slice(0, 160),
     role: 'unknown'
@@ -402,40 +424,49 @@ const roleCpuKey = (role) => {
 
 const sanitizeRoleCpuPercent = (value) => {
   const result = createEmptyRoleCpuPercent()
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return result
   }
+
   for (const key of Object.keys(result)) {
     if (isFiniteNonNegativeNumber(value[key])) {
       result[key] = value[key]
     }
   }
+
   return result
 }
 
 const sanitizeRoleCpuTimeMs = (value) => {
   const result = createEmptyRoleCpuTimeMs()
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return result
   }
+
   for (const key of Object.keys(result)) {
     if (isFiniteNonNegativeNumber(value[key])) {
       result[key] = value[key]
     }
   }
+
   return result
 }
 
 const sanitizeBrowserProcessTypeCpuPercent = (value) => {
   const result = createEmptyBrowserProcessTypeCpuPercent()
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return result
   }
+
   for (const key of Object.keys(result)) {
     if (isFiniteNonNegativeNumber(value[key])) {
       result[key] = value[key]
     }
   }
+
   return result
 }
 
@@ -447,8 +478,10 @@ const sanitizeProcessCpuTimes = (value) => {
   ) {
     return []
   }
+
   const pids = new Set()
   const entries = []
+
   for (const entry of value) {
     if (
       !entry ||
@@ -462,13 +495,16 @@ const sanitizeProcessCpuTimes = (value) => {
     ) {
       return []
     }
+
     pids.add(entry.pid)
     let browserProcessType = null
+
     if (CLIENT_BROWSER_PROCESS_ROLES.has(entry.role)) {
       browserProcessType = BROWSER_PROCESS_TYPES.has(entry.browserProcessType)
         ? entry.browserProcessType
         : 'other-browser'
     }
+
     entries.push({
       ...(browserProcessType ? { browserProcessType } : {}),
       cpuTimeMs: entry.cpuTimeMs,
@@ -476,6 +512,7 @@ const sanitizeProcessCpuTimes = (value) => {
       role: entry.role
     })
   }
+
   return entries.sort((left, right) => left.pid - right.pid)
 }
 
@@ -499,6 +536,7 @@ const sanitizeCpuContributors = (value) => {
       ) {
         return []
       }
+
       return [
         {
           pid: contributor.pid,
@@ -528,9 +566,11 @@ const sanitizeTrackedProcessGroups = (value) => {
   if (!Array.isArray(value)) {
     return []
   }
+
   const roles = new Set()
   const pgids = new Set()
   const groups = []
+
   for (const group of value) {
     if (
       !group ||
@@ -544,10 +584,12 @@ const sanitizeTrackedProcessGroups = (value) => {
     ) {
       continue
     }
+
     roles.add(group.role)
     pgids.add(group.pgid)
     groups.push({ pgid: group.pgid, role: group.role })
   }
+
   return groups.sort(
     (left, right) =>
       TRACKED_PROCESS_ROLES.indexOf(left.role) -
@@ -561,6 +603,7 @@ const sanitizeScalarRecord = (value, maximumKeys = 32) => {
   }
 
   const result = {}
+
   for (const [key, item] of Object.entries(value).slice(0, maximumKeys)) {
     if (
       item === null ||
@@ -571,6 +614,7 @@ const sanitizeScalarRecord = (value, maximumKeys = 32) => {
       result[key] = item
     }
   }
+
   return result
 }
 
@@ -593,6 +637,7 @@ const sanitizeTopPhases = (value) => {
   if (!Array.isArray(value)) {
     return []
   }
+
   return value.slice(0, 24).flatMap((phase) => {
     if (
       !phase ||
@@ -603,6 +648,7 @@ const sanitizeTopPhases = (value) => {
     ) {
       return []
     }
+
     return [
       {
         durationMs: phase.durationMs,
@@ -616,6 +662,7 @@ const sanitizePhaseTimeline = (value) => {
   if (!Array.isArray(value)) {
     return []
   }
+
   return value.slice(0, 128).flatMap((phase) => {
     if (
       !phase ||
@@ -627,6 +674,7 @@ const sanitizePhaseTimeline = (value) => {
     ) {
       return []
     }
+
     return [
       {
         atMs: phase.atMs,
@@ -641,6 +689,7 @@ const sanitizeCounterTimeline = (value) => {
   if (!Array.isArray(value)) {
     return []
   }
+
   return value.slice(0, 64).flatMap((counter) => {
     if (
       !counter ||
@@ -652,6 +701,7 @@ const sanitizeCounterTimeline = (value) => {
     ) {
       return []
     }
+
     return [
       {
         atMs: counter.atMs,
@@ -666,6 +716,7 @@ const sanitizeWhiteBackgrounds = (value) => {
   if (!Array.isArray(value)) {
     return []
   }
+
   return value.slice(0, 4).flatMap((background) => {
     if (
       !background ||
@@ -677,6 +728,7 @@ const sanitizeWhiteBackgrounds = (value) => {
     ) {
       return []
     }
+
     return [
       {
         height: background.height,
@@ -691,6 +743,7 @@ const sanitizeEndpointActor = (value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null
   }
+
   const diagnostics =
     value.diagnostics &&
     typeof value.diagnostics === 'object' &&
@@ -703,6 +756,7 @@ const sanitizeEndpointActor = (value) => {
     !Array.isArray(value.summary)
       ? value.summary
       : {}
+
   return {
     ...sanitizeScalarRecord(value),
     diagnostics: {
@@ -729,6 +783,7 @@ const sanitizeFailureOwnerEvidence = (value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null
   }
+
   const sanitizeFailureActor = (actorValue) => {
     if (
       !actorValue ||
@@ -740,7 +795,9 @@ const sanitizeFailureOwnerEvidence = (value) => {
     ) {
       return null
     }
+
     const diagnostics = actorValue.diagnostics
+
     return {
       diagnostics: {
         ...sanitizeScalarRecord(diagnostics),
@@ -754,11 +811,14 @@ const sanitizeFailureOwnerEvidence = (value) => {
       }
     }
   }
+
   const actorA = sanitizeFailureActor(value.actorA)
   const actorB = sanitizeFailureActor(value.actorB)
+
   if (!actorA && !actorB) {
     return null
   }
+
   return {
     actorA,
     actorB
@@ -772,17 +832,22 @@ const sanitizeFailure = (value) => {
       name: 'Error'
     }
   }
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null
   }
+
   const message =
     typeof value.message === 'string' && value.message.length > 0
       ? value.message.slice(0, 500)
       : null
+
   if (!message) {
     return null
   }
+
   const ownerEvidence = sanitizeFailureOwnerEvidence(value.ownerEvidence)
+
   return {
     message,
     name:
@@ -804,13 +869,16 @@ const sanitizeEndpointReport = (value, expectedOwner, proofKind) => {
   ) {
     return null
   }
+
   const actorA = sanitizeEndpointActor(value.actorA)
   let actorB
+
   if (proofKind === 'local-attribution') {
     actorB = value.actorB === null ? null : undefined
   } else {
     actorB = sanitizeEndpointActor(value.actorB)
   }
+
   if (
     !actorA ||
     actorB === undefined ||
@@ -818,6 +886,7 @@ const sanitizeEndpointReport = (value, expectedOwner, proofKind) => {
   ) {
     return null
   }
+
   return {
     ...sanitizeScalarRecord(value),
     actorA,
@@ -830,6 +899,7 @@ const sanitizeEndpointReport = (value, expectedOwner, proofKind) => {
 
 const sanitizeHeartbeat = (heartbeat) => {
   const base = sanitizeScalarRecord(heartbeat)
+
   return {
     ...base,
     owner: heartbeat.owner,
@@ -851,7 +921,9 @@ const normalizeCollaborationEndpoint = (value) => {
       'Endpoint artifact attestation requires one bounded WebSocket endpoint'
     )
   }
+
   let endpoint
+
   try {
     endpoint = new URL(value)
   } catch {
@@ -859,6 +931,7 @@ const normalizeCollaborationEndpoint = (value) => {
       'Endpoint artifact attestation requires a valid WebSocket endpoint'
     )
   }
+
   if (
     !['ws:', 'wss:'].includes(endpoint.protocol) ||
     endpoint.username ||
@@ -871,6 +944,7 @@ const normalizeCollaborationEndpoint = (value) => {
       'Endpoint artifact attestation requires the collaboration WebSocket route'
     )
   }
+
   return endpoint.href
 }
 
@@ -885,6 +959,7 @@ export const attestEndpointBuildArtifact = async ({
   const assetNames = (await readdirImpl(assetsDirectory))
     .filter((name) => typeof name === 'string' && name.endsWith('.js'))
     .sort()
+
   if (assetNames.length === 0) {
     throw new Error(
       'Endpoint performance production artifact has no JavaScript assets'
@@ -892,9 +967,11 @@ export const attestEndpointBuildArtifact = async ({
   }
 
   const sources = []
+
   for (const name of assetNames) {
     sources.push(await readFileImpl(resolve(assetsDirectory, name), 'utf8'))
   }
+
   const artifactEndpoints = [
     ...new Set(
       sources.flatMap((source) =>
@@ -906,6 +983,7 @@ export const attestEndpointBuildArtifact = async ({
       )
     )
   ].sort()
+
   if (
     artifactEndpoints.length !== 1 ||
     artifactEndpoints[0] !== normalizedExpectedEndpoint
@@ -916,6 +994,7 @@ export const attestEndpointBuildArtifact = async ({
       }; expected ${normalizedExpectedEndpoint}`
     )
   }
+
   return {
     assetsInspected: assetNames.length,
     endpoint: normalizedExpectedEndpoint
@@ -932,18 +1011,23 @@ const normalizePreparedResponsePreviewAttestation = (attestation) => {
       'Prepared response preview attestation must be an object'
     )
   }
+
   const { currentPath, manifestPath, productionIndexSha256 } = attestation
+
   if (!isEndpointGuardAbsolutePath(currentPath)) {
     throw new TypeError(
       'Prepared response preview attestation requires one bounded absolute output path'
     )
   }
+
   if (!isEndpointGuardAbsolutePath(manifestPath)) {
     throw new TypeError(
       'Prepared response preview attestation requires one bounded absolute manifest path'
     )
   }
+
   const relativeManifestPath = relative(currentPath, manifestPath)
+
   if (
     relativeManifestPath.length === 0 ||
     relativeManifestPath === '..' ||
@@ -954,6 +1038,7 @@ const normalizePreparedResponsePreviewAttestation = (attestation) => {
       'Prepared response preview manifest must belong to the attested output directory'
     )
   }
+
   if (
     typeof productionIndexSha256 !== 'string' ||
     !/^[a-f0-9]{64}$/u.test(productionIndexSha256)
@@ -962,6 +1047,7 @@ const normalizePreparedResponsePreviewAttestation = (attestation) => {
       'Prepared response preview attestation requires one SHA-256 production index digest'
     )
   }
+
   return {
     currentPath,
     manifestPath,
@@ -972,6 +1058,7 @@ const normalizePreparedResponsePreviewAttestation = (attestation) => {
 const attestPreparedResponsePreview = async () => {
   const { attestPreparedServerResponsePreview } =
     await import('./prepared-server-response-artifacts.mjs')
+
   return attestPreparedServerResponsePreview()
 }
 
@@ -981,6 +1068,7 @@ export const recordTrackedProcessGroupRegistration = (
   { expectedToken, expectedOwner, rootPgid, descendantVerified = false }
 ) => {
   const reject = (reason) => ({ accepted: false, reason, state })
+
   if (
     !registration ||
     typeof registration !== 'object' ||
@@ -988,6 +1076,7 @@ export const recordTrackedProcessGroupRegistration = (
   ) {
     return reject('invalid-registration')
   }
+
   if (
     typeof expectedToken !== 'string' ||
     expectedToken.length === 0 ||
@@ -995,15 +1084,18 @@ export const recordTrackedProcessGroupRegistration = (
   ) {
     return reject('invalid-token')
   }
+
   if (
     !isNonEmptyBoundedString(registration.owner) ||
     registration.owner !== expectedOwner
   ) {
     return reject('invalid-owner')
   }
+
   if (state.stopDecision) {
     return reject('guard-stopping')
   }
+
   if (
     !TRACKED_PROCESS_ROLE_SET.has(registration.role) ||
     !Number.isSafeInteger(registration.pid) ||
@@ -1012,27 +1104,33 @@ export const recordTrackedProcessGroupRegistration = (
   ) {
     return reject('invalid-process-group')
   }
+
   const isRootRegistration =
     registration.role === 'test-harness' &&
     registration.pid === rootPgid &&
     registration.pgid === rootPgid
+
   if (!isRootRegistration && !descendantVerified) {
     return reject('unverified-descendant')
   }
+
   if (registration.role === 'test-harness' && !isRootRegistration) {
     return reject('invalid-process-group')
   }
 
   const processGroups = sanitizeTrackedProcessGroups(state.processGroups)
   const sameRole = processGroups.find(({ role }) => role === registration.role)
+
   if (sameRole) {
     return sameRole.pgid === registration.pgid
       ? { accepted: true, reason: null, state }
       : reject('role-conflict')
   }
+
   if (processGroups.some(({ pgid }) => pgid === registration.pgid)) {
     return reject('process-group-conflict')
   }
+
   if (processGroups.length >= TRACKED_PROCESS_ROLES.length) {
     return reject('process-group-limit')
   }
@@ -1087,18 +1185,22 @@ const validateHeartbeat = (heartbeat, expectedOwner) => {
   if (!heartbeat || typeof heartbeat !== 'object' || Array.isArray(heartbeat)) {
     return 'invalid-heartbeat'
   }
+
   if (
     !isNonEmptyBoundedString(heartbeat.owner) ||
     heartbeat.owner !== expectedOwner
   ) {
     return 'invalid-owner'
   }
+
   if (!isNonEmptyBoundedString(heartbeat.phase)) {
     return 'invalid-phase'
   }
+
   if (!PROOF_KINDS.has(heartbeat.proofKind)) {
     return 'invalid-proof-kind'
   }
+
   if (
     !isFiniteNonNegativeNumber(heartbeat.capturedAtMs) ||
     !(
@@ -1108,15 +1210,18 @@ const validateHeartbeat = (heartbeat, expectedOwner) => {
   ) {
     return 'invalid-phase-timing'
   }
+
   if (!validateActor(heartbeat.actorA) || !validateActor(heartbeat.actorB)) {
     return 'invalid-actor-progress'
   }
+
   if (
     heartbeat.proofKind === 'local-attribution' &&
     !isInactiveActor(heartbeat.actorB)
   ) {
     return 'invalid-actor-progress'
   }
+
   if (
     !heartbeat.ownerTiming ||
     typeof heartbeat.ownerTiming !== 'object' ||
@@ -1128,6 +1233,7 @@ const validateHeartbeat = (heartbeat, expectedOwner) => {
   ) {
     return 'invalid-owner-timing'
   }
+
   return null
 }
 
@@ -1136,6 +1242,7 @@ export const createResourceGuardState = ({
   config
 } = {}) => {
   const normalizedConfig = mergeConfig(config)
+
   return {
     config: normalizedConfig,
     startedAtMs: nowMs,
@@ -1195,6 +1302,7 @@ export const recordResourceHeartbeat = (
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { accepted: false, reason: 'invalid-body', state }
   }
+
   if (
     typeof expectedToken !== 'string' ||
     expectedToken.length === 0 ||
@@ -1202,21 +1310,27 @@ export const recordResourceHeartbeat = (
   ) {
     return { accepted: false, reason: 'invalid-token', state }
   }
+
   if (!HEARTBEAT_KINDS.has(body.kind)) {
     return { accepted: false, reason: 'invalid-kind', state }
   }
 
   const validationFailure = validateHeartbeat(body.heartbeat, expectedOwner)
+
   if (validationFailure) {
     return { accepted: false, reason: validationFailure, state }
   }
+
   const config = state.config ?? mergeConfig()
+
   if (body.heartbeat.proofKind !== config.requiredProofKind) {
     return { accepted: false, reason: 'unexpected-proof-kind', state }
   }
+
   if (body.kind === 'ready' && state.acceptedRawSamples < 1) {
     return { accepted: false, reason: 'guard-not-armed', state }
   }
+
   if (
     body.kind === 'ready' &&
     config.requiredProcessRoles.some(
@@ -1230,6 +1344,7 @@ export const recordResourceHeartbeat = (
       state
     }
   }
+
   if (
     body.kind === 'ready' &&
     config.requiredProcessRoles.some(
@@ -1242,6 +1357,7 @@ export const recordResourceHeartbeat = (
       state
     }
   }
+
   if (
     !state.ready &&
     body.kind !== 'ready' &&
@@ -1252,6 +1368,7 @@ export const recordResourceHeartbeat = (
   }
 
   const heartbeat = sanitizeHeartbeat(body.heartbeat)
+
   if (
     body.kind === 'complete' &&
     (heartbeat.proofKind === 'local-attribution'
@@ -1262,6 +1379,7 @@ export const recordResourceHeartbeat = (
   ) {
     return { accepted: false, reason: 'incomplete-proof', state }
   }
+
   const endpointReport =
     body.kind === 'complete'
       ? sanitizeEndpointReport(
@@ -1270,9 +1388,11 @@ export const recordResourceHeartbeat = (
           heartbeat.proofKind
         )
       : state.endpointReport
+
   if (body.kind === 'complete' && endpointReport === null) {
     return { accepted: false, reason: 'invalid-endpoint-report', state }
   }
+
   const previous = state.lastHeartbeat
   const madeProgress =
     !previous ||
@@ -1332,7 +1452,9 @@ const readRendererPerformanceMetricMap = (response) => {
   ) {
     throw new TypeError('Renderer performance response must contain metrics')
   }
+
   const metrics = new Map()
+
   for (const metric of response.metrics) {
     if (
       metric &&
@@ -1344,11 +1466,13 @@ const readRendererPerformanceMetricMap = (response) => {
       metrics.set(metric.name, metric.value)
     }
   }
+
   for (const name of rendererPerformanceMetricNames) {
     if (!metrics.has(name)) {
       throw new Error(`Renderer performance metric ${name} is unavailable`)
     }
   }
+
   return metrics
 }
 
@@ -1359,17 +1483,23 @@ export const summarizeRendererPerformanceWindow = (
   const start = readRendererPerformanceMetricMap(startResponse)
   const end = readRendererPerformanceMetricMap(endResponse)
   const durationMs = (end.get('Timestamp') - start.get('Timestamp')) * 1_000
+
   if (!Number.isFinite(durationMs) || durationMs <= 0) {
     throw new Error('Renderer performance window duration must be positive')
   }
+
   const durationDeltaMs = (name) => {
     const value = (end.get(name) - start.get(name)) * 1_000
+
     if (!Number.isFinite(value) || value < 0) {
       throw new Error(`Renderer performance metric ${name} moved backwards`)
     }
+
     return roundCpuMetric(value)
   }
+
   const taskDurationMs = durationDeltaMs('TaskDuration')
+
   return {
     averageTaskCorePercent: roundCpuMetric((taskDurationMs / durationMs) * 100),
     durationMs: roundCpuMetric(durationMs),
@@ -1386,8 +1516,10 @@ const sanitizeProcessCpuSnapshot = (sample) => {
   if (!sample || typeof sample !== 'object' || Array.isArray(sample)) {
     return null
   }
+
   const processCpuTimes = sanitizeProcessCpuTimes(sample.processCpuTimes)
   const monotonicMs = sample.monotonicMs ?? sample.nowMs
+
   if (
     processCpuTimes.length === 0 ||
     processCpuTimes.length !== sample.processCpuTimes?.length ||
@@ -1396,6 +1528,7 @@ const sanitizeProcessCpuSnapshot = (sample) => {
   ) {
     return null
   }
+
   return {
     monotonicMs,
     nowMs: sample.nowMs,
@@ -1412,9 +1545,12 @@ const haveExactProcessIdentitySet = (leftEntries, rightEntries) => {
   if (leftEntries.length !== rightEntries.length) {
     return false
   }
+
   const leftByPid = new Map(leftEntries.map((entry) => [entry.pid, entry]))
+
   return rightEntries.every((entry) => {
     const left = leftByPid.get(entry.pid)
+
     return left && processIdentityMatches(left, entry)
   })
 }
@@ -1422,9 +1558,11 @@ const haveExactProcessIdentitySet = (leftEntries, rightEntries) => {
 export const deriveProcessCpuTimeDelta = (previousSample, currentSample) => {
   const previous = sanitizeProcessCpuSnapshot(previousSample)
   const current = sanitizeProcessCpuSnapshot(currentSample)
+
   if (!previous || !current) {
     return { accepted: false, reason: 'invalid-process-sample', sample: null }
   }
+
   if (
     !haveExactProcessIdentitySet(
       previous.processCpuTimes,
@@ -1437,10 +1575,12 @@ export const deriveProcessCpuTimeDelta = (previousSample, currentSample) => {
       sample: null
     }
   }
+
   const previousByPid = new Map(
     previous.processCpuTimes.map((entry) => [entry.pid, entry])
   )
   const wallTimeMs = current.monotonicMs - previous.monotonicMs
+
   if (wallTimeMs <= 0) {
     return { accepted: false, reason: 'invalid-cpu-time-delta', sample: null }
   }
@@ -1449,9 +1589,11 @@ export const deriveProcessCpuTimeDelta = (previousSample, currentSample) => {
   const browserProcessTypeCpuTimeMs = createEmptyBrowserProcessTypeCpuTimeMs()
   const rendererProcessCpuTimeMs = []
   let cpuTimeMs = 0
+
   for (const currentEntry of current.processCpuTimes) {
     const previousEntry = previousByPid.get(currentEntry.pid)
     const delta = currentEntry.cpuTimeMs - previousEntry.cpuTimeMs
+
     if (delta < 0) {
       return {
         accepted: false,
@@ -1459,6 +1601,7 @@ export const deriveProcessCpuTimeDelta = (previousSample, currentSample) => {
         sample: null
       }
     }
+
     cpuTimeMs += delta
     roleCpuTimeMs[roleCpuKey(currentEntry.role)] += delta
     if (CLIENT_BROWSER_PROCESS_ROLES.has(currentEntry.role)) {
@@ -1496,9 +1639,11 @@ export const recordResourcePhaseBoundary = (
   { expectedToken, expectedOwner }
 ) => {
   const reject = (reason) => ({ accepted: false, reason, state })
+
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return reject('invalid-body')
   }
+
   if (
     typeof expectedToken !== 'string' ||
     expectedToken.length === 0 ||
@@ -1506,16 +1651,20 @@ export const recordResourcePhaseBoundary = (
   ) {
     return reject('invalid-token')
   }
+
   if (!isNonEmptyBoundedString(body.owner) || body.owner !== expectedOwner) {
     return reject('invalid-owner')
   }
+
   if (
     !['start', 'end'].includes(body.kind) ||
     !isNonEmptyBoundedString(body.phase)
   ) {
     return reject('invalid-phase-boundary')
   }
+
   const sample = body.sample
+
   if (
     !sample ||
     typeof sample !== 'object' ||
@@ -1525,9 +1674,11 @@ export const recordResourcePhaseBoundary = (
   ) {
     return reject('invalid-process-sample')
   }
+
   const roleCpuTimeMs = sanitizeRoleCpuTimeMs(sample.roleCpuTimeMs)
   const processCpuTimes = sanitizeProcessCpuTimes(sample.processCpuTimes)
   const monotonicMs = sample.monotonicMs ?? sample.nowMs
+
   if (
     processCpuTimes.length === 0 ||
     processCpuTimes.length !== sample.processCpuTimes?.length ||
@@ -1535,10 +1686,12 @@ export const recordResourcePhaseBoundary = (
   ) {
     return reject('invalid-process-sample')
   }
+
   if (body.kind === 'start') {
     if (state.activePhaseBoundary !== null) {
       return reject('phase-already-active')
     }
+
     return {
       accepted: true,
       reason: null,
@@ -1562,27 +1715,35 @@ export const recordResourcePhaseBoundary = (
   }
 
   const active = state.activePhaseBoundary
+
   if (!active || active.phase !== body.phase) {
     return reject('phase-not-active')
   }
+
   if (active.processSetChanged) {
     return reject('phase-process-churn')
   }
+
   const wallTimeMs = monotonicMs - active.startedAtMonotonicMs
+
   if (wallTimeMs <= 0) {
     return reject('invalid-phase-delta')
   }
+
   const endingByPid = new Map(
     processCpuTimes.map((entry) => [entry.pid, entry])
   )
+
   for (const startedProcess of active.processCpuTimes) {
     if (!endingByPid.has(startedProcess.pid)) {
       return reject('phase-process-exited')
     }
   }
+
   if (processCpuTimes.length > active.processCpuTimes.length) {
     return reject('phase-process-created')
   }
+
   const startingByPid = new Map(
     active.processCpuTimes.map((entry) => [entry.pid, entry])
   )
@@ -1590,21 +1751,27 @@ export const recordResourcePhaseBoundary = (
   const browserProcessTypeCpuTimeDelta =
     createEmptyBrowserProcessTypeCpuTimeMs()
   let cpuTimeMs = 0
+
   for (const endingProcess of processCpuTimes) {
     const startingProcess = startingByPid.get(endingProcess.pid)
+
     if (
       startingProcess &&
       !processIdentityMatches(startingProcess, endingProcess)
     ) {
       return reject('invalid-phase-delta')
     }
+
     if (!startingProcess) {
       return reject('phase-process-created')
     }
+
     const delta = endingProcess.cpuTimeMs - startingProcess.cpuTimeMs
+
     if (delta < 0) {
       return reject('invalid-phase-delta')
     }
+
     cpuTimeMs += delta
     roleCpuTimeDelta[roleCpuKey(endingProcess.role)] += delta
     if (CLIENT_BROWSER_PROCESS_ROLES.has(endingProcess.role)) {
@@ -1613,6 +1780,7 @@ export const recordResourcePhaseBoundary = (
       ] += delta
     }
   }
+
   const phaseSample = {
     browserProcessTypeCpuTimeMs: browserProcessTypeCpuTimeDelta,
     browserProcessTypeMaximumRawCpuPercent:
@@ -1626,6 +1794,7 @@ export const recordResourcePhaseBoundary = (
     startedAtMs: active.startedAtMs,
     wallTimeMs
   }
+
   return {
     accepted: true,
     reason: null,
@@ -1661,6 +1830,7 @@ export const evaluateResourceSample = (
     ...state.config,
     ...config
   })
+
   if (
     !Number.isSafeInteger(targetPgid) ||
     targetPgid <= 0 ||
@@ -1674,6 +1844,7 @@ export const evaluateResourceSample = (
       decision: state.stopDecision ?? noStopDecision
     }
   }
+
   if (
     !isFiniteNonNegativeNumber(sample.cpuPercent) ||
     !isFiniteNonNegativeNumber(sample.nowMs)
@@ -1685,10 +1856,13 @@ export const evaluateResourceSample = (
       decision: state.stopDecision ?? noStopDecision
     }
   }
+
   const currentProcessCpuSnapshot = sanitizeProcessCpuSnapshot(sample)
+
   if (!currentProcessCpuSnapshot) {
     const decision =
       state.stopDecision ?? stopDecision('invalid-process-sample', sample.nowMs)
+
     return {
       accepted: false,
       reason: 'invalid-process-sample',
@@ -1700,6 +1874,7 @@ export const evaluateResourceSample = (
       decision
     }
   }
+
   if (state.finished) {
     return {
       accepted: true,
@@ -1713,6 +1888,7 @@ export const evaluateResourceSample = (
       decision: state.stopDecision ?? noStopDecision
     }
   }
+
   const missingProcessRoles = normalizeRequiredProcessRoles(
     sample.missingProcessRoles
   )
@@ -1752,6 +1928,7 @@ export const evaluateResourceSample = (
     currentProcessCpuSnapshot.monotonicMs - state.lastProcessSampleMonotonicMs >
       normalizedConfig.maximumSampleGapMs
   let acceptedRawSamples = state.acceptedRawSamples
+
   if (!state.ready && observedProcessIdentityChanged) {
     acceptedRawSamples = hasCompleteRequiredProcessSet ? 1 : 0
   } else if (!state.ready && !hasCompleteRequiredProcessSet) {
@@ -1843,9 +2020,11 @@ export const evaluateResourceSample = (
       ? cpuSafetySample
       : state.maximumAggregateCpuSafetySample
   let decision = state.stopDecision
+
   if (!decision && !state.finished && missingRequiredProcessRoles.length > 0) {
     decision = stopDecision('tracked-process-group-missing', sample.nowMs)
   }
+
   if (
     !decision &&
     observedProcessIdentityChanged &&
@@ -1853,12 +2032,15 @@ export const evaluateResourceSample = (
   ) {
     decision = stopDecision('tracked-process-identity-changed', sample.nowMs)
   }
+
   if (!decision && sampleGapExceeded) {
     decision = stopDecision('cpu-sample-gap-exceeded', sample.nowMs)
   }
+
   if (!decision && sample.cpuPercent > normalizedConfig.maximumCpuPercent) {
     decision = stopDecision('cpu-limit-exceeded', sample.nowMs)
   }
+
   if (
     !decision &&
     frontendRawCpuPercent > normalizedConfig.maximumFrontendCpuPercent
@@ -1867,6 +2049,7 @@ export const evaluateResourceSample = (
   }
 
   const hostIsBusy = sample.cpuPercent > normalizedConfig.busyCpuPercent
+
   if (
     !decision &&
     hostIsBusy &&
@@ -1880,6 +2063,7 @@ export const evaluateResourceSample = (
   const bothActorsComplete =
     state.lastHeartbeat?.actorA.complete === true &&
     state.lastHeartbeat?.actorB.complete === true
+
   if (
     !decision &&
     hostIsBusy &&
@@ -1891,6 +2075,7 @@ export const evaluateResourceSample = (
   }
 
   let activePhaseBoundary = state.activePhaseBoundary
+
   if (activePhaseBoundary) {
     if (observedProcessIdentityChanged) {
       activePhaseBoundary = {
@@ -1901,12 +2086,14 @@ export const evaluateResourceSample = (
       const browserProcessTypeMaximumRawCpuPercent = {
         ...activePhaseBoundary.browserProcessTypeMaximumRawCpuPercent
       }
+
       for (const key of Object.keys(browserProcessTypeMaximumRawCpuPercent)) {
         browserProcessTypeMaximumRawCpuPercent[key] = Math.max(
           browserProcessTypeMaximumRawCpuPercent[key],
           browserProcessTypeRawCpuPercent[key]
         )
       }
+
       activePhaseBoundary = {
         ...activePhaseBoundary,
         browserProcessTypeMaximumRawCpuPercent,
@@ -1918,7 +2105,9 @@ export const evaluateResourceSample = (
       }
     }
   }
+
   let attributionInvalidReason = state.attributionInvalidReason
+
   if (
     observedProcessIdentityChanged &&
     (state.ready || state.activePhaseBoundary)
@@ -1927,6 +2116,7 @@ export const evaluateResourceSample = (
   } else if (sampleGapExceeded) {
     attributionInvalidReason = 'cpu-sample-gap-exceeded'
   }
+
   const overallCpuLimitViolationSample =
     state.overallCpuLimitViolationSample ??
     (decision?.reason === 'cpu-limit-exceeded' ? cpuSafetySample : null)
@@ -1949,6 +2139,7 @@ export const evaluateResourceSample = (
     previousProcessSnapshot: currentProcessCpuSnapshot,
     stopDecision: decision
   }
+
   return {
     accepted: true,
     reason: null,
@@ -1966,9 +2157,11 @@ export const recordGuardedResourcePhaseBoundary = (
     targetPgid,
     config
   })
+
   if (!evaluated.accepted) {
     return evaluated
   }
+
   if (evaluated.decision.stop) {
     return {
       accepted: false,
@@ -1977,6 +2170,7 @@ export const recordGuardedResourcePhaseBoundary = (
       decision: evaluated.decision
     }
   }
+
   if (body?.kind === 'start' && evaluated.state.ready !== true) {
     return {
       accepted: false,
@@ -1985,10 +2179,12 @@ export const recordGuardedResourcePhaseBoundary = (
       decision: evaluated.decision
     }
   }
+
   const boundary = recordResourcePhaseBoundary(evaluated.state, body, {
     expectedOwner,
     expectedToken
   })
+
   return {
     ...boundary,
     decision: evaluated.decision
@@ -2027,6 +2223,7 @@ export const recordResourceSampleFailure = (
     },
     stopDecision: decision
   }
+
   return {
     state: nextState,
     decision
@@ -2045,6 +2242,7 @@ export const classifyGuardedChildExit = (
     !state.ready
   ) {
     const decision = stopDecision('guard-never-ready', nowMs)
+
     return {
       ok: false,
       state: {
@@ -2054,6 +2252,7 @@ export const classifyGuardedChildExit = (
       decision
     }
   }
+
   if (
     !state.stopDecision &&
     requiresReady &&
@@ -2061,6 +2260,7 @@ export const classifyGuardedChildExit = (
     (!state.finished || state.endpointReport === null)
   ) {
     const decision = stopDecision('guard-never-complete', nowMs)
+
     return {
       ok: false,
       state: {
@@ -2076,6 +2276,7 @@ export const classifyGuardedChildExit = (
     childExit.error === null &&
     childExit.signal === null &&
     childExit.code === 0
+
   return {
     ok,
     state,
@@ -2110,6 +2311,7 @@ const DEFAULT_CPU_PROFILE_DIAGNOSTIC_OUTPUT_LIMIT = 12
 
 const normalizeCpuProfileDiagnosticLimit = (value, fallback, maximum, name) => {
   const candidate = value ?? fallback
+
   if (
     !Number.isSafeInteger(candidate) ||
     candidate < 1 ||
@@ -2117,6 +2319,7 @@ const normalizeCpuProfileDiagnosticLimit = (value, fallback, maximum, name) => {
   ) {
     throw new TypeError(`${name} must be an integer from 1 through ${maximum}`)
   }
+
   return candidate
 }
 
@@ -2133,6 +2336,7 @@ export const createCpuProfileDiagnosticAggregate = (options = {}) => {
     entryLimit,
     'CPU profile diagnostic output limit'
   )
+
   return {
     capturedTopSelfSamples: 0,
     entries: [],
@@ -2161,6 +2365,7 @@ const normalizeCpuProfileDiagnosticFrame = (frame) => {
   ) {
     throw new TypeError('Invalid CPU profile diagnostic slice call frame')
   }
+
   return {
     columnNumber: frame.columnNumber,
     functionName: frame.functionName,
@@ -2199,6 +2404,7 @@ export const recordCpuProfileDiagnosticSlice = (aggregate, slice) => {
     (total, frame) => total + frame.samples,
     0
   )
+
   if (capturedSamples > slice.samples) {
     throw new TypeError('Invalid CPU profile diagnostic slice sample count')
   }
@@ -2210,10 +2416,12 @@ export const recordCpuProfileDiagnosticSlice = (aggregate, slice) => {
   for (const frame of frames) {
     const key = cpuProfileDiagnosticFrameKey(frame)
     const existing = aggregate.entries.find((entry) => entry.key === key)
+
     if (existing) {
       existing.samples += frame.samples
       continue
     }
+
     if (aggregate.entries.length < aggregate.entryLimit) {
       aggregate.entries.push({
         ...frame,
@@ -2222,9 +2430,12 @@ export const recordCpuProfileDiagnosticSlice = (aggregate, slice) => {
       })
       continue
     }
+
     let minimum = aggregate.entries[0]
+
     for (let index = 1; index < aggregate.entries.length; index += 1) {
       const candidate = aggregate.entries[index]
+
       if (
         candidate.samples < minimum.samples ||
         (candidate.samples === minimum.samples && candidate.key < minimum.key)
@@ -2232,7 +2443,9 @@ export const recordCpuProfileDiagnosticSlice = (aggregate, slice) => {
         minimum = candidate
       }
     }
+
     const replacedSamples = minimum.samples
+
     Object.assign(minimum, {
       ...frame,
       errorSamples: replacedSamples,
@@ -2240,6 +2453,7 @@ export const recordCpuProfileDiagnosticSlice = (aggregate, slice) => {
       samples: replacedSamples + frame.samples
     })
   }
+
   return aggregate
 }
 
@@ -2252,6 +2466,7 @@ export const summarizeCpuProfileDiagnosticAggregate = (aggregate) => {
   ) {
     throw new TypeError('Invalid CPU profile diagnostic aggregate')
   }
+
   return {
     capturedTopSelfSamples: aggregate.capturedTopSelfSamples,
     profileSamples: aggregate.profileSamples,
@@ -2288,16 +2503,20 @@ const CPU_PROFILE_SLICE_PREFIX = 'CPU_PROFILE_SLICE '
 
 const parseCpuProfileDiagnosticLine = (line) => {
   const prefixIndex = line.indexOf(CPU_PROFILE_SLICE_PREFIX)
+
   if (prefixIndex < 0) {
     return null
   }
+
   try {
     const parsed = JSON.parse(
       line.slice(prefixIndex + CPU_PROFILE_SLICE_PREFIX.length).trim()
     )
+
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return null
     }
+
     return parsed
   } catch {
     return null
@@ -2307,15 +2526,20 @@ const parseCpuProfileDiagnosticLine = (line) => {
 const parseProfileLine = (line) => {
   for (const candidate of PROFILE_PREFIXES) {
     const prefixIndex = line.indexOf(candidate.prefix)
+
     if (prefixIndex < 0) {
       continue
     }
+
     const json = line.slice(prefixIndex + candidate.prefix.length).trim()
+
     try {
       const parsed = JSON.parse(json)
+
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
         return null
       }
+
       return {
         type: candidate.key,
         evidence: sanitizeScalarRecord(parsed)
@@ -2324,6 +2548,7 @@ const parseProfileLine = (line) => {
       return null
     }
   }
+
   return null
 }
 
@@ -2332,6 +2557,7 @@ export const recordProfileOutput = (state, chunk, { flush = false } = {}) => {
   const lines = combined.split(/\r?\n/u)
   const trailing = lines.pop() ?? ''
   const remainder = flush ? '' : trailing
+
   if (flush && trailing) {
     lines.push(trailing)
   }
@@ -2340,8 +2566,10 @@ export const recordProfileOutput = (state, chunk, { flush = false } = {}) => {
   let profileMetrics = state.profileMetrics
   const cpuProfileDiagnosticAggregate =
     state.cpuProfileDiagnosticAggregate ?? createCpuProfileDiagnosticAggregate()
+
   for (const line of lines) {
     const cpuProfileDiagnosticSlice = parseCpuProfileDiagnosticLine(line)
+
     if (cpuProfileDiagnosticSlice) {
       try {
         recordCpuProfileDiagnosticSlice(
@@ -2352,12 +2580,16 @@ export const recordProfileOutput = (state, chunk, { flush = false } = {}) => {
         // Untrusted child diagnostics never change guard safety or liveness.
       }
     }
+
     const metric = parseProfileLine(line)
+
     if (!metric) {
       continue
     }
+
     const evidence = metric.evidence
     const sampleCount = evidence.sampleCount
+
     if (
       !Number.isSafeInteger(sampleCount) ||
       sampleCount < 1 ||
@@ -2365,6 +2597,7 @@ export const recordProfileOutput = (state, chunk, { flush = false } = {}) => {
     ) {
       continue
     }
+
     profileMetrics = {
       counts: {
         ...profileMetrics.counts,
@@ -2427,6 +2660,7 @@ export const readBootstrapResourceStatus = (
   const rolesPresent = requiredRoles.every((role) =>
     state.sampledProcessRoles.includes(role)
   )
+
   return {
     actorFrontendRawCpuPercent: sample?.actorFrontendRawCpuPercent ?? {
       actorA: 0,
@@ -2455,6 +2689,7 @@ export const buildBoundedResourceReport = (
 ) => {
   const heartbeat = state.lastHeartbeat
   const historyLimit = state.config?.historyLimit ?? 8
+
   return {
     owner,
     targetPgid,
@@ -2519,11 +2754,13 @@ const defaultWait = (milliseconds) =>
 const defaultProbe = async (pgid) => {
   try {
     process.kill(-pgid, 0)
+
     return true
   } catch (error) {
     if (isMissingProcessError(error)) {
       return false
     }
+
     throw error
   }
 }
@@ -2538,31 +2775,38 @@ export const installTrackedProcessLifecycleGuard = ({
   if (!Number.isSafeInteger(pgid) || pgid <= 0) {
     throw new TypeError('A positive tracked process-group ID is required')
   }
+
   if (typeof startTermination !== 'function') {
     throw new TypeError('A tracked process-group termination owner is required')
   }
 
   let disposed = false
   const signalHandlers = new Map()
+
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     const handler = () => {
       if (disposed) {
         return
       }
+
       try {
         void Promise.resolve(startTermination(signal)).catch(() => undefined)
       } catch {
         // The synchronous exit hook remains the final exact-PGID fallback.
       }
     }
+
     signalHandlers.set(signal, handler)
     runtimeProcess.on(signal, handler)
   }
+
   const handleExit = () => {
     if (disposed) {
       return
     }
+
     const groups = sanitizeTrackedProcessGroups(getProcessGroups())
+
     for (const group of groups) {
       try {
         emergencyKill(-group.pgid, 'SIGKILL')
@@ -2573,12 +2817,14 @@ export const installTrackedProcessLifecycleGuard = ({
       }
     }
   }
+
   runtimeProcess.on('exit', handleExit)
 
   return () => {
     if (disposed) {
       return
     }
+
     disposed = true
     signalHandlers.forEach((handler, signal) => {
       runtimeProcess.removeListener(signal, handler)
@@ -2599,6 +2845,7 @@ export const terminateTrackedProcessGroup = async ({
   }
 
   let termSent = false
+
   try {
     await kill(-pgid, 'SIGTERM')
     termSent = true
@@ -2619,17 +2866,20 @@ export const terminateTrackedProcessGroup = async ({
     )
   )
   const alive = await probe(pgid)
+
   if (!alive) {
     return { pgid, termSent: true, forceKilled: false }
   }
 
   try {
     await kill(-pgid, 'SIGKILL')
+
     return { pgid, termSent: true, forceKilled: true }
   } catch (error) {
     if (isMissingProcessError(error)) {
       return { pgid, termSent: true, forceKilled: false }
     }
+
     throw error
   }
 }
@@ -2644,8 +2894,10 @@ export const attemptGuardedTermination = async ({
   fallbackTerminate = terminateTrackedProcessGroup
 }) => {
   const failures = []
+
   try {
     const result = await terminate({ pgid, graceMs })
+
     return {
       ...result,
       confirmed: true,
@@ -2660,6 +2912,7 @@ export const attemptGuardedTermination = async ({
 
   try {
     const result = await fallbackTerminate({ pgid, graceMs: 0 })
+
     return {
       ...result,
       confirmed: true,
@@ -2670,6 +2923,7 @@ export const attemptGuardedTermination = async ({
       owner: 'fallback',
       message: boundedErrorMessage(error)
     })
+
     return {
       pgid,
       termSent: false,
@@ -2688,15 +2942,19 @@ export const terminateTrackedProcessGroups = async ({
 }) => {
   const groups = sanitizeTrackedProcessGroups(processGroups)
   const rootGroup = groups.find(({ role }) => role === 'test-harness')
+
   if (!rootGroup) {
     throw new Error(
       'Tracked process termination requires the root harness group'
     )
   }
+
   const productGroups = PRODUCT_PROCESS_ROLES.flatMap((role) => {
     const group = groups.find((candidate) => candidate.role === role)
+
     return group ? [group] : []
   })
+
   const terminateGroup = async (group) => ({
     role: group.role,
     ...(await attemptGuardedTermination({
@@ -2706,6 +2964,7 @@ export const terminateTrackedProcessGroups = async ({
       fallbackTerminate
     }))
   })
+
   const productResultsPromise = Promise.all(productGroups.map(terminateGroup))
   const rootResultPromise = terminateGroup(rootGroup)
   const [productResults, rootResult] = await Promise.all([
@@ -2713,6 +2972,7 @@ export const terminateTrackedProcessGroups = async ({
     rootResultPromise
   ])
   const results = [...productResults, rootResult]
+
   return {
     confirmed: results.every((result) => result.confirmed),
     groups: results
@@ -2727,19 +2987,23 @@ const forceKillExactTrackedProcessGroups = ({
   const groups = sanitizeTrackedProcessGroups(processGroups).map((group) => {
     try {
       emergencyKill(-group.pgid, 'SIGKILL')
+
       return { ...group, forceKilled: true }
     } catch (error) {
       if (isMissingProcessError(error)) {
         return { ...group, forceKilled: false }
       }
+
       failures.push({
         message: boundedErrorMessage(error),
         pgid: group.pgid,
         role: group.role
       })
+
       return { ...group, forceKilled: false }
     }
   })
+
   return {
     confirmed: failures.length === 0,
     failures,
@@ -2753,25 +3017,30 @@ export const parseRunnerArguments = (argv) => {
 
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index]
+
     if (argument === '--') {
       separatorIndex = index
       break
     }
+
     if (argument === '--owner') {
       owner = argv[index + 1]
       index += 1
       continue
     }
+
     if (argument.startsWith('--owner=')) {
       owner = argument.slice('--owner='.length)
       continue
     }
+
     throw new Error(`Unknown resource-guard option: ${argument}`)
   }
 
   if (!isNonEmptyBoundedString(owner)) {
     throw new Error('Resource-guard runner requires --owner')
   }
+
   if (separatorIndex < 0 || separatorIndex >= argv.length - 1) {
     throw new Error('Resource-guard runner requires a command after --')
   }
@@ -2786,6 +3055,7 @@ export const parseRunnerArguments = (argv) => {
 const parseTrackedProcessLauncherArguments = (argv, baseEnv = process.env) => {
   const environmentRole = baseEnv.TRACKED_ROLE?.trim()
   const environmentExecutable = baseEnv.TRACKED_EXECUTABLE?.trim()
+
   if (environmentRole || environmentExecutable) {
     if (
       !PRODUCT_PROCESS_ROLES.includes(environmentRole) ||
@@ -2795,6 +3065,7 @@ const parseTrackedProcessLauncherArguments = (argv, baseEnv = process.env) => {
         'Tracked browser launcher requires a fixed role and executable'
       )
     }
+
     return {
       role: environmentRole,
       command: environmentExecutable,
@@ -2812,6 +3083,7 @@ const parseTrackedProcessLauncherArguments = (argv, baseEnv = process.env) => {
       'Tracked process launcher usage: --tracked-role <role> -- <command>'
     )
   }
+
   return {
     role: argv[1],
     command: argv[3],
@@ -2833,6 +3105,7 @@ const postTrackedProcessRegistration = async (
     }
   )
   const result = await response.json().catch(() => ({}))
+
   if (!response.ok || result.accepted !== true) {
     throw new Error(
       `Tracked ${registration.role} process group registration failed: ${
@@ -2855,6 +3128,7 @@ export const runTrackedProcessLauncher = async (
   const guardUrl = baseEnv.ENDPOINT_GUARD_URL?.trim()
   const guardToken = baseEnv.ENDPOINT_GUARD_TOKEN?.trim()
   const owner = baseEnv.ENDPOINT_OWNER?.trim()
+
   if (
     !isNonEmptyBoundedString(guardUrl) ||
     !isNonEmptyBoundedString(guardToken) ||
@@ -2875,6 +3149,7 @@ export const runTrackedProcessLauncher = async (
   )
 
   const childEnvironment = { ...baseEnv }
+
   GUARD_ENVIRONMENT_KEYS.forEach((key) => {
     Reflect.deleteProperty(childEnvironment, key)
   })
@@ -2886,6 +3161,7 @@ export const runTrackedProcessLauncher = async (
       ? ['ignore', 'inherit', 'inherit', 3, 4]
       : 'inherit'
   })
+
   return await new Promise((resolveChild, rejectChild) => {
     child.once('error', rejectChild)
     child.once('close', (code, signal) => {
@@ -2917,9 +3193,11 @@ export const buildRunnerSpawnOptions = ({
 
 const normalizePort = (value, fallback, name) => {
   const port = value === undefined ? fallback : Number(value)
+
   if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
     throw new Error(`${name} must be a valid TCP port`)
   }
+
   return port
 }
 
@@ -2930,6 +3208,7 @@ export const buildEndpointPerformancePhases = ({
   if (!isNonEmptyBoundedString(owner)) {
     throw new Error('Endpoint performance pipeline requires an owner')
   }
+
   const appPort = normalizePort(
     baseEnv.ENDPOINT_APP_PORT,
     3_021,
@@ -2945,11 +3224,13 @@ export const buildEndpointPerformancePhases = ({
     4_221,
     'ENDPOINT_DOCUMENT_BACKEND_PORT'
   )
+
   if (new Set([appPort, collaborationPort, documentBackendPort]).size !== 3) {
     throw new Error(
       'Endpoint App, collaboration, and document backend ports must be different'
     )
   }
+
   const collaborationUrl = `ws://127.0.0.1:${collaborationPort}/collaboration`
   const attributionCase = baseEnv.ENDPOINT_ATTRIBUTION_CASE?.trim() ?? ''
   const validAttributionCases = new Set([
@@ -2961,11 +3242,13 @@ export const buildEndpointPerformancePhases = ({
     '1280-two-actor-attribution',
     '320-two-actor-attribution'
   ])
+
   if (attributionCase && !validAttributionCases.has(attributionCase)) {
     throw new Error(
       'ENDPOINT_ATTRIBUTION_CASE must be 16, 16-reduced-motion, 1280, 27471-maximum, 16-two-actor-activity, 1280-two-actor-attribution, or 320-two-actor-attribution'
     )
   }
+
   const twoActorActivityAttribution = [
     '16-two-actor-activity',
     '1280-two-actor-attribution',
@@ -2983,6 +3266,7 @@ export const buildEndpointPerformancePhases = ({
   ]
   let selectedPlaywrightTest = 'creation-only high-detail endpoint proof'
   let requiredProofKind = 'endpoint'
+
   if (singleActorAttribution) {
     selectedPlaywrightTest = 'single-Actor local attribution'
     requiredProofKind = 'local-attribution'
@@ -2990,6 +3274,7 @@ export const buildEndpointPerformancePhases = ({
     selectedPlaywrightTest = 'two-Actor operation and idle attribution'
     requiredProofKind = 'collaboration-attribution'
   }
+
   const sharedEnv = {
     ...baseEnv,
     ENDPOINT_APP_PORT: String(appPort),
@@ -3004,6 +3289,7 @@ export const buildEndpointPerformancePhases = ({
     ENDPOINT_ATTRIBUTION_CASE: attributionCase,
     VITE_COLLABORATION_WS_URL: collaborationUrl
   }
+
   return [
     {
       name: 'playwright',
@@ -3045,8 +3331,10 @@ const execFilePromise = (implementation, file, args, options) =>
     implementation(file, args, options, (error, stdout) => {
       if (error) {
         rejectExec(error)
+
         return
       }
+
       resolveExec(stdout)
     })
   })
@@ -3054,25 +3342,33 @@ const execFilePromise = (implementation, file, args, options) =>
 const parseDarwinCurrentCpuByPid = (stdout) => {
   const tables = []
   let currentTable = null
+
   for (const line of stdout.split(/\r?\n/u)) {
     const trimmed = line.trim()
+
     if (/^PID\s+%CPU$/u.test(trimmed)) {
       currentTable = new Map()
       tables.push(currentTable)
       continue
     }
+
     if (!currentTable) {
       continue
     }
+
     const match = trimmed.match(/^(\d+)\s+(\d+(?:\.\d+)?)$/u)
+
     if (!match) {
       continue
     }
+
     currentTable.set(Number(match[1]), Number(match[2]))
   }
+
   if (tables.length < 2) {
     throw new Error('Darwin current CPU sample is missing its second raw table')
   }
+
   return tables.at(-1)
 }
 
@@ -3092,7 +3388,9 @@ export const sampleTrackedProcessGroupsCpu = async (
   if (!Number.isSafeInteger(rootPgid) || rootPgid <= 0) {
     throw new TypeError('A positive root process-group ID is required')
   }
+
   const groups = sanitizeTrackedProcessGroups(processGroups)
+
   if (
     !groups.some(
       ({ pgid, role }) => pgid === rootPgid && role === 'test-harness'
@@ -3100,6 +3398,7 @@ export const sampleTrackedProcessGroupsCpu = async (
   ) {
     throw new Error('Tracked process groups are missing the root harness group')
   }
+
   const groupByPgid = new Map(groups.map((group) => [group.pgid, group]))
   const processGroupList = groups.map(({ pgid }) => pgid).join(',')
   const processArguments =
@@ -3113,6 +3412,7 @@ export const sampleTrackedProcessGroupsCpu = async (
     maxBuffer: 256 * 1024
   })
   const trackedProcesses = []
+
   for (const line of stdout.split(/\r?\n/u)) {
     const match =
       platform === 'darwin'
@@ -3122,14 +3422,18 @@ export const sampleTrackedProcessGroupsCpu = async (
             .match(
               /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+(?:\.\d+)?)\s+(\S+)(?:\s+(.*))?$/u
             )
+
     if (!match) {
       continue
     }
+
     const pgid = Number(match[3])
     const group = groupByPgid.get(pgid)
+
     if (!group) {
       continue
     }
+
     trackedProcesses.push({
       command: match[platform === 'darwin' ? 5 : 6]?.trim() ?? '',
       cpuPercent: platform === 'darwin' ? null : Number(match[4]),
@@ -3142,25 +3446,31 @@ export const sampleTrackedProcessGroupsCpu = async (
       pid: Number(match[1])
     })
   }
+
   if (trackedProcesses.length > MAX_PROCESS_CPU_TIME_ENTRIES) {
     throw new Error(
       `Tracked process sample exceeded ${MAX_PROCESS_CPU_TIME_ENTRIES} entries`
     )
   }
+
   let darwinCurrentCpuByPid = null
+
   if (platform === 'darwin') {
     if (!Number.isSafeInteger(samplerPid) || samplerPid <= 0) {
       throw new TypeError(
         'A positive current-CPU sampler process ID is required'
       )
     }
+
     const currentCpuArguments = ['-F', '-l', '2', '-s', '0']
     const currentCpuPids = [
       ...new Set([...trackedProcesses.map(({ pid }) => pid), samplerPid])
     ].sort((left, right) => left - right)
+
     for (const pid of currentCpuPids) {
       currentCpuArguments.push('-pid', String(pid))
     }
+
     currentCpuArguments.push('-stats', 'pid,cpu')
     const currentCpuStdout = await execFilePromise(
       execFileImpl,
@@ -3173,8 +3483,10 @@ export const sampleTrackedProcessGroupsCpu = async (
         maxBuffer: 256 * 1024
       }
     )
+
     darwinCurrentCpuByPid = parseDarwinCurrentCpuByPid(currentCpuStdout)
   }
+
   const currentTrackedProcesses = darwinCurrentCpuByPid
     ? trackedProcesses.filter(({ pid }) => darwinCurrentCpuByPid.has(pid))
     : trackedProcesses
@@ -3187,6 +3499,7 @@ export const sampleTrackedProcessGroupsCpu = async (
   const sampledPgids = new Set()
   let cpuPercent = 0
   let cpuTimeMs = 0
+
   for (const trackedProcess of currentTrackedProcesses) {
     const {
       command,
@@ -3196,6 +3509,7 @@ export const sampleTrackedProcessGroupsCpu = async (
       pgid,
       pid
     } = trackedProcess
+
     sampledPgids.add(pgid)
     const processCpuPercent =
       darwinCurrentCpuByPid?.get(pid) ?? trackedProcess.cpuPercent
@@ -3204,16 +3518,20 @@ export const sampleTrackedProcessGroupsCpu = async (
     const browserProcessType = CLIENT_BROWSER_PROCESS_ROLES.has(group.role)
       ? (classification?.browserProcessType ?? 'other-browser')
       : null
+
     cpuPercent += processCpuPercent
     cpuTimeMs += processCpuTimeMs
     const roleKey = roleCpuKey(group.role)
+
     roleCpuPercent[roleKey] += processCpuPercent
     roleCpuTimeMs[roleKey] += processCpuTimeMs
     if (browserProcessType) {
       const browserProcessTypeKey = browserProcessTypeCpuKey(browserProcessType)
+
       browserProcessTypeCpuPercent[browserProcessTypeKey] += processCpuPercent
       browserProcessTypeCpuTimeMs[browserProcessTypeKey] += processCpuTimeMs
     }
+
     processCpuTimes.push({
       ...(browserProcessType ? { browserProcessType } : {}),
       cpuTimeMs: processCpuTimeMs,
@@ -3232,12 +3550,14 @@ export const sampleTrackedProcessGroupsCpu = async (
       })
     }
   }
+
   const trackedProcessRoles = TRACKED_PROCESS_ROLES.filter((role) =>
     groups.some((group) => group.role === role && sampledPgids.has(group.pgid))
   )
   const missingProcessRoles = TRACKED_PROCESS_ROLES.filter((role) =>
     groups.some((group) => group.role === role && !sampledPgids.has(group.pgid))
   )
+
   return {
     browserProcessTypeCpuPercent,
     browserProcessTypeCpuTimeMs,
@@ -3271,9 +3591,11 @@ const readTrackedProcessIdentity = async (
     }
   )
   const match = stdout.trim().match(/^(\d+)\s+(\d+)\s+(\d+)$/u)
+
   if (!match) {
     return null
   }
+
   return {
     pid: Number(match[1]),
     parentPid: Number(match[2]),
@@ -3294,18 +3616,24 @@ export const verifyTrackedProcessDescendant = async (
   ) {
     return false
   }
+
   let currentPid = pid
+
   for (let depth = 0; depth < 32; depth += 1) {
     const identity = await readIdentity(currentPid)
+
     if (!identity || identity.pid !== currentPid) {
       return false
     }
+
     if (depth === 0 && identity.pgid !== pgid) {
       return false
     }
+
     if (identity.pid === rootPgid) {
       return true
     }
+
     if (
       !Number.isSafeInteger(identity.parentPid) ||
       identity.parentPid <= 1 ||
@@ -3313,8 +3641,10 @@ export const verifyTrackedProcessDescendant = async (
     ) {
       return false
     }
+
     currentPid = identity.parentPid
   }
+
   return false
 }
 
@@ -3322,15 +3652,19 @@ const readBoundedJsonBody = (request, limitBytes) =>
   new Promise((resolveBody, rejectBody) => {
     const chunks = []
     let length = 0
+
     request.on('data', (chunk) => {
       length += chunk.length
       if (length > limitBytes) {
         const error = new Error('Heartbeat body exceeds the bounded limit')
+
         error.code = 'BODY_TOO_LARGE'
         rejectBody(error)
         request.destroy()
+
         return
       }
+
       chunks.push(chunk)
     })
     request.on('end', () => {
@@ -3338,6 +3672,7 @@ const readBoundedJsonBody = (request, limitBytes) =>
         resolveBody(JSON.parse(Buffer.concat(chunks).toString('utf8')))
       } catch {
         const error = new Error('Heartbeat body is not valid JSON')
+
         error.code = 'INVALID_JSON'
         rejectBody(error)
       }
@@ -3347,6 +3682,7 @@ const readBoundedJsonBody = (request, limitBytes) =>
 
 const sendJson = (response, statusCode, value) => {
   const body = JSON.stringify(value)
+
   response.writeHead(statusCode, {
     'content-type': 'application/json',
     'content-length': Buffer.byteLength(body),
@@ -3374,6 +3710,7 @@ const appendOutputTail = (tail, chunk, limit) => {
     .split(/\r?\n/u)
     .filter(Boolean)
     .map((line) => line.slice(0, 500))
+
   return keepLast([...tail, ...nextLines], limit)
 }
 
@@ -3381,21 +3718,27 @@ export const createSerializedResourceSampler = (sampleSnapshot) => {
   if (typeof sampleSnapshot !== 'function') {
     throw new TypeError('A resource sample function is required')
   }
+
   let operationTail = Promise.resolve()
+
   return (consumeSample) => {
     if (typeof consumeSample !== 'function') {
       return Promise.reject(
         new TypeError('A resource sample consumer is required')
       )
     }
+
     const operation = operationTail.then(async () => {
       const sample = await sampleSnapshot()
+
       return consumeSample(sample)
     })
+
     operationTail = operation.then(
       () => undefined,
       () => undefined
     )
+
     return operation
   }
 }
@@ -3423,22 +3766,27 @@ export const runResourceGuardCli = async (
   const normalizedConfig = mergeConfig(config)
   const exactEmergencyKill =
     emergencyKill ?? ((pid, signal) => process.kill(pid, signal))
+
   if (requiresReady && normalizedConfig.guardMode === 'diagnostic') {
     throw new Error(
       'Diagnostic CPU mode cannot run an authenticated endpoint proof'
     )
   }
+
   const token = randomBytes(24).toString('hex')
   let state = createResourceGuardState({
     nowMs: now(),
     config: normalizedConfig
   })
   let targetPgid = null
+
   let requestTermination = () => undefined
+
   const runSerializedSample = createSerializedResourceSampler(async () => {
     if (!Number.isSafeInteger(targetPgid) || targetPgid <= 0) {
       throw new Error('Resource guard process group is not ready')
     }
+
     return sampleCpu(targetPgid, {
       processGroups: state.processGroups
     })
@@ -3455,13 +3803,16 @@ export const runResourceGuardCli = async (
       ].includes(request.url)
     ) {
       sendJson(response, 404, { accepted: false })
+
       return
     }
+
     try {
       const body = await readBoundedJsonBody(
         request,
         normalizedConfig.requestBodyLimitBytes
       )
+
       if (request.url === RESOURCE_STATUS_PATH) {
         if (
           body.token !== token ||
@@ -3475,8 +3826,10 @@ export const runResourceGuardCli = async (
             accepted: false,
             reason: 'invalid-resource-status'
           })
+
           return
         }
+
         sendJson(response, 200, {
           accepted: true,
           ...readBootstrapResourceStatus(state, {
@@ -3484,8 +3837,10 @@ export const runResourceGuardCli = async (
             requiredBrowserRoles: body.requiredBrowserRoles
           })
         })
+
         return
       }
+
       if (request.url === TRACKED_PROCESS_REGISTRATION_PATH) {
         let result = recordTrackedProcessGroupRegistration(state, body, {
           descendantVerified: false,
@@ -3493,6 +3848,7 @@ export const runResourceGuardCli = async (
           expectedToken: token,
           rootPgid: targetPgid
         })
+
         if (
           result.reason === 'unverified-descendant' &&
           Number.isSafeInteger(targetPgid)
@@ -3502,6 +3858,7 @@ export const runResourceGuardCli = async (
             pgid: body.pgid,
             rootPgid: targetPgid
           })
+
           result = recordTrackedProcessGroupRegistration(state, body, {
             descendantVerified,
             expectedOwner: parsed.owner,
@@ -3509,27 +3866,34 @@ export const runResourceGuardCli = async (
             rootPgid: targetPgid
           })
         }
+
         state = result.state
         let statusCode = 400
+
         if (result.accepted) {
           statusCode = 200
         } else if (result.reason === 'invalid-token') {
           statusCode = 401
         }
+
         sendJson(response, statusCode, {
           accepted: result.accepted,
           ...(result.reason ? { reason: result.reason } : {})
         })
+
         return
       }
+
       if (request.url === PHASE_BOUNDARY_PATH) {
         if (body.token !== token) {
           sendJson(response, 401, {
             accepted: false,
             reason: 'invalid-token'
           })
+
           return
         }
+
         if (
           body.owner !== parsed.owner ||
           !['start', 'end'].includes(body.kind) ||
@@ -3540,9 +3904,12 @@ export const runResourceGuardCli = async (
             accepted: false,
             reason: 'invalid-phase-boundary'
           })
+
           return
         }
+
         let result
+
         try {
           result = await runSerializedSample((sample) => {
             const nextResult = recordGuardedResourcePhaseBoundary(
@@ -3557,7 +3924,9 @@ export const runResourceGuardCli = async (
                 targetPgid
               }
             )
+
             state = nextResult.state
+
             return nextResult
           })
         } catch (error) {
@@ -3566,14 +3935,17 @@ export const runResourceGuardCli = async (
             nowMs: now(),
             error
           })
+
           state = failure.state
           sendJson(response, 503, {
             accepted: false,
             reason: 'resource-sample-failed'
           })
           void requestTermination('phase-boundary-sample-failed')
+
           return
         }
+
         sendJson(response, result.accepted ? 200 : 409, {
           accepted: result.accepted,
           ...(result.reason ? { reason: result.reason } : {})
@@ -3581,15 +3953,19 @@ export const runResourceGuardCli = async (
         if (result.decision?.stop) {
           void requestTermination('phase-boundary-safety')
         }
+
         return
       }
+
       const result = recordResourceHeartbeat(state, body, {
         expectedToken: token,
         expectedOwner: parsed.owner,
         nowMs: now()
       })
+
       state = result.state
       let statusCode = 400
+
       if (result.accepted) {
         statusCode = 200
       } else if (result.reason === 'invalid-token') {
@@ -3597,6 +3973,7 @@ export const runResourceGuardCli = async (
       } else if (result.reason === 'guard-not-armed') {
         statusCode = 409
       }
+
       sendJson(response, statusCode, {
         accepted: result.accepted,
         ...(result.reason ? { reason: result.reason } : {})
@@ -3609,13 +3986,16 @@ export const runResourceGuardCli = async (
       })
     }
   })
+
   server.requestTimeout = 5_000
   await listen(server)
   const address = server.address()
+
   if (!address || typeof address === 'string') {
     await close(server)
     throw new Error('Resource-guard server did not bind a local TCP port')
   }
+
   const guardUrl = `http://127.0.0.1:${address.port}`
   const child = spawnImpl(
     parsed.command,
@@ -3627,6 +4007,7 @@ export const runResourceGuardCli = async (
       baseEnv
     })
   )
+
   if (!Number.isSafeInteger(child.pid) || child.pid <= 0) {
     await close(server)
     throw new Error('Resource-guard runner could not determine Playwright PGID')
@@ -3649,12 +4030,15 @@ export const runResourceGuardCli = async (
       rootPgid: targetPgid
     }
   )
+
   if (!rootRegistration.accepted) {
     await close(server)
     throw new Error('Resource guard could not register its root process group')
   }
+
   state = rootRegistration.state
   let outputTail = []
+
   child.stdout?.on('data', (chunk) => {
     state = recordProfileOutput(state, chunk)
     outputTail = appendOutputTail(
@@ -3689,6 +4073,7 @@ export const runResourceGuardCli = async (
   })
 
   let resolveTerminationStarted = () => undefined
+
   const terminationStartedSignal = new Promise((resolveStarted) => {
     resolveTerminationStarted = resolveStarted
   })
@@ -3696,19 +4081,23 @@ export const runResourceGuardCli = async (
   let terminationPromise = null
   let evaluationRunning = false
   let terminationStarted = false
+
   const markCleanupFailure = () => {
     if (state.stopDecision) {
       return
     }
+
     state = {
       ...state,
       stopDecision: stopDecision('tracked-process-cleanup-failed', now())
     }
   }
+
   const startCleanup = () => {
     if (terminationPromise) {
       return terminationPromise
     }
+
     terminationPromise = terminateTrackedProcessGroups({
       processGroups: state.processGroups,
       graceMs: normalizedConfig.terminationGraceMs,
@@ -3718,8 +4107,10 @@ export const runResourceGuardCli = async (
       .then((result) => {
         if (result.confirmed) {
           termination = result
+
           return result
         }
+
         markCleanupFailure()
         termination = {
           ...result,
@@ -3728,6 +4119,7 @@ export const runResourceGuardCli = async (
             emergencyKill: exactEmergencyKill
           })
         }
+
         return termination
       })
       .catch((error) => {
@@ -3741,10 +4133,13 @@ export const runResourceGuardCli = async (
           failures: [{ message: boundedErrorMessage(error) }],
           groups: []
         }
+
         return termination
       })
+
     return terminationPromise
   }
+
   const startTermination = (reason = 'guard-requested') => {
     if (!state.stopDecision) {
       state = {
@@ -3755,35 +4150,46 @@ export const runResourceGuardCli = async (
         )
       }
     }
+
     terminationStarted = true
     resolveTerminationStarted()
+
     return startCleanup()
   }
+
   requestTermination = startTermination
   const removeLifecycleGuard = installTrackedProcessLifecycleGuard({
     pgid: targetPgid,
+
     getProcessGroups: () => state.processGroups,
+
     startTermination,
     runtimeProcess,
     emergencyKill: exactEmergencyKill
   })
+
   const sampleTrackedGroup = async () => {
     if (childClosed || evaluationRunning || terminationStarted) {
       return
     }
+
     evaluationRunning = true
     try {
       const result = await runSerializedSample((sample) => {
         if (childClosed) {
           return null
         }
+
         const nextResult = evaluateResourceSample(state, sample, {
           targetPgid,
           config: normalizedConfig
         })
+
         state = nextResult.state
+
         return nextResult
       })
+
       if (result?.decision.stop) {
         await startTermination()
       }
@@ -3791,11 +4197,13 @@ export const runResourceGuardCli = async (
       if (childClosed) {
         return
       }
+
       const failure = recordResourceSampleFailure(state, {
         targetPgid,
         nowMs: now(),
         error
       })
+
       state = failure.state
       outputTail = appendOutputTail(
         outputTail,
@@ -3807,17 +4215,21 @@ export const runResourceGuardCli = async (
       evaluationRunning = false
     }
   }
+
   const interval = setIntervalImpl(() => {
     void sampleTrackedGroup()
   }, normalizedConfig.sampleIntervalMs)
+
   interval.unref?.()
   await sampleTrackedGroup()
 
   let serverClosed = false
+
   const closeGuardServer = async () => {
     if (serverClosed) {
       return
     }
+
     serverClosed = true
     await close(server)
   }
@@ -3828,9 +4240,11 @@ export const runResourceGuardCli = async (
       terminationStartedSignal.then(() => ({ kind: 'termination' }))
     ])
     let childExit
+
     if (firstSettlement.kind === 'child') {
       childExit = firstSettlement.childExit
       const cleanup = await startCleanup()
+
       if (
         !state.stopDecision &&
         cleanup.groups.some(
@@ -3857,6 +4271,7 @@ export const runResourceGuardCli = async (
             }),
           Math.min(1_000, normalizedConfig.terminationGraceMs)
         )
+
         childClose.then((result) => {
           clearTimeout(timeout)
           resolveExit(result)
@@ -3885,11 +4300,13 @@ export const runResourceGuardCli = async (
     while (evaluationRunning) {
       await new Promise((resolveWait) => setTimeout(resolveWait, 10))
     }
+
     state = recordProfileOutput(state, '', { flush: true })
     const classification = classifyGuardedChildExit(state, childExit, {
       requiresReady,
       nowMs: now()
     })
+
     state = classification.state
     await closeGuardServer()
 
@@ -3900,7 +4317,9 @@ export const runResourceGuardCli = async (
       childExit,
       childOutputTail: outputTail
     })
+
     stdout.write(`${JSON.stringify(report)}\n`)
+
     return {
       exitCode: state.stopDecision ? 86 : (childExit.code ?? 1),
       report
@@ -3909,6 +4328,7 @@ export const runResourceGuardCli = async (
     if (!childClosed) {
       await startTermination('exception').catch(() => undefined)
     }
+
     await closeGuardServer()
     throw error
   } finally {
@@ -3920,6 +4340,7 @@ export const runResourceGuardCli = async (
 const assertPortAvailable = (port) =>
   new Promise((resolvePort, rejectPort) => {
     const server = createNetServer()
+
     server.unref()
     server.once('error', (error) => {
       rejectPort(
@@ -3932,8 +4353,10 @@ const assertPortAvailable = (port) =>
       server.close((error) => {
         if (error) {
           rejectPort(error)
+
           return
         }
+
         resolvePort()
       })
     })
@@ -3947,6 +4370,7 @@ const parsePipelineArguments = (argv) => {
   ) {
     throw new Error('Endpoint pipeline usage: --owner <inspector-owner>')
   }
+
   return argv[1]
 }
 
@@ -3965,6 +4389,7 @@ export const runEndpointPerformancePipeline = async (
     owner,
     baseEnv: dependencies.baseEnv ?? process.env
   })
+
   for (const port of phases[0].ports) {
     await assertAvailable(port)
   }
@@ -3989,6 +4414,7 @@ export const runEndpointPerformancePipeline = async (
     config: runtimePhase.guardConfig,
     requiresReady: runtimePhase.requiresReady
   })
+
   return {
     exitCode: result.exitCode,
     phases: [
@@ -4010,6 +4436,7 @@ if (isMain) {
   const trackedLauncher =
     argv[0] === '--tracked-role' || Boolean(process.env.TRACKED_ROLE)
   let execution
+
   if (trackedLauncher) {
     execution = runTrackedProcessLauncher(argv)
   } else if (argv.includes('--')) {
@@ -4017,6 +4444,7 @@ if (isMain) {
   } else {
     execution = runEndpointPerformancePipeline(argv)
   }
+
   execution
     .then((result) => {
       process.exitCode = result.exitCode

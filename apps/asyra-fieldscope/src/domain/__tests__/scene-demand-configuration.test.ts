@@ -48,6 +48,7 @@ describe('scene demand configuration', () => {
     const raw = complete()
     const accepted = validateSceneDemandConfiguration(raw)
     const volume = raw.growth.kind === 'bounded' ? raw.growth.volumes[0] : null
+
     expect(accepted).toEqual(raw)
     expect(accepted).not.toBe(raw)
     expect(Object.isFrozen(accepted)).toBe(true)
@@ -56,6 +57,7 @@ describe('scene demand configuration', () => {
     if (accepted.growth.kind !== 'bounded' || !volume) {
       throw new Error('Missing fixture volume')
     }
+
     expect(Object.isFrozen(accepted.growth.volumes)).toBe(true)
     expect(Object.isFrozen(accepted.growth.volumes[0].anchor)).toBe(true)
     expect(Object.isFrozen(accepted.growth.volumes[0].min)).toBe(true)
@@ -68,6 +70,7 @@ describe('scene demand configuration', () => {
       ...complete(),
       evidence: { kind: 'measured', id: 'survey-measured-a' }
     })
+
     expect(accepted.evidence).toEqual({
       kind: 'measured',
       id: 'survey-measured-a'

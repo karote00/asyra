@@ -18,6 +18,7 @@ function present<T>(value: T | null | undefined): T {
   if (value == null) {
     throw new Error('Missing test input')
   }
+
   return value
 }
 
@@ -194,9 +195,11 @@ async function select(label: string, value: string) {
       node.getAttribute('aria-label') === label ||
       node.closest('label')?.textContent?.trim().startsWith(label)
   )
+
   if (!input) {
     throw new Error(`Missing select ${label}`)
   }
+
   await act(() => {
     input.value = value
     input.dispatchEvent(new Event('change', { bubbles: true }))
@@ -206,15 +209,18 @@ async function select(label: string, value: string) {
 async function externalCsv() {
   const example = createSyntheticExample()
   const file = new File([], 'external.csv')
+
   file.text = vi.fn(async () =>
     trajectoryToCsv(example.workcell, example.trajectory)
   )
   await choose(file)
+
   return example
 }
 
 it('blocks external CSV with canonical headers until every source unit is declared', async () => {
   const example = await externalCsv()
+
   await act(() => button('Preview trajectory')?.click())
   expect(button('Import trajectory')).toBeUndefined()
   expect(
@@ -232,6 +238,7 @@ it('blocks external CSV with canonical headers until every source unit is declar
       await select(`${body.name} CSV unit`, 'rad')
     }
   }
+
   await preview()
   expect(
     host.querySelector('[aria-label="Trajectory conversion preview"]')
@@ -246,8 +253,10 @@ it('reuses source parsing and the exact validated preview on repeated review and
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
   const normalize = vi.spyOn(sourceDomain, 'normalizeTrajectorySource')
   const inspect = vi.spyOn(importer, 'previewTrajectoryCsv')
+
   try {
     const example = await externalCsv()
+
     expect(parse).not.toHaveBeenCalled()
     expect(normalize).not.toHaveBeenCalled()
     await select('Time unit', 's')
@@ -256,9 +265,11 @@ it('reuses source parsing and the exact validated preview on repeated review and
         await select(`${body.name} CSV unit`, 'rad')
       }
     }
+
     await preview()
     const result = inspect.mock.results.at(-1)?.value
     const work = normalize.mock.calls.length
+
     expect(work).toBe(example.trajectory.keyframes.length)
     await preview()
     await act(() => button('Import trajectory')?.click())
@@ -291,6 +302,7 @@ it('preserves strict JSON declarations and displays source-to-canonical conversi
       .map((body) => [body.id, 0])
   )
   const file = new File([], 'declared.json')
+
   file.text = vi.fn(async () =>
     JSON.stringify({
       format: 'sim-trajectory',
@@ -310,6 +322,7 @@ it('preserves strict JSON declarations and displays source-to-canonical conversi
   const review = host.querySelector(
     '[aria-label="Trajectory conversion preview"]'
   )
+
   expect(review?.textContent).toContain('2500 ms')
   expect(review?.textContent).toContain('2.5 s')
   expect(review?.textContent).toContain('0 deg')
@@ -321,7 +334,9 @@ it('retires an existing preview and late file read when its workcell changes', a
   await preview()
   const example = createSyntheticExample()
   const pending = new File([], 'pending.csv')
+
   let resolve: (value: string) => void = () => undefined
+
   pending.text = vi.fn(
     () =>
       new Promise<string>((done) => {
@@ -334,6 +349,7 @@ it('retires an existing preview and late file read when its workcell changes', a
   const joint = present(
     workcell.bodies.find((body) => body.joint.kind !== 'fixed')
   )
+
   joint.joint.max -= 0.1
   await act(() =>
     root.render(
@@ -368,6 +384,7 @@ it('retires the old preview but retains known units after source edits', async (
   await preview()
   const input = present(host.querySelector('textarea'))
   const next = input.value.replace('\n0,', '\n1,')
+
   await act(() => {
     present(
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')
@@ -386,6 +403,7 @@ it('retires the old preview but retains known units after source edits', async (
 
 it('invalidates column mapping and current workcell previews without reparsing source', async () => {
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
+
   try {
     await preview()
     await select('Time column', '')
@@ -400,6 +418,7 @@ it('invalidates column mapping and current workcell previews without reparsing s
     const joint = present(
       workcell.bodies.find((body) => body.joint.kind !== 'fixed')
     )
+
     joint.joint.max = 0.1
     await act(() =>
       root.render(
@@ -428,7 +447,9 @@ it('invalidates column mapping and current workcell previews without reparsing s
 
 it('discard and unmount retire in-flight reads without late updates', async () => {
   let resolve: (text: string) => void = () => undefined
+
   const file = new File([], 'pending.csv')
+
   file.text = vi.fn(
     () =>
       new Promise<string>((done) => {
@@ -436,6 +457,7 @@ it('discard and unmount retire in-flight reads without late updates', async () =
       })
   )
   const original = present(host.querySelector('textarea')).value
+
   await choose(file)
   await act(() => button('Discard preview')?.click())
   await act(async () => resolve('time\n99'))
@@ -449,6 +471,7 @@ it('discard and unmount retire in-flight reads without late updates', async () =
 
 async function editSource(text: string) {
   const input = present(host.querySelector('textarea'))
+
   await act(() => {
     present(
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')
@@ -460,20 +483,24 @@ async function editSource(text: string) {
 
 it('retains declared units across numeric edits but recomputes and accepts only the current preview', async () => {
   const example = await externalCsv()
+
   await select('Time unit', 'ms')
   for (const body of example.workcell.bodies) {
     if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'deg')
     }
   }
+
   await preview()
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
   const inspect = vi.spyOn(importer, 'previewTrajectoryCsv')
+
   try {
     const text = present(host.querySelector('textarea')).value.replace(
       '\n4,',
       '\n5,'
     )
+
     await editSource(text)
     expect(button('Import trajectory')).toBeUndefined()
     expect(
@@ -486,6 +513,7 @@ it('retains declared units across numeric edits but recomputes and accepts only 
     expect(inspect).toHaveBeenCalledOnce()
     expect(parse).toHaveBeenCalledOnce()
     const result = inspect.mock.results[0].value
+
     expect(result.value.trajectory.keyframes[1].time).toBe(0.005)
     await act(() => button('Import trajectory')?.click())
     expect(accepted.mock.calls[0][0]).toBe(result.value)
@@ -507,6 +535,7 @@ it('preserves known joint units when only the time unit is selected', async () =
     '\n4,',
     '\n5,'
   )
+
   await editSource(text)
   await act(() => button('Preview trajectory')?.click())
   expect(host.textContent).not.toContain('explicit supported time unit')
@@ -514,24 +543,29 @@ it('preserves known joint units when only the time unit is selected', async () =
     host.querySelector('[aria-label="Trajectory conversion preview"]')
   ).not.toBeNull()
   const example = createSyntheticExample()
+
   for (const body of example.workcell.bodies) {
     if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'rad')
     }
   }
+
   await editSource(text.replace('\n5,', '\n6,'))
   await preview()
 })
 
 it('preserves unaffected declarations when one source column is removed', async () => {
   const example = await externalCsv()
+
   await select('Time unit', 's')
   for (const body of example.workcell.bodies) {
     if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'rad')
     }
   }
+
   const text = present(host.querySelector('textarea')).value
+
   await editSource(
     text
       .split('\n')
@@ -543,6 +577,7 @@ it('preserves unaffected declarations when one source column is removed', async 
       'select[aria-label$=" CSV unit"]'
     )
   ]
+
   expect(units.map((unit) => unit.value)).toEqual([
     'rad',
     'rad',
@@ -560,16 +595,19 @@ it('preserves unaffected declarations when one source column is removed', async 
 
 it('retains unaffected units when the workcell changes joint type', async () => {
   const example = await externalCsv()
+
   await select('Time unit', 's')
   for (const body of example.workcell.bodies) {
     if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'rad')
     }
   }
+
   const workcell = structuredClone(example.workcell)
   const joint = present(
     workcell.bodies.find((body) => body.joint.kind === 'revolute')
   )
+
   joint.joint = { ...joint.joint, kind: 'prismatic' }
   await act(() =>
     root.render(
@@ -597,6 +635,7 @@ it('retains unaffected units when the workcell changes joint type', async () => 
 it('keeps known units during first edits without prompting for confirmation', async () => {
   const input = present(host.querySelector('textarea'))
   const original = input.value
+
   const units = () =>
     [...host.querySelectorAll<HTMLSelectElement>('select')]
       .filter(
@@ -605,7 +644,9 @@ it('keeps known units during first edits without prompting for confirmation', as
           node.getAttribute('aria-label')?.endsWith(' CSV unit')
       )
       .map((node) => node.value)
+
   const initialUnits = units()
+
   await preview()
   await editSource(original.replace('\n8,', '\nㄉㄢ,'))
   expect(units()).toEqual(initialUnits)
@@ -631,6 +672,7 @@ it('keeps known units during first edits without prompting for confirmation', as
 
 it('previews edits in known units without an extra confirmation step', async () => {
   const original = present(host.querySelector('textarea')).value
+
   await editSource(original.replace('\n8,', '\n9,'))
   expect(button('Confirm displayed units')).toBeUndefined()
   expect(host.querySelector('.unit-confirmation')).toBeNull()
@@ -644,6 +686,7 @@ it('previews edits in known units without an extra confirmation step', async () 
 
 it('retains unit choices through an unfinished CSV quoted value', async () => {
   const original = present(host.querySelector('textarea')).value
+
   await editSource(original.replace('\n8,', '\n9,'))
   await editSource(original.replace('\n8,', '\n"8,'))
   expect(
@@ -665,8 +708,10 @@ it('retains unit choices through an unfinished CSV quoted value', async () => {
 
 it('commits completed inline trajectory edits once without Apply and reuses their conversion review', async () => {
   const inspect = vi.spyOn(importer, 'previewTrajectoryCsv')
+
   try {
     const field = present(host.querySelector('textarea'))
+
     await editSource(field.value.replace('\n8,', '\n9,'))
     expect(accepted).not.toHaveBeenCalled()
     await act(() =>
@@ -676,6 +721,7 @@ it('commits completed inline trajectory edits once without Apply and reuses thei
     expect(accepted.mock.calls[0][0].trajectory.keyframes.at(-1).time).toBe(9)
     expect(button('Import trajectory')).toBeUndefined()
     const result = inspect.mock.results[0].value
+
     expect(accepted.mock.calls[0][0]).toBe(result.value)
     await act(() => button('Preview trajectory')?.click())
     await act(() =>
@@ -702,6 +748,7 @@ it('reports invalid authored input while typing and commits it on blur without r
     ) => true
   )
   const example = createSyntheticExample()
+
   await act(() =>
     root.render(
       createElement(TrajectoryImportPanel, {
@@ -713,6 +760,7 @@ it('reports invalid authored input while typing and commits it on blur without r
     )
   )
   const field = present(host.querySelector('textarea'))
+
   await editSource('time,broken\nnope,value')
   expect(host.querySelector('[role="alert"]')).not.toBeNull()
   expect(edit).not.toHaveBeenCalled()
@@ -732,8 +780,10 @@ it('reports invalid authored input while typing and commits it on blur without r
 it('reads new external CSV columns without converting under the previous source units', async () => {
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
   const normalize = vi.spyOn(sourceDomain, 'normalizeTrajectorySource')
+
   try {
     const file = new File([], 'different.csv')
+
     file.text = vi.fn(async () =>
       present(host.querySelector('textarea')).value.replace('\n8,', '\n9,')
     )
@@ -759,7 +809,9 @@ it('reveals an explicitly requested preview but not normal completed edits', asy
 
 it('shows trajectory reading status beside the file controls', async () => {
   let finish: (value: string) => void = () => undefined
+
   const file = new File([], 'pending.csv')
+
   file.text = () =>
     new Promise<string>((resolve) => {
       finish = resolve

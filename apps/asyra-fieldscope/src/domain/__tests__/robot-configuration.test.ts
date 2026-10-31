@@ -11,6 +11,7 @@ describe('robot design admission', () => {
   it('keeps legacy width readable without granting active walking admission', () => {
     const raw = { ...DEFAULT_ROBOT, width: 1 }
     const bytes = JSON.stringify(raw)
+
     expect(validateRobot(raw).width).toBe(1)
     expect(() => readActiveRobotConfiguration(raw)).toThrow(/legacy-topology/)
     expect(JSON.stringify(raw)).toBe(bytes)
@@ -20,6 +21,7 @@ describe('robot design admission', () => {
       validateRobot(DEFAULT_ROBOT),
       DEFAULT_CONFIGURATION
     )
+
     expect(report.lane?.status).toBe('unverified')
     expect(report.energy.action).toBe('hold')
     expect(report.settings.survey.ground).toBe('unknown')
@@ -45,12 +47,14 @@ describe('robot design admission', () => {
       }
     }
     const result = validateRobot(input)
+
     input.lane.stripId = DEFAULT_CONFIGURATION.strips[1].id
     expect(result.lane).toEqual(DEFAULT_ROBOT.lane)
     expect(Object.isFrozen(result.lane)).toBe(true)
   })
   it('retains a mission that becomes invalid after farm edits', () => {
     const robot = validateRobot(DEFAULT_ROBOT)
+
     expect(
       assessRobotDesign(robot, { ...DEFAULT_CONFIGURATION, length: 20 }).lane
     ).toBeNull()
@@ -67,6 +71,7 @@ describe('robot design admission', () => {
       payload: 9
     })
     const report = assessRobotDesign(robot, DEFAULT_CONFIGURATION)
+
     expect(report.lane?.blocked).toContain('water-channel')
     expect(report.exchangeRequired).toBe(true)
     expect(report.energy.action).toBe('hold')
@@ -85,11 +90,13 @@ describe('robot design admission', () => {
       ...DEFAULT_ROBOT,
       lane: { kind: 'strip', bay: 0, stripId: 'selected' }
     })
+
     expect(assessRobotDesign(settings, farm).lane?.centerX).toBe(3.5)
     const reordered = {
       ...farm,
       strips: [farm.strips[2], farm.strips[0], farm.strips[1]]
     }
+
     expect(assessRobotDesign(settings, reordered).lane?.centerX).toBe(4.5)
     expect(
       assessRobotDesign(settings, {
@@ -125,6 +132,7 @@ it('hands off the completed immutable route without exporting a second identity 
     lane: { kind: 'strip', bay: 0, stripId: 'selected' }
   })
   const report = assessRobotDesign(settings, farm)
+
   expect(report.route).toEqual({ kind: 'strip', bay: 0, strip: 1 })
   expect(Object.isFrozen(report.route)).toBe(true)
   expect(
@@ -148,6 +156,7 @@ it('hands off the completed immutable route without exporting a second identity 
     lane: { kind: 'shared', boundary: 1, side: 'right' }
   })
   const sharedReport = assessRobotDesign(shared, farm)
+
   expect(sharedReport.route).toEqual(shared.lane)
   expect(sharedReport.route).not.toBe(shared.lane)
   expect(Object.isFrozen(sharedReport.route)).toBe(true)

@@ -81,25 +81,34 @@ export interface WalkingQuasiStaticAssessment {
   }>[]
   readonly work: WalkingQuasiStaticWork
 }
+
 const unknown = (): Unknown => ({ kind: 'unknown' })
+
 const known = <T>(value: T): Known<T> => ({ kind: 'known', value })
+
 const finiteInterval = (value: Interval) =>
   Number.isFinite(value.low) && Number.isFinite(value.high)
+
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     for (const child of Object.values(value)) {
       freeze(child)
     }
+
     Object.freeze(value)
   }
+
   return value
 }
+
 function required<T>(value: T | undefined): T {
   if (value === undefined) {
     throw Error('Walking mechanics source identity is incomplete')
   }
+
   return value
 }
+
 const emptyWork = () => ({
   fk: 0,
   bodyMassVisits: 0,
@@ -112,41 +121,54 @@ const emptyWork = () => ({
 /** Owns gravity-only arithmetic for one completed W2 pose bound to current W3. */
 export class WalkingQuasiStaticOwner {
   private current: WalkingQuasiStaticAssessment | undefined
+
   private lastRequest: WalkingQuasiStaticRequest | undefined
+
   private revision = 0
+
   private totals = { preparations: 0, ...emptyWork() }
+
   constructor(
     private readonly dependencies: {
       readonly getCurrentWalkingMotion: () => WalkingMotionAdmission | undefined
     }
   ) {}
+
   get work() {
     return Object.freeze({ ...this.totals })
   }
+
   isCurrent(result: WalkingQuasiStaticAssessment) {
     return (
       result === this.current &&
       result.motion === this.dependencies.getCurrentWalkingMotion()
     )
   }
+
   read() {
     return this.current && this.isCurrent(this.current)
       ? this.current
       : undefined
   }
+
   clear() {
     this.current = undefined
     this.lastRequest = undefined
   }
+
   prepare(raw: unknown): WalkingQuasiStaticAssessment {
     const motion = this.dependencies.getCurrentWalkingMotion()
+
     if (!motion) {
       throw Error('Walking motion owner is unavailable')
     }
+
     const request = readWalkingQuasiStaticRequest(raw, motion)
+
     if (request === this.lastRequest && this.current?.motion === motion) {
       return this.current
     }
+
     const work = emptyWork(),
       reasons: string[] = [],
       source = motion.source,
@@ -154,10 +176,13 @@ export class WalkingQuasiStaticOwner {
         source,
         walkingMotionPoseAt(motion.path, request.time)
       )
+
     work.fk++
     const frames = new Map(pose.bodyTransforms.map((b) => [b.id, b.transform])),
       entries: MassEntry[] = []
+
     const bodyFrame = (id: string) => required(frames.get(id))
+
     for (const mass of source.massProperties.bodies) {
       entries.push({
         bodyId: mass.bodyId,
@@ -172,7 +197,9 @@ export class WalkingQuasiStaticOwner {
       })
       work.bodyMassVisits++
     }
+
     const crate = request.loadMasses.crate
+
     entries.push({
       bodyId: 'base',
       loadId: 'crate',
@@ -191,11 +218,13 @@ export class WalkingQuasiStaticOwner {
     work.externalMassVisits++
     const carried =
       motion.load.carried.kind === 'attached' ? motion.load.carried.items : []
+
     for (const load of request.loadMasses.carried) {
       const attachment = required(
           carried.find((item) => item.id === load.attachmentId)
         ),
         properties = load.properties
+
       entries.push({
         bodyId: attachment.holderBodyId,
         loadId: attachment.id,
@@ -216,6 +245,7 @@ export class WalkingQuasiStaticOwner {
       })
       work.externalMassVisits++
     }
+
     const completeMasses = entries.every(
       (entry) => entry.properties.kind === 'known'
     )
@@ -229,6 +259,7 @@ export class WalkingQuasiStaticOwner {
           )
         }
       : unknown()
+
     if (
       centreOfMass.kind === 'known' &&
       (!finiteInterval(centreOfMass.totalMass) ||
@@ -236,22 +267,29 @@ export class WalkingQuasiStaticOwner {
     ) {
       centreOfMass = unknown()
     }
+
     if (centreOfMass.kind === 'unknown') {
       reasons.push('mass-or-centre-of-mass-unknown')
     }
+
     const parent = new Map(
       source.rig.bodies.map((body) => [body.id, body.parentBodyId])
     )
+
     const descendant = (bodyId: string, rootId: string) => {
       let id: string | null | undefined = bodyId
+
       while (id) {
         if (id === rootId) {
           return true
         }
+
         id = parent.get(id)
       }
+
       return false
     }
+
     const moment = (jointId: string): ArmMoment => {
       const joint = required(
           source.rig.joints.find((item) => item.id === jointId)
@@ -270,11 +308,14 @@ export class WalkingQuasiStaticOwner {
         loadIds = members.flatMap((entry) =>
           entry.loadId === undefined ? [] : [entry.loadId]
         )
+
       work.momentMassVisits += members.length
       if (members.some((entry) => entry.properties.kind === 'unknown')) {
         return { kind: 'unknown', bodyIds, loadIds }
       }
+
       let vector = mechanicsVector([0, 0, 0])
+
       for (const member of members) {
         if (member.properties.kind === 'known') {
           vector = mechanicsAdd(
@@ -287,10 +328,13 @@ export class WalkingQuasiStaticOwner {
           )
         }
       }
+
       const magnitude = mechanicsMagnitude(vector)
+
       if (!vector.every(finiteInterval) || !finiteInterval(magnitude)) {
         return { kind: 'unknown', bodyIds, loadIds }
       }
+
       return {
         kind: 'known',
         bodyIds,
@@ -299,11 +343,13 @@ export class WalkingQuasiStaticOwner {
         magnitude
       }
     }
+
     const armMoments = source.rig.armChains.map((chain) => ({
       chainId: chain.id,
       root: moment(required(chain.jointIds[0])),
       shoulder: moment(required(chain.jointIds[1]))
     }))
+
     if (
       armMoments.some(
         (arm) => arm.root.kind === 'unknown' || arm.shoulder.kind === 'unknown'
@@ -311,8 +357,10 @@ export class WalkingQuasiStaticOwner {
     ) {
       reasons.push('arm-moment-unknown')
     }
+
     const points: MechanicsPlanePoint[] = []
     let contactsComplete = request.support.contacts.length > 0
+
     for (const contact of request.support.contacts) {
       work.contactVisits++
       const bound = motion.contacts.find(
@@ -322,6 +370,7 @@ export class WalkingQuasiStaticOwner {
           item.from === request.phase.from &&
           item.until === request.phase.until
       )
+
       if (
         !bound ||
         bound.status !== 'admitted' ||
@@ -330,27 +379,36 @@ export class WalkingQuasiStaticOwner {
       ) {
         contactsComplete = false
       }
+
       if (contact.position.kind === 'plane-point') {
         points.push(contact.position.coordinates)
       }
     }
+
     if (!contactsComplete) {
       reasons.push('support-contact-evidence-unknown')
     }
+
     const slope = motion.terrain.observations.slope
+
     if ('kind' in slope || slope.coverage !== 'complete') {
       reasons.push('slope-evidence-unknown')
     }
+
     const plane = request.support.plane,
       reserve = request.support.lineOfActionReserve
+
     if (plane.kind === 'unknown') {
       reasons.push('support-plane-unknown')
     }
+
     if (reserve.kind === 'unknown') {
       reasons.push('line-of-action-reserve-unknown')
     }
+
     let supportResult: Support | undefined
     let hull: readonly MechanicsPlanePoint[] | undefined
+
     if (contactsComplete) {
       work.hullPreparations++
       if (centreOfMass.kind === 'known' && plane.kind === 'declared') {
@@ -366,6 +424,7 @@ export class WalkingQuasiStaticOwner {
         hull = mechanicsHull(points)
       }
     }
+
     const supportPolygon = hull
       ? known(
           hull.map((coordinates) => ({
@@ -381,12 +440,15 @@ export class WalkingQuasiStaticOwner {
       : unknown()
     const status =
       reasons.length === 0 && supportResult ? supportResult.status : 'unknown'
+
     if (supportResult?.status === 'unknown') {
       reasons.push('support-sign-unresolved')
     }
+
     if (supportResult?.status === 'blocked') {
       reasons.push('support-or-overturning-blocked')
     }
+
     const result: WalkingQuasiStaticAssessment = freeze({
       identity: {},
       revision: ++this.revision,
@@ -421,12 +483,14 @@ export class WalkingQuasiStaticOwner {
       armMoments,
       work
     })
+
     this.current = result
     this.lastRequest = request
     this.totals.preparations++
     for (const key of Object.keys(work) as (keyof WalkingQuasiStaticWork)[]) {
       this.totals[key] += work[key]
     }
+
     return result
   }
 }

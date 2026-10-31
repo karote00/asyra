@@ -30,6 +30,7 @@ test('Play detects the original-part collision without a formal run', async ({
   const feedback = page.getByTestId('playback-feedback')
 
   const observed = await collision()
+
   expect(observed.text).toContain('Collision detected')
 
   await expect(
@@ -159,10 +160,12 @@ test('known formal witnesses need no Worker, missing poses are checked, and edit
   await expect(page.getByTestId('live-observations')).toHaveCount(0)
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const collision = await observePlaybackFeedback(page, { kind: 'collision' })
+
   await page
     .getByRole('button', { name: 'Play trajectory', exact: true })
     .click()
   const observed = await collision()
+
   expect(observed.text).toContain('Collision detected')
   expect(observed.text).toContain('Live')
   expect(created.length).toBeGreaterThan(0)

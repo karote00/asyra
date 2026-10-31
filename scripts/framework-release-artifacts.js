@@ -38,9 +38,11 @@ const validatePackageEvidence = (packages, consumerEvidence) => {
   ) {
     throw new Error('Framework packed consumer gate did not pass')
   }
+
   const actualIntegrity = Object.fromEntries(
     packages.map(({ name, integrity }) => [name, integrity])
   )
+
   if (
     JSON.stringify(actualIntegrity) !==
     JSON.stringify(consumerEvidence.artifactIntegrities)
@@ -53,15 +55,20 @@ const validatePackageEvidence = (packages, consumerEvidence) => {
 
 const normalizeArtifactPackages = (packages) => {
   const seen = new Set()
+
   return packages.map((record) => {
     const name = record.packageName ?? record.name
+
     if (typeof name !== 'string' || !name.startsWith('@asyra/')) {
       throw new Error('Framework artifact package identity is invalid')
     }
+
     if (seen.has(name)) {
       throw new Error(`Duplicate Framework artifact ${name}`)
     }
+
     seen.add(name)
+
     return {
       name,
       version: record.version,
@@ -79,11 +86,15 @@ export const createFrameworkReleaseArtifactManifest = ({
   if (!/^[a-f0-9]{40}$/u.test(sourceCommitSha ?? '')) {
     throw new Error('Framework artifact source commit is invalid')
   }
+
   if (!Array.isArray(packages) || packages.length === 0) {
     throw new Error('Framework artifact set is empty')
   }
+
   const normalizedPackages = normalizeArtifactPackages(packages)
+
   validatePackageEvidence(normalizedPackages, consumerEvidence)
+
   return {
     schemaVersion: 1,
     status: 'READY',
@@ -112,13 +123,17 @@ export const validateFrameworkReleaseArtifactManifest = ({
       'Framework artifact source commit changed or handoff is invalid'
     )
   }
+
   const handoffPackages = manifest.packages ?? []
+
   if (handoffPackages.length !== packages.length) {
     throw new Error('Framework artifact set changed after validation')
   }
+
   for (const [index, record] of packages.entries()) {
     const name = record.packageName ?? record.name
     const prior = handoffPackages[index]
+
     if (
       prior?.name !== name ||
       prior.version !== record.version ||
@@ -126,15 +141,18 @@ export const validateFrameworkReleaseArtifactManifest = ({
     ) {
       throw new Error('Framework artifact set changed after validation')
     }
+
     if (prior.integrity !== sha512Integrity(record.tarballPath)) {
       throw new Error(`Framework artifact integrity changed for ${name}`)
     }
   }
+
   const currentManifest = createFrameworkReleaseArtifactManifest({
     sourceCommitSha: currentCommitSha,
     packages,
     consumerEvidence
   })
+
   for (const [index, artifact] of currentManifest.packages.entries()) {
     if (JSON.stringify(manifest.packages[index]) !== JSON.stringify(artifact)) {
       throw new Error(
@@ -142,6 +160,7 @@ export const validateFrameworkReleaseArtifactManifest = ({
       )
     }
   }
+
   if (
     JSON.stringify(manifest.consumer) !==
     JSON.stringify(currentManifest.consumer)
@@ -150,6 +169,7 @@ export const validateFrameworkReleaseArtifactManifest = ({
       'Framework packed consumer evidence changed after validation'
     )
   }
+
   return currentManifest
 }
 
@@ -163,6 +183,7 @@ const resolveValidationWorkspace = (repositoryRoot) => {
   const pointer = readJson(pointerPath)
   const validationRoot = path.resolve(pointer.validationRoot)
   const temporaryRoot = path.join(repositoryRoot, 'tmp')
+
   if (
     path.dirname(validationRoot) !== temporaryRoot ||
     !path.basename(validationRoot).startsWith('release-validation-')
@@ -171,6 +192,7 @@ const resolveValidationWorkspace = (repositoryRoot) => {
       'Framework validation workspace pointer is outside project tmp'
     )
   }
+
   return { pointer, pointerPath, validationRoot }
 }
 
@@ -180,6 +202,7 @@ const prepareArtifacts = (repositoryRoot) => {
     cwd: repositoryRoot,
     encoding: 'utf8'
   }).trim()
+
   if (sourceCommitSha !== pointer.sourceCommitSha) {
     throw new Error('Source commit changed after Framework validation')
   }
@@ -211,6 +234,7 @@ const prepareArtifacts = (repositoryRoot) => {
     packages: validated.packages,
     consumerEvidence
   })
+
   fs.writeFileSync(
     path.join(artifactDirectory, FRAMEWORK_ARTIFACT_HANDOFF),
     `${JSON.stringify(manifest, null, 2)}\n`
@@ -232,7 +256,9 @@ const prepareArtifacts = (repositoryRoot) => {
       sourceCommitSha,
       guidanceFile
     )
+
     current.push(observed.current)
+
     return {
       id: pkg.name,
       roots: [`packages/${pkg.name.slice('@asyra/'.length)}`],
@@ -240,6 +266,7 @@ const prepareArtifacts = (repositoryRoot) => {
       artifact
     }
   })
+
   prepareOrReuseGuidance(
     guidanceFile,
     {
@@ -258,6 +285,7 @@ const prepareArtifacts = (repositoryRoot) => {
 const cleanupArtifacts = (repositoryRoot) => {
   const { pointerPath, validationRoot } =
     resolveValidationWorkspace(repositoryRoot)
+
   fs.rmSync(validationRoot, { recursive: true, force: true })
   fs.rmSync(pointerPath, { force: true })
   process.stdout.write('Framework release validation workspace cleaned\n')
@@ -277,6 +305,7 @@ export function recordFrameworkGuidance({
       'tmp/framework-release-evidence/registry-only-consumer.json'
     )
   )
+
   if (
     consumer.status !== 'READY' ||
     expectedConsumerPhases.some((phase) => !consumer.phases?.includes(phase)) ||
@@ -284,10 +313,12 @@ export function recordFrameworkGuidance({
   ) {
     throw new Error('Registry consumer verification is missing or incomplete')
   }
+
   const records = guidance.deliveries.map(({ id, artifact }) => ({
     artifact,
     current: registryRecord(repositoryRoot, id, runCommand)
   }))
+
   for (const { artifact, current } of records) {
     if (
       current.version !== artifact.version ||
@@ -305,6 +336,7 @@ export function recordFrameworkGuidance({
       )
     }
   }
+
   for (const { artifact } of records) {
     recordGuidanceResult(
       path.join(repositoryRoot, 'tmp/framework-release-guidance-result.json'),
@@ -331,6 +363,7 @@ if (isDirectExecution) {
     '..'
   )
   const args = process.argv.slice(2)
+
   if (
     args.length !== 1 ||
     !['--prepare', '--cleanup', '--record', '--plan'].includes(args[0])
@@ -339,6 +372,7 @@ if (isDirectExecution) {
       'Specify exactly one of --prepare, --cleanup, --record, or --plan'
     )
   }
+
   if (args[0] === '--plan') {
     process.stdout.write(
       `${JSON.stringify(

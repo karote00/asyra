@@ -23,9 +23,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing measured source pair')
         }
+
         const context = new OriginalMeshQuery()
         const rows: {
           kind: string
@@ -48,15 +50,21 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           alternativeOverlap: number
         }[] = []
         const nodes = new WeakMap<Bounds, (typeof nodeRows)[number]>()
+
         const area = (bounds: Bounds) => {
           const [x, y, z] = bounds.map((axis) => Math.max(0, axis[1] - axis[0]))
+
           return 2 * (x * y + x * z + y * z)
         }
+
         const centroidBoxes = new WeakMap<MeshNode, Bounds>()
+
         const register = (node: MeshNode, depth: number): number => {
           let count = node.triangles.length
+
           if (node.children) {
             const [a, b] = node.children
+
             count = register(a, depth + 1) + register(b, depth + 1)
             const intersect: Bounds = a.bounds.map((axis, i) => [
               Math.max(axis[0], b.bounds[i][0]),
@@ -71,13 +79,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 )
             const ac = centroidBoxes.get(a),
               bc = centroidBoxes.get(b)
+
             if (!ac || !bc) {
               throw new Error('Missing complete centroid summary')
             }
+
             const centroids = ac.map((axis, i) => [
               Math.min(axis[0], bc[i][0]),
               Math.max(axis[1], bc[i][1])
             ]) as unknown as Bounds
+
             centroidBoxes.set(node, centroids)
             const fullWidths = node.bounds.map((axis) => axis[1] - axis[0])
             const centroidWidths = centroids.map((axis) => axis[1] - axis[0])
@@ -85,13 +96,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             const centroidAxis = centroidWidths.indexOf(
               Math.max(...centroidWidths)
             )
+
             const collectTriangles = (
               current: MeshNode
             ): typeof node.triangles =>
               current.children
                 ? current.children.flatMap(collectTriangles)
                 : current.triangles
+
             let alternativeOverlap = overlap
+
             if (fullAxis !== centroidAxis) {
               const sorted = [...collectTriangles(node)].sort(
                 (a, b) =>
@@ -100,22 +114,26 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                     b.bounds[centroidAxis][0] -
                     b.bounds[centroidAxis][1] || a.offset - b.offset
               )
+
               const box = (items: typeof sorted): Bounds =>
                 [0, 1, 2].map((axis) => [
                   Math.min(...items.map((item) => item.bounds[axis][0])),
                   Math.max(...items.map((item) => item.bounds[axis][1]))
                 ]) as unknown as Bounds
+
               const left = box(sorted.slice(0, Math.floor(sorted.length / 2))),
                 right = box(sorted.slice(Math.floor(sorted.length / 2)))
               const common = left.map((axis, i) => [
                 Math.max(axis[0], right[i][0]),
                 Math.min(axis[1], right[i][1])
               ]) as unknown as Bounds
+
               alternativeOverlap = common.some((axis) => axis[0] > axis[1])
                 ? 0
                 : area(common) /
                   Math.max(Number.MIN_VALUE, Math.min(area(left), area(right)))
             }
+
             const row = {
               depth,
               triangles: count,
@@ -127,44 +145,58 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               centroidAxis,
               alternativeOverlap
             }
+
             nodes.set(node.bounds, row)
             nodeRows.push(row)
           }
+
           if (!node.children) {
             const centroids = [0, 1, 2].map((axis) => {
               const values = node.triangles.map(
                 (triangle) =>
                   triangle.bounds[axis][0] + triangle.bounds[axis][1]
               )
+
               return [Math.min(...values), Math.max(...values)]
             }) as unknown as Bounds
+
             centroidBoxes.set(node, centroids)
           }
+
           return count
         }
+
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation((...args) => {
           const index = build(...args)
+
           register(index.root, 0)
+
           return index
         })
         const world = meshIndex.worldBounds
+
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
             const row = nodes.get(bounds)
+
             if (row) {
               row.visits++
             }
+
             return world(bounds, pose)
           }
         )
         let queryTime: readonly [number, number] = [start, start]
         const interpolate = kinematics.interpolateSegment
+
         vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
           (...args) => {
             if (Array.isArray(args[2])) {
               queryTime = [args[2][0], args[2][1]]
             }
+
             return interpolate(...args)
           }
         )
@@ -182,6 +214,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         let membershipWork = 0,
           convexCalls = 0
         const contains = membership.shapeMembership
+
         vi.spyOn(membership, 'shapeMembership').mockImplementation(
           (point, shape, index, checkpoint) =>
             contains(point, shape, index, () => {
@@ -190,20 +223,25 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             })
         )
         const distance = convex.convexDistance
+
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
           convexCalls++
+
           return distance(...args)
         })
         for (const method of ['distance', 'lowerOver'] as const) {
           const original = context[method].bind(context)
+
           // Preserve the two public query signatures while recording their actual work.
           if (method === 'distance') {
             const call = original as typeof context.distance
+
             context.distance = (...args) => {
               const before = context.work,
                 members = membershipWork,
                 calls = convexCalls
               const result = call(...args)
+
               rows.push({
                 kind: method,
                 work: context.work - before,
@@ -213,10 +251,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 upper: result.upper,
                 penetration: result.penetration
               })
+
               return result
             }
           } else {
             const call = original as typeof context.lowerOver
+
             context.lowerOver = (...args) => {
               const before = context.work,
                 members = membershipWork,
@@ -231,6 +271,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 args[5]
               ])
               const admitted = args[3].lower > 0
+
               if (
                 previous?.key === key &&
                 previous.a === args[0].geometry &&
@@ -242,6 +283,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 repeatedIntervalWork += context.work - before
                 repeatedIntervalCalls++
               }
+
               previous = {
                 key,
                 a: args[0].geometry,
@@ -256,10 +298,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 convexCalls: convexCalls - calls,
                 lower: result
               })
+
               return result
             }
           }
         }
+
         const result = queryOriginalPartPair(
           {
             workcell: snapshot.workcell,
@@ -276,6 +320,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- permanent bounded owner-cost evidence
         console.info(
           JSON.stringify({

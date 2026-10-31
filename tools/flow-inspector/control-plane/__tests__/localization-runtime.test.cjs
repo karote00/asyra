@@ -7,22 +7,27 @@ const executionCaseIds =
   require('../../../../apps/asyra-design/flow-contracts.json')
     .flows.flatMap((flow) => flow.cases.map((item) => item.id))
     .sort()
+
 test(
   'ordinary App and Factory tests locate real source faults and recover without rewriting assertions',
   { timeout: 180000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     t.diagnostic('Retained evidence: ' + fixture.directory)
     for (const kind of ['app', 'factory']) {
       const baseline = await fixture.run(kind)
+
       assert.equal(baseline.result.code, 0, baseline.result.output)
       fixture.mutate(kind)
       const fault = await fixture.run(kind)
+
       assert.equal(fault.result.code, 1, fault.result.output)
       const failed = fault.record.cases.filter(
         (item) => item.status === 'failed'
       )
+
       assert.ok(failed.length > 0, fault.result.output)
       assert.ok(
         failed.every((item) => item.resolution === 'mapped'),
@@ -41,10 +46,13 @@ test(
           new Set(failed.map((item) => item.locations[0].stepId)).size >= 2
         )
       }
+
       const output = []
+
       assert.equal(
         await main(['test-results', fault.record.id], {
           repositoryRoot: fixture.repository,
+
           write: (line) => output.push(line)
         }),
         0
@@ -53,6 +61,7 @@ test(
       assert.notEqual(baseline.record.source.digest, fault.record.source.digest)
       fixture.restore()
       const recovered = await fixture.run(kind)
+
       assert.equal(recovered.result.code, 0, recovered.result.output)
       assert.equal(
         recovered.record.source.digest,
@@ -76,6 +85,7 @@ test('in-flight mapped-source edits invalidate locations and later reporter cycl
   const { default: Reporter } = await import('../vitest-reporter.mjs')
   const fixture = localizationFixture()
   const context = beginObservation(fixture.repository)
+
   fixture.mutate('app')
   const contract = context.contracts.find(
     (item) => item.targetId === 'history-shortcut'
@@ -97,10 +107,12 @@ test('in-flight mapped-source edits invalidate locations and later reporter cycl
     ]
   }
   const result = completeObservation(fixture.repository, context, input)
+
   assert.equal(result.cases[0].resolution, 'stale')
   assert.deepEqual(result.cases[0].locations, [])
   fixture.restore()
   const reporter = new Reporter()
+
   reporter.root = fixture.repository
   reporter.options = {}
   reporter.context = context
@@ -116,15 +128,18 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     fixture.mutate('app')
     const failed = await fixture.run('app')
+
     assert.equal(failed.result.code, 1)
     fixture.restore()
     const filtered = await fixture.run('app', [
       '-t',
       'keeps the exclusive Undo'
     ])
+
     assert.equal(filtered.result.code, 0)
     assert.deepEqual(
       filtered.record.cases.map((item) => item.status),
@@ -133,6 +148,7 @@ test(
     const unresolved = fixture.reader
       .list()
       .currentCases.filter((item) => item.status === 'failed')
+
     assert.equal(unresolved.length, 1)
     assert.equal(unresolved[0].runId, failed.record.id)
     assert.match(unresolved[0].testName, /awaits the issued Redo/)
@@ -151,8 +167,10 @@ test(
   { timeout: 60000 },
   async () => {
     const fixture = localizationFixture()
+
     fixture.addHookAssertionFailure()
     const result = await fixture.run('app')
+
     assert.equal(result.result.code, 1)
     assert.ok(
       result.record.issues.some(
@@ -164,6 +182,7 @@ test(
     )
     assert.equal(result.record.executionFailureDetails?.length, 1)
     const detail = result.record.executionFailureDetails[0]
+
     assert.match(detail.expected, /9999/)
     assert.match(detail.actual, /57/)
     assert.match(detail.diff, /9999/)
@@ -185,6 +204,7 @@ test('missing mapped implementation input cannot yield a precise mapped location
     completeObservation
   } = require('../localization.cjs')
   const fixture = localizationFixture()
+
   fs.unlinkSync(
     path.join(
       fixture.repository,
@@ -210,6 +230,7 @@ test('missing mapped implementation input cannot yield a precise mapped location
       }
     ]
   })
+
   assert.equal(result.cases[0].resolution, 'stale')
   assert.match(result.issues.join(' '), /missing/i)
 })
@@ -219,18 +240,22 @@ test(
   { timeout: 60000 },
   async () => {
     const fixture = localizationFixture()
+
     fixture.addAssertionFailures()
     const fault = await fixture.run('app')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
+
     assert.equal(failures.length, 2)
     assert.equal(failures[0].testName, failures[1].testName)
     for (const [index, item] of failures.entries()) {
       assert.equal(item.resolution, 'ambiguous')
       assert.equal(item.failureDetails?.length, 4)
       const [array, boolean, missing, empty] = item.failureDetails
+
       assert.match(array.message, /Array\(100\)/)
       assert.ok(array.expected.includes(String([9999, 8888][index])))
       assert.ok(array.diff.includes(String([9999, 8888][index])))
@@ -247,11 +272,14 @@ test(
         )
       )
     }
+
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
     const output = []
+
     assert.equal(
       await main(['test-results', fault.record.id], {
         repositoryRoot: fixture.repository,
+
         write: (line) => output.push(line)
       }),
       0
@@ -265,8 +293,10 @@ test(
   { timeout: 120000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     const baseline = await fixture.run('history')
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.equal(baseline.record.cases.length, 17)
     assert.equal(
@@ -276,16 +306,19 @@ test(
     )
     fixture.mutate('app')
     const appFault = await fixture.run('app')
+
     assert.equal(appFault.result.code, 1, appFault.result.output)
     fixture.restore()
     for (const scenario of ['replay-order', 'inverse-regression']) {
       fixture.mutateReplay(scenario)
       const fault = await fixture.run('history')
+
       assert.equal(fault.result.code, 1, fault.result.output)
       const failures = fault.record.cases.filter(
         (item) => item.status === 'failed'
       )
       const mapped = failures.filter((item) => item.resolution === 'mapped')
+
       assert.equal(mapped.length, scenario === 'replay-order' ? 8 : 12)
       assert.ok(failures.every((item) => item.resolution === 'mapped'))
       for (const item of mapped) {
@@ -304,10 +337,13 @@ test(
           )
         )
       }
+
       const output = []
+
       assert.equal(
         await main(['test-results', fault.record.id], {
           repositoryRoot: fixture.repository,
+
           write: (line) => output.push(line)
         }),
         0
@@ -318,6 +354,7 @@ test(
       const partial = await fixture.run('history', [
         '--testNamePattern=records one owner batch'
       ])
+
       assert.equal(partial.result.code, 0, partial.result.output)
       assert.ok(
         fixture.reader
@@ -331,6 +368,7 @@ test(
           )
       )
       const recovered = await fixture.run('history')
+
       assert.equal(recovered.result.code, 0, recovered.result.output)
       assert.equal(
         recovered.record.source.digest,
@@ -340,6 +378,7 @@ test(
       const current = fixture.reader
         .list()
         .currentCases.filter((item) => item.status === 'failed')
+
       assert.equal(current.length, 2)
       assert.ok(
         current.every(
@@ -347,6 +386,7 @@ test(
         )
       )
     }
+
     t.diagnostic('History replay evidence: ' + fixture.directory)
   }
 )
@@ -359,9 +399,11 @@ const executionFaultScenarios = [
 
 async function proveExecutionRecovery(t, scenarioIndex) {
   const fixture = localizationFixture()
+
   t.after(() => fixture.restore())
   t.diagnostic('Execution evidence: ' + fixture.directory)
   const baseline = await fixture.run('execution')
+
   assert.equal(baseline.result.code, 0, baseline.result.output)
   assert.deepEqual(
     baseline.record.cases
@@ -380,12 +422,16 @@ async function proveExecutionRecovery(t, scenarioIndex) {
     ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
   )
   const scenarios = executionFaultScenarios.slice(0, scenarioIndex + 1)
+
   for (const scenario of scenarios) {
     fixture.mutateExecution(scenario)
   }
+
   const fault = await fixture.run('execution')
+
   assert.equal(fault.result.code, 1, fault.result.output)
   const failed = fault.record.cases.filter((item) => item.status === 'failed')
+
   assert.deepEqual(
     failed.map((item) => item.locations[0].caseId).sort(),
     scenarios
@@ -403,18 +449,23 @@ async function proveExecutionRecovery(t, scenarioIndex) {
     assert.ok(item.locations[0].implementationPaths.length)
     assert.ok(item.failureDetails.some((error) => error.message && error.stack))
   }
+
   const output = []
+
   assert.equal(
     await main(['test-results', fault.record.id], {
       repositoryRoot: fixture.repository,
+
       write: (line) => output.push(line)
     }),
     0
   )
   assert.deepEqual(JSON.parse(output.join('')), fault.record)
   const failedRecord = fixture.reader.get(fault.record.id)
+
   fixture.restore()
   const recovery = await fixture.run('execution')
+
   assert.equal(recovery.result.code, 0, recovery.result.output)
   assert.equal(recovery.record.source.digest, baseline.record.source.digest)
   assert.ok(
@@ -436,9 +487,11 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     fixture.failExecutionSourceEntry()
     const fault = await fixture.run('execution')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.match(fault.record.issues.join(' '), /Captured runtime entry failed/)
     assert.equal(
@@ -448,6 +501,7 @@ test(
     assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
     fixture.restore()
     const recovery = await fixture.run('execution')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.deepEqual(
       recovery.record.cases
@@ -465,8 +519,10 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     const baseline = await fixture.run('viewport')
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.equal(baseline.record.cases.length, 6)
     assert.ok(
@@ -476,10 +532,13 @@ test(
     assert.deepEqual(baseline.record.issues, [])
     fixture.mutateViewport()
     const fault = await fixture.run('viewport')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failed = fault.record.cases.filter((item) => item.status === 'failed')
+
     assert.equal(failed.length, 1)
     const location = failed[0].locations[0]
+
     assert.equal(location.targetId, 'render-engine-boundary')
     assert.equal(location.stepId, 'orchestrate-render-adapter')
     assert.equal(location.caseId, 'navigation.camera')
@@ -499,9 +558,11 @@ test(
       )
     )
     const output = []
+
     assert.equal(
       await main(['test-results', fault.record.id], {
         repositoryRoot: fixture.repository,
+
         write: (line) => output.push(line)
       }),
       0
@@ -509,6 +570,7 @@ test(
     assert.deepEqual(JSON.parse(output.join('')), fault.record)
     fixture.restore()
     const recovery = await fixture.run('viewport')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.source.digest, baseline.record.source.digest)
     assert.ok(
@@ -526,9 +588,11 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     fixture.failViewportSourceEntry()
     const fault = await fixture.run('viewport')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.match(
       fault.record.issues.join(' '),
@@ -537,6 +601,7 @@ test(
     assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
     fixture.restore()
     const recovery = await fixture.run('viewport')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
@@ -552,8 +617,10 @@ test(
   { timeout: 90000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     const baseline = await fixture.run('recipe')
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.equal(baseline.record.cases.length, 11)
     assert.deepEqual(baseline.record.issues, [])
@@ -567,14 +634,17 @@ test(
       'omit-reload-name'
     ]
     const steps = ['admit', 'register', 'invoke', 'persist']
+
     for (const [index, scenario] of scenarios.entries()) {
       fixture.restore()
       fixture.mutateRecipe(scenario)
       const fault = await fixture.run('recipe')
+
       assert.equal(fault.result.code, 1, fault.result.output)
       const failed = fault.record.cases.filter(
         (item) => item.status === 'failed'
       )
+
       assert.deepEqual(
         failed.map((item) => item.locations[0]?.caseId).sort(),
         require('../../../../packages/ai-agent-runtime/flow-contracts.json')
@@ -583,6 +653,7 @@ test(
           .sort()
       )
       const location = failed[0].locations[0]
+
       assert.equal(location.targetId, 'reusable-tool-composition')
       assert.equal(location.caseId, steps[index] + '.handoff')
       assert.equal(
@@ -594,11 +665,14 @@ test(
         failed[0].failureDetails.some((error) => error.message && error.stack)
       )
     }
+
     fixture.restore()
     for (const scenario of scenarios) {
       fixture.mutateRecipe(scenario)
     }
+
     const combined = await fixture.run('recipe')
+
     assert.equal(combined.result.code, 1, combined.result.output)
     assert.deepEqual(
       combined.record.cases
@@ -617,9 +691,11 @@ test(
       ].sort()
     )
     const output = []
+
     assert.equal(
       await main(['test-results', combined.record.id], {
         repositoryRoot: fixture.repository,
+
         write: (line) => output.push(line)
       }),
       0
@@ -627,6 +703,7 @@ test(
     assert.deepEqual(JSON.parse(output.join('')), combined.record)
     fixture.restore()
     const recovery = await fixture.run('recipe')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.source.digest, baseline.record.source.digest)
     assert.ok(
@@ -644,9 +721,11 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     fixture.failRecipeSourceEntry()
     const fault = await fixture.run('recipe')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.match(
       fault.record.issues.join(' '),
@@ -655,6 +734,7 @@ test(
     assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
     fixture.restore()
     const recovery = await fixture.run('recipe')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
@@ -670,8 +750,10 @@ test(
   { timeout: 90000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     const baseline = await fixture.run('pixi')
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.equal(baseline.record.cases.length, 29)
     assert.deepEqual(baseline.record.issues, [])
@@ -683,10 +765,13 @@ test(
     )
     fixture.mutatePixi()
     const fault = await fixture.run('pixi')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failed = fault.record.cases.filter((item) => item.status === 'failed')
+
     assert.equal(failed.length, 1)
     const location = failed[0].locations[0]
+
     assert.equal(location.stepId, 'execute-render-engine')
     assert.equal(location.targetId, 'render-engine-boundary')
     assert.equal(location.caseId, 'navigation.camera')
@@ -702,11 +787,14 @@ test(
     )
     fixture.mutateViewport()
     const adapter = await fixture.run('viewport')
+
     assert.equal(adapter.result.code, 1, adapter.result.output)
+
     const currentFailures = () =>
       fixture.reader
         .list()
         .currentCases.filter((item) => item.status === 'failed')
+
     assert.deepEqual(
       currentFailures()
         .map((item) => item.locations[0].stepId)
@@ -716,15 +804,18 @@ test(
     assert.equal(new Set(currentFailures().map((item) => item.file)).size, 2)
     fixture.restorePixi()
     const partial = await fixture.run('pixi')
+
     assert.equal(partial.result.code, 0, partial.result.output)
     assert.deepEqual(
       currentFailures().map((item) => item.locations[0].stepId),
       ['orchestrate-render-adapter']
     )
     const output = []
+
     assert.equal(
       await main(['test-results', fault.record.id], {
         repositoryRoot: fixture.repository,
+
         write: (line) => output.push(line)
       }),
       0
@@ -732,6 +823,7 @@ test(
     assert.deepEqual(JSON.parse(output.join('')), fault.record)
     fixture.restore()
     const recovery = await fixture.run('viewport')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.source.digest, baseline.record.source.digest)
     assert.equal(currentFailures().length, 0)
@@ -746,9 +838,11 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     fixture.failViewportSourceEntry()
     const fault = await fixture.run('pixi')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.match(
       fault.record.issues.join(' '),
@@ -757,6 +851,7 @@ test(
     assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
     fixture.restore()
     const recovery = await fixture.run('pixi')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
@@ -772,8 +867,10 @@ test(
   { timeout: 90000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     const baseline = await fixture.run('vector')
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.equal(baseline.record.cases.length, 11)
     assert.deepEqual(baseline.record.issues, [])
@@ -782,10 +879,13 @@ test(
     )
     fixture.mutateVector()
     const fault = await fixture.run('vector')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failed = fault.record.cases.filter((item) => item.status === 'failed')
+
     assert.equal(failed.length, 1)
     const location = failed[0].locations[0]
+
     assert.equal(location.targetId, 'render-delta-update')
     assert.equal(location.stepId, 'evaluate-vector-material')
     assert.equal(location.caseId, 'navigation.native')
@@ -806,23 +906,28 @@ test(
       '--testNamePattern',
       'keeps radial gradients'
     ])
+
     assert.equal(sibling.result.code, 0, sibling.result.output)
     assert.equal(
       sibling.record.cases.filter((item) => item.status === 'passed').length,
       1
     )
+
     const currentFailures = () =>
       fixture.reader
         .list()
         .currentCases.filter((item) => item.status === 'failed')
+
     assert.deepEqual(
       currentFailures().map((item) => item.id),
       [failed[0].id]
     )
     const output = []
+
     assert.equal(
       await main(['test-results', fault.record.id], {
         repositoryRoot: fixture.repository,
+
         write: (line) => output.push(line)
       }),
       0
@@ -830,6 +935,7 @@ test(
     assert.deepEqual(JSON.parse(output.join('')), fault.record)
     fixture.restore()
     const recovery = await fixture.run('vector')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.source.digest, baseline.record.source.digest)
     assert.equal(currentFailures().length, 0)
@@ -843,14 +949,17 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     fixture.failVectorSourceEntry()
     const fault = await fixture.run('vector')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.match(fault.record.issues.join(' '), /Captured Core source failed/)
     assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
     fixture.restore()
     const recovery = await fixture.run('vector')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
@@ -866,8 +975,10 @@ test(
   { timeout: 90000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     const baseline = await fixture.run('coverage')
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.equal(baseline.record.cases.length, 16)
     assert.deepEqual(baseline.record.issues, [])
@@ -876,18 +987,22 @@ test(
     )
     fixture.mutateVector()
     const material = await fixture.run('vector')
+
     assert.equal(material.result.code, 1, material.result.output)
     const materialFailures = material.record.cases.filter(
       (item) => item.status === 'failed'
     )
+
     assert.equal(materialFailures.length, 1)
     fixture.restore()
     fixture.mutateCoverage()
     const fault = await fixture.run('coverage')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
+
     assert.deepEqual(failures.map((item) => item.locations[0]?.caseId).sort(), [
       'coverage.cross.evenodd',
       'coverage.holes.evenodd',
@@ -910,11 +1025,14 @@ test(
         )
       )
     }
+
     const currentFailures = () =>
       fixture.reader
         .list()
         .currentCases.filter((item) => item.status === 'failed')
+
     const ids = (items) => items.map((item) => item.id).sort()
+
     assert.deepEqual(
       ids(currentFailures()),
       ids([...materialFailures, ...failures])
@@ -923,6 +1041,7 @@ test(
       '--testNamePattern',
       'preserves declared nonzero coverage'
     ])
+
     assert.equal(partial.result.code, 0, partial.result.output)
     assert.equal(
       partial.record.cases.filter((item) => item.status === 'passed').length,
@@ -933,9 +1052,11 @@ test(
       ids([...materialFailures, ...failures])
     )
     const output = []
+
     assert.equal(
       await main(['test-results', fault.record.id], {
         repositoryRoot: fixture.repository,
+
         write: (line) => output.push(line)
       }),
       0
@@ -943,10 +1064,12 @@ test(
     assert.deepEqual(JSON.parse(output.join('')), fault.record)
     fixture.restore()
     const recovery = await fixture.run('coverage')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.source.digest, baseline.record.source.digest)
     assert.deepEqual(ids(currentFailures()), ids(materialFailures))
     const complete = await fixture.run('vector')
+
     assert.equal(complete.result.code, 0, complete.result.output)
     assert.equal(currentFailures().length, 0)
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
@@ -960,14 +1083,17 @@ test(
   { timeout: 60000 },
   async (t) => {
     const fixture = localizationFixture()
+
     t.after(() => fixture.restore())
     fixture.failVectorSourceEntry()
     const fault = await fixture.run('coverage')
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.match(fault.record.issues.join(' '), /Captured Core source failed/)
     assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
     fixture.restore()
     const recovery = await fixture.run('coverage')
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
@@ -981,6 +1107,7 @@ test('watch publication excludes cached files outside the actual runner specific
   const { default: Reporter } = await import('../vitest-reporter.mjs')
   const { JsonReporter } = await import('vitest/reporters')
   let published
+
   t.mock.method(JsonReporter.prototype, 'onFinished', async (files) => {
     published = files
   })
@@ -995,6 +1122,7 @@ test('watch publication excludes cached files outside the actual runner specific
     projectName: 'selected',
     tasks: []
   }
+
   reporter.onTestRunStart([
     { moduleId: selected.filepath, project: { name: 'selected' } }
   ])

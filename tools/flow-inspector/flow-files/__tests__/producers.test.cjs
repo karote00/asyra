@@ -8,9 +8,11 @@ const { fromContracts, capture, publish } = require('../producers.cjs')
 const { loadContract } = require('../../control-plane/contracts.cjs')
 const { openProject } = require('../store.cjs')
 const root = path.resolve(__dirname, '../../../..')
+
 test('architecture conversion preserves exact owners, routes, artifacts and all mapped cases', () => {
   const contract = loadContract(root),
     docs = fromContracts([contract], 'project')
+
   assert.deepEqual(
     docs[0].definition.architecture,
     contract.architectureDefinition
@@ -26,6 +28,7 @@ test('offline localized publication writes current flow files and preserves unma
   const contract = loadContract(root),
     docs = fromContracts([contract], 'project'),
     dir = directory(t)
+
   fs.writeFileSync(
     path.join(dir, docs[0].flowId + '.flow.json'),
     JSON.stringify(docs[0])
@@ -56,8 +59,10 @@ test('offline localized publication writes current flow files and preserves unma
     contracts: [contract],
     issues: []
   }
+
   publish(record, captured)
   const state = openProject(dir).snapshot()
+
   assert.equal(state.documents[0].current.observations[0].status, 'failed')
   assert.equal(
     state.documents[0].current.observations[0].summary,
@@ -77,6 +82,7 @@ test('a known no-tests selection is replaced by its complete failed assertion wi
   const contract = loadContract(root),
     docs = fromContracts([contract], 'project'),
     dir = directory(t)
+
   fs.writeFileSync(
     path.join(dir, docs[0].flowId + '.flow.json'),
     JSON.stringify(docs[0])
@@ -95,6 +101,7 @@ test('a known no-tests selection is replaced by its complete failed assertion wi
     issues: ['No tests found'],
     intent: { version: 1, cases: [identity] }
   }
+
   publish(record, capture(dir))
   openProject(dir).update(docs[0].flowId, {
     expectedRevision: 1,
@@ -127,6 +134,7 @@ test('a known no-tests selection is replaced by its complete failed assertion wi
     capture(dir)
   )
   const current = openProject(dir).snapshot()
+
   assert.equal(current.documents[0].current.warnings.length, 0)
   assert.equal(current.documents[0].current.observations[0].status, 'failed')
 })
@@ -166,6 +174,7 @@ test('one-time projection preserves latest mapped failure and leaves archives un
   const archive = localization.observationDirectory(oldRoot)
   const attachment = path.join(archive, id, 'attachments', '0'),
     attachmentBytes = Buffer.from('Retained current failure')
+
   fs.mkdirSync(path.dirname(attachment), { recursive: true })
   fs.writeFileSync(attachment, attachmentBytes)
   record.retainedArtifacts = [
@@ -188,6 +197,7 @@ test('one-time projection preserves latest mapped failure and leaves archives un
     [contract],
     'project'
   )
+
   assert.equal(
     projected.documents[0].current.observations[0].summary,
     'Preserved failure'
@@ -217,6 +227,7 @@ test('a retained result cannot acquire a changed architecture authority during p
   const contract = loadContract(root),
     docs = fromContracts([contract], 'project'),
     dir = directory(t)
+
   docs[0].definition.architecture.steps[0].purpose += ' Revised responsibility'
   fs.writeFileSync(
     path.join(dir, docs[0].flowId + '.flow.json'),
@@ -248,6 +259,7 @@ test('a retained result cannot acquire a changed architecture authority during p
       }
     ]
   }
+
   assert.throws(() => publish(record, capture(dir)), /architecture/)
   assert.equal(
     openProject(dir).snapshot().documents[0].current.observations.length,
@@ -266,6 +278,7 @@ test('explicit selection excludes skipped siblings but retains skipped selected 
       { ...identity, testName: 'unknown', status: 'failed' }
     ]
   }
+
   assert.deepEqual(
     participatingCases(record).map((c) => c.testName),
     ['selected', 'unknown']
@@ -278,6 +291,7 @@ function publicationFixture(t) {
   const contract = loadContract(root),
     docs = fromContracts([contract], 'project'),
     dir = directory(t)
+
   fs.writeFileSync(path.join(dir, 'current.flow.json'), JSON.stringify(docs[0]))
   const cases = contract.cases.slice(0, 2).map((candidate, index) => ({
     id: 'run:' + index,
@@ -296,6 +310,7 @@ function publicationFixture(t) {
       }
     ]
   }))
+
   return {
     dir,
     docs,
@@ -320,14 +335,17 @@ function publicationFixture(t) {
 test('offline empty and partial selected reports block old passing evidence until complete recovery', (t) => {
   for (const count of [0, 1]) {
     const { dir, record } = publicationFixture(t)
+
     publish(record, capture(dir))
     publish(
       { ...record, id: 'partial', cases: record.cases.slice(0, count) },
       capture(dir)
     )
     let current = openProject(dir).snapshot()
+
     assert.ok(current.documents[0].current.warnings.length > 0)
     const omitted = record.cases[count].locations[0].stepId
+
     assert.notEqual(
       current.evaluation.flows[0].nodes.find((n) => n.id === omitted).status,
       'done'
@@ -340,8 +358,10 @@ test('offline empty and partial selected reports block old passing evidence unti
 
 test('empty unscoped output remains an explicit unresolved warning', (t) => {
   const { dir, record } = publicationFixture(t)
+
   publish({ ...record, cases: [], intent: undefined }, capture(dir))
   const current = openProject(dir).snapshot()
+
   assert.ok(
     current.documents[0].current.warnings.some(
       (w) => w.nodeId === 'integration'
@@ -356,6 +376,7 @@ test('rejected mapped publication does not leave tool-owned attachments', (t) =>
       .createHash('sha256')
       .update(bytes)
       .digest('hex')
+
   fs.writeFileSync(path.join(dir, 'original.txt'), bytes)
   docs[0].definition.architecture.steps[0].purpose += ' Changed'
   fs.writeFileSync(path.join(dir, 'current.flow.json'), JSON.stringify(docs[0]))
@@ -383,6 +404,7 @@ test('projection does not turn superseded run selections into missing-result war
     contract = loadContract(root),
     candidates = contract.cases.slice(0, 2),
     archive = localization.observationDirectory(oldRoot)
+
   for (const [index, selected] of [
     candidates,
     candidates.slice(0, 1)
@@ -418,15 +440,18 @@ test('projection does not turn superseded run selections into missing-result war
         }
       ]
     })
+
     record.finishedAt = context.startedAt
     localization.saveObservation(archive, record)
   }
+
   const projected = migrate(
     oldRoot,
     path.join(oldRoot, 'current'),
     [contract],
     'project'
   )
+
   assert.equal(projected.documents[0].current.observations.length, 2)
   assert.deepEqual(projected.documents[0].current.warnings, [])
 })
@@ -438,6 +463,7 @@ test('producer keeps complete long diagnostics behind a concise failure summary'
       message: 'Trace '.repeat(3000),
       stack: 'Frame '.repeat(3000)
     }
+
     record.cases = [
       {
         ...record.cases[0],
@@ -450,6 +476,7 @@ test('producer keeps complete long diagnostics behind a concise failure summary'
     publish(record, capture(dir))
     const current = openProject(dir).snapshot()
     const observed = current.documents[0].current.observations[0]
+
     assert.equal(observed.status, 'failed')
     assert.ok(
       observed.summary.trim().length > 0 && observed.summary.length <= 1200
@@ -464,10 +491,12 @@ test('producer keeps complete long diagnostics behind a concise failure summary'
 
 test('producer warnings preserve full diagnostics without overflowing their summaries', (t) => {
   const { dir, record } = publicationFixture(t)
+
   record.cases = []
   record.issues = ['Discovery failure '.repeat(2000)]
   publish(record, capture(dir))
   const warning = openProject(dir).snapshot().documents[0].current.warnings[0]
+
   assert.ok(warning.summary.length <= 1200)
   assert.ok(warning.details.includes(record.issues[0]))
 })

@@ -34,6 +34,7 @@ it('accepts exact bounded metadata and preserves the legacy absent property', ()
     snapshotId: 'snapshot',
     experimentId: 'study'
   }
+
   expect(validRunReference(reference)).toBe(true)
   expect(validRunReference({ ...reference, observations: [note] })).toBe(true)
   expect(validRunReference({ ...reference, observations: undefined })).toBe(
@@ -84,6 +85,7 @@ it('rejects malformed, oversized, duplicate or inconsistent annotations without 
   ]) {
     expect(validObservationDraft(invalid)).toBe(false)
   }
+
   for (const invalid of [
     { ...note, version: 2 },
     { ...note, revision: 0 },
@@ -96,6 +98,7 @@ it('rejects malformed, oversized, duplicate or inconsistent annotations without 
   ]) {
     expect(validFieldObservations([invalid])).toBe(false)
   }
+
   expect(validFieldObservations([note, note])).toBe(false)
   expect(
     validFieldObservations(

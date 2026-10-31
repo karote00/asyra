@@ -31,16 +31,20 @@ class Workspace extends Group {
       this.data.id = data.id
       loadId(data.id, IDTypes.WORKSPACE)
     }
+
     if (data.name) {
       this.data.name = data.name
       loadName(data.name, NameTypes.WORKSPACE)
     }
+
     if (typeof data.visible === 'boolean') {
       this.data.visible = data.visible
     }
+
     if (typeof data.lock === 'boolean') {
       this.data.lock = data.lock
     }
+
     this.data.parentId = typeof data.parentId === 'string' ? data.parentId : ''
   }
 
@@ -48,8 +52,10 @@ class Workspace extends Group {
     let result = null
 
     const children = this.get('children')
+
     for (const childId of children) {
       const child = this.registry.getElementById(childId)
+
       if (
         child &&
         isGroupEntity(child.get('type')) &&
@@ -73,8 +79,10 @@ class Workspace extends Group {
     }
 
     let avaliableParent = parent
+
     if (!avaliableParent) {
       const firstFrame = this.firstFrame
+
       if (firstFrame) {
         avaliableParent = this.firstFrame as GroupInstanceTypes
       }
@@ -87,6 +95,7 @@ class Workspace extends Group {
       // Add new element to Workspace
       super.addElement(element, index)
     }
+
     this.registry.addToMap(element)
   }
 
@@ -96,17 +105,21 @@ class Workspace extends Group {
     index = -1
   ): GroupInstanceTypes {
     let availableParent = parent
+
     if (!availableParent) {
       availableParent =
         (this.firstFrame as GroupInstanceTypes | null) ?? undefined
     }
+
     const target = (availableParent ?? this) as Group
     const insertionIndex = index > -1 ? index : target.getCanonicalChildCount()
+
     this.registry.addManyToMap(elements, target.get('id'))
     target.insertChildrenFromCanonicalBatch(
       insertionIndex,
       elements.map((element) => element.get('id'))
     )
+
     return target as GroupInstanceTypes
   }
 
@@ -141,19 +154,23 @@ class Workspace extends Group {
     }
 
     const elementId = element.get('id')
+
     if (parent && parent.get('children')) {
       // Remove element from Group type instance
       if (parent.get('children').indexOf(elementId) < 0) {
         return false
       }
+
       parent.removeElement(element)
     } else {
       // Remove element from Workspace
       if (this.get('children').indexOf(elementId) < 0) {
         return false
       }
+
       super.removeElement(element)
     }
+
     return true
   }
 }

@@ -32,6 +32,7 @@ describe('canonical nonlinear first sheet witness', () => {
       )
     )
     const robot = nonlinearRequired(robotInventory[600])
+
     expect([
       robot.body.id,
       robot.part.id,
@@ -54,11 +55,14 @@ describe('canonical nonlinear first sheet witness', () => {
           (value, k) => value === [3.1500000000000004, 0, 24.650000000000002][k]
         )
     )
+
     expect(matches).toHaveLength(1)
     const selected = nonlinearRequired(matches[0])
+
     expect(selected.mesh.id).toBe('cucumber-1914-11-2')
     expect(selected.instance).toBe(44)
     const instance = nonlinearRequired(selected.transform.instance)
+
     expect(selected.transform.descriptor).toBe(selected.mesh.descriptor)
     expect(selected.mesh.regions.includes(selected.region)).toBe(true)
     expect(selected.mesh.descriptor.instances?.[selected.instance]).toBe(
@@ -68,11 +72,14 @@ describe('canonical nonlinear first sheet witness', () => {
       prepareQueryExactInstanceFrame(instance),
       prepareQueryExactForwardFrame(selected.transform.descriptor)
     ])
+
     const lift = (v: ReturnType<typeof dyadic>) =>
       v.exponent >= 0
         ? nonlinearFraction(v.significand << BigInt(v.exponent))
         : nonlinearFraction(v.significand, 1n << BigInt(-v.exponent))
+
     const scalar = (n: number) => nonlinearExact(n)
+
     const zero = scalar(0)
     const oracleWork = {
       arithmeticChecks: 0,
@@ -80,10 +87,12 @@ describe('canonical nonlinear first sheet witness', () => {
       maxChecks: 100000,
       bitLimit: 24000
     }
+
     const check = (...values: bigint[]) => {
       oracleWork.arithmeticChecks++
       for (const value of values) {
         const bits = (value < 0n ? -value : value).toString(2).length
+
         oracleWork.maxBits = Math.max(oracleWork.maxBits, bits)
         if (
           bits > oracleWork.bitLimit ||
@@ -93,6 +102,7 @@ describe('canonical nonlinear first sheet witness', () => {
         }
       }
     }
+
     const product = (a: bigint, b: bigint) => {
       check(a, b)
       if (
@@ -104,42 +114,56 @@ describe('canonical nonlinear first sheet witness', () => {
       ) {
         throw new Error('Independent sheet witness product limit')
       }
+
       const result = a * b
+
       check(result)
+
       return result
     }
+
     const plus = (a: NonlinearFraction, b: NonlinearFraction) => {
       const g = nonlinearGcd(a.denominator, b.denominator)
       const n =
         product(a.numerator, b.denominator / g) +
         product(b.numerator, a.denominator / g)
+
       check(n)
+
       return nonlinearFraction(n, product(a.denominator / g, b.denominator))
     }
+
     const minus = (a: NonlinearFraction, b: NonlinearFraction) =>
       plus(a, nonlinearNeg(b))
+
     const times = (a: NonlinearFraction, b: NonlinearFraction) => {
       const g = nonlinearGcd(a.numerator, b.denominator),
         h = nonlinearGcd(b.numerator, a.denominator)
+
       return nonlinearFraction(
         product(a.numerator / g, b.numerator / h),
         product(a.denominator / h, b.denominator / g)
       )
     }
+
     const quotient = (a: NonlinearFraction, b: NonlinearFraction) => {
       if (!b.numerator) {
         throw new Error('Singular witness inverse')
       }
+
       return times(a, nonlinearFraction(b.denominator, b.numerator))
     }
+
     const dot = (
       a: readonly NonlinearFraction[],
       b: readonly NonlinearFraction[]
     ) => a.reduce((sum, v, i) => plus(sum, times(v, b[i])), zero)
+
     const sub = (
       a: readonly NonlinearFraction[],
       b: readonly NonlinearFraction[]
     ) => a.map((v, i) => minus(v, b[i]))
+
     const cross = (
       a: readonly NonlinearFraction[],
       b: readonly NonlinearFraction[]
@@ -150,11 +174,13 @@ describe('canonical nonlinear first sheet witness', () => {
           times(a[(i + 2) % 3], b[(i + 1) % 3])
         )
       )
+
     const affine = (
       matrix: readonly (readonly NonlinearFraction[])[],
       origin: readonly NonlinearFraction[],
       v: readonly NonlinearFraction[]
     ) => matrix.map((row, i) => plus(dot(row, v), origin[i]))
+
     const bodyFrame = nonlinearRequired(
       point.parts.find((p) => p.part === robot.part)
     ).exact
@@ -164,9 +190,12 @@ describe('canonical nonlinear first sheet witness', () => {
       cross(bodyFrame.matrix[0], bodyFrame.matrix[1])
     ]
     const determinant = dot(bodyFrame.matrix[0], cofactor[0])
+
     expect(determinant.numerator).not.toBe(0n)
+
     const inverse = (v: readonly NonlinearFraction[]) => {
       const translated = sub(v, bodyFrame.origin)
+
       return [0, 1, 2].map((k) =>
         quotient(
           dot(
@@ -177,6 +206,7 @@ describe('canonical nonlinear first sheet witness', () => {
         )
       )
     }
+
     const original = (
       shape: typeof robot.part.shape,
       start: number,
@@ -189,6 +219,7 @@ describe('canonical nonlinear first sheet witness', () => {
         coordinates: shape.positions.slice(index * 3, index * 3 + 3),
         exact: shape.positions.slice(index * 3, index * 3 + 3).map(scalar)
       }))
+
       return {
         vertices,
         triangles: offsets.map((offset) => ({
@@ -197,9 +228,11 @@ describe('canonical nonlinear first sheet witness', () => {
         }))
       }
     }
+
     if (selected.mesh.descriptor.shape.kind !== 'triangles') {
       throw new Error('Foreign sheet shape')
     }
+
     const solid = original(
       robot.part.shape,
       robot.region.indexStart,
@@ -210,21 +243,28 @@ describe('canonical nonlinear first sheet witness', () => {
       selected.region.indexStart,
       selected.region.indexCount
     )
+
     const localPoint = (index: number) =>
       nonlinearRequired(solid.vertices.find((v) => v.index === index)).exact
+
     const key = (v: readonly NonlinearFraction[]) =>
       v.map((q) => q.numerator + '/' + q.denominator).join(',')
+
     const edges = new Map<string, number>()
     const planes = solid.triangles.map((triangle) => {
       const vertices = triangle.indices.map(localPoint)
+
       for (let i = 0; i < 3; i++) {
         const edge = key(vertices[i]) + '>' + key(vertices[(i + 1) % 3])
+
         edges.set(edge, (edges.get(edge) ?? 0) + 1)
       }
+
       const normal = cross(
         sub(vertices[1], vertices[0]),
         sub(vertices[2], vertices[0])
       )
+
       expect(normal.some((v) => v.numerator !== 0n)).toBe(true)
       const distances = solid.vertices.map(
         (v) => dot(normal, sub(v.exact, vertices[0])).numerator
@@ -233,16 +273,20 @@ describe('canonical nonlinear first sheet witness', () => {
         distances.every((d) => d <= 0n) && distances.some((d) => d < 0n)
       const positive =
         distances.every((d) => d >= 0n) && distances.some((d) => d > 0n)
+
       expect(negative || positive).toBe(true)
+
       return {
         origin: vertices[0],
         normal: positive ? normal.map(nonlinearNeg) : normal
       }
     })
+
     for (const [edge, count] of edges) {
       expect(count).toBe(1)
       expect(edges.get(edge.split('>').reverse().join('>'))).toBe(1)
     }
+
     const evaluator = new WalkingSourceRelationEvaluator({
       maxRegionPairs: 2,
       maxExactPredicates: 5000000,
@@ -254,6 +298,7 @@ describe('canonical nonlinear first sheet witness', () => {
       selected.mesh.descriptor.shape,
       selected.region
     )
+
     expect(preparedSolid.certified).toBe(true)
     const solidPlacement = evaluator.rationalPlacement(preparedSolid, node, 0)
     const sheetPlacement = evaluator.rationalPlacement(
@@ -273,8 +318,10 @@ describe('canonical nonlinear first sheet witness', () => {
           ),
         v.exact
       )
+
       return { ...v, world: worldPoint, solidLocal: inverse(worldPoint) }
     })
+
     const verifyCompiled = (
       vertices: typeof solid.vertices,
       placement: typeof solidPlacement,
@@ -293,9 +340,12 @@ describe('canonical nonlinear first sheet witness', () => {
             v.exact
           )
           .map((q) => quotient(q, scale))
+
         expect(compiled).toEqual(expected)
+
         return { index: v.index, world: expected, compiledWorld: compiled }
       })
+
     const solidCoordinates = verifyCompiled(
       solid.vertices,
       solidPlacement,
@@ -322,6 +372,7 @@ describe('canonical nonlinear first sheet witness', () => {
             .solidLocal
       )
       const initial = polygon
+
       expect(
         cross(sub(polygon[1], polygon[0]), sub(polygon[2], polygon[0])).some(
           (v) => v.numerator !== 0n
@@ -329,28 +380,35 @@ describe('canonical nonlinear first sheet witness', () => {
       ).toBe(true)
       for (const plane of planes) {
         const next: NonlinearFraction[][] = []
+
         for (let i = 0; i < polygon.length; i++) {
           const a = polygon[i],
             b = polygon[(i + 1) % polygon.length]
           const da = dot(plane.normal, sub(a, plane.origin)),
             db = dot(plane.normal, sub(b, plane.origin))
+
           if (da.numerator <= 0n) {
             next.push(a)
           }
+
           if (
             (da.numerator < 0n && db.numerator > 0n) ||
             (da.numerator > 0n && db.numerator < 0n)
           ) {
             const t = quotient(da, minus(da, db))
+
             next.push(a.map((v, k) => plus(v, times(t, minus(b[k], v)))))
           }
         }
+
         polygon = next
       }
+
       const triangleNormal = cross(
         sub(initial[1], initial[0]),
         sub(initial[2], initial[0])
       )
+
       for (const v of polygon) {
         expect(
           planes.every((p) => dot(p.normal, sub(v, p.origin)).numerator <= 0n)
@@ -361,11 +419,15 @@ describe('canonical nonlinear first sheet witness', () => {
             triangleNormal,
             sub(initial[(i + 1) % 3], initial[i])
           )
+
           expect(dot(side, sub(v, initial[i])).numerator >= 0n).toBe(true)
         }
+
         const roundtrip = inverse(affine(bodyFrame.matrix, bodyFrame.origin, v))
+
         expect(roundtrip).toEqual(v)
       }
+
       const centroid = polygon.length
         ? [0, 1, 2].map((k) =>
             quotient(
@@ -385,9 +447,11 @@ describe('canonical nonlinear first sheet witness', () => {
         node,
         triangle.offset
       )
+
       expect(result.kind).toBe(
         polygon.length ? 'surface-intersection' : 'separated'
       )
+
       return {
         triangleOffset: triangle.offset,
         originalIndices: triangle.indices,
@@ -458,6 +522,7 @@ describe('canonical nonlinear first sheet witness', () => {
       oracleWork,
       productWork: evaluator.work
     }
+
     if (process.env.CAPTURE_SHEET_WITNESS === '1') {
       writeFileSync(
         new URL(
@@ -472,6 +537,7 @@ describe('canonical nonlinear first sheet witness', () => {
         { flag: 'wx' }
       )
     }
+
     process.stdout.write(
       JSON.stringify({
         sheetWitness: {

@@ -78,6 +78,7 @@ export function useExperimentController({
     if (!canonical) {
       return null
     }
+
     try {
       return runtime.experimentInputs.resolve(canonical.definition, workcell)
     } catch {
@@ -87,6 +88,7 @@ export function useExperimentController({
   const exclusionsError = useMemo(() => {
     try {
       runtime.experimentInputs.readExclusions(exclusions)
+
       return ''
     } catch (reason) {
       return reason instanceof Error ? reason.message : String(reason)
@@ -126,6 +128,7 @@ export function useExperimentController({
 
   useEffect(() => {
     const acknowledgedWrite = canonicalKey === expectedCanonical.current
+
     expectedCanonical.current = ''
     if (canonical && !acknowledgedWrite) {
       setDraft(definitionToDraft(canonical.definition))
@@ -180,23 +183,30 @@ export function useExperimentController({
 
   const save = async (input: ExperimentDraft = draft) => {
     const next = withExclusions(input)
+
     setDraft(next)
     const key = JSON.stringify(next)
+
     if (pendingWrites.current && requestedWrite.current === key) {
       return writeQueue.current
     }
+
     requestedWrite.current = key
     pendingWrites.current++
     setSaving(true)
+
     const write = async () => {
       if (!live.current) {
         return
       }
+
       let committed = false
+
       await perform(async (assertCurrent) => {
         const current = runtime
           .getExperiments(candidateId)
           .find((item) => item.id === experimentId)
+
         expectedCanonical.current = key
         if (current) {
           await runtime.features.edit.updateExperiment(
@@ -210,11 +220,13 @@ export function useExperimentController({
             name,
             next
           )
+
           assertCurrent()
           if (live.current) {
             setExperimentId(id)
           }
         }
+
         assertCurrent()
         committed = true
       }, 'Experiment updated - one Undo action')
@@ -222,16 +234,20 @@ export function useExperimentController({
         throw new Error('Experiment edit was not committed.')
       }
     }
+
     const pending = writeQueue.current.then(write)
+
     writeQueue.current = pending.catch(() => undefined)
     try {
       await pending
       if (live.current) {
         setError('')
       }
+
       return true
     } catch (reason) {
       fail(reason)
+
       return false
     } finally {
       pendingWrites.current--
@@ -259,6 +275,7 @@ export function useExperimentController({
     if (!canonical || dirty || pendingWrites.current) {
       throw new Error('Complete the current experiment edits before analysis.')
     }
+
     // This owner reports the current authored-input diagnostic, never the old
     // normalized trajectory retained alongside invalid authored text.
     runtime.experimentInputs.resolve(canonical.definition, workcell)
@@ -317,23 +334,28 @@ export function useExperimentController({
     if (admissionPending.current || active.current || pendingWrites.current) {
       return
     }
+
     admissionPending.current = true
     try {
       const report = inspect()
+
       if (report.blockers.length || report.assumptions.length) {
         setError(
           [...report.blockers, ...report.assumptions]
             .map((issue) => issue.message)
             .join(' ')
         )
+
         return
       }
+
       if (
         report.resourceWarnings.some((issue) => !warnings.includes(issue.code))
       ) {
         setError(
           'Review and acknowledge the resource warnings before analysis.'
         )
+
         return
       }
 
@@ -376,6 +398,7 @@ export function useExperimentController({
       if (!live.current) {
         return
       }
+
       const record: RunRecord = {
         version: 1,
         name: runName,
@@ -385,11 +408,13 @@ export function useExperimentController({
         result,
         ...(lineage ? { lineage } : {})
       }
+
       try {
         await runtime.features.storage.retain(record)
       } catch (reason) {
         fail(reason)
       }
+
       if (live.current) {
         onRun(record)
       }

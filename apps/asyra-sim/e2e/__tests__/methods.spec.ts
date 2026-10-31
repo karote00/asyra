@@ -3,17 +3,23 @@ import { expect, test, type Page } from '@playwright/test'
 import { MethodIds, MethodVersions } from '../../src/constants'
 
 const exampleSelection = `${MethodIds.STATIC_SPHERES}@${MethodVersions.STATIC_SPHERES}`
+
 async function download(page: Page, name: string) {
   const pending = page.waitForEvent('download')
+
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
+
   if (!stream) {
     throw new Error('Missing download stream')
   }
+
   const chunks: Buffer[] = []
+
   for await (const chunk of stream) {
     chunks.push(Buffer.from(chunk))
   }
+
   return Buffer.concat(chunks).toString('utf8')
 }
 
@@ -24,6 +30,7 @@ test('method capabilities block an unsupported ordinary experiment without runni
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   const depth = await page.getByTestId('history-depth').textContent()
+
   await showSetup(page, true)
   await page.getByLabel('Analysis method').selectOption(exampleSelection)
   await expect(page.getByLabel('Method parameter additionalError')).toHaveValue(
@@ -56,6 +63,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   test.setTimeout(60000)
   const errors: string[] = [],
     external: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => {
     if (
@@ -84,6 +92,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
     await page.getByLabel('Shape 1 type').selectOption('sphere')
     await expect(page.getByLabel('Shape 1 radius (m)')).toHaveValue('0.1')
   }
+
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByLabel('Experiment name').fill('Independent sphere study')
   await showSetup(page, true)
@@ -108,6 +117,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await viewResults(page)
   const result = page.getByTestId('analysis-result')
+
   await expect(result).toContainText('No issue found within scope')
   await expect(result).toContainText(MethodIds.STATIC_SPHERES)
   await expect(page.locator('.retention-actions')).toContainText(
@@ -118,6 +128,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
   const report = JSON.parse(await download(page, 'Export JSON'))
+
   expect(report.run.snapshot.methodDescriptor.manifest).toMatchObject({
     origin: 'example',
     coordinates: 'right-handed-y-up'
@@ -128,6 +139,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   await library.getByRole('button', { name: 'Close runs', exact: true }).click()
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   const payload = await download(page, 'Export project')
+
   await page
     .getByLabel('Portable project file', { exact: true })
     .setInputFiles({
@@ -144,6 +156,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
   const reopened = JSON.parse(await download(page, 'Export JSON'))
+
   expect(reopened.run).toEqual(report.run)
   await library
     .getByText('Retained method declaration', { exact: true })
@@ -159,11 +172,14 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
     if (value === MethodIds.STATIC_SPHERES) {
       return 'private-retired-spheres'
     }
+
     if (key === 'origin' && value === 'example') {
       return 'private'
     }
+
     return value
   })
+
   await info.attach('missing-method-project.json', {
     contentType: 'application/json',
     body: privatePayload
@@ -199,6 +215,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
   const privateReport = JSON.parse(await download(page, 'Export JSON'))
+
   expect(privateReport.run.result.pairEvidence).toEqual(
     report.run.result.pairEvidence
   )

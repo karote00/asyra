@@ -17,6 +17,7 @@ const rule = 'docs/ai/framework/rules/release-update-guidance.md'
 const guide = 'docs/public/updates/text-official-fields-example-1-r3.md'
 const source = 'packages/preset/src/text.ts'
 const notePath = 'RELEASE_NOTES.md'
+
 const note = (overrides = {}) => ({
   change: 'text-fields',
   owner: 'Framework packages',
@@ -27,8 +28,10 @@ const note = (overrides = {}) => ({
   reason: 'Consumers must compare local field meaning and retain extensions.',
   ...overrides
 })
+
 const block = (value) =>
   `\n\`\`\`update-note\n${JSON.stringify(value)}\n\`\`\`\n`
+
 function check({
   notes = [note()],
   changes = [source, notePath],
@@ -44,12 +47,17 @@ function check({
     }),
     ...files
   }
+
   return validateUpdateGuidance({
     changes,
     notePaths: Object.keys(contents),
+
     read: (file) => contents[file],
+
     readBase: (file) => before[file],
+
     exists: (file) => contents[file] !== undefined,
+
     existsBase: (file) => before[file] !== undefined
   })
 }
@@ -162,6 +170,7 @@ test('invalid, incomplete or duplicate declarations fail', () => {
   ]) {
     assert.throws(() => check({ notes: [value] }))
   }
+
   assert.throws(() => check({ notes: [note(), note()] }), /Duplicate/)
   assert.throws(
     () => check({ files: { [notePath]: '\n```update-note\n{broken}\n```' } }),
@@ -199,8 +208,10 @@ test('normal development and release entries reach one permanent rule without th
       'app-cloudflare'
     ].map((name) => `docs/ai/workflows/${name}.md`)
   ]
+
   for (const entry of entries) {
     const text = fs.readFileSync(path.join(root, entry), 'utf8')
+
     assert.ok(
       text.includes(
         entry === 'AGENTS.md'
@@ -210,7 +221,9 @@ test('normal development and release entries reach one permanent rule without th
       entry
     )
   }
+
   const text = fs.readFileSync(path.join(root, rule), 'utf8')
+
   for (const link of text.matchAll(/\]\(([^)#]+)(?:#[^)]*)?\)/g)) {
     assert.ok(
       fs.existsSync(path.resolve(root, path.dirname(rule), link[1])),
@@ -224,12 +237,14 @@ test('PR checks and permanent tests are wired without touching publisher command
     path.join(root, '.github/workflows/main.yml'),
     'utf8'
   )
+
   assert.match(workflow, /UPDATE_GUIDANCE_BASE_SHA:.*pull_request.base.sha/)
   assert.match(workflow, /UPDATE_GUIDANCE_HEAD_SHA:.*pull_request.head.sha/)
   assert.match(workflow, /run: yarn docs:updates:check/)
   const manifest = JSON.parse(
     fs.readFileSync(path.join(root, 'package.json'), 'utf8')
   )
+
   assert.ok(
     manifest.scripts['test:scripts'].includes(
       'scripts/docs/__tests__/release-update-guidance.test.mjs'
@@ -239,19 +254,24 @@ test('PR checks and permanent tests are wired without touching publisher command
 
 test('Git comparisons bind notes to the PR head and include untracked local work', (t) => {
   const parent = path.join(root, 'tmp')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'update-guidance-test-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+
   const git = (...args) =>
     execFileSync('git', args, {
       cwd: directory,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim()
+
   const write = (file, contents) => {
     fs.mkdirSync(path.dirname(path.join(directory, file)), { recursive: true })
     fs.writeFileSync(path.join(directory, file), contents)
   }
+
   git('init', '-b', 'test-guidance')
   git('config', 'user.email', 'fixture@example.test')
   git('config', 'user.name', 'Guidance fixture')
@@ -259,6 +279,7 @@ test('Git comparisons bind notes to the PR head and include untracked local work
   git('add', '.')
   git('commit', '-m', 'Fixture baseline')
   const base = git('rev-parse', 'HEAD')
+
   write(source, 'after')
   git('add', '.')
   git('commit', '-m', 'Missing declaration')
@@ -268,6 +289,7 @@ test('Git comparisons bind notes to the PR head and include untracked local work
     guides: [],
     reason: 'Fixture-only change.'
   })
+
   write(notePath, block(internal))
   assert.throws(
     () =>
@@ -285,6 +307,7 @@ test('Git comparisons bind notes to the PR head and include untracked local work
   git('add', '.')
   git('commit', '-m', 'Declare fixture impact')
   const head = git('rev-parse', 'HEAD')
+
   fs.rmSync(path.join(directory, notePath))
   assert.equal(
     checkUpdateGuidance({ repositoryRoot: directory, base, head }).notes,
@@ -316,18 +339,25 @@ test('integration guide reads are shared for one invocation and refreshed on the
     })
   }
   const reads = new Map()
+
   const read = (file) => {
     reads.set(file, (reads.get(file) ?? 0) + 1)
+
     return files[file]
   }
+
   const input = {
     changes: [source, notePath],
     notePaths: [notePath],
     read,
+
     readBase: () => undefined,
+
     exists: (file) => files[file] !== undefined,
+
     existsBase: () => false
   }
+
   assert.equal(validateUpdateGuidance(input).notes, 2)
   assert.equal(reads.get(guide), 1)
   assert.equal(reads.get('docs/public/content-manifest.json'), 1)
@@ -337,6 +367,7 @@ test('integration guide reads are shared for one invocation and refreshed on the
 
 test('retained notes reject duplicate identities and broken guide references', () => {
   const retained = block(note())
+
   assert.throws(
     () =>
       check({
@@ -377,34 +408,43 @@ test('retained notes reject duplicate identities and broken guide references', (
 
 function gitFixture(t) {
   const parent = path.join(root, 'tmp')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(parent, 'update-guidance-regression-')
   )
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+
   const git = (...args) =>
     execFileSync('git', args, {
       cwd: directory,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim()
+
   const write = (file, contents) => {
     fs.mkdirSync(path.dirname(path.join(directory, file)), { recursive: true })
     fs.writeFileSync(path.join(directory, file), contents)
   }
+
   const commit = () => {
     git('add', '.')
     git('commit', '-m', 'Fixture state')
+
     return git('rev-parse', 'HEAD')
   }
+
   git('init', '-b', 'test-guidance')
   git('config', 'user.email', 'fixture@example.test')
   git('config', 'user.name', 'Guidance fixture')
+
   return { directory, write, commit }
 }
 
 test('unchanged note files participate in integrity checks without consuming the Markdown exemption', (t) => {
   const { directory, write, commit } = gitFixture(t)
+
   write(source, 'before')
   write(notePath, block(note()))
   write(guide, '# Guide\n\n## Canonical sources\nSources.')
@@ -413,6 +453,7 @@ test('unchanged note files participate in integrity checks without consuming the
     JSON.stringify({ pages: [{ path: guide.slice('docs/public/'.length) }] })
   )
   const base = commit()
+
   write('README.md', '# Documentation wording')
   assert.equal(
     checkUpdateGuidance({ repositoryRoot: directory, base }).mode,
@@ -434,6 +475,7 @@ test('unchanged note files participate in integrity checks without consuming the
     /Missing guide/
   )
   const head = commit()
+
   // Restoring an uncommitted guide cannot repair a broken committed comparison.
   write(guide, '# Guide\n\n## Canonical sources\nSources.')
   assert.throws(
@@ -444,9 +486,11 @@ test('unchanged note files participate in integrity checks without consuming the
 
 test('large source files can be added and deleted with valid notes in Git comparisons', (t) => {
   const { directory, write, commit } = gitFixture(t)
+
   write('README.md', '# Fixture')
   const base = commit()
   const asset = 'assets/review.png'
+
   write(asset, Buffer.alloc(2 * 1024 * 1024, 0x89))
   const declaration = note({
     sources: [asset],
@@ -454,12 +498,14 @@ test('large source files can be added and deleted with valid notes in Git compar
     guides: [],
     reason: 'Review image only.'
   })
+
   write(notePath, block(declaration))
   assert.equal(
     checkUpdateGuidance({ repositoryRoot: directory, base }).notes,
     1
   )
   const head = commit()
+
   assert.equal(
     checkUpdateGuidance({ repositoryRoot: directory, base, head }).notes,
     1
@@ -467,6 +513,7 @@ test('large source files can be added and deleted with valid notes in Git compar
   fs.rmSync(path.join(directory, asset))
   write(notePath, block({ ...declaration, summary: 'Remove review image.' }))
   const deleted = commit()
+
   assert.equal(
     checkUpdateGuidance({
       repositoryRoot: directory,
@@ -482,17 +529,28 @@ test('source existence checks do not read payloads and still reject missing sour
   const input = {
     changes: [source, notePath],
     notePaths: [notePath],
+
     read: (file) => {
       assert.notEqual(file, source, 'Source payload must not be read')
+
       return file === notePath ? block(declaration) : undefined
     },
+
     readBase: () => undefined,
+
     exists: (file) => file === source,
+
     existsBase: () => false
   }
+
   assert.equal(validateUpdateGuidance(input).notes, 1)
   assert.throws(
-    () => validateUpdateGuidance({ ...input, exists: () => false }),
+    () =>
+      validateUpdateGuidance({
+        ...input,
+
+        exists: () => false
+      }),
     /missing source/
   )
 })
@@ -503,6 +561,7 @@ test('retained historical source paths do not force restored files or a new docu
     before: { [notePath]: block(note()) },
     files: { [source]: undefined, 'README.md': '# Updated documentation' }
   })
+
   assert.deepEqual(result, { mode: 'documentation-only', notes: 0 })
 })
 
@@ -514,12 +573,14 @@ test('current release guidance routes hosted Apps and the website to Cloudflare 
   const entry = index.match(
     /\[Release Update Summaries and Consumer Integration Guidance\]\(([^)]+)\)/
   )
+
   assert.ok(entry, 'Release guidance plan is missing from its owner index')
   const plan = fs.readFileSync(
     path.resolve(root, 'docs/ai/framework', entry[1]),
     'utf8'
   )
   const contract = fs.readFileSync(path.join(root, rule), 'utf8')
+
   assert.ok(plan.includes('.github/workflows/app-cloudflare.yml'))
   assert.ok(plan.includes('.github/workflows/site-cloudflare.yml'))
   assert.ok(!plan.includes('`scripts/app-release.mjs`'))
@@ -536,6 +597,7 @@ test('published summaries cannot be edited, deleted or removed from discovery; o
     pages: [{ path: 'updates/releases/retained.md' }]
   })
   const before = { [file]: original, [manifest]: inventory }
+
   assert.throws(
     () =>
       check({

@@ -32,21 +32,25 @@ const artifacts = new Map<
 >()
 const admit = vi.fn()
 let features: ReturnType<typeof installEditingFeatures>
+
 const draft = (): ObservationDraft => ({
   title: 'Fixture measurement',
   text: 'Reported gap: 25 mm.',
   attachments: []
 })
+
 const attachment = {
   sourceId: `sha256:${'a'.repeat(64)}`,
   filename: 'gap.csv',
   mediaType: 'text/csv',
   byteLength: 20
 }
+
 beforeAll(() => {
   installModelComponents(core)
   features = installEditingFeatures(core, {
     readRun: (id) => artifacts.get(id),
+
     validateObservationAttachments: admit
   })
 })
@@ -55,6 +59,7 @@ beforeEach(() => {
   artifacts.clear()
   admit.mockReset()
 })
+
 async function retain(runId = 'run-a', candidateId?: string) {
   const candidate =
     candidateId ??
@@ -63,6 +68,7 @@ async function retain(runId = 'run-a', candidateId?: string) {
       robotRootId: null,
       bodies: []
     }))
+
   artifacts.set(runId, {
     runId,
     snapshotId: `snapshot-${runId}`,
@@ -70,6 +76,7 @@ async function retain(runId = 'run-a', candidateId?: string) {
     experimentId: 'historical-study',
     name: 'Study A'
   })
+
   return { candidate, elementId: await features.edit.attachRun(runId) }
 }
 
@@ -79,9 +86,11 @@ it('owns annotation identity, revisions and complete single-action Undo without 
   const before = core.getUndoHistoryDepth()
   const input = draft()
   const adding = features.edit.addObservation('run-a', input)
+
   input.text = 'Caller mutation after dispatch'
   const id = await adding
   const original = readFieldObservations(core, 'run-a')[0]
+
   expect(original).toMatchObject({ ...draft(), id, version: 1, revision: 1 })
   expect(new Date(original.createdAt).toISOString()).toBe(original.createdAt)
   expect(original.updatedAt).toBe(original.createdAt)
@@ -93,6 +102,7 @@ it('owns annotation identity, revisions and complete single-action Undo without 
     text: 'Second measurement: 24 mm.',
     attachments: [attachment]
   }
+
   await features.edit.updateObservation('run-a', id, 1, changed)
   expect(admit).toHaveBeenCalledWith([attachment])
   expect(readFieldObservations(core, 'run-a')[0]).toMatchObject({
@@ -112,6 +122,7 @@ it('owns annotation identity, revisions and complete single-action Undo without 
   expect(readFieldObservations(core, 'run-a')[0].revision).toBe(2)
   expect(artifacts.get('run-a')).toEqual(evidence)
   const duplicate = await features.edit.duplicateCandidate(candidate, 'Copy')
+
   expect(
     readRunReferences(core).filter(
       (reference) => reference.candidateId === duplicate
@@ -133,6 +144,7 @@ it('rejects absent retained runs, stale updates, invalid metadata and failed att
   const id = await features.edit.addObservation('run-a', draft())
   const before = await features.edit.captureDocument()
   const depth = core.getUndoHistoryDepth()
+
   await expect(
     features.edit.updateObservation('run-a', id, 2, draft())
   ).rejects.toThrow('revision')
@@ -170,6 +182,7 @@ it('does not wrap exhausted revisions or backdate updates when the system clock 
     snapshotId: reference.snapshotId,
     experimentId: reference.experimentId
   }
+
   for (const invalidNext of [
     { ...note, revision: Number.MAX_SAFE_INTEGER },
     { ...note, updatedAt: '2099-01-01T00:00:00.000Z' }
@@ -186,6 +199,7 @@ it('does not wrap exhausted revisions or backdate updates when the system clock 
       }
     ])
     const before = core.getUndoHistoryDepth()
+
     await expect(
       features.edit.updateObservation('run-a', id, invalidNext.revision, {
         ...draft(),
@@ -199,9 +213,11 @@ it('does not wrap exhausted revisions or backdate updates when the system clock 
 
 it('roundtrips current observations and rejects malformed runtime writes with visible load recovery', async () => {
   const { elementId } = await retain()
+
   await features.edit.addObservation('run-a', draft())
   const saved = await features.edit.captureDocument()
   const notes = readFieldObservations(core, 'run-a')
+
   core.load(saved)
   expect(readFieldObservations(core, 'run-a')).toEqual(notes)
   const reference = readRunReferences(core)[0]
@@ -212,6 +228,7 @@ it('roundtrips current observations and rejects malformed runtime writes with vi
     experimentId: reference.experimentId,
     observations: [{ ...notes[0], revision: -1 }]
   }
+
   expect(() =>
     core.updateElementProperties([
       { elementId, values: { [PropertyFields.RUN_REFERENCE]: invalid } }
@@ -219,9 +236,11 @@ it('roundtrips current observations and rejects malformed runtime writes with vi
   ).toThrow()
   const propertyId =
     core.getElementData(elementId)?.props?.[PropertyNames.RUN_REFERENCE]
+
   if (!propertyId) {
     throw new Error('Missing reference property')
   }
+
   ;(saved.props[propertyId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] = invalid
@@ -235,31 +254,40 @@ it('roundtrips current observations and rejects malformed runtime writes with vi
 
 it('enforces per-run and project limits and project-wide observation identity before another write', async () => {
   const { candidate } = await retain()
+
   await features.edit.addObservation('run-a', draft())
   const note = readFieldObservations(core, 'run-a')[0]
+
   for (let index = 1; index < 11; index++) {
     await retain(`run-${index}`, candidate)
   }
+
   const saved = await features.edit.captureDocument()
   const references = readCapturedRunReferences(saved)
+
   for (const [index, reference] of references.entries()) {
     const element = saved.sceneTree.elements[reference.elementId]
     const propertyId = element.props?.[PropertyNames.RUN_REFERENCE]
+
     if (!propertyId) {
       throw new Error('Missing reference property')
     }
+
     const property = saved.props[propertyId] as Record<string, unknown>
     const value = property[PropertyFields.RUN_REFERENCE] as Record<
       string,
       unknown
     >
+
     value.observations = Array.from(
       { length: index < 10 ? 20 : 0 },
       (_, n) => ({ ...note, id: `note-${index}-${n}` })
     )
   }
+
   core.load(saved)
   const depth = core.getUndoHistoryDepth()
+
   await expect(features.edit.addObservation('run-a', draft())).rejects.toThrow(
     'limit'
   )
@@ -268,19 +296,24 @@ it('enforces per-run and project limits and project-wide observation identity be
   )
   expect(core.getUndoHistoryDepth()).toBe(depth)
   const last = references.at(-1)
+
   if (!last) {
     throw new Error('Missing reference')
   }
+
   const propertyId =
     saved.sceneTree.elements[last.elementId].props?.[
       PropertyNames.RUN_REFERENCE
     ]
+
   if (!propertyId) {
     throw new Error('Missing reference property')
   }
+
   const value = (saved.props[propertyId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] as Record<string, unknown>
+
   value.observations = [{ ...note, id: 'note-0-0' }]
   expect(() => readCapturedRunReferences(saved)).toThrow(/Duplicate|limit/)
   value.observations = [{ ...note, id: 'one-too-many' }]
@@ -290,12 +323,15 @@ it('enforces per-run and project limits and project-wide observation identity be
     saved.sceneTree.elements[references[0].elementId].props?.[
       PropertyNames.RUN_REFERENCE
     ]
+
   if (!firstId) {
     throw new Error('Missing reference property')
   }
+
   const firstValue = (saved.props[firstId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] as { observations: (typeof note)[] }
+
   firstValue.observations[1] = { ...note, id: 'note-0-0' }
   expect(() => readCapturedRunReferences(saved)).toThrow('review')
   firstValue.observations[1] = { ...note, id: 'note-1-0' }
@@ -310,6 +346,7 @@ it('commits incomplete observation fields independently and preserves them throu
     text: '',
     attachments: []
   })
+
   await features.edit.updateObservation('run-a', id, 1, {
     title: '',
     text: '25 mm',
@@ -323,6 +360,7 @@ it('commits incomplete observation fields independently and preserves them throu
   })
   await features.history.redo()
   const saved = await core.save()
+
   loadCanonicalDocument(core, saved)
   expect(readFieldObservations(core, 'run-a')[0]).toMatchObject({
     title: '',

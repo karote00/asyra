@@ -10,7 +10,9 @@ const architecture = require('../../inspectors/transaction-flow-inspector.data.c
 
 const admit = (change) => {
   const input = structuredClone({ manifest, architecture })
+
   change?.(input)
+
   return admitContract(input.manifest, input.architecture)
 }
 
@@ -21,6 +23,7 @@ test('workspace source declarations bind real names and relative inputs without 
   const contract = admit(({ manifest }) => {
     manifest.workspaceSources = workspaceSources
   })
+
   assert.equal(contract.runtimeScope.format, 2)
   assert.deepEqual(contract.runtimeScope.workspaceSources, workspaceSources)
   assert.ok(Object.isFrozen(contract.runtimeScope.workspaceSources[0].inputs))
@@ -61,6 +64,7 @@ test('product flow admission retains its declared manifest instead of the Factor
   const contract = admit(({ manifest }) => {
     manifest.manifestPath = 'apps/example/flow-contracts.json'
   })
+
   assert.equal(contract.manifestPath, 'apps/example/flow-contracts.json')
   for (const manifestPath of [
     null,
@@ -84,18 +88,22 @@ test('product flow admission retains its declared manifest instead of the Factor
 test('explicit product loading reads that manifest and rejects a substituted declared location', (t) => {
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/contract-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'product-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const selected = path.relative(
     root,
     path.join(directory, 'flow-contracts.json')
   )
   const input = structuredClone(manifest)
+
   input.manifestPath = selected
   input.flows[0].title = 'Selected App flow'
   fs.writeFileSync(path.join(root, selected), JSON.stringify(input))
   const loaded = loadContract(root, undefined, selected)
+
   assert.equal(loaded.manifestPath, selected)
   assert.equal(loaded.definition.flows[0].title, 'Selected App flow')
   input.manifestPath = 'apps/other/flow-contracts.json'
@@ -110,18 +118,22 @@ test('App negative proof uses its selected runtime boundary without changing ver
   const input = structuredClone({ manifest, architecture })
   const runtimeFile = 'apps/example/server/session.ts'
   const selected = new Set(input.manifest.flows.flatMap((flow) => flow.stepIds))
+
   for (const step of input.architecture.steps.filter((step) =>
     selected.has(step.id)
   )) {
     step.ownerPackage = '@example/editor'
     step.implementationBoundary = [runtimeFile]
   }
+
   for (const scenario of input.manifest.scenarios.filter(
     (scenario) => scenario.id !== 'baseline'
   )) {
     scenario.mutation.file = runtimeFile
   }
+
   const admitted = admitContract(input.manifest, input.architecture)
+
   assert.equal(
     admitted.definition.scenarios.find((scenario) => scenario.id !== 'baseline')
       .mutation.file,
@@ -133,6 +145,7 @@ test('App negative proof uses its selected runtime boundary without changing ver
     '../outside.ts'
   ]) {
     const invalid = structuredClone(input)
+
     invalid.manifest.scenarios.find(
       (scenario) => scenario.id !== 'baseline'
     ).mutation.file = file
@@ -154,8 +167,10 @@ test('runtime authority retains each selected architecture step once without cha
       ownerPackage: step.ownerPackage,
       implementationBoundary: [...step.implementationBoundary]
     }))
+
   const hash = (value) =>
     createHash('sha256').update(JSON.stringify(value)).digest('hex')
+
   assert.deepEqual(contract.runtimeScope, {
     format: 1,
     steps: entries,
@@ -175,6 +190,7 @@ test('runtime authority retains each selected architecture step once without cha
 test('runtime authority follows architecture order and binds every selected owner boundary', () => {
   const original = admit()
   const reordered = admit(({ architecture }) => architecture.steps.reverse())
+
   assert.deepEqual(
     reordered.runtimeScope.steps.map((step) => step.stepId),
     original.runtimeScope.steps.map((step) => step.stepId).reverse()
@@ -184,6 +200,7 @@ test('runtime authority follows architecture order and binds every selected owne
       .find((step) => step.id === manifest.flows[0].stepIds[0])
       .implementationBoundary.push('packages/factory/src/new-owner.ts')
   })
+
   assert.notEqual(changed.runtimeScope.digest, original.runtimeScope.digest)
   assert.notEqual(reordered.runtimeScope.digest, original.runtimeScope.digest)
 })
@@ -193,6 +210,7 @@ test('mapping review prepares exact test-name changes while preserving every obl
   const candidate = admit(({ manifest }) => {
     manifest.flows[0].cases[0].testName = 'Renamed snapshot assertion'
   })
+
   assert.deepEqual(mappingDiff(accepted, candidate), [
     {
       caseId: 'deferred.snapshot',
@@ -227,6 +245,7 @@ test('mapping review prepares exact test-name changes while preserving every obl
 
 test('resolves every declared flow and obligation using architecture-owned steps', () => {
   const contract = admit()
+
   assert.equal(contract.flows.length, manifest.flows.length)
   assert.equal(
     contract.cases.length,
@@ -407,11 +426,13 @@ for (const [name, corrupt] of [
 
 test('accepted contracts retain detached architecture for immutable version reconstruction', () => {
   const original = admit()
+
   assert.ok(original.architectureDefinition)
   const restored = admitContract(
     original.definition,
     original.architectureDefinition
   )
+
   assert.equal(restored.digest, original.digest)
   assert.ok(Object.isFrozen(original.architectureDefinition.steps))
   assert.notStrictEqual(original.architectureDefinition, architecture)
@@ -424,17 +445,21 @@ test('a terminal App shortcut admits no incoming handoffs and retains exact loca
     undefined,
     'apps/asyra-design/undo-redo-flow-contracts.json'
   )
+
   assert.equal(contract.flows[0].steps[0].ownerPackage, '@asyra/asyra-design')
   assert.deepEqual(contract.flows[0].handoffs, [])
   for (const location of ['../outside.ts', 'packages/factory/src/index.ts']) {
     const changed = structuredClone(contract.definition)
+
     changed.flows[0].cases[0].implementationPaths = [location]
     assert.throws(
       () => admitContract(changed, contract.architectureDefinition),
       /implementation location/
     )
   }
+
   const changed = structuredClone(manifest)
+
   changed.flows[0].handoffs = []
   assert.throws(() => admitContract(changed, architecture), /handoff/)
 })
@@ -446,9 +471,11 @@ test('History replay admission maps existing Factory cases to their runtime owne
     undefined,
     'packages/factory/history-replay-flow-contracts.json'
   )
+
   assert.equal(contract.targetId, 'history-replay')
   assert.equal(contract.cases.length, 17)
   const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
+
   for (const item of contract.cases) {
     assert.ok(
       source.includes(
@@ -468,6 +495,7 @@ test('History replay admission maps existing Factory cases to their runtime owne
       'packages/factory/src/data-transact.ts'
     ])
   }
+
   assert.equal(contract.runtimeScope.steps[0].ownerPackage, '@asyra/factory')
   assert.deepEqual(
     contract.scenarios.map((item) => item.expectedFailedCaseIds),
@@ -513,6 +541,7 @@ test('Design execution admission locates all existing cases within their seven o
     undefined,
     'apps/asyra-design/flow-contracts.json'
   )
+
   assert.deepEqual(
     [...new Set(contract.cases.map((item) => item.stepId))].sort(),
     ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
@@ -526,6 +555,7 @@ test('Design execution admission locates all existing cases within their seven o
     true
   )
   const declared = []
+
   const visit = (node) => {
     if (
       ts.isCallExpression(node) &&
@@ -535,8 +565,10 @@ test('Design execution admission locates all existing cases within their seven o
     ) {
       declared.push(node.arguments[0].text)
     }
+
     ts.forEachChild(node, visit)
   }
+
   visit(parsed)
   assert.ok(declared.length > 0)
   assert.deepEqual(
@@ -551,6 +583,7 @@ test('Design execution admission locates all existing cases within their seven o
       )
     }
   }
+
   for (const item of contract.cases) {
     assert.ok(source.includes(item.testName))
     assert.ok(item.implementationPaths?.length, item.id)
@@ -568,6 +601,7 @@ test('Render viewport admission retains six exact responsibility locations', () 
     undefined,
     'packages/render/navigation-flow-contracts.json'
   )
+
   assert.equal(
     contract.specPath,
     contract.architectureDefinition.authority.specPath
@@ -582,9 +616,11 @@ test('Render viewport admission retains six exact responsibility locations', () 
   const step = contract.architectureDefinition.steps.find(
     (item) => item.id === 'orchestrate-render-adapter'
   )
+
   for (const reference of step.specRefs) {
     assert.ok(headings.includes(reference), reference)
   }
+
   assert.equal(contract.cases.length, 6)
   for (const item of contract.cases) {
     assert.equal(item.stepId, 'orchestrate-render-adapter')
@@ -602,11 +638,13 @@ test('Render viewport admission retains six exact responsibility locations', () 
 
 test('Render viewport source config runs all unchanged cases without proof environment', () => {
   const root = path.resolve(__dirname, '../../../..')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const temporary = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/viewport-config-')
   )
   const env = { ...process.env, TMPDIR: temporary }
+
   delete env.FLOW_PROOF_SOURCE
   delete env.FLOW_PROOF_SCENARIO
   const result = require('node:child_process').spawnSync(
@@ -620,8 +658,10 @@ test('Render viewport source config runs all unchanged cases without proof envir
     ],
     { cwd: root, env, encoding: 'utf8', timeout: 30000 }
   )
+
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
+
   assert.equal(report.numPassedTests, 6)
   assert.equal(report.numFailedTests, 0)
 })
@@ -633,6 +673,7 @@ test('Reusable composition admission retains four exact owner locations', () => 
     undefined,
     'packages/ai-agent-runtime/flow-contracts.json'
   )
+
   assert.equal(
     contract.specPath,
     contract.architectureDefinition.authority.specPath
@@ -649,15 +690,18 @@ test('Reusable composition admission retains four exact owner locations', () => 
     .map(
       (line) => '#' + line.replace(/^#+ /, '').toLowerCase().replace(/ /g, '-')
     )
+
   for (const item of contract.cases) {
     assert.ok(source.includes(item.testName.replace('recipe proof ', '')))
     assert.ok(item.implementationPaths?.length, item.id)
     for (const file of item.implementationPaths) {
       assert.ok(fs.statSync(path.join(root, file)).isFile())
     }
+
     const step = contract.architectureDefinition.steps.find(
       (step) => step.id === item.stepId
     )
+
     for (const ref of step.specRefs) {
       assert.ok(headings.includes(ref), ref)
     }
@@ -665,11 +709,13 @@ test('Reusable composition admission retains four exact owner locations', () => 
 })
 test('Reusable composition source config runs all unchanged cases without proof environment', () => {
   const root = path.resolve(__dirname, '../../../..')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const temporary = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/recipe-config-')
   )
   const env = { ...process.env, TMPDIR: temporary }
+
   delete env.FLOW_PROOF_SOURCE
   delete env.FLOW_PROOF_SCENARIO
   const result = require('node:child_process').spawnSync(
@@ -683,8 +729,10 @@ test('Reusable composition source config runs all unchanged cases without proof 
     ],
     { cwd: root, env, encoding: 'utf8', timeout: 30000 }
   )
+
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
+
   assert.equal(report.numPassedTests, 11)
   assert.equal(report.numFailedTests, 0)
 })
@@ -696,6 +744,7 @@ test('Pixi engine admission retains 29 exact responsibility locations', () => {
     undefined,
     'packages/render-engine-pixi/navigation-flow-contracts.json'
   )
+
   assert.equal(
     contract.specPath,
     contract.architectureDefinition.authority.specPath
@@ -710,9 +759,11 @@ test('Pixi engine admission retains 29 exact responsibility locations', () => {
   const step = contract.architectureDefinition.steps.find(
     (item) => item.id === 'execute-render-engine'
   )
+
   for (const reference of step.specRefs) {
     assert.ok(headings.includes(reference), reference)
   }
+
   assert.equal(contract.cases.length, 29)
   for (const item of contract.cases) {
     assert.equal(item.stepId, 'execute-render-engine')
@@ -730,11 +781,13 @@ test('Pixi engine admission retains 29 exact responsibility locations', () => {
 
 test('Pixi engine source config runs all unchanged cases without proof environment', () => {
   const root = path.resolve(__dirname, '../../../..')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const temporary = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/pixi-config-')
   )
   const env = { ...process.env, TMPDIR: temporary }
+
   delete env.FLOW_PROOF_SOURCE
   delete env.FLOW_PROOF_SCENARIO
   const result = require('node:child_process').spawnSync(
@@ -748,8 +801,10 @@ test('Pixi engine source config runs all unchanged cases without proof environme
     ],
     { cwd: root, env, encoding: 'utf8', timeout: 30000 }
   )
+
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
+
   assert.equal(report.numPassedTests, 29)
   assert.equal(report.numFailedTests, 0)
 })
@@ -761,11 +816,13 @@ test('Preset vector admission retains exact locations and the explicitly referen
     undefined,
     'packages/preset/navigation-flow-contracts.json'
   )
+
   assert.equal(contract.cases.length, 11)
   assert.equal(contract.specPath, 'docs/ai/framework/packages/preset.md')
   const step = contract.architectureDefinition.steps.find(
     (item) => item.id === 'evaluate-vector-material'
   )
+
   assert.ok(step.specRefs.includes(contract.specPath))
   assert.ok(fs.statSync(path.join(root, contract.specPath)).isFile())
   for (const item of contract.cases) {
@@ -782,11 +839,13 @@ test('Preset vector admission retains exact locations and the explicitly referen
 })
 test('Preset vector source config runs all unchanged cases without proof environment', () => {
   const root = path.resolve(__dirname, '../../../..')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const temporary = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/vector-config-')
   )
   const env = { ...process.env, TMPDIR: temporary }
+
   delete env.FLOW_PROOF_SOURCE
   delete env.FLOW_PROOF_SCENARIO
   const result = require('node:child_process').spawnSync(
@@ -800,8 +859,10 @@ test('Preset vector source config runs all unchanged cases without proof environ
     ],
     { cwd: root, env, encoding: 'utf8', timeout: 30000 }
   )
+
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
+
   assert.equal(report.numPassedTests, 11)
   assert.equal(report.numFailedTests, 0)
 })
@@ -813,11 +874,13 @@ test('Preset compound coverage admission retains exact locations and the explici
     undefined,
     'packages/preset/coverage-flow-contracts.json'
   )
+
   assert.equal(contract.cases.length, 16)
   assert.equal(contract.specPath, 'docs/ai/framework/packages/preset.md')
   const step = contract.architectureDefinition.steps.find(
     (item) => item.id === 'evaluate-vector-material'
   )
+
   assert.ok(step.specRefs.includes(contract.specPath))
   assert.ok(fs.statSync(path.join(root, contract.specPath)).isFile())
   for (const item of contract.cases) {
@@ -840,11 +903,13 @@ test('Preset compound coverage admission retains exact locations and the explici
 })
 test('Preset compound coverage source config runs all unchanged cases without proof environment', () => {
   const root = path.resolve(__dirname, '../../../..')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const temporary = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/vector-config-')
   )
   const env = { ...process.env, TMPDIR: temporary }
+
   delete env.FLOW_PROOF_SOURCE
   delete env.FLOW_PROOF_SCENARIO
   const result = require('node:child_process').spawnSync(
@@ -858,22 +923,27 @@ test('Preset compound coverage source config runs all unchanged cases without pr
     ],
     { cwd: root, env, encoding: 'utf8', timeout: 30000 }
   )
+
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
+
   assert.equal(report.numPassedTests, 16)
   assert.equal(report.numFailedTests, 0)
 })
 
 test('Playwright observations admit exact cases without inventing executable proof scenarios', async () => {
   const input = structuredClone({ manifest, architecture })
+
   input.manifest.runner = 'playwright'
   input.manifest.negativeCaseIds = []
   input.manifest.scenarios = []
   input.manifest.defaultNegativeScenario = null
   const contract = admitContract(input.manifest, input.architecture)
+
   assert.equal(contract.runner, 'playwright')
   assert.deepEqual(contract.scenarios, [])
   const { runVerification } = require('../runner.cjs')
+
   await assert.rejects(() => runVerification({ contract }), /observation-only/)
   for (const runner of [null, 'unknown', '']) {
     input.manifest.runner = runner
@@ -891,6 +961,7 @@ test('Design Playwright mapping admits only the six reviewed Chromium deletion c
     undefined,
     'apps/asyra-design/playwright-flow-contracts.json'
   )
+
   assert.equal(contract.runner, 'playwright')
   const expected = [
     ['design.delete', 'Delete key removes the single selected element'],
@@ -909,11 +980,13 @@ test('Design Playwright mapping admits only the six reviewed Chromium deletion c
       'Delete is allowed when path-editing mode is false even if editing vector id exists'
     ]
   ]
+
   assert.deepEqual(
     contract.cases.map((item) => [item.id, item.testName]),
     expected.map(([id, name]) => [id, 'Delete Selected Element ' + name])
   )
   const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
+
   for (const item of contract.cases) {
     assert.equal(item.projectName, 'chromium')
     assert.equal(item.stepId, 'delete-selected-element')
@@ -933,8 +1006,10 @@ test('observation cases admit exact per-case files and reject unsafe or non-obse
   const architecture = require('../../inspectors/design-deletion-flow-inspector.data.cjs')
   const input = structuredClone(manifest)
   const selected = input.flows[0].cases[0]
+
   selected.testFile = 'apps/asyra-design/e2e/selection.spec.ts'
   const contract = admitContract(input, architecture)
+
   assert.equal(contract.cases[0].testFile, selected.testFile)
   assert.equal(contract.cases[1].testFile, undefined)
   assert.ok(Object.isFrozen(contract.cases[0]))
@@ -951,6 +1026,7 @@ test('observation cases admit exact per-case files and reject unsafe or non-obse
     selected.testFile = file
     assert.throws(() => admitContract(input, architecture), /case test file/)
   }
+
   assert.throws(
     () =>
       admit(({ manifest }) => {
@@ -965,6 +1041,7 @@ test('the complete functional discovery has one exact responsibility per case, i
   const root = path.resolve(__dirname, '../../../..')
   const { spawnSync } = require('node:child_process')
   const { sourceManifestPaths } = require('../playwright-results.cjs')
+
   const collect = (source, configFile) => {
     const contracts = sourceManifestPaths(source).map((file) =>
       loadContract(root, undefined, file)
@@ -994,10 +1071,13 @@ test('the complete functional discovery has one exact responsibility per case, i
         maxBuffer: 4 * 1024 * 1024
       }
     )
+
     assert.equal(result.status, 0, result.stderr + result.stdout.slice(-2000))
     const report = JSON.parse(result.stdout)
+
     assert.deepEqual(report.errors, [])
     const observed = []
+
     const walk = (suite, titles = []) => {
       for (const spec of suite.specs ?? []) {
         for (const project of spec.tests) {
@@ -1010,19 +1090,23 @@ test('the complete functional discovery has one exact responsibility per case, i
           )
         }
       }
+
       for (const child of suite.suites ?? []) {
         walk(child, [...titles, child.title])
       }
     }
+
     for (const suite of report.suites) {
       walk(suite)
     }
+
     const expected = contracts.flatMap((contract) =>
       contract.cases.map((item) => {
         assert.ok(item.implementationPaths.length > 0)
         for (const file of item.implementationPaths) {
           assert.ok(fs.statSync(path.join(root, file)).isFile(), file)
         }
+
         return JSON.stringify([
           item.testFile ?? contract.testFile,
           item.testName,
@@ -1030,10 +1114,12 @@ test('the complete functional discovery has one exact responsibility per case, i
         ])
       })
     )
+
     assert.ok(observed.length > 0)
     assert.equal(new Set(expected).size, expected.length)
     assert.deepEqual(observed.sort(), expected.sort())
   }
+
   collect('functional', 'playwright.config.ts')
   collect('status', 'playwright.status-toast.config.ts')
 })
@@ -1045,12 +1131,15 @@ test('functional responsibility follows the asserted operation across test-file 
     undefined,
     'apps/asyra-design/playwright-functional-flow-contracts.json'
   )
+
   const selected = (id) => contract.cases.find((item) => item.id === id)
+
   assert.equal(
     selected('functional.pen-tool.db4841244256').stepId,
     'switch-tool'
   )
   const disclosure = selected('functional.group-hierarchy.caf2f297812e')
+
   assert.equal(disclosure.stepId, 'present-layer-hierarchy')
   assert.ok(
     disclosure.implementationPaths.includes(
@@ -1073,13 +1162,17 @@ test('Text observations retain Canvas, typography, fill and migration owners', (
   const cases = contract.cases.filter((item) =>
     /\/text-(canvas|properties)\.spec\.ts$/.test(item.testFile)
   )
+
   assert.equal(cases.length, 38)
+
   const requireOwner = (name, stepId, entry) => {
     const item = cases.find((item) => item.testName === name)
+
     assert.ok(item, name)
     assert.equal(item.stepId, stepId)
     assert.ok(item.implementationPaths.includes(entry), name)
   }
+
   requireOwner(
     'Canvas publishes live drafts without a Content field and preserves cancel and Undo',
     'edit-native-text',
@@ -1114,8 +1207,10 @@ test('toolbar observations retain the actual reset, control and zoom implementat
     undefined,
     'apps/asyra-design/playwright-functional-flow-contracts.json'
   )
+
   const requireEntry = (name, entries) => {
     const item = contract.cases.find((item) => item.testName === name)
+
     assert.ok(item, name)
     for (const entry of entries) {
       assert.ok(
@@ -1126,6 +1221,7 @@ test('toolbar observations retain the actual reset, control and zoom implementat
       )
     }
   }
+
   requireEntry('Asyra Design Tool should render toolbar with controls', [
     'index.tsx',
     'tool-button.tsx'

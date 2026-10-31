@@ -12,10 +12,12 @@ const prepare = archive.prepare.bind(archive)
 let editing: ReturnType<typeof installEditingFeatures>
 let api: ReturnType<typeof installObservationStorageFeatures>
 let candidate = ''
+
 const file = () => ({
   filename: 'measurement.txt',
   bytes: new TextEncoder().encode('Observed gap: 25 mm')
 })
+
 beforeAll(() => {
   installModelComponents(core)
   editing = installEditingFeatures(core, {
@@ -26,6 +28,7 @@ beforeAll(() => {
       experimentId: 'historical-study',
       name: 'Study'
     }),
+
     validateObservationAttachments: (references) => archive.resolve(references)
   })
   api = installObservationStorageFeatures(core, archive, editing.edit)
@@ -54,8 +57,10 @@ it('prepares outside history and accepts exact detached metadata through one exi
     original = new Uint8Array(input.bytes),
     before = core.getUndoHistoryDepth()
   const pending = api.prepare([input])
+
   input.bytes.fill(0)
   const receipt = await pending
+
   expect(core.getUndoHistoryDepth()).toBe(before)
   const draft = {
     title: 'Field check',
@@ -63,8 +68,10 @@ it('prepares outside history and accepts exact detached metadata through one exi
     attachments: receipt.attachments
   }
   const accepting = api.retain(receipt, { runId: 'run', draft })
+
   draft.text = 'Caller changed its buffer'
   const id = await accepting
+
   expect(readFieldObservations(core, 'run')[0]).toMatchObject({
     id,
     text: 'Reported 25 mm',
@@ -90,6 +97,7 @@ it('keeps a failed metadata acceptance retryable without a partial canonical not
     text: 'Observation',
     attachments: receipt.attachments
   }
+
   await expect(
     api.retain(receipt, { runId: 'not-retained', draft })
   ).rejects.toThrow('retained')
@@ -100,6 +108,7 @@ it('keeps a failed metadata acceptance retryable without a partial canonical not
     { filename: 'revision.csv', bytes: new TextEncoder().encode('gap,24') }
   ])
   const next = { ...draft, attachments: revised.attachments }
+
   await expect(
     api.retain(revised, {
       runId: 'run',
@@ -122,6 +131,7 @@ it('keeps a failed metadata acceptance retryable without a partial canonical not
 it('requires metadata parity and explicit receipt retention, never retains discarded previews', async () => {
   const receipt = await api.prepare([file()]),
     before = core.getUndoHistoryDepth()
+
   await expect(
     api.retain(receipt, {
       runId: 'run',
@@ -148,6 +158,7 @@ it('requires metadata parity and explicit receipt retention, never retains disca
 
 it('uses Feature-owned cancellation and rejects overlapping tasks without writing history', async () => {
   let captured: AbortSignal | undefined
+
   archive.prepare = vi.fn(
     async (_files, signal) =>
       new Promise<never>((_resolve, reject) => {
@@ -162,6 +173,7 @@ it('uses Feature-owned cancellation and rejects overlapping tasks without writin
   const external = new AbortController(),
     before = core.getUndoHistoryDepth()
   const pending = api.prepare([file()], { signal: external.signal })
+
   await vi.waitFor(() => expect(captured).toBeDefined())
   expect(captured).not.toBe(external.signal)
   await expect(api.prepare([file()])).rejects.toMatchObject({

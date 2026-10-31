@@ -16,22 +16,28 @@ const packageJson = JSON.parse(
 )
 
 const sourceFiles = []
+
 const visit = (directory, files = sourceFiles) => {
   for (const entry of readdirSync(directory)) {
     const absolutePath = path.join(directory, entry)
+
     if (statSync(absolutePath).isDirectory()) {
       if (entry !== '__tests__') {
         visit(absolutePath, files)
       }
+
       continue
     }
+
     if (/\.(?:ts|tsx|mjs)$/.test(entry)) {
       files.push(absolutePath)
     }
   }
 }
+
 visit(sourceDirectory)
 const backendSourceFiles = []
+
 visit(serverDirectory, backendSourceFiles)
 backendSourceFiles.push(path.join(appDirectory, 'collaboration-server.ts'))
 
@@ -47,10 +53,12 @@ const nodeBuiltins = new Set([
   ...builtinModules,
   ...builtinModules.map((moduleName) => `node:${moduleName}`)
 ])
+
 const externalPackageName = (specifier) =>
   specifier.startsWith('@')
     ? specifier.split('/').slice(0, 2).join('/')
     : specifier.split('/')[0]
+
 const collectExternalImports = (absolutePath) => {
   const source = readFileSync(absolutePath, 'utf8')
   const imports = new Set()
@@ -59,6 +67,7 @@ const collectExternalImports = (absolutePath) => {
 
   for (const match of source.matchAll(pattern)) {
     const specifier = match[1] ?? match[2] ?? match[3]
+
     if (
       specifier.startsWith('.') ||
       specifier.startsWith('/') ||
@@ -66,20 +75,25 @@ const collectExternalImports = (absolutePath) => {
     ) {
       continue
     }
+
     imports.add(specifier)
   }
+
   return imports
 }
 
 test('Asyra Design production code uses Core for framework-owned runtime capabilities', () => {
   const failures = []
+
   for (const absolutePath of sourceFiles) {
     const source = readFileSync(absolutePath, 'utf8')
+
     if (/\bcore\.deps\b/.test(source)) {
       failures.push(
         `${path.relative(appDirectory, absolutePath)} accesses core.deps`
       )
     }
+
     for (const packageName of runtimePackagesOwnedByCore) {
       if (
         new RegExp(`['"]@asyra/${packageName.replaceAll('-', '\\-')}['"]`).test(
@@ -92,6 +106,7 @@ test('Asyra Design production code uses Core for framework-owned runtime capabil
       }
     }
   }
+
   assert.deepEqual(failures, [])
 })
 
@@ -103,6 +118,7 @@ test('Asyra Design declares only independently composed framework packages', () 
       `@asyra/${packageName} must be consumed through @asyra/core`
     )
   }
+
   assert.equal(typeof packageJson.dependencies['@asyra/core'], 'string')
   assert.equal(
     typeof packageJson.dependencies['@asyra/collaboration'],
@@ -115,13 +131,17 @@ test('Asyra Design declares only independently composed framework packages', () 
 
 test('Asyra Design declares every production import as a direct runtime dependency', () => {
   const missingDependencies = new Map()
+
   for (const absolutePath of [...sourceFiles, ...backendSourceFiles]) {
     for (const specifier of collectExternalImports(absolutePath)) {
       const packageName = externalPackageName(specifier)
+
       if (packageJson.dependencies[packageName] !== undefined) {
         continue
       }
+
       const consumers = missingDependencies.get(packageName) ?? []
+
       consumers.push(path.relative(appDirectory, absolutePath))
       missingDependencies.set(packageName, consumers)
     }
@@ -160,6 +180,7 @@ const independentBackendEntries = new Set([
 
 test('Asyra Design backend uses App protocols and independent public capabilities', () => {
   const failures = []
+
   for (const absolutePath of backendSourceFiles) {
     for (const specifier of collectExternalImports(absolutePath)) {
       if (
@@ -172,6 +193,7 @@ test('Asyra Design backend uses App protocols and independent public capabilitie
       }
     }
   }
+
   assert.deepEqual(failures, [])
 })
 
@@ -197,6 +219,7 @@ for (const specifier of [
       .flatMap((item) => item.output)
       .filter((item) => item.type === 'chunk')
     const modules = chunks.flatMap((chunk) => Object.keys(chunk.modules))
+
     assert.ok(modules.includes(entry))
     assert.deepEqual(
       modules.filter((file) => !file.startsWith(runtimeDirectory + path.sep)),
@@ -239,6 +262,7 @@ test('the public Group bounds entrypoint loads only its canonical pure geometry 
     fileURLToPath(import.meta.resolve('@asyra/utils'))
   )
   const geometryEntry = path.join(utilsDirectory, 'render/geometry-bounds.js')
+
   // Exact owner closure: a new dependency must be reviewed, not silently allowed
   // merely because it lives somewhere in Utils. The unused point transform
   // is tree-shaken from this consumer; the ellipse calculation remains shared.
@@ -252,6 +276,7 @@ test('the public Group bounds entrypoint loads only its canonical pure geometry 
   )
   const rootGeometry = await import('@asyra/utils')
   const narrowGeometry = await import('@asyra/utils/geometry-bounds')
+
   assert.equal(
     narrowGeometry.calculateEllipseBounds,
     rootGeometry.calculateEllipseBounds,
@@ -265,6 +290,7 @@ test('the public Group bounds entrypoint loads only its canonical pure geometry 
   const { deriveGroupBounds } = await import(
     `data:text/javascript;base64,${Buffer.from(chunks[0].code).toString('base64')}`
   )
+
   assert.deepEqual(deriveGroupBounds([]), { x: 0, y: 0, width: 0, height: 0 })
   assert.deepEqual(
     deriveGroupBounds([{ x: 10, y: 20, width: -15, height: 10 }]),
@@ -284,6 +310,7 @@ test('the public Group bounds entrypoint loads only its canonical pure geometry 
   })
   const bounds = deriveGroupBounds([oval])
   const radius = Math.sqrt(62.5)
+
   for (const [key, expected] of Object.entries({
     x: 10 + 5 / Math.sqrt(2) - radius,
     y: 20 + 15 / Math.sqrt(2) - radius,
@@ -321,6 +348,7 @@ for (const configFileName of [
       )
       .map((moduleId) => path.relative(appDirectory, moduleId))
     let allowedDiagnosticModules = new Set()
+
     if (configFileName === 'vite.document-backend.config.ts') {
       const diagnosticBuild = await build({
         root: appDirectory,
@@ -336,6 +364,7 @@ for (const configFileName of [
           minify: false
         }
       })
+
       allowedDiagnosticModules = new Set(
         (Array.isArray(diagnosticBuild) ? diagnosticBuild : [diagnosticBuild])
           .flatMap((item) => item.output)
@@ -348,6 +377,7 @@ for (const configFileName of [
         'Persistence diagnostics must be included'
       )
     }
+
     assert.deepEqual(
       frameworkModules.filter((id) => !allowedDiagnosticModules.has(id)),
       [],
@@ -357,6 +387,7 @@ for (const configFileName of [
     const frameworkTerms = chunks.flatMap((chunk) =>
       ['@asyra/', 'Factory', 'Core'].filter((term) => chunk.code.includes(term))
     )
+
     assert.deepEqual(
       frameworkTerms,
       [],
@@ -382,6 +413,7 @@ test('ordinary validation includes every maintained server regression suite', ()
     .filter(
       (file) => !commands.split(/\s+/).includes(`server/__tests__/${file}`)
     )
+
   assert.deepEqual(
     missing,
     [],
@@ -396,12 +428,15 @@ test('formal AI suites do not enable live model inference', () => {
     path.resolve(appDirectory, '../../scripts/__tests__')
   ]
   const failures = []
+
   for (const directory of directories) {
     for (const name of readdirSync(directory)) {
       if (!/\.(test|spec)\.(ts|tsx|mjs)$/.test(name)) {
         continue
       }
+
       const source = readFileSync(path.join(directory, name), 'utf8')
+
       if (
         /process\.env\.(E2E_LOCAL_AI|LOCAL_AI_DISCOVERY_PROBE)\b/.test(source)
       ) {
@@ -409,6 +444,7 @@ test('formal AI suites do not enable live model inference', () => {
       }
     }
   }
+
   assert.deepEqual(
     failures,
     [],

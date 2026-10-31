@@ -32,9 +32,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing measured pair')
         }
+
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -56,11 +58,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         )
         let originalPreparation = 0,
           addedPreparation = 0
+
         const offsets = (node: MeshNode): number[] =>
           node.children
             ? node.children.flatMap(offsets)
             : node.triangles.map((triangle) => triangle.offset)
+
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (mesh, checkpoint, hierarchy, checkExecution) => {
             const index = build(
@@ -72,18 +77,22 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               hierarchy,
               checkExecution
             )
+
             if (!hierarchy) {
               return index
             }
+
             const result = partitionIndex(index, () => {
               addedPreparation++
               checkpoint()
             })
+
             expect(offsets(result.root).sort((a, b) => a - b)).toEqual(
               offsets(index.root).sort((a, b) => a - b)
             )
             expect(result.representatives).toBe(index.representatives)
             expect(result.componentCount).toBe(index.componentCount)
+
             return result
           }
         )
@@ -94,6 +103,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- fixed immutable partition feasibility includes original and added preparation
         console.info(
           JSON.stringify({
@@ -136,6 +146,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         addedPreparation = 0,
         builds = 0
       const build = meshIndex.buildMeshIndex
+
       vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
         (mesh, checkpoint, hierarchy, checkExecution) => {
           builds++
@@ -148,6 +159,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             hierarchy,
             checkExecution
           )
+
           return hierarchy
             ? partitionIndex(index, () => {
                 addedPreparation++
@@ -157,6 +169,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         }
       )
       const result = runOriginalPartMethod(snapshot, () => undefined)
+
       // eslint-disable-next-line no-console -- whole-workload feasibility includes all immutable preparation charges
       console.info(
         JSON.stringify({

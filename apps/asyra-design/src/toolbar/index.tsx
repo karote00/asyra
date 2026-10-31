@@ -17,6 +17,7 @@ const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   ) {
     return
   }
+
   event.stopPropagation()
 }
 

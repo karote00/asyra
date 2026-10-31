@@ -26,6 +26,7 @@ import {
 test.describe('Undo/Redo Actions', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const browserErrors: string[] = []
+
     ;(testInfo as typeof testInfo & { browserErrors: string[] }).browserErrors =
       browserErrors
     page.on('pageerror', (error) => {
@@ -46,6 +47,7 @@ test.describe('Undo/Redo Actions', () => {
     const browserErrors =
       (testInfo as typeof testInfo & { browserErrors?: string[] })
         .browserErrors ?? []
+
     expect(
       browserErrors.filter((message) =>
         message.includes('Not allow to get value which is not in entity data.')
@@ -62,6 +64,7 @@ test.describe('Undo/Redo Actions', () => {
 
     // Verify a new element was created
     const currentCount = await getElementCount(page)
+
     expect(currentCount).toBe(initialCount + 1)
 
     // Undo the creation
@@ -70,6 +73,7 @@ test.describe('Undo/Redo Actions', () => {
     // Verify the element was removed with retries
     await expect(async () => {
       const count = await getElementCount(page)
+
       expect(count).toBe(initialCount)
     }).toPass({ timeout: 2000 })
   })
@@ -139,6 +143,7 @@ test.describe('Undo/Redo Actions', () => {
     await createRectangle(page, 0.35, 0.35)
 
     const before = await getSelectedElementRect(page)
+
     expect(before).not.toBeNull()
     if (!before) {
       return
@@ -146,12 +151,14 @@ test.describe('Undo/Redo Actions', () => {
 
     const beforeUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
 
     await dragSelectedElementBy(page, 120, 70, 20)
 
     const moved = await getSelectedElementRect(page)
+
     expect(moved).not.toBeNull()
     if (!moved) {
       return
@@ -163,14 +170,17 @@ test.describe('Undo/Redo Actions', () => {
 
     const afterUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
+
     expect(afterUndoCount).toBe(beforeUndoCount + 1)
 
     await undo(page)
     await expect
       .poll(async () => {
         const restored = await getSelectedElementRect(page)
+
         return restored
           ? { x: Math.round(restored.x), y: Math.round(restored.y) }
           : null
@@ -181,6 +191,7 @@ test.describe('Undo/Redo Actions', () => {
     await expect
       .poll(async () => {
         const restored = await getSelectedElementRect(page)
+
         return restored
           ? { x: Math.round(restored.x), y: Math.round(restored.y) }
           : null
@@ -195,31 +206,41 @@ test.describe('Undo/Redo Actions', () => {
     await createRectangle(page, 0.35, 0.35)
     const before = await getSelectedElementRect(page)
     const center = await getSelectedElementClientCenter(page)
+
     expect(before).not.toBeNull()
     expect(center).not.toBeNull()
     if (!before || !center) {
       throw new Error('Missing real drag target')
     }
+
     const fileId = new URL(page.url()).searchParams.get('fileId')
+
     if (!fileId) {
       throw new Error('Missing document identity')
     }
+
     const original = await getCoreDocumentDigest(page)
+
     const durable = async (expected: typeof original) => {
       await expect
         .poll(() => getPersistedDocumentDigest(fileId), { timeout: 15_000 })
         .toEqual(expected)
     }
+
     await durable(original)
+
     const historyDepth = () =>
       page.evaluate(async () => {
         const { core } = await import('../src/testing/runtime-access')
+
         return {
           undo: core.deps.factory.transact.undoStack.length,
           redo: core.deps.factory.transact.redoStack.length
         }
       })
+
     const initialDepth = await historyDepth()
+
     await page.mouse.move(center.x, center.y)
     await page.mouse.down()
     await page.mouse.move(center.x + 120, center.y + 70, { steps: 10 })
@@ -227,6 +248,7 @@ test.describe('Undo/Redo Actions', () => {
       .poll(async () => (await getSelectedElementRect(page))?.x)
       .toBeGreaterThan(before.x + 10)
     const moved = await getCoreDocumentDigest(page)
+
     // Keep the pointer down: using the toolbar here would end the session first.
     await page.keyboard.press('ControlOrMeta+z')
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(original)
@@ -248,6 +270,7 @@ test.describe('Undo/Redo Actions', () => {
     expect(await getCoreDocumentDigest(page)).toEqual(moved)
     await createRectangle(page, 0.65, 0.45)
     const next = await getCoreDocumentDigest(page)
+
     await durable(next)
     await page.reload()
     await waitForAppReady(page)
@@ -259,6 +282,7 @@ test.describe('Undo/Redo Actions', () => {
   }) => {
     await createRectangle(page, 0.35, 0.35)
     const before = await getSelectedElementRect(page)
+
     expect(before).not.toBeNull()
     if (!before) {
       return
@@ -266,9 +290,11 @@ test.describe('Undo/Redo Actions', () => {
 
     const beforeUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
     const start = await getSelectedElementClientCenter(page)
+
     expect(start).not.toBeNull()
     if (!start) {
       return
@@ -277,6 +303,7 @@ test.describe('Undo/Redo Actions', () => {
     await page.evaluate(async () => {
       const { startSharedPublicationCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedPublicationCapture('move-preview-publications')
     })
     await page.mouse.move(start.x, start.y)
@@ -285,6 +312,7 @@ test.describe('Undo/Redo Actions', () => {
     await expect
       .poll(async () => {
         const current = await getSelectedElementRect(page)
+
         return current
           ? current.x > before.x + 10 && current.y > before.y + 10
           : false
@@ -295,14 +323,17 @@ test.describe('Undo/Redo Actions', () => {
         page.evaluate(async () => {
           const { readTestCapture } =
             await import('../src/testing/runtime-access')
+
           return readTestCapture('move-preview-publications').length
         })
       )
       .toBeGreaterThan(0)
     const previewPublications = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('move-preview-publications')
     })
+
     expect(previewPublications).toContainEqual(
       expect.objectContaining({
         slices: expect.arrayContaining([
@@ -335,6 +366,7 @@ test.describe('Undo/Redo Actions', () => {
       'move-elements:positions'
     )
     const interrupted = await getSelectedElementRect(page)
+
     expect(interrupted).not.toBeNull()
     if (!interrupted) {
       return
@@ -345,6 +377,7 @@ test.describe('Undo/Redo Actions', () => {
         const core = (await import('../src/testing/runtime-access')).core
         const element = core?.deps?.sceneTree?.getElementById?.(elementId)
         const computed = element?.getAllComputedData?.()
+
         return computed
           ? { x: Number(computed.x), y: Number(computed.y) }
           : null
@@ -354,12 +387,14 @@ test.describe('Undo/Redo Actions', () => {
     await page.mouse.up()
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('move-preview-publications')
     })
 
     await expect
       .poll(async () => {
         const committed = await getPositionById()
+
         return committed
           ? { x: Math.round(committed.x), y: Math.round(committed.y) }
           : null
@@ -371,14 +406,17 @@ test.describe('Undo/Redo Actions', () => {
 
     const afterUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
+
     expect(afterUndoCount).toBe(beforeUndoCount + 1)
 
     await undo(page)
     await expect
       .poll(async () => {
         const restored = await getPositionById()
+
         return restored
           ? { x: Math.round(restored.x), y: Math.round(restored.y) }
           : null
@@ -395,6 +433,7 @@ test.describe('Undo/Redo Actions', () => {
     const beforeSummary = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const stack = core?.deps?.factory?.transact?.undoStack ?? []
+
       return { count: stack.length }
     })
 
@@ -450,6 +489,7 @@ test.describe('Undo/Redo Actions', () => {
 
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       if (!core || !elementApis) {
         throw new Error('Asyra Design E2E APIs are not available')
       }
@@ -515,6 +555,7 @@ test.describe('Undo/Redo Actions', () => {
         },
         { undoable: false }
       )
+
       if (!elementId) {
         throw new Error('Failed to create vector fixture')
       }
@@ -527,6 +568,7 @@ test.describe('Undo/Redo Actions', () => {
         ? JSON.parse(JSON.stringify(beforePointRaw))
         : null
       const stackBefore = core.deps.factory.transact.undoStack.length
+
       elementApis.updateVectorAnchorPointPosition(
         elementId,
         'A',
@@ -587,6 +629,7 @@ test.describe('Undo/Redo Actions', () => {
         page.evaluate(async (elementId) => {
           const elementApis = (await import('../src/testing/runtime-access'))
             .elementApis
+
           return elementApis?.getVectorAnchorPointById?.(elementId, 'A')?.point
         }, summary.elementId)
       )
@@ -598,6 +641,7 @@ test.describe('Undo/Redo Actions', () => {
         page.evaluate(async (elementId) => {
           const elementApis = (await import('../src/testing/runtime-access'))
             .elementApis
+
           return elementApis?.getVectorAnchorPointById?.(elementId, 'A')?.point
         }, summary.elementId)
       )
@@ -612,6 +656,7 @@ test.describe('Undo/Redo Actions', () => {
 
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       if (!core || !elementApis) {
         throw new Error('Asyra Design E2E APIs are not available')
       }
@@ -670,10 +715,13 @@ test.describe('Undo/Redo Actions', () => {
         },
         { undoable: false }
       )
+
       if (!elementId) {
         throw new Error('Failed to create vector fixture')
       }
+
       core.selectElements?.([elementId], { undoable: false })
+
       return { elementId }
     })
 
@@ -684,6 +732,7 @@ test.describe('Undo/Redo Actions', () => {
           core?.deps?.sceneTree
             ?.getElementById?.(elementId)
             ?.getAllComputedData?.() ?? {}
+
         return {
           pointIds: Object.keys(computed.points ?? {}).sort(),
           segmentIds: Object.keys(computed.segments ?? {}).sort(),
@@ -716,6 +765,7 @@ test.describe('Undo/Redo Actions', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (entry: any) => entry.event
         )
+
         return {
           changeTypes: events.map(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -726,6 +776,7 @@ test.describe('Undo/Redo Actions', () => {
 
     const expectCanonicalPropertyUndo = async () => {
       const summary = await readLastUndo()
+
       expect(summary.changeTypes.length).toBeGreaterThan(0)
       expect(
         summary.changeTypes.every((type) =>
@@ -733,6 +784,7 @@ test.describe('Undo/Redo Actions', () => {
         )
       ).toBe(true)
     }
+
     const undoStructuralOperation = async () => {
       await page.evaluate(async () => {
         ;(
@@ -741,6 +793,7 @@ test.describe('Undo/Redo Actions', () => {
       })
       await page.waitForTimeout(120)
     }
+
     const redoStructuralOperation = async () => {
       await page.evaluate(async () => {
         ;(
@@ -753,6 +806,7 @@ test.describe('Undo/Redo Actions', () => {
     await page.evaluate(async (elementId) => {
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       elementApis.appendVectorAnchorPoint(elementId, {
         id: 'D',
         type: 'sharp',
@@ -793,11 +847,14 @@ test.describe('Undo/Redo Actions', () => {
           y: (start.y + end.y) / 2
         }
       )
+
       if (!result.changed || result.unavailableIds.length) {
         throw new Error('Vector split did not settle')
       }
+
       return result.value?.point.id
     }, setup.elementId)
+
     expect(splitPointId).toBeTruthy()
     await expectCanonicalPropertyUndo()
     await undoStructuralOperation()
@@ -813,6 +870,7 @@ test.describe('Undo/Redo Actions', () => {
       async ({ elementId, pointId }) => {
         const elementApis = (await import('../src/testing/runtime-access'))
           .elementApis
+
         elementApis.removeVectorAnchorPoint(elementId, pointId)
       },
       { elementId: setup.elementId, pointId: splitPointId }
@@ -830,6 +888,7 @@ test.describe('Undo/Redo Actions', () => {
     await page.evaluate(async (elementId) => {
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       elementApis.updateVectorAnchorPointType(elementId, 'B', 'smooth')
     }, setup.elementId)
     await expectCanonicalPropertyUndo()
@@ -847,6 +906,7 @@ test.describe('Undo/Redo Actions', () => {
         core?.deps?.sceneTree
           ?.getElementById?.(elementId)
           ?.getAllComputedData?.()?.points?.B ?? {}
+
       elementApis.updateVectorAnchorPointHandles(elementId, [
         {
           pointId: 'B',
@@ -877,6 +937,7 @@ test.describe('Undo/Redo Actions', () => {
     await page.evaluate(async (elementId) => {
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       elementApis.setVectorAnchorPointHandleMode(
         elementId,
         'B',
@@ -903,6 +964,7 @@ test.describe('Undo/Redo Actions', () => {
     await page.evaluate(async (elementId) => {
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       elementApis.connectVectorAnchorEndpoints(elementId, 'D', 'A')
     }, setup.elementId)
     await expectCanonicalPropertyUndo()
@@ -914,6 +976,7 @@ test.describe('Undo/Redo Actions', () => {
     await page.evaluate(async (elementId) => {
       const elementApis = (await import('../src/testing/runtime-access'))
         .elementApis
+
       elementApis.setVectorClosed(elementId, true)
     }, setup.elementId)
     await expectCanonicalPropertyUndo()
@@ -929,6 +992,7 @@ test.describe('Undo/Redo Actions', () => {
       .poll(() =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('pathEditingMode') ?? false
         })
       )
@@ -958,6 +1022,7 @@ test.describe('Undo/Redo Actions', () => {
             }
           ])
       )
+
       if (!vectorId || !anchor) {
         throw new Error('Missing editable vector anchor')
       }
@@ -994,6 +1059,7 @@ test.describe('Undo/Redo Actions', () => {
     await page.evaluate(async () => {
       const { startSharedPublicationCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedPublicationCapture('vector-point-preview-publications')
     })
     await page.mouse.move(before.client.x, before.client.y)
@@ -1008,6 +1074,7 @@ test.describe('Undo/Redo Actions', () => {
             const core = (await import('../src/testing/runtime-access')).core
             const element = core?.deps?.sceneTree?.getElementById?.(vectorId)
             const point = element?.getAllComputedData?.().points?.[pointId]
+
             return Boolean(point && point.x > minimumX && point.y > minimumY)
           },
           {
@@ -1025,8 +1092,10 @@ test.describe('Undo/Redo Actions', () => {
     await page.waitForTimeout(80)
     const previewPublications = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('vector-point-preview-publications')
     })
+
     expect(previewPublications.length).toBeGreaterThan(0)
     expect(previewPublications).toContainEqual(
       expect.objectContaining({
@@ -1054,8 +1123,10 @@ test.describe('Undo/Redo Actions', () => {
     await page.mouse.up()
     const committedPublications = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('vector-point-preview-publications')
     })
+
     expect(
       JSON.stringify(committedPublications.slice(previewPublications.length))
     ).not.toContain('"channel":"props"')
@@ -1084,6 +1155,7 @@ test.describe('Undo/Redo Actions', () => {
     )
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('vector-point-preview-publications')
     })
     await page.waitForTimeout(80)
@@ -1106,6 +1178,7 @@ test.describe('Undo/Redo Actions', () => {
             }
           ])
       )
+
       return {
         undoCount: core?.deps?.factory?.transact?.undoStack?.length ?? 0,
         point: point ? { x: point.x, y: point.y } : null,
@@ -1151,6 +1224,7 @@ test.describe('Undo/Redo Actions', () => {
               }
             ])
         )
+
         return {
           point: point ? { x: point.x, y: point.y } : null,
           anchors,
@@ -1174,6 +1248,7 @@ test.describe('Undo/Redo Actions', () => {
       .poll(() =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return {
             pathEditingMode:
               core?.getSystemProperty?.('pathEditingMode') ?? false,
@@ -1195,6 +1270,7 @@ test.describe('Undo/Redo Actions', () => {
   }) => {
     await createRectangle(page, 0.22, 0.28) // A (selected)
     const aBefore = await getSelectedElementRect(page)
+
     expect(aBefore).not.toBeNull()
     if (!aBefore) {
       return
@@ -1202,6 +1278,7 @@ test.describe('Undo/Redo Actions', () => {
 
     await createRectangle(page, 0.52, 0.46) // B (selected)
     const bBefore = await getSelectedElementRect(page)
+
     expect(bBefore).not.toBeNull()
     if (!bBefore) {
       return
@@ -1214,10 +1291,12 @@ test.describe('Undo/Redo Actions', () => {
 
     const beforeUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
 
     const aCenter = await getElementRectClientCenter(page, aBefore)
+
     await page.mouse.move(aCenter.x, aCenter.y)
     await page.mouse.down()
     await page.mouse.move(aCenter.x + 80, aCenter.y + 50, { steps: 16 })
@@ -1225,24 +1304,29 @@ test.describe('Undo/Redo Actions', () => {
     await page.waitForTimeout(150)
 
     const aMoved = await getSelectedElementRect(page)
+
     expect(aMoved).not.toBeNull()
     if (!aMoved) {
       return
     }
+
     expect(aMoved.id).toBe(aBefore.id)
     expect(aMoved.x).toBeGreaterThan(aBefore.x)
     expect(aMoved.y).toBeGreaterThan(aBefore.y)
 
     const afterUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
+
     expect(afterUndoCount).toBe(beforeUndoCount + 1)
 
     await undo(page)
     await expect
       .poll(async () => {
         const restored = await getSelectedElementRect(page)
+
         return restored
           ? {
               id: restored.id,
@@ -1259,8 +1343,10 @@ test.describe('Undo/Redo Actions', () => {
 
     const bStillExists = await page.evaluate(async (elementId) => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return Boolean(core?.deps?.sceneTree?.getElementById?.(elementId))
     }, bBefore.id)
+
     expect(bStillExists).toBe(true)
   })
 })

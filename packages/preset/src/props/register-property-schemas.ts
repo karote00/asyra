@@ -22,12 +22,16 @@ import type { PresetCoreAPIs } from '../types.js'
 import { PRESET_REGISTRATION } from '../registration.js'
 
 const isUnit = (value: unknown) => value === Unit.PX || value === Unit.PERCENT
+
 const isStringArray = (value: unknown) =>
   Array.isArray(value) && value.every((item) => typeof item === 'string')
+
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
 const isOpacity = (value: unknown) =>
   isFiniteNumber(value) && (value as number) >= 0 && (value as number) <= 1
+
 const isNullableFinitePoint = (value: unknown) =>
   value === null ||
   (typeof value === 'object' &&
@@ -36,6 +40,7 @@ const isNullableFinitePoint = (value: unknown) =>
     Number.isFinite((value as { y?: unknown }).y))
 
 const COLOR_FORMAT_SET = new Set(Object.values(FillColorFormats))
+
 const isFillColorFormat = (value: unknown) =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   typeof value === 'string' && COLOR_FORMAT_SET.has(value as any)
@@ -123,8 +128,10 @@ const fillSchema: PropertySchema = {
     {
       key: 'kind',
       kind: 'string',
+
       validate: (value) =>
         value === FillKinds.SOLID || value === FillKinds.GRADIENT,
+
       defaultValue: fillDefaults.kind
     },
     {
@@ -142,7 +149,9 @@ const fillSchema: PropertySchema = {
     {
       key: 'color',
       kind: 'string',
+
       validate: (value) => typeof value === 'string' && value.length > 0,
+
       defaultValue: fillDefaults.color
     },
     {
@@ -183,35 +192,45 @@ const strokeSchema: PropertySchema = {
     {
       key: 'style',
       kind: 'string',
+
       validate: (value) =>
         value === StrokeStyles.SOLID || value === StrokeStyles.DASHED,
+
       defaultValue: strokeDefaults.style
     },
     {
       key: 'position',
       kind: 'string',
+
       validate: (value) =>
         value === StrokePositions.CENTER ||
         value === StrokePositions.INSIDE ||
         value === StrokePositions.OUTSIDE,
+
       defaultValue: strokeDefaults.position
     },
     {
       key: 'width',
       kind: 'number',
+
       validate: (value) => isFiniteNumber(value) && (value as number) >= 0,
+
       defaultValue: strokeDefaults.width
     },
     {
       key: 'dash',
       kind: 'number',
+
       validate: (value) => isFiniteNumber(value) && (value as number) > 0,
+
       defaultValue: strokeDefaults.dash
     },
     {
       key: 'gap',
       kind: 'number',
+
       validate: (value) => isFiniteNumber(value) && (value as number) > 0,
+
       defaultValue: strokeDefaults.gap
     },
     {
@@ -223,28 +242,34 @@ const strokeSchema: PropertySchema = {
     {
       key: 'joinType',
       kind: 'string',
+
       validate: (value) =>
         value === StrokeJoinTypes.MITER ||
         value === StrokeJoinTypes.BEVEL ||
         value === StrokeJoinTypes.ROUND,
+
       defaultValue: strokeDefaults.joinType
     },
     {
       key: 'capType',
       kind: 'string',
+
       validate: (value) =>
         value === StrokeCapTypes.BUTT ||
         value === StrokeCapTypes.SQUARE ||
         value === StrokeCapTypes.ROUND,
+
       defaultValue: strokeDefaults.capType
     },
     {
       key: 'miterAngle',
       kind: 'number',
+
       validate: (value) =>
         isFiniteNumber(value) &&
         (value as number) >= 0 &&
         (value as number) <= 180,
+
       defaultValue: strokeDefaults.miterAngle
     }
   ]
@@ -346,8 +371,10 @@ const anchorPointSchema: PropertySchema = {
     {
       key: 'pointType',
       kind: 'string',
+
       validate: (value) =>
         value === AnchorPointTypes.SHARP || value === AnchorPointTypes.SMOOTH,
+
       defaultValue: AnchorPointTypes.SHARP
     },
     {
@@ -375,7 +402,9 @@ const anchorPointsSchema: PropertySchema = {
     {
       key: 'anchorPoints',
       kind: 'array',
+
       validate: (value) => Array.isArray(value),
+
       defaultValue: []
     }
   ]
@@ -387,9 +416,11 @@ const vectorPointSchema: PropertySchema = {
     {
       key: 'kind',
       kind: 'string',
+
       validate: (value) =>
         value === VECTOR_TOKENS.POINT.KIND.ANCHOR ||
         value === VECTOR_TOKENS.POINT.KIND.CONTROL,
+
       defaultValue: VECTOR_TOKENS.POINT.KIND.ANCHOR
     },
     {
@@ -407,8 +438,10 @@ const vectorPointSchema: PropertySchema = {
     {
       key: 'anchorType',
       kind: 'string',
+
       validate: (value) =>
         value === AnchorPointTypes.SHARP || value === AnchorPointTypes.SMOOTH,
+
       defaultValue: AnchorPointTypes.SHARP
     },
     {
@@ -424,6 +457,7 @@ const vectorPointSchema: PropertySchema = {
     {
       key: 'controlRole',
       kind: 'string',
+
       validate: (value) =>
         value === VECTOR_TOKENS.CONTROL.ROLE.IN ||
         value === VECTOR_TOKENS.CONTROL.ROLE.OUT
@@ -459,13 +493,17 @@ const vectorSegmentSchema: PropertySchema = {
     {
       key: 'outControlId',
       kind: 'custom',
+
       validate: (value) => value === null || typeof value === 'string',
+
       defaultValue: null
     },
     {
       key: 'inControlId',
       kind: 'custom',
+
       validate: (value) => value === null || typeof value === 'string',
+
       defaultValue: null
     }
   ]

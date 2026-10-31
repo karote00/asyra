@@ -15,11 +15,13 @@ export const runOwnedBuildCommand = (
 ) =>
   new Promise((resolve, reject) => {
     const env = { ...process.env, CI: 'true', FORCE_COLOR: '0' }
+
     if (githubActions) {
       env.GITHUB_ACTIONS = 'true'
     } else {
       delete env.GITHUB_ACTIONS
     }
+
     const child = spawn(command, args, {
       cwd: repositoryRoot,
       env,
@@ -29,10 +31,12 @@ export const runOwnedBuildCommand = (
     let output = ''
     let timedOut = false
     let oversized = false
+
     const killGroup = () => {
       if (!child.pid) {
         return
       }
+
       try {
         process.kill(-child.pid, 'SIGKILL')
       } catch (error) {
@@ -41,10 +45,12 @@ export const runOwnedBuildCommand = (
         }
       }
     }
+
     const timer = setTimeout(() => {
       timedOut = true
       killGroup()
     }, timeoutMs)
+
     const append = (data) => {
       output += data.toString()
       if (output.length > 8 * 1024 * 1024) {
@@ -52,6 +58,7 @@ export const runOwnedBuildCommand = (
         killGroup()
       }
     }
+
     child.stdout.on('data', append)
     child.stderr.on('data', append)
     child.once('error', (error) => {
@@ -64,6 +71,7 @@ export const runOwnedBuildCommand = (
         const error = new Error(
           timedOut ? `${command} timed out` : `${command} output exceeded limit`
         )
+
         error.output = output
         reject(error)
       } else {
@@ -99,6 +107,7 @@ export async function assertStarterBuildArtifacts() {
       )
     )
   )
+
   assertStarterArtifact(
     typeof utils.Setter === 'function',
     '@asyra/utils Setter'

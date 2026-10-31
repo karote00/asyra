@@ -43,10 +43,15 @@ const roomKey = (identity: ProviderIdentity): string =>
 
 export class MemoryHub {
   private readonly rooms = new Map<string, MemoryRoom>()
+
   private readonly peerAcceptanceTails = new Map<MemoryPeer, Promise<void>>()
+
   private readonly peerApplicationTails = new Map<MemoryPeer, Promise<void>>()
+
   private readonly peerConnections = new Map<MemoryPeer, MemoryPeerConnection>()
+
   private readonly authorizeConnection?: MemoryHubOptions['authorizeConnection']
+
   private readonly acknowledgePublication?: MemoryHubOptions['acknowledgePublication']
 
   constructor(options: MemoryHubOptions = {}) {
@@ -56,6 +61,7 @@ export class MemoryHub {
 
   async connect(peer: MemoryPeer, connectionToken: symbol): Promise<void> {
     let authorized = true
+
     try {
       authorized = (await this.authorizeConnection?.(peer.identity)) ?? true
     } catch (error) {
@@ -65,39 +71,48 @@ export class MemoryHub {
         error
       )
     }
+
     if (!authorized) {
       throw new ProviderFailure(
         'connection-rejected',
         '[collaboration] provider connection was rejected'
       )
     }
+
     this.endPeerConnection(peer)
     const endWaiters = new Set<() => void>()
     let active = true
     const connection: MemoryPeerConnection = {
       connectionToken,
       endWaiters,
+
       waitForEnd: () => {
         if (!active) {
           return Object.freeze({
             ended: Promise.resolve(),
+
             cancel: () => undefined
           })
         }
+
         let settle: (() => void) | undefined
         const ended = new Promise<void>((resolve) => {
           settle = () => {
             if (settle) {
               endWaiters.delete(settle)
             }
+
             resolve()
           }
         })
+
         if (settle) {
           endWaiters.add(settle)
         }
+
         return Object.freeze({
           ended,
+
           cancel: () => {
             if (settle) {
               endWaiters.delete(settle)
@@ -105,14 +120,17 @@ export class MemoryHub {
           }
         })
       },
+
       end: () => {
         if (!active) {
           return
         }
+
         active = false
         ;[...endWaiters].forEach((settle) => settle())
       }
     }
+
     this.peerConnections.set(peer, connection)
     this.room(peer.identity).providers.set(peer, connectionToken)
   }
@@ -120,25 +138,31 @@ export class MemoryHub {
   disconnect(peer: MemoryPeer, connectionToken?: symbol): void {
     const key = roomKey(peer.identity)
     const room = this.rooms.get(key)
+
     if (!room) {
       return
     }
+
     if (
       connectionToken !== undefined &&
       room.providers.get(peer) !== connectionToken
     ) {
       return
     }
+
     const activeConnectionToken = room.providers.get(peer)
+
     if (!room.providers.delete(peer)) {
       return
     }
+
     this.endPeerConnection(peer, activeConnectionToken)
 
     const event: ProviderAwarenessDisconnect = Object.freeze({
       actorId: peer.identity.actorId,
       reason: 'disconnect'
     })
+
     room.providers.forEach((_token, connectedPeer) =>
       connectedPeer.receiveAwarenessDisconnect(event)
     )
@@ -154,10 +178,12 @@ export class MemoryHub {
     await this.requirePublicationAcknowledgement(publication, sender.identity)
     const room = this.room(sender.identity)
     const acceptances: Promise<void>[] = []
+
     room.providers.forEach((connectionToken, peer) => {
       if (peer === sender) {
         return
       }
+
       acceptances.push(
         this.acceptPeerPublication(room, peer, connectionToken, publication)
       )
@@ -178,11 +204,14 @@ export class MemoryHub {
       .catch(() => undefined)
       .then(async () => {
         const previousApplication = this.peerApplicationTails.get(peer)
+
         if (previousApplication) {
           if (connection?.connectionToken !== connectionToken) {
             return
           }
+
           const endWait = connection.waitForEnd()
+
           try {
             const capacityOutcome = await Promise.race([
               previousApplication.then(
@@ -191,6 +220,7 @@ export class MemoryHub {
               ),
               endWait.ended.then(() => 'disconnected' as const)
             ])
+
             if (capacityOutcome === 'disconnected') {
               return
             }
@@ -198,23 +228,28 @@ export class MemoryHub {
             endWait.cancel()
           }
         }
+
         if (room.providers.get(peer) !== connectionToken) {
           return
         }
+
         const application = peer.receivePublication(
           clonePublication(publication)
         )
+
         this.peerApplicationTails.set(peer, application)
         void application.then(
           () => this.clearPeerApplication(peer, application),
           () => this.clearPeerApplication(peer, application)
         )
       })
+
     this.peerAcceptanceTails.set(peer, acceptance)
     void acceptance.then(
       () => this.clearPeerAcceptance(peer, acceptance),
       () => this.clearPeerAcceptance(peer, acceptance)
     )
+
     return acceptance
   }
 
@@ -238,6 +273,7 @@ export class MemoryHub {
 
   private endPeerConnection(peer: MemoryPeer, connectionToken?: symbol): void {
     const connection = this.peerConnections.get(peer)
+
     if (
       !connection ||
       (connectionToken !== undefined &&
@@ -245,6 +281,7 @@ export class MemoryHub {
     ) {
       return
     }
+
     this.peerConnections.delete(peer)
     this.peerApplicationTails.delete(peer)
     connection.end()
@@ -255,6 +292,7 @@ export class MemoryHub {
     identity: ProviderIdentity
   ): Promise<void> {
     let acknowledged = true
+
     try {
       acknowledged =
         (await this.acknowledgePublication?.(
@@ -269,6 +307,7 @@ export class MemoryHub {
         publication.publicationId
       )
     }
+
     if (!acknowledged) {
       throw new ProviderFailure(
         'acknowledgement-failed',
@@ -284,10 +323,12 @@ export class MemoryHub {
     message: ProviderAwarenessMessage
   ): void {
     const room = this.room(sender.identity)
+
     room.providers.forEach((_token, peer) => {
       if (peer === sender) {
         return
       }
+
       peer.receiveAwareness(cloneAwareness(message))
     })
   }
@@ -295,10 +336,12 @@ export class MemoryHub {
   private room(identity: ProviderIdentity): MemoryRoom {
     const key = roomKey(identity)
     let room = this.rooms.get(key)
+
     if (!room) {
       room = { providers: new Map() }
       this.rooms.set(key, room)
     }
+
     return room
   }
 }

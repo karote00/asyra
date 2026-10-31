@@ -21,6 +21,7 @@ import {
 } from './mesh-index'
 
 const ops = poseOperations(intervalAlgebra)
+
 export type Membership = 'inside' | 'outside' | 'unknown'
 const directions: readonly Vec3[] = [
   [1, 0.371, 0.529],
@@ -35,14 +36,17 @@ function rayMayHit(
 ): boolean {
   let near = 0,
     far = Infinity
+
   for (let axis = 0; axis < 3; axis++) {
     const range = idiv(
       isub(bounds[axis], origin[axis]),
       interval(direction[axis])
     )
+
     near = Math.max(near, range[0])
     far = Math.min(far, range[1])
   }
+
   return near <= far
 }
 
@@ -60,64 +64,82 @@ export function meshMembership(
   ) {
     return 'outside'
   }
+
   for (const direction of directions) {
     const crossings = new Int32Array(index.componentCount),
       d = ops.vector(direction)
     const pending: MeshNode[] = [index.root]
     let uncertain = false
+
     while (pending.length && !uncertain) {
       checkpoint()
       const node = pending.pop()
+
       if (!node) {
         throw new Error('Missing pending mesh node')
       }
+
       if (!rayMayHit(point, direction, node.bounds)) {
         continue
       }
+
       if (node.children) {
         pending.push(...node.children)
         continue
       }
+
       for (const triangle of node.triangles) {
         checkpoint()
         if (!rayMayHit(point, direction, triangle.bounds)) {
           continue
         }
+
         const [a, b, c] = triangle.vertices.map(ops.vector),
           e1 = ops.sub(b, a),
           e2 = ops.sub(c, a)
         const p = ops.cross(d, e2),
           determinant = ops.dot(e1, p)
+
         if (determinant[0] <= 0 && determinant[1] >= 0) {
           uncertain = true
           break
         }
+
         const tvec = ops.sub(point, a),
           u = idiv(ops.dot(tvec, p), determinant)
+
         if (u[1] < 0 || u[0] > 1) {
           continue
         }
+
         const q = ops.cross(tvec, e1),
           v = idiv(ops.dot(d, q), determinant),
           sum = iadd(u, v)
+
         if (v[1] < 0 || sum[0] > 1) {
           continue
         }
+
         const time = idiv(ops.dot(e2, q), determinant)
+
         if (time[1] < 0) {
           continue
         }
+
         if (u[0] <= 0 || v[0] <= 0 || sum[1] >= 1 || time[0] <= 0) {
           uncertain = true
           break
         }
+
         crossings[triangle.component] += determinant[0] > 0 ? 1 : -1
       }
     }
+
     if (!uncertain) {
       return crossings.some((count) => count !== 0) ? 'inside' : 'outside'
     }
   }
+
   return 'unknown'
 }
 
@@ -129,15 +151,19 @@ export function shapeMembership(
 ): Membership {
   const local = localPoint(shape.pose, point),
     g = shape.geometry
+
   if (g.kind === 'mesh') {
     if (!index) {
       throw new Error('Missing mesh membership index')
     }
+
     return meshMembership(local, index, checkpoint)
   }
+
   if (g.kind === 'triangle') {
     return 'unknown'
   }
+
   if (g.kind === 'box') {
     if (
       local.every(
@@ -147,6 +173,7 @@ export function shapeMembership(
     ) {
       return 'inside'
     }
+
     if (
       local.some(
         (value, axis) =>
@@ -155,14 +182,18 @@ export function shapeMembership(
     ) {
       return 'outside'
     }
+
     return 'unknown'
   }
+
   let vector = local
+
   if (g.kind === 'capsule') {
     const y = local[1],
       half = interval(g.length / 2)
     const above = isub(y, half),
       below = isub(ineg(y), half)
+
     vector = [
       local[0],
       interval(
@@ -172,9 +203,12 @@ export function shapeMembership(
       local[2]
     ]
   }
+
   const distance = ops.norm(vector)
+
   if (distance[1] < g.radius) {
     return 'inside'
   }
+
   return distance[0] > g.radius ? 'outside' : 'unknown'
 }

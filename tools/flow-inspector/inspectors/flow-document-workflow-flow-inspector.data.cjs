@@ -3,8 +3,10 @@ const freeze = (value) => {
     Object.values(value).forEach(freeze)
     Object.freeze(value)
   }
+
   return value
 }
+
 module.exports = freeze({
   schema: {
     id: 'flow-inspector',

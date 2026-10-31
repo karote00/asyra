@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { resolveAppEnvironment } from './app-environment'
 export default defineConfig(({ command }) => {
   const environment = command === 'serve' ? resolveAppEnvironment() : undefined
+
   return {
     plugins: [react(), tailwindcss()],
     base: './',

@@ -82,6 +82,7 @@ for (const source of sources) {
       `${source}-flow-inspector.data.cjs`
     )
     const data = require(filename)
+
     assert.deepEqual(Object.keys(data), topLevelKeys)
     assert.doesNotMatch(fs.readFileSync(filename, 'utf8'), /\brequire\s*\(/)
     assert.ok(deeplyFrozen(data))
@@ -90,6 +91,7 @@ for (const source of sources) {
     assert.ok(data.steps.length > 0)
     assert.equal(Object.hasOwn(data, 'stages'), false)
     const sets = {}
+
     for (const name of [
       'lanes',
       'steps',
@@ -101,6 +103,7 @@ for (const source of sources) {
       sets[name] = new Set(data[name].map((item) => item.id))
       assert.equal(sets[name].size, data[name].length, `${name} IDs are unique`)
     }
+
     for (const step of data.steps) {
       assert.deepEqual(Object.keys(step), stepFields)
       assert.ok(sets.lanes.has(step.laneId), step.id)
@@ -111,10 +114,12 @@ for (const source of sources) {
       )) {
         assert.ok(sets.artifacts.has(input), `${step.id}: ${input}`)
       }
+
       for (const output of step.outputs) {
         assert.ok(sets.artifacts.has(output), `${step.id}: ${output}`)
       }
     }
+
     for (const route of data.routes) {
       assert.ok(sets.steps.has(route.from), route.id)
       if (route.kind === 'terminal') {
@@ -122,8 +127,10 @@ for (const source of sources) {
       } else {
         assert.ok(sets.steps.has(route.to), route.id)
       }
+
       for (const id of route.producedArtifacts) {
         const artifact = data.artifacts.find((item) => item.id === id)
+
         assert.ok(artifact, route.id)
         assert.equal(artifact.ownerStepId, route.from, route.id)
         if (route.to) {
@@ -131,10 +138,12 @@ for (const source of sources) {
         }
       }
     }
+
     for (const artifact of data.artifacts) {
       assert.equal(Object.hasOwn(artifact, 'ownerStageId'), false)
       assert.equal(Object.hasOwn(artifact, 'consumerStageIds'), false)
       const owner = data.steps.find((step) => step.id === artifact.ownerStepId)
+
       assert.ok(owner?.outputs.includes(artifact.id), artifact.id)
       assert.equal(artifact.terminal, artifact.consumerStepIds.length === 0)
       for (const id of artifact.consumerStepIds) {
@@ -154,6 +163,7 @@ for (const source of sources) {
           artifact.id
         )
       }
+
       if (artifact.terminal) {
         assert.ok(
           data.routes.some(
@@ -166,6 +176,7 @@ for (const source of sources) {
         )
       }
     }
+
     const spec = fs.readFileSync(
       path.resolve(repositoryRoot, data.authority.specPath),
       'utf8'
@@ -173,6 +184,7 @@ for (const source of sources) {
     const anchors = new Set(
       [...spec.matchAll(/^#{1,6}\s+(.+)$/gm)].map((match) => anchor(match[1]))
     )
+
     for (const item of [
       ...data.steps,
       ...data.invariants,
@@ -182,14 +194,17 @@ for (const source of sources) {
       for (const id of item.stepIds ?? []) {
         assert.ok(sets.steps.has(id), item.id)
       }
+
       for (const id of item.artifactIds ?? []) {
         assert.ok(sets.artifacts.has(id), item.id)
       }
+
       for (const reference of item.specRefs) {
         assert.match(reference, /^#[a-z0-9-]+$/)
         assert.ok(anchors.has(reference.slice(1)), `${item.id}: ${reference}`)
       }
     }
+
     for (const link of data.links) {
       assert.ok(
         fs.existsSync(

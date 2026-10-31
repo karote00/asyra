@@ -67,6 +67,7 @@ test('Agent organization preserves artwork and each request is one durable Undo'
     }
   ]
   let requests = 0
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
@@ -75,11 +76,14 @@ test('Agent organization preserves artwork and each request is one durable Undo'
   )
   await page.goto(identity.url)
   await waitForAppReady(page)
+
   const send = async (text: string) => {
     const open = page.getByRole('button', { name: 'Open Agent' })
+
     if (await open.isVisible()) {
       await open.click()
     }
+
     await page.getByLabel('Message Agent').fill(text)
     requests++
     await page.getByRole('button', { name: 'Send', exact: true }).click()
@@ -89,11 +93,14 @@ test('Agent organization preserves artwork and each request is one durable Undo'
       'success'
     )
   }
+
   await send('Create three editable shapes.')
+
   const readArtwork = () =>
     page.evaluate(
       async (ids) => {
         const { core } = await import('../src/testing/runtime-access')
+
         return ids.map((id) => {
           const raw = core.getElementData(id)
           const properties =
@@ -107,16 +114,19 @@ test('Agent organization preserves artwork and each request is one durable Undo'
           let x = Number(properties.x),
             y = Number(properties.y),
             parentId = raw?.parentId
+
           while (
             parentId &&
             core.getElementData(parentId)?.type !== 'workspace'
           ) {
             const parent =
               core.getElementComputedData(parentId, ['x', 'y']) ?? {}
+
             x += Number(parent.x)
             y += Number(parent.y)
             parentId = core.getElementData(parentId)?.parentId
           }
+
           return {
             id,
             type: raw?.type,
@@ -130,9 +140,11 @@ test('Agent organization preserves artwork and each request is one durable Undo'
       },
       [design.keyToId.a, design.keyToId.b, design.keyToId.c]
     )
+
   const artwork = await readArtwork()
   const before = await getCoreDocumentDigest(page)
   const groupDepth = await getUndoHistoryDepth(page)
+
   actions = [
     {
       id: 'group',
@@ -151,8 +163,10 @@ test('Agent organization preserves artwork and each request is one durable Undo'
   const group = await page.evaluate(async (id) => {
     const { core } = await import('../src/testing/runtime-access')
     const groupId = core.getElementData(id)?.parentId
+
     return groupId ? { id: groupId, ...core.getElementData(groupId) } : null
   }, design.keyToId.a)
+
   expect(group).toMatchObject({
     type: 'group',
     name: 'Primary artwork',
@@ -161,7 +175,9 @@ test('Agent organization preserves artwork and each request is one durable Undo'
   if (!group) {
     throw new Error('Missing group')
   }
+
   const grouped = await getCoreDocumentDigest(page)
+
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
   await undo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(before)
@@ -176,6 +192,7 @@ test('Agent organization preserves artwork and each request is one durable Undo'
     }
   ]
   const ungroupDepth = await getUndoHistoryDepth(page)
+
   await send('Ungroup Primary artwork, keeping all shapes.')
   expect(await readArtwork()).toEqual(artwork)
   expect(await getUndoHistoryDepth(page)).toBe(ungroupDepth + 1)
@@ -193,6 +210,7 @@ test('Agent organization preserves artwork and each request is one durable Undo'
     }
   ]
   const reorderDepth = await getUndoHistoryDepth(page)
+
   await send('Move Other card to the first layer position.')
   expect(await readArtwork()).toEqual(artwork)
   expect(await getUndoHistoryDepth(page)).toBe(reorderDepth + 1)
@@ -202,6 +220,7 @@ test('Agent organization preserves artwork and each request is one durable Undo'
         ?.children,
     design.rootId
   )
+
   expect(children).toEqual([
     design.keyToId.c,
     design.keyToId.a,
@@ -222,10 +241,12 @@ test('Agent organization preserves artwork and each request is one durable Undo'
   ]
   const beforeAlign = await getCoreDocumentDigest(page)
   const alignDepth = await getUndoHistoryDepth(page)
+
   await send('Align the top edges of all three shapes.')
   expect((await readArtwork()).map((item) => item.y)).toEqual([100, 100, 100])
   expect(await getUndoHistoryDepth(page)).toBe(alignDepth + 1)
   const aligned = await getCoreDocumentDigest(page)
+
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
   await undo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(beforeAlign)
@@ -245,14 +266,17 @@ test('Agent organization preserves artwork and each request is one durable Undo'
     }
   ]
   const spaceDepth = await getUndoHistoryDepth(page)
+
   await send('Set the horizontal gaps between the shapes to 24 pixels.')
   const arrangedArtwork = await readArtwork()
+
   expect(arrangedArtwork.map((item) => item.x)).toEqual([90, 234, 348])
   expect(arrangedArtwork.map(({ x, y, ...item }) => item)).toEqual(
     artwork.map(({ x, y, ...item }) => item)
   )
   expect(await getUndoHistoryDepth(page)).toBe(spaceDepth + 1)
   const after = await getCoreDocumentDigest(page)
+
   await expect
     .poll(() => getPersistedDocumentDigest(identity.fileId), { timeout: 15000 })
     .toEqual(after)

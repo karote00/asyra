@@ -56,7 +56,9 @@ export interface TransactionStatusPayload {
 /** A canonical owner could not prove recovery, even before journal admission. */
 export class MutationRecoveryError extends Error {
   readonly cause: unknown
+
   readonly recoveryFailures: readonly unknown[]
+
   constructor(cause: unknown, recoveryFailures: readonly unknown[]) {
     super('Canonical mutation recovery could not be verified')
     this.cause = cause

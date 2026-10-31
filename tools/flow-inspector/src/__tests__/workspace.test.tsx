@@ -67,6 +67,7 @@ describe('workspace routing contract', () => {
       '/tools/flow-inspector/workspace/workspace.html#inspector=app-flow'
     )
     const length = window.history.length
+
     render(<WorkspaceApp bundle={bundle} routingMode="path" />)
 
     expect(window.location.pathname).toBe('/app')
@@ -95,6 +96,7 @@ describe('React workspace', () => {
   it('keeps the selected canvas and its selection during search and panel toggles', () => {
     render(<WorkspaceApp bundle={bundle} initialHash="#inspector=app-flow" />)
     const viewport = screen.getByRole('region', { name: 'Inspector flow' })
+
     fireEvent.click(
       screen.getByRole('button', { name: /Direct React workspace composition/ })
     )
@@ -136,6 +138,7 @@ describe('React workspace', () => {
   it('collapses and restores groups without changing membership', () => {
     render(<WorkspaceApp bundle={bundle} initialHash="" />)
     const group = screen.getByTestId('group-Framework')
+
     fireEvent.click(
       within(group).getByRole('button', { name: 'Collapse Framework' })
     )
@@ -152,6 +155,7 @@ describe('React workspace', () => {
     window.history.replaceState(null, '', '/app')
     render(<WorkspaceApp bundle={bundle} routingMode="path" />)
     const original = screen.getByRole('region', { name: 'Inspector flow' })
+
     fireEvent.click(screen.getByRole('button', { name: /framework Flow/ }))
 
     expect(window.location.pathname).toBe('/framework')

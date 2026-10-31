@@ -2,13 +2,16 @@
 const path = require('node:path')
 const { validId } = require('./store.cjs')
 const { sourceInputPath } = require('./workspace-sources.cjs')
+
 const freeze = (value) => {
   if (value && typeof value === 'object') {
     Object.values(value).forEach(freeze)
     Object.freeze(value)
   }
+
   return value
 }
+
 const TASK_POLICY = freeze({
   format: 1,
   maximums: { elapsedMs: 300000, toolCalls: 100, attempts: 5 },
@@ -27,11 +30,13 @@ const TASK_POLICY = freeze({
     'change-protection'
   ]
 })
+
 function requireTask(condition, message) {
   if (!condition) {
     throw new Error('Task admission: ' + message)
   }
 }
+
 function canonicalFile(file) {
   return (
     typeof file === 'string' &&
@@ -41,6 +46,7 @@ function canonicalFile(file) {
     !file.split('/').some((part) => !part || part === '.' || part === '..')
   )
 }
+
 function admitTask(
   request,
   contract,
@@ -73,6 +79,7 @@ function admitTask(
   requireTask(validId(request.requestId), 'invalid task identity')
   if (Object.hasOwn(request, 'workBinding')) {
     const binding = request.workBinding
+
     requireTask(
       binding &&
         typeof binding === 'object' &&
@@ -84,6 +91,7 @@ function admitTask(
       'invalid work binding'
     )
   }
+
   requireTask(typeof actor === 'string' && actor.trim(), 'missing actor')
   requireTask(
     request.contractDigest === contract.digest && request.revision === revision,
@@ -92,6 +100,7 @@ function admitTask(
   const step = contract.flows
     .flatMap((flow) => flow.steps)
     .find((value) => value.id === request.stepId)
+
   requireTask(step, 'unknown concrete step')
   for (const key of [
     'inputs',
@@ -108,6 +117,7 @@ function admitTask(
       'incomplete step ' + key
     )
   }
+
   requireTask(
     step.failureOwnerStepId && step.ownerPackage,
     'missing failure owner'
@@ -119,8 +129,10 @@ function admitTask(
     'invalid objective'
   )
   let provider
+
   if (request.adapter === 'provider') {
     const value = providerAuthorization
+
     requireTask(
       value && typeof value === 'object',
       'provider is not authorized'
@@ -168,7 +180,9 @@ function admitTask(
       'unknown demonstration'
     )
   }
+
   const files = request.allowedFiles
+
   requireTask(
     Array.isArray(files) &&
       files.length > 0 &&
@@ -179,6 +193,7 @@ function admitTask(
   const primaryPackageRoot =
     'packages/' + step.ownerPackage.slice('@asyra/'.length) + '/'
   const workspaceScope = contract.runtimeScope?.format === 2
+
   for (const file of files) {
     requireTask(
       canonicalFile(file) &&
@@ -202,7 +217,9 @@ function admitTask(
       'file outside owner boundary'
     )
   }
+
   const budgets = request.budgets
+
   requireTask(
     budgets &&
       Object.keys(budgets).length === 3 &&
@@ -217,9 +234,11 @@ function admitTask(
       'invalid ' + key
     )
   }
+
   const routes = contract.architectureDefinition.routes.filter(
     (route) => route.from === step.id || route.to === step.id
   )
+
   return freeze(
     structuredClone({
       format: TASK_POLICY.format,
@@ -241,8 +260,10 @@ function admitTask(
     })
   )
 }
+
 function admitTaskSource(task, snapshot) {
   const authority = snapshot.runtimeAuthority
+
   requireTask([1, 2].includes(authority?.format), 'missing runtime authority')
   requireTask(
     snapshot.contractDigest === task.contractDigest,
@@ -251,6 +272,7 @@ function admitTaskSource(task, snapshot) {
   const owner = authority.packages.find(
     (entry) => entry.name === task.step.ownerPackage
   )
+
   requireTask(owner, 'missing source owner')
   for (const file of task.allowedFiles) {
     requireTask(

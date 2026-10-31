@@ -12,9 +12,11 @@ it('preserves complete original-segment source evidence while eliminating repeat
     (item) =>
       item.a.bodyId === 'example:joint-2' && item.b.bodyId === 'obstacle-11'
   )
+
   if (!pair) {
     throw new Error('Missing measured source pair')
   }
+
   const input = {
     workcell: snapshot.workcell,
     trajectory: snapshot.trajectory,
@@ -56,6 +58,7 @@ it('preserves complete original-segment source evidence while eliminating repeat
     () => undefined,
     controlContext
   )
+
   controlRoute.mockRestore()
   const context = new OriginalMeshQuery()
   const distance = vi.spyOn(context, 'distance'),
@@ -67,6 +70,7 @@ it('preserves complete original-segment source evidence while eliminating repeat
     () => undefined,
     context
   )
+
   expect(candidate).toEqual(control)
   expect(candidate.coverage).toBe('complete')
   expect(candidate.evaluations).toBe(7)

@@ -13,16 +13,20 @@ export function composeOfficeSeating({ add }: Pick<OfficeComposer, 'add'>) {
   const tableTops = new Map<string, number>()
   // One factory invocation per requested asset per composition, shared by its instances.
   const assets = new Map<string, ReturnType<typeof catalogAsset>>()
+
   for (const item of OFFICE_SEATING) {
     let parts = assets.get(item.asset)
+
     if (!parts) {
       if (item.asset === 'round-tea-table') {
         parts = teaTable()
       } else {
         parts = catalogAsset(item.asset)
       }
+
       assets.set(item.asset, parts)
     }
+
     tableTops.set(
       item.id,
       OFFICE_FLOORS[item.room as keyof typeof OFFICE_FLOORS] +
@@ -40,5 +44,6 @@ export function composeOfficeSeating({ add }: Pick<OfficeComposer, 'add'>) {
       item.scale as Vec
     )
   }
+
   return tableTops
 }

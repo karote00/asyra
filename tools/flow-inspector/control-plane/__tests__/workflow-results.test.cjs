@@ -14,6 +14,7 @@ const identity = {
   run: '123',
   attempt: '1'
 }
+
 function workspaceEntry(
   name,
   directory,
@@ -33,6 +34,7 @@ function workspaceEntry(
     artifactId: createHash('sha256').update(name).digest('hex').slice(0, 16)
   }
 }
+
 function makeScope({
   identity: scopeIdentity = identity,
   workspaceMatrix = [
@@ -155,6 +157,7 @@ function makeScope({
     ),
     unknownPaths
   }
+
   return {
     version: 2,
     identity: scopeIdentity,
@@ -174,6 +177,7 @@ function makeScope({
     unknownPaths
   }
 }
+
 const designScopeEvidence = makeScope()
 const names = [
   ['delete-element.spec.ts', 'Delete key removes the single selected element'],
@@ -186,6 +190,7 @@ const names = [
     'remote undo restores an exact nested Group with and without local tombstones'
   ]
 ]
+
 function report(indices) {
   return {
     errors: [],
@@ -210,14 +215,17 @@ function report(indices) {
     ]
   }
 }
+
 function envelopes() {
   return [
     collect(report([0]), 'design', identity),
     collect(report([1, 2]), 'collaboration', identity)
   ]
 }
+
 function checkResultsFor(scope) {
   const plan = scope.relationshipMap.executionPlan
+
   return {
     version: 1,
     identity: scope.identity,
@@ -228,6 +236,7 @@ function checkResultsFor(scope) {
     checks: Object.fromEntries(
       ['lint', 'repositoryScripts', 'naming'].map((name) => {
         const selection = plan.checks[name]
+
         return [
           name,
           {
@@ -251,8 +260,10 @@ function checkResultsFor(scope) {
     )
   }
 }
+
 function workspaceResult(entry, scope, result = {}) {
   const selection = entry.testSelection
+
   return {
     version: 1,
     identity: scope.identity,
@@ -315,6 +326,7 @@ function workspaceResult(entry, scope, result = {}) {
     ...result
   }
 }
+
 function assess(
   records = envelopes(),
   jobs = {},
@@ -330,6 +342,7 @@ function assess(
   const defaultCheckResults = Object.fromEntries(
     ['lint', 'repositoryScripts', 'naming'].map((name) => {
       const selection = plan.checks[name]
+
       return [
         name,
         {
@@ -361,6 +374,7 @@ function assess(
       selectedSuites.includes(suite) ? 'success' : 'skipped'
     ])
   )
+
   return aggregate(
     records,
     currentIdentity,
@@ -404,8 +418,10 @@ function assess(
     selectedScope
   )
 }
+
 test('all exact Design cases pass only after successful dependencies', () => {
   const r = assess()
+
   assert.equal(r.status, 'passed', r.blockers.join('; '))
   assert.equal(r.cases.length, 3)
 })
@@ -417,6 +433,7 @@ test('selected CI scopes require success and unselected scopes must be skipped',
       result === 'failure' ? 'failed' : 'unverified'
     )
   }
+
   assert.equal(
     assess(envelopes(), { workspaceResults: [] }).status,
     'unverified'
@@ -424,6 +441,7 @@ test('selected CI scopes require success and unselected scopes must be skipped',
 })
 test('a documented owner with no affected workspace requires the app job to stay skipped', () => {
   const documentationScope = makeScope({ workspaceMatrix: [], e2eSuites: [] })
+
   assert.equal(
     assess(
       envelopes(),
@@ -458,6 +476,7 @@ test('Framework changes require the package release gate and actual consumers', 
     ],
     frameworkReleaseRequired: true
   })
+
   assert.equal(
     assess(envelopes(), { frameworkRelease: 'success' }, frameworkScope).status,
     'passed'
@@ -474,6 +493,7 @@ test('non-workspace release owners require their actual workflow gates', () => {
     e2eSuites: [],
     createAppPackages: ['create-app/asyra-design']
   })
+
   assert.equal(
     assess(
       envelopes(),
@@ -507,6 +527,7 @@ test('non-workspace release owners require their actual workflow gates', () => {
       frameworkReleaseRequired: true
     })
   }
+
   assert.equal(
     assess(
       envelopes(),
@@ -551,6 +572,7 @@ test('Changesets and root documentation pass only through shared validation', ()
     workspaceValidation: 'skipped',
     workspaceResults: []
   }
+
   assert.equal(assess(envelopes(), sharedJobs, sharedScope).status, 'passed')
   assert.equal(
     assess(envelopes(), { ...sharedJobs, validate: 'skipped' }, sharedScope)
@@ -562,6 +584,7 @@ test('Changesets and root documentation pass only through shared validation', ()
     path.join(root, '.github/workflows/main.yml'),
     'utf8'
   )
+
   assert.match(main, /node scripts\/validation-checks\.mjs --check shared/)
   assert.match(main, /run: yarn changeset:pr:check/)
 })
@@ -572,11 +595,13 @@ test('formal path owners reach their selected gates through the final aggregate'
   const root = path.resolve(__dirname, '../../../..')
   const manifests = readWorkspaceManifests(root)
   const createAppManifests = readCreateAppManifests(root)
+
   const jobsFor = (scope, missingSelectedGate = false) => {
     const selected = scope.relationshipMap.workspaceMatrix
     const plan = scope.relationshipMap.executionPlan
     const selectedE2E = plan.checks.e2e.selected
     const designSelected = scope.relationshipMap.designE2ERequired
+
     return Object.fromEntries([
       [
         'productionArtifacts',
@@ -641,6 +666,7 @@ test('formal path owners reach their selected gates through the final aggregate'
       ['collaborationForwarder', 'success']
     ])
   }
+
   for (const changedPath of [
     'domain-knowledge/components.button.md',
     '.changeset/example.md',
@@ -663,8 +689,10 @@ test('formal path owners reach their selected gates through the final aggregate'
         createAppManifests
       )
     }
+
     assert.deepEqual(scope.unknownPaths, [], changedPath)
     const result = aggregate(envelopes(), identity, jobsFor(scope), scope)
+
     assert.equal(
       result.status,
       'passed',
@@ -677,6 +705,7 @@ test('formal path owners reach their selected gates through the final aggregate'
       { testTask: 'test:ci' }
     ]) {
       const forged = structuredClone(scope)
+
       Object.assign(
         forged.relationshipMap.workspaceGraph.find(
           ({ contentOnly }) => contentOnly
@@ -694,6 +723,7 @@ test('formal path owners reach their selected gates through the final aggregate'
 
     const selection =
       scope.relationshipMap.executionPlan.checks.repositoryScripts
+
     if (selection.mode === 'files') {
       for (const executedTests of [
         undefined,
@@ -701,6 +731,7 @@ test('formal path owners reach their selected gates through the final aggregate'
         [...selection.tests, 'unregistered.test.mjs']
       ]) {
         const incomplete = jobsFor(scope)
+
         incomplete.selectedCheckResults.checks.repositoryScripts.executedTests =
           executedTests
         assert.notEqual(
@@ -710,11 +741,13 @@ test('formal path owners reach their selected gates through the final aggregate'
         )
       }
     }
+
     if (
       scope.relationshipMap.executionPlan.checks.frameworkDeclarations.mode ===
       'full'
     ) {
       const missingDeclarations = jobsFor(scope)
+
       missingDeclarations.frameworkDeclarationResult = 'skipped'
       assert.notEqual(
         aggregate(envelopes(), identity, missingDeclarations, scope).status,
@@ -744,6 +777,7 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
     'apps/unnamed-consumer'
   )
   const scope = makeScope({ workspaceMatrix: [workspace], e2eSuites: [] })
+
   const record = (buildStatus = 'success', testStatus = 'success') =>
     workspaceResult(workspace, scope, {
       buildStatus,
@@ -757,6 +791,7 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
           ? [workspace.lintTask, workspace.buildTask]
           : [workspace.lintTask, workspace.buildTask, workspace.testTask]
     })
+
   const jobs = {
     validate: 'success',
     e2e: 'skipped',
@@ -791,6 +826,7 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
       workspaceMatrix: []
     }
   }
+
   assert.equal(
     aggregate(
       [],
@@ -883,6 +919,7 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
 
 test('selected workspace E2E owners require one passing run and reject zero tests', () => {
   const workspace = workspaceEntry('@fixture/e2e-owner', 'apps/e2e-owner')
+
   workspace.e2eTask = 'test:e2e:ci'
   workspace.e2eSelection = {
     mode: 'full',
@@ -899,6 +936,7 @@ test('selected workspace E2E owners require one passing run and reject zero test
       })
     ]
   }
+
   assert.notEqual(assess(envelopes(), jobs, scope).status, 'passed')
   assert.equal(
     assess(
@@ -973,6 +1011,7 @@ test('selected workspace E2E owners require one passing run and reject zero test
       result
     )
   }
+
   for (const invalid of [
     { e2eStatus: 'passed', e2eResult: undefined },
     { e2eStatus: 'passed', e2eTask: null },
@@ -1010,6 +1049,7 @@ test('selected workspace E2E owners require one passing run and reject zero test
 test('selected E2E suites require exact outcomes and unselected suites stay skipped', () => {
   const scope = makeScope({ e2eSuites: ['collaboration'] })
   const incomplete = assess(envelopes(), { e2eSuiteResults: {} }, scope)
+
   assert.notEqual(incomplete.status, 'passed')
 
   const results = {
@@ -1019,6 +1059,7 @@ test('selected E2E suites require exact outcomes and unselected suites stay skip
     collaboration: 'success'
   }
   const complete = assess(envelopes(), { e2eSuiteResults: results }, scope)
+
   assert.equal(complete.status, 'passed')
   assert.equal(
     complete.cases.find(({ id }) => id === 'design.delete')?.status,
@@ -1045,6 +1086,7 @@ test('selected E2E suites require exact outcomes and unselected suites stay skip
 test('selected lint cannot pass without at least one executed-file result', () => {
   const scope = makeScope()
   const emptyResult = checkResultsFor(scope)
+
   emptyResult.checks.lint.executedFiles = []
   assert.notEqual(
     assess(envelopes(), { selectedCheckResults: emptyResult }, scope).status,
@@ -1065,9 +1107,12 @@ test('root lint producer evidence survives aggregation and rejects execution fai
   const runners = {
     identity,
     relationshipMapDigest: scope.relationshipMapDigest,
+
     lint: () =>
       runYarnScript('lint', (command, args) => calls.push([command, args])),
+
     repositoryScripts: () => checkResultsFor(scope).checks.repositoryScripts,
+
     naming: () => checkResultsFor(scope).checks.naming
   }
   const results = await executeSelectedChecks(plan, runners)
@@ -1082,6 +1127,7 @@ test('root lint producer evidence survives aggregation and rejects execution fai
   const workspaceResults = scope.relationshipMap.workspaceMatrix.map((entry) =>
     workspaceResult(entry, scope)
   )
+
   workspaceResults[0].status = 'failed'
   workspaceResults[0].testStatus = 'failure'
   const upstreamFailure = assess(
@@ -1108,6 +1154,7 @@ test('root lint producer evidence survives aggregation and rejects execution fai
 
   const failed = await executeSelectedChecks(plan, {
     ...runners,
+
     lint: () =>
       runYarnScript('lint', () => {
         throw new Error('Lint failed')
@@ -1128,6 +1175,7 @@ test('workflow wires non-workspace owners to their concrete readiness producers'
     path.join(root, '.github/workflows/main.yml'),
     'utf8'
   )
+
   assert.match(
     main,
     /create_app_packages: \$\{\{ steps\.scope\.outputs\.create_app_packages \}\}/
@@ -1177,6 +1225,7 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
   const artifact = proofFlow.artifacts.find(
     (item) => item.id === 'artifact:workflow-result-summary'
   )
+
   assert.ok(step)
   assert.ok(route)
   assert.ok(artifact)
@@ -1198,6 +1247,7 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
   ]) {
     assert.ok(step.inputs.includes(input), input)
   }
+
   assert.ok(
     step.conditions.some((condition) =>
       /docs-only.*shared validation.*applicable document-owner check/iu.test(
@@ -1313,6 +1363,7 @@ test('missing, unknown, duplicate, or future-attempt scope evidence cannot pass'
       workspaceResult(entry, evidence)
     )
   }
+
   assert.equal(
     aggregate(
       envelopes(),
@@ -1344,19 +1395,23 @@ test('missing, unknown, duplicate, or future-attempt scope evidence cannot pass'
   const duplicateScope = makeScope({
     workspaceMatrix: [...evidence.workspaceMatrix, duplicateEntry]
   })
+
   assert.equal(assess(envelopes(), jobs, duplicateScope).status, 'unverified')
   const staleScope = makeScope({
     identity: { ...identity, attempt: '2' }
   })
+
   assert.equal(assess(envelopes(), jobs, staleScope).status, 'unverified')
 })
 test('a Delete assertion failure survives missing downstream observations and failed jobs', () => {
   const r = report([0])
+
   r.suites[0].suites[0].specs[0].tests[0].results[0].status = 'failed'
   const result = assess(
     [collect(r, 'design', identity), collect(null, 'collaboration', identity)],
     { validate: 'success', e2e: 'failure' }
   )
+
   assert.equal(result.status, 'failed')
   assert.equal(result.cases[0].status, 'failed')
   assert.equal(result.cases[1].status, 'unverified')
@@ -1364,6 +1419,7 @@ test('a Delete assertion failure survives missing downstream observations and fa
 for (const status of ['skipped', 'interrupted', 'unknown']) {
   test(status + ' cannot pass', () => {
     const r = report([0])
+
     r.suites[0].suites[0].specs[0].tests[0].results[0].status = status
     assert.notEqual(
       assess([collect(r, 'design', identity), envelopes()[1]]).status,
@@ -1371,8 +1427,10 @@ for (const status of ['skipped', 'interrupted', 'unknown']) {
     )
   })
 }
+
 test('failed retry followed by pass remains failed', () => {
   const r = report([0])
+
   r.suites[0].suites[0].specs[0].tests[0].results = [
     { status: 'failed' },
     { status: 'passed' }
@@ -1389,42 +1447,55 @@ for (const variant of [
   test(variant + ' report is unverified', () => {
     const r = report([0])
     const specs = r.suites[0].suites[0].specs
+
     if (variant === 'missing') {
       specs.length = 0
     }
+
     if (variant === 'duplicate') {
       specs.push(structuredClone(specs[0]))
     }
+
     if (variant === 'wrong-project') {
       specs[0].tests[0].projectName = 'firefox'
     }
+
     if (variant === 'expected-failure') {
       specs[0].tests[0].expectedStatus = 'failed'
     }
+
     if (variant === 'errors') {
       r.errors.push({ message: 'do not expose report text' })
     }
+
     assert.equal(collect(r, 'design', identity).cases[0].status, 'unverified')
   })
 }
+
 for (const key of Object.keys(identity)) {
   test('mismatched ' + key + ' cannot pass', () => {
     const e = envelopes()
+
     e[0].identity[key] += 'x'
     assert.equal(assess(e).status, 'unverified')
   })
 }
+
 test('malformed envelope, removed or duplicated cases cannot weaken inventory', () => {
   for (const records of [[], [null], [{ producer: 'design' }]]) {
     assert.notEqual(assess(records).status, 'passed')
   }
+
   const e = envelopes()
+
   e[0].cases = []
   assert.equal(assess(e).status, 'unverified')
   const d = envelopes()
+
   d.push(d[0])
   assert.equal(assess(d).status, 'unverified')
   const changed = envelopes()
+
   changed[0].cases[0].status = 'passed'
   changed[0].cases[0].observations[0].results = ['failed']
   assert.notEqual(assess(changed).status, 'passed')
@@ -1439,6 +1510,7 @@ test('dependency failure or cancellation blocks green even if selected cases pas
 })
 test('bounded output contains no raw report messages or stdout', () => {
   const r = report([0])
+
   r.secret = 'SENSITIVE_VALUE'
   r.errors = [{ message: 'SENSITIVE_VALUE' }]
   assert.ok(
@@ -1455,6 +1527,7 @@ test('workflow waits on reusable producers and always collects after failed test
     path.join(root, '.github/workflows/e2e.yml'),
     'utf8'
   )
+
   assert.match(
     main,
     /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*fieldscope-profile-heavy,\s*fieldscope-profile-source,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
@@ -1490,6 +1563,7 @@ test('workflow waits on reusable producers and always collects after failed test
     0,
     validateJob.indexOf('    steps:')
   )
+
   assert.doesNotMatch(validateEnvironment, /FLOW_/)
   assert.match(e2e, /workflow_call:/)
   assert.doesNotMatch(e2e.split('permissions:')[0], /pull_request:/)
@@ -1501,10 +1575,13 @@ test('workflow waits on reusable producers and always collects after failed test
     const step = e2e
       .split('      - name: ' + name + '\n')[1]
       ?.split('      - name: ')[0]
+
     assert.ok(step, name)
     assert.match(step, /if: \$\{\{ always\(\) \}\}/, name)
   }
+
   const runner = fs.readFileSync(path.join(root, 'scripts/run-e2e.sh'), 'utf8')
+
   assert.match(
     runner,
     /playwright-results\.cjs begin "\$FLOW_CI_REPORT" functional/
@@ -1529,6 +1606,7 @@ test('workflow waits on reusable producers and always collects after failed test
   const step = e2e
     .split('      - name: Run E2E Tests\n')[1]
     .split('      - name: ')[0]
+
   assert.match(
     step,
     /RUN_BALANCED_AI_CORRECTNESS: \$\{\{ steps\.balanced_ai_scope\.outputs\.run_balanced_ai_correctness \}\}/
@@ -1553,6 +1631,7 @@ test('existing required E2E check names succeed for producers or declared skips'
     path.join(root, '.github/workflows/e2e.yml'),
     'utf8'
   )
+
   for (const [job, output] of [
     ['e2e-tests', 'design-result'],
     ['collaboration-e2e-tests', 'collaboration-result']
@@ -1566,6 +1645,7 @@ test('existing required E2E check names succeed for producers or declared skips'
         'm'
       )
     )?.[1]
+
     assert.ok(block, 'missing existing required check: ' + job)
     assert.match(block, /needs: \[scope, design-e2e\]/)
     assert.match(
@@ -1578,6 +1658,7 @@ test('existing required E2E check names succeed for producers or declared skips'
       )
     )
     const command = block.match(/run: \|\n([\s\S]*?)(?=\n\n|$)/)?.[1]
+
     assert.ok(command)
     for (const [selected, workflowResult, result, expected] of [
       ['true', 'success', 'success', true],
@@ -1598,6 +1679,7 @@ test('existing required E2E check names succeed for producers or declared skips'
           DESIGN_E2E_WORKFLOW_RESULT: workflowResult
         }
       })
+
       assert.equal(
         run.status === 0,
         expected,
@@ -1611,8 +1693,10 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
   const { spawnSync } = require('node:child_process')
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-ci-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'results-'))
+
   try {
     const output = path.join(directory, 'output')
     const summary = path.join(directory, 'summary')
@@ -1639,10 +1723,12 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       [cli, 'collect', 'design', path.join(directory, 'missing.json')],
       { env, encoding: 'utf8' }
     )
+
     assert.equal(collected.status, 0)
     const evidence = JSON.parse(
       fs.readFileSync(output, 'utf8').trim().slice('evidence='.length)
     )
+
     assert.equal(evidence.cases[0].status, 'unverified')
     assert.equal(
       evidence.identity.integration,
@@ -1660,18 +1746,22 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       identity: currentIdentity
     }
     const workspaceResultsDirectory = path.join(directory, 'workspace-results')
+
     fs.mkdirSync(workspaceResultsDirectory)
     const scopeEvidenceFile = path.join(directory, 'scope-evidence.json')
+
     fs.writeFileSync(scopeEvidenceFile, JSON.stringify(currentScope))
     const selectedCheckResultsFile = path.join(
       directory,
       'selected-check-results.json'
     )
+
     fs.writeFileSync(
       selectedCheckResultsFile,
       JSON.stringify(checkResultsFor(currentScope))
     )
     const designWorkspace = currentScope.workspaceMatrix[0]
+
     fs.writeFileSync(
       path.join(
         workspaceResultsDirectory,
@@ -1687,6 +1777,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     const { exportBundle } = require('../observation-files.cjs')
     const { loadContract } = require('../contracts.cjs')
     const bundleDirectory = path.join(directory, 'bundles')
+
     for (const producer of ['design', 'collaboration']) {
       const producerRoot = path.join(directory, producer)
       const manifest =
@@ -1737,6 +1828,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
           originalReport: report(producer === 'design' ? [0] : [1, 2])
         }
       )
+
       saveObservation(observationDirectory(producerRoot), record)
       exportBundle(producerRoot, 'bundle', currentIdentity)
       fs.cpSync(
@@ -1753,6 +1845,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         { recursive: true }
       )
     }
+
     const completeRun = {
       ...env,
       FLOW_RESULT_INTEGRATION: currentIdentity.integration,
@@ -1789,11 +1882,13 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       env: completeRun,
       encoding: 'utf8'
     })
+
     assert.equal(complete.status, 0, complete.stdout.slice(0, 2500))
     assert.equal(JSON.parse(complete.stdout).status, 'passed')
     assert.ok(Buffer.byteLength(complete.stdout) < 16384)
     assert.ok(!complete.stdout.includes('retained-runner-payload-'))
     const retained = JSON.parse(fs.readFileSync(resultFile, 'utf8'))
+
     assert.equal(retained.status, 'passed')
     for (const producer of ['design', 'collaboration']) {
       assert.equal(
@@ -1801,6 +1896,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         runnerPayload
       )
     }
+
     assert.equal(
       JSON.parse(complete.stdout).resultFile,
       path.relative(root, resultFile)
@@ -1809,6 +1905,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       env: { ...completeRun, FLOW_AGGREGATE_RESULT_FILE: directory },
       encoding: 'utf8'
     })
+
     assert.notEqual(invalidOutput.status, 0)
     assert.equal(invalidOutput.stdout, '')
 
@@ -1821,6 +1918,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         identity: currentIdentity,
         createAppPackages: ['create-app/asyra-design']
       })
+
       fs.writeFileSync(
         scopeEvidenceFile,
         JSON.stringify(selectedCreateAppScope)
@@ -1851,6 +1949,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         },
         encoding: 'utf8'
       })
+
       assert.equal(
         JSON.parse(aggregated.stdout).status,
         expectedStatus,
@@ -1858,6 +1957,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       )
       assert.equal(aggregated.status, expectedStatus === 'passed' ? 0 : 1)
     }
+
     fs.writeFileSync(scopeEvidenceFile, JSON.stringify(currentScope))
     fs.writeFileSync(
       selectedCheckResultsFile,
@@ -1874,6 +1974,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       env: { ...completeRun, FLOW_RESULT_ATTEMPT: '2' },
       encoding: 'utf8'
     })
+
     assert.equal(partialRerun.status, 0, partialRerun.stdout)
     assert.equal(JSON.parse(partialRerun.stdout).status, 'passed')
     const result = spawnSync(process.execPath, [cli, 'aggregate'], {
@@ -1888,6 +1989,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       },
       encoding: 'utf8'
     })
+
     assert.equal(result.status, 1)
     assert.equal(JSON.parse(result.stdout).status, 'failed')
     assert.equal(
@@ -1913,6 +2015,7 @@ test('production artifact selection is required by the final aggregate and canno
     workspaceValidation: 'skipped',
     productionArtifacts: 'success'
   }
+
   assert.equal(assess(envelopes(), jobs, selected).status, 'passed')
   for (const result of [undefined, 'skipped', 'failure', 'cancelled']) {
     assert.notEqual(
@@ -1921,7 +2024,9 @@ test('production artifact selection is required by the final aggregate and canno
       'passed'
     )
   }
+
   const unselected = makeScope({ workspaceMatrix: [], e2eSuites: [] })
+
   assert.notEqual(assess(envelopes(), jobs, unselected).status, 'passed')
 })
 
@@ -1932,6 +2037,7 @@ for (const guard of [
 ]) {
   test(`${guard} must succeed when selected and must stay skipped when unselected`, () => {
     const selected = makeScope({ workspaceMatrix: [], e2eSuites: [] })
+
     selected.executionPlan.checks[guard] = {
       mode: 'full',
       inputs: ['yarn.lock']
@@ -1940,6 +2046,7 @@ for (const guard of [
       .update(JSON.stringify(selected.relationshipMap))
       .digest('hex')
     const jobs = { workspaceValidation: 'skipped', [guard]: 'success' }
+
     assert.equal(assess(envelopes(), jobs, selected).status, 'passed')
     for (const result of [undefined, 'skipped', 'failure', 'cancelled']) {
       assert.notEqual(
@@ -1947,7 +2054,9 @@ for (const guard of [
         'passed'
       )
     }
+
     const unselected = makeScope({ workspaceMatrix: [], e2eSuites: [] })
+
     assert.notEqual(assess(envelopes(), jobs, unselected).status, 'passed')
   })
 }
@@ -1964,6 +2073,7 @@ test('partial reruns reuse successful receipts from the same source and selectio
     ...identity,
     attempt: '3'
   })
+
   assert.equal(result.status, 'passed', result.blockers.join('; '))
   assert.equal(result.identity.attempt, '3')
   assert.equal(scope.identity.attempt, '1')
@@ -1972,6 +2082,7 @@ test('partial reruns reuse successful receipts from the same source and selectio
 
 test('earlier successes cannot override latest failed or incomplete dependencies', () => {
   const current = { ...identity, attempt: '3' }
+
   for (const producer of [
     'validate',
     'workspaceValidation',
@@ -1986,10 +2097,13 @@ test('earlier successes cannot override latest failed or incomplete dependencies
         designScopeEvidence,
         current
       )
+
       assert.notEqual(result.status, 'passed', `${producer}: ${outcome}`)
     }
   }
+
   const cases = envelopes()
+
   cases[0] = collect(report([0]), 'design', { ...identity, attempt: '2' })
   cases[0].cases[0].observations[0].results = ['failed']
   assert.equal(assess(cases, {}, designScopeEvidence, current).status, 'failed')
@@ -2004,8 +2118,10 @@ test('partial reruns reject foreign source, future attempts and changed selectio
     integration: 'd'.repeat(40),
     run: '456'
   }
+
   for (const [key, value] of Object.entries(incompatibleIdentity)) {
     const scope = structuredClone(designScopeEvidence)
+
     scope.identity[key] = value
     assert.notEqual(
       assess(envelopes(), {}, scope, current).status,
@@ -2013,6 +2129,7 @@ test('partial reruns reject foreign source, future attempts and changed selectio
       key
     )
   }
+
   for (const attempt of [
     '4',
     '0',
@@ -2024,6 +2141,7 @@ test('partial reruns reject foreign source, future attempts and changed selectio
     '9007199254740992'
   ]) {
     const scope = structuredClone(designScopeEvidence)
+
     scope.identity.attempt = attempt
     assert.notEqual(
       assess(envelopes(), {}, scope, current).status,
@@ -2031,8 +2149,10 @@ test('partial reruns reject foreign source, future attempts and changed selectio
       attempt
     )
   }
+
   const scope = structuredClone(designScopeEvidence)
   const checks = checkResultsFor(scope)
+
   checks.executionPlanDigest = 'f'.repeat(64)
   assert.notEqual(
     assess(envelopes(), { selectedCheckResults: checks }, scope, current)
@@ -2042,6 +2162,7 @@ test('partial reruns reject foreign source, future attempts and changed selectio
   const workspaces = scope.relationshipMap.workspaceMatrix.map((entry) =>
     workspaceResult(entry, scope)
   )
+
   workspaces[0].relationshipMapDigest = 'f'.repeat(64)
   assert.notEqual(
     assess(envelopes(), { workspaceResults: workspaces }, scope, current)
@@ -2052,6 +2173,7 @@ test('partial reruns reject foreign source, future attempts and changed selectio
 
 test('each reused producer still rejects incompatible execution identities', () => {
   const current = { ...identity, attempt: '3' }
+
   for (const changed of [
     { attempt: '4' },
     { run: 'another-run' },
@@ -2059,12 +2181,14 @@ test('each reused producer still rejects incompatible execution identities', () 
     { attempt: 'local' }
   ]) {
     const evidence = envelopes()
+
     evidence[0].identity = { ...identity, ...changed }
     assert.notEqual(
       assess(evidence, {}, designScopeEvidence, current).status,
       'passed'
     )
     const selectedCheckResults = checkResultsFor(designScopeEvidence)
+
     selectedCheckResults.identity = { ...identity, ...changed }
     assert.notEqual(
       assess(
@@ -2081,6 +2205,7 @@ test('each reused producer still rejects incompatible execution identities', () 
           identity: { ...identity, ...changed }
         })
       )
+
     assert.notEqual(
       assess(envelopes(), { workspaceResults }, designScopeEvidence, current)
         .status,
@@ -2092,11 +2217,13 @@ test('each reused producer still rejects incompatible execution identities', () 
 test('local evidence stays local and never enters a GitHub rerun', () => {
   const local = { ...identity, run: 'local', attempt: 'local' }
   const scope = structuredClone(designScopeEvidence)
+
   scope.identity = local
   const receipts = [
     collect(report([0]), 'design', local),
     collect(report([1, 2]), 'collaboration', local)
   ]
+
   assert.equal(assess(receipts, {}, scope, local).status, 'passed')
   assert.notEqual(
     assess(receipts, {}, scope, { ...identity, attempt: '2' }).status,
@@ -2112,6 +2239,7 @@ test('workflow validates candidate behavior without claiming accepted-base deliv
   const job = workflow
     .split('  flow-inspector-validation:')[1]
     .split('  fieldscope-profile-heavy:')[0]
+
   assert.match(
     job,
     /node tools\/flow-inspector\/control-plane\/cli\.cjs candidate/
@@ -2126,6 +2254,7 @@ test('exact supervised file selections require the same executed files at aggreg
     'apps/asyra-fieldscope',
     'react:build'
   )
+
   entry.testSelection = {
     mode: 'files',
     inputs: ['src/ui/__tests__/workbench.test.tsx'],
@@ -2135,6 +2264,7 @@ test('exact supervised file selections require the same executed files at aggreg
   const scope = makeScope({ workspaceMatrix: [entry], e2eSuites: [] })
   const record = workspaceResult(entry, scope)
   const result = assess([], { workspaceResults: [record] }, scope)
+
   assert.equal(result.status, 'passed', JSON.stringify(result.blockers))
   record.testResult.inputs = []
   assert.notEqual(
@@ -2149,6 +2279,7 @@ test('positional supervised file selections preserve exact aggregate evidence', 
     'apps/asyra-sim',
     'react:build'
   )
+
   entry.testSelection = {
     mode: 'files',
     inputs: ['src/render-app/__tests__/spatial-layer.test.ts'],
@@ -2157,6 +2288,7 @@ test('positional supervised file selections preserve exact aggregate evidence', 
   }
   const scope = makeScope({ workspaceMatrix: [entry], e2eSuites: [] })
   const record = workspaceResult(entry, scope)
+
   assert.equal(
     assess([], { workspaceResults: [record] }, scope).status,
     'passed'
@@ -2171,11 +2303,13 @@ test('positional supervised file selections preserve exact aggregate evidence', 
 test('functional observation cleanup preserves original build failure and termination status', () => {
   const { spawnSync } = require('node:child_process')
   const root = path.resolve(__dirname, '../../../..')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/shell-observation-')
   )
   const bin = path.join(directory, 'bin')
+
   fs.mkdirSync(bin)
   fs.writeFileSync(
     path.join(bin, 'node'),
@@ -2222,6 +2356,7 @@ exit 42
         SHELL_OBSERVATION_MODE: mode
       }
     })
+
     assert.equal(result.status, code, result.stdout + result.stderr)
     assert.deepEqual(fs.readFileSync(log, 'utf8').trim().split('\n'), [
       'begin',
@@ -2233,11 +2368,13 @@ exit 42
 test('functional and status observations share the report destination across workspace commands', () => {
   const { spawnSync } = require('node:child_process')
   const root = path.resolve(__dirname, '../../../..')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/shell-report-path-')
   )
   const bin = path.join(directory, 'bin')
+
   fs.mkdirSync(bin)
   fs.writeFileSync(
     path.join(bin, 'node'),
@@ -2282,6 +2419,7 @@ exit 0
         FLOW_CI_REPORT: relative ? path.relative(root, report) : report
       }
     })
+
     assert.equal(run.status, 0, run.stdout + run.stderr)
     const handoffs = fs
       .readFileSync(log, 'utf8')
@@ -2289,6 +2427,7 @@ exit 0
       .split('\n')
       .map((line) => {
         const [kind, file] = line.split('|')
+
         return [
           kind,
           path.resolve(
@@ -2298,6 +2437,7 @@ exit 0
         ]
       })
     const status = report.replace(/\.json$/, '-status.json')
+
     assert.deepEqual(handoffs, [
       ['begin', report],
       ['runner', report],

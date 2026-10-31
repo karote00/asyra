@@ -13,20 +13,24 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
     'Initialize test execution envelope',
     'run: node scripts/validation-checks.mjs --check "$VALIDATION_WORKSPACE"'
   ]
+
   function checkOrdering(source) {
     for (const marker of markers) {
       assert.equal(source.split(marker).length - 1, 1, marker)
       assert.ok(source.indexOf(marker) >= 0, marker)
     }
+
     for (let index = 1; index < markers.length; index++) {
       assert.ok(
         source.indexOf(markers[index - 1]) < source.indexOf(markers[index])
       )
     }
   }
+
   const workspaceJob = workflow.match(
     /\n {2}workspace-validation:\n([\s\S]*?)(?=\n {2}[a-zA-Z][\w-]*:\n|$)/
   )?.[1]
+
   assert.ok(workspaceJob)
   checkOrdering(workspaceJob)
   for (const marker of markers) {
@@ -36,10 +40,13 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
     )
     assert.throws(() => checkOrdering(workspaceJob + '\n' + marker), marker)
   }
+
   const manifest = JSON.parse(
     readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
   )
+
   assert.equal(manifest.scripts['test:local'], manifest.scripts['test:ci'])
+
   function checkEntry(script) {
     for (const entry of [
       'scripts/__tests__/supervise-tests.test.mjs',
@@ -48,8 +55,10 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
     ]) {
       assert.equal(script.split(entry).length - 1, 1, entry)
     }
+
     assert.doesNotMatch(script, /install|ln -s/)
   }
+
   checkEntry(manifest.scripts['test:ci'])
   assert.throws(() =>
     checkEntry(

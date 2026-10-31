@@ -15,6 +15,7 @@ let runSequence = 0
 const createRunId = () => {
   runSequence += 1
   const runtimeId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
+
   return `atlas-run-${runtimeId}-${runSequence}`
 }
 
@@ -25,6 +26,7 @@ const detached = (value) =>
 
 const valuePayload = (event) => {
   const payload = event?.payload
+
   if (
     !payload ||
     typeof payload !== 'object' ||
@@ -33,19 +35,23 @@ const valuePayload = (event) => {
   ) {
     throw new Error('Invalid Atlas value payload')
   }
+
   return payload
 }
 
 const registerValueReplay = (owner, eventName, state) => {
   owner.registerTransactionInverter(eventName, (event) => {
     const payload = valuePayload(event)
+
     return {
       ...event,
       payload: { before: payload.after, after: payload.before }
     }
   })
+
   return owner.registerTransactionReplayHandler(eventName, (event) => {
     state.value = valuePayload(event).after
+
     return true
   })
 }
@@ -68,10 +74,12 @@ const createContinuousPointerCase = () => {
   const state = { value: 0, undoValue: 0, redoValue: 0 }
   const sessions = new SessionManager()
   const eventName = 'atlas:pointer-value'
+
   let disposeReplay = () => undefined
 
   return {
     expectedStatus: 'succeeded',
+
     async execute(actionId) {
       if (actionId === 'compose') {
         disposeReplay = registerValueReplay(factory, eventName, state)
@@ -83,48 +91,65 @@ const createContinuousPointerCase = () => {
           SessionCancelPolicies.ROLLBACK,
           {
             onStart: () => ({ initialValue: state.value }),
+
             onUpdate: (snapshot) =>
               updateValue(factory, eventName, state, snapshot.detail.nextValue),
+
             onEnd: () => undefined,
+
             onCancel: () => SessionCancelPolicies.ROLLBACK
           }
         )
+
         return { registered: true, canonicalValue: state.value }
       }
+
       if (actionId === 'start') {
         const accepted = await sessions.handleStart('atlas:pointer', {})
+
         return { accepted, transaction: 'open' }
       }
+
       if (actionId.startsWith('update-')) {
         const nextValue = Number(actionId.slice('update-'.length))
+
         await sessions.handleUpdate('atlas:pointer', {
           detail: { nextValue }
         })
+
         return { canonicalValue: state.value, transaction: 'open' }
       }
+
       if (actionId === 'commit') {
         await sessions.handleEnd('atlas:pointer', {})
+
         return {
           canonicalValue: state.value,
           transaction: 'committed',
           undoDepth: factory.getUndoHistoryDepth()
         }
       }
+
       if (actionId === 'undo') {
         factory.undo()
         state.undoValue = state.value
+
         return { canonicalValue: state.value, replay: 'undo' }
       }
+
       factory.redo()
       state.redoValue = state.value
+
       return { canonicalValue: state.value, replay: 'redo' }
     },
+
     result: () => ({
       canonicalValue: state.value,
       undoDepth: factory.getUndoHistoryDepth(),
       undoValue: state.undoValue,
       redoValue: state.redoValue
     }),
+
     dispose: async () => {
       disposeReplay()
       sessions.clearAll()
@@ -137,12 +162,14 @@ const createProjectionCase = () => {
   const eventName = 'atlas:approve-record'
   let feature
   let projections = {}
+
   let disposeReplay = () => undefined
 
   const canonical = () => systemContext.getSystemContextSnapshot()[key]
 
   return {
     expectedStatus: 'succeeded',
+
     async execute(actionId) {
       if (actionId === 'register-model') {
         systemContext.registerProperty(
@@ -150,6 +177,7 @@ const createProjectionCase = () => {
           { id: 'record-a', label: 'Cooling audit', status: 'open' },
           {
             runtime: false,
+
             validate: (value) =>
               Boolean(
                 value &&
@@ -163,6 +191,7 @@ const createProjectionCase = () => {
           eventName,
           (event) => {
             systemContext.setManagedProperty(key, event.payload.after)
+
             return true
           }
         )
@@ -170,8 +199,10 @@ const createProjectionCase = () => {
           ...event,
           payload: { before: event.payload.after, after: event.payload.before }
         }))
+
         return { canonical: canonical() }
       }
+
       if (actionId === 'register-action') {
         feature = defineFeature('atlas:record-approval', undefined, {
           priority: 100,
@@ -180,6 +211,7 @@ const createProjectionCase = () => {
             approve() {
               const before = canonical()
               const after = { ...before, status: 'approved' }
+
               factory.startTransaction()
               factory.updateTransaction({
                 type: 'updateTransaction',
@@ -192,25 +224,33 @@ const createProjectionCase = () => {
             }
           }
         })
+
         return { feature: 'atlas:record-approval', registered: true }
       }
+
       if (actionId === 'approve') {
         feature.api.approve()
+
         return {
           canonical: canonical(),
           undoDepth: factory.getUndoHistoryDepth()
         }
       }
+
       const snapshot = detached(canonical())
+
       projections = {
         canvas: { badge: snapshot.status, label: snapshot.label },
         hierarchy: { id: snapshot.id, childCount: 0 },
         properties: { status: snapshot.status },
         serialization: JSON.stringify(snapshot)
       }
+
       return { canonical: snapshot, projections }
     },
+
     result: () => ({ canonical: detached(canonical()), projections }),
+
     dispose: async () => {
       feature?.dispose()
       disposeReplay()
@@ -223,10 +263,12 @@ const createRollbackCase = () => {
   const state = { value: 5, failure: '' }
   const sessions = new SessionManager()
   const eventName = 'atlas:validated-value'
+
   let disposeReplay = () => undefined
 
   return {
     expectedStatus: 'rejected',
+
     async execute(actionId) {
       if (actionId === 'compose') {
         disposeReplay = registerValueReplay(factory, eventName, state)
@@ -238,28 +280,38 @@ const createRollbackCase = () => {
           SessionCancelPolicies.ROLLBACK,
           {
             onStart: () => ({ initialValue: state.value }),
+
             onUpdate: (snapshot) => {
               const nextValue = snapshot.detail.nextValue
+
               if (nextValue < 0) {
                 throw new Error('Value must be greater than or equal to zero')
               }
+
               updateValue(factory, eventName, state, nextValue)
             },
+
             onCancel: () => SessionCancelPolicies.ROLLBACK
           }
         )
+
         return { registered: true, canonicalValue: state.value }
       }
+
       if (actionId === 'start') {
         await sessions.handleStart('atlas:validated-edit', {})
+
         return { transaction: 'open', canonicalValue: state.value }
       }
+
       if (actionId === 'preview') {
         await sessions.handleUpdate('atlas:validated-edit', {
           detail: { nextValue: 8 }
         })
+
         return { transaction: 'open', canonicalValue: state.value }
       }
+
       try {
         await sessions.handleUpdate('atlas:validated-edit', {
           detail: { nextValue: -1 }
@@ -267,6 +319,7 @@ const createRollbackCase = () => {
       } catch (error) {
         state.failure = error instanceof Error ? error.message : String(error)
       }
+
       return {
         lifecycleStatus: 'rejected',
         canonicalValue: state.value,
@@ -274,11 +327,13 @@ const createRollbackCase = () => {
         failure: state.failure
       }
     },
+
     result: () => ({
       canonicalValue: state.value,
       undoDepth: factory.getUndoHistoryDepth(),
       failure: state.failure
     }),
+
     dispose: async () => {
       disposeReplay()
       sessions.clearAll()
@@ -305,6 +360,7 @@ const createCollaborationCase = () => {
 
   return {
     expectedStatus: 'succeeded',
+
     async execute(actionId) {
       if (actionId === 'compose') {
         ownerA.registerSharedDataChannel(
@@ -326,7 +382,9 @@ const createCollaborationCase = () => {
             subscribe: (subscriber) =>
               ownerA.subscribeToSharedPublication(subscriber)
           },
+
           processRemotePublication: () => undefined,
+
           resourceOwnership: { provider: 'owned' }
         })
         actorB = createCollaboration({
@@ -338,10 +396,12 @@ const createCollaborationCase = () => {
             roomId: 'atlas-room',
             actorId: 'actor-b'
           }),
+
           processRemotePublication: (publication) => {
             ownerB.runRemoteTransaction(() => {
               deliveriesOf(publication).forEach((delivery) => {
                 const payload = valuePayload(delivery)
+
                 ownerB.updateTransaction({
                   type: 'updateTransaction',
                   eventName,
@@ -352,22 +412,29 @@ const createCollaborationCase = () => {
               })
             })
           },
+
           resourceOwnership: { provider: 'owned' }
         })
+
         return { actors: ['actor-a', 'actor-b'], provider: 'MemoryProvider' }
       }
+
       if (actionId === 'connect') {
         await Promise.all([actorA.start(), actorB.start()])
+
         return { connected: true, durable: false }
       }
+
       if (actionId === 'presence') {
         await actorA.updateAwareness({ tool: 'value-edit' })
         remotePresence = actorB.awareness.getRemote('actor-a')
+
         return {
           presence: remotePresence?.state.tool,
           canonical: false
         }
       }
+
       if (actionId === 'publish') {
         ownerA.startTransaction()
         updateValue(ownerA, eventName, stateA, 7, {
@@ -376,11 +443,15 @@ const createCollaborationCase = () => {
         })
         ownerA.endTransaction()
         await Promise.all([actorA.whenIdle(), actorB.whenIdle()])
+
         return { actorA: stateA.value, publication: 'completed' }
       }
+
       await Promise.all([actorA.whenIdle(), actorB.whenIdle()])
+
       return { actorA: stateA.value, actorB: stateB.value, converged: true }
     },
+
     result: () => ({
       actorA: stateA.value,
       actorB: stateB.value,
@@ -388,6 +459,7 @@ const createCollaborationCase = () => {
       awarenessCanonical: false,
       presence: remotePresence?.state.tool ?? null
     }),
+
     dispose: async () => {
       await Promise.all([actorA?.dispose(), actorB?.dispose()])
     }
@@ -403,6 +475,7 @@ const createAiCase = () => {
 
   return {
     expectedStatus: 'succeeded',
+
     async execute(actionId) {
       if (actionId === 'register') {
         feature = defineFeature('atlas:visibility', undefined, {
@@ -411,12 +484,15 @@ const createAiCase = () => {
           api: {
             setVisible(nextVisible) {
               visible = nextVisible
+
               return visible
             }
           }
         })
+
         return { action: 'set_visibility', registered: true }
       }
+
       if (actionId === 'prepare') {
         runtime = createAiAgentRuntime({
           provider: {
@@ -456,6 +532,7 @@ const createAiCase = () => {
                 required: ['visible'],
                 properties: { visible: { type: 'boolean' } }
               },
+
               execute: async ({ visible: nextVisible }) => ({
                 visible: feature.api.setVisible(nextVisible)
               })
@@ -472,34 +549,41 @@ const createAiCase = () => {
           transactionRunner: {
             run: async (_label, execute) => {
               transactionCount += 1
+
               return execute()
             }
           }
         })
+
         return {
           providerKind: 'deterministic-app-provider',
           preparedActions: 1
         }
       }
+
       if (actionId === 'permit') {
         return { policy: 'allow registered set_visibility only' }
       }
+
       runtimeResult = await runtime.run({
         intent: 'Hide the selected record',
         signal: new globalThis.AbortController().signal
       })
+
       return {
         runtimeStatus: runtimeResult.status,
         visible,
         transactionCount
       }
     },
+
     result: () => ({
       visible,
       transactionCount,
       providerKind: 'deterministic-app-provider',
       runtimeStatus: runtimeResult?.status ?? 'not-run'
     }),
+
     dispose: async () => {
       await runtime?.dispose()
       feature?.dispose()
@@ -516,18 +600,23 @@ const createRetrievalCase = () => {
     'record-a': { label: 'Cooling audit', status: 'open' },
     'record-b': { label: 'Safety review', status: 'open' }
   }
+
   const records = () => detached(systemContext.getSystemContextSnapshot()[key])
 
   return {
     expectedStatus: 'succeeded',
+
     async execute(actionId) {
       if (actionId === 'register-model') {
         systemContext.registerProperty(key, initialRecords, {
           runtime: false,
+
           validate: (value) => Boolean(value && typeof value === 'object')
         })
+
         return { records: records() }
       }
+
       if (actionId === 'register-action') {
         feature = defineFeature('atlas:record-actions', undefined, {
           priority: 100,
@@ -535,9 +624,11 @@ const createRetrievalCase = () => {
           api: {
             setStatus(recordId, status) {
               const current = records()
+
               if (!current[recordId]) {
                 throw new Error(`Unknown record: ${recordId}`)
               }
+
               systemContext.setManagedProperty(key, {
                 ...current,
                 [recordId]: { ...current[recordId], status }
@@ -545,32 +636,42 @@ const createRetrievalCase = () => {
             }
           }
         })
+
         return { feature: 'atlas:record-actions', registered: true }
       }
+
       if (actionId === 'retrieve') {
         const before = JSON.stringify(records())
+
         matches = Object.entries(records())
           .filter(([, record]) => record.label.toLowerCase().includes('safety'))
           .map(([id, record]) => ({ id, ...record }))
         const after = JSON.stringify(records())
+
         retrievalChangedCanonical = before !== after
+
         return { matches, retrievalChangedCanonical }
       }
+
       if (actionId === 'act') {
         feature.api.setStatus(matches[0].id, 'approved')
+
         return { records: records(), owner: 'registered Feature API' }
       }
+
       return {
         runtimeBoundary: 'browser/Core composition',
         headless: 'Roadmap, not a current API'
       }
     },
+
     result: () => ({
       matches,
       retrievalChangedCanonical,
       records: records(),
       runtimeBoundary: 'browser/Core composition'
     }),
+
     dispose: async () => {
       feature?.dispose()
       systemContext.unregisterProperty(key)
@@ -601,9 +702,11 @@ const snapshot = (run) => ({
 export const createAtlasRun = async (caseId) => {
   const definition = getAtlasCase(caseId)
   const build = builders[caseId]
+
   if (!definition || !build) {
     throw new Error(`Unknown Runtime Atlas case: ${caseId}`)
   }
+
   const run = {
     definition,
     runId: createRunId(),
@@ -613,6 +716,7 @@ export const createAtlasRun = async (caseId) => {
     evidence: [],
     runtime: build()
   }
+
   return run
 }
 
@@ -620,6 +724,7 @@ export const getAtlasRunSnapshot = (run) => snapshot(run)
 
 export const advanceAtlasRun = async (run) => {
   const action = run.definition.actions[run.actionIndex]
+
   if (!action || ['succeeded', 'rejected', 'failed'].includes(run.status)) {
     return snapshot(run)
   }
@@ -628,11 +733,14 @@ export const advanceAtlasRun = async (run) => {
   run.sequence += 1
   try {
     const output = await run.runtime.execute(action.id)
+
     run.actionIndex += 1
     const isComplete = run.actionIndex === run.definition.actions.length
+
     if (isComplete) {
       run.status = run.runtime.expectedStatus
     }
+
     run.evidence.push({
       caseId: run.definition.id,
       runId: run.runId,
@@ -660,6 +768,7 @@ export const advanceAtlasRun = async (run) => {
       failure: error instanceof Error ? error.message : String(error)
     })
   }
+
   return snapshot(run)
 }
 
@@ -669,6 +778,7 @@ export const disposeAtlasRun = async (run) => {
 
 export const runCaseToCompletion = async (caseId) => {
   const run = await createAtlasRun(caseId)
+
   try {
     while (
       run.actionIndex < run.definition.actions.length &&
@@ -676,6 +786,7 @@ export const runCaseToCompletion = async (caseId) => {
     ) {
       await advanceAtlasRun(run)
     }
+
     return snapshot(run)
   } finally {
     await disposeAtlasRun(run)

@@ -16,41 +16,51 @@ export const parseReleaseType = (args) => {
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]
+
     if (arg === '--type') {
       const value = args[index + 1]
+
       if (!value || value.startsWith('--')) {
         throw new Error('--type requires patch, minor, or major')
       }
+
       values.push(value)
       index += 1
       continue
     }
+
     if (arg.startsWith('--type=')) {
       values.push(arg.slice('--type='.length))
       continue
     }
+
     throw new Error(`Unknown argument: ${arg}`)
   }
 
   if (values.length === 0) {
     throw new Error('--type is required for the exceptional generator')
   }
+
   if (values.length !== 1) {
     throw new Error('--type must be provided exactly once')
   }
 
   const [releaseType] = values
+
   if (!RELEASE_TYPES.includes(releaseType)) {
     throw new Error(`Unsupported Changesets release type: ${releaseType}`)
   }
+
   return releaseType
 }
 
 const readPendingChangesets = (repositoryRoot) => {
   const changesetDirectory = path.join(repositoryRoot, '.changeset')
+
   if (!fs.existsSync(changesetDirectory)) {
     return []
   }
+
   return fs
     .readdirSync(changesetDirectory)
     .filter((entry) => entry.endsWith('.md') && entry !== 'README.md')
@@ -59,12 +69,14 @@ const readPendingChangesets = (repositoryRoot) => {
 
 const validateFrameworkManifests = (repositoryRoot) => {
   const uniqueNames = new Set(FRAMEWORK_RELEASE_PACKAGE_NAMES)
+
   if (uniqueNames.size !== FRAMEWORK_RELEASE_PACKAGE_NAMES.length) {
     throw new Error('Framework release allowlist contains duplicate names')
   }
 
   const source = readFrameworkReleaseSource({ repositoryRoot })
   const sourceNames = source.packages.map((record) => record.name)
+
   if (
     sourceNames.length !== FRAMEWORK_RELEASE_PACKAGE_NAMES.length ||
     sourceNames.some(
@@ -100,6 +112,7 @@ export const createFrameworkChangesetPlan = ({
 
   const resolvedRoot = path.resolve(repositoryRoot)
   const pendingChangesets = readPendingChangesets(resolvedRoot)
+
   if (pendingChangesets.length > 0) {
     throw new Error(
       `Exceptional generator requires an empty pending Changeset set; found ${pendingChangesets.join(
@@ -110,6 +123,7 @@ export const createFrameworkChangesetPlan = ({
 
   validateFrameworkManifests(resolvedRoot)
   const packageNames = [...FRAMEWORK_RELEASE_PACKAGE_NAMES]
+
   return Object.freeze({
     releaseType,
     packageNames: Object.freeze(packageNames),
@@ -137,6 +151,7 @@ if (isDirectInvocation) {
     repositoryRoot,
     releaseType
   })
+
   writeFrameworkChangeset(plan)
   process.stdout.write(
     `Generated ${path.relative(repositoryRoot, plan.outputPath)} for ${plan.packageNames.length} Framework packages at ${releaseType}.\n`

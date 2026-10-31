@@ -13,13 +13,17 @@ const spec = fs.readFileSync(
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
 const route = (id) => {
   const value = data.routes.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector route: ${id}`)
+
   return value
 }
 
@@ -38,6 +42,7 @@ const contractText = (owner) =>
 test('completed plan and direct-open Inspector are the resolvable authorities', () => {
   const formerActiveSpecPath =
     'docs/ai/framework/plans/preset-composition-plan.md'
+
   assert.equal(
     data.authority.specPath,
     'docs/ai/framework/plans/completed/preset-composition-plan.md'
@@ -94,6 +99,7 @@ test('removed unreleased composition APIs are not compatibility contracts', () =
 
   const result = contractText(step('publish-preset-result'))
   const request = contractText(step('request-preset'))
+
   assert.match(request, /never supplies installers, callbacks, engine ids/i)
   assert.match(request, /capability bundle or arbitrary installer input/i)
   assert.match(result, /No public disposer, application handle/i)
@@ -287,6 +293,7 @@ test('every owner step is exact and all routes and artifacts resolve', () => {
     if (item.to) {
       assert.ok(stepIds.has(item.to), `Unknown route destination: ${item.to}`)
     }
+
     assert.ok(item.predicate, `Missing route predicate: ${item.id}`)
     item.producedArtifacts.forEach((artifactId) => {
       assert.ok(

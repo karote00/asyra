@@ -22,6 +22,7 @@ const runIsolatedCase = async (caseId) => {
     '--eval',
     script
   ])
+
   return JSON.parse(stdout)
 }
 
@@ -59,6 +60,7 @@ test('invalid input rolls back the complete preview without history', async () =
 
 test('registered AI action executes through the current Runtime contract', async () => {
   const result = await runIsolatedCase('ai-registered-action')
+
   assert.equal(result.status, 'succeeded')
   assert.equal(result.result.visible, false)
   assert.equal(result.result.transactionCount, 1)

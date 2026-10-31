@@ -17,8 +17,10 @@ export interface ExecutionAssessment {
   opinion?: unknown
   criteria: string[]
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
+
 const boundedText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0 && value.length <= 2000
 
@@ -42,6 +44,7 @@ export const assessExecution = async (
     durationMs: 0,
     criteria: options.criteria
   }
+
   if (
     !report.requestId ||
     !options.criteria.length ||
@@ -49,7 +52,9 @@ export const assessExecution = async (
   ) {
     return { ...result, reason: 'MISSING_ASSESSMENT_INPUT' }
   }
+
   const review = report.modelReview
+
   if (
     options.purpose === 'visual' &&
     review.current &&
@@ -67,6 +72,7 @@ export const assessExecution = async (
   ) {
     return { ...result, status: 'reused', opinion: review }
   }
+
   if (!options.provider) {
     return { ...result, reason: 'ASSESSMENT_PROVIDER_UNAVAILABLE' }
   }
@@ -103,10 +109,13 @@ export const assessExecution = async (
   }
   const now = options.now ?? (() => performance.now())
   const started = now()
+
   try {
     const response = await options.provider(summary)
+
     result.assessmentRequestId = response.requestId
     const opinion = response.value
+
     if (
       !record(opinion) ||
       !boundedText(opinion.overall) ||
@@ -132,6 +141,7 @@ export const assessExecution = async (
         reason: 'INVALID_ASSESSMENT'
       }
     }
+
     // Keep only the declared opinion fields, not arbitrary model-supplied payloads.
     return {
       ...result,
@@ -157,6 +167,7 @@ export const assessExecution = async (
     ) {
       result.assessmentRequestId = error.requestId
     }
+
     return {
       ...result,
       status: 'failed',

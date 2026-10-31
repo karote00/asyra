@@ -4,6 +4,7 @@ import type { NextConfig } from 'next'
 import { siteSecurityHeaders } from './lib/site-security-headers.mjs'
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url))
+
 if (process.env.SITE_OUTPUT === 'export' && !process.env.NEXT_PUBLIC_SITE_URL) {
   throw new Error('Static export requires NEXT_PUBLIC_SITE_URL')
 }

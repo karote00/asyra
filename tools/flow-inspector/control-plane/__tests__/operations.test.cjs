@@ -10,13 +10,18 @@ const {
   createAcceptedRepository
 } = require('./accepted-repository-fixture.cjs')
 const root = path.resolve(__dirname, '../../../..')
+
 function directory(t) {
   const parent = path.join(root, 'tmp/flow-inspector/operations-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const dir = fs.mkdtempSync(path.join(parent, 'store-'))
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+
   return dir
 }
+
 test('provider capability is service-owned and state reports the same retained request observations', async (t) => {
   const authorization = {
     id: randomUUID(),
@@ -31,7 +36,9 @@ test('provider capability is service-owned and state reports the same retained r
     directory: directory(t),
     agentOptions: {
       available: () => true,
+
       providerAuthorization: authorization,
+
       providerComplete: async () => ({
         text: '{"tool":"shell"}',
         terminal: true,
@@ -39,6 +46,7 @@ test('provider capability is service-owned and state reports the same retained r
       })
     }
   })
+
   try {
     assert.deepEqual(service.state().tasks.providerAuthorization, authorization)
     const contract = service.contract()
@@ -57,6 +65,7 @@ test('provider capability is service-owned and state reports the same retained r
       },
       LOCAL_ACTOR
     )
+
     await service.waitTask(id)
     assert.deepEqual(
       service.state().tasks.records[0].providerRequests,
@@ -73,30 +82,38 @@ test(
   async (t) => {
     const dir = directory(t)
     let service = createService(root, { directory: dir })
+
     try {
       const id = service.start({ mode: 'candidate' }, LOCAL_ACTOR)
       const result = await service.wait(id)
+
       assert.equal(result.evidence.status, 'passed')
       assert.equal(service.get(id).matchesCurrentContract, false)
       const review = service.prepareEvolution({ attemptId: id }, LOCAL_ACTOR)
+
       assert.equal(review.blockers.length, 0)
       const request = {
         id: review.id,
         decision: 'accept',
         reason: 'Admit reviewed baseline'
       }
+
       service.decideEvolution(request, LOCAL_ACTOR)
       assert.equal(service.state().evolution.revision, 2)
       const shared = service.shared()
+
       assert.equal(shared.workStatus, 'untracked')
       assert.equal(shared.deliveryStatus, 'not-assessed')
       assert.equal(shared.verificationStatus, 'unknown')
       const original = fs.readFileSync
       let reads = 0
+
       fs.readFileSync = (...args) => {
         reads++
+
         return original(...args)
       }
+
       try {
         for (let i = 0; i < 10; i++) {
           assert.strictEqual(service.shared(), shared)
@@ -105,6 +122,7 @@ test(
       } finally {
         fs.readFileSync = original
       }
+
       assert.equal(reads, 0)
       await service.close()
       service = createService(root, { directory: dir })
@@ -129,6 +147,7 @@ for (const [githubActions, provider] of [
     { timeout: 30000 },
     async (t) => {
       const previous = process.env.GITHUB_ACTIONS
+
       process.env.GITHUB_ACTIONS = githubActions
       t.after(() => {
         if (previous === undefined) {
@@ -138,6 +157,7 @@ for (const [githubActions, provider] of [
         }
       })
       const service = createService(root, { directory: directory(t) })
+
       try {
         assert.throws(
           () =>
@@ -158,6 +178,7 @@ for (const [githubActions, provider] of [
         const request = { mode: 'ci', requestId: randomUUID() }
         const id = service.start(request, LOCAL_ACTOR),
           record = await service.wait(id)
+
         assert.equal(
           record.evidence.cases.length,
           service.contract().cases.length
@@ -177,8 +198,10 @@ for (const [githubActions, provider] of [
     }
   )
 }
+
 test('unknown or denied evolution decisions have no version side effects', async (t) => {
   const service = createService(root, { directory: directory(t) })
+
   try {
     assert.throws(
       () =>
@@ -208,12 +231,15 @@ test(
   async (t) => {
     const local = createService(root, { directory: directory(t) })
     let envelope
+
     try {
       const record = await local.wait(local.start({ mode: 'ci' }, LOCAL_ACTOR))
+
       envelope = JSON.parse(local.readArtifact(record.id, 'ci-envelope'))
     } finally {
       await local.close()
     }
+
     envelope.provider = 'github-actions'
     envelope.runId = '100'
     const expected = Object.fromEntries(
@@ -230,12 +256,14 @@ test(
         'policyDigest'
       ].map((key) => [key, envelope[key]])
     )
+
     expected.policyDigest = '0'.repeat(64)
     const dir = directory(t)
     let service = createService(root, {
       directory: dir,
       ciAdmission: { expected }
     })
+
     try {
       assert.throws(
         () =>
@@ -243,6 +271,7 @@ test(
         /authorized/
       )
       const imported = service.ingestCI({ envelope }, LOCAL_ACTOR)
+
       assert.equal(
         imported.result.evidence.cases.length,
         service.contract().cases.length
@@ -255,6 +284,7 @@ test(
       assert.deepEqual(service.ingestCI({ envelope }, LOCAL_ACTOR), imported)
       assert.equal(service.state().ci.deliveries.length, 1)
       const conflict = structuredClone(envelope)
+
       conflict.providerConclusion = 'failure'
       assert.throws(
         () => service.ingestCI({ envelope: conflict }, LOCAL_ACTOR),
@@ -278,6 +308,7 @@ test(
         { attemptId: preview.id },
         LOCAL_ACTOR
       )
+
       service.decideEvolution(
         { id: review.id, decision: 'accept', reason: 'New accepted version' },
         LOCAL_ACTOR
@@ -286,6 +317,7 @@ test(
       assert.equal(service.shared().deliveryStatus, 'not-assessed')
       await service.close()
       const older = { ...envelope, runId: '99' }
+
       service = createService(root, {
         directory: dir,
         ciAdmission: { expected: { ...expected, runId: '99' } }
@@ -303,10 +335,12 @@ test(
 
 test('reported work completion is independent of verification and shared snapshots cannot be mutated by readers', async (t) => {
   const service = createService(root, { directory: directory(t) })
+
   try {
     const steps = [
       ...new Set(service.contract().cases.map((item) => item.stepId))
     ]
+
     assert.throws(
       () =>
         service.setWork(
@@ -321,11 +355,13 @@ test('reported work completion is independent of verification and shared snapsho
         LOCAL_ACTOR
       )
     }
+
     assert.equal(service.shared().workStatus, 'reported-complete')
     assert.equal(service.shared().verificationStatus, 'unknown')
     assert.equal(service.shared().deliveryStatus, 'not-assessed')
     const shared = service.shared(),
       goal = shared.goals[0].goal
+
     assert.equal(Reflect.set(shared.goals[0], 'goal', 'forged'), false)
     assert.equal(service.shared().goals[0].goal, goal)
     assert.equal(service.shared().remainingWork.length, 0)
@@ -343,6 +379,7 @@ test(
     const service = createService(repository, {
       directory: path.join(repository, 'tmp/store')
     })
+
     try {
       const negative = await service.wait(
         service.start(
@@ -350,6 +387,7 @@ test(
           LOCAL_ACTOR
         )
       )
+
       assert.equal(negative.ci.evidence.status, 'failed')
       assert.equal(negative.ci.deliveryStatus, 'blocked')
       assert.equal(negative.deliveryStatus, negative.ci.deliveryStatus)
@@ -372,6 +410,7 @@ test(
       const corrected = await service.wait(
         service.start({ mode: 'ci' }, LOCAL_ACTOR)
       )
+
       assert.equal(corrected.ci.evidence.status, 'passed')
       assert.equal(
         corrected.ci.evidence.passedCount,
@@ -391,9 +430,11 @@ test('agent actions share capability, task identity, all-flow policy and mutual 
     directory: dir,
     agentOptions: {
       available: () => true,
+
       verify: async () => ({ evidence: { status: 'unknown' } })
     }
   })
+
   try {
     const state = service.state()
     const request = {
@@ -407,12 +448,14 @@ test('agent actions share capability, task identity, all-flow policy and mutual 
       revision: state.mapping.revision,
       budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
     }
+
     assert.throws(
       () => service.startTask(request, { id: 'agent', capabilities: [] }),
       /authorized/
     )
     assert.equal(service.state().tasks.records.length, 0)
     const id = service.startTask(request, LOCAL_ACTOR)
+
     assert.equal(service.startTask(request, LOCAL_ACTOR), id)
     assert.throws(() => service.start({}, LOCAL_ACTOR), /running/)
     assert.throws(() => service.prepareMapping({}, LOCAL_ACTOR), /running/)
@@ -421,6 +464,7 @@ test('agent actions share capability, task identity, all-flow policy and mutual 
       { action: 'handoff' },
       LOCAL_ACTOR
     )
+
     assert.equal(stopped.phase, 'handed-off')
     assert.equal(service.state().mapping.revision, state.mapping.revision)
     assert.equal(service.state().tasks.records[0].id, id)
@@ -439,13 +483,16 @@ test(
     const adapter = {
       repository: 'owner/repo',
       base: 'main',
+
       inspect: async () => ({
         baseSha: 'a'.repeat(40),
         baseTree: 'b'.repeat(40)
       }),
+
       deliver: async (p, checkpoint) => {
         effects++
         await checkpoint('create-pr', { expectedHead: 'c'.repeat(40) })
+
         return {
           number: 1,
           state: 'open',
@@ -453,6 +500,7 @@ test(
           draft: true
         }
       },
+
       observe: async () => ({
         number: 1,
         state: 'merged',
@@ -464,6 +512,7 @@ test(
       serviceOptions: { directory: directory(t), deliveryAdapter: adapter },
       url: 'http://127.0.0.1:0'
     })
+
     try {
       const service = server.service
       const initial = service.state().mapping.revision
@@ -482,6 +531,7 @@ test(
         },
         LOCAL_ACTOR
       )
+
       assert.equal((await service.waitTask(id)).verificationStatus, 'passed')
       await assert.rejects(
         () =>
@@ -493,14 +543,17 @@ test(
         /authorized/
       )
       const lines = []
+
       assert.equal(
         await main(['--url', server.origin, 'pr-prepare', id], {
           repositoryRoot: root,
+
           write: (x) => lines.push(x)
         }),
         0
       )
       const prepared = JSON.parse(lines.pop())
+
       assert.equal(prepared.preview.taskId, id)
       assert.equal(prepared.preview.metadata.packageName, '@asyra/factory')
       assert.equal(prepared.preview.metadata.validation.status, 'passed')
@@ -511,6 +564,7 @@ test(
       const read = await fetch(
         server.origin + '/api/tasks/' + id + '/review'
       ).then((r) => r.json())
+
       assert.deepEqual(read, prepared)
       assert.equal(effects, 0)
       await assert.rejects(
@@ -537,11 +591,16 @@ test(
             prepared.previewDigest,
             'confirm'
           ],
-          { repositoryRoot: root, write: (x) => lines.push(x) }
+          {
+            repositoryRoot: root,
+
+            write: (x) => lines.push(x)
+          }
         ),
         0
       )
       const submitted = JSON.parse(lines.pop())
+
       assert.equal(submitted.state, 'submitted-for-review')
       assert.deepEqual(submitted.preview, prepared.preview)
       assert.ok(
@@ -550,6 +609,7 @@ test(
       assert.equal(effects, 1)
       await main(['--url', server.origin, 'pr-refresh', id], {
         repositoryRoot: root,
+
         write: (x) => lines.push(x)
       })
       assert.equal(JSON.parse(lines.pop()).observation.state, 'merged')
@@ -573,13 +633,16 @@ test(
       deliveryAdapter: {
         repository: 'owner/repo',
         base: 'main',
+
         inspect: async () => {
           entered()
           await new Promise((resolve) => (release = resolve))
+
           return { baseSha: 'a'.repeat(40), baseTree: 'b'.repeat(40) }
         }
       }
     })
+
     try {
       const request = {
         requestId: randomUUID(),
@@ -593,12 +656,14 @@ test(
         budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
       }
       const id = service.startTask(request, LOCAL_ACTOR)
+
       await service.waitTask(id)
       const preparing = service.reviewTask(
         id,
         { action: 'prepare' },
         LOCAL_ACTOR
       )
+
       await ready
       try {
         assert.throws(() => service.start({}, LOCAL_ACTOR), /review|delivery/)
@@ -614,6 +679,7 @@ test(
         release()
         await preparing
       }
+
       assert.ok(service.state().tasks.records[0].reviewRevision > 0)
     } finally {
       await service.close()
@@ -624,6 +690,7 @@ test(
 test('invalid retained delivery refuses startup without leaking the exclusive store lock', (t) => {
   const dir = directory(t)
   const service = createService(root, { directory: dir })
+
   return service.close().then(() => {
     fs.writeFileSync(path.join(dir, 'reviews', randomUUID() + '.json'), '{}')
     assert.throws(
@@ -642,8 +709,10 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const service = createService(root, { directory: directory(t) })
+
     try {
       const baseline = await service.wait(service.start({}, LOCAL_ACTOR))
+
       assert.equal(baseline.evidence.status, 'passed')
       const contract = service.contract()
       const work = {
@@ -680,6 +749,7 @@ test(
         taskId: randomUUID(),
         sourceAttemptId: baseline.id
       }
+
       service.decideTarget(admission, LOCAL_ACTOR)
       const id = service.startTask(
         {
@@ -701,6 +771,7 @@ test(
         LOCAL_ACTOR
       )
       const failed = await service.waitTask(id)
+
       assert.equal(failed.verificationStatus, 'failed')
       assert.equal(
         service.getTarget(target.id).works[0].assessment.status,
@@ -712,6 +783,7 @@ test(
         LOCAL_ACTOR
       )
       const corrected = await service.waitTask(id)
+
       assert.equal(corrected.verificationStatus, 'passed')
       assert.equal(
         corrected.attempts.at(-1).verdict.evidence.cases.length,
@@ -719,6 +791,7 @@ test(
       )
       assert.equal(corrected.attempts[0].verdict.evidence.status, 'failed')
       const result = service.getTarget(target.id)
+
       assert.equal(result.works[0].assessment.status, 'passed')
       assert.equal(result.status, 'pending')
       assert.deepEqual(result.pending, ['cancel.snapshot', 'cancel.delivery'])

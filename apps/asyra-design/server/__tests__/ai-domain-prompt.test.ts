@@ -174,6 +174,7 @@ describe('stage-owned App guidance', () => {
     ]) {
       expect(general).toContain(name)
     }
+
     expect(general).toContain('Do not replay uncertain writes')
     expect(general).toContain('No old snapshot')
   })
@@ -213,11 +214,13 @@ describe('stage-owned App guidance', () => {
     ]) {
       expect(general).toContain(name)
     }
+
     expect(general).not.toContain('record_design_review')
     expect(general).toContain('all original criteria')
     const review = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
+
     expect(review.description).toContain('final=true (default)')
     expect(review.description).toContain('without discarding valid local work')
     expect(review.description).toContain('deferredDetails')
@@ -228,6 +231,7 @@ describe('stage-owned App guidance', () => {
     )
     const example = (criteria.inputSchema as { examples: unknown[] })
       .examples[0]
+
     expect(criteria.description).not.toContain(JSON.stringify(example))
     expect(operationInputIssue(example, criteria.inputSchema)).toBeUndefined()
     expect(createLocalDesignReview().record(example)).toMatchObject({
@@ -247,6 +251,7 @@ describe('stage-owned App guidance', () => {
     ]) {
       expect(imageGuidance).toContain(detail)
     }
+
     expect(AI_IMAGE_TOOL_CATALOG.map((t) => t.id).sort()).toEqual(
       Object.values(AiImageToolIds).sort()
     )
@@ -260,6 +265,7 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) {
     throw new Error('Required test fixture is unavailable')
   }
+
   return value
 }
 

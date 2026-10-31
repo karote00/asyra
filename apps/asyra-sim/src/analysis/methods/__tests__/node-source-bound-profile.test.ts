@@ -30,9 +30,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing measured pair')
         }
+
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -57,31 +59,39 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           { root: MeshNode; geometry: MeshGeometry }
         >()
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation((...args) => {
           const index = build(...args)
+
           roots.set(index.root.bounds, { root: index.root, geometry: args[0] })
+
           return index
         })
         let pointWork = 0,
           unionWork = 0,
           lookupWork = 0,
           refinements = 0
+
         const extra = () => pointWork + unionWork + lookupWork
+
         const context = new OriginalMeshQuery(() => {
           if (context.work + extra() >= 500000) {
             throw new MeshWorkLimit('Combined source-extrema query budget')
           }
         })
+
         const check = () => {
           if (context.work + extra() > 500000) {
             throw new MeshWorkLimit('Source-extrema preparation budget')
           }
         }
+
         interface QueryBounds {
           seen: WeakSet<Bounds>
           bounds: WeakMap<Bounds, Bounds>
         }
         let active: WeakMap<object, QueryBounds> | undefined
+
         function refine(
           root: MeshNode,
           geometry: MeshGeometry,
@@ -91,32 +101,42 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           if (!active) {
             throw new Error('Missing direct query owner')
           }
+
           const retained = state.bounds
           const points = new Map<number, Bounds>()
+
           const point = (index: number) => {
             const previous = points.get(index)
+
             if (previous) {
               return previous
             }
+
             pointWork++
             check()
             const value = meshIndex.worldPoint(
               pose,
               meshIndex.meshPoint(geometry, index)
             )
+
             points.set(index, value)
+
             return value
           }
+
           const union = (values: readonly Bounds[]): Bounds => {
             unionWork++
             check()
+
             return [0, 1, 2].map((axis) => [
               Math.min(...values.map((value) => value[axis][0])),
               Math.max(...values.map((value) => value[axis][1]))
             ]) as unknown as Bounds
           }
+
           const visit = (node: MeshNode): Bounds => {
             let result: Bounds
+
             if (node.children) {
               result = union(node.children.map(visit))
             } else {
@@ -126,45 +146,61 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                     point(geometry.indices[triangle.offset + index])
                   )
                 )
+
                 retained.set(triangle.bounds, bounds)
+
                 return bounds
               })
+
               result = union(triangles)
             }
+
             retained.set(node.bounds, result)
+
             return result
           }
+
           refinements++
           visit(root)
         }
+
         const world = meshIndex.worldBounds
+
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
             if (!active) {
               throw new Error('Bounds escaped direct query')
             }
+
             const state = active.get(pose) ?? {
               seen: new WeakSet<Bounds>(),
               bounds: new WeakMap<Bounds, Bounds>()
             }
+
             active.set(pose, state)
             const root = roots.get(bounds)
+
             // First root request is the unchanged cheap complete-box admission. Only a
             // repeated root request starts actual source hierarchy traversal/refinement.
             if (root && !state.seen.has(bounds)) {
               state.seen.add(bounds)
+
               return world(bounds, pose)
             }
+
             if (root && !state.bounds.has(bounds)) {
               refine(root.root, root.geometry, pose, state)
             }
+
             lookupWork++
             check()
+
             return state.bounds.get(bounds) ?? world(bounds, pose)
           }
         )
         const distance = context.distance.bind(context),
           lower = context.lowerOver.bind(context)
+
         context.distance = (...args) => {
           active = new WeakMap()
           try {
@@ -173,6 +209,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             active = undefined
           }
         }
+
         context.lowerOver = (...args) => {
           active = new WeakMap()
           try {
@@ -181,12 +218,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             active = undefined
           }
         }
+
         const candidate = queryOriginalPartPair(
           query,
           settings,
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- complete source extrema feasibility with all point/union/lookup costs
         console.info(
           JSON.stringify({

@@ -21,14 +21,17 @@ const temporaryRoot = path.join(projectRoot, 'tmp')
 function makeRepository(branch) {
   mkdirSync(temporaryRoot, { recursive: true })
   const root = mkdtempSync(path.join(temporaryRoot, 'agent-safety-hook-'))
+
   const git = (...args) =>
     execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim()
+
   git('init', '-q', '-b', branch)
   git('config', 'user.name', 'Agent Safety Test')
   git('config', 'user.email', 'agent-safety@example.test')
   writeFileSync(path.join(root, 'tracked.txt'), 'base\n')
   git('add', 'tracked.txt')
   git('commit', '-qm', 'baseline')
+
   return { root, git }
 }
 
@@ -36,6 +39,7 @@ function makeLinkedWorktree(t, branch) {
   const { root, git } = makeRepository('main')
   const container = mkdtempSync(path.join(temporaryRoot, 'agent-safety-link-'))
   const linkedRoot = path.join(container, 'feature')
+
   git('worktree', 'add', '-q', '-b', branch, linkedRoot, 'HEAD')
   t.after(() => {
     execFileSync('git', ['worktree', 'remove', '--force', linkedRoot], {
@@ -45,6 +49,7 @@ function makeLinkedWorktree(t, branch) {
     rmSync(container, { recursive: true, force: true })
     rmSync(root, { recursive: true, force: true })
   })
+
   return { root, linkedRoot }
 }
 
@@ -55,8 +60,10 @@ function invokeHook(root, event) {
     encoding: 'utf8',
     timeout: 5000
   })
+
   assert.equal(result.error, undefined, result.error?.message)
   assert.equal(result.status, 0, result.stderr)
+
   return JSON.parse(result.stdout)
 }
 
@@ -74,6 +81,7 @@ function permissionDecision(result) {
 
 test('normal writes and feature-branch commits need no task or shared registry state', (t) => {
   const { root, git } = makeRepository('codex/ordinary-work')
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const patch = {
     command:
@@ -92,6 +100,7 @@ test('normal writes and feature-branch commits need no task or shared registry s
     {}
   )
   const firstCommit = git('rev-parse', 'HEAD')
+
   git('commit', '-qm', 'ordinary change')
   assert.notEqual(git('rev-parse', 'HEAD'), firstCommit)
 
@@ -106,23 +115,27 @@ test('normal writes and feature-branch commits need no task or shared registry s
     {}
   )
   const secondCommit = git('rev-parse', 'HEAD')
+
   git('commit', '-qm', 'ordinary change with obsolete state present')
   assert.notEqual(git('rev-parse', 'HEAD'), secondCommit)
 })
 
 test('main-branch writes and independently unsafe Git commands remain denied', (t) => {
   const { root } = makeRepository('main')
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   assert.deepEqual(preTool(root, 'Bash', { command: 'git status --short' }), {})
   const write = preTool(root, 'apply_patch', {
     command:
       '*** Begin Patch\n*** Update File: tracked.txt\n@@\n-base\n+changed\n*** End Patch'
   })
+
   assert.equal(permissionDecision(write), 'deny')
 
   const commit = preTool(root, 'Bash', {
     command: 'git commit -m "must stay off main"'
   })
+
   assert.equal(permissionDecision(commit), 'deny')
   assert.equal(
     permissionDecision(
@@ -140,8 +153,10 @@ test('main-branch writes and independently unsafe Git commands remain denied', (
   )
 
   const { root: featureRoot } = makeRepository('codex/unsafe-command-proof')
+
   t.after(() => rmSync(featureRoot, { recursive: true, force: true }))
   const { root: otherRoot } = makeRepository('main')
+
   t.after(() => rmSync(otherRoot, { recursive: true, force: true }))
   assert.equal(
     permissionDecision(
@@ -219,6 +234,7 @@ test('mixed-worktree patches and targets in another repository are denied', (t) 
   )
   const linkedRoot = path.join(linkedContainer, 'feature')
   const secondLinkedRoot = path.join(linkedContainer, 'second-feature')
+
   git('worktree', 'add', '-q', '-b', 'codex/mixed-targets', linkedRoot, 'HEAD')
   git(
     'worktree',
@@ -242,6 +258,7 @@ test('mixed-worktree patches and targets in another repository are denied', (t) 
     rmSync(root, { recursive: true, force: true })
   })
   const { root: otherRoot } = makeRepository('codex/different-repository')
+
   t.after(() => rmSync(otherRoot, { recursive: true, force: true }))
 
   assert.equal(
@@ -288,6 +305,7 @@ test('the project keeps native hooks for stateless write safety only', () => {
   const config = JSON.parse(
     readFileSync(path.join(projectRoot, '.codex/hooks.json'), 'utf8')
   )
+
   assert.deepEqual(Object.keys(config.hooks).sort(), ['PreToolUse'])
   assert.match(
     config.hooks.PreToolUse[0].hooks[0].command,
@@ -296,6 +314,7 @@ test('the project keeps native hooks for stateless write safety only', () => {
   const packageJson = JSON.parse(
     readFileSync(path.join(projectRoot, 'package.json'), 'utf8')
   )
+
   assert.equal(
     packageJson.scripts['test:agent-safety'],
     'node --test scripts/__tests__/agent-safety-hook.test.mjs'

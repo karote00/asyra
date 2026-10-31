@@ -49,15 +49,18 @@ export interface DesignContextSource {
     fields: readonly string[]
   ): Record<string, unknown> | undefined
 }
+
 export const validateDesignContextFilter = (
   filter: DesignContextQuery['filter']
 ) => {
   if (filter === undefined) {
     return
   }
+
   if (!filter || typeof filter !== 'object' || Array.isArray(filter)) {
     throw new DesignContextQueryError('Invalid context filter.')
   }
+
   for (const [key, value] of Object.entries(filter)) {
     if (key === 'name') {
       if (
@@ -106,19 +109,25 @@ export const matchesDesignContextFilter = (
   readMetadata: DesignContextSource['getElementMetadata']
 ) => {
   const data = readMetadata(id)
+
   if (!data) {
     return false
   }
+
   if (filter?.type !== undefined && data.type !== filter.type) {
     return false
   }
+
   if (filter?.parentId !== undefined && data.parentId !== filter.parentId) {
     return false
   }
+
   if (filter?.locked !== undefined && (data.lock === true) !== filter.locked) {
     return false
   }
+
   const name = filter?.name
+
   if (
     name &&
     (typeof data.name !== 'string' ||
@@ -128,18 +137,23 @@ export const matchesDesignContextFilter = (
   ) {
     return false
   }
+
   if (filter?.ancestorId !== undefined) {
     let parent = data.parentId
     const visited = new Set<string>()
+
     while (typeof parent === 'string' && parent && !visited.has(parent)) {
       if (parent === filter.ancestorId) {
         return true
       }
+
       visited.add(parent)
       parent = readMetadata(parent)?.parentId
     }
+
     return false
   }
+
   return true
 }
 
@@ -209,16 +223,19 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
   ) {
     throw new DesignContextQueryError('Invalid document context query.')
   }
+
   const allowed = [
     ...designContextCommonFields,
     ...designContextScopes[query.scope].fields
   ]
   const unsupported = Object.keys(query).filter((key) => !allowed.includes(key))
+
   if (unsupported.length) {
     throw new DesignContextQueryError(
       `scope=${query.scope} does not support ${unsupported.join(', ')}. Allowed fields: ${allowed.join(', ')}. Direct filter requires scope=region with bounds; to filter hierarchy results, retain children then use scope=snapshot with snapshotId and filter.`
     )
   }
+
   if (
     (query.scope === 'ids' &&
       (!Array.isArray(query.elementIds) ||
@@ -237,8 +254,10 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
       'Invalid document context targets or fields.'
     )
   }
+
   if (query.scope === 'region') {
     const bounds = query.bounds
+
     if (
       !bounds ||
       Object.keys(bounds).some(
@@ -259,16 +278,19 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
         'Region requires finite workspace bounds with nonnegative dimensions.'
       )
     }
+
     validateDesignContextFilter(query.filter)
   } else if (query.bounds !== undefined || query.filter !== undefined) {
     throw new DesignContextQueryError(
       'Region bounds and filters require scope=region.'
     )
   }
+
   const offset = query.offset === undefined ? 0 : query.offset
   const limit =
     query.limit ??
     (query.scope === 'ids' ? (query.elementIds?.length ?? 50) : 50)
+
   if (
     !Number.isSafeInteger(offset) ||
     offset < 0 ||
@@ -279,6 +301,7 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
   ) {
     throw new DesignContextQueryError('Invalid document context page.')
   }
+
   if (
     query.expectedCount !== undefined &&
     (!Number.isSafeInteger(query.expectedCount) || query.expectedCount < 0)
@@ -296,12 +319,15 @@ export const createDesignContextReader =
       string,
       ReturnType<DesignContextSource['getElementMetadata']>
     >()
+
     const readMetadata = (id: string) => {
       if (!metadata.has(id)) {
         metadata.set(id, source.getElementMetadata(id))
       }
+
       return metadata.get(id)
     }
+
     const fields = query.fields ?? []
     const elementIds = query.elementIds ?? []
     const offset = query.offset === undefined ? 0 : query.offset
@@ -317,6 +343,7 @@ export const createDesignContextReader =
     const available =
       query.scope !== 'children' || Boolean(childPage?.available)
     let ids: string[] = []
+
     if (query.scope === 'ids') {
       ids = elementIds
     } else if (query.scope === 'selection') {
@@ -330,10 +357,13 @@ export const createDesignContextReader =
           matchesDesignContextFilter(id, query.filter, readMetadata)
         )
     }
+
     if (query.allMatches === true) {
       limit = Math.max(ids.length, 1)
     }
+
     const total = childPage?.total ?? ids.length
+
     assertDesignContextCount(total, query.expectedCount)
     const pageIds =
       query.scope === 'children' ? ids : ids.slice(offset, offset + limit)
@@ -350,26 +380,33 @@ export const createDesignContextReader =
       properties: Record<string, unknown>
       truncatedFields: string[]
     }[] = []
+
     for (const id of pageIds) {
       const data = readMetadata(id)
+
       if (!data) {
         missingIds.push(id)
         continue
       }
+
       matchedIds.push(id)
       if (query.result === 'ids') {
         continue
       }
+
       const computed = fields.length
         ? (source.getElementComputedData(id, fields) ?? {})
         : {}
       const properties: Record<string, unknown> = {}
       const truncatedFields: string[] = []
+
       for (const field of fields) {
         const value = computed[field]
+
         if (value === undefined) {
           continue
         }
+
         if (field === 'text' && typeof value === 'string') {
           properties[field] = value.slice(0, 2000)
           if (value.length > 2000) {
@@ -383,6 +420,7 @@ export const createDesignContextReader =
             if (!style || typeof style !== 'object') {
               return null
             }
+
             return Object.fromEntries(
               ['type', 'color', 'opacity', 'visible', 'width', 'align']
                 .filter((key) => key in style)
@@ -396,6 +434,7 @@ export const createDesignContextReader =
           properties[field] = value
         }
       }
+
       elements.push({
         id,
         name: data.name,
@@ -408,6 +447,7 @@ export const createDesignContextReader =
         truncatedFields
       })
     }
+
     return {
       available,
       scope: query.scope,

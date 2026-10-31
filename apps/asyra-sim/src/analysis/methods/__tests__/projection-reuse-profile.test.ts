@@ -20,9 +20,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing measured pair')
         }
+
         interface Completed {
           a: Bounds
           b: Bounds
@@ -39,17 +41,20 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           referenceCalls = 0,
           referenceAxes = 0
         const original = projection.projectedBoundsGap
+
         vi.spyOn(projection, 'projectedBoundsGap').mockImplementation(
           (a, aPose, b, bPose, threshold, checkpoint) => {
             if (!active) {
               throw new Error('Projection escaped its direct query lifetime')
             }
+
             expect(aPose).toBe(active.aPose)
             expect(bPose).toBe(active.bPose)
             const key = [...a.flat(), ...b.flat(), threshold]
               .map((value) => (Object.is(value, -0) ? '-0' : String(value)))
               .join(',')
             let work = 0
+
             calls++
             const result = original(a, aPose, b, bPose, threshold, () => {
               work++
@@ -57,6 +62,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               checkpoint()
             })
             const previous = active.completed.get(key)
+
             if (previous) {
               expect(result).toBe(previous.value)
               expect(work).toBe(previous.axes)
@@ -69,12 +75,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             } else {
               active.completed.set(key, { a, b, value: result, axes: work })
             }
+
             return result
           }
         )
         const context = new OriginalMeshQuery()
         const distance = context.distance.bind(context),
           lower = context.lowerOver.bind(context)
+
         context.distance = (...args) => {
           active = {
             aPose: args[0].pose,
@@ -87,6 +95,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             active = undefined
           }
         }
+
         context.lowerOver = (...args) => {
           active = {
             aPose: args[0].pose,
@@ -99,6 +108,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             active = undefined
           }
         }
+
         const result = queryOriginalPartPair(
           {
             workcell: snapshot.workcell,
@@ -115,6 +125,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- passive exact query identity and actual projection-work evidence
         console.info(
           JSON.stringify({

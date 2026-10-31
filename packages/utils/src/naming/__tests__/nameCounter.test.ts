@@ -18,6 +18,7 @@ describe('nameCounter', () => {
       const currentName = nameCounter.current(type)
 
       const expectResult = `${capitalizeFirstLetter(type)}${CODE_SPLIT}${FIRST_NAME}`
+
       expect(currentName).toBe(expectResult)
     })
   })
@@ -31,6 +32,7 @@ describe('nameCounter', () => {
 
       const next = addOne(currentName.split(CODE_SPLIT)[1])
       const expectResult = `${capitalizeFirstLetter(type)}${CODE_SPLIT}${next}`
+
       expect(newName).toBe(expectResult)
     })
 
@@ -43,6 +45,7 @@ describe('nameCounter', () => {
       expect(nameCounter.current(type)).toBe(testName)
 
       const newName = nameCounter.increase(type)
+
       expect(newName).toBe(`New_type${CODE_SPLIT}11`)
     })
   })
@@ -76,6 +79,7 @@ describe('nameCounter', () => {
   describe('register/unregister type', () => {
     it('should unregister a registered custom type', () => {
       const type = 'custom_name_type'
+
       nameCounter.registerType(type, 'Custom')
       expect(nameCounter.hasType(type)).toBe(true)
 

@@ -12,6 +12,7 @@ const root = path.resolve(
   '../out'
 )
 const origin = new URL(process.env.SITE_URL ?? '')
+
 if (
   origin.protocol !== 'http:' ||
   origin.hostname !== '127.0.0.1' ||
@@ -19,6 +20,7 @@ if (
 ) {
   throw new Error('Static preview requires SITE_URL=http://127.0.0.1:<port>')
 }
+
 const types = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -37,11 +39,15 @@ const server = createServer(async (request, response) => {
   try {
     const route = decodeURIComponent(new URL(request.url, origin).pathname)
     const requested = path.resolve(root, `.${route}`)
+
     if (!requested.startsWith(`${root}${path.sep}`) && requested !== root) {
       response.writeHead(400).end()
+
       return
     }
+
     let selected
+
     for (const candidate of [
       requested,
       `${requested}.html`,
@@ -57,7 +63,9 @@ const server = createServer(async (request, response) => {
         break
       }
     }
+
     const status = selected ? 200 : 404
+
     selected ??= path.join(root, '404.html')
     const type = types[path.extname(selected)] ?? 'application/octet-stream'
     let body = await readFile(selected)
@@ -66,6 +74,7 @@ const server = createServer(async (request, response) => {
         ({ key, value }) => [key, value]
       )
     )
+
     headers['Content-Type'] = type
     if (
       request.headers['accept-encoding']?.includes('gzip') &&
@@ -75,12 +84,14 @@ const server = createServer(async (request, response) => {
       headers['Content-Encoding'] = 'gzip'
       headers.Vary = 'Accept-Encoding'
     }
+
     response.writeHead(status, headers)
     response.end(request.method === 'HEAD' ? undefined : body)
   } catch {
     response.writeHead(500).end('Static preview failed')
   }
 })
+
 server.listen(Number(origin.port), origin.hostname, () => {
   console.log(`Static preview PID ${process.pid}: ${origin.origin}`)
 })

@@ -21,12 +21,15 @@ export const partitionExecutionTime = (
     'appOrchestrationMs',
     'unattributedMs'
   ] as const
+
   type Category = (typeof categories)[number]
   const spans: { start: number; end: number; category: Category }[] = []
+
   for (const step of steps) {
     if (step.startedMs === null) {
       continue
     }
+
     const start = Math.min(durationMs, step.startedMs)
     const end = Math.min(durationMs, step.endedMs ?? durationMs)
     const evidence = step.evidence.filter(
@@ -34,8 +37,10 @@ export const partitionExecutionTime = (
         !!item && typeof item === 'object'
     )
     const kind = evidence.find((item) => typeof item.kind === 'string')?.kind
+
     if (step.kind === 'lifecycle') {
       const ownership = evidence.find((item) => typeof item.owner === 'string')
+
       if (ownership?.owner === 'provider') {
         spans.push({
           start,
@@ -52,6 +57,7 @@ export const partitionExecutionTime = (
         (item) =>
           item.executor === 'app-server' && item.timingScope === 'owner-handoff'
       )
+
       spans.push({
         start,
         end,
@@ -60,6 +66,7 @@ export const partitionExecutionTime = (
     } else if (step.kind === 'tool') {
       if (step.executionStartedMs != null) {
         const boundary = Math.max(start, Math.min(end, step.executionStartedMs))
+
         spans.push(
           { start, end: boundary, category: 'toolQueueMs' },
           { start: boundary, end, category: 'toolExecutionMs' }
@@ -69,30 +76,38 @@ export const partitionExecutionTime = (
       }
     } else {
       let category: Category = 'unattributedMs'
+
       if (evidence.some((item) => typeof item.method === 'string')) {
         category = 'providerRequestMs'
       }
+
       if (kind === 'agentMessage') {
         category = 'providerResponseEventMs'
       }
+
       if (kind === 'reasoning') {
         category = 'providerReasoningEventMs'
       }
+
       if (kind === 'sleep') {
         category = 'nativeWaitMs'
       }
+
       if (
         kind === 'functionCallOutput' &&
         ['exec', 'wait'].includes(step.tool ?? '')
       ) {
         category = 'providerOrchestrationEventMs'
       }
+
       if (step.kind === 'research') {
         category = 'researchMs'
       }
+
       spans.push({ start, end, category })
     }
   }
+
   const events = spans
     .flatMap((span) => [
       { time: span.start, category: span.category, delta: 1 },
@@ -104,17 +119,22 @@ export const partitionExecutionTime = (
   ) as Record<Category, number>
   const active = new Map<Category, number>()
   let previous = 0
+
   const add = (end: number) => {
     const category =
       categories.find((key) => (active.get(key) ?? 0) > 0) ?? 'unattributedMs'
+
     totals[category] += Math.max(0, end - previous)
     previous = end
   }
+
   for (const event of events) {
     add(event.time)
     active.set(event.category, (active.get(event.category) ?? 0) + event.delta)
   }
+
   add(durationMs)
+
   return totals
 }
 
@@ -135,8 +155,10 @@ export const summarizeAppCallGaps = (
   }[] = []
   let end = 0,
     beforeTool: string | null = null
+
   for (const call of calls) {
     const start = Math.min(durationMs, call.startedMs ?? 0)
+
     if (start > end) {
       gaps.push({
         startMs: end,
@@ -146,12 +168,15 @@ export const summarizeAppCallGaps = (
         afterTool: call.tool
       })
     }
+
     const finish = Math.min(durationMs, call.endedMs ?? durationMs)
+
     if (finish > end) {
       end = finish
       beforeTool = call.tool
     }
   }
+
   if (end < durationMs) {
     gaps.push({
       startMs: end,
@@ -161,6 +186,7 @@ export const summarizeAppCallGaps = (
       afterTool: null
     })
   }
+
   return gaps
     .sort((a, b) => b.durationMs - a.durationMs)
     .slice(0, 10)
@@ -175,6 +201,7 @@ export const summarizeAppCallGaps = (
           ) {
             return []
           }
+
           return [
             {
               ...step,
@@ -236,10 +263,12 @@ export const summarizeCallDurations = (
         .sort((a, b) => a[0] - b[0])
       let previous = start,
         childMs = 0
+
       for (const [from, to] of children) {
         childMs += Math.max(0, to - Math.max(from, previous))
         previous = Math.max(previous, to)
       }
+
       return {
         callId: step.callId,
         kind: step.kind,

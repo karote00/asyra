@@ -13,6 +13,7 @@ const recursiveSiteRoot = path.join(siteRoot, 'apps', 'asyra-framework-site')
 
 test('ordinary visual review uses the installed Chrome in and outside CI', async () => {
   const previousCI = process.env.CI
+
   try {
     delete process.env.CI
     const localConfig =
@@ -20,6 +21,7 @@ test('ordinary visual review uses the installed Chrome in and outside CI', async
     const localChromium = localConfig.default.projects?.find(
       (project) => project.name === 'chromium'
     )
+
     assert.equal(localChromium?.use?.channel, 'chrome')
 
     process.env.CI = '1'
@@ -27,6 +29,7 @@ test('ordinary visual review uses the installed Chrome in and outside CI', async
     const ciChromium = ciConfig.default.projects?.find(
       (project) => project.name === 'chromium'
     )
+
     assert.equal(ciChromium?.use?.channel, 'chrome')
   } finally {
     if (previousCI === undefined) {

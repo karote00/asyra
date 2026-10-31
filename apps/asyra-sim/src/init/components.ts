@@ -37,6 +37,7 @@ export function installModelComponents(core: Core): void {
               : [PropertyFields[key]]
         }
       ],
+
       // The registered spatial layer owns visual output; there is no 2D surrogate.
       renderStrategy: () => null
     })

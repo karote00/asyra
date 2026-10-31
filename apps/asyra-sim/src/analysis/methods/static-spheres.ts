@@ -87,6 +87,7 @@ export function runStaticSphereMethod(
       'Static-sphere method requires its exact version and a static sphere scope'
     )
   }
+
   if (
     !validParameterValues(
       STATIC_SPHERE_METHOD.parameterSchema,
@@ -95,6 +96,7 @@ export function runStaticSphereMethod(
   ) {
     throw new Error('Invalid static-sphere method parameters')
   }
+
   checkpoint()
   const extra = snapshot.method.settings.parameters?.additionalError as number,
     ops = poseOperations(intervalAlgebra),
@@ -105,6 +107,7 @@ export function runStaticSphereMethod(
       intervalAlgebra
     ),
     poses = evaluateKinematics(snapshot.workcell, values, intervalAlgebra)
+
   const resolve = (reference: AnalysisColliderReference) => {
     const body = snapshot.workcell.bodies.find(
         (item) => item.id === reference.bodyId
@@ -113,19 +116,24 @@ export function runStaticSphereMethod(
         (item) => item.id === reference.colliderId
       ),
       pose = poses.get(reference.bodyId)
+
     if (!pose || collider?.geometry.kind !== 'sphere') {
       throw new Error('Static-sphere method received unsupported geometry')
     }
+
     return {
       center: ops.compose(pose, ops.fromPose(collider.pose)).position,
       radius: interval(collider.geometry.radius)
     }
   }
+
   const pairs: MethodPairEvidence[] = []
   let evaluations = 0
+
   for (const pair of snapshot.pairs) {
     checkpoint()
     let evidence: PairEvidence
+
     if (evaluations >= snapshot.budget.maxIntervals) {
       evidence = {
         lower: 0,
@@ -158,6 +166,7 @@ export function runStaticSphereMethod(
       let state: IntervalEvidence['state'] = 'unresolved',
         reason =
           'Analytical distance interval overlaps contact or the decision threshold.'
+
       if (penetration) {
         state = 'finding'
         reason = 'Strict analytical sphere penetration bound.'
@@ -168,6 +177,7 @@ export function runStaticSphereMethod(
         state = 'clear'
         reason = 'Analytical distance lower bound exceeds the threshold.'
       }
+
       evaluations++
       evidence = {
         lower,
@@ -188,15 +198,18 @@ export function runStaticSphereMethod(
         ]
       }
     }
+
     evidence.leaves.forEach(Object.freeze)
     Object.freeze(evidence.leaves)
     const completed = Object.freeze({
       pairId: pair.id,
       evidence: Object.freeze(evidence)
     })
+
     pairs.push(completed)
     onPair(completed)
   }
+
   return Object.freeze({
     version: 1,
     snapshotId: snapshot.snapshotId,

@@ -14,6 +14,7 @@ import { readCompleteInformation } from './tool-contract-assertions'
 it('compares complete model result contracts against the same owner declarations with internal fields included', async () => {
   const original = contracts.modelToolResultSchemas
   const complete = JSON.parse(JSON.stringify(prior))
+
   complete.source =
     'Deterministic complete owner schemas before model field selection; internal fields included. No model execution.'
   for (const source of Object.keys(complete.sources)) {
@@ -21,6 +22,7 @@ it('compares complete model result contracts against the same owner declarations
       .update(readFileSync(resolve(source)))
       .digest('hex')
   }
+
   const cases = {
     ...prior.entries,
     vector: {
@@ -31,6 +33,7 @@ it('compares complete model result contracts against the same owner declarations
       }
     }
   }
+
   for (const [key, entry] of Object.entries(cases)) {
     const sizes: number[] = []
     const acquisition: {
@@ -39,8 +42,10 @@ it('compares complete model result contracts against the same owner declarations
       pages: number
       input: number
     }[] = []
+
     for (const baseline of [true, false]) {
       const project = vi.spyOn(contracts, 'modelToolResultSchemas')
+
       if (baseline) {
         project.mockImplementation((contract, stage) =>
           original(
@@ -51,6 +56,7 @@ it('compares complete model result contracts against the same owner declarations
           )
         )
       }
+
       try {
         const actions = [
           AiActionNames.APPLY_PREPARED_DESIGN,
@@ -80,16 +86,21 @@ it('compares complete model result contracts against the same owner declarations
             args,
             new AbortController().signal
           )
+
           wire += Buffer.byteLength(reply)
           pages++
+
           return reply
         }, entry.query)
+
         acquisition.push({ body: Buffer.byteLength(text), wire, pages, input })
         const body = JSON.parse(text)
         const selected = [...(body.tools ?? []), ...(body.apis ?? [])][0]
+
         expect(selected, text).toBeDefined()
         const resultSchema = selected.usageGuide.results
         const serialized = JSON.stringify(resultSchema)
+
         sizes.push(Buffer.byteLength(serialized))
         if (baseline) {
           complete.entries[key] = {
@@ -101,6 +112,7 @@ it('compares complete model result contracts against the same owner declarations
             }
           }
         }
+
         expect(execute).not.toHaveBeenCalled()
         expect(serialized).toContain('settlement')
         expect(serialized).toContain('partial')
@@ -108,6 +120,7 @@ it('compares complete model result contracts against the same owner declarations
         project.mockRestore()
       }
     }
+
     expect(sizes[1], key).toBeLessThan(sizes[0])
     expect(acquisition[1].body, key).toBeLessThan(acquisition[0].body)
     expect(acquisition[1].wire + acquisition[1].input, key).toBeLessThan(
@@ -123,6 +136,7 @@ it('compares complete model result contracts against the same owner declarations
       }) + '\n'
     )
   }
+
   if (process.env.TOOL_DELIVERY_COST_REPORT === '1') {
     writeFileSync(
       resolve('tmp/model-delivery-complete-baseline.json'),

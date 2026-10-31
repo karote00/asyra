@@ -22,6 +22,7 @@ it('admits an explicit active walking definition without rewriting it', () => {
     definitionId: 'runtime-selection-fixture'
   })
   const selection = createWalkingRuntimeSelection(definition)
+
   expect(selection).toEqual({
     format: 'walking-runtime-selection/1',
     mode: 'walking-active',
@@ -40,6 +41,7 @@ it('rejects invalid active width while the legacy selection remains viewable', (
   const mutable = overWidth as unknown as {
     base: { chassis: { size: number[] } }
   }
+
   mutable.base.chassis.size[0] = 0.81
   expect(() =>
     readWalkingRuntimeSelection({

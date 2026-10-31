@@ -10,8 +10,11 @@ it('phase-root canonical coverage retains original required pairs without crossi
   const f = mountedConsumerFixture()
   const owner = new WalkingMotionOwner({
     getCurrentSceneDemand: () => f.demand,
+
     getCurrentWalkingRobotSource: () => f.source,
+
     getCurrentWalkingCycle: () => f.current,
+
     getCurrentMountedCrate: () => f.mounted
   })
   const result = owner.prepare({
@@ -19,9 +22,11 @@ it('phase-root canonical coverage retains original required pairs without crossi
     budget: { ...f.raw.budget, maxPhaseNodes: 2, maxSubdivisions: 1 },
     load: { ...f.raw.load, crate: { kind: 'mounted', artifact: f.crate } }
   })
+
   if (!('format' in result) || result.format !== 'walking-motion-admission/3') {
     throw new Error('Missing canonical nonlinear result')
   }
+
   const relations = result.sourceRelations
   const selected = relations.phases[0].pairs.filter(
     (p) =>
@@ -48,6 +53,7 @@ it('phase-root canonical coverage retains original required pairs without crossi
       }))
     }))
   })
+
   process.stdout.write(summary + '\n')
   expect(selected, summary).toHaveLength(1)
   expect(['exactSeparated', 'declaredBoundary']).toContain(selected[0].kind)
@@ -61,7 +67,9 @@ it('phase-root canonical coverage retains original required pairs without crossi
     denominator: 1n
   })
   const c = relations.coverage
+
   expect(relations.work.globalFixedReuses).toBeGreaterThan(0)
+
   const phasePair = (phase: number) =>
     relations.phases[phase].pairs.find(
       (p) =>
@@ -71,8 +79,10 @@ it('phase-root canonical coverage retains original required pairs without crossi
           'left-front-abduction-sleeve' &&
         relations.inventory[p.second].region.indexStart === 36
     )
+
   const supportPair = phasePair(0),
     swingPair = phasePair(1)
+
   process.stdout.write(
     JSON.stringify({ phaseRootPairs: [supportPair, swingPair] }, (_, v) =>
       typeof v === 'bigint' ? v.toString() : v

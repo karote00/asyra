@@ -15,11 +15,13 @@ const attachReferenceImage = async (page: Page) => {
         character.charCodeAt(0)
       )
       const transfer = new DataTransfer()
+
       transfer.items.add(
         new File([bytes], 'reference-image.png', {
           type: 'image/png'
         })
       )
+
       return transfer
     },
     { base64: image.toString('base64') }
@@ -32,6 +34,7 @@ const attachReferenceImage = async (page: Page) => {
   } finally {
     await dataTransfer.dispose()
   }
+
   await expect(
     page.getByRole('img', { name: 'reference-image.png' })
   ).toBeVisible()
@@ -45,11 +48,14 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
   const startupErrors: string[] = []
   let actionBatchPostCount = 0
   let directDocumentRequestCount = 0
+
   page.on('console', (message) => {
     const text = message.text()
+
     if (message.type() === 'error') {
       startupErrors.push(text)
     }
+
     if (
       message.type() === 'error' &&
       (text.includes('[Preset Vector]') ||
@@ -69,6 +75,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
     ) {
       actionBatchPostCount += 1
     }
+
     if (request.url().includes('/samples/crdt-7076/document.json.gz')) {
       directDocumentRequestCount += 1
     }
@@ -83,12 +90,14 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
     await waitForAppReady(page)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
+
     throw new Error(
       `${message}\nCaptured startup errors: ${
         startupErrors.join(' | ') || '(none)'
       }\nCaptured render failures: ${renderFailures.join(' | ') || '(none)'}`
     )
   }
+
   await expect
     .poll(() =>
       startupErrors.some((message) =>
@@ -104,6 +113,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
   const instruction = (
     await readFile(new URL('instruction.txt', sampleRoot), 'utf8')
   ).trim()
+
   await page.getByLabel('Message Agent').fill(instruction)
   await page.getByRole('button', { name: 'Send' }).click()
   await expect(
@@ -115,6 +125,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
     async () => {
       const { core } = await import('../src/testing/runtime-access')
       const document = await core.save()
+
       return Object.keys(document.sceneTree.elements).length === 7_077
     },
     undefined,
@@ -133,6 +144,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
         core.deps?.sceneTree
           ?.getElementById?.(element.id)
           ?.getAllComputedData?.() ?? {}
+
       return {
         id: element.id,
         pointCoordinateSpace: computed.pointCoordinateSpace,
@@ -140,6 +152,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
         rendered: Boolean(core.deps?.render?.getElementById?.(element.id))
       }
     })
+
     return {
       sceneTreeRecordCount: elements.length,
       vectorCount: summaries.length,
@@ -177,6 +190,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
   const screenshotFrame = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
     const { viewportApis } = await import('../src/common-apis')
+
     viewportApis.zoomFit()
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -189,6 +203,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
     const position = core.getSystemProperty<{ x: number; y: number }>(
       'viewportPosition'
     ) ?? { x: 0, y: 0 }
+
     return {
       output: bounds
         ? {
@@ -208,6 +223,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
         : undefined
     }
   })
+
   expect(screenshotFrame.viewport).toBeDefined()
   expect(screenshotFrame.output).toBeDefined()
   expect(screenshotFrame.output?.left).toBeGreaterThanOrEqual(
@@ -224,6 +240,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
   )
 
   const screenshotPath = testInfo.outputPath('crdt-7076-render.png')
+
   await page.screenshot({
     path: screenshotPath,
     fullPage: true,
@@ -245,6 +262,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
     const firstAnchorEntry = Object.entries(points ?? {}).find(
       ([, point]) => point.kind === 'anchor'
     )
+
     elementApis.setElementPositions(
       {
         [elementId]: {
@@ -272,6 +290,7 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
           1
         )
       : null
+
     return {
       pointsIdentityPreserved: points === after.points,
       pointSamplesPreserved:
@@ -297,14 +316,17 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
     const element = core.deps?.sceneTree?.getElementById?.(elementId)
     const before = element?.getAllComputedData?.() ?? {}
     const visibleAnchor = elementApis.getVectorAnchorPoints(elementId)[0]
+
     if (!visibleAnchor) {
       throw new Error('The dense Vector must expose an editable anchor')
     }
+
     const storedBefore = before.points?.[visibleAnchor.id]
     const target = {
       x: visibleAnchor.x + 5,
       y: visibleAnchor.y + 3
     }
+
     elementApis.updateVectorAnchorPointPosition(
       elementId,
       visibleAnchor.id,
@@ -316,14 +338,17 @@ test('renders the complete crdt-7076 HTTP-intercepted action while the socket is
     )
     const after = element?.getAllComputedData?.() ?? {}
     const storedAfter = after.points?.[visibleAnchor.id]
+
     if (!storedBefore || !storedAfter) {
       throw new Error('The edited anchor must remain in stored Vector data')
     }
+
     const projectedHit = elementApis.getVectorEditablePointAtWorkspacePos(
       elementId,
       target,
       1
     )
+
     return {
       pointCount: Object.keys(after.points ?? {}).length,
       storedDeltaX: storedAfter?.x - storedBefore?.x,

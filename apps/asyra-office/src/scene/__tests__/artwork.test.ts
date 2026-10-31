@@ -3,11 +3,13 @@ import { prepareArtwork, sampleArtwork } from '../artwork'
 
 it('maps only the selected picture corners and rejects out-of-source regions', () => {
   const source = { width: 4, height: 4, data: new Uint8ClampedArray(64) }
+
   for (let y = 0; y < 4; y++) {
     for (let x = 0; x < 4; x++) {
       source.data.set([x * 50, y * 50, 20, 255], (y * 4 + x) * 4)
     }
   }
+
   const result = sampleArtwork(
     source,
     [
@@ -18,6 +20,7 @@ it('maps only the selected picture corners and rejects out-of-source regions', (
     ],
     2
   )
+
   expect(result.albedo).toEqual([
     50, 50, 20, 255, 100, 50, 20, 255, 50, 150, 20, 255, 100, 150, 20, 255
   ])
@@ -34,12 +37,16 @@ it('maps only the selected picture corners and rejects out-of-source regions', (
 it('decodes one shared source once for six printed surfaces during scene preparation', async () => {
   const decode = vi.fn().mockResolvedValue(undefined),
     drawImage = vi.fn()
+
   vi.stubGlobal(
     'Image',
     class {
       src = ''
+
       naturalWidth = 4
+
       naturalHeight = 4
+
       decode = decode
     }
   )
@@ -47,8 +54,10 @@ it('decodes one shared source once for six printed surfaces during scene prepara
     .spyOn(HTMLCanvasElement.prototype, 'getContext')
     .mockReturnValue({
       drawImage,
+
       getImageData: () => ({ data: new Uint8ClampedArray(64) })
     } as unknown as CanvasRenderingContext2D)
+
   try {
     const result = await prepareArtwork(
       Array.from({ length: 6 }, () => ({
@@ -63,13 +72,16 @@ it('decodes one shared source once for six printed surfaces during scene prepara
         }
       }))
     )
+
     expect(result.size).toBe(1)
     expect(decode).toHaveBeenCalledOnce()
     expect(drawImage).toHaveBeenCalledOnce()
     const prepared = result.get('/approved.jpg')
+
     if (!prepared) {
       throw new Error('Missing prepared artwork')
     }
+
     for (let i = 0; i < 6; i++) {
       sampleArtwork(
         prepared,
@@ -82,6 +94,7 @@ it('decodes one shared source once for six printed surfaces during scene prepara
         2
       )
     }
+
     expect(decode).toHaveBeenCalledOnce()
   } finally {
     spy.mockRestore()

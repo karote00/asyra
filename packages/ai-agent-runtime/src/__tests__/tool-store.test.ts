@@ -5,6 +5,7 @@ describe('durable recipe reuse', () => {
   it('separates completed execution from save failure and retries storage only', async () => {
     const { store } = memoryStore()
     const host = setup(store)
+
     expect(host.register().ok).toBe(true)
     const receipt = await host.runner.invoke({
       name: 'reusable',
@@ -12,9 +13,11 @@ describe('durable recipe reuse', () => {
       input: 4
     })
     const write = store.write
+
     store.write = async () => {
       throw new Error('Disk unavailable')
     }
+
     expect(
       await host.persistence.save({
         name: 'reusable',
@@ -40,12 +43,14 @@ describe('durable recipe reuse', () => {
   it('reloads a saved eligible definition without executing and uses fresh arguments', async () => {
     const { store, entries } = memoryStore()
     const first = setup(store)
+
     first.register()
     const receipt = await first.runner.invoke({
       name: 'reusable',
       requestId: 'author',
       input: 4
     })
+
     await first.persistence.save({
       name: 'reusable',
       revision: 1,
@@ -53,9 +58,11 @@ describe('durable recipe reuse', () => {
       receipt
     })
     const persisted = JSON.stringify([...entries.values()])
+
     expect(persisted).not.toContain('author')
     expect(persisted).not.toContain('"value":4')
     const second = setup(store)
+
     expect(await second.persistence.load('new-request')).toMatchObject({
       loaded: ['reusable'],
       unavailable: []
@@ -74,6 +81,7 @@ describe('durable recipe reuse', () => {
   it('keeps saved candidates and fabricated receipts ineligible', async () => {
     const { store } = memoryStore()
     const first = setup(store)
+
     first.register()
     expect(
       await first.persistence.save({
@@ -96,6 +104,7 @@ describe('durable recipe reuse', () => {
       })
     ).toMatchObject({ status: 'unsaved' })
     const second = setup(store)
+
     expect(await second.persistence.load('new')).toMatchObject({
       loaded: [],
       unavailable: [expect.objectContaining({ reason: 'candidate' })]
@@ -106,12 +115,14 @@ describe('durable recipe reuse', () => {
   it('isolates corrupt records and suspends definitions with changed dependencies', async () => {
     const { store, entries } = memoryStore()
     const first = setup(store)
+
     first.register()
     const receipt = await first.runner.invoke({
       name: 'reusable',
       requestId: 'author',
       input: 4
     })
+
     await first.persistence.save({
       name: 'reusable',
       revision: 1,
@@ -125,14 +136,17 @@ describe('durable recipe reuse', () => {
     })
     const second = setup(store)
     const primitive = second.registry.get('set')
+
     if (!primitive) {
       throw new Error('Missing primitive')
     }
+
     second.registry.register(
       { ...primitive, revision: 2 },
       { expectedRevision: 1 }
     )
     const result = await second.persistence.load('new')
+
     expect(result.loaded).toEqual([])
     expect(result.unavailable).toHaveLength(2)
     expect(second.writes).toEqual([])
@@ -141,12 +155,14 @@ describe('durable recipe reuse', () => {
   it('does not trust a store acknowledgement for different bytes', async () => {
     const { store } = memoryStore()
     const host = setup(store)
+
     host.register()
     const receipt = await host.runner.invoke({
       name: 'reusable',
       requestId: 'author',
       input: 4
     })
+
     store.write = async () => ({ key: 'wrong', version: 'x', record: {} })
     expect(
       await host.persistence.save({
@@ -162,12 +178,14 @@ describe('durable recipe reuse', () => {
   it('disables future discovery durably and never revives retired versions on reload', async () => {
     const { store } = memoryStore()
     const host = setup(store)
+
     host.register()
     const receipt = await host.runner.invoke({
       name: 'reusable',
       requestId: 'author',
       input: 4
     })
+
     await host.persistence.save({
       name: 'reusable',
       revision: 1,
@@ -179,6 +197,7 @@ describe('durable recipe reuse', () => {
     ).toMatchObject({ status: 'saved' })
     expect(host.registry.get('reusable')).toBeUndefined()
     const second = setup(store)
+
     expect((await second.persistence.load('new')).loaded).toEqual([])
     expect(
       await host.persistence.save({
@@ -194,12 +213,14 @@ describe('durable recipe reuse', () => {
 it('rejects omitted dependency evidence without leaving a half-registered candidate', async () => {
   const { store, entries } = memoryStore()
   const first = setup(store)
+
   first.register()
   const receipt = await first.runner.invoke({
     name: 'reusable',
     requestId: 'author',
     input: 4
   })
+
   await first.persistence.save({
     name: 'reusable',
     revision: 1,
@@ -211,12 +232,14 @@ it('rejects omitted dependency evidence without leaving a half-registered candid
     string,
     import('../types.js').AiJsonValue
   >
+
   entries.set(original.key, {
     ...original,
     record: { ...record, dependencies: [] }
   })
   const second = setup(store)
   const result = await second.persistence.load('new')
+
   expect(result.loaded).toEqual([])
   expect(second.registry.get('reusable', { requestId: 'new' })).toBeUndefined()
   entries.set(original.key, original)
@@ -226,6 +249,7 @@ it('rejects omitted dependency evidence without leaving a half-registered candid
 it('preserves a durable save acknowledgement when its author request has already ended', async () => {
   const { store } = memoryStore()
   const host = setup(store)
+
   host.register()
   const receipt = await host.runner.invoke({
     name: 'reusable',
@@ -233,11 +257,15 @@ it('preserves a durable save acknowledgement when its author request has already
     input: 4
   })
   const write = store.write
+
   store.write = async (input) => {
     const ack = await write(input)
+
     host.library.releaseRequest('author')
+
     return ack
   }
+
   expect(
     await host.persistence.save({
       name: 'reusable',
@@ -247,18 +275,21 @@ it('preserves a durable save acknowledgement when its author request has already
     })
   ).toMatchObject({ status: 'saved' })
   const next = setup(store)
+
   expect((await next.persistence.load('next')).loaded).toEqual(['reusable'])
 })
 
 it('rechecks a listed version before publishing it after concurrent retirement', async () => {
   const { store } = memoryStore()
   const first = setup(store)
+
   first.register()
   const receipt = await first.runner.invoke({
     name: 'reusable',
     requestId: 'author',
     input: 4
   })
+
   await first.persistence.save({
     name: 'reusable',
     revision: 1,
@@ -266,12 +297,17 @@ it('rechecks a listed version before publishing it after concurrent retirement',
     receipt
   })
   const list = store.list
+
   store.list = async (limit) => {
     const snapshot = await list(limit)
+
     await first.persistence.setState('reusable', 1, 'retired')
+
     return snapshot
   }
+
   const second = setup(store)
+
   expect((await second.persistence.load('new')).loaded).toEqual([])
   expect(second.registry.get('reusable')).toBeUndefined()
 })
@@ -279,6 +315,7 @@ it('rechecks a listed version before publishing it after concurrent retirement',
 it('recovers a lost durable acknowledgement by reading the exact saved bytes, without repeating execution', async () => {
   const { store } = memoryStore()
   const host = setup(store)
+
   host.register()
   const receipt = await host.runner.invoke({
     name: 'reusable',
@@ -286,10 +323,12 @@ it('recovers a lost durable acknowledgement by reading the exact saved bytes, wi
     input: 4
   })
   const write = store.write
+
   store.write = async (input) => {
     await write(input)
     throw new Error('Acknowledgement lost')
   }
+
   expect(
     (
       await host.persistence.save({
@@ -318,6 +357,7 @@ it('recovers a lost durable acknowledgement by reading the exact saved bytes, wi
 it('revokes a private saved candidate in the author request immediately', async () => {
   const { store } = memoryStore()
   const host = setup(store)
+
   host.register()
   await host.persistence.save({
     name: 'reusable',
@@ -341,12 +381,14 @@ it('revokes a private saved candidate in the author request immediately', async 
 it('does not restore an older revision when a newer saved identity is corrupt', async () => {
   const { store, entries } = memoryStore()
   const first = setup(store)
+
   first.register()
   const receipt = await first.runner.invoke({
     name: 'reusable',
     requestId: 'author',
     input: 3
   })
+
   await first.persistence.save({
     name: 'reusable',
     revision: 1,
@@ -360,6 +402,7 @@ it('does not restore an older revision when a newer saved identity is corrupt', 
   })
   const next = setup(store)
   const result = await next.persistence.load('new')
+
   expect(result.loaded).toEqual([])
   expect(next.registry.get('reusable')).toBeUndefined()
 })
@@ -367,12 +410,14 @@ it('does not restore an older revision when a newer saved identity is corrupt', 
 it('does not publish a partial inventory whose newest revisions may be omitted', async () => {
   const { store, entries } = memoryStore()
   const first = setup(store)
+
   first.register()
   const receipt = await first.runner.invoke({
     name: 'reusable',
     requestId: 'author',
     input: 3
   })
+
   await first.persistence.save({
     name: 'reusable',
     revision: 1,
@@ -382,7 +427,9 @@ it('does not publish a partial inventory whose newest revisions may be omitted',
   for (let i = 0; i < 32; i++) {
     entries.set(`extra${i}`, { key: `extra${i}`, version: '1', record: null })
   }
+
   const next = setup(store)
+
   expect(await next.persistence.load('new')).toMatchObject({
     loaded: [],
     truncated: true
@@ -393,6 +440,7 @@ it('does not publish a partial inventory whose newest revisions may be omitted',
 it('explicitly resumes a saved candidate for a fresh request without execution', async () => {
   const { store } = memoryStore()
   const first = setup(store)
+
   first.register()
   await first.persistence.save({
     name: 'reusable',
@@ -400,6 +448,7 @@ it('explicitly resumes a saved candidate for a fresh request without execution',
     requestId: 'author'
   })
   const next = setup(store)
+
   expect(
     await next.persistence.resume({
       name: 'reusable',
@@ -418,6 +467,7 @@ it('explicitly resumes a saved candidate for a fresh request without execution',
 it('repeats candidate resume without registering again or changing its submission', async () => {
   const { store } = memoryStore()
   const first = setup(store)
+
   first.register()
   await first.persistence.save({
     name: 'reusable',
@@ -427,6 +477,7 @@ it('repeats candidate resume without registering again or changing its submissio
   const next = setup(store)
   const input = { name: 'reusable', revision: 1, requestId: 'next' }
   const result = await next.persistence.resume(input)
+
   expect(result.ok).toBe(true)
   expect(await next.persistence.resume(input)).toEqual(result)
   expect(next.writes).toEqual([])
@@ -436,6 +487,7 @@ describe('stored tool management', () => {
   const savedCandidate = async () => {
     const memory = memoryStore()
     const host = setup(memory.store)
+
     host.register()
     await host.persistence.save({
       name: 'reusable',
@@ -446,12 +498,14 @@ describe('stored tool management', () => {
       store: memory.store,
       capacity: 32
     })
+
     return { ...memory, host, management }
   }
 
   it('lists only canonical compact metadata without registering or executing tools', async () => {
     const { management, host } = await savedCandidate()
     const result = await management.list()
+
     expect(result).toEqual({
       entries: [
         {
@@ -471,15 +525,18 @@ describe('stored tool management', () => {
 
   it('reads the current exact revision without listing and rejects corrupt saved data', async () => {
     const { management, entries, store } = await savedCandidate()
+
     store.list = async () => {
       throw new Error('No inventory scan expected')
     }
+
     expect(await management.read('reusable', 1)).toMatchObject({
       availability: 'candidate',
       version: '1'
     })
     expect(await management.read('missing', 1)).toBeUndefined()
     const key = JSON.stringify(['reusable', 1])
+
     entries.set(key, { key, version: '2', record: {} })
     await expect(management.read('reusable', 1)).rejects.toThrow(
       'invalid saved recipe'
@@ -488,6 +545,7 @@ describe('stored tool management', () => {
 
   it('rejects a stale observed version even when the requested state already matches', async () => {
     const { management, host } = await savedCandidate()
+
     expect(
       await management.setState({
         name: 'reusable',
@@ -525,6 +583,7 @@ describe('stored tool management', () => {
 
   it('isolates corrupt records and reports incomplete inventories without exposing recipes', async () => {
     const { store, entries, management } = await savedCandidate()
+
     entries.set('corrupt', { key: 'corrupt', version: '1', record: {} })
     expect(await management.list()).toMatchObject({
       entries: [{ name: 'reusable' }],
@@ -532,11 +591,13 @@ describe('stored tool management', () => {
       truncated: false
     })
     const bounded = createAiToolStoreManagement({ store, capacity: 1 })
+
     expect(await bounded.list()).toMatchObject({ truncated: true })
   })
 
   it('rejects a forged durable acknowledgement and never claims the state changed', async () => {
     const { store, management } = await savedCandidate()
+
     store.write = async ({ key, record }) => ({
       key,
       version: '2',
@@ -556,6 +617,7 @@ describe('stored tool management', () => {
 it('rejects a final read for a different durable identity and recovers without replay', async () => {
   const { store } = memoryStore()
   const author = setup(store)
+
   author.register()
   const receipt = await author.runner.invoke({
     name: 'reusable',
@@ -568,24 +630,32 @@ it('rejects a final read for a different durable identity and recovers without r
     requestId: 'author',
     receipt
   }
+
   expect(await author.persistence.save(request)).toMatchObject({
     status: 'saved'
   })
   const read = store.read
   let reads = 0
+
   store.read = async (key) => {
     const entry = await read(key)
+
     reads++
+
     return entry && reads === 2 ? { ...entry, key: 'wrong-identity' } : entry
   }
+
   expect(await author.persistence.save(request)).toMatchObject({
     status: 'unsaved'
   })
   store.read = async (key) => {
     const entry = await read(key)
+
     return entry ? { ...entry, key: 'wrong-identity' } : entry
   }
+
   const consumer = setup(store)
+
   expect((await consumer.persistence.load('fresh')).loaded).toEqual([])
   expect(consumer.registry.get('reusable')).toBeUndefined()
   store.read = read

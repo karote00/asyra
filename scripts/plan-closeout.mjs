@@ -11,7 +11,9 @@ export function closeoutPaths(planPath) {
   const boundary = planPath.indexOf('/plans/')
   const owner = planPath.slice(0, boundary)
   const relative = planPath.slice(boundary + '/plans/'.length)
+
   requireValue(owner && relative, 'Plan path must have a plans owner')
+
   return {
     active: planPath,
     completed: `${owner}/plans/completed/${relative}`,
@@ -27,6 +29,7 @@ export function rewritePlanReferences(content, fromFile, toFile, paths) {
     if (!target || /^(?:[a-z][a-z\d+.-]*:|\/\/|#)/iu.test(target)) {
       return target
     }
+
     const boundary = target.search(/[?#]/u)
     const file = boundary < 0 ? target : target.slice(0, boundary)
     const suffix = boundary < 0 ? '' : target.slice(boundary)
@@ -36,21 +39,27 @@ export function rewritePlanReferences(content, fromFile, toFile, paths) {
       : path.posix.normalize(
           path.posix.join(path.posix.dirname(fromFile), file)
         )
+
     if (fromFile === toFile && resolved !== paths.active) {
       return target
     }
+
     const destination = resolved === paths.active ? paths.completed : resolved
+
     if (rooted) {
       return `${file.startsWith('/') ? '/' : ''}${destination}${suffix}`
     }
+
     const relative = path.posix.relative(
       path.posix.dirname(toFile),
       destination
     )
     const prefix =
       file.startsWith('./') && !relative.startsWith('.') ? './' : ''
+
     return `${prefix}${relative}${suffix}`
   }
+
   const links = content
     .replace(
       /(\]\(<?)([^\s)>]+)(>?)/gu,
@@ -65,6 +74,7 @@ export function rewritePlanReferences(content, fromFile, toFile, paths) {
       (_, start, target, end) => start + relocate(target) + end
     )
   const escaped = paths.active.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+
   return links.replace(
     new RegExp(
       '(^|[\\s("\'`<>])(/?)' + escaped + '(?=$|[\\s)"\'`<>#?,;])',
@@ -87,13 +97,17 @@ export async function evaluateCloseout({
   // Immutable file reads are shared within one evaluation only. A later head
   // or evaluation gets its own cache, including missing-file results.
   const files = new Map()
+
   const read = (sha, file) => {
     const key = JSON.stringify([sha, file])
+
     if (!files.has(key)) {
       files.set(key, Promise.resolve(snapshot.read(sha, file)))
     }
+
     return files.get(key)
   }
+
   requireValue(
     await snapshot.isAncestor(context.base.sha, baseSha),
     'Task base must be integrated in the PR base'
@@ -108,12 +122,15 @@ export async function evaluateCloseout({
       'Task prerequisite is missing from the selected base'
     )
   }
+
   const changed = await snapshot.changedPaths(baseSha, headSha)
   const completedAdditions = []
   const removedPlans = []
+
   for (const file of changed.filter((file) => /\/plans\/.*\.md$/.test(file))) {
     const before = await read(baseSha, file)
     const after = await read(headSha, file)
+
     if (file.includes('/plans/completed/')) {
       if (before === null && after !== null) {
         completedAdditions.push(file)
@@ -122,6 +139,7 @@ export async function evaluateCloseout({
       removedPlans.push(file)
     }
   }
+
   if (context.mode === 'standalone') {
     requireValue(
       completedAdditions.length === 0,
@@ -131,13 +149,16 @@ export async function evaluateCloseout({
       removedPlans.length === 0,
       'Removing an active plan requires a plan association'
     )
+
     return {
       applicable: false,
       summary: 'Explicit standalone task; no plan closeout required.'
     }
   }
+
   const paths = closeoutPaths(context.plan.path)
   const basePlan = await read(context.base.sha, paths.active)
+
   requireValue(
     basePlan !== null,
     'Referenced plan is missing from the task base'
@@ -149,6 +170,7 @@ export async function evaluateCloseout({
       'Partial task cannot remove active plans'
     )
     const active = await read(headSha, paths.active)
+
     requireValue(
       active !== null,
       'Partial task removed its plan; use plan-closeout for final completion'
@@ -158,12 +180,14 @@ export async function evaluateCloseout({
       completedAdditions.length === 0,
       'Partial task cannot update completed plan records'
     )
+
     return {
       applicable: false,
       summary:
         'Plan task retains its active plan; whole-plan closeout remains with the named owner.'
     }
   }
+
   requireValue(
     /^[a-f0-9]{40}$/.test(reviewedSha ?? ''),
     'A trusted review of an exact source commit is required before closeout'
@@ -177,21 +201,27 @@ export async function evaluateCloseout({
     'Reviewed source must include the selected task base'
   )
   const sourcePlan = await read(reviewedSha, paths.active)
+
   requireValue(sourcePlan !== null, 'Review must precede plan closeout')
   assertPlanSection(sourcePlan, context)
   const afterReview = await snapshot.changedPaths(reviewedSha, headSha)
   const allowed = new Set(Object.values(paths))
+
   for (const file of afterReview.filter((file) => !allowed.has(file))) {
     const before = await read(reviewedSha, file)
     const after = await read(headSha, file)
+
     if (typeof before !== 'string' || typeof after !== 'string') {
       continue
     }
+
     const expected = rewritePlanReferences(before, file, file, paths)
+
     if (expected !== before && after === expected) {
       allowed.add(file)
     }
   }
+
   requireValue(
     afterReview.length > 0 && afterReview.every((file) => allowed.has(file)),
     'Changes after review must be limited to closeout records and exact plan-reference updates; review changed implementation again'
@@ -219,11 +249,13 @@ export async function evaluateCloseout({
     paths.completed,
     paths
   )
+
   requireValue(
     completed?.startsWith(preservedPlan),
     'Completed record must preserve the reviewed plan except relocated links and append its outcome'
   )
   const outcome = completed.slice(preservedPlan.length)
+
   requireValue(
     outcome.includes(`Reviewed source: ${reviewedSha}`),
     'Completed record must identify the reviewed source'
@@ -238,9 +270,12 @@ export async function evaluateCloseout({
       `Completed record requires ${label}`
     )
   }
+
   const index = await read(headSha, paths.index)
+
   requireValue(index !== null, 'Owner plan index is missing')
   const relative = paths.active.slice(paths.active.indexOf('/plans/') + 1)
+
   requireValue(
     !index.includes(paths.active) && !index.includes(relative),
     'Plan index retains a stale active plan reference'
@@ -252,22 +287,27 @@ export async function evaluateCloseout({
       : path.posix.normalize(
           path.posix.join(path.posix.dirname(paths.index), target)
         )
+
     requireValue(
       resolved !== paths.active,
       'Plan index retains a stale active plan link'
     )
   }
+
   const oldDecisions = await read(reviewedSha, paths.decisions)
   const decisions = await read(headSha, paths.decisions)
+
   requireValue(
     oldDecisions !== null && decisions?.startsWith(oldDecisions),
     'Decision history must preserve existing text and append the closeout entry'
   )
   const addition = decisions.slice(oldDecisions.length)
+
   requireValue(
     addition.includes(paths.completed) && /\d{4}-\d{2}-\d{2}/.test(addition),
     'Decision history must append a dated entry linking the completed plan'
   )
+
   return {
     applicable: true,
     summary: `Plan closeout verified against reviewed source ${reviewedSha}.`

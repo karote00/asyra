@@ -5,6 +5,7 @@ import type { SpatialBloom } from './lighting.js'
 /** Concrete SDK boundary: bloom requires render-target and renderer-state APIs. */
 export function requireBloomRenderer(driver: unknown): THREE.WebGLRenderer {
   const candidate = driver as Record<string, unknown>
+
   for (const method of [
     'getRenderTarget',
     'setRenderTarget',
@@ -18,6 +19,7 @@ export function requireBloomRenderer(driver: unknown): THREE.WebGLRenderer {
       throw new Error(`Spatial bloom requires renderer method ${method}`)
     }
   }
+
   return driver as THREE.WebGLRenderer
 }
 
@@ -41,10 +43,12 @@ export class EmissiveBloom {
   private readonly maskTarget = new THREE.WebGLRenderTarget(1, 1, {
     type: THREE.HalfFloatType
   })
+
   private readonly blurTarget = new THREE.WebGLRenderTarget(1, 1, {
     type: THREE.HalfFloatType,
     depthBuffer: false
   })
+
   private readonly horizontal = new THREE.ShaderMaterial({
     uniforms: {
       source: { value: this.maskTarget.texture },
@@ -57,6 +61,7 @@ export class EmissiveBloom {
     depthWrite: false,
     toneMapped: false
   })
+
   private readonly composite = new THREE.ShaderMaterial({
     uniforms: {
       source: { value: this.blurTarget.texture },
@@ -79,11 +84,14 @@ void main() {
     depthTest: false,
     depthWrite: false
   })
+
   private readonly quad = new FullScreenQuad(this.horizontal)
+
   private readonly masks = new Map<
     THREE.Material,
     { material: THREE.MeshBasicMaterial; release: () => void }
   >()
+
   private disposed = false
 
   constructor(
@@ -96,6 +104,7 @@ void main() {
   setSize(width: number, height: number, pixelRatio: number): void {
     const w = Math.max(1, Math.round(width * pixelRatio))
     const h = Math.max(1, Math.round(height * pixelRatio))
+
     this.maskTarget.setSize(w, h)
     this.blurTarget.setSize(w, h)
     this.horizontal.uniforms.stepUV.value.set(
@@ -110,25 +119,31 @@ void main() {
 
   private mask(source: THREE.Material): THREE.MeshBasicMaterial {
     let entry = this.masks.get(source)
+
     if (!entry) {
       const material = new THREE.MeshBasicMaterial({
         color: 0,
         toneMapped: false
       })
+
       const release = () => {
         source.removeEventListener('dispose', release)
         material.dispose()
         this.masks.delete(source)
       }
+
       entry = { material, release }
       this.masks.set(source, entry)
       source.addEventListener('dispose', release)
     }
+
     const material = entry.material
     const transparent = source.transparent
+
     if (material.transparent !== transparent || material.side !== source.side) {
       material.needsUpdate = true
     }
+
     material.transparent = transparent
     material.opacity = source.opacity
     material.side = source.side
@@ -141,6 +156,7 @@ void main() {
         .copy(source.emissive)
         .multiplyScalar(source.emissiveIntensity)
     }
+
     return material
   }
 
@@ -148,9 +164,11 @@ void main() {
     if (this.disposed) {
       throw new Error('Spatial bloom is disposed')
     }
+
     if (this.settings.strength === 0) {
       return
     }
+
     const renderer = this.renderer
     const target = renderer.getRenderTarget()
     const clearColor = renderer.getClearColor(new THREE.Color()).clone()
@@ -159,11 +177,13 @@ void main() {
     const background = scene.background
     const shadowUpdate = renderer.shadowMap?.autoUpdate
     const originals: [THREE.Mesh, THREE.Material | THREE.Material[]][] = []
+
     try {
       scene.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) {
           return
         }
+
         originals.push([object, object.material])
         object.material = Array.isArray(object.material)
           ? object.material.map((material) => this.mask(material))
@@ -174,6 +194,7 @@ void main() {
       if (renderer.shadowMap) {
         renderer.shadowMap.autoUpdate = false
       }
+
       renderer.setClearColor(0, 0)
       renderer.setRenderTarget(this.maskTarget)
       renderer.clear()
@@ -189,11 +210,13 @@ void main() {
       for (const [object, material] of originals) {
         object.material = material
       }
+
       scene.background = background
       renderer.autoClear = autoClear
       if (renderer.shadowMap && shadowUpdate !== undefined) {
         renderer.shadowMap.autoUpdate = shadowUpdate
       }
+
       renderer.setClearColor(clearColor, clearAlpha)
       renderer.setRenderTarget(target)
     }
@@ -203,10 +226,12 @@ void main() {
     if (this.disposed) {
       return
     }
+
     this.disposed = true
     for (const { release } of [...this.masks.values()]) {
       release()
     }
+
     this.maskTarget.dispose()
     this.blurTarget.dispose()
     this.horizontal.dispose()

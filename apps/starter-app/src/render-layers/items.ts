@@ -9,6 +9,7 @@ import type { StarterProjectionStore } from '../derived-state/item-projection.js
 
 const STARTER_RENDER_LAYER_NAME = 'starter-app.items'
 const STARTER_RENDER_FRAME_KEY = 'starter-app.render-frame'
+
 export interface StarterItemRenderBounds {
   readonly x: number
   readonly y: number
@@ -25,6 +26,7 @@ export const getStarterItemRenderBounds = (
   const narrow = viewportWidth < 760
   const width = narrow ? 150 : 218
   const height = narrow ? 94 : 124
+
   if (viewportWidth < 340) {
     return {
       x: Math.max(
@@ -51,6 +53,7 @@ export const getStarterItemRenderBounds = (
   const xFractions = narrow ? [0.05, 0.94, 0.19] : [0.1, 0.55, 0.34]
   const yOffsets = narrow ? [90, 140, 255] : [135, 110, 315]
   const cycleHeight = narrow ? 330 : 430
+
   return {
     x: Math.max(
       0,
@@ -80,6 +83,7 @@ export const getStarterRenderHeight = (
     itemCount > 0
       ? getStarterItemRenderBounds(itemCount - 1, viewportWidth)
       : null
+
   return Math.max(
     viewportWidth < 760 ? 390 : 510,
     last ? last.y + last.height + 46 : 0
@@ -100,18 +104,25 @@ const ITEM_STATUS_COLORS: Record<ItemStatus, number> = {
 
 class StarterItemRenderLayer {
   readonly registration: RenderLayerRegistration
+
   private pendingItems: readonly ItemProjection[] | null = null
+
   private currentItems: readonly ItemProjection[] = []
+
   private viewportWidth = 800
+
   private viewportHeight = 510
+
   private preview: { id: string; offset: { x: number; y: number } } | null =
     null
+
   private disposed = false
 
   constructor(private readonly invalidate: () => void) {
     this.registration = createOverlayLayerRegistration({
       name: STARTER_RENDER_LAYER_NAME,
       zIndex: 0,
+
       update: (canvas) => this.flush(canvas)
     })
   }
@@ -120,6 +131,7 @@ class StarterItemRenderLayer {
     if (this.disposed) {
       return
     }
+
     this.currentItems = items
     this.pendingItems = items
     this.invalidate()
@@ -129,6 +141,7 @@ class StarterItemRenderLayer {
     if (this.viewportWidth === width && this.viewportHeight === height) {
       return
     }
+
     this.viewportWidth = width
     this.viewportHeight = height
     this.submit(this.currentItems)
@@ -143,15 +156,18 @@ class StarterItemRenderLayer {
     if (this.disposed) {
       return
     }
+
     this.disposed = true
     this.pendingItems = null
   }
 
   private flush(canvas: OverlayCanvas): boolean {
     const items = this.pendingItems
+
     if (!items || this.disposed) {
       return false
     }
+
     canvas.clear()
     for (let x = 28; x < this.viewportWidth; x += 28) {
       canvas.line(
@@ -160,6 +176,7 @@ class StarterItemRenderLayer {
         { color: 0xeef2ed, width: 1 }
       )
     }
+
     for (let y = 28; y < this.viewportHeight; y += 28) {
       canvas.line(
         { x: 0, y },
@@ -167,6 +184,7 @@ class StarterItemRenderLayer {
         { color: 0xeef2ed, width: 1 }
       )
     }
+
     items.forEach((item, index) => {
       const { x, y, width, height } = getStarterItemRenderBounds(
         index,
@@ -174,6 +192,7 @@ class StarterItemRenderLayer {
         this.preview?.id === item.id ? this.preview.offset : item.offset,
         this.viewportHeight
       )
+
       canvas.polygon(
         [
           { x, y },
@@ -195,6 +214,7 @@ class StarterItemRenderLayer {
       )
     })
     this.pendingItems = null
+
     return true
   }
 }
@@ -208,6 +228,7 @@ export const registerStarterRenderLayer = (
   dispose(): void
 } => {
   let renderRevision = 0
+
   core.defineSystemProperty(STARTER_RENDER_FRAME_KEY, renderRevision, {
     runtime: true,
     silent: true
@@ -216,15 +237,19 @@ export const registerStarterRenderLayer = (
     renderRevision += 1
     core.setSystemProperty(STARTER_RENDER_FRAME_KEY, renderRevision)
   })
+
   core.registerRenderLayer(layer.registration)
   const unsubscribe = projection.subscribe((items) => layer.submit(items))
+
   return {
     resize(width, height) {
       layer.resize(width, height)
     },
+
     setPreview(id, offset) {
       layer.setPreview(id, offset)
     },
+
     dispose() {
       unsubscribe()
       core.unregisterRenderLayer(STARTER_RENDER_LAYER_NAME)

@@ -163,11 +163,13 @@ const getContainerChildren = (
   parentId: string
 ): readonly string[] => {
   const parent = data.elements[parentId] as GroupRawData | undefined
+
   if (!parent || !Array.isArray(parent.children)) {
     return failGroupPreparation(
       `parent "${parentId}" is not a canonical container`
     )
   }
+
   return parent.children
 }
 
@@ -177,6 +179,7 @@ const normalizeGroupBoundsInTransaction = (
   groupId: string
 ): NormalizedGroupBounds => {
   const group = data.elements[groupId] as GroupRawData | undefined
+
   if (
     !group ||
     group.type !== EntityTypes.GROUP ||
@@ -233,9 +236,11 @@ const readFiniteNumber = (
   elementId: string
 ): number => {
   const value = data[key]
+
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return failGroupGeometry(`"${elementId}.${key}" is invalid`)
   }
+
   return value
 }
 
@@ -244,16 +249,21 @@ const getComputedData = (
   elementId: string
 ): Record<string, unknown> => {
   const projectedValues = projection.projectedValues.get(elementId)
+
   if (projectedValues) {
     return projectedValues
   }
 
   const data = projection.core.getElementComputedData(elementId)
+
   if (!data) {
     return failGroupGeometry(`element "${elementId}" has no computed data`)
   }
+
   const values = { ...data }
+
   projection.projectedValues.set(elementId, values)
+
   return values
 }
 
@@ -263,15 +273,18 @@ const stageGeometryValues = (
   values: Readonly<Record<string, number>>
 ): void => {
   const projectedValues = getComputedData(projection, elementId)
+
   projection.projectedValues.set(elementId, {
     ...projectedValues,
     ...values
   })
 
   const existingUpdate = projection.updatesByElementId.get(elementId)
+
   if (!existingUpdate) {
     projection.orderedElementIds.push(elementId)
   }
+
   projection.updatesByElementId.set(elementId, {
     ...existingUpdate,
     ...values
@@ -310,6 +323,7 @@ const readRectangle = (
   type?: string
 ): ElementRectangle => {
   const data = getComputedData(projection, elementId)
+
   return Object.freeze({
     id: elementId,
     type,
@@ -326,6 +340,7 @@ const readPosition = (
   elementId: string
 ): Readonly<{ x: number; y: number }> => {
   const data = getComputedData(projection, elementId)
+
   return Object.freeze({
     x: readFiniteNumber(data, 'x', elementId),
     y: readFiniteNumber(data, 'y', elementId)
@@ -346,15 +361,20 @@ const getElementWorldPosition = (
     if (visited.has(currentId)) {
       return failGroupGeometry(`hierarchy cycle reaches "${currentId}"`)
     }
+
     visited.add(currentId)
     const element = data.elements[currentId]
+
     if (!element) {
       return failGroupGeometry(`element "${currentId}" is missing`)
     }
+
     if (element.type === EntityTypes.WORKSPACE) {
       break
     }
+
     const position = readPosition(projection, currentId)
+
     x += position.x
     y += position.y
     currentId = element.parentId ?? ''
@@ -369,10 +389,12 @@ const getHierarchyDepth = (
 ): number => {
   let depth = 0
   let element = data.elements[elementId]
+
   while (element?.parentId) {
     depth += 1
     element = data.elements[element.parentId]
   }
+
   return depth
 }
 
@@ -384,23 +406,28 @@ const getAffectedGroupIds = (
 
   elementIds.forEach((elementId) => {
     let element = data.elements[elementId]
+
     if (!element) {
       return failGroupPreparation(`element "${elementId}" is missing`)
     }
+
     if (element.type === EntityTypes.GROUP) {
       groupIds.add(element.id)
     }
 
     while (element.parentId) {
       const parent = data.elements[element.parentId]
+
       if (!parent) {
         return failGroupPreparation(
           `parent "${element.parentId}" of "${element.id}" is missing`
         )
       }
+
       if (parent.type === EntityTypes.GROUP) {
         groupIds.add(parent.id)
       }
+
       element = parent
     }
   })
@@ -447,6 +474,7 @@ const stageInitialPropertyUpdates = (
         GROUP_GEOMETRY_PROPERTY_KEYS.has(key)
       )
     )
+
     if (Object.keys(stagedGeometryValues).length === 0) {
       return
     }
@@ -465,6 +493,7 @@ export const projectGroupGeometryPropertyUpdates = (
   if (!Array.isArray(initialUpdates)) {
     return failGroupPreparation('property updates must be an array')
   }
+
   if (initialUpdates.length === 0) {
     return Object.freeze([])
   }
@@ -474,12 +503,14 @@ export const projectGroupGeometryPropertyUpdates = (
     projection,
     initialUpdates
   )
+
   if (geometryElementIds.length === 0 || explicitGroupElementIds.length === 0) {
     return getProjectedPropertyUpdates(projection)
   }
 
   const geometryElementIdSet = new Set(geometryElementIds)
   const groupGeometryElementIds = [...new Set(explicitGroupElementIds)]
+
   if (
     groupGeometryElementIds.length !== explicitGroupElementIds.length ||
     groupGeometryElementIds.some(
@@ -492,6 +523,7 @@ export const projectGroupGeometryPropertyUpdates = (
   }
 
   const data = core.sceneTreeSaveData()
+
   groupGeometryElementIds.forEach((elementId) => {
     if (data.elements[elementId]?.type !== EntityTypes.GROUP) {
       return failGroupPreparation(
@@ -508,6 +540,7 @@ export const projectGroupGeometryPropertyUpdates = (
         GROUP_GEOMETRY_PROPERTY_KEYS.has(key)
       )
     )
+
     projection.projectedValues.set(elementId, {
       ...currentValues,
       ...stagedGeometryValues
@@ -517,6 +550,7 @@ export const projectGroupGeometryPropertyUpdates = (
   getAffectedGroupIds(data, groupGeometryElementIds).forEach((groupId) => {
     normalizeGroupBoundsInTransaction(projection, data, groupId)
   })
+
   return getProjectedPropertyUpdates(projection)
 }
 
@@ -535,6 +569,7 @@ const readGroupOperation = (
   ) {
     return failGroupPreparation('element ids must be a non-empty string list')
   }
+
   if (new Set(elementIds).size !== elementIds.length) {
     return failGroupPreparation('element ids must be unique')
   }
@@ -542,12 +577,15 @@ const readGroupOperation = (
   const data = core.sceneTreeSaveData()
   const elements = elementIds.map((elementId) => {
     const element = data.elements[elementId]
+
     if (!element) {
       return failGroupPreparation(`element "${elementId}" is missing`)
     }
+
     return element
   })
   const parentId = elements[0].parentId ?? ''
+
   if (
     parentId.length === 0 ||
     elements.some((element) => element.parentId !== parentId)
@@ -560,6 +598,7 @@ const readGroupOperation = (
   const selectedIds = new Set(elementIds)
   const children = getContainerChildren(data, parentId)
   const canonicalIds = children.filter((childId) => selectedIds.has(childId))
+
   if (canonicalIds.length !== elementIds.length) {
     return failGroupPreparation(
       'element ids must each have one canonical parent membership'
@@ -588,6 +627,7 @@ export const prepareUngroupOperation = (
 ): PreparedUngroupOperation => {
   const data = core.sceneTreeSaveData()
   const group = data.elements[groupId] as GroupRawData | undefined
+
   if (
     !group ||
     group.type !== EntityTypes.GROUP ||
@@ -601,6 +641,7 @@ export const prepareUngroupOperation = (
   const parentId = group.parentId ?? ''
   const siblings = getContainerChildren(data, parentId)
   const groupIndex = siblings.indexOf(groupId)
+
   if (groupIndex < 0 || siblings.lastIndexOf(groupId) !== groupIndex) {
     return failGroupPreparation(
       `Group "${groupId}" must have one canonical parent membership`
@@ -646,6 +687,7 @@ export const groupElements = (
       preparedGroup.groupIndex,
       options
     )
+
     if (!createdGroupId) {
       throw new Error('[Preset] Official Group creation failed')
     }
@@ -734,7 +776,9 @@ export const normalizeGroupsForElements = (
     const results = deepestFirstGroupIds.map((groupId) =>
       normalizeGroupBoundsInTransaction(geometryProjection, data, groupId)
     )
+
     applyGeometryProjection(core, geometryProjection, options)
+
     return Object.freeze(results)
   })
 }
@@ -749,6 +793,7 @@ export const moveElementsWithGroupGeometry = (
 
   return runTransaction(() => {
     const result = core.moveElements(request, options)
+
     if (result.moves.length === 0) {
       return result
     }
@@ -760,6 +805,7 @@ export const moveElementsWithGroupGeometry = (
       beforeData.elements[sourceParentId]?.type === EntityTypes.GROUP
     const targetIsGroup =
       afterData.elements[targetParentId]?.type === EntityTypes.GROUP
+
     if (!sourceIsGroup && !targetIsGroup) {
       return result
     }
@@ -782,13 +828,16 @@ export const moveElementsWithGroupGeometry = (
 
     const groupIds = new Set<string>()
     const affectedParentIds = [sourceParentId, targetParentId]
+
     affectedParentIds.forEach((parentId) => {
       let element: SceneTreeRawData['elements'][string] | undefined =
         afterData.elements[parentId]
+
       while (element) {
         if (element.type === EntityTypes.GROUP) {
           groupIds.add(element.id)
         }
+
         element = element.parentId
           ? afterData.elements[element.parentId]
           : undefined
@@ -799,6 +848,7 @@ export const moveElementsWithGroupGeometry = (
         getHierarchyDepth(afterData, second) -
         getHierarchyDepth(afterData, first)
     )
+
     deepestFirstGroupIds.forEach((groupId) => {
       normalizeGroupBoundsInTransaction(geometryProjection, afterData, groupId)
     })

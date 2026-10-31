@@ -67,6 +67,7 @@ const getElementSelectionIds = (deps: SelectionOverlayRenderLayerDeps) => {
         ElementSelectionReader | undefined
     )?.getSelectedIds() ?? []
   )
+
   return selectedIds.length > 0
     ? selectedIds
     : [...renderSelectionStore.elementSelection]
@@ -148,12 +149,14 @@ const getGroupBoundsCorners = (
   element: RenderElementShape
 ): [PositionData, PositionData, PositionData, PositionData] | null => {
   const sceneElement = deps.sceneTree.getElementById(elementId)
+
   if (!sceneElement || sceneElement.get('type') !== EntityTypes.GROUP) {
     return null
   }
 
   const bounds = element.getBounds()
   const { x, y, width, height } = bounds
+
   if (
     ![x, y, width, height].every(Number.isFinite) ||
     typeof x !== 'number' ||
@@ -199,6 +202,7 @@ const getElementOverlayWorldBounds = (
 ): LocalBounds | null => {
   if (getElementType(deps, elementId) === EntityTypes.GROUP) {
     const corners = getGroupBoundsCorners(deps, elementId, element)
+
     return corners ? getCornersBounds(corners) : null
   }
 
@@ -258,6 +262,7 @@ const drawOvalGeometryOutline = (
         color: SELECTION_STROKE_COLOR
       })
     }
+
     previousPoint = worldPoint
   }
 
@@ -277,6 +282,7 @@ const drawVectorHoverOutline = (
   viewportScale: number
 ) => {
   const element = deps.sceneTree.getElementById(elementId)
+
   if (!element) {
     return false
   }
@@ -285,6 +291,7 @@ const drawVectorHoverOutline = (
   const points = computed.points
   const segments = computed.segments
   const networks = computed.networks
+
   if (
     computed.pointCoordinateSpace !== 'workspace' ||
     !points ||
@@ -293,20 +300,25 @@ const drawVectorHoverOutline = (
   ) {
     return false
   }
+
   const renderElement = deps.render.getElementById(elementId)
+
   if (!renderElement) {
     return false
   }
+
   const resolveCurrentWorkspacePoint = (
     point: PositionData
   ): PositionData | null => {
     const localPoint = getVectorRenderLocalPoint(renderElement, point)
+
     return localPoint
       ? deps.render.elementLocalToWorkspace(elementId, localPoint)
       : null
   }
 
   const orderedNetworks = sortVectorItemsById(Object.values(networks))
+
   if (orderedNetworks.length === 0) {
     return false
   }
@@ -316,12 +328,14 @@ const drawVectorHoverOutline = (
   orderedNetworks.forEach((network) => {
     network.segmentIds.forEach((segmentId) => {
       const segment = segments[segmentId]
+
       if (!segment) {
         return
       }
 
       const start = points[segment.startId]
       const end = points[segment.endId]
+
       if (
         !start ||
         !end ||
@@ -344,9 +358,11 @@ const drawVectorHoverOutline = (
 
       const startWorkspace = resolveCurrentWorkspacePoint(start)
       const endWorkspace = resolveCurrentWorkspacePoint(end)
+
       if (!startWorkspace || !endWorkspace) {
         return
       }
+
       const startPoint = projectWorkspacePointToOverlayScreen(
         startWorkspace,
         viewportPosition,
@@ -364,6 +380,7 @@ const drawVectorHoverOutline = (
           color: SELECTION_STROKE_COLOR
         })
         hasDrawn = true
+
         return
       }
 
@@ -371,9 +388,11 @@ const drawVectorHoverOutline = (
         outControl ?? start
       )
       const control2Workspace = resolveCurrentWorkspacePoint(inControl ?? end)
+
       if (!control1Workspace || !control2Workspace) {
         return
       }
+
       const control1 = projectWorkspacePointToOverlayScreen(
         control1Workspace,
         viewportPosition,
@@ -403,6 +422,7 @@ const drawHoverGeometryOutline = (
   hoveredElement: RenderElementShape
 ) => {
   const type = getElementType(deps, elementId)
+
   if (!type) {
     drawElementBoundsOutline(
       canvas,
@@ -410,6 +430,7 @@ const drawHoverGeometryOutline = (
       SELECTION_STROKE_COLOR,
       SELECTION_OVERLAY_STROKE_WIDTH
     )
+
     return
   }
 
@@ -421,6 +442,7 @@ const drawHoverGeometryOutline = (
       deps.render.getViewportPosition(),
       deps.render.getViewportScale()
     )
+
     if (hasVectorOutline) {
       return
     }
@@ -428,6 +450,7 @@ const drawHoverGeometryOutline = (
 
   if (type === EntityTypes.GROUP) {
     const corners = getGroupBoundsCorners(deps, elementId, hoveredElement)
+
     if (corners) {
       drawOutline(
         canvas,
@@ -436,6 +459,7 @@ const drawHoverGeometryOutline = (
         SELECTION_OVERLAY_STROKE_WIDTH
       )
     }
+
     return
   }
 
@@ -453,8 +477,10 @@ const drawHoverGeometryOutline = (
         width,
         height
       )
+
       return
     }
+
     if (type === 'rect') {
       drawRectGeometryOutline(
         canvas,
@@ -462,6 +488,7 @@ const drawHoverGeometryOutline = (
         width,
         height
       )
+
       return
     }
   }
@@ -481,8 +508,10 @@ const drawSelectedGeometryOutline = (
   element: RenderElementShape
 ) => {
   const type = getElementType(deps, elementId)
+
   if (type === EntityTypes.GROUP) {
     const corners = getGroupBoundsCorners(deps, elementId, element)
+
     if (corners) {
       drawOutline(
         canvas,
@@ -491,6 +520,7 @@ const drawSelectedGeometryOutline = (
         SELECTION_OVERLAY_STROKE_WIDTH
       )
     }
+
     return
   }
 
@@ -528,6 +558,7 @@ const getMultiSelectionBounds = (
     const element = deps.render.getElementById(
       elementId
     ) as RenderElementShape | null
+
     if (!element) {
       return
     }
@@ -537,9 +568,11 @@ const getMultiSelectionBounds = (
       elementId,
       element
     )
+
     if (!geometryBounds) {
       return
     }
+
     minX = Math.min(minX, geometryBounds.x)
     minY = Math.min(minY, geometryBounds.y)
     maxX = Math.max(maxX, geometryBounds.x + geometryBounds.width)
@@ -567,11 +600,13 @@ const appendElementTransformSignature = (
   parts.push(elementId)
   if (!element) {
     parts.push('missing')
+
     return
   }
 
   const transform = element.worldTransform
   const bounds = getElementOverlayWorldBounds(deps, elementId, element)
+
   parts.push(
     String(transform.a),
     String(transform.b),
@@ -582,8 +617,10 @@ const appendElementTransformSignature = (
   )
   if (!bounds) {
     parts.push('invalid-bounds')
+
     return
   }
+
   parts.push(
     String(bounds.x),
     String(bounds.y),
@@ -598,11 +635,13 @@ const appendVectorComputedSignature = (
   elementId: string
 ) => {
   const sceneElement = deps.sceneTree.getElementById(elementId)
+
   if (!sceneElement || sceneElement.get('type') !== 'vector') {
     return
   }
 
   const computed = sceneElement.getAllComputedData() as VectorComputedData
+
   parts.push(
     computed.pointCoordinateSpace ?? 'missing-workspace',
     String(computed.x ?? ''),
@@ -657,6 +696,7 @@ export const registerSelectionOverlayRenderLayer = (
   const layerRegistration = createOverlayLayerRegistration({
     name: SELECTION_OVERLAY_LAYER_NAME,
     zIndex: 8,
+
     update: (canvas: OverlayCanvas) => {
       const pathEditingVectorId =
         deps.systemContext.getManagedProperty<string | null>(
@@ -666,6 +706,7 @@ export const registerSelectionOverlayRenderLayer = (
       const isSuppressed = (elementId: string) =>
         (deps.render.getElementById(elementId) as RenderElementShape | null)
           ?.presentationSuppressed === true
+
       const selectedIds = getElementSelectionIds(deps).filter(
         (id) => !isSuppressed(id)
       )
@@ -674,14 +715,17 @@ export const registerSelectionOverlayRenderLayer = (
         deps.systemContext.getManagedProperty<string | null>(
           PresetSystemPropertyKeys.HOVERED_ELEMENT_ID
         ) ?? null
+
       if (hoveredElementId && isSuppressed(hoveredElementId)) {
         hoveredElementId = null
       }
+
       const drawSignatureParts = [
         pathEditingVectorId ?? '',
         selectedIds.join(','),
         hoveredElementId ?? ''
       ]
+
       selectedIds.forEach((selectedId) => {
         appendElementTransformSignature(
           drawSignatureParts,
@@ -706,10 +750,13 @@ export const registerSelectionOverlayRenderLayer = (
           hoveredElementId
         )
       }
+
       const drawSignature = drawSignatureParts.join('|')
+
       if (drawSignature === lastDrawSignature) {
         return false
       }
+
       lastDrawSignature = drawSignature
 
       canvas.clear()
@@ -729,6 +776,7 @@ export const registerSelectionOverlayRenderLayer = (
           }
         } else {
           const bounds = getMultiSelectionBounds(deps, selectedIds)
+
           if (bounds) {
             drawBoundsOutline(
               canvas,
@@ -751,11 +799,13 @@ export const registerSelectionOverlayRenderLayer = (
       const hoveredElement = deps.render.getElementById(
         hoveredElementId
       ) as RenderElementShape | null
+
       if (!hoveredElement) {
         return true
       }
 
       drawHoverGeometryOutline(canvas, deps, hoveredElementId, hoveredElement)
+
       return true
     }
   })

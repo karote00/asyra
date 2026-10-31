@@ -21,9 +21,11 @@ describe('asset preview work boundary', () => {
       build
     )
     const original = layer.getBounds()
+
     for (const view of REVIEW_VIEWS.slice(0, 5)) {
       controller.setView(view)
     }
+
     expect(build).toHaveBeenCalledOnce()
     expect(submit).toHaveBeenCalledOnce()
     expect(camera).toHaveBeenCalledTimes(5)
@@ -41,6 +43,7 @@ describe('asset preview work boundary', () => {
       build
     )
     const near = submit.mock.calls[0][0].meshes[0].descriptor.shape
+
     controller.setView('Distant')
     expect(controller.getSnapshot()).toMatchObject({
       detail: 'distant',
@@ -49,9 +52,11 @@ describe('asset preview work boundary', () => {
     controller.setView('Front')
     controller.setNeutral(true)
     const last = submit.mock.lastCall
+
     if (!last) {
       throw new Error('Expected submitted frame')
     }
+
     expect(last[0].meshes[0].descriptor.shape).toBe(near)
     expect(last[0].meshes[0].descriptor.color).toBe(0xb9b9b9)
     expect(build).toHaveBeenCalledOnce()
@@ -67,6 +72,7 @@ describe('asset preview work boundary', () => {
       const quantization =
         (depth * depth * (camera.far - camera.near)) /
         (camera.far * camera.near * 2 ** 24)
+
       expect(quantization).toBeLessThan(0.00001)
       expect(camera.near).toBeLessThan(depth)
       expect(camera.far).toBeGreaterThan(depth)
@@ -81,11 +87,13 @@ describe('asset preview work boundary', () => {
     for (const view of REVIEW_VIEWS) {
       expect(cameraForView(view).kind).toBe('camera')
     }
+
     const layer = new SpatialLayer(vi.fn()),
       controller = createPreviewController(layer, {
         height: 800,
         pixelRatio: 1
       })
+
     expect(() => controller.resize(0, 1)).toThrow()
     controller.dispose()
     layer.dispose()
@@ -98,6 +106,7 @@ describe('asset preview work boundary', () => {
       })
     const changed = vi.fn(),
       off = controller.subscribe(changed)
+
     controller.setView('Front')
     expect(changed).toHaveBeenCalledOnce()
     off()

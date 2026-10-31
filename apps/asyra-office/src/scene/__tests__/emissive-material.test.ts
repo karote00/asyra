@@ -12,6 +12,7 @@ it('transports light emission through the production frame builder', () => {
   const luminous = meshes.filter(
     (m) => (m.descriptor.emissiveIntensity ?? 0) > 0
   )
+
   expect(luminous).toHaveLength(1)
   expect(luminous[0].descriptor).toMatchObject({
     emissive: 0xffb35c,
@@ -47,6 +48,7 @@ it('separates identical albedo with different emission for batched and instanced
     { parts: [ordinary, luminous, instanced], assemblies: [], labels: [] },
     {}
   )
+
   expect(meshes).toHaveLength(3)
   expect(
     meshes.filter((m) => m.descriptor.emissiveIntensity === 2.5)

@@ -12,17 +12,23 @@ function setup() {
     toneMapping: THREE.ACESFilmicToneMapping,
     autoClear: false,
     xr: { enabled: true },
+
     getRenderTarget: () => target,
+
     getActiveCubeFace: () => 0,
+
     getActiveMipmapLevel: () => 0,
+
     setRenderTarget: vi.fn((value) => {
       target = value
     }),
     render: vi.fn((_scene?: THREE.Scene, _camera?: THREE.Camera) => {
       const names: string[] = []
+
       scene.traverseVisible((object) => {
         if (object instanceof THREE.Mesh) {
           const material = object.material as THREE.MeshPhysicalMaterial
+
           names.push(
             object.name + (material.side === THREE.BackSide ? ':back' : '')
           )
@@ -32,16 +38,20 @@ function setup() {
     })
   }
   const capture = new TransmissionCapture()
+
   const mesh = (name: string, layer?: number) => {
     const material = new THREE.MeshPhysicalMaterial({ transmission: 1 })
     const object = new THREE.Mesh(new THREE.BoxGeometry(), material)
+
     object.name = name
     scene.add(object)
     if (layer !== undefined) {
       capture.apply(material, layer)
     }
+
     return object
   }
+
   const render = () =>
     capture.render(
       renderer as unknown as THREE.WebGLRenderer,
@@ -51,18 +61,22 @@ function setup() {
       480,
       (scene, camera) => renderer.render(scene, camera)
     )
+
   return { scene, camera, capture, renderer, original, captures, mesh, render }
 }
 
 it('captures lower media and ordinary transparent objects once per layer, without self feedback', () => {
   const f = setup()
+
   f.mesh('glass', 2)
   f.mesh('liquid', 1)
   f.mesh('ice-a', 0)
   f.mesh('ice-b', 0)
   const background = f.mesh('background')
+
   background.material.transparent = true
   const hidden = f.mesh('hidden', 3)
+
   hidden.visible = false
   f.render()
   expect(f.captures).toEqual([
@@ -78,10 +92,12 @@ it('captures lower media and ordinary transparent objects once per layer, withou
   const firstTargets = f.renderer.setRenderTarget.mock.calls
     .slice(0, 3)
     .map(([target]) => target)
+
   f.render()
   const secondTargets = f.renderer.setRenderTarget.mock.calls
     .slice(4, 7)
     .map(([target]) => target)
+
   expect(secondTargets).toEqual(firstTargets)
   expect(f.captures).toHaveLength(6)
   f.capture.dispose()
@@ -89,11 +105,13 @@ it('captures lower media and ordinary transparent objects once per layer, withou
 
 it('does not redraw the scene for offscreen optical recipients and refreshes them on camera return', () => {
   const f = setup()
+
   f.camera.position.set(0, 0, 5)
   const glass = f.mesh('glass', 2)
   const liquid = f.mesh('liquid', 1)
   const ice = f.mesh('ice', 0)
   const group = new THREE.Group()
+
   f.scene.add(group)
   group.add(glass, liquid, ice)
   f.render()
@@ -102,6 +120,7 @@ it('does not redraw the scene for offscreen optical recipients and refreshes the
     .slice(0, 3)
     .map(([value]) => value)
   const releases = targets.map((target) => vi.spyOn(target, 'dispose'))
+
   f.renderer.render.mockClear()
   f.camera.position.x = 100
   f.render()
@@ -130,6 +149,7 @@ it('does not redraw the scene for offscreen optical recipients and refreshes the
 it('respects camera layers and material visibility when admitting optical captures', () => {
   const f = setup()
   const glass = f.mesh('glass', 2)
+
   glass.layers.set(1)
   f.render()
   expect(f.renderer.render).not.toHaveBeenCalled()
@@ -146,6 +166,7 @@ it('respects camera layers and material visibility when admitting optical captur
 it('restores visibility and renderer state when a capture fails', () => {
   const f = setup()
   const glass = f.mesh('glass', 2)
+
   f.mesh('ice', 0)
   f.renderer.render.mockImplementation(() => {
     throw new Error('capture failure')
@@ -162,6 +183,7 @@ it('restores visibility and renderer state when a capture fails', () => {
 it('releases removed layers and binds the native transmission chunk to current targets', () => {
   const f = setup()
   const glass = f.mesh('glass', 1)
+
   f.render()
   const target = f.renderer.setRenderTarget.mock
     .calls[0][0] as THREE.WebGLRenderTarget
@@ -170,6 +192,7 @@ it('releases removed layers and binds the native transmission chunk to current t
     uniforms: {},
     fragmentShader: '#include <transmission_pars_fragment>'
   }
+
   glass.material.onBeforeCompile(shader as never, f.renderer as never)
   expect(shader.fragmentShader).toContain('spatialTransmissionMap')
   expect(shader.fragmentShader).toContain('if ( spatialCaptureEnabled )')
@@ -202,10 +225,12 @@ it('draws enclosing back faces before contents without occluding the contents', 
   const glass = f.mesh('glass', 2)
   const coffee = f.mesh('coffee', 1)
   const ice = f.mesh('ice', 0)
+
   glass.renderOrder = 7
   coffee.renderOrder = 4
   ice.renderOrder = 2
   let frame = 0
+
   f.renderer.render.mockImplementation(() => {
     if (frame++ === 0) {
       expect(glass.material.depthWrite).toBe(false)
@@ -225,10 +250,12 @@ it('draws enclosing back faces before contents without occluding the contents', 
 it('keeps source shader versions stable across repeated enclosing back-face captures', () => {
   const f = setup()
   const glass = f.mesh('glass', 2)
+
   f.mesh('liquid', 1)
   f.mesh('ice', 0)
   const source = glass.material
   const version = source.version
+
   f.render()
   f.render()
   expect(source.version).toBe(version)
@@ -240,9 +267,11 @@ it('keeps source shader versions stable across repeated enclosing back-face capt
 it('reuses enclosing materials, synchronizes optical values and releases removed sources', () => {
   const f = setup()
   const glass = f.mesh('glass', 2)
+
   f.mesh('ice', 0)
   const source = glass.material
   const backFaces: THREE.MeshPhysicalMaterial[] = []
+
   f.renderer.render.mockImplementation(() => {
     if (glass.visible && glass.material.side === THREE.BackSide) {
       backFaces.push(glass.material)
@@ -251,6 +280,7 @@ it('reuses enclosing materials, synchronizes optical values and releases removed
   f.render()
   const back = backFaces[0]
   const version = back.version
+
   source.color.setHex(0x112233)
   source.roughness = 0.37
   source.attenuationDistance = 0.42
@@ -264,6 +294,7 @@ it('reuses enclosing materials, synchronizes optical values and releases removed
   f.render()
   expect(back.version).toBeGreaterThan(version)
   const release = vi.spyOn(back, 'dispose')
+
   f.scene.remove(glass)
   f.render()
   expect(release).toHaveBeenCalledTimes(1)
@@ -274,8 +305,10 @@ it('reuses enclosing materials, synchronizes optical values and releases removed
 it('releases retained enclosing materials when the original material is disposed', () => {
   const f = setup()
   const glass = f.mesh('glass', 2)
+
   f.mesh('ice', 0)
   let back: THREE.MeshPhysicalMaterial | undefined
+
   f.renderer.render.mockImplementation(() => {
     if (glass.visible && glass.material.side === THREE.BackSide) {
       back = glass.material
@@ -285,7 +318,9 @@ it('releases retained enclosing materials when the original material is disposed
   if (!back) {
     throw new Error('Missing enclosing material')
   }
+
   const release = vi.spyOn(back, 'dispose')
+
   glass.material.dispose()
   expect(release).toHaveBeenCalledTimes(1)
   f.capture.dispose()

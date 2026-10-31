@@ -30,10 +30,12 @@ class StateRegistry {
   unregister(name: string): boolean {
     if (!this.states.has(name)) {
       console.warn(`State "${name}" not found.`)
+
       return false
     }
 
     this.states.delete(name)
+
     return true
   }
 
@@ -43,14 +45,17 @@ class StateRegistry {
 
   getValue(name: string): unknown {
     const state = this.states.get(name)
+
     if (state?.observable instanceof BehaviorSubject) {
       return state.observable.value
     }
+
     return state?.initialValue
   }
 
   setValue(name: string, value: unknown): void {
     const state = this.states.get(name)
+
     if (state?.observable instanceof BehaviorSubject) {
       state.observable.next(value)
     } else {
@@ -70,4 +75,5 @@ class StateRegistry {
 }
 
 export const stateRegistry = new StateRegistry()
+
 export default stateRegistry

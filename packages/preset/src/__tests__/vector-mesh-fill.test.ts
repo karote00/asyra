@@ -22,6 +22,7 @@ const gradient = () =>
       ]
     }
   })
+
 const dataFor = (
   vertices = [
     [20, 30],
@@ -32,6 +33,7 @@ const dataFor = (
 ) => {
   const ids = vertices.map((_, index) => `p${index}`)
   const segmentIds = ids.map((id) => `s${id}`)
+
   return {
     id: 'vector',
     type: 'vector',
@@ -76,7 +78,9 @@ const meshOf = (graphic: RenderGraphics): RenderMesh => {
   const meshes = graphic.children
     .flatMap((child) => child.children)
     .filter((child) => child instanceof RenderMesh)
+
   expect(meshes).toHaveLength(1)
+
   return meshes[0] as RenderMesh
 }
 
@@ -84,16 +88,20 @@ describe('retained vector coverage and material', () => {
   afterEach(() => vi.restoreAllMocks())
   it('uses the same mesh coverage for all materials without CPU rasterization', () => {
     const raster = vi.spyOn(core, 'createEvenOddFillStyle')
+
     for (const type of ['linear', 'radial', 'angular', 'diamond'] as const) {
       const data = dataFor()
       const gradient = data.fills[0].gradient
+
       if (!gradient) {
         throw new Error('Missing gradient fixture')
       }
+
       gradient.gradientType = type
       data.fills[0].opacity = 0.5
       const source = JSON.stringify(data)
       const graphic = new RenderGraphics()
+
       VECTOR_RENDER_STRATEGY(graphic, data)
       expect(meshOf(graphic).getEngineProperties().material).toMatchObject({
         fills: [{ kind: 'gradient', type }]
@@ -103,15 +111,18 @@ describe('retained vector coverage and material', () => {
       expect(JSON.stringify(data)).toBe(source)
       graphic.destroy()
     }
+
     expect(raster).not.toHaveBeenCalled()
   })
   it('retains coverage for paint and transform edits, and invalidates geometry or fill-rule edits', () => {
     const prepare = vi.spyOn(coverage, 'prepareVectorCompoundFill')
     const data = dataFor()
     const graphic = new RenderGraphics()
+
     VECTOR_RENDER_STRATEGY(graphic, data)
     const mesh = meshOf(graphic)
     const geometry = mesh.getEngineProperties().geometry
+
     expect(prepare).toHaveBeenCalledTimes(1)
     VECTOR_RENDER_STRATEGY(graphic, {
       ...data,
@@ -142,6 +153,7 @@ it('uses the existing constant mesh paint without a parameter texture for one so
     ...dataFor(),
     fills: [createDefaultFill({ color: '#ff0000', opacity: 0.5 })]
   }
+
   VECTOR_RENDER_STRATEGY(graphic, data)
   expect(meshOf(graphic).getEngineProperties()).toMatchObject({
     material: null,

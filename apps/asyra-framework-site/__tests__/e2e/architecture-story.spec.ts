@@ -7,8 +7,10 @@ test('the homepage keeps the infrastructure explanation available without animat
     javaScriptEnabled: false,
     viewport: { width: 1440, height: 900 }
   })
+
   try {
     const page = await context.newPage()
+
     await page.goto('/')
     await expect(page.locator('[data-story-chapter]')).toHaveCount(6)
     await expect(page.locator('main')).toContainText('Defined relations.')

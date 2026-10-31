@@ -23,6 +23,7 @@ const face = () => ({
     { x: 0, y: 0, z: 8 }
   ]
 })
+
 const pattern = () => ({
   key: 'windows',
   name: 'Windows',
@@ -34,6 +35,7 @@ const pattern = () => ({
   ],
   faces: [face()]
 })
+
 const draft = (children: unknown[]) => ({
   type: 'frame',
   name: 'Facade',
@@ -54,6 +56,7 @@ describe('compact planar patterns', () => {
     const input = draft([pattern()])
     const before = structuredClone(input)
     const explicit = []
+
     for (let x = 0; x < 3; x++) {
       for (let z = 0; z < 2; z++) {
         explicit.push({
@@ -68,6 +71,7 @@ describe('compact planar patterns', () => {
         })
       }
     }
+
     const actual = constructDesign(input).draft.children as Record<
       string,
       unknown
@@ -76,12 +80,14 @@ describe('compact planar patterns', () => {
       string,
       unknown
     >[]
+
     expect(actual).toHaveLength(6)
     actual.forEach((node, i) => {
       expect(node.type).toBe('vector')
       for (const k of ['x', 'y', 'width', 'height']) {
         expect(node[k]).toBeCloseTo(expected[i][k] as number, 8)
       }
+
       expect(node.fill).toBe(expected[i].fill)
     })
     expect(new Set(actual.map((n) => n.key)).size).toBe(6)
@@ -100,8 +106,10 @@ describe('compact planar patterns', () => {
             faces: [
               {
                 ...face(),
+
                 get vertices() {
                   reads.push('vertices')
+
                   return coordinates
                 }
               }
@@ -109,14 +117,18 @@ describe('compact planar patterns', () => {
             axes: [{ count, step: { x: 1, y: 0, z: 0 } }]
           }
         ])
+
         Object.defineProperty(input, 'name', {
           enumerable: true,
+
           get() {
             reads.push('snapshot')
+
             return 'Facade'
           }
         })
         const original = structuredClone(input)
+
         reads.length = 0
         expect(measureDesignBudget(input).observed).toMatchObject({
           sourceNodes: 2,
@@ -136,15 +148,18 @@ describe('compact planar patterns', () => {
           mode === 'sync'
             ? session.prepare(input)
             : await session.prepareAsync(input, new AbortController().signal)
+
         // Admission reads once before the snapshot reads each caller property once.
         expect(reads).toEqual(['vertices', 'snapshot', 'vertices'])
         // Four template vertices, one shared zero, then one offset per instance.
         expect(receipt.sourceWork?.projectionCalls).toBe(4 + 1 + count)
         expect(receipt.sourceWork).toMatchObject({ nodes: 2, pathCommands: 4 })
         const recipe = session.recipe(receipt.artifactId).recipe
+
         expect(Object.isFrozen(recipe)).toBe(true)
         expect(recipe).toEqual(original)
         const artifact = session.resolve(receipt.artifactId)
+
         expect(artifact).toEqual(prepareDesign(original, receipt.artifactId))
         expect(artifact.entries).toHaveLength(count + 1)
         expect(compile).toHaveBeenCalledOnce()
@@ -153,12 +168,14 @@ describe('compact planar patterns', () => {
           expect(session.resolve(receipt.artifactId)).toBe(artifact)
           expect(session.recipe(receipt.artifactId).recipe).toBe(recipe)
         }
+
         expect(reads).toEqual(['vertices', 'snapshot', 'vertices'])
         expect(recipe).toEqual(original)
         const next =
           mode === 'sync'
             ? session.prepare(input)
             : await session.prepareAsync(input, new AbortController().signal)
+
         expect(compile).toHaveBeenCalledTimes(2)
         expect(reads).toEqual([
           'vertices',
@@ -200,18 +217,23 @@ describe('compact planar patterns', () => {
           faces: [
             {
               ...face(),
+
               get vertices() {
                 reads.push('vertices')
+
                 return face().vertices
               }
             }
           ]
         }
       ])
+
       Object.defineProperty(input, 'name', {
         enumerable: true,
+
         get() {
           reads.push('snapshot')
+
           return 'Rejected'
         }
       })
@@ -222,11 +244,13 @@ describe('compact planar patterns', () => {
           session.prepareAsync(input, new AbortController().signal)
         ).rejects.toThrow()
       }
+
       expect(reads).toEqual(['vertices'])
       expect(compile).toHaveBeenCalledOnce()
       expect(session.resolve(good.artifactId)).toBe(retained)
       reads.length = 0
       const cancelled = new AbortController()
+
       cancelled.abort(new Error('Cancelled before admission'))
       await expect(
         session.prepareAsync(input, cancelled.signal)
@@ -248,6 +272,7 @@ describe('compact planar patterns', () => {
         }))
       }
     ])
+
     expect(measureDesignBudget(input).observed).toMatchObject({
       sourceNodes: 3,
       sourcePathCommands: 7,
@@ -261,6 +286,7 @@ describe('compact planar patterns', () => {
       [null, {}, { vertices: null }, { vertices: 'invalid' }]
     ]) {
       const result = measureDesignBudget(draft([{ ...pattern(), faces }]))
+
       expect(result.observed).toMatchObject({
         expandedNodes: 1 + faces.length * 6,
         sourcePathCommands: 0,
@@ -282,6 +308,7 @@ describe('compact planar patterns', () => {
         faces: [
           {
             ...face(),
+
             get vertices() {
               return vertices()
             }
@@ -290,10 +317,12 @@ describe('compact planar patterns', () => {
         fills: ['#112233', '#445566']
       }
     ])
+
     input.width = 2000
     input.height = 2000
     input.projection.originY = 1000
     const artifact = prepareDesign(input, 'whole-stage')
+
     expect(artifact.entries).toHaveLength(6401)
     expect(vertices).toHaveBeenCalledTimes(1)
     expect(artifact.entries[6400].key).toBe('windows-6399-pane')
@@ -304,6 +333,7 @@ describe('compact planar patterns', () => {
   })
   it('keeps template planarity work constant as instance count grows', () => {
     const work = vi.spyOn(Math, 'hypot')
+
     try {
       constructDesign(
         draft([
@@ -311,6 +341,7 @@ describe('compact planar patterns', () => {
         ])
       )
       const once = work.mock.calls.length
+
       work.mockClear()
       constructDesign(
         draft([
@@ -353,6 +384,7 @@ describe('compact planar patterns', () => {
     const nodes = constructDesign(
       draft([{ ...pattern(), fills: ['#112233', '#445566'] }])
     ).draft.children as Record<string, unknown>[]
+
     expect(nodes.map((n) => n.fill)).toEqual([
       '#112233',
       '#445566',
@@ -366,14 +398,17 @@ describe('compact planar patterns', () => {
 
 it('measures shared repeated geometry once per preparation, without cross-call reuse', () => {
   const measure = vi.spyOn(vectorArtifact, 'measureVectorPath')
+
   try {
     const input = draft([
       { ...pattern(), axes: [{ count: 100, step: { x: 1, y: 0, z: 0 } }] }
     ])
     const result = prepareDesign(input, 'shared-bounds')
+
     expect(result.entries).toHaveLength(101)
     expect(measure).toHaveBeenCalledTimes(1)
     const changed = pattern()
+
     changed.faces[0].vertices[1].x = 9
     input.children = [changed]
     prepareDesign(input, 'changed-bounds')
@@ -400,6 +435,7 @@ it('expands only selected ranges and preserves original indices, fills and geome
       }
     ])
   ).draft.children
+
   expect(selected).toEqual([all[1], all[2], all[5]])
   const restored = constructDesign(
     draft([
@@ -412,6 +448,7 @@ it('expands only selected ranges and preserves original indices, fills and geome
       }
     ])
   ).draft.children as Record<string, unknown>[]
+
   expect(restored).toEqual([all[0], all[3], all[4]])
 })
 
@@ -428,11 +465,13 @@ it('does not expand unselected instances or charge their output against artifact
     }
   ])
   const work = vi.spyOn(Math, 'floor')
+
   try {
     const output = constructDesign(input).draft.children as Record<
       string,
       unknown
     >[]
+
     expect(output).toHaveLength(2)
     expect(output[0].key).toBe('windows-99999998-pane')
     expect(work.mock.calls.length).toBeLessThan(20)
@@ -485,6 +524,7 @@ describe('exact 2D vector patterns', () => {
       ]
     ]
   })
+
   const motif = () => ({
     type: 'vector-pattern',
     key: 'curves',
@@ -495,11 +535,13 @@ describe('exact 2D vector patterns', () => {
       { x: 30, y: 20, fill: '#abcdef' }
     ]
   })
+
   it('matches explicit geometry and painter order and measures a template once per preparation', () => {
     const node = motif(),
       input = draft([node]),
       before = structuredClone(input)
     const measure = vi.spyOn(vectorArtifact, 'measureVectorPath')
+
     try {
       const actual = constructDesign(input).draft.children as Record<
         string,
@@ -512,12 +554,15 @@ describe('exact 2D vector patterns', () => {
         key: `curves-${i}`,
         name: `Curves - ${i + 1}`
       }))
+
       expect(actual).toEqual(expected)
       expect(actual[0].rings).toBe(actual[1].rings)
       const prepared = prepareDesign(input, 'reused')
+
       expect(measure).toHaveBeenCalledTimes(1)
       expect(prepared.findings).toEqual([])
       const explicit = prepareDesign(draft(expected), 'reused')
+
       expect(prepared.entries).toEqual(explicit.entries)
       expect(input).toEqual(before)
       measure.mockClear()
@@ -534,6 +579,7 @@ describe('exact 2D vector patterns', () => {
   })
   it('rejects overrides, unpaired controls and expanded budget overflow', () => {
     const node = motif()
+
     expect(() =>
       prepareDesign(
         draft([{ ...node, placements: [{ x: 1, y: 1, width: 20 }] }]),
@@ -558,6 +604,7 @@ describe('exact 2D vector patterns', () => {
 it('projects children of an explicitly keyed container using the same camera', () => {
   const unnamed = prepareDesign(draft([pattern()]), 'same')
   const named = prepareDesign({ ...draft([pattern()]), key: 'facade' }, 'same')
+
   expect(named.entries.slice(1)).toEqual(unnamed.entries.slice(1))
   expect(named.keyToId.facade).toBe(named.rootId)
 })
@@ -571,6 +618,7 @@ describe('construction budget recovery diagnostics', () => {
       width: 1,
       height: 1
     })
+
     const children = Array.from({ length: 2 }, (_, group) => ({
       type: 'group',
       key: `group-${group}`,
@@ -580,6 +628,7 @@ describe('construction budget recovery diagnostics', () => {
       )
     }))
     const result = constructDesign(draft(children))
+
     expect(result.sourceWork).toMatchObject({
       batches: 2,
       nodes: 1003,
@@ -595,6 +644,7 @@ describe('construction budget recovery diagnostics', () => {
       width: 1,
       height: 1
     }
+
     for (let level = 0; level < 11; level++) {
       child = {
         type: 'group',
@@ -603,6 +653,7 @@ describe('construction budget recovery diagnostics', () => {
         children: [child]
       }
     }
+
     expect(() => constructDesign(draft([child]))).toThrow(
       'depth 13 exceeds 12 per artifact; reduce container nesting without changing visible geometry'
     )
@@ -627,6 +678,7 @@ it('expands explicitly typed and implicit vector templates to identical geometry
     ],
     fill: '#123456'
   }
+
   const source = (value: unknown) => ({
     type: 'group',
     key: 'drawing',
@@ -644,6 +696,7 @@ it('expands explicitly typed and implicit vector templates to identical geometry
       }
     ]
   })
+
   expect(constructDesign(source({ ...template, type: 'vector' }))).toEqual(
     constructDesign(source(template))
   )
@@ -663,6 +716,7 @@ it('retains one explicitly shared Fill across expanded faces', () => {
   const fills = result.entries
     .slice(1)
     .map(({ descriptor }) => descriptor.fills)
+
   expect(fills[0]).toEqual([expect.objectContaining({ color: '#224466' })])
   expect(fills.slice(1)).toEqual(
     Array.from({ length: 5 }, () => [result.sharedFillIds?.glass])
@@ -681,6 +735,7 @@ describe('cooperative construction', () => {
       'stable-root',
       controller.signal
     )
+
     setImmediate(() => controller.abort(new Error('Cancelled construction')))
     await expect(pending).rejects.toThrow('Cancelled construction')
     expect(input).toEqual(before)
@@ -689,6 +744,7 @@ describe('cooperative construction', () => {
     const input = draft([
       { ...pattern(), axes: [{ count: 2200, step: { x: 1, y: 0, z: 0 } }] }
     ])
+
     expect(
       await constructDesignAsync(
         input,
@@ -710,8 +766,10 @@ it('counts independent faces separately while preserving expanded and primitive 
       }))
     }
   ])
+
   expect(inspectDesignBudget(input)).toBeUndefined()
   const result = constructDesign(input)
+
   expect(result.sourceWork).toMatchObject({
     nodes: 5002,
     pathCommands: 20004,
@@ -764,6 +822,7 @@ it('preserves sparse instance indices and palette phase beyond one work window',
     string,
     unknown
   >[]
+
   expect(result).toHaveLength(1100)
   expect(result[1099]).toMatchObject({
     key: 'windows-2198-pane',
@@ -801,11 +860,13 @@ it.each(['cell-major', 'motif-major'])(
       motifs,
       order
     }
+
     const map = (u: number, v: number) => ({
       x: -50 + 10 * v + (100 - 20 * v) * u,
       y: 0,
       z: 300 * v
     })
+
     const cells = Array.from({ length: 750 }, (_, i) => i)
     const pairs =
       order === 'cell-major'
@@ -820,12 +881,14 @@ it.each(['cell-major', 'motif-major'])(
         map(((cell % 25) + u) / 25, (Math.floor(cell / 25) + v) / 30)
       )
     }))
+
     const make = (children: unknown[]) => ({
       ...draft(children),
       type: 'group',
       width: undefined,
       height: undefined
     })
+
     const actual = constructDesign(make([grid]), 'stable')
     const expected = constructDesign(make(explicit), 'stable')
     const a = actual.draft.children as {
@@ -848,6 +911,7 @@ it.each(['cell-major', 'motif-major'])(
       height: number
       rings: { x: number; y: number }[][]
     }[]
+
     expect(a).toHaveLength(3000)
     for (let i = 0; i < a.length; i++) {
       expect({ key: a[i].key, name: a[i].name, fill: a[i].fill }).toEqual({
@@ -858,11 +922,13 @@ it.each(['cell-major', 'motif-major'])(
       for (const field of ['x', 'y', 'width', 'height'] as const) {
         expect(a[i][field]).toBeCloseTo(b[i][field], 9)
       }
+
       for (let j = 0; j < 4; j++) {
         expect(a[i].rings[0][j].x).toBeCloseTo(b[i].rings[0][j].x, 9)
         expect(a[i].rings[0][j].y).toBeCloseTo(b[i].rings[0][j].y, 9)
       }
     }
+
     expect(actual.sourceWork.projectionCalls).toBe(4)
     expect(actual.sourceWork.pathCommands).toBe(20)
     expect(JSON.stringify(grid).length).toBeLessThan(
@@ -875,6 +941,7 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
   const grids = [0, 1].map((side) => {
     const orient = (x: number, y: number, z: number) =>
       side === 0 ? { x, y, z } : { x: y, y: x, z }
+
     return {
       type: 'surface-grid',
       key: `side${side}`,
@@ -917,6 +984,7 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
       ]
     }
   })
+
   const envelope = (children: unknown[]) => ({
     type: 'group',
     name: 'Recorded facade',
@@ -924,10 +992,12 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
     fillTemplates: recordedFacade.fillTemplates,
     children
   })
+
   const source = envelope(recordedFacade.faces)
   const compact = envelope(grids)
   const actual = constructDesign(compact, 'root')
   const expected = constructDesign(source, 'root')
+
   interface Vector {
     key: string
     fill: unknown
@@ -939,15 +1009,19 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
   }
   const vectors = actual.draft.children as Vector[]
   const originals = expected.draft.children as Vector[]
+
   expect(vectors).toHaveLength(3000)
   for (let i = 0; i < vectors.length; i++) {
     const sourceKey = /^basefine(g|tr)([01])-(\d+)-(\d+)$/.exec(
       originals[i].key
     )
+
     if (!sourceKey) {
       throw new Error('Recorded face key is invalid')
     }
+
     const [, motif, side, row, column] = sourceKey
+
     expect(vectors[i].key).toBe(
       `side${side}-${Number(row) * 30 + Number(column)}-${motif === 'g' ? 'glass' : 'trim'}`
     )
@@ -955,6 +1029,7 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
     for (const field of ['x', 'y', 'width', 'height'] as const) {
       expect(vectors[i][field]).toBeCloseTo(originals[i][field], 8)
     }
+
     for (let j = 0; j < 4; j++) {
       expect(vectors[i].rings[0][j].x).toBeCloseTo(
         originals[i].rings[0][j].x,
@@ -966,6 +1041,7 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
       )
     }
   }
+
   expect(actual.sourceWork.projectionCalls).toBe(12)
   expect(expected.sourceWork.projectionCalls).toBe(12000)
   expect(JSON.stringify(compact).length).toBeLessThan(
@@ -985,6 +1061,7 @@ it('preserves every saved ornament contour, material and painter position with e
   const expected = before.draft.children as Record<string, unknown>[]
   const actual = after.draft.children as Record<string, unknown>[]
   const budget = 64 * Number.EPSILON * 100000
+
   // The coordinate contract bounds both world/projected values to 100,000.
   const close = (a: unknown, b: unknown): void => {
     if (typeof a === 'number' && typeof b === 'number') {
@@ -1004,6 +1081,7 @@ it('preserves every saved ornament contour, material and painter position with e
       assert.deepEqual(a, b)
     }
   }
+
   expect(actual).toHaveLength(output.elementCount - 1)
   expect(before.sourceWork.projectionCalls).toBe(
     output.sourceWork.projectionCalls
@@ -1013,6 +1091,7 @@ it('preserves every saved ornament contour, material and painter position with e
   )
   input.draft.children.forEach((face, index) => {
     const prototype = compact.children[0].faces[index % 44]
+
     expect(face.key).toBe(correspondence[index].original)
     expect(face.fill).toEqual(prototype.fill)
     expect(face.vertices).toHaveLength(prototype.vertices.length)
@@ -1029,6 +1108,7 @@ it('preserves every saved ornament contour, material and painter position with e
   })
   const canonical = prepareDesign(compact)
   const explicit = prepareDesign(input.draft)
+
   expect(admitPreparedDesign(JSON.parse(JSON.stringify(canonical)))).toEqual(
     canonical
   )
@@ -1036,18 +1116,23 @@ it('preserves every saved ornament contour, material and painter position with e
   for (let i = 0; i < canonical.entries.length; i++) {
     const a = canonical.entries[i].descriptor,
       b = explicit.entries[i].descriptor
+
     for (const k of ['x', 'y', 'width', 'height']) {
       close(a[k], b[k])
     }
+
     if (i) {
       const { id: _a, ...fill } = (a.fills as { id: string }[])[0]
       const { id: _b, ...other } = (b.fills as { id: string }[])[0]
+
       close(fill, other)
     }
   }
+
   const ids = canonical.entries
     .slice(1)
     .map((e) => (e.descriptor.fills as { id: string }[])[0].id)
+
   expect(new Set(ids).size).toBe(352)
   expect(input).toEqual(original)
   expect(after.sourceWork.projectionCalls).toBeLessThan(
@@ -1059,6 +1144,7 @@ it('preserves every saved ornament contour, material and painter position with e
   const compactBytes = Buffer.byteLength(
     JSON.stringify({ ...input, draft: compact })
   )
+
   expect(compactBytes).toBeLessThan(inputBytes / 4)
   context.task.meta.representationWork = {
     inputBytes,
@@ -1114,6 +1200,7 @@ const equivalentValue = (actual: unknown, expected: unknown) => {
 it('expands the recorded mixed component once per template with equivalent geometry and fewer input bytes', () => {
   const input = compactComponent()
   const before = structuredClone(input)
+
   expect(Buffer.byteLength(JSON.stringify(input))).toBeLessThan(
     Buffer.byteLength(JSON.stringify(translatedComponent.draft)) * 0.65
   )
@@ -1121,9 +1208,11 @@ it('expands the recorded mixed component once per template with equivalent geome
   const explicit = constructDesign(translatedComponent.draft, 'root')
   const nodes = actual.draft.children as Record<string, unknown>[]
   const originals = explicit.draft.children as Record<string, unknown>[]
+
   expect(nodes).toHaveLength(1778)
   nodes.forEach(({ key, name, ...node }, index) => {
     const { key: _key, name: _name, ...expected } = originals[index]
+
     equivalentValue(node, expected)
     expect(key).toMatch(/^component-[01]-/)
     expect(name).toContain('Repeated component')
@@ -1131,6 +1220,7 @@ it('expands the recorded mixed component once per template with equivalent geome
   expect(new Set(nodes.map((node) => node.key)).size).toBe(nodes.length)
   expect(input).toEqual(before)
   const one = constructDesign(compactComponent(1), 'root')
+
   expect(actual.sourceWork.nodes).toBe(one.sourceWork.nodes)
   expect(actual.sourceWork.pathCommands).toBe(one.sourceWork.pathCommands)
   expect(actual.sourceWork.projectionCalls).toBe(
@@ -1140,6 +1230,7 @@ it('expands the recorded mixed component once per template with equivalent geome
     explicit.sourceWork.projectionCalls
   )
   const prepared = prepareDesign(input, 'mixed')
+
   expect(prepared.entries).toHaveLength(1779)
   expect(
     prepared.entries
@@ -1150,6 +1241,7 @@ it('expands the recorded mixed component once per template with equivalent geome
 
 it('budgets selected mixed components before compilation without treating them as one node', () => {
   const issue = inspectDesignBudget(compactComponent(20))
+
   expect(issue?.budget.observed.expandedNodes).toBe(17781)
   expect(issue?.budget.observed.expandedPathCommands).toBe(71120)
   expect(issue?.budget.lowerBound).toBe(false)
@@ -1162,10 +1254,12 @@ it('budgets selected mixed components before compilation without treating them a
       }
     ]
   }
+
   expect(inspectDesignBudget(input)).toBeUndefined()
   const output = constructDesign(input, 'root').draft.children as {
     key: string
   }[]
+
   expect(output).toHaveLength(1778)
   expect(output[0].key).toContain('component-3-')
   expect(output.at(-1)?.key).toContain('component-4-')
@@ -1239,11 +1333,13 @@ it.each(['cell-major', 'motif-major'])(
         y: 3,
         z: 4 + (index % 2) * 12
       }
+
       const move = (p: { x: number; y: number; z: number }) => ({
         x: p.x + offset.x,
         y: p.y + offset.y,
         z: p.z + offset.z
       })
+
       return [
         {
           ...members[0],
@@ -1264,9 +1360,11 @@ it.each(['cell-major', 'motif-major'])(
     )
     const a = actual.draft.children as Record<string, unknown>[]
     const b = expected.draft.children as Record<string, unknown>[]
+
     expect(a).toHaveLength(27)
     a.forEach(({ key, name: _name, ...node }, i) => {
       const { key: _key, name: _other, ...other } = b[i]
+
       equivalentValue(node, other)
       expect(key).toMatch(new RegExp(`^windows-${1 + Math.floor(i / 9)}-`))
     })
@@ -1298,6 +1396,7 @@ it.each([
   'rejects ambiguous, nested, transformed or colliding mixed components %j',
   (patch) => {
     const input = compactComponent(1)
+
     expect(() =>
       constructDesign({
         ...input,
@@ -1309,9 +1408,11 @@ it.each([
 
 it('does not traverse unsupported recursive members in structural admission', () => {
   let member: unknown = pattern()
+
   for (let i = 0; i < 20000; i++) {
     member = { ...pattern(), faces: undefined, members: [member] }
   }
+
   expect(() => inspectDesignBudget(draft([member]))).not.toThrow()
   expect(() => constructDesign(draft([member]))).toThrow(/members support/)
 })
@@ -1324,6 +1425,7 @@ it('preserves exact mixed object capacity, rejects excess and translated extent,
     axes: [{ count: 9999, step: { x: 0, y: 0, z: 0 } }],
     members: [{ ...face(), type: 'projected-face' }]
   }
+
   expect(inspectDesignBudget(draft([single]))).toBeUndefined()
   expect(constructDesign(draft([single])).draft.children).toHaveLength(9999)
   expect(
@@ -1342,6 +1444,7 @@ it('preserves exact mixed object capacity, rejects excess and translated extent,
   const before = structuredClone(input)
   const controller = new AbortController()
   const pending = constructDesignAsync(input, 'root', controller.signal)
+
   controller.abort(new Error('Cancelled mixed component'))
   await expect(pending).rejects.toThrow('Cancelled mixed component')
   expect(input).toEqual(before)
@@ -1365,8 +1468,10 @@ it('does not charge mixed grid templates twice against the expanded artifact bud
     },
     { type: 'rect', key: 'extra', name: 'Extra', width: 1, height: 1 }
   ])
+
   expect(inspectDesignBudget(input)).toBeUndefined()
   const result = constructDesign(input)
+
   expect(result.draft.children).toHaveLength(9999)
   expect(result.sourceWork.expansionWork.nodes).toBe(10000)
 })
@@ -1403,8 +1508,10 @@ it('validates grid projected extent after component translation, like face templ
   >[]
   const expected = constructDesign({ ...draft([grid]), projection }, 'root')
     .draft.children as Record<string, unknown>[]
+
   actual.forEach(({ key: _key, name: _name, ...node }, index) => {
     const { key: _other, name: _otherName, ...other } = expected[index]
+
     equivalentValue(node, other)
   })
 })
@@ -1412,12 +1519,14 @@ it('validates grid projected extent after component translation, like face templ
 it('preserves saved component layers, independent exceptions and bounded grid ranges', () => {
   const source = componentSelection.massing
   const compact = componentSelection.compactMassing
+
   const compare = (
     actual: ReturnType<typeof constructDesign>,
     expected: ReturnType<typeof constructDesign>
   ) => {
     const nodes = actual.draft.children as Record<string, unknown>[]
     const originals = expected.draft.children as Record<string, unknown>[]
+
     expect(nodes).toHaveLength(originals.length)
     nodes.forEach(({ key: _key, name: _name, ...node }, index) => {
       const {
@@ -1425,11 +1534,14 @@ it('preserves saved component layers, independent exceptions and bounded grid ra
         name: _originalName,
         ...original
       } = originals[index]
+
       equivalentValue(node, original)
     })
     expect(new Set(nodes.map((node) => node.key)).size).toBe(nodes.length)
   }
+
   const before = structuredClone(componentSelection)
+
   compare(constructDesign(compact, 'root'), constructDesign(source, 'root'))
   expect(compact.children.slice(0, 6)).toEqual(source.children.slice(0, 6))
   expect(compact.children.slice(7)).toEqual(source.children.slice(78))
@@ -1441,6 +1553,7 @@ it('preserves saved component layers, independent exceptions and bounded grid ra
     ...componentSelection.grids,
     children: componentSelection.grids.children.slice(2, 18)
   }
+
   expect(inspectDesignBudget(grids)?.budget.observed.expandedNodes).toBe(12801)
   expect(() => constructDesign(grids)).toThrow()
   expect(Buffer.byteLength(JSON.stringify(grids))).toBeLessThan(
@@ -1453,6 +1566,7 @@ it('preserves saved component layers, independent exceptions and bounded grid ra
         { ...grids.children[0], instanceRanges: [{ start, end: start + 4 }] }
       ]
     }
+
     expect(inspectDesignBudget(bounded)).toBeUndefined()
     compare(
       constructDesign(bounded, 'root'),
@@ -1465,6 +1579,7 @@ it('preserves saved component layers, independent exceptions and bounded grid ra
       )
     )
   }
+
   expect(componentSelection).toEqual(before)
 })
 
@@ -1480,6 +1595,7 @@ it('preserves recorded root materials and independent siblings around translated
     ]
   }
   const before = structuredClone(compositionMaterials)
+
   expect(inspectDesignBudget(original)?.budget.observed.expandedNodes).toBe(
     13117
   )
@@ -1510,8 +1626,10 @@ it('preserves recorded root materials and independent siblings around translated
       count: 6083
     }
   ]
+
   for (const pair of pairs) {
     const source = { ...original, children: pair.actual }
+
     expect(inspectDesignBudget(source)).toBeUndefined()
     const actual = constructDesign(source, 'root').draft.children as Record<
       string,
@@ -1521,14 +1639,17 @@ it('preserves recorded root materials and independent siblings around translated
       { ...original, children: pair.expected },
       'root'
     ).draft.children as Record<string, unknown>[]
+
     expect(actual).toHaveLength(pair.count)
     expect(actual).toHaveLength(expected.length)
     actual.forEach(({ key: _key, name: _name, ...node }, index) => {
       const { key: _oldKey, name: _oldName, ...other } = expected[index]
+
       equivalentValue(node, other)
     })
     expect(new Set(actual.map((node) => node.key)).size).toBe(actual.length)
   }
+
   expect(compositionMaterials).toEqual(before)
   process.stdout.write(
     JSON.stringify({

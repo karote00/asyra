@@ -15,6 +15,7 @@ const admitStructured = (
     name: 'structured',
     inputSchema: schema
   })
+
   return admitAiRecipe(
     {
       format: 1,
@@ -57,6 +58,7 @@ describe('registered structured contract constraints', () => {
         }
       }
       const schema = { [mode]: [flat, opaque] }
+
       expect(admitStructured(schema, flat, binding)).toMatchObject({ ok: true })
       for (const source of [
         object({ kind: { type: 'string', enum: ['curved'] }, value: number }),
@@ -68,6 +70,7 @@ describe('registered structured contract constraints', () => {
       ]) {
         expect(admitStructured(schema, source, binding).ok).toBe(false)
       }
+
       for (const sibling of [
         { ...opaque, properties: { kind: { const: 'flat' }, value: number } },
         { allOf: [opaque] },
@@ -91,16 +94,19 @@ describe('registered structured contract constraints', () => {
       $defs: {
         get node() {
           definitionReads += 1
+
           return node
         }
       }
     })
+
     for (let index = 0; index < 100; index += 1) {
       expect(recipeSchemaAt(schema, '/first/next/next/value').type).toBe(
         'number'
       )
       expect(recipeSchemaAt(schema, '/second/next/value').type).toBe('number')
     }
+
     expect(definitionReads).toBe(1)
   })
   it('preserves common and branch constraints instead of replacing overlapping fields', () => {
@@ -118,6 +124,7 @@ describe('registered structured contract constraints', () => {
         value: { kind: 'input', path: '/value' }
       }
     }
+
     expect(
       admitStructured(
         schema,
@@ -171,6 +178,7 @@ describe('registered structured contract constraints', () => {
 
   it('proves strict numeric bounds and string patterns without relaxing them', () => {
     const input = { kind: 'input', path: '' }
+
     expect(
       admitStructured(
         { type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 10 },
@@ -213,6 +221,7 @@ describe('registered structured contract constraints', () => {
       ...object({ child: { $ref: '#/$defs/node' } }),
       $defs: { node: object({ value: reference }) }
     }
+
     expect(
       admitStructured(schema, reference, {
         kind: 'object',
@@ -248,6 +257,7 @@ const object = (properties: Record<string, unknown>) => ({
   required: Object.keys(properties),
   additionalProperties: false
 })
+
 const number = { type: 'number' }
 const reference = { type: 'string', 'x-runtime-value': 'document' }
 const find = createAiToolContract({
@@ -276,6 +286,7 @@ const edit = createAiToolContract({
   composition: 'allowed',
   lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' }
 })
+
 const proposal = (): {
   format: number
   name: string
@@ -324,16 +335,20 @@ const proposal = (): {
   ],
   output: { kind: 'step', step: 'change', path: '' }
 })
+
 const options = (overrides = {}) => ({
   resolve: (name: string) => {
     if (name === 'find') {
       return find
     }
+
     if (name === 'edit') {
       return edit
     }
+
     return undefined
   },
+
   validate: vi.fn((): string | undefined => undefined),
   limits: {
     steps: 8,
@@ -344,12 +359,15 @@ const options = (overrides = {}) => ({
   },
   ...overrides
 })
+
 const rejected = (input: unknown, overrides = {}) => {
   const result = admitAiRecipe(input, options(overrides))
+
   expect(result.ok).toBe(false)
   if (result.ok) {
     throw new Error('Expected admission issues')
   }
+
   return result
 }
 
@@ -357,10 +375,12 @@ describe('typed recipe admission', () => {
   it('admits a finite typed chain and derives immutable effects without execution', () => {
     const input = proposal()
     const result = admitAiRecipe(input, options())
+
     expect(result.ok).toBe(true)
     if (!result.ok) {
       throw new Error(JSON.stringify(result))
     }
+
     expect(result.value.contract).toMatchObject({
       effect: 'mutation',
       resources: ['document'],
@@ -379,6 +399,7 @@ describe('typed recipe admission', () => {
 
   it('reports the exact bad output binding without guessing a replacement', () => {
     const input = proposal()
+
     input.steps[1].input.fields.target = {
       kind: 'step',
       step: 'locate',
@@ -401,12 +422,14 @@ describe('typed recipe admission', () => {
       ...find,
       outputSchema: { ...object({ target: reference }), required: [] }
     })
+
     expect(
       rejected(proposal(), {
         resolve: (name: string) => (name === 'find' ? optional : edit)
       }).issues[0].code
     ).toBe('binding')
     const opaque = createAiToolContract({ ...find, outputSchema: true })
+
     expect(
       rejected(proposal(), {
         resolve: (name: string) => (name === 'find' ? opaque : edit)
@@ -416,6 +439,7 @@ describe('typed recipe admission', () => {
 
   it('rejects captured document references but accepts fresh typed input', () => {
     const input = proposal()
+
     input.steps[1].input.fields.target = {
       kind: 'literal',
       value: 'current-id'
@@ -434,6 +458,7 @@ describe('typed recipe admission', () => {
 
   it('rejects future outputs, duplicate identities and unknown dependency revisions', () => {
     const input = proposal()
+
     input.steps[0].input.fields.query = {
       kind: 'step',
       step: 'change',
@@ -451,12 +476,14 @@ describe('typed recipe admission', () => {
       ...find,
       composition: 'control-plane'
     })
+
     expect(
       rejected(proposal(), {
         resolve: (name: string) => (name === 'find' ? denied : edit)
       }).issues[0].code
     ).toBe('dependency')
     const input = proposal()
+
     input.steps[0].tool = input.name
     expect(
       rejected(input).issues.some((item) => item.code === 'dependency')
@@ -465,22 +492,26 @@ describe('typed recipe admission', () => {
 
   it('rejects unsupported keywords and never weakens the host validator', () => {
     const input = proposal()
+
     input.inputSchema.properties.query = { type: 'string', pattern: '^x' }
     expect(rejected(input).issues[0].code).toBe('schema')
     input.inputSchema.properties.query = { type: 'string' }
     input.steps[0].input.fields.query = { kind: 'literal', value: 4 }
     const validate = vi.fn(() => 'Expected string')
+
     expect(rejected(input, { validate }).issues[0].code).toBe('binding')
     expect(validate).toHaveBeenCalledOnce()
   })
 
   it('returns bounded independent issues with an explicit omitted count', () => {
     const input = proposal()
+
     input.steps[0].tool = 'missing-a'
     input.steps[1].tool = 'missing-b'
     const result = rejected(input, {
       limits: { ...options().limits, issues: 1 }
     })
+
     expect(result.issues).toHaveLength(1)
     expect(result.omittedIssues).toBeGreaterThan(0)
   })
@@ -513,6 +544,7 @@ describe('typed recipe admission', () => {
 
   it('rejects non-JSON and executable values without running them', () => {
     const run = vi.fn()
+
     expect(rejected({ ...proposal(), output: run }).issues[0].code).toBe(
       'format'
     )
@@ -527,6 +559,7 @@ describe('binding boundary preservation', () => {
       inputSchema: target,
       outputSchema: target
     })
+
     return admitAiRecipe(
       {
         ...proposal(),
@@ -599,6 +632,7 @@ describe('binding boundary preservation', () => {
       ...object({ value: { type: 'string' } }),
       'x-runtime-value': 'secret'
     }
+
     expect(bindInput(source, { type: 'string' }, '/value').ok).toBe(false)
     expect(
       bindInput(
@@ -611,6 +645,7 @@ describe('binding boundary preservation', () => {
 
   it('checks nested literals for captured values and rejects defaults', () => {
     const input = proposal()
+
     input.steps[1].input = {
       kind: 'object',
       fields: {
@@ -627,6 +662,7 @@ describe('binding boundary preservation', () => {
 
   it('reports throwing validators and resolvers as repairable failures', () => {
     const input = proposal()
+
     input.steps[0].input.fields.query = { kind: 'literal', value: 'window' }
     expect(
       rejected(input, {
@@ -669,6 +705,7 @@ it('publishes the exact submission fields and binding variants used by admission
       }
     }
   }
+
   expect(schema.required).toEqual(recipeFormatKeys.proposal)
   expect(Object.keys(schema.properties)).toEqual([
     ...recipeFormatKeys.proposal,
@@ -679,6 +716,7 @@ it('publishes the exact submission fields and binding variants used by admission
       recipeFormatKeys.bindings[variant.properties.kind.const]
     )
   }
+
   expect(
     schema.$defs.binding.oneOf.map((item) => item.properties.kind.const)
   ).toEqual(['literal', 'input', 'state', 'step', 'object', 'array'])
@@ -706,6 +744,7 @@ describe('registered dependency schema projection', () => {
       }),
       additionalProperties: true
     }
+
     expect(admitAiRecipe(proposal(), chain(schema)).ok).toBe(true)
     expect(
       admitAiRecipe(proposal(), chain({ ...schema, required: ['ignored'] })).ok
@@ -734,6 +773,7 @@ describe('registered dependency schema projection', () => {
         object({ target: reference })
       ]
     }
+
     expect(admitAiRecipe(proposal(), chain(schema)).ok).toBe(true)
     expect(
       admitAiRecipe(
@@ -755,6 +795,7 @@ describe('registered dependency schema projection', () => {
 
   it('selects a disjoint destination using a literal discriminator and preserves required fields', () => {
     const input = proposal()
+
     input.steps[1].input.fields.mode = { kind: 'literal', value: 'edit' }
     const schema = {
       oneOf: [
@@ -762,6 +803,7 @@ describe('registered dependency schema projection', () => {
         object({ mode: { enum: ['release'] }, target: reference })
       ]
     }
+
     expect(admitAiRecipe(input, chain(find.outputSchema, schema)).ok).toBe(true)
     delete input.steps[1].input.fields.value
     expect(admitAiRecipe(input, chain(find.outputSchema, schema)).ok).toBe(
@@ -771,6 +813,7 @@ describe('registered dependency schema projection', () => {
 
   it('selects bound discriminators without erasing uncertainty or captured values', () => {
     const input = proposal()
+
     input.inputSchema.properties.mode = { type: 'string', enum: ['edit'] }
     input.steps[1].input.fields.mode = { kind: 'input', path: '/mode' }
     input.inputSchema.required.push('mode')
@@ -780,6 +823,7 @@ describe('registered dependency schema projection', () => {
         object({ mode: { const: 'release' }, target: reference })
       ]
     }
+
     expect(admitAiRecipe(input, chain(find.outputSchema, schema)).ok).toBe(true)
     input.steps[1].input.fields.target = {
       kind: 'literal',
@@ -804,12 +848,14 @@ describe('registered dependency schema projection', () => {
 
   it('rejects ambiguous unions and additional constraints on union siblings', () => {
     const input = proposal()
+
     input.steps[1].input.fields.mode = { kind: 'literal', value: 'edit' }
     const branch = object({
       mode: { const: 'edit' },
       target: reference,
       value: number
     })
+
     expect(
       admitAiRecipe(
         input,
@@ -826,6 +872,7 @@ describe('registered dependency schema projection', () => {
 
   it('keeps opaque fields unusable even when given a literal', () => {
     const input = proposal()
+
     input.steps[1].input.fields.value = { kind: 'literal', value: 'x' }
     expect(
       admitAiRecipe(
@@ -840,6 +887,7 @@ describe('registered dependency schema projection', () => {
 
   it('accepts omitted optional required arrays but does not invent optional source paths', () => {
     const input = proposal()
+
     input.steps[1].input.fields.settings = { kind: 'object', fields: {} }
     const schema = object({
       target: reference,
@@ -850,16 +898,19 @@ describe('registered dependency schema projection', () => {
         additionalProperties: false
       }
     })
+
     expect(admitAiRecipe(input, chain(find.outputSchema, schema)).ok).toBe(true)
   })
 
   it('rejects an open source object forwarded into a closed destination', () => {
     const input = proposal()
+
     input.steps[1].input = { kind: 'step', step: 'locate', path: '' } as never
     const source = {
       ...object({ target: reference, value: number }),
       additionalProperties: true
     }
+
     expect(admitAiRecipe(input, chain(source)).ok).toBe(false)
   })
 
@@ -870,6 +921,7 @@ describe('registered dependency schema projection', () => {
       value: number,
       tags: { type: 'array', items: { type: 'string' }, uniqueItems: true }
     })
+
     input.steps[1].input.fields.tags = {
       kind: 'array',
       items: [
@@ -893,8 +945,10 @@ describe('registered dependency schema projection', () => {
 
 it('preserves runtime classifications carried by a registered union wrapper', () => {
   const input = proposal()
+
   input.steps[1].input.fields.value = { kind: 'input', path: '/value' }
   const union = { anyOf: [{ type: 'number' }], 'x-runtime-value': 'secret' }
+
   const resolve = (name: string) =>
     name === 'find'
       ? find
@@ -902,6 +956,7 @@ it('preserves runtime classifications carried by a registered union wrapper', ()
           ...edit,
           inputSchema: object({ target: reference, value: union })
         })
+
   expect(admitAiRecipe(input, options({ resolve })).ok).toBe(false)
   input.inputSchema.properties.value = {
     type: 'number',
@@ -923,16 +978,21 @@ describe('registered ordered receipt bindings', () => {
         }
       })
     })
+
   const bound = (path = '/receipts/0/target') => {
     const input = proposal()
+
     input.steps[1].input.fields.target = { kind: 'step', step: 'locate', path }
+
     return input
   }
+
   const resolve = (contract: ReturnType<typeof receipt>) => (name: string) =>
     name === 'find' ? contract : edit
 
   it('binds a guaranteed primary receipt independently of later diagnostics', () => {
     const contract = receipt(object({ target: reference }))
+
     expect(
       admitAiRecipe(bound(), options({ resolve: resolve(contract) })).ok
     ).toBe(true)
@@ -960,6 +1020,7 @@ describe('registered ordered receipt bindings', () => {
 
   it('does not treat a heterogeneous prefix as a homogeneous whole array', () => {
     const input = proposal()
+
     input.steps.splice(1)
     input.outputSchema = { type: 'array', items: { type: 'string' } } as never
     input.output = { kind: 'step', step: 'locate', path: '/receipts' }
@@ -988,6 +1049,7 @@ describe('registered ordered receipt bindings', () => {
       }
     })
     const input = proposal()
+
     input.steps[0].input = { kind: 'literal', value: ['old-request'] } as never
     expect(
       admitAiRecipe(input, options({ resolve: resolve(contract) })).ok
@@ -1006,11 +1068,14 @@ it('checks constructed items against registered positional constraints', () => {
     }
   })
   const input = proposal()
+
   input.steps[0].input = {
     kind: 'array',
     items: [{ kind: 'input', path: '/query' }]
   } as never
+
   const resolve = (name: string) => (name === 'find' ? contract : edit)
+
   expect(admitAiRecipe(input, options({ resolve })).ok).toBe(false)
   input.steps[0].input = {
     kind: 'array',
@@ -1028,6 +1093,7 @@ it('requires fresh typed values for undeclared fields of an open registered obje
     properties: { label: { type: 'string' } },
     additionalProperties: true
   }
+
   expect(
     admitStructured(schema, number, {
       kind: 'literal',
@@ -1038,12 +1104,14 @@ it('requires fresh typed values for undeclared fields of an open registered obje
     kind: 'literal',
     value: { label: 'Part', ref: 'prior-document-id' }
   })
+
   expect(captured.ok).toBe(false)
   if (!captured.ok) {
     expect(
       captured.issues.some((issue) => issue.code === 'captured-value')
     ).toBe(true)
   }
+
   expect(
     admitStructured(
       schema,
@@ -1063,6 +1131,7 @@ describe('bounded repair admission', () => {
     progress: { type: 'string', minLength: 1 },
     remaining: scalar
   })
+
   const fixture = () => {
     const common = {
       description: 'A deterministic scalar operation.',
@@ -1131,10 +1200,13 @@ describe('bounded repair admission', () => {
       },
       output: { kind: 'step', step: 'verified', path: '/state' }
     }
+
     const admit = () =>
       admitAiRecipe(proposal, {
         resolve: (name) => contracts.get(name),
+
         validate: () => undefined,
+
         limits: {
           bytes: 20000,
           steps: 8,
@@ -1143,12 +1215,14 @@ describe('bounded repair admission', () => {
           issues: 20
         }
       })
+
     return { contracts, proposal, admit }
   }
 
   it('admits a typed bounded repair with owner-declared check semantics', () => {
     const { admit } = fixture()
     const result = admit()
+
     expect(result).toMatchObject({
       ok: true,
       value: { contract: { effect: 'mutation' } }
@@ -1171,31 +1245,39 @@ describe('bounded repair admission', () => {
   ])('rejects a %s verification contract without executing it', (mode) => {
     const { contracts, admit } = fixture()
     const original = contracts.get('check')
+
     if (!original) {
       throw new Error('Missing checker')
     }
+
     const replacement = { ...original, outputSchema: structuredClone(outcome) }
+
     if (mode === 'missing') {
       delete replacement.verification
     }
+
     if (mode === 'mutation') {
       replacement.effect = 'mutation'
     }
+
     if (mode === 'optional') {
       replacement.outputSchema.required = ['remaining']
     }
+
     if (mode === 'wrong-status') {
       replacement.outputSchema.properties.status = {
         type: 'string',
         enum: ['done']
       }
     }
+
     if (mode === 'empty-progress') {
       replacement.outputSchema.properties.progress = {
         type: 'string',
         minLength: 0
       }
     }
+
     // Malformed host descriptors must also fail admission, not just registration.
     contracts.set('check', {
       ...replacement,
@@ -1208,6 +1290,7 @@ describe('bounded repair admission', () => {
     'rejects invalid or over-budget rounds %s',
     (rounds) => {
       const { proposal, admit } = fixture()
+
       proposal.iteration.maxIterations = rounds
       expect(admit().ok).toBe(false)
     }
@@ -1222,9 +1305,11 @@ describe('bounded repair admission', () => {
     'captured-state'
   ])('rejects %s without weakening binding rules', (mode) => {
     const { proposal, admit } = fixture()
+
     if (mode === 'state-outside') {
       proposal.steps[0].input.kind = 'state'
     }
+
     if (mode === 'forward') {
       proposal.iteration.check.input = {
         kind: 'step',
@@ -1232,15 +1317,19 @@ describe('bounded repair admission', () => {
         path: ''
       } as never
     }
+
     if (mode === 'optional-repair-output') {
       proposal.output.step = 'correction'
     }
+
     if (mode === 'next-type') {
       proposal.iteration.next.path = '/missing'
     }
+
     if (mode === 'duplicate') {
       proposal.iteration.check.id = 'initial'
     }
+
     if (mode === 'captured-state') {
       proposal.iteration.stateSchema = {
         type: 'string',
@@ -1251,6 +1340,7 @@ describe('bounded repair admission', () => {
         value: 'old-request'
       } as never
     }
+
     expect(admit().ok).toBe(false)
   })
 })
@@ -1258,6 +1348,7 @@ describe('bounded repair admission', () => {
 it('admits fresh leased handles without accepting captured or plain request values', () => {
   const artifact = { type: 'string', 'x-runtime-value': 'request-artifact' }
   const request = { type: 'string', 'x-runtime-value': 'request' }
+
   expect(
     admitStructured(artifact, artifact, { kind: 'input', path: '' }).ok
   ).toBe(true)
@@ -1279,6 +1370,7 @@ it('preserves unique request selections through finite recipe input schemas', ()
     uniqueItems: true,
     items: { type: 'string', 'x-runtime-value': 'request' }
   }
+
   expect(admitStructured(schema, schema, { kind: 'input', path: '' }).ok).toBe(
     true
   )

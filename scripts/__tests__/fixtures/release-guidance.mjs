@@ -10,6 +10,7 @@ export function initializeGuidance(root, packages, artifacts) {
       encoding: 'utf8',
       stdio: 'pipe'
     }).trim()
+
   fs.writeFileSync(path.join(root, '.gitignore'), 'artifacts/\ntmp/\n')
   git('init', '-q')
   git('config', 'user.email', 'release-fixture@example.test')
@@ -20,12 +21,15 @@ export function initializeGuidance(root, packages, artifacts) {
   const sources = packages.map(
     (pkg) => `packages/${pkg.name.split('/')[1]}/package.json`
   )
+
   for (const source of sources) {
     const file = path.join(root, source)
     const value = JSON.parse(fs.readFileSync(file, 'utf8'))
+
     value.description = 'Candidate change'
     fs.writeFileSync(file, JSON.stringify(value))
   }
+
   const note = {
     change: 'candidate',
     owner: 'Framework',
@@ -35,6 +39,7 @@ export function initializeGuidance(root, packages, artifacts) {
     guides: [],
     reason: 'Internal contract preserved'
   }
+
   fs.writeFileSync(
     path.join(root, 'RELEASE_NOTES.md'),
     `\`\`\`update-note\n${JSON.stringify(note)}\n\`\`\`\n`
@@ -64,6 +69,8 @@ export function initializeGuidance(root, packages, artifacts) {
     deliveries
   })
   const evidencePath = path.join(root, 'tmp/framework-release-guidance.json')
+
   writeGuidance(evidencePath, evidence)
+
   return { git, baselineSha, sourceSha, deliveries, evidence, evidencePath }
 }

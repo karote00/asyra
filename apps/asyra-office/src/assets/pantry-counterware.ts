@@ -5,6 +5,7 @@ import { planter } from './plants'
 
 export const COUNTERTOP_REFERENCE =
   specification.sourceVariants.countertopReview
+
 const colorValue = (value: string) => Number.parseInt(value.slice(1), 16)
 
 /** Near-cylindrical pitcher with a recessed source-visible top insert and squared handle. */
@@ -33,14 +34,17 @@ export function pantryPitcher(
     [0, base]
   ]
   const body = lathe(profile, 64)
+
   for (let i = 0; i < body.positions.length; i += 3) {
     const x = body.positions[i],
       y = body.positions[i + 1],
       z = body.positions[i + 2]
     const side = Math.max(0, -x / (Math.hypot(x, y) || 1)) ** 14
     const rise = Math.max(0, (z / h - 0.62) / 0.38) ** 2
+
     body.positions[i] -= side * rise * spoutReach
   }
+
   const corner = COUNTERTOP_REFERENCE.pitcher.handleCornerRadius
   const x0 = r * 0.97,
     x1 = x0 + handleReach
@@ -50,25 +54,31 @@ export function pantryPitcher(
     [x0, 0, z1],
     [x1 - corner, 0, z1]
   ]
+
   for (let i = 1; i <= 8; i++) {
     const angle = Math.PI / 2 - (i * Math.PI) / 16
+
     path.push([
       x1 - corner + corner * Math.cos(angle),
       0,
       z1 - corner + corner * Math.sin(angle)
     ])
   }
+
   path.push([x1, 0, z0 + corner])
   for (let i = 1; i <= 8; i++) {
     const angle = (-i * Math.PI) / 16
+
     path.push([
       x1 - corner + corner * Math.cos(angle),
       0,
       z0 + corner + corner * Math.sin(angle)
     ])
   }
+
   path.push([x0, 0, z0])
   const recipe = COUNTERTOP_REFERENCE.pitcher
+
   return [
     part('vessel', body, color, 'ceramic', 0.55),
     part('handle', tube(path, handleRadius, 16), color, 'ceramic', 0.55),
@@ -103,6 +113,7 @@ export function pantryTumbler(
   color = colorValue(COUNTERTOP_REFERENCE.tumbler.color)
 ): AssetPart[] {
   const { radius: r, height: h, lidHeight: l } = COUNTERTOP_REFERENCE.tumbler
+
   return [
     part(
       'body',
@@ -153,6 +164,7 @@ export function pantryTumbler(
 
 export function pantryBrush(): AssetPart[] {
   const { height, shaftRadius, headRadii } = COUNTERTOP_REFERENCE.brush
+
   return [
     part(
       'brush-shaft',
@@ -195,9 +207,11 @@ export function pantryCounterPlant(kind: 'preparation' | 'sink'): AssetPart[] {
     kind === 'preparation'
       ? COUNTERTOP_REFERENCE.preparationPot.soilHeight
       : root
+
   return parts.map((p) => {
     if (kind === 'preparation' && (p.id === 'pot' || p.id === 'soil')) {
       const pot = COUNTERTOP_REFERENCE.preparationPot
+
       if (p.id === 'soil') {
         return placeParts(
           [
@@ -211,10 +225,12 @@ export function pantryCounterPlant(kind: 'preparation' | 'sink'): AssetPart[] {
           [0, 0, pot.soilHeight - 0.002]
         )[0]
       }
+
       const r = pot.radius,
         b = pot.baseRadius,
         h = pot.height,
         w = pot.wall
+
       return part(
         'pot',
         lathe(
@@ -235,9 +251,11 @@ export function pantryCounterPlant(kind: 'preparation' | 'sink'): AssetPart[] {
         0.82
       )
     }
+
     if (p.id === 'pot' || p.id === 'soil') {
       return p
     }
+
     const transform = (mesh: typeof p.mesh) => ({
       ...mesh,
       positions: mesh.positions.map((v, i) =>
@@ -246,6 +264,7 @@ export function pantryCounterPlant(kind: 'preparation' | 'sink'): AssetPart[] {
           : v * recipe.foliageWidth
       )
     })
+
     return {
       ...p,
       mesh: transform(p.mesh),

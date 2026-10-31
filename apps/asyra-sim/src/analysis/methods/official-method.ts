@@ -61,10 +61,12 @@ function deepFreeze<T>(input: T, seen = new WeakSet<object>()): T {
   if (!input || typeof input !== 'object' || seen.has(input)) {
     return input
   }
+
   seen.add(input)
   for (const value of Object.values(input)) {
     deepFreeze(value, seen)
   }
+
   return Object.freeze(input)
 }
 
@@ -96,15 +98,18 @@ export function runClearanceQueries(
   ) {
     throw new Error('Snapshot requests a different method or version')
   }
+
   if (!snapshot.pairs.length) {
     throw new Error('Snapshot has no analysis pairs')
   }
+
   if (
     snapshot.pairs.length > EXPERIMENT_RESOURCE_PROFILE.maxPairs ||
     snapshot.pairs.length > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves
   ) {
     throw new Error('Snapshot exceeds the analysis pair or evidence capacity')
   }
+
   const settings: Omit<QuerySettings, 'maxIntervals'> = {
     threshold: snapshot.rule.minimumClearance,
     distanceTolerance: snapshot.method.settings.distanceTolerance,
@@ -115,9 +120,11 @@ export function runClearanceQueries(
     remainingLeaves = EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves,
     evaluations = 0
   const pairs: OfficialPairEvidence[] = []
+
   for (const pair of snapshot.pairs) {
     checkpoint()
     let evidence: PairEvidence
+
     if (remaining <= 0) {
       evidence = unresolved(
         snapshot.interval[0],
@@ -144,11 +151,14 @@ export function runClearanceQueries(
       remaining -= evidence.evaluations
       evaluations += evidence.evaluations
     }
+
     remainingLeaves -= evidence.leaves.length
     const completed = deepFreeze({ pairId: pair.id, evidence })
+
     pairs.push(completed)
     onPair(completed)
   }
+
   return deepFreeze({
     version: 1,
     snapshotId: snapshot.snapshotId,

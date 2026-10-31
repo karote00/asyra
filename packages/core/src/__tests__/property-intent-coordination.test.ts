@@ -20,6 +20,7 @@ import { createElementPropertyIntentAPIs } from '../apis/property-intents.js'
 
 const type = 'intent-coordination-material'
 const ownerType = 'intent-coordination-element'
+
 beforeAll(() => {
   const config = {
     type,
@@ -27,6 +28,7 @@ beforeAll(() => {
     persistKeys: ['opacity', 'color'],
     valueKeys: ['opacity', 'color']
   }
+
   registerPropertySchema({
     type,
     fields: [
@@ -41,6 +43,7 @@ beforeAll(() => {
     config
   )
   const properties = [{ name: 'material', type }]
+
   elementPropertyRegistry.register(properties[0], ownerType)
   componentRegistry.register({
     type: ownerType,
@@ -57,8 +60,10 @@ beforeAll(() => {
     defaults: {}
   })
 })
+
 const setup = () => {
   const props = new PropsManager()
+
   props.load({
     source: {
       id: 'source',
@@ -69,6 +74,7 @@ const setup = () => {
     }
   })
   const scene = new SceneTree(props)
+
   scene.load({
     workspace: 'workspace',
     workspaceList: ['workspace'],
@@ -116,31 +122,42 @@ const setup = () => {
   const evidence: UpdateTransactionEvent[] = []
   const owner: TransactionOwner = {
     startTransaction: () => undefined,
+
     endTransaction: () => undefined,
+
     undo: () => undefined,
+
     redo: () => undefined,
+
     updateTransactionBatch: (events) => {
       evidence.push(...events)
     }
   }
+
   const run = <T>(fn: () => T): T => runWithTransactionOwner(owner, fn)
+
   const target = (elementId = 'a') => ({
     elementId,
     propertyName: 'material',
     path: []
   })
+
   return { props, scene, api, evidence, run, target }
 }
+
 describe('Canonical property intention coordination', () => {
   it('preserves isolated masks through source edits, reset, detach, sharing and reload', () => {
     const { props, scene, api, run, target } = setup()
+
     run(() =>
       api.updateElementPropertyTargets([
         { target: target(), values: { opacity: 0.2 } },
         { target: target('b'), values: { opacity: 0.6 } }
       ])
     )
+
     const read = () => api.readElementPropertyTargets([target(), target('b')])
+
     expect(read().map((r) => r.effective.opacity)).toEqual([0.2, 0.6])
     run(() =>
       api.updateSharedPropertySources([
@@ -155,9 +172,11 @@ describe('Canonical property intention coordination', () => {
     )
     expect(read()[0].effective.opacity).toBe(0.9)
     const oldRoot = scene.getElementById('a')?.props.getPropId('material')
+
     if (!oldRoot) {
       throw new Error('Missing canonical root')
     }
+
     run(() => api.detachElementPropertyTargets([target()]))
     expect(props.getPropertyById(oldRoot)).toBeUndefined()
     expect(read()[0].mode).toBe('independent')
@@ -174,8 +193,10 @@ describe('Canonical property intention coordination', () => {
     )
     expect(read()[0].effective.color).toBe('#445566')
     const reloadedProps = new PropsManager()
+
     reloadedProps.load(props.save())
     const reloadedScene = new SceneTree(reloadedProps)
+
     reloadedScene.load(scene.save())
     expect(reloadedScene.save()).toEqual(scene.save())
     expect(reloadedProps.save()).toEqual(props.save())
@@ -183,6 +204,7 @@ describe('Canonical property intention coordination', () => {
   it('rejects stale or later-invalid targets without a canonical or journal prefix', () => {
     const { props, scene, api, run, target, evidence } = setup()
     const before = { props: props.save(), scene: scene.save() }
+
     expect(() =>
       run(() =>
         api.updateElementPropertyTargets([

@@ -101,6 +101,7 @@ const registerProperties = () => {
     persistKeys: ['value'],
     valueKeys: ['value']
   }
+
   registerPropertyComponent(
     CANONICAL_PROPERTY_TYPE,
     createPropertyComponentFromConfig(config),
@@ -118,6 +119,7 @@ const add = (
     { id, type } as CreateElementData,
     parent
   )
+
   return sceneTree.getElementById(addedId) as ElementInstanceTypes
 }
 
@@ -132,6 +134,7 @@ const createCoreFacade = (factory: Factory): Core =>
     props: propsManager,
     render: {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1
     } as never,
     sceneTree,
@@ -164,11 +167,14 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const originalGet = root.get.bind(root)
     let oldMemberReads = 0
     const get = vi.spyOn(root, 'get')
+
     get.mockImplementation(((key: string) => {
       const value = originalGet(key as never)
+
       if (key !== 'children') {
         return value
       }
+
       return new Proxy(value as string[], {
         get(target, property, receiver) {
           if (property === Symbol.iterator) {
@@ -179,6 +185,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
               }
             }
           }
+
           return Reflect.get(target, property, receiver)
         }
       })
@@ -202,6 +209,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
         )
         expect(oldMemberReads).toBe(0)
       }
+
       expect(priorSnapshots.map((snapshot) => snapshot.length)).toEqual([
         0, 16, 32, 48, 64
       ])
@@ -224,6 +232,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       const root = sceneTree.currentWorkspace as GroupInstanceTypes & {
         addNewElements: (...args: unknown[]) => unknown
       }
+
       const create = (id: string) =>
         runWithTransactionOwner(factory.getTransactionOwner(), () =>
           runTransaction(() =>
@@ -233,10 +242,12 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
             )
           )
         )
+
       create('retained-before-failure')
       const beforeProps = propsManager.save()
       const beforeChildren = root.get('children')
       const failure = new Error('ordinary creation fault')
+
       const injectFailure = () => {
         if (failureAt === 'materialization') {
           return vi
@@ -245,6 +256,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
               throw failure
             })
         }
+
         if (failureAt === 'membership') {
           const membership = vi
             .spyOn(root, 'addNewElements')
@@ -253,15 +265,19 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
               root.addNewElements(...args)
               throw failure
             })
+
           return membership
         }
+
         return vi
           .spyOn(propsManager, 'prepareTransactionEvents')
           .mockImplementationOnce(() => {
             throw failure
           })
       }
+
       const spy = injectFailure()
+
       try {
         expect(() => create('failed-ordinary-child')).toThrow(
           'ordinary creation fault'
@@ -275,6 +291,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       } finally {
         spy.mockRestore()
       }
+
       create('continued-after-failure')
       expect(root.get('children')).toEqual([
         'retained-before-failure',
@@ -290,6 +307,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       expect(beforeChildren).toEqual(['retained-before-failure'])
       const saved = structuredClone(sceneTree.save())
       const savedProps = structuredClone(propsManager.save())
+
       factory.transact.reset()
       sceneTree.reset()
       propsManager.reset()
@@ -305,14 +323,17 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const core = createCoreFacade(factory)
     const root = sceneTree.currentWorkspace as GroupInstanceTypes
     const statuses: TransactionStatusPayload[] = []
+
     factory.subscribeToTransactionStatus((status) => statuses.push(status))
     const original = propsManager.runInPropertyCreationBatch.bind(propsManager)
     const property = vi
       .spyOn(propsManager, 'runInPropertyCreationBatch')
       .mockImplementation(((...args: Parameters<typeof original>) => {
         const receipt = original(...args)
+
         return {
           ...receipt,
+
           rollback: () => {
             receipt.rollback()
             throw new Error('recovery observer failed')
@@ -324,6 +345,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       .mockImplementationOnce(() => {
         throw new Error('primary handoff failure')
       })
+
     try {
       expect(() =>
         runWithTransactionOwner(factory.getTransactionOwner(), () =>
@@ -375,6 +397,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       lock: false,
       props: { value: value.id }
     })) as unknown as ElementRawData[]
+
     runWithTransactionOwner(factory.getTransactionOwner(), () =>
       runTransaction(() =>
         core.createElementsInParentFromCanonicalData(
@@ -387,6 +410,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     factory.transact.reset()
     const before = sceneTree.save()
     const original = propsManager.getPropertyById(value.id)
+
     expect(() =>
       runWithTransactionOwner(factory.getTransactionOwner(), () =>
         runTransaction(() => core.removeSubtrees(['remove-a', 'missing']))
@@ -426,6 +450,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       lock: false,
       props: { value: property.id }
     })) as unknown as ElementRawData[]
+
     runWithTransactionOwner(factory.getTransactionOwner(), () =>
       runTransaction(() =>
         core.createElementsInParentFromCanonicalData(
@@ -443,6 +468,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       .slice(1)
       .map(({ id }) => id)
       .reverse()
+
     try {
       runWithTransactionOwner(factory.getTransactionOwner(), () =>
         runTransaction(() => expect(core.removeSubtrees(roots)).toEqual(roots))
@@ -452,6 +478,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       expect(factory.getUndoHistoryDepth()).toBe(1)
       const afterScene = sceneTree.save()
       const afterProps = propsManager.save()
+
       factory.undo()
       expect(sceneTree.save()).toEqual(beforeScene)
       expect(propsManager.save()).toEqual(beforeProps)
@@ -466,6 +493,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
 
   it('deletes a forest with one property preparation and preserves exact Undo and Redo', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -476,6 +504,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     )
     const core = createCoreFacade(factory)
     const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
+
     add('keep', CANONICAL_LEAF_TYPE, workspace)
     add('first-remove', CANONICAL_LEAF_TYPE, workspace)
     const group = add(
@@ -483,11 +512,13 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       CONTAINER_TYPE,
       workspace
     ) as GroupInstanceTypes
+
     add('nested-remove', CANONICAL_LEAF_TYPE, group)
     add('last-remove', CANONICAL_LEAF_TYPE, workspace)
     const beforeScene = sceneTree.save()
     const beforeProps = propsManager.save()
     const prepare = vi.spyOn(propsManager, 'preparePropertyMutationBatch')
+
     try {
       runWithTransactionOwner(factory.getTransactionOwner(), () =>
         runTransaction(() => {
@@ -511,6 +542,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       expect(factory.getUndoHistoryDepth()).toBe(1)
       const afterScene = sceneTree.save()
       const afterProps = propsManager.save()
+
       factory.undo()
       expect(sceneTree.save()).toEqual(beforeScene)
       expect(propsManager.save()).toEqual(beforeProps)
@@ -527,6 +559,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const channel = new LocalSharedDataChannel()
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -540,6 +573,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     )
 
     const root = sceneTree.currentWorkspace as GroupInstanceTypes
+
     expect(root.get('type')).toBe(EntityTypes.WORKSPACE)
     add('target', CONTAINER_TYPE, root)
     const moved = add('moved', LEAF_TYPE, root)
@@ -550,6 +584,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const originalRootOrder = childrenOf(sceneTree.workspace)
     const originalSubtreeOrder = childrenOf('subtree')
     const originalProps = propsManager.save()
+
     expect(Object.keys(originalProps).length).toBeGreaterThan(0)
 
     runWithTransactionOwner(factory.getTransactionOwner(), () => {
@@ -617,6 +652,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const channel = new LocalSharedDataChannel()
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -673,6 +709,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
 
   it('replays consecutive single-element history through one plural Scene owner batch', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -696,13 +733,17 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
         ) {
           return []
         }
+
         if (!('payload' in event)) {
           return []
         }
+
         const id = (event.payload as { data?: { id?: unknown } } | undefined)
           ?.data?.id
+
         return typeof id === 'string' ? [id] : []
       })
+
       if (elementIds.length > 0) {
         replayEventBatches.push(elementIds)
       }
@@ -744,6 +785,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
   it('replays one real plural Scene removal through the same tombstone on Undo and Redo', () => {
     const factory = new Factory()
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -754,6 +796,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const root = sceneTree.currentWorkspace as GroupInstanceTypes
     const retained = add('tombstone-retained', LEAF_TYPE, root)
     const removed = add('tombstone-replayed', LEAF_TYPE, root)
+
     sceneTree.cleanChanges()
     const prepared = sceneTree.prepareElementRemoval(['tombstone-replayed'])
 
@@ -796,6 +839,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
 
   it('coordinates complete element-property targets before one Props apply', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -804,6 +848,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const root = sceneTree.currentWorkspace as GroupInstanceTypes
     const first = add('property-target-first', CANONICAL_LEAF_TYPE, root)
     const second = add('property-target-second', CANONICAL_LEAF_TYPE, root)
+
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const sequence: string[] = []
@@ -817,18 +862,21 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       .spyOn(sceneTree, 'resolveElementPropertyTargets')
       .mockImplementation((requests) => {
         sequence.push('target')
+
         return resolveTargets(requests)
       })
     const prepareSpy = vi
       .spyOn(propsManager, 'preparePropertyMutationBatch')
       .mockImplementation((mutations) => {
         sequence.push('props-preflight')
+
         return prepareProperties(mutations)
       })
     const applySpy = vi
       .spyOn(propsManager, 'applyPreparedPropertyMutationBatch')
       .mockImplementation((prepared) => {
         sequence.push('props-apply')
+
         return applyProperties(prepared)
       })
     let result: ReturnType<Core['updateElementProperties']> | undefined
@@ -875,6 +923,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
 
   it('reprojects canonical property action, Undo, and Redo through ordinary computed batches', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -886,8 +935,10 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       CANONICAL_LEAF_TYPE,
       root
     )
+
     const getComputedValue = (): unknown =>
       (element.getAllComputedData() as Record<string, unknown>).value
+
     const computedBatches: unknown[][] = []
     const computedTransactionEvents: unknown[] = []
     const subscription = subscribeToEventBatches((events) => {
@@ -896,9 +947,11 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
           type === EventTypes.UPDATE_COMPUTED_DATA ||
           type === EventTypes.UPDATE_COMPUTED_DATA_PATCH
       )
+
       if (computedEvents.length > 0) {
         computedBatches.push(computedEvents)
       }
+
       computedTransactionEvents.push(
         ...events.filter(
           (event) =>
@@ -946,12 +999,14 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
 
   it('leaves no cross-owner prefix when a later element-property target is invalid', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
     )
     const core = createCoreFacade(factory)
     const root = sceneTree.currentWorkspace as GroupInstanceTypes
+
     add('property-valid-prefix', CANONICAL_LEAF_TYPE, root)
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
@@ -991,6 +1046,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
   it('keeps public-facade Group and children on one outer transaction handle and history action', () => {
     const factory = new Factory()
     const statuses: TransactionStatusPayload[] = []
+
     factory.subscribeToTransactionStatus((status) => statuses.push(status))
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
@@ -1001,6 +1057,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       new LocalSharedDataChannel()
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -1018,6 +1075,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
           { id: 'facade-group', type: CONTAINER_TYPE, x: 0, y: 0 },
           root.get('id')
         )
+
         result = core.createElementsInParent(
           childIds.map((id, index) => ({
             id,
@@ -1062,6 +1120,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     expect(childrenOf(sceneTree.workspace)).toEqual(['facade-group'])
     expect(childrenOf('facade-group')).toEqual(childIds)
     const committedProps = propsManager.save()
+
     expect(Object.keys(committedProps).length).toBeGreaterThan(0)
     expect(statuses.slice(-1)[0]).toMatchObject({
       origin: 'action',
@@ -1098,6 +1157,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const deliveryFailure = new Error('canonical immediate delivery failed')
     const propsChannel = new LocalSharedDataChannel()
+
     propsChannel.appendBatch = vi.fn(() => {
       throw deliveryFailure
     })
@@ -1110,6 +1170,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       new LocalSharedDataChannel()
     )
     const statuses: TransactionStatusPayload[] = []
+
     factory.subscribeToTransactionStatus((status) => statuses.push(status))
     const core = createCoreFacade(factory)
     const root = sceneTree.currentWorkspace as GroupInstanceTypes
@@ -1161,6 +1222,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
 
   it('leaves no public-facade prefix when a later batch item is invalid', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -1208,6 +1270,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const core = createCoreFacade(factory)
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -1262,6 +1325,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
 
     expect(publications).toHaveLength(1)
     const deliveries = publicationDeliveriesWithChannel(publications[0])
+
     expect(
       deliveries.map(({ channel, eventName, payload }) => ({
         channel,
@@ -1330,6 +1394,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const core = createCoreFacade(factory)
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -1385,6 +1450,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const core = createCoreFacade(factory)
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -1449,6 +1515,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const core = createCoreFacade(factory)
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -1491,6 +1558,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
       })
     })
     const activeProperty = propsManager.getPropertyById('existing-owner-value')
+
     publications.length = 0
 
     runWithTransactionOwner(factory.getTransactionOwner(), () => {
@@ -1569,6 +1637,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const channel = new LocalSharedDataChannel()
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -1609,6 +1678,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const channel = new LocalSharedDataChannel()
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -1618,6 +1688,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     )
 
     const root = sceneTree.currentWorkspace as GroupInstanceTypes
+
     add('target', CONTAINER_TYPE, root)
     const moved = add('moved', LEAF_TYPE, root)
     const subtree = add('subtree', CONTAINER_TYPE, root) as GroupInstanceTypes
@@ -1657,6 +1728,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     const factory = new Factory()
     const channel = new LocalSharedDataChannel()
     const publications: SharedPublication[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel

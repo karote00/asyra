@@ -24,9 +24,11 @@ interface SetValuePayload {
 
 const createFactoryHarness = () => {
   const factory = new Factory()
+
   factory.registerSharedDataChannel(CHANNEL, new LocalSharedDataChannel())
   factory.registerTransactionInverter(SET_VALUE, (event) => {
     const payload = (event as unknown as { payload: SetValuePayload }).payload
+
     return {
       ...event,
       payload: {
@@ -53,6 +55,7 @@ const createFactoryHarness = () => {
     processRemotePublication,
     resourceOwnership: { provider: 'owned' }
   })
+
   const update = (
     id: string,
     after: number,
@@ -75,6 +78,7 @@ const createFactoryHarness = () => {
       }
     })
   }
+
   return { factory, instance, provider, sendPublication, update }
 }
 
@@ -96,6 +100,7 @@ describe('Collaboration publication handoff', () => {
   it('sends one intact ordered publication when the batched Factory action settles', async () => {
     const { factory, instance, sendPublication, update } =
       createFactoryHarness()
+
     await instance.start()
 
     factory.startTransaction()
@@ -110,6 +115,7 @@ describe('Collaboration publication handoff', () => {
 
     expect(sendPublication).toHaveBeenCalledTimes(1)
     const sent = sendPublication.mock.calls[0]?.[0]
+
     expect(sent?.mode).toBe('progressive')
     expect(deliveriesOf(sent as SharedPublication)).toEqual([
       expect.objectContaining({
@@ -127,6 +133,7 @@ describe('Collaboration publication handoff', () => {
   it('forwards Factory compensation as an ordinary second publication', async () => {
     const { factory, instance, sendPublication, update } =
       createFactoryHarness()
+
     await instance.start()
 
     factory.startTransaction()
@@ -143,6 +150,7 @@ describe('Collaboration publication handoff', () => {
     expect(sendPublication).toHaveBeenCalledTimes(2)
     const forward = sendPublication.mock.calls[0]?.[0]
     const compensation = sendPublication.mock.calls[1]?.[0]
+
     expect(compensation).toMatchObject({
       origin: 'rollback-compensation',
       compensatesPublicationId: forward?.publicationId
@@ -168,6 +176,7 @@ describe('Collaboration publication handoff', () => {
       subscribeToSharedPublication: vi.fn(
         (next: SharedPublicationSubscriber) => {
           subscriber = next
+
           return () => undefined
         }
       )
@@ -186,6 +195,7 @@ describe('Collaboration publication handoff', () => {
       provider,
       processRemotePublication: vi.fn()
     })
+
     await instance.start()
     const repeated = publication()
 
@@ -204,6 +214,7 @@ describe('Collaboration publication handoff', () => {
   it('hands action, Undo, and Redo to the Provider as three separate publications', async () => {
     const { factory, instance, sendPublication, update } =
       createFactoryHarness()
+
     await instance.start()
 
     factory.startTransaction()

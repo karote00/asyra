@@ -17,6 +17,7 @@ const buildSource = fs.readFileSync(
   'utf8'
 )
 const snapshot = {}
+
 vm.runInNewContext(bundleSource, snapshot)
 const bundle = snapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE
 
@@ -25,6 +26,7 @@ async function waitFor(check) {
     if (check()) {
       return
     }
+
     await new Promise((resolve) => setTimeout(resolve, 10))
   }
 
@@ -34,9 +36,11 @@ async function waitFor(check) {
 async function mount(id) {
   const errors = []
   const virtualConsole = new VirtualConsole()
+
   virtualConsole.on('jsdomError', (error) => errors.push(error.message))
   virtualConsole.on('error', (error) => errors.push(String(error)))
   const url = pathToFileURL(path.join(root, 'workspace.html'))
+
   url.hash = 'inspector=' + id
   const dom = new JSDOM('<div id="flow-inspector-workspace-root"></div>', {
     url: url.href,
@@ -44,6 +48,7 @@ async function mount(id) {
     pretendToBeVisual: true,
     virtualConsole
   })
+
   dom.window.eval(bundleSource)
   dom.window.eval(buildSource)
   await waitFor(() => dom.window.document.querySelector('.workspace-main'))
@@ -53,6 +58,7 @@ async function mount(id) {
 
 test('workspace mounts only the checked-in React build and source catalog', () => {
   const html = fs.readFileSync(path.join(root, 'workspace.html'), 'utf8')
+
   assert.match(html, /flow-inspector-workspace-root/)
   assert.match(html, /generated\/flow-inspector-workspace\.js/)
   assert.match(html, /workspace-bundle\.data\.js/)
@@ -65,6 +71,7 @@ test('workspace mounts only the checked-in React build and source catalog', () =
 for (const entry of bundle.entries) {
   test(`${entry.id} renders its declared contract directly in React`, async () => {
     const { dom, document, errors } = await mount(entry.id)
+
     try {
       assert.equal(document.querySelectorAll('iframe').length, 0)
       assert.match(
@@ -80,11 +87,13 @@ for (const entry of bundle.entries) {
           const button = [...document.querySelectorAll('.filter-button')].find(
             (item) => item.textContent === lane.title
           )
+
           assert.ok(button, lane.id)
           button.click()
           const steps = entry.data.steps.filter(
             (step) => step.laneId === lane.id
           )
+
           await waitFor(
             () =>
               document.querySelectorAll('.step-card').length === steps.length
@@ -97,11 +106,13 @@ for (const entry of bundle.entries) {
             )
           }
         }
+
         for (const anchor of document.querySelectorAll('a[href]')) {
           assert.equal(anchor.target, '_blank')
           assert.ok(anchor.rel.split(/\s+/).includes('noopener'))
           assert.ok(anchor.rel.split(/\s+/).includes('noreferrer'))
           const url = new URL(anchor.href)
+
           assert.equal(url.protocol, 'file:')
           assert.ok(
             fs.existsSync(fileURLToPath(url)),
@@ -120,6 +131,7 @@ for (const entry of bundle.entries) {
           )
         }
       }
+
       assert.deepEqual(errors, [])
     } finally {
       dom.window.close()
@@ -129,6 +141,7 @@ for (const entry of bundle.entries) {
 
 test('unknown routes do not mount another contract or a fallback renderer', async () => {
   const { dom, document, errors } = await mount('unknown-inspector')
+
   try {
     assert.match(
       document.querySelector('.route-error').textContent,

@@ -21,11 +21,13 @@ const transactionEvidence = (): {
   readonly runner: AiTransactionRunner
 } => {
   const run = vi.fn()
+
   return {
     run,
     runner: {
       run: async <T>(label: string, execute: () => Promise<T>) => {
         run(label)
+
         return execute()
       }
     }
@@ -79,6 +81,7 @@ describe('server-prepared AiActionBatch resolution boundary', () => {
     const runtime = createAiAgentRuntime(
       runtimeInput([serverAction(vi.fn(async () => null))], actionBatch([]))
     )
+
     expect(runtime).toHaveProperty('resolveAiActionBatch')
     expect(publicApi).not.toHaveProperty('resolveAiActionBatch')
     expect(publicApi).not.toHaveProperty('resolveAiExecutionPlan')
@@ -108,6 +111,7 @@ describe('server-prepared AiActionBatch resolution boundary', () => {
     const rawArguments: Record<string, unknown> = {
       compactGeometry: nestedGeometry
     }
+
     Object.defineProperty(rawArguments, 'items', {
       enumerable: true,
       get: nestedGetter
@@ -167,6 +171,7 @@ describe('server-prepared AiActionBatch resolution boundary', () => {
     let confirmationPreview: unknown
     const confirm = vi.fn(async (preview) => {
       confirmationPreview = preview
+
       return true
     })
     const transaction = transactionEvidence()
@@ -192,6 +197,7 @@ describe('server-prepared AiActionBatch resolution boundary', () => {
           permissionPolicy: {
             evaluate: vi.fn(async ({ action }) => {
               permissionArguments = action.arguments
+
               return 'confirm' as const
             })
           },
@@ -209,6 +215,7 @@ describe('server-prepared AiActionBatch resolution boundary', () => {
     if (result.status !== 'executed') {
       throw new Error('Expected the resolved action batch to execute.')
     }
+
     expect(result.batchId).toBe('batch-1')
     expect(permissionArguments).toBe(rawArguments)
     expect(execute).toHaveBeenCalledOnce()

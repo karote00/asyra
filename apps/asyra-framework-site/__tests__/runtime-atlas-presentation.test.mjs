@@ -4,6 +4,7 @@ import path from 'node:path'
 import test from 'node:test'
 
 const siteRoot = path.resolve(import.meta.dirname, '..')
+
 const readSiteFile = (file) => readFile(path.join(siteRoot, file), 'utf8')
 
 test('Atlas route explains the current browser boundary before runtime depth', async () => {

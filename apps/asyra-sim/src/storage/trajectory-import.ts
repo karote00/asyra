@@ -103,6 +103,7 @@ function parseCsv(text: string): CsvRow[] {
     rowLine = 1,
     quoted = false,
     closedQuote = false
+
   const checkCapacity = () => {
     if (rows.length >= TRAJECTORY_IMPORT_LIMITS.keyframes + 1) {
       throw new CsvResourceError(
@@ -110,6 +111,7 @@ function parseCsv(text: string): CsvRow[] {
         `CSV exceeds ${TRAJECTORY_IMPORT_LIMITS.keyframes} trajectory rows.`
       )
     }
+
     if (cells.length >= TRAJECTORY_IMPORT_LIMITS.columns) {
       throw new CsvResourceError(
         'too-many-columns',
@@ -117,21 +119,25 @@ function parseCsv(text: string): CsvRow[] {
       )
     }
   }
+
   const finishField = () => {
     checkCapacity()
     cells.push(field.trim())
     field = ''
     closedQuote = false
   }
+
   const finishRow = () => {
     finishField()
     rows.push({ line: rowLine, cells })
     cells = []
     rowLine = line + 1
   }
+
   for (let index = 0; index < text.length; index++) {
     checkCapacity()
     const character = text[index]
+
     if (quoted) {
       if (character === '"') {
         if (text[index + 1] === '"') {
@@ -147,12 +153,15 @@ function parseCsv(text: string): CsvRow[] {
           line++
         }
       }
+
       continue
     }
+
     if (character === '"') {
       if (field.length || closedQuote) {
         throw new Error(`Unexpected quote on CSV line ${line}`)
       }
+
       quoted = true
     } else if (character === ',') {
       finishField()
@@ -168,15 +177,19 @@ function parseCsv(text: string): CsvRow[] {
       if (closedQuote && !/\s/.test(character)) {
         throw new Error(`Unexpected content after quote on CSV line ${line}`)
       }
+
       field += character
     }
   }
+
   if (quoted) {
     throw new Error(`Unclosed quote on CSV line ${line}`)
   }
+
   if (field.length || cells.length || !rows.length) {
     finishRow()
   }
+
   return rows
 }
 
@@ -188,16 +201,20 @@ function validateMapping(
   if (!hasExactOwnKeys(mapping, mappingFields)) {
     return 'Invalid mapping shape'
   }
+
   if (!hasExactOwnKeys(mapping.time, mappingEntryFields)) {
     return 'Invalid time mapping'
   }
+
   if (
     typeof mapping.time.column !== 'string' ||
     (mapping.time.unit !== 'ms' && mapping.time.unit !== 's')
   ) {
     return 'An explicit supported time unit is required'
   }
+
   const actuated = workcell.bodies.filter((body) => body.joint.kind !== 'fixed')
+
   if (
     !hasExactOwnKeys(
       mapping.joints,
@@ -206,15 +223,20 @@ function validateMapping(
   ) {
     return 'Every actuated joint requires one mapping'
   }
+
   const mappedColumns = [mapping.time.column]
+
   for (const body of actuated) {
     const entry = mapping.joints[body.id]
+
     if (!hasExactOwnKeys(entry, mappingEntryFields)) {
       return `Invalid mapping for joint ${body.id}`
     }
+
     if (typeof entry.column !== 'string') {
       return `Invalid column for joint ${body.id}`
     }
+
     if (
       (body.joint.kind === 'revolute' &&
         entry.unit !== 'deg' &&
@@ -225,12 +247,16 @@ function validateMapping(
     ) {
       return `An explicit compatible unit is required for joint ${body.id}`
     }
+
     mappedColumns.push(entry.column)
   }
+
   if (new Set(mappedColumns).size !== mappedColumns.length) {
     return 'A CSV column cannot be mapped more than once'
   }
+
   const missing = mappedColumns.find((column) => !columns.includes(column))
+
   return missing ? `Mapped column ${missing} is missing` : null
 }
 
@@ -238,7 +264,9 @@ function parseDecimal(value: string): number | null {
   if (!decimal.test(value)) {
     return null
   }
+
   const parsed = Number(value)
+
   return Number.isFinite(parsed) ? parsed : null
 }
 
@@ -260,7 +288,9 @@ export function prepareTrajectoryCsv(text: string): PreparedTrajectoryCsv {
       diagnostic('file-too-large', 'Trajectory CSV exceeds the 8 MiB limit.')
     )
   }
+
   let rows: CsvRow[]
+
   try {
     rows = parseCsv(text.replace(/^\uFEFF/, ''))
   } catch (error) {
@@ -271,25 +301,30 @@ export function prepareTrajectoryCsv(text: string): PreparedTrajectoryCsv {
       )
     )
   }
+
   const headerRow = rows.shift(),
     columns = headerRow?.cells ?? []
+
   if (!headerRow || !columns.length || columns.some((column) => !column)) {
     return rejectedCsv(
       diagnostic('missing-header', 'CSV requires a header row.')
     )
   }
+
   if (new Set(columns).size !== columns.length) {
     return rejectedCsv(
       diagnostic('duplicate-header', 'CSV column names must be unique.'),
       columns
     )
   }
+
   if (!rows.length) {
     return rejectedCsv(
       diagnostic('empty-trajectory', 'CSV requires at least one data row.'),
       columns
     )
   }
+
   return { columns, rows, diagnostics: [] }
 }
 
@@ -301,6 +336,7 @@ function conversionSamples(
   const indices = [
     ...new Set([0, Math.floor(sources.length / 2), sources.length - 1])
   ]
+
   return indices.flatMap((frameIndex) => {
     const source = sources[frameIndex]
     const canonical = value.trajectory.keyframes[frameIndex]
@@ -314,6 +350,7 @@ function conversionSamples(
         canonicalUnit: 's'
       }
     ]
+
     for (const [id, unit] of Object.entries(value.sourceUnits.joints)) {
       samples.push({
         frameIndex,
@@ -324,6 +361,7 @@ function conversionSamples(
         canonicalUnit: unit === 'deg' || unit === 'rad' ? 'rad' : 'm'
       })
     }
+
     return samples
   })
 }
@@ -336,6 +374,7 @@ export function previewTrajectoryCsv(
   const prepared =
     typeof source === 'string' ? prepareTrajectoryCsv(source) : source
   const { columns, rows, diagnostics: sourceDiagnostics } = prepared
+
   if (sourceDiagnostics.length) {
     return {
       value: null,
@@ -345,10 +384,13 @@ export function previewTrajectoryCsv(
       diagnostics: sourceDiagnostics
     }
   }
+
   const mappingError = validateMapping(draftMapping, workcell, columns)
+
   if (mappingError) {
     return emptyPreview(diagnostic('invalid-mapping', mappingError), columns)
   }
+
   // The exact mapping shape and every compatible unit have been validated above.
   const mapping = draftMapping as TrajectoryCsvMapping
 
@@ -359,10 +401,13 @@ export function previewTrajectoryCsv(
     previewRows: Readonly<Record<string, string>>[] = [],
     jointUnits: Record<string, TrajectoryJointUnit> = {},
     jointMappings = Object.entries(mapping.joints)
+
   for (const [id, entry] of jointMappings) {
     jointUnits[id] = entry.unit
   }
+
   let previous = -Infinity
+
   for (const row of rows) {
     if (previewRows.length < 20) {
       previewRows.push(
@@ -371,6 +416,7 @@ export function previewTrajectoryCsv(
         )
       )
     }
+
     if (row.cells.length !== columns.length) {
       diagnostics.push(
         diagnostic(
@@ -381,11 +427,13 @@ export function previewTrajectoryCsv(
       )
       continue
     }
+
     const timeCell =
         row.cells[columnIndex.get(mapping.time.column) ?? -1] ?? '',
       time = parseDecimal(timeCell),
       joints: Record<string, number> = {}
     let rowInvalid = false
+
     if (time === null) {
       diagnostics.push(
         diagnostic('invalid-number', 'Time must be a finite decimal number.', {
@@ -395,9 +443,11 @@ export function previewTrajectoryCsv(
       )
       rowInvalid = true
     }
+
     for (const [id, entry] of jointMappings) {
       const cell = row.cells[columnIndex.get(entry.column) ?? -1] ?? '',
         value = parseDecimal(cell)
+
       if (value === null) {
         diagnostics.push(
           diagnostic(
@@ -411,10 +461,13 @@ export function previewTrajectoryCsv(
         joints[id] = value
       }
     }
+
     if (rowInvalid || time === null) {
       continue
     }
+
     const frame = { time, joints }
+
     try {
       const normalized = normalizeTrajectorySource(workcell, {
         version: 1,
@@ -422,9 +475,11 @@ export function previewTrajectoryCsv(
         jointUnits,
         keyframes: [frame]
       }).trajectory.keyframes[0]
+
       if (!normalized) {
         throw new Error('Missing normalized row')
       }
+
       if (normalized.time - previous < GEOMETRY_PROFILE.minSegmentDuration) {
         diagnostics.push(
           diagnostic(
@@ -435,6 +490,7 @@ export function previewTrajectoryCsv(
         )
         continue
       }
+
       previous = normalized.time
       sourceFrames.push(frame)
       normalizedFrames.push(normalized)
@@ -448,15 +504,18 @@ export function previewTrajectoryCsv(
       )
     }
   }
+
   if (diagnostics.length) {
     return { value: null, conversions: [], diagnostics, columns, previewRows }
   }
+
   // Each row is domain-admitted exactly once; the parser and time-order check
   // above enforce the aggregate row-count and cross-frame contracts.
   const value: NormalizedTrajectorySource = {
     trajectory: { version: 1, keyframes: normalizedFrames },
     sourceUnits: { time: mapping.time.unit, joints: jointUnits }
   }
+
   return {
     value,
     conversions: conversionSamples(value, sourceFrames, mapping),
@@ -475,7 +534,9 @@ export function previewTrajectoryJson(
       diagnostic('file-too-large', 'Trajectory JSON exceeds the 1 MiB limit.')
     )
   }
+
   let data: unknown
+
   try {
     data = JSON.parse(text)
   } catch {
@@ -483,6 +544,7 @@ export function previewTrajectoryJson(
       diagnostic('json-syntax', 'Trajectory JSON is malformed.')
     )
   }
+
   if (
     !hasExactOwnKeys(data, envelopeFields) ||
     (data.format !== StorageFormats.TRAJECTORY &&
@@ -496,12 +558,14 @@ export function previewTrajectoryJson(
       )
     )
   }
+
   try {
     const value = normalizeTrajectorySource(workcell, data.source)
     // The domain has admitted the exact envelope before any display projection.
     const source = data.source as {
       keyframes: readonly TrajectorySourceKeyframe[]
     }
+
     return {
       value,
       conversions: conversionSamples(value, source.keyframes),

@@ -33,9 +33,11 @@ const findItemProperty = (core: CoreRawData): Record<string, unknown> => {
       typeof entry === 'object' &&
       (entry as { type?: unknown }).type === ITEM_PROPERTY_TYPE
   )
+
   if (!property || typeof property !== 'object') {
     throw new Error('Expected saved item property.')
   }
+
   return property as Record<string, unknown>
 }
 
@@ -54,10 +56,12 @@ describe('starter runtime canonical App path', () => {
   it('replays Add through one Undo and Redo with canonical evidence', async () => {
     const runtime = initApp({ storage: new MemoryStorage() })
     const container = document.createElement('div')
+
     try {
       await runtime.start(container, { width: 320, height: 390 })
       const firstId = runtime.itemActions.addItem({ title: 'First' })
       const secondId = runtime.itemActions.addItem({ title: 'Second' })
+
       await settleProjection()
       expect(runtime.projection.getSnapshot().map((item) => item.id)).toEqual([
         firstId,
@@ -86,6 +90,7 @@ describe('starter runtime canonical App path', () => {
       const bounds = Array.from({ length: 9 }, (_, index) =>
         getStarterItemRenderBounds(index, viewportWidth)
       )
+
       bounds.forEach((item, index) => {
         expect(item.width).toBeGreaterThan(0)
         expect(item.height).toBeGreaterThan(0)
@@ -96,6 +101,7 @@ describe('starter runtime canonical App path', () => {
             other.x + other.width <= item.x ||
             item.y + item.height <= other.y ||
             other.y + other.height <= item.y
+
           expect(separated).toBe(true)
         })
       })
@@ -106,12 +112,15 @@ describe('starter runtime canonical App path', () => {
     const storage = new MemoryStorage()
     const runtime = initApp({ storage })
     const container = document.createElement('div')
+
     try {
       await runtime.start(container, { width: 800, height: 510 })
       const itemId = runtime.itemActions.addItem({ title: 'Movable' })
+
       await settleProjection()
       const beforeMoveDepth = runtime.core.getUndoHistoryDepth()
       const accepted = runtime.itemActions.moveItem(itemId, { x: 64, y: 82 })
+
       expect(accepted).toEqual([itemId])
       expect(Object.isFrozen(accepted)).toBe(true)
       await settleProjection()
@@ -156,11 +165,13 @@ describe('starter runtime canonical App path', () => {
       })
 
       const beforeInvalid = await runtime.core.save()
+
       expect(() =>
         runtime.itemActions.moveItem(itemId, { x: Number.NaN, y: 0 })
       ).toThrow('position')
       expect(await runtime.core.save()).toEqual(beforeInvalid)
       const invalidSaved = clone(beforeInvalid)
+
       findItemProperty(invalidSaved).offsetX = 'bad'
       storage.setItem(
         STARTER_STORAGE_SLOT,
@@ -170,6 +181,7 @@ describe('starter runtime canonical App path', () => {
       expect(await runtime.core.save()).toEqual(beforeInvalid)
 
       const legacySaved = clone(beforeInvalid)
+
       delete findItemProperty(legacySaved).offsetX
       delete findItemProperty(legacySaved).offsetY
       storage.setItem(
@@ -201,6 +213,7 @@ describe('starter runtime canonical App path', () => {
       title: 'First item',
       status: 'todo'
     })
+
     await settleProjection()
     expect(itemId).toMatch(/^item-/)
     expect(runtime.projection.getSnapshot()).toEqual([
@@ -208,6 +221,7 @@ describe('starter runtime canonical App path', () => {
     ])
     expect(runtime.core.getUndoHistoryDepth()).toBe(1)
     const beforeResize = await runtime.core.save()
+
     runtime.resize(294, 390)
     expect(await runtime.core.save()).toEqual(beforeResize)
     expect(runtime.core.getUndoHistoryDepth()).toBe(1)
@@ -234,6 +248,7 @@ describe('starter runtime canonical App path', () => {
     ])
 
     const beforeInvalidWrite = await saveWrapper(runtime)
+
     expect(() =>
       runtime.itemActions.editItem(itemId, {
         status: 'blocked' as never
@@ -245,8 +260,10 @@ describe('starter runtime canonical App path', () => {
     ])
 
     const saveResult = await runtime.storageApis.save()
+
     expect(saveResult.ok).toBe(true)
     const saved = storage.getItem(STARTER_STORAGE_SLOT)
+
     expect(saved).not.toBeNull()
 
     runtime.itemActions.editItem(itemId, {
@@ -259,6 +276,7 @@ describe('starter runtime canonical App path', () => {
     ])
 
     const reloadResult = await runtime.storageApis.reload()
+
     expect(reloadResult.ok).toBe(true)
     expect(loadAccepted).toHaveBeenCalledOnce()
     expect(runtime.projection.getSnapshot()).toEqual([
@@ -269,6 +287,7 @@ describe('starter runtime canonical App path', () => {
     const acceptedProjection = runtime.projection.getSnapshot()
     const acceptedDepth = runtime.core.getUndoHistoryDepth()
     const invalidCore = clone(acceptedCore)
+
     findItemProperty(invalidCore).status = 'blocked'
     storage.setItem(
       STARTER_STORAGE_SLOT,
@@ -277,6 +296,7 @@ describe('starter runtime canonical App path', () => {
     const preflightSpy = vi.spyOn(runtime.core, 'preflightLoad')
     const loadSpy = vi.spyOn(runtime.core, 'load')
     const invalidStatusResult = await runtime.storageApis.reload()
+
     expect(invalidStatusResult.ok).toBe(false)
     expect(invalidStatusResult.message).toContain('invalid status')
     expect(preflightSpy).not.toHaveBeenCalled()
@@ -286,29 +306,34 @@ describe('starter runtime canonical App path', () => {
     expect(runtime.core.getUndoHistoryDepth()).toBe(acceptedDepth)
 
     const missingTitleCore = clone(acceptedCore)
+
     delete findItemProperty(missingTitleCore).title
     storage.setItem(
       STARTER_STORAGE_SLOT,
       JSON.stringify(createStarterDocumentWrapper(missingTitleCore))
     )
     const missingTitleResult = await runtime.storageApis.reload()
+
     expect(missingTitleResult.ok).toBe(false)
     expect(missingTitleResult.message).toContain('valid title')
     expect(await saveWrapper(runtime)).toEqual(acceptedCore)
 
     const missingStatusCore = clone(acceptedCore)
+
     delete findItemProperty(missingStatusCore).status
     storage.setItem(
       STARTER_STORAGE_SLOT,
       JSON.stringify(createStarterDocumentWrapper(missingStatusCore))
     )
     const missingStatusResult = await runtime.storageApis.reload()
+
     expect(missingStatusResult.ok).toBe(false)
     expect(missingStatusResult.message).toContain('invalid status')
     expect(await saveWrapper(runtime)).toEqual(acceptedCore)
 
     const observed = vi.fn()
     const unsubscribe = runtime.projection.subscribe(observed)
+
     await runtime.dispose()
     runtime.projection.refresh()
     expect(runtime.projection.lateRefreshCount).toBe(1)
@@ -321,8 +346,10 @@ describe('starter runtime canonical App path', () => {
       window,
       'localStorage'
     )
+
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
+
       get() {
         throw new DOMException('Storage denied', 'SecurityError')
       }
@@ -331,6 +358,7 @@ describe('starter runtime canonical App path', () => {
     try {
       const runtime = initApp()
       const result = await runtime.storageApis.save()
+
       expect(result.ok).toBe(false)
       expect(result.message).toContain('Storage denied')
       await runtime.dispose()
@@ -344,6 +372,7 @@ describe('starter runtime canonical App path', () => {
   it('uses publication-scoped projection updates for normal actions and history replay', async () => {
     const runtime = initApp({ storage: new MemoryStorage() })
     const container = document.createElement('div')
+
     await runtime.start(container, { width: 320, height: 240 })
 
     const fullRead = vi.spyOn(runtime.core, 'getAllElementData')
@@ -352,6 +381,7 @@ describe('starter runtime canonical App path', () => {
       title: 'First item',
       status: 'todo'
     })
+
     await settleProjection()
     expect(runtime.projection.refreshCount).toBe(initialRefreshCount + 1)
     expect(fullRead).not.toHaveBeenCalled()
@@ -361,15 +391,18 @@ describe('starter runtime canonical App path', () => {
       title: 'Second item',
       status: 'todo'
     })
+
     await settleProjection()
     expect(runtime.projection.refreshCount).toBe(afterFirstAdd + 1)
     expect(fullRead).not.toHaveBeenCalled()
     const firstBeforeEdit = runtime.projection
       .getSnapshot()
       .find((item) => item.id === firstId)
+
     expect(firstBeforeEdit).toBeDefined()
 
     const beforeEdit = runtime.projection.refreshCount
+
     runtime.itemActions.editItem(secondId, { status: 'doing' })
     await settleProjection()
     expect(runtime.projection.refreshCount).toBe(beforeEdit + 1)
@@ -382,6 +415,7 @@ describe('starter runtime canonical App path', () => {
     ).toMatchObject({ title: 'Second item', status: 'doing' })
 
     const beforeUndo = runtime.projection.refreshCount
+
     await runtime.historyApis.undo()
     await settleProjection()
     expect(runtime.projection.refreshCount).toBe(beforeUndo + 1)
@@ -391,6 +425,7 @@ describe('starter runtime canonical App path', () => {
     ).toMatchObject({ title: 'Second item', status: 'todo' })
 
     const beforeRedo = runtime.projection.refreshCount
+
     await runtime.historyApis.redo()
     await settleProjection()
     expect(runtime.projection.refreshCount).toBe(beforeRedo + 1)
@@ -400,8 +435,10 @@ describe('starter runtime canonical App path', () => {
     ).toMatchObject({ title: 'Second item', status: 'doing' })
 
     const saved = await runtime.storageApis.save()
+
     expect(saved.ok).toBe(true)
     const beforeLoadRefresh = runtime.projection.refreshCount
+
     expect(await runtime.storageApis.reload()).toMatchObject({ ok: true })
     expect(runtime.projection.refreshCount).toBe(beforeLoadRefresh + 1)
     expect(fullRead).toHaveBeenCalledTimes(1)
@@ -417,23 +454,28 @@ describe('starter runtime canonical App path', () => {
     } as unknown as CoreRawData
     const storage: StarterStorage = {
       getItem: () => null,
+
       setItem: () => {
         throw new Error('quota exceeded')
       }
     }
 
     const result = saveCoreDocument(storage, core)
+
     expect(result.ok).toBe(false)
     expect(result.message).toContain('quota exceeded')
   })
   it('does not let a retired App history action mutate the next App', async () => {
     const first = initApp({ storage: new MemoryStorage() })
+
     await first.start(document.createElement('div'))
     await first.dispose()
     const next = initApp({ storage: new MemoryStorage() })
+
     try {
       await next.start(document.createElement('div'))
       const id = next.itemActions.addItem({ title: 'New lifetime' })
+
       await settleProjection()
       await first.historyApis.undo()
       await settleProjection()

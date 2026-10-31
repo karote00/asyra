@@ -12,8 +12,10 @@ function discover(directory) {
   if (!fs.existsSync(directory)) {
     return []
   }
+
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const file = path.join(directory, entry.name)
+
     return entry.isDirectory() ? discover(file) : [file]
   })
 }
@@ -64,7 +66,9 @@ export function selectTestImpact(
       (file) =>
         file.includes(`${path.sep}__tests__${path.sep}`) && testFile.test(file)
     )
+
   const relative = (file) => path.relative(app, file).split(path.sep).join('/')
+
   const result = (selected, reason) => ({
     ordinary: selected
       .filter((file) => !profileFile.test(file))
@@ -76,7 +80,9 @@ export function selectTestImpact(
       .sort(),
     reason
   })
+
   const relevant = inputs.filter((input) => !input.endsWith('.md'))
+
   if (
     forceFull ||
     relevant.some(
@@ -97,13 +103,17 @@ export function selectTestImpact(
   ) {
     return result(tests, 'full-owner-input')
   }
+
   if (!relevant.length) {
     return result([], 'no-source-input')
   }
+
   const ts = require('typescript')
   const configPath = path.join(app, 'tsconfig.json')
+
   if (fs.existsSync(configPath)) {
     const config = ts.readConfigFile(configPath, ts.sys.readFile)
+
     if (
       config.error ||
       config.config.extends ||
@@ -113,28 +123,36 @@ export function selectTestImpact(
       return result(tests, 'full-owner-input')
     }
   }
+
   const dependents = new Map()
   const runtimeDependents = new Map()
   let parsedFiles = 0
   const uncertain = new Set()
+
   for (const target of upstream.targets ?? []) {
     const test = path.resolve(app, target.file)
+
     for (const input of target.inputs) {
       const source = path.resolve(app, input)
+
       if (!fs.existsSync(source)) {
         uncertain.add(test)
       }
+
       for (const edges of [dependents, runtimeDependents]) {
         if (!edges.has(source)) {
           edges.set(source, new Set())
         }
+
         edges.get(source).add(test)
       }
     }
+
     if (!target.inputs.length) {
       uncertain.add(test)
     }
   }
+
   const pendingFiles = [
     ...new Set([
       ...files,
@@ -147,6 +165,7 @@ export function selectTestImpact(
   ]
   const discovered = new Set(pendingFiles)
   const resolveWorkspace = createWorkspaceSourceResolver(root, workspaces, ts)
+
   const resolve = (from, specifier) => {
     const base = path.resolve(path.dirname(from), specifier)
     const withoutJs = base.replace(/\.[cm]?jsx?$/, '')
@@ -162,19 +181,25 @@ export function selectTestImpact(
         '/index.js'
       ].flatMap((ext) => [base + ext, withoutJs + ext])
     ]
+
     return candidates.find(
       (file) => fs.existsSync(file) && fs.statSync(file).isFile()
     )
   }
+
   const erasedTypeImports = new Map()
+
   const erasesNamedTypes = (file) => {
     const configPath = ts.findConfigFile(path.dirname(file), ts.sys.fileExists)
+
     if (!configPath) {
       return true
     }
+
     if (!erasedTypeImports.has(configPath)) {
       const config = ts.readConfigFile(configPath, ts.sys.readFile)
       const options = config.config?.compilerOptions ?? {}
+
       erasedTypeImports.set(
         configPath,
         !config.error &&
@@ -184,8 +209,10 @@ export function selectTestImpact(
           !options.importsNotUsedAsValues
       )
     }
+
     return erasedTypeImports.get(configPath)
   }
+
   for (const file of pendingFiles) {
     parsedFiles++
     const source = ts.createSourceFile(
@@ -194,9 +221,11 @@ export function selectTestImpact(
       ts.ScriptTarget.Latest,
       true
     )
+
     if (source.parseDiagnostics.length) {
       uncertain.add(file)
     }
+
     const add = (specifier, typeOnly = false) => {
       if (!specifier.startsWith('.')) {
         if (sourcePaths.size && !typeOnly) {
@@ -207,18 +236,23 @@ export function selectTestImpact(
           ) {
             uncertain.add(file)
           }
+
           const resolved = resolveWorkspace(specifier)
+
           if (resolved.kind === 'unknown') {
             uncertain.add(file)
           }
+
           for (const target of resolved.files) {
             if (!dependents.has(target)) {
               dependents.set(target, new Set())
             }
+
             dependents.get(target).add(file)
             if (!runtimeDependents.has(target)) {
               runtimeDependents.set(target, new Set())
             }
+
             runtimeDependents.get(target).add(file)
             if (!discovered.has(target)) {
               discovered.add(target)
@@ -226,6 +260,7 @@ export function selectTestImpact(
             }
           }
         }
+
         if (
           !specifier.startsWith('@asyra/') &&
           !specifier.startsWith('node:') &&
@@ -233,21 +268,28 @@ export function selectTestImpact(
         ) {
           uncertain.add(file)
         }
+
         return
       }
+
       const target = resolve(file, specifier)
+
       if (!target) {
         uncertain.add(file)
+
         return
       }
+
       if (!dependents.has(target)) {
         dependents.set(target, new Set())
       }
+
       dependents.get(target).add(file)
       if (!typeOnly) {
         if (!runtimeDependents.has(target)) {
           runtimeDependents.set(target, new Set())
         }
+
         runtimeDependents.get(target).add(file)
         if (sourcePaths.size && code.test(target) && !discovered.has(target)) {
           discovered.add(target)
@@ -255,6 +297,7 @@ export function selectTestImpact(
         }
       }
     }
+
     const visit = (node) => {
       if (
         (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
@@ -286,14 +329,17 @@ export function selectTestImpact(
           uncertain.add(file)
         }
       }
+
       if (ts.isImportEqualsDeclaration(node)) {
         const expression = node.moduleReference.expression
+
         if (expression && ts.isStringLiteralLike(expression)) {
           add(expression.text, node.isTypeOnly)
         } else {
           uncertain.add(file)
         }
       }
+
       if (
         ts.isCallExpression(node) &&
         (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
@@ -308,19 +354,24 @@ export function selectTestImpact(
           uncertain.add(file)
         }
       }
+
       if (
         ts.isCallExpression(node) &&
         node.expression.getText(source).startsWith('import.meta.glob')
       ) {
         uncertain.add(file)
       }
+
       ts.forEachChild(node, visit)
     }
+
     visit(source)
   }
+
   const closure = (roots, edges) => {
     const reached = new Set(roots)
     const queue = [...reached]
+
     for (const file of queue) {
       for (const consumer of edges.get(file) ?? []) {
         if (!reached.has(consumer)) {
@@ -329,8 +380,10 @@ export function selectTestImpact(
         }
       }
     }
+
     return reached
   }
+
   const affected = new Set([
     ...closure(
       [
@@ -346,6 +399,7 @@ export function selectTestImpact(
       runtimeDependents
     )
   ])
+
   return {
     ...result(
       tests.filter((file) => affected.has(file)),

@@ -60,16 +60,19 @@ function validateWorkspaceEntry(workspace) {
   ) {
     throw new Error('Invalid workspace matrix entry')
   }
+
   const expectedArtifactId = crypto
     .createHash('sha256')
     .update(workspace.name)
     .digest('hex')
     .slice(0, 16)
+
   if (workspace.artifactId !== expectedArtifactId) {
     throw new Error(
       'Workspace matrix artifact identity does not match its name'
     )
   }
+
   return workspace
 }
 
@@ -92,6 +95,7 @@ async function executeWorkspaceChecks(
   if (typeof runTask !== 'function') {
     throw new Error('Workspace task runner is required')
   }
+
   const record = {
     version: 1,
     identity,
@@ -112,6 +116,7 @@ async function executeWorkspaceChecks(
     taskSequence: [],
     status: 'pending'
   }
+
   try {
     if (workspace.lintSelection.mode === 'not-selected') {
       record.lintStatus = 'not-selected'
@@ -130,8 +135,10 @@ async function executeWorkspaceChecks(
     record.testStatus = 'skipped'
     record.e2eStatus = 'skipped'
     record.status = 'failed'
+
     return record
   }
+
   try {
     record.taskSequence.push(workspace.buildTask)
     await runTask(workspace.name, workspace.buildTask)
@@ -141,8 +148,10 @@ async function executeWorkspaceChecks(
     record.testStatus = 'skipped'
     record.e2eStatus = 'skipped'
     record.status = 'failed'
+
     return record
   }
+
   try {
     if (workspace.testSelection.mode === 'not-selected') {
       record.testStatus = 'not-selected'
@@ -156,9 +165,11 @@ async function executeWorkspaceChecks(
           record.testResult = { status: 'zero-tests' }
           record.e2eStatus = 'skipped'
           record.status = 'failed'
+
           return record
         }
       }
+
       record.taskSequence.push(workspace.testTask)
       record.testResult = await runTask(
         workspace.name,
@@ -171,8 +182,10 @@ async function executeWorkspaceChecks(
     record.testStatus = 'failure'
     record.status = 'failed'
     record.e2eStatus = 'skipped'
+
     return record
   }
+
   try {
     if (workspace.e2eSelection.mode === 'not-selected') {
       record.e2eStatus = 'not-selected'
@@ -180,6 +193,7 @@ async function executeWorkspaceChecks(
       if (!workspace.e2eTask) {
         throw new Error('Selected E2E task is missing')
       }
+
       record.taskSequence.push(workspace.e2eTask)
       const result = await runTask(
         workspace.name,
@@ -187,12 +201,14 @@ async function executeWorkspaceChecks(
         workspace.e2eSelection,
         { identity, artifactId: workspace.artifactId }
       )
+
       record.e2eResult = result
       record.e2eStatus = result?.testCount > 0 ? 'passed' : 'zero-tests'
       if (record.e2eStatus === 'zero-tests') {
         record.status = 'failed'
       }
     }
+
     if (record.status === 'pending') {
       record.status = 'success'
     }
@@ -200,6 +216,7 @@ async function executeWorkspaceChecks(
     record.e2eStatus = 'failure'
     record.status = 'failed'
   }
+
   return record
 }
 
@@ -208,9 +225,11 @@ function resolveWorkspaceResultDirectory(
   configured = '.ci-workspace-results'
 ) {
   const directory = path.resolve(repositoryRoot, configured)
+
   if (!directory.startsWith(`${path.resolve(repositoryRoot)}${path.sep}`)) {
     throw new Error('Workspace results must stay inside the repository')
   }
+
   return directory
 }
 
@@ -219,9 +238,12 @@ function writeWorkspaceResult(record, artifactId, repositoryRoot) {
     repositoryRoot,
     process.env.WORKSPACE_CHECK_RESULTS_DIRECTORY
   )
+
   fs.mkdirSync(directory, { recursive: true })
   const destination = path.join(directory, `${artifactId}.json`)
+
   fs.writeFileSync(destination, JSON.stringify(record) + '\n')
+
   return destination
 }
 
@@ -234,6 +256,7 @@ function resolveWorkspaceEvidence(selected, evidence, identity, mapDigest) {
   ) {
     throw new Error('Workspace evidence identity does not match this execution')
   }
+
   if (
     evidence.relationshipMapDigest !== mapDigest ||
     crypto
@@ -243,6 +266,7 @@ function resolveWorkspaceEvidence(selected, evidence, identity, mapDigest) {
   ) {
     throw new Error('Workspace evidence relationship digest does not match')
   }
+
   const matches = evidence.relationshipMap.workspaceMatrix.filter(
     (entry) =>
       entry.name === selected.name &&
@@ -250,18 +274,23 @@ function resolveWorkspaceEvidence(selected, evidence, identity, mapDigest) {
       entry.artifactId === selected.artifactId &&
       entry.e2eSelection.mode === selected.e2eSelection?.mode
   )
+
   if (matches.length !== 1) {
     throw new Error('Scheduled workspace does not match the admitted evidence')
   }
+
   return validateWorkspaceEntry(matches[0])
 }
 
 async function main() {
   const relationshipMapDigest = process.env.CI_RELATIONSHIP_MAP_DIGEST ?? ''
+
   if (!/^[a-f0-9]{64}$/.test(relationshipMapDigest)) {
     throw new Error('Workspace relationship map digest is unavailable')
   }
+
   const identity = runtimeIdentity(process.env)
+
   if (
     Object.values(identity).some((value) => !value) ||
     !['base', 'head', 'integration'].every((key) =>
@@ -270,6 +299,7 @@ async function main() {
   ) {
     throw new Error('Workspace validation identity is incomplete')
   }
+
   const repositoryRoot = process.cwd()
   const workspace = resolveWorkspaceEvidence(
     JSON.parse(process.env.CI_WORKSPACE_MATRIX_ITEM ?? ''),
@@ -280,17 +310,21 @@ async function main() {
   const record = await executeWorkspaceChecks(workspace, {
     identity,
     relationshipMapDigest,
+
     runTask: async (name, task, selection, e2eContext) => {
       if (task === 'eslint') {
         const eslint = new ESLint({ cwd: repositoryRoot })
         const results = await eslint.lintFiles(workspace.directory)
         const output = (await eslint.loadFormatter('stylish')).format(results)
+
         if (output) {
           process.stdout.write(output)
         }
+
         if (results.some(({ errorCount }) => errorCount > 0)) {
           throw new Error('Workspace lint failed')
         }
+
         return {
           mode: 'full',
           executedFiles: results.map(({ filePath }) =>
@@ -298,20 +332,25 @@ async function main() {
           )
         }
       }
+
       if (task === 'lint') {
         execFileSync('yarn', ['workspace', name, 'lint'], {
           cwd: repositoryRoot,
           stdio: 'inherit'
         })
+
         return { mode: 'full' }
       }
+
       if (task === 'has:test') {
         execFileSync('yarn', ['workspace', name, 'has:test'], {
           cwd: repositoryRoot,
           stdio: 'ignore'
         })
+
         return { mode: 'preflight' }
       }
+
       if (task === 'test:ci' && selection.mode === 'files') {
         execFileSync(
           'yarn',
@@ -325,12 +364,15 @@ async function main() {
           ],
           { cwd: repositoryRoot, stdio: 'inherit' }
         )
+
         return { mode: 'files', inputs: selection.inputs }
       }
+
       if (task === 'test:ci' && selection.mode === 'related') {
         const files = selection.inputs.map((file) =>
           path.resolve(repositoryRoot, file)
         )
+
         execFileSync(
           'yarn',
           [
@@ -345,19 +387,23 @@ async function main() {
           ],
           { cwd: repositoryRoot, stdio: 'inherit' }
         )
+
         return { mode: 'related', inputs: selection.inputs }
       }
+
       if (task === 'test:e2e:ci') {
         const resultDirectory = resolveWorkspaceResultDirectory(
           repositoryRoot,
           process.env.WORKSPACE_CHECK_RESULTS_DIRECTORY
         )
+
         fs.mkdirSync(resultDirectory, { recursive: true })
         const reportPath = path.join(
           resultDirectory,
           `${e2eContext.artifactId}.playwright.json`
         )
         let reportReadSuccessfully = false
+
         try {
           execFileSync(
             'yarn',
@@ -377,12 +423,14 @@ async function main() {
             }
           )
           const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'))
+
           reportReadSuccessfully = true
           const observations = playwrightObservations(report)
           const digest = crypto
             .createHash('sha256')
             .update(JSON.stringify(report))
             .digest('hex')
+
           return {
             mode: selection.mode,
             inputs: selection.inputs,
@@ -399,14 +447,17 @@ async function main() {
           }
         }
       }
+
       execFileSync(
         'yarn',
         ['turbo', 'run', task, `--filter=${name}`, '--concurrency=2'],
         { cwd: repositoryRoot, stdio: 'inherit' }
       )
+
       return { mode: 'full' }
     }
   })
+
   writeWorkspaceResult(record, workspace.artifactId, repositoryRoot)
   console.log(JSON.stringify(record))
   if (record.status !== 'success') {
@@ -418,6 +469,7 @@ function playwrightObservations(report) {
   let testCount = 0
   let passedCount = 0
   let failedCount = 0
+
   const visit = (suites) => {
     for (const suite of suites ?? []) {
       for (const spec of suite.specs ?? []) {
@@ -433,13 +485,16 @@ function playwrightObservations(report) {
           }
         }
       }
+
       visit(suite.suites)
     }
   }
+
   visit(report?.suites)
   if (report?.errors?.length) {
     failedCount += report.errors.length
   }
+
   return { testCount, passedCount, failedCount }
 }
 

@@ -15,24 +15,30 @@ export const runReleaseCommand = (command, args, options = {}) =>
     maxBuffer: 32 * 1024 * 1024,
     ...options
   })
+
 export const guidanceHash = (value) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex')
+
 const sha = (value) =>
   assert.match(
     value ?? '',
     /^[a-f0-9]{40}$/,
     'Release guidance requires an exact source SHA'
   )
+
 const notePath = (file) =>
   /(?:^|\/)(?:CHANGELOG|RELEASE_NOTES)\.md$|^docs\/public\/updates\/pending\.md$/.test(
     file
   )
+
 const within = (file, root) => file === root || file.startsWith(`${root}/`)
 
 export function artifactIntegrity(file) {
   const hash = createHash('sha512')
+
   const visit = (entry, relative) => {
     const stat = fs.lstatSync(entry)
+
     assert.ok(
       !stat.isSymbolicLink(),
       'Release artifacts cannot contain symlinks'
@@ -46,17 +52,22 @@ export function artifactIntegrity(file) {
       if (relative) {
         hash.update(`${relative}\0${stat.size}\0`)
       }
+
       hash.update(fs.readFileSync(entry))
     }
   }
+
   visit(file, '')
+
   return `sha512-${hash.digest('base64')}`
 }
 
 export function readGuidance(file) {
   assert.ok(fs.existsSync(file), `Missing release guidance: ${file}`)
+
   return JSON.parse(fs.readFileSync(file, 'utf8'))
 }
+
 export function writeGuidance(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`)
@@ -76,7 +87,9 @@ export function prepareGuidance({
     owner && deliveries?.length,
     'Release guidance requires an owner and deliveries'
   )
+
   const git = (args) => runCommand('git', args, { cwd: root })
+
   assert.equal(
     git(['rev-parse', 'HEAD']).trim(),
     sourceSha,
@@ -97,6 +110,7 @@ export function prepareGuidance({
     .filter(Boolean)
   const comparisons = new Map()
   const snapshots = new Map()
+
   const snapshot = (revision) => {
     sha(revision)
     if (!snapshots.has(revision)) {
@@ -110,15 +124,19 @@ export function prepareGuidance({
         .filter(Boolean)
       const present = new Set(files)
       const contents = new Map()
+
       const read = (file) => {
         if (!present.has(file)) {
           return undefined
         }
+
         if (!contents.has(file)) {
           contents.set(file, git(['show', `${revision}:${file}`]))
         }
+
         return contents.get(file)
       }
+
       const manifests = files
         .filter((file) =>
           /^(?:apps|packages|tools)\/[^/]+\/package\.json$/.test(file)
@@ -127,13 +145,17 @@ export function prepareGuidance({
           root: path.posix.dirname(file),
           manifest: JSON.parse(read(file))
         }))
+
       const closure = (roots) => {
         const included = new Set(roots)
+
         const visit = (directory) => {
           const entry = manifests.find((item) => item.root === directory)
+
           if (!entry) {
             return
           }
+
           for (const name of Object.keys({
             ...entry.manifest.dependencies,
             ...entry.manifest.devDependencies,
@@ -143,24 +165,32 @@ export function prepareGuidance({
             const dependency = manifests.find(
               (item) => item.manifest.name === name
             )
+
             if (dependency && !included.has(dependency.root)) {
               included.add(dependency.root)
               visit(dependency.root)
             }
           }
         }
+
         roots.forEach(visit)
+
         return [...included]
       }
+
       snapshots.set(revision, {
         files,
         read,
+
         exists: (file) => present.has(file),
+
         closure
       })
     }
+
     return snapshots.get(revision)
   }
+
   const target = snapshot(sourceSha)
   const notes = target.files.filter(notePath)
   const ids = new Set()
@@ -189,6 +219,7 @@ export function prepareGuidance({
     const rootsUnion = [
       ...new Set([...previous.closure(roots), ...target.closure(roots)])
     ]
+
     if (!comparisons.has(baseline.sourceSha)) {
       // Never silently replace a non-ancestor baseline with a merge base.
       git(['merge-base', '--is-ancestor', baseline.sourceSha, sourceSha])
@@ -207,12 +238,15 @@ export function prepareGuidance({
           .filter(Boolean)
       )
     }
+
     const allChanges = comparisons.get(baseline.sourceSha)
+
     const relevant = (file) =>
       rootsUnion.some((directory) => within(file, directory)) ||
       !file.includes('/') ||
       file.startsWith('scripts/') ||
       /^\.(?:yarn|github)\//.test(file)
+
     assert.deepEqual(
       untracked.filter(
         (file) =>
@@ -224,6 +258,7 @@ export function prepareGuidance({
     )
     const changes = allChanges.filter(relevant)
     const changedNotes = allChanges.filter(notePath)
+
     validateUpdateGuidance({
       changes: [...new Set([...changes, ...changedNotes])],
       notePaths: notes,
@@ -236,6 +271,7 @@ export function prepareGuidance({
       const old = readNotes(previous.read(file)).map((note) =>
         JSON.stringify(note)
       )
+
       return readNotes(target.read(file))
         .filter(
           (note) =>
@@ -256,6 +292,7 @@ export function prepareGuidance({
       .filter(Boolean)
       .map((content) => {
         const manifest = JSON.parse(content)
+
         return {
           name: manifest.name,
           version: manifest.version,
@@ -263,6 +300,7 @@ export function prepareGuidance({
           peerDependencies: manifest.peerDependencies ?? {}
         }
       })
+
     return {
       id,
       roots,
@@ -280,6 +318,7 @@ export function prepareGuidance({
         : 'No non-documentation source delta; artifact identity is recorded separately.'
     }
   })
+
   return {
     schemaVersion: 1,
     status: 'CANDIDATE',
@@ -322,12 +361,15 @@ export function admitGuidance({
       'Publication source changed'
     )
   }
+
   for (const delivery of deliveries) {
     const live = current.find((item) => item.id === delivery.id)
+
     assert.ok(live, `Missing current baseline for ${delivery.id}`)
     const baseline = evidence.deliveries?.find(
       (item) => item.id === delivery.id
     )?.baseline
+
     assert.ok(baseline, 'Missing frozen release guidance baseline')
     // npm retries may encounter this exact immutable candidate after a partial publish.
     const matches =
@@ -344,11 +386,13 @@ export function admitGuidance({
             Boolean(publication.outcomes[delivery.id].deploymentId) &&
             live.deploymentId ===
               publication.outcomes[delivery.id].deploymentId)
+
     assert.ok(
       matches,
       `Online baseline changed for ${delivery.id}; prepare new release guidance`
     )
   }
+
   const rebuilt = prepareGuidance({
     root,
     owner,
@@ -360,11 +404,13 @@ export function admitGuidance({
         ?.baseline
     }))
   })
+
   assert.deepEqual(
     evidence,
     rebuilt,
     'Release guidance source, scope, summary, guide or artifacts changed'
   )
+
   return guidanceHash(evidence)
 }
 
@@ -386,10 +432,12 @@ export function registryRecord(root, name, runCommand = runReleaseCommand) {
     )
   )
   const integrity = record['dist.integrity'] ?? record.dist?.integrity
+
   assert.ok(
     record.version && integrity,
     `Release coverage gap: registry identity missing for ${name}`
   )
+
   return {
     id: name,
     version: record.version,
@@ -397,13 +445,17 @@ export function registryRecord(root, name, runCommand = runReleaseCommand) {
     ...(record.gitHead ? { sourceSha: record.gitHead } : {})
   }
 }
+
 export function registryBaseline(root, name, runCommand = runReleaseCommand) {
   const record = registryRecord(root, name, runCommand)
+
   return resolveRegistryBaseline(root, record, runCommand)
 }
+
 function resolveRegistryBaseline(root, record, runCommand) {
   const name = record.id
   let sourceSha = record.sourceSha
+
   if (!sourceSha) {
     try {
       sourceSha = runCommand(
@@ -421,12 +473,15 @@ function resolveRegistryBaseline(root, record, runCommand) {
       )
     }
   }
+
   sha(sourceSha)
+
   return { ...record, sourceSha }
 }
 
 export function recordGuidanceResult(file, evidence, id, status, details = {}) {
   const reference = guidanceHash(evidence)
+
   file = `${file}.${reference}.json`
   const previous = fs.existsSync(file)
     ? readGuidance(file)
@@ -436,6 +491,7 @@ export function recordGuidanceResult(file, evidence, id, status, details = {}) {
         sourceSha: evidence.sourceSha,
         outcomes: {}
       }
+
   assert.equal(
     previous.guidance,
     reference,
@@ -451,16 +507,19 @@ export function recordGuidanceResult(file, evidence, id, status, details = {}) {
   )
   previous.outcomes[id] = { status, ...details }
   writeGuidance(file, previous)
+
   return previous
 }
 
 export function prepareOrReuseGuidance(file, inputs, current) {
   if (fs.existsSync(file)) {
     const prior = readGuidance(file)
+
     const identities = (deliveries) =>
       deliveries
         .map(({ id, roots, artifact }) => ({ id, roots, artifact }))
         .sort((a, b) => a.id.localeCompare(b.id))
+
     const resuming = current.some((item) =>
       inputs.deliveries.some(
         ({ artifact }) =>
@@ -470,6 +529,7 @@ export function prepareOrReuseGuidance(file, inputs, current) {
           item.integrity === artifact.integrity
       )
     )
+
     if (
       resuming &&
       prior.owner === inputs.owner &&
@@ -478,11 +538,15 @@ export function prepareOrReuseGuidance(file, inputs, current) {
         JSON.stringify(identities(inputs.deliveries))
     ) {
       admitGuidance({ ...inputs, evidence: prior, current })
+
       return prior
     }
   }
+
   const candidate = prepareGuidance(inputs)
+
   writeGuidance(file, candidate)
+
   return candidate
 }
 
@@ -494,6 +558,7 @@ export function registryPreparationBaseline(
   runCommand = runReleaseCommand
 ) {
   const current = registryRecord(root, artifact.id, runCommand)
+
   if (current.version === artifact.version) {
     assert.equal(
       current.integrity,
@@ -502,27 +567,35 @@ export function registryPreparationBaseline(
     )
     if (fs.existsSync(file)) {
       const previous = readGuidance(file)
+
       if (previous.sourceSha === sourceSha) {
         const prior = previous.deliveries.find(
           (item) => item.id === artifact.id
         )
+
         assert.deepEqual(
           prior?.artifact,
           artifact,
           'Published candidate has no matching retained guidance'
         )
+
         return { baseline: prior.baseline, current }
       }
     }
+
     const published = resolveRegistryBaseline(root, current, runCommand)
+
     assert.notEqual(
       published.sourceSha,
       sourceSha,
       'Missing release guidance for this published candidate'
     )
+
     return { baseline: published, current: published }
   }
+
   const resolved = resolveRegistryBaseline(root, current, runCommand)
+
   return { baseline: resolved, current: resolved }
 }
 
@@ -532,11 +605,13 @@ export function registryCurrent(
   runCommand = runReleaseCommand
 ) {
   const record = registryRecord(root, artifact.id, runCommand)
+
   if (
     record.version === artifact.version &&
     record.integrity === artifact.integrity
   ) {
     return record
   }
+
   return resolveRegistryBaseline(root, record, runCommand)
 }

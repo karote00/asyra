@@ -26,6 +26,7 @@ describe('ephemeral awareness ownership', () => {
     let now = 100
     const runtime = new Awareness({
       actorId: 'actor-a',
+
       now: () => now
     })
     const input = {
@@ -38,6 +39,7 @@ describe('ephemeral awareness ownership', () => {
     }
 
     const first = runtime.updateLocal(input)
+
     now = 120
     input.cursor.x = 999
     input.selection.ids.push('mutated')
@@ -70,9 +72,11 @@ describe('ephemeral awareness ownership', () => {
     let now = 100
     const runtime = new Awareness({
       actorId: 'actor-local',
+
       now: () => now
     })
     const later = vi.fn()
+
     runtime.observe((event) => {
       if (event.type === 'updated') {
         ;(event.snapshot.state.cursor as { x: number }).x = 999
@@ -117,14 +121,17 @@ describe('ephemeral awareness ownership', () => {
     const runtime = new Awareness({
       actorId: 'actor-local',
       timeoutMs: 50,
+
       now: () => now
     })
     const removed = vi.fn()
+
     runtime.observe((event) => {
       if (event.type === 'removed') {
         removed(event)
       }
     })
+
     const apply = (actorId: string) =>
       runtime.applyRemote({
         actorId,
@@ -154,6 +161,7 @@ describe('ephemeral awareness ownership', () => {
   it('clears every remote snapshot when the local transport is lost', () => {
     const runtime = new Awareness({ actorId: 'actor-local' })
     const removed = vi.fn()
+
     runtime.observe((event) => {
       if (event.type === 'removed') {
         removed(event)
@@ -184,6 +192,7 @@ describe('ephemeral awareness ownership', () => {
 
   it('rejects disconnect accessors without executing them or clearing presence', () => {
     const runtime = new Awareness({ actorId: 'actor-local' })
+
     runtime.applyRemote({
       actorId: 'actor-remote',
       clock: 1,
@@ -191,10 +200,13 @@ describe('ephemeral awareness ownership', () => {
     })
     let actorReads = 0
     const disconnect = { reason: 'disconnect' }
+
     Object.defineProperty(disconnect, 'actorId', {
       enumerable: true,
+
       get: () => {
         actorReads += 1
+
         return 'actor-remote'
       }
     })
@@ -276,6 +288,7 @@ describe('ephemeral awareness ownership', () => {
       string,
       unknown
     >
+
     expect(Object.getPrototypeOf(cloned)).toBe(Object.prototype)
     expect(Object.prototype.hasOwnProperty.call(cloned, '__proto__')).toBe(true)
     expect(cloned.__proto__).toEqual({ claimedPermission: 'write' })
@@ -286,6 +299,7 @@ describe('ephemeral awareness ownership', () => {
     const runtime = new Awareness({ actorId: 'actor-local' })
     const nestedGetter = vi.fn(() => 'Asa')
     const identity = {}
+
     Object.defineProperty(identity, 'displayName', {
       enumerable: true,
       get: nestedGetter
@@ -302,6 +316,7 @@ describe('ephemeral awareness ownership', () => {
 
     const topLevelGetter = vi.fn(() => ({ displayName: 'Asa' }))
     const input = {}
+
     Object.defineProperty(input, 'identity', {
       enumerable: true,
       get: topLevelGetter
@@ -326,6 +341,7 @@ describe('ephemeral awareness ownership', () => {
         clock: 1,
         state: { tool: 'select' }
       }
+
       Object.defineProperty(message, field, {
         enumerable: true,
         get: getter
@@ -370,6 +386,7 @@ describe('ephemeral awareness ownership', () => {
     const first = new Awareness({ actorId: 'actor-a' })
     const second = new Awareness({ actorId: 'actor-b' })
     const firstObserver = vi.fn()
+
     first.observe(firstObserver)
     first.applyRemote({
       actorId: 'actor-c',
@@ -398,11 +415,14 @@ describe('ephemeral awareness ownership', () => {
     })
     const projectedPresence = new Map<string, unknown>()
     const runtime = new Awareness({ actorId: 'actor-local' })
+
     runtime.observe((event) => {
       if (event.type === 'updated') {
         projectedPresence.set(event.snapshot.actorId, event.snapshot.state)
+
         return
       }
+
       projectedPresence.delete(event.actorId)
     })
 

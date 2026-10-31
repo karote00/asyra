@@ -1,4 +1,5 @@
 import { test } from '@playwright/test'
+
 const painted = async (page: import('@playwright/test').Page) =>
   page.evaluate(
     () =>
@@ -6,6 +7,7 @@ const painted = async (page: import('@playwright/test').Page) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       )
   )
+
 test('tree inspection uses the live office from overview and side', async ({
   page
 }, info) => {
@@ -29,9 +31,11 @@ test('tree inspection uses the live office from overview and side', async ({
   const bounds = await page
     .getByLabel('Office 3D scene', { exact: true })
     .boundingBox()
+
   if (!bounds) {
     throw new Error('Scene viewport missing')
   }
+
   await page.mouse.move(
     bounds.x + bounds.width * 0.55,
     bounds.y + bounds.height * 0.5
@@ -70,6 +74,7 @@ test('wide overview exposes different tree sizes and crowns in the same live sce
   for (let i = 0; i < 2; i++) {
     await page.getByRole('button', { name: 'Zoom out', exact: true }).click()
   }
+
   await painted(page)
   await page.screenshot({
     path: info.outputPath('tree-variation-overview.png')

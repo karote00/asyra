@@ -12,6 +12,7 @@ export async function prepareProjectVisuals(
   const groups = [
     ...readCapturedVisualBindingGroups(snapshot.document).values()
   ]
+
   for (const run of snapshot.runs ?? []) {
     groups.push(
       run.snapshot.workcell.bodies.flatMap((body) =>
@@ -19,19 +20,24 @@ export async function prepareProjectVisuals(
       )
     )
   }
+
   const archive = await VisualAssetArchive.fromSources(
     snapshot.visualSources ?? [],
     decoder,
     signal
   )
+
   try {
     for (const bindings of groups) {
       archive.resolveBindings(bindings)
     }
+
     for (const run of snapshot.runs ?? []) {
       validateOriginalPartSources(run.snapshot, archive)
     }
+
     signal?.throwIfAborted()
+
     return archive
   } catch (error) {
     archive.dispose()

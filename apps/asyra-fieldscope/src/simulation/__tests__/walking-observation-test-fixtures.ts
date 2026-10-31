@@ -29,8 +29,10 @@ export function walkingObservationScene(kind: WalkingObservationSceneKind) {
   const farm = { ...DEFAULT_CONFIGURATION, length: 2.2 }
   let scene: PreparedScene
   let isCurrentScene: (value: PreparedScene) => boolean
+
   if (kind === 'actual-site') {
     const site = new SiteGeometry()
+
     scene = site.prepareScene(farm, buildSiteMeshes(farm, site))
     isCurrentScene = (value) => site.isCurrentScene(value)
   } else {
@@ -52,9 +54,11 @@ export function walkingObservationScene(kind: WalkingObservationSceneKind) {
       wireframe: false,
       selectable: false
     })
+
     if (descriptor.kind !== 'mesh') {
       throw new Error('Missing canonical sheet')
     }
+
     const mesh: SiteMesh = Object.freeze({
       id: 'bounded-observation-sheet',
       layer: 'supports',
@@ -65,6 +69,7 @@ export function walkingObservationScene(kind: WalkingObservationSceneKind) {
         3
       )
     })
+
     scene = Object.freeze({
       revision: 1,
       meshes: Object.freeze([mesh]),
@@ -73,6 +78,7 @@ export function walkingObservationScene(kind: WalkingObservationSceneKind) {
     })
     isCurrentScene = (value) => value === scene
   }
+
   const sourceOwner = new SceneDemandSourceBoundsOwner()
   const demand = prepareSceneDemand(
     farm,
@@ -96,17 +102,21 @@ export function walkingObservationScene(kind: WalkingObservationSceneKind) {
     },
     sourceOwner
   )
+
   if (!demand.route) {
     throw new Error('Missing source route')
   }
+
   return { farm, scene, isCurrentScene, sourceOwner, demand }
 }
 
 export function walkingActionFixture(kind: WalkingObservationSceneKind) {
   const f = walkingObservationScene(kind)
+
   if (!f.demand.route) {
     throw new Error('Missing source route')
   }
+
   const operating = new WalkingOperatingOwner(
     () => f.demand,
     (value) => value === f.demand
@@ -118,9 +128,11 @@ export function walkingActionFixture(kind: WalkingObservationSceneKind) {
       })
     )
   )
+
   if (report.status === 'legacy-view') {
     throw new Error('Missing walking source')
   }
+
   const receipt = Object.freeze({
     format: 'walking-observation-geometry/1' as const,
     scene: f.scene,
@@ -129,8 +141,11 @@ export function walkingActionFixture(kind: WalkingObservationSceneKind) {
   })
   const query = new QueryGeometry({
     isCurrentWalkingReceipt: (value) => value === receipt,
+
     isCurrentScene: f.isCurrentScene,
+
     isCurrentDemand: (value) => value === f.demand,
+
     isCurrentWalkingSource: (value) => operating.sourceOwner.isCurrent(value)
   })
   const source = query.prepareWalking(receipt)
@@ -157,12 +172,16 @@ export function walkingActionFixture(kind: WalkingObservationSceneKind) {
     validUntil: 10,
     actors: []
   }
+
   dynamics.prepare(world)
   const observations = new WalkingActionObservations(query, {
     prepareObservationSpace: prepareSpace,
+
     isCurrentObservationSpace: (value) => value === space,
+
     isCurrentContext: (value) =>
       value === context && operating.isCurrent(report),
+
     screen: operating.transitScreen,
     dynamics
   })
@@ -208,6 +227,7 @@ export function walkingActionFixture(kind: WalkingObservationSceneKind) {
     leaves: 'source-pose' as const,
     fruits: 'all-attached' as const
   }
+
   return {
     ...f,
     observations,
@@ -215,7 +235,9 @@ export function walkingActionFixture(kind: WalkingObservationSceneKind) {
     input,
     operating,
     prepareSpace,
+
     getSpace: () => space,
+
     dynamics,
     world
   }

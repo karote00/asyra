@@ -9,12 +9,15 @@ export const sha256 = (filename) =>
 export function distributionFiles(directory) {
   const files = []
   let bytes = 0
+
   function visit(relative) {
     const filename = path.join(directory, relative)
     const stat = lstatSync(filename)
+
     if (stat.isSymbolicLink()) {
       throw new Error(`Distribution symlink: ${relative}`)
     }
+
     if (stat.isDirectory()) {
       for (const name of readdirSync(filename).sort()) {
         if (
@@ -26,6 +29,7 @@ export function distributionFiles(directory) {
         ) {
           throw new Error('Unsupported distribution filename.')
         }
+
         visit(path.posix.join(relative, name))
       }
     } else if (stat.isFile()) {
@@ -40,7 +44,9 @@ export function distributionFiles(directory) {
       throw new Error(`Unsupported distribution input: ${relative}`)
     }
   }
+
   visit('')
+
   return files
 }
 

@@ -19,16 +19,19 @@ test('public source map retains the current source bytes without API type analys
       'utf8'
     )
   )
+
   const hashFile = (file) =>
     createHash('sha256')
       .update(fs.readFileSync(path.join(repositoryRoot, file), 'utf8'))
       .digest('hex')
+
   assert.deepEqual(
     sourceMap.pages.map((page) => page.id),
     pages.map((page) => page.id)
   )
   for (const page of pages) {
     const record = sourceMap.pages.find((record) => record.id === page.id)
+
     assert.equal(
       record.pageSha256,
       hashFile(`docs/public/${page.path}`),

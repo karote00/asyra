@@ -23,12 +23,14 @@ const snapshot = () => ({
 describe('local project envelope', () => {
   it('reports unavailable native storage rather than substituting memory', async () => {
     const repository = new IndexedProjectRepository()
+
     await expect(repository.list()).rejects.toThrow('IndexedDB is unavailable')
     repository.close()
   })
   it('roundtrips detached document data and retained load repair diagnostics', () => {
     const original = snapshot(),
       decoded = decodeProject(encodeProject(original))
+
     expect(decoded).toEqual(original)
     expect(decoded.document).not.toBe(original.document)
     original.loadIssues[0].message = 'changed'

@@ -9,6 +9,7 @@ it('places and scales non-instanced LoD with its master and retains it through m
   }
   const placed = placeParts([source], [4, 3, 2], 90, [2, 1, 3])
   const distant = placed[0].distant
+
   expect(distant?.maxError).toBeCloseTo(0.06, 8)
   expect(
     Math.min(...(distant?.mesh.positions.filter((_, i) => i % 3 === 2) ?? []))
@@ -17,6 +18,7 @@ it('places and scales non-instanced LoD with its master and retains it through m
     { assemblies: [], labels: [], parts: placed },
     {}
   )
+
   expect(meshes[0].descriptor.distant?.maxError).toBeCloseTo(0.06, 8)
   expect(meshes[0].descriptor.distant?.shape.kind).toBe('triangles')
 })

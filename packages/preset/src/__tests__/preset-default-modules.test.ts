@@ -93,6 +93,7 @@ describe('Preset default modules', () => {
   it('installs only resolved defaults and preserves canonical module order', async () => {
     const { installers, installPresetDefaults } = await loadInstallHarness()
     const callOrder: string[] = []
+
     installers.vector.mockImplementation(() => callOrder.push('vector'))
     installers.selection.mockImplementation(() => callOrder.push('selection'))
     installers.vectorEditing.mockImplementation(() =>
@@ -133,6 +134,7 @@ describe('Preset default modules', () => {
     const { installers, installPresetDefaults, PresetApplyError } =
       await loadInstallHarness()
     const cause = new Error('selection install failed')
+
     installers.selection.mockImplementation(() => {
       throw cause
     })
@@ -143,6 +145,7 @@ describe('Preset default modules', () => {
     ])
 
     let received: unknown
+
     try {
       installPresetDefaults(input)
     } catch (error) {

@@ -12,8 +12,10 @@ function freeze<T>(value: T): T {
     for (const child of Object.values(value)) {
       freeze(child)
     }
+
     Object.freeze(value)
   }
+
   return value
 }
 
@@ -27,24 +29,30 @@ export function createMethodCatalog(
   ) {
     throw new Error('Method catalog capacity exceeded')
   }
+
   const byId = new Map<string, Readonly<MethodRegistration>>(),
     names = new Set<string>()
+
   for (const input of registrations) {
     validateInstalledDescriptor(input?.descriptor)
     if (typeof input.execute !== 'function') {
       throw new Error('Missing trusted method implementation')
     }
+
     if (
       input.createExecutor !== undefined &&
       typeof input.createExecutor !== 'function'
     ) {
       throw new Error('Invalid trusted method executor factory')
     }
+
     const descriptor = freeze(structuredClone(input.descriptor)),
       name = descriptor.manifest.name.trim().toLowerCase()
+
     if (byId.has(descriptor.id) || names.has(name)) {
       throw new Error('Duplicate method ID or name')
     }
+
     names.add(name)
     byId.set(
       descriptor.id,
@@ -57,15 +65,19 @@ export function createMethodCatalog(
       })
     )
   }
+
   return Object.freeze({
     descriptors: Object.freeze(
       [...byId.values()].map((item) => item.descriptor)
     ),
+
     resolve(id: string, version: string) {
       const entry = byId.get(id)
+
       if (!entry || entry.descriptor.version !== version) {
         throw new Error('Requested method or version is unavailable')
       }
+
       return entry
     }
   })

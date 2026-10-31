@@ -11,6 +11,7 @@ export const strokesPropertyComponentDefinition: PropertyComponentDefinition = {
     childType: PropertyTypes.STROKE,
     mode: 'ids-or-objects',
     collection: 'array-or-record',
+
     toChildData: (item, childId) => {
       if (typeof item !== 'object' || item === null || Array.isArray(item)) {
         return null
@@ -22,8 +23,10 @@ export const strokesPropertyComponentDefinition: PropertyComponentDefinition = {
         ...item
       }
     },
+
     toValue: (child, childId) => {
       const fill = child.get('fill')
+
       return {
         id: childId,
         style: child.get('style'),

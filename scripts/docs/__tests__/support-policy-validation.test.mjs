@@ -85,11 +85,13 @@ test('support policy rejects ordinary Issues, PR invitations, missing security r
 test('Sim local candidate keeps coordinator and unresolved maintenance and safety duties', () => {
   const read = (relativePath) =>
     fs.readFileSync(path.join(repositoryRoot, relativePath), 'utf8')
+
   const local = read('docs/ai/apps/asyra-sim/release/LOCAL_CANDIDATE.md')
   const first = read('docs/ai/apps/asyra-sim/release/FIRST_RELEASE.md')
   const proposal = read(
     'docs/ai/apps/asyra-sim/release/MAINTENANCE_PROPOSAL.md'
   )
+
   assert.match(local, /person coordinating your\s+local review/u)
   assert.match(
     local,

@@ -8,6 +8,7 @@ export async function showSetup(page: Page, advanced = false) {
         .locator(':scope > summary')
         .filter({ hasText: 'Advanced settings' })
     })
+
     if (
       !(await section.evaluate(
         (element) => (element as HTMLDetailsElement).open
@@ -36,7 +37,9 @@ export async function runAnalysis(page: Page) {
 
 export async function expectAnalysisBlocked(page: Page) {
   const workers: string[] = []
+
   const observe = (worker: { url(): string }) => workers.push(worker.url())
+
   page.on('worker', observe)
   try {
     await page

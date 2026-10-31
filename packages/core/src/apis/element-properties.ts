@@ -40,6 +40,7 @@ export const createElementPropertyAPIs = (
     if (targetRequests.length === 0) {
       return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
     }
+
     const resolvedTargets =
       requests.resolveElementPropertyTargets(targetRequests)
     const roots = requests.resolveElementPropertyBindings(
@@ -61,6 +62,7 @@ export const createElementPropertyAPIs = (
       options
     )
     const changed = applyPreparedPropertyIntent(requests, prepared, options)
+
     return Object.freeze({
       acceptedIds: freezeOrderedElementIds(resolvedTargets),
       changed
@@ -81,6 +83,7 @@ export const createElementPropertyAPIs = (
         options
       )
     },
+
     patchElementProperties(
       patches: readonly ElementPropertyPatchUpdate[],
       options?: EVENT_OPTIONS

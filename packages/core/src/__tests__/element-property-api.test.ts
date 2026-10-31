@@ -30,6 +30,7 @@ const emptyPreparedIntent = {
   retainedExistingPropertyIds: [],
   createdPropertyIds: []
 }
+
 const bindingRequests = () => ({
   resolveElementPropertyBindings: vi.fn(
     (
@@ -92,15 +93,18 @@ describe('Core canonical element property APIs', () => {
     const resolveElementPropertyTargets = vi.fn(
       (_requests: readonly ElementPropertyTargetRequest[]) => {
         sequence.push('target')
+
         return resolvedTargets
       }
     )
     const prepareOwnerPropertyMutations = vi.fn(() => {
       sequence.push('props-preflight')
+
       return emptyPreparedIntent
     })
     const applyPreparedPropertyMutationBatch = vi.fn(() => {
       sequence.push('props-apply')
+
       return emptyPropsResult
     })
     const apis = createElementPropertyAPIs({
@@ -241,17 +245,24 @@ it('resolves nested shared property owners through canonical indexes without sca
     if (id === 'fills') {
       return [{ ownerElementId: 'tier-3' }, { ownerElementId: 'tier-5' }]
     }
+
     if (id === 'fill') {
       return [{ ownerElementId: 'tier-3' }]
     }
+
     return []
   })
   const host = {
     deps: {
-      props: { resolvePropertyAncestorIds, getPropertyById: () => ({}) },
+      props: {
+        resolvePropertyAncestorIds,
+
+        getPropertyById: () => ({})
+      },
       sceneTree: { getElementPropertyRelations }
     }
   }
+
   expect(
     Core.prototype.getPropertyOwnerElementIds.call(host as never, ['color'])
   ).toEqual(['tier-3', 'tier-5'])
@@ -269,6 +280,7 @@ it('does not treat retired property cleanup as an unknown document mutation', as
     if (ids.includes('retired')) {
       throw new Error('Property is retired')
     }
+
     return ids
   })
   const getElementPropertyRelations = vi.fn((id: string) =>
@@ -278,11 +290,13 @@ it('does not treat retired property cleanup as an unknown document mutation', as
     deps: {
       props: {
         getPropertyById: (id: string) => (id === 'active' ? {} : undefined),
+
         resolvePropertyAncestorIds
       },
       sceneTree: { getElementPropertyRelations }
     }
   }
+
   expect(
     Core.prototype.getPropertyOwnerElementIds.call(
       host as never,

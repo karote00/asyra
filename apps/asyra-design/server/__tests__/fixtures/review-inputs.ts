@@ -18,6 +18,7 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
   owner: T
 ): T => {
   const call = owner.call.bind(owner)
+
   owner.call = async (name, input, signal) => {
     if (
       name !== AiDesignToolIds.REVIEW_DRAWING ||
@@ -27,7 +28,9 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
     ) {
       return call(name, input, signal)
     }
+
     const value = input as Record<string, unknown>
+
     if (
       value.inspections ||
       !Array.isArray(value.checks) ||
@@ -38,6 +41,7 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
     ) {
       return call(name, input, signal)
     }
+
     const bindingText = await call(
       name,
       {
@@ -49,9 +53,11 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
       signal
     )
     const binding = JSON.parse(bindingText)
+
     if (!binding.next?.arguments?.checks) {
       return bindingText
     }
+
     return call(
       name,
       {
@@ -64,5 +70,6 @@ export const withReviewBindingActor = <T extends LocalToolOwner>(
       signal
     )
   }
+
   return owner
 }

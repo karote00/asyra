@@ -27,6 +27,7 @@ export function createDynamicPropsClass(properties: PropertyDefinition[]) {
 
   return class DynamicProps {
     elementId: string;
+
     [key: string]: unknown // Generic index for class methods and properties
 
     constructor(
@@ -49,17 +50,20 @@ export function createDynamicPropsClass(properties: PropertyDefinition[]) {
           `[SceneTree] Unknown canonical property binding "${name}"`
         )
       }
+
       this[name] = id
     }
 
     getPropId(name: string): string | undefined {
       const val = this[name]
+
       return typeof val === 'string' ? val : undefined
     }
 
     getCanonicalRootPropertyIds(): readonly string[] {
       return properties.flatMap((property) => {
         const propertyId = this.getPropId(property.name)
+
         return propertyId ? [propertyId] : []
       })
     }
@@ -78,9 +82,11 @@ export function createDynamicPropsClass(properties: PropertyDefinition[]) {
       const components = properties.map((property) =>
         this.createProperty(property)
       )
+
       this.propsManagerOwner.addProperty(components)
       properties.forEach((prop, index) => {
         const component = components[index]
+
         this[prop.name] = component.get('id')
       })
     }
@@ -97,13 +103,18 @@ export function createDynamicPropsClass(properties: PropertyDefinition[]) {
         if (propComponent) {
           return propComponent
         }
+
         const created = this.createProperty(prop, propId)
+
         createdComponents.push(created)
+
         return created
       })
+
       if (createdComponents.length > 0) {
         this.propsManagerOwner.addProperty(createdComponents)
       }
+
       properties.forEach((prop, index) => {
         this[prop.name] = components[index].get('id')
       })
@@ -111,12 +122,15 @@ export function createDynamicPropsClass(properties: PropertyDefinition[]) {
 
     save(): PropsRawData {
       const data = {} as PropsRawData
+
       properties.forEach((prop) => {
         const id = this.getPropId(prop.name)
+
         if (id) {
           data[prop.name] = id
         }
       })
+
       return data
     }
 
@@ -140,6 +154,7 @@ export function createDynamicPropsClass(properties: PropertyDefinition[]) {
     cleanup(options?: EvnetOptions) {
       properties.forEach((prop) => {
         const propId = this.getPropId(prop.name)
+
         if (propId) {
           this.propsManagerOwner.removeProperty([propId], options)
         }

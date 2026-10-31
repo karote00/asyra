@@ -7,6 +7,7 @@ it('validates only evidence, without cloning report source, method, rule or pair
   const input = liveFixture()
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const clone = vi.spyOn(globalThis, 'structuredClone')
+
   try {
     validateLiveEvidence(input, 4, evidence)
     expect(clone).toHaveBeenCalledTimes(evidence.pairs.length)

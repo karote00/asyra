@@ -36,6 +36,7 @@ const plan = createWorkspaceVersionPlan({
   rootDirectory: process.cwd(),
   environment
 })
+
 applyWorkspaceVersionPlan(plan)
 
 for (const { packageName, updates } of plan) {

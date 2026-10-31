@@ -42,6 +42,7 @@ export const getVectorControlId = (
   anchorId: string,
   role: VectorControlRole
 ): string => `${anchorId}:${role}`
+
 export type VectorEndpointSide =
   (typeof VECTOR_TOKENS.ENDPOINT.SIDE)[keyof typeof VECTOR_TOKENS.ENDPOINT.SIDE]
 export type VectorPointTarget =
@@ -51,6 +52,7 @@ export const VECTOR_HANDLE_MODES = {
   MIRROR_ANGLE: 'mirror-angle',
   MIRROR_ANGLE_LENGTH: 'mirror-angle-length'
 } as const
+
 export type VectorHandleMode =
   (typeof VECTOR_HANDLE_MODES)[keyof typeof VECTOR_HANDLE_MODES]
 
@@ -109,6 +111,7 @@ export const isVectorHandleMode = (value: unknown): value is VectorHandleMode =>
 
 const getTrailingVectorIdNumber = (value: string): number => {
   const match = value.match(/[-_](\d+)$/)
+
   return match ? Number.parseInt(match[1], 10) : Number.NaN
 }
 
@@ -118,6 +121,7 @@ export const sortVectorItemsById = <T extends { id: string }>(
   [...items].sort((left, right) => {
     const leftRank = getTrailingVectorIdNumber(left.id)
     const rightRank = getTrailingVectorIdNumber(right.id)
+
     if (!Number.isNaN(leftRank) && !Number.isNaN(rightRank)) {
       return leftRank - rightRank
     }
@@ -135,22 +139,26 @@ export const getVectorNetworkAnchorHandleRefs = (
   segments: Readonly<Record<string, VectorSegment>>
 ): Map<string, VectorAnchorHandleRefs> => {
   const refs = new Map<string, VectorAnchorHandleRefs>()
+
   network.pointIds.forEach((pointId) => {
     refs.set(pointId, { inControlId: null, outControlId: null })
   })
 
   network.segmentIds.forEach((segmentId) => {
     const segment = segments[segmentId]
+
     if (!segment) {
       return
     }
 
     const startRefs = refs.get(segment.startId)
+
     if (startRefs && segment.outControlId) {
       startRefs.outControlId = segment.outControlId
     }
 
     const endRefs = refs.get(segment.endId)
+
     if (endRefs && segment.inControlId) {
       endRefs.inControlId = segment.inControlId
     }

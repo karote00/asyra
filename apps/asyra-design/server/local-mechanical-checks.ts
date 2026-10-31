@@ -48,8 +48,10 @@ export interface MechanicalCheckInput {
   requestId: string
   checks: DesignCheckSelection[]
 }
+
 const object = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
+
 export const prescribedPositionFinding = (
   value: unknown
 ): value is {
@@ -79,26 +81,34 @@ export const createMechanicalChecks = (options: {
   ) => Promise<unknown>
 }) => {
   const { store } = options
+
   const admit = (input: unknown) => {
     const issue = operationInputIssue(input, designCheckInputSchema)
+
     if (issue) {
       throw new LocalToolInputError(issue)
     }
+
     const value = input as MechanicalCheckInput
+
     if (value.requestId !== options.requestId) {
       throw new LocalToolInputError(
         'Mechanical checks belong to another request.'
       )
     }
+
     try {
       store.select(value.checks)
     } catch (error) {
       throw new LocalToolInputError((error as Error).message)
     }
+
     return value
   }
+
   const selected = (input: MechanicalCheckInput) =>
     store.select(store.selection(input.checks.map(({ checkId }) => checkId)))
+
   const targets = (input: MechanicalCheckInput) => [
     ...new Set(
       selected(input).flatMap((item) =>
@@ -108,6 +118,7 @@ export const createMechanicalChecks = (options: {
       )
     )
   ]
+
   const refreshPrepared = async (
     input: MechanicalCheckInput,
     signal: AbortSignal
@@ -119,10 +130,12 @@ export const createMechanicalChecks = (options: {
           : []
       )
     )
+
     if (dependencies.size) {
       await options.refreshPrepared(signal, dependencies)
     }
   }
+
   const snapshot = (
     input: MechanicalCheckInput,
     current: ReadonlySet<string>,
@@ -138,22 +151,29 @@ export const createMechanicalChecks = (options: {
     }[] = []
     const progress: unknown[] = []
     let incomplete = error !== undefined
+
     for (const item of records) {
       if (item.retired) {
         continue
       }
+
       const { result, recheck } = item
+
       if (result.status === 'unverified' || result.status === 'stale') {
         incomplete = true
       }
+
       const evidenceCurrent =
         recheck?.kind !== 'measurement' || current.has(recheck.elementId)
+
       if (!evidenceCurrent) {
         incomplete = true
       }
+
       if (recheck && evidenceCurrent && result.status === 'pass') {
         continue
       }
+
       const findings = recheck?.kind === 'measurement' ? recheck.findings : []
       const repairable =
         evidenceCurrent &&
@@ -162,12 +182,14 @@ export const createMechanicalChecks = (options: {
         findings.every(prescribedPositionFinding)
       let reason =
         'The selected check requires current evidence or a primary-agent decision.'
+
       if (!recheck) {
         reason = 'This check has no supported recheck descriptor.'
       } else if (repairable) {
         reason =
           'Apply explicit positions using current parent attachment evidence.'
       }
+
       unresolved.push({
         checkId: item.checkId,
         revision: item.revision,
@@ -191,13 +213,17 @@ export const createMechanicalChecks = (options: {
         supported: !!recheck
       })
     }
+
     let status: 'pass' | 'repairable' | 'decision-required' = 'pass'
+
     if (unresolved.length) {
       status = 'repairable'
     }
+
     if (incomplete || unresolved.some((item) => !item.capability)) {
       status = 'decision-required'
     }
+
     return {
       requestId: options.requestId,
       checks: records.map(({ checkId, revision }) => ({ checkId, revision })),
@@ -236,17 +262,22 @@ export const createMechanicalChecks = (options: {
         : {})
     }
   }
+
   return {
     admit,
+
     async verify(raw: unknown, signal: AbortSignal) {
       const input = admit(raw)
+
       signal.throwIfAborted()
       let failure: unknown
+
       try {
         await refreshPrepared(input, signal)
         const ids = targets(input)
         const current = await options.validate(ids, signal)
         const missing = ids.filter((id) => !current.has(id))
+
         if (missing.length) {
           await options.measure(missing, signal)
         }
@@ -254,34 +285,43 @@ export const createMechanicalChecks = (options: {
         signal.throwIfAborted()
         failure = error
       }
+
       // Revalidate completed independent receipts even after a partial read.
       let current = new Set<string>()
+
       try {
         current = await options.validate(targets(input), signal)
       } catch (error) {
         failure ??= error
       }
+
       signal.throwIfAborted()
+
       return snapshot(input, current, failure)
     },
+
     async repairSelection(raw: unknown, signal: AbortSignal) {
       const input = admit(raw)
+
       signal.throwIfAborted()
       await refreshPrepared(input, signal)
       const ids = targets(input)
       const current = await options.validate(ids, signal)
+
       signal.throwIfAborted()
       if (ids.some((id) => !current.has(id))) {
         throw new LocalToolInputError(
           'Mechanical evidence is unavailable before repair.'
         )
       }
+
       // Never silently substitute newer revisions while admitting a write.
       admit(input)
       const records = store.select(input.checks)
       const pending = records.filter(
         (item) => !item.retired && item.result.status !== 'pass'
       )
+
       if (
         !pending.length ||
         records.some((item) => !item.retired && !item.recheck)
@@ -290,6 +330,7 @@ export const createMechanicalChecks = (options: {
           'No complete supported pending repair selection.'
         )
       }
+
       const findings = pending.flatMap((item) =>
         !item.retired &&
         item.result.status === 'fail' &&
@@ -299,6 +340,7 @@ export const createMechanicalChecks = (options: {
           ? item.recheck.findings
           : []
       )
+
       if (
         pending.some(
           (item) =>
@@ -313,6 +355,7 @@ export const createMechanicalChecks = (options: {
           'The complete pending set is not supported by this repair.'
         )
       }
+
       return { input, findings, targets: targets(input) }
     }
   }

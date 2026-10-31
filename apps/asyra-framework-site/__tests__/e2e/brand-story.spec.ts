@@ -6,8 +6,10 @@ test('chapter navigation lands on the accepted six-part homepage narrative', asy
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Story chapters' })
+
   for (const link of await nav.getByRole('link').all()) {
     const href = await link.getAttribute('href')
+
     await link.click()
     await expect(page.locator(`${href} h1, ${href} h2`)).toBeVisible()
   }

@@ -20,10 +20,13 @@ const mocks = vi.hoisted(() => ({
   selectElements: vi.fn(),
   updateHoveredElementId: vi.fn()
 }))
+
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
+
   defineFeature: (name: string, _event: string, definition: never) => {
     mocks.definitions.set(name, definition)
+
     return { api: {}, dispose: vi.fn() }
   }
 }))
@@ -57,12 +60,15 @@ const snapshot = {
   keyCtrl: false,
   keyAlt: false
 } as SystemContextSnapshot
+
 const definition = () => {
   const feature = mocks.definitions.get(FeatureNames.SELECT_CONTAINER_CHILD)
+
   expect(feature, 'registered container double-click Feature').toBeDefined()
   if (!feature) {
     throw new Error('Missing container double-click Feature')
   }
+
   return feature
 }
 
@@ -78,6 +84,7 @@ describe('container double-click selection Feature', () => {
 
   it('uses registered container capability and consumes the event before vector editing', () => {
     const feature = definition()
+
     expect(feature.priority).toBeGreaterThan(90)
     expect(feature.exclusive).toBe(true)
     expect(feature.execution(snapshot)).not.toBeNull()
@@ -101,6 +108,7 @@ describe('container double-click selection Feature', () => {
 
   it('recognizes a custom registration derived from the Group definition', () => {
     const type = 'selection-test-container'
+
     core.defineComponent({
       ...GROUP_COMPONENT_DEFINITION,
       type,
@@ -145,6 +153,7 @@ describe('container double-click selection Feature', () => {
       mocks.getSelectedIds.mockReturnValue(ids)
       expect(definition().execution(snapshot)).toBeNull()
     }
+
     mocks.getSelectedIds.mockReturnValue(['vector'])
     mocks.isContainerType.mockReturnValue(false)
     expect(definition().execution(snapshot)).toBeNull()

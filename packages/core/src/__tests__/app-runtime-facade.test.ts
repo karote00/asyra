@@ -37,6 +37,7 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
   )
   const sceneElement = {
     getCanonicalChildCount: vi.fn(() => 3),
+
     get: (key: string) =>
       (
         ({
@@ -49,6 +50,7 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
           children: ['a', 'b', 'c']
         }) as Record<string, unknown>
       )[key],
+
     save: vi.fn(() => ({
       id: 'element-1',
       type: 'rect',
@@ -145,7 +147,9 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
       getSystemContextSnapshot: vi.fn(() => ({ primaryTool: 'select' }))
     } as never
   })
+
   core.applyCanonicalChanges = vi.fn()
+
   return {
     core,
     measureText,
@@ -168,6 +172,7 @@ describe('Core app runtime facade', () => {
   it('reads replay admission from the composed Factory without retaining state', () => {
     const { core } = createCoreForTest()
     const replaying = vi.fn(() => false)
+
     core.deps.factory.isInUndoRedo = replaying
     expect(core.isInUndoRedo()).toBe(false)
     replaying.mockReturnValue(true)
@@ -179,6 +184,7 @@ describe('Core app runtime facade', () => {
 
   it('reads metadata and a child page without saving property data or copying the full child list', () => {
     const { core, sceneElement } = createCoreForTest()
+
     expect(core.getElementMetadata('element-1')).toMatchObject({
       name: 'Rectangle',
       childCount: 3
@@ -191,6 +197,7 @@ describe('Core app runtime facade', () => {
     })
     expect(sceneElement.save).not.toHaveBeenCalled()
     const page = core.getElementChildren('element-1', 0, 1)
+
     page.elementIds.push('changed')
     expect(core.getElementChildren('element-1', 0, 1).elementIds).toEqual(['a'])
     expect(() => core.getElementChildren('element-1', -1, 1)).toThrow()
@@ -207,6 +214,7 @@ describe('Core app runtime facade', () => {
       lineHeight: 20,
       letterSpacing: 0
     } as const
+
     expect(core.measureText(layout)).toMatchObject({ width: 40, height: 20 })
     expect(measureText).toHaveBeenCalledExactlyOnceWith(layout)
     expect(getAllElements).not.toHaveBeenCalled()
@@ -215,6 +223,7 @@ describe('Core app runtime facade', () => {
   it('forwards bounded content measurement to the render owner without document scans', () => {
     const { core, measureElementContentBounds, getAllElements } =
       createCoreForTest()
+
     expect(core.measureElementContentBounds(['element-1'])).toEqual([
       { elementId: 'element-1', bounds: { x: 0, y: 0, width: 30, height: 45 } }
     ])
@@ -350,6 +359,7 @@ describe('Core app runtime facade', () => {
     const publication = Object.freeze({ id: 'publication' }),
       status = Object.freeze({ id: 'status' }),
       change = Object.freeze({ id: 'change' })
+
     subscribeToSharedPublication.mock.calls[0][0](publication)
     subscribeToTransactionStatus.mock.calls[0][0](status)
     observeSharedDataChannel.mock.calls[0][1](change)
@@ -384,6 +394,7 @@ it('projects engine-backed viewport positions to fresh detached coordinate data'
   const position = { x: 12, y: 24, onChange: vi.fn() }
   const { core } = createCoreForTest(position)
   const first = core.getViewportPosition()
+
   expect(first).toEqual({ x: 12, y: 24 })
   expect(Object.keys(first)).toEqual(['x', 'y'])
   first.x = 99
@@ -404,6 +415,7 @@ it('reads current canonical metadata without materializing lazy child snapshots'
     {},
     true
   )
+
   componentRegistry.register({
     type,
     idPrefix: type,
@@ -419,6 +431,7 @@ it('reads current canonical metadata without materializing lazy child snapshots'
     parentId: 'workspace-1'
   }) as Group
   const { core } = createCoreForTest()
+
   core.deps.sceneTree.getElementById = vi.fn((id) =>
     id === group.get('id') ? group : undefined
   )
@@ -428,9 +441,11 @@ it('reads current canonical metadata without materializing lazy child snapshots'
       copies += count
     }
   })
+
   try {
     const read = (count: number) => {
       const before = copies
+
       expect(core.getElementMetadata('count-owner')).toEqual({
         id: 'count-owner',
         name: 'Container',
@@ -442,11 +457,13 @@ it('reads current canonical metadata without materializing lazy child snapshots'
       })
       expect(copies - before).toBe(0)
     }
+
     expect(core.getElementMetadata('missing')).toBeUndefined()
     read(0)
     group.insertChildrenFromCanonicalBatch(0, ['a', 'b', 'c'])
     read(3)
     const snapshot = group.get('children')
+
     expect(copies).toBe(3)
     expect(core.getElementChildren('count-owner', 1, 1)).toMatchObject({
       elementIds: ['b'],
@@ -466,6 +483,7 @@ it('reads current canonical metadata without materializing lazy child snapshots'
     group.replaceChildrenFromCanonicalBatch(['c', 'a'])
     read(2)
     const page = core.getElementChildren('count-owner', 0, 10)
+
     page.elementIds.reverse()
     expect(core.getElementChildren('count-owner', 0, 10).elementIds).toEqual([
       'c',

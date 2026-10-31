@@ -17,10 +17,13 @@ const decoder: VisualDecoder = {
 const archive = new VisualAssetArchive(decoder)
 let editing: ReturnType<typeof installEditingFeatures>
 let api: ReturnType<typeof installVisualStorageFeatures>
+
 const fixture = () => {
   const { json, binary } = triangleFixture()
+
   return encodeGlb(json, binary)
 }
+
 beforeAll(() => {
   installModelComponents(core)
   editing = installEditingFeatures(core, {
@@ -63,8 +66,10 @@ it('prepares without history and accepts only after explicit intent as one canon
   const before = core.getUndoHistoryDepth(),
     bytes = fixture()
   const pending = api.prepare(bytes, 'triangle.glb')
+
   bytes.fill(0)
   const receipt = await pending
+
   expect(core.getUndoHistoryDepth()).toBe(before)
   expect(archive.get(receipt.source.assetId)).toBeUndefined()
   await api.retain(receipt, candidate, 'body', {
@@ -97,6 +102,7 @@ it('prepares without history and accepts only after explicit intent as one canon
 it('revokes discarded completed previews without writing canonical state', async () => {
   const receipt = await api.prepare(fixture(), 'discard.glb'),
     before = core.getUndoHistoryDepth()
+
   api.discard(receipt)
   await expect(
     api.retain(receipt, 'candidate', 'body', {
@@ -111,6 +117,7 @@ it('revokes discarded completed previews without writing canonical state', async
 
 it('uses a Feature-owned signal, rejects overlap and cancels the owned preparation', async () => {
   let captured: AbortSignal | undefined
+
   vi.mocked(decoder.decode).mockImplementation(
     async (_bytes, signal) =>
       new Promise((_resolve, reject) => {
@@ -127,6 +134,7 @@ it('uses a Feature-owned signal, rejects overlap and cancels the owned preparati
   const pending = api.prepare(fixture(), 'pending.glb', {
     signal: external.signal
   })
+
   await vi.waitFor(() => expect(captured).toBeDefined())
   expect(captured).not.toBe(external.signal)
   await expect(api.prepare(fixture(), 'overlap.glb')).rejects.toMatchObject({
@@ -144,8 +152,10 @@ it('rejects invalid transform input before retaining a prepared source or writin
     binary
   )
   const prepared = await api.prepare(bytes, 'invalid-scale.glb')
+
   expect(archive.get(prepared.source.assetId)).toBeUndefined()
   const before = core.getUndoHistoryDepth()
+
   await expect(
     api.retain(prepared, 'candidate', 'body', {
       version: 1,

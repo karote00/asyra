@@ -36,19 +36,25 @@ function readGit(repositoryRoot, args) {
 
 function fileFingerprint(repositoryRoot, relativePath) {
   const absolutePath = path.resolve(repositoryRoot, relativePath)
+
   if (!absolutePath.startsWith(`${repositoryRoot}${path.sep}`)) {
     throw new Error('Git input escapes the repository')
   }
+
   let stat
+
   try {
     stat = fs.lstatSync(absolutePath)
   } catch (error) {
     if (error.code !== 'ENOENT') {
       throw error
     }
+
     return { path: relativePath, kind: 'missing' }
   }
+
   const mode = stat.mode & 0o777
+
   if (stat.isSymbolicLink()) {
     return {
       path: relativePath,
@@ -57,9 +63,11 @@ function fileFingerprint(repositoryRoot, relativePath) {
       digest: fingerprint(fs.readlinkSync(absolutePath))
     }
   }
+
   if (!stat.isFile()) {
     throw new Error(`Unsupported local input kind: ${relativePath}`)
   }
+
   return {
     path: relativePath,
     kind: 'file',
@@ -73,7 +81,9 @@ export function collectLocalInputs({
   base
 } = {}) {
   repositoryRoot = path.resolve(repositoryRoot)
+
   const git = (...args) => readGit(repositoryRoot, args)
+
   const headRevision = git('rev-parse', '--verify', 'HEAD^{commit}').trim()
   const baseRevision = base
     ? git(
@@ -112,6 +122,7 @@ export function collectLocalInputs({
     changedPaths,
     files
   }
+
   return { ...inputs, identity: fingerprint(JSON.stringify(inputs)) }
 }
 
@@ -131,6 +142,7 @@ export function selectLocalValidation({
     { fullValidation: full, baseRevision: inputs.baseRevision, repositoryRoot }
   )
   const selected = readValidationPlan(scope)
+
   return {
     ...selected,
     version: 1,
@@ -196,14 +208,18 @@ export function localCheckCommands(
 async function main() {
   const options = { run: false, full: false, json: false, base: undefined }
   const args = process.argv.slice(2)
+
   for (let index = 0; index < args.length; index++) {
     const argument = args[index]
+
     if (argument === '--help') {
       console.log(
         'yarn validate:local [--base <ref>] [--full] [--json] [--run]\nPreview local affected checks; --run executes them and records evidence under tmp/local-validation/.'
       )
+
       return
     }
+
     if (['--run', '--full', '--json'].includes(argument)) {
       options[argument.slice(2)] = true
     } else if (
@@ -216,6 +232,7 @@ async function main() {
       throw new Error(`Unknown or incomplete argument: ${argument}`)
     }
   }
+
   const repositoryRoot = process.cwd()
   const inputs = collectLocalInputs({ repositoryRoot, base: options.base })
   const plan = selectLocalValidation({
@@ -229,6 +246,7 @@ async function main() {
     randomUUID()
   )
   const commands = localCheckCommands(plan, outputDirectory, repositoryRoot)
+
   if (options.json) {
     console.log(JSON.stringify({ ...plan, commands }, null, 2))
   } else {
@@ -240,29 +258,38 @@ async function main() {
         `  ${command.id}: ${command.executable} ${command.args.join(' ')}`
       )
     }
+
     for (const owner of plan.e2eOwners) {
       console.log(`  ${owner.workspace} E2E: ${owner.status}`)
     }
+
     console.log(
       'Local lint/tests/E2E only; remote CI, release and publication evidence remain separate.'
     )
   }
+
   if (!options.run) {
     return
   }
+
   writeLocalValidationEvidence(plan, commands, outputDirectory)
   const controller = new globalThis.AbortController()
+
   const cancel = () => controller.abort()
+
   process.on('SIGINT', cancel)
   process.on('SIGTERM', cancel)
   let result
+
   try {
     result = await runLocalChecks({
       repositoryRoot,
       outputDirectory,
       commands,
       signal: controller.signal,
+
       onProgress: (message) => console.log(message),
+
       verifyInputs: () =>
         collectLocalInputs({ repositoryRoot, base: inputs.baseRevision })
           .identity === inputs.identity
@@ -271,6 +298,7 @@ async function main() {
     process.off('SIGINT', cancel)
     process.off('SIGTERM', cancel)
   }
+
   console.log(`Local validation ${result.status}. Evidence: ${outputDirectory}`)
   if (result.status !== 'passed') {
     process.exitCode = result.status === 'cancelled' ? 130 : 1

@@ -16,9 +16,11 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       (value) =>
         value.a.bodyId === 'example:joint-2' && value.b.bodyId === 'obstacle-11'
     )
+
     if (!pair) {
       throw new Error('Missing admitted source pair')
     }
+
     const segment = 114
     const start = snapshot.trajectory.keyframes[segment].time
     const end = snapshot.trajectory.keyframes[segment + 1].time
@@ -38,25 +40,32 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
     }[] = []
     let intervalShapes: readonly [ConvexShape, ConvexShape] | undefined
     const originalContinuous = continuous.queryContinuousPair
+
     vi.spyOn(continuous, 'queryContinuousPair').mockImplementation(
       (query, options, checkpoint, kernel) => {
         if (!kernel?.deriveZeroLower) {
           throw new Error('Missing actual mesh route')
         }
+
         const derive = kernel.deriveZeroLower
+
         return originalContinuous(query, options, checkpoint, {
           ...kernel,
+
           deriveZeroLower(a, b) {
             if (intervalShapes) {
               throw new Error('Unexpected second interval request')
             }
+
             intervalShapes = [a, b]
+
             return derive(a, b)
           }
         })
       }
     )
     const originalSampler = samplers.createFreshStaticSampler
+
     vi.spyOn(samplers, 'createFreshStaticSampler').mockImplementation(
       (threshold, tick, solve, exhausted) => {
         let actualSeed: samplers.SourceUpper | undefined
@@ -65,10 +74,12 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           tick,
           (a, b, seed) => {
             actualSeed = seed
+
             return solve(a, b, seed)
           },
           exhausted
         )
+
         const observed: samplers.StaticSampler = (a, b, origin, previous) => {
           expect(origin.segment).toBe(segment)
           expect([origin.start, origin.end]).toEqual([start, end])
@@ -76,9 +87,11 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           actualSeed = undefined
           const before = context.work
           const result = sample(a, b, origin, previous)
+
           if (!result || result.exhausted) {
             throw new Error('Incomplete baseline sample')
           }
+
           records.push({
             time: origin.time,
             shapes: [a, b],
@@ -86,9 +99,12 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             seed: actualSeed,
             work: context.work - before
           })
+
           return result
         }
+
         observed.publishBoundary = sample.publishBoundary
+
         return observed
       }
     )
@@ -104,6 +120,7 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       () => undefined,
       context
     )
+
     expect(result.coverage).toBe('complete')
     expect(result.evaluations).toBe(1)
     expect(records.map((record) => record.time)).toEqual([start, middle, end])
@@ -115,6 +132,7 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       penetration: false
     })
     const first = records[0]
+
     expect(first.seed).toBeUndefined()
     expect(first.evidence.penetration).toBe(false)
     expect(first.evidence.lower).toBeGreaterThan(0)
@@ -123,12 +141,14 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
     if (!intervalShapes) {
       throw new Error('Missing actual full-root interval inputs')
     }
+
     for (const [side, shape] of intervalShapes.entries()) {
       expect(shape.geometry).toBe(first.shapes[side].geometry)
       expect(shape.geometry.kind).toBe('mesh')
       if (shape.geometry.kind !== 'mesh') {
         throw new Error('Expected admitted mesh')
       }
+
       expect(Object.isFrozen(shape.geometry)).toBe(true)
       expect(Object.isFrozen(shape.geometry.positions)).toBe(true)
       expect(Object.isFrozen(shape.geometry.indices)).toBe(true)
@@ -136,13 +156,16 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         expect(record.shapes[side].geometry).toBe(shape.geometry)
       }
     }
+
     const baselineWork = context.work
+
     expect(records.reduce((sum, record) => sum + record.work, 0) + 1).toBe(
       baselineWork
     )
     const unchanged = JSON.stringify(result)
     let gap: number | null = null
     let status = 'complete'
+
     try {
       gap = context.lowerOver(
         intervalShapes[0],
@@ -156,8 +179,10 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       if (!(error instanceof MeshWorkLimit)) {
         throw error
       }
+
       status = 'exhausted'
     }
+
     const certificateWork = context.work - baselineWork
     const targets = records.slice(1)
     const seedEligible = targets.every(
@@ -170,6 +195,7 @@ it.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       gap !== null && gap > 0 && seedEligible
         ? targets.reduce((sum, record) => sum + record.work, 0)
         : 0
+
     // eslint-disable-next-line no-console -- bounded passive cost evidence, not a production replacement
     console.info(
       JSON.stringify({

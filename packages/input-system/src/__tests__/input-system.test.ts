@@ -93,6 +93,7 @@ describe('InputSystem', () => {
     const second = document.createElement('canvas')
     const firstRemoveSpy = vi.spyOn(first, 'removeEventListener')
     const secondAddSpy = vi.spyOn(second, 'addEventListener')
+
     inputSystem.attachBrowserHost(window, first)
     addEventListenerSpy.mockClear()
     removeEventListenerSpy.mockClear()
@@ -120,6 +121,7 @@ describe('InputSystem', () => {
       addEventListener: secondAdd,
       removeEventListener: vi.fn()
     } as unknown as HTMLElement
+
     inputSystem.attachBrowserHost(window, first)
     removeEventListenerSpy.mockClear()
 
@@ -134,6 +136,7 @@ describe('InputSystem', () => {
   it('keeps browser attachment on reset and removes it on dispose', () => {
     const canvas = document.createElement('canvas')
     const canvasRemoveSpy = vi.spyOn(canvas, 'removeEventListener')
+
     inputSystem.attachBrowserHost(window, canvas)
     removeEventListenerSpy.mockClear()
 
@@ -157,24 +160,30 @@ describe('InputSystem', () => {
     'releases %s across a propagation-blocking editor without dispatching editor shortcuts',
     (modifier) => {
       const editor = document.createElement('textarea')
+
       document.body.append(editor)
       editor.addEventListener('keydown', (event) => event.stopPropagation())
       editor.addEventListener('keyup', (event) => event.stopPropagation())
       inputSystem.attachBrowserHost(window)
       const receive = vi.fn()
+
       inputSystem.registry.register('INPUT_KEYBOARD_A', [
         { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] }
       ])
       inputSystem.on('INPUT_KEYBOARD_A', receive)
+
       const dispatch = (target: HTMLElement, type: string, code: string) => {
         const event = new KeyboardEvent(type, {
           code,
           bubbles: true,
           cancelable: true
         })
+
         target.dispatchEvent(event)
+
         return event
       }
+
       try {
         dispatch(document.body, 'keydown', modifier)
         dispatch(document.body, 'keydown', 'KeyA')
@@ -199,6 +208,7 @@ describe('InputSystem', () => {
   // Test handleKeyDown
   it('should add key to activeKeys and prevent default if not input active', () => {
     const event = new KeyboardEvent('keydown', { code: 'KeyA' })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement }) // Not an input field
     event.preventDefault = preventDefaultSpy
 
@@ -211,6 +221,7 @@ describe('InputSystem', () => {
   it('should not prevent default if input field is active', () => {
     const event = new KeyboardEvent('keydown', { code: 'KeyA' })
     const inputElement = document.createElement('input')
+
     Object.defineProperty(event, 'target', { value: inputElement })
     event.preventDefault = preventDefaultSpy
 
@@ -223,6 +234,7 @@ describe('InputSystem', () => {
   it('should start timer for non-modifier keys', () => {
     vi.spyOn(keyMap, 'isModifierKeys').mockReturnValue(false)
     const event = new KeyboardEvent('keydown', { code: 'KeyA' })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     event.preventDefault = preventDefaultSpy
 
@@ -238,6 +250,7 @@ describe('InputSystem', () => {
   it('should not start timer for modifier keys', () => {
     vi.spyOn(keyMap, 'isModifierKeys').mockReturnValue(true)
     const event = new KeyboardEvent('keydown', { code: 'ShiftLeft' })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     event.preventDefault = preventDefaultSpy
 
@@ -249,10 +262,13 @@ describe('InputSystem', () => {
   // Test handleKeyUp
   it('should remove key from activeKeys and clear timer', () => {
     const key = keyMap.keys.KeyA
+
     inputSystem['activeKeys'].add(key)
     const timerId = 123
+
     inputSystem['timers'].set(key, timerId as unknown as NodeJS.Timeout)
     const event = new KeyboardEvent('keyup', { code: 'KeyA' })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     event.preventDefault = preventDefaultSpy
 
@@ -271,6 +287,7 @@ describe('InputSystem', () => {
       clientX: 10,
       clientY: 20
     })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     inputSystem['handleMouseDown'](event)
 
@@ -281,6 +298,7 @@ describe('InputSystem', () => {
   it('should skip pointer combinations when pointer capture is blocked', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const checkSpy = vi.spyOn(inputSystem as any, 'checkCombinations')
+
     inputSystem.setPointerCaptureBlock(true, 'capture-1')
 
     const event = new MouseEvent('mousedown', {
@@ -288,6 +306,7 @@ describe('InputSystem', () => {
       clientX: 10,
       clientY: 20
     })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     inputSystem['handleMouseDown'](event)
 
@@ -312,6 +331,7 @@ describe('InputSystem', () => {
       clientX: 10,
       clientY: 20
     })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     inputSystem['handleMouseUp'](event)
     expect(inputSystem['activeKeys'].has('leftMouseUp')).toBe(false)
@@ -326,6 +346,7 @@ describe('InputSystem', () => {
       clientX: 10,
       clientY: 10
     }) // Distance > CLICK_THRESHOLD (5)
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     inputSystem['handleMouseMove'](event)
     expect(inputSystem['activeKeys'].has('leftMouseMove')).toBe(false)
@@ -338,6 +359,7 @@ describe('InputSystem', () => {
       clientX: 1,
       clientY: 1
     }) // Distance < CLICK_THRESHOLD (5)
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     inputSystem['handleMouseMove'](event)
 
@@ -349,6 +371,7 @@ describe('InputSystem', () => {
     const received = vi.fn()
     const ctrlOnly = vi.fn()
     const canvas = document.createElement('canvas')
+
     inputSystem.attachBrowserHost(window, canvas)
     inputSystem.registry.register('test.wheel', [
       { type: InputType.WHEEL, keys: [PointerKey.WHEEL] }
@@ -412,6 +435,7 @@ describe('InputSystem', () => {
       clientX: 50,
       clientY: 60
     })
+
     Object.defineProperty(event, 'target', { value: mockHTMLElement })
     event.preventDefault = preventDefaultSpy
 
@@ -433,6 +457,7 @@ describe('InputSystem', () => {
     )
 
     const modifiers = inputSystem.getActiveModifiers(inputSystem['activeKeys'])
+
     expect(modifiers).toEqual(['shift', 'ctrl'])
   })
 
@@ -440,6 +465,7 @@ describe('InputSystem', () => {
   it('should return all modifier keys status', () => {
     const activeModifiers: ModifierKey[] = [ModifierKey.SHIFT, ModifierKey.ALT]
     const allModifiers = inputSystem.getAllModifiers(activeModifiers)
+
     expect(allModifiers).toEqual({
       meta: false,
       ctrl: false,
@@ -452,8 +478,10 @@ describe('InputSystem', () => {
   it('should trigger action for matching combination', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const triggerActionSpy = vi.spyOn(inputSystem, 'triggerAction' as any)
+
     inputSystem['activeKeys'].add(keyMap.keys.KeyA)
     const INPUT_KEYBOARD_A = 'INPUT_KEYBOARD_A'
+
     inputSystem.registry.register(INPUT_KEYBOARD_A, [
       { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] }
     ])
@@ -473,9 +501,11 @@ describe('InputSystem', () => {
   it('should deliver keyboard actions while a pointer input remains active', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const triggerActionSpy = vi.spyOn(inputSystem, 'triggerAction' as any)
+
     inputSystem['activeKeys'].add(PointerKey.LEFT_MOUSE_DOWN)
     inputSystem['activeKeys'].add(keyMap.keys.KeyA)
     const INPUT_KEYBOARD_A = 'INPUT_KEYBOARD_A'
+
     inputSystem.registry.register(INPUT_KEYBOARD_A, [
       { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] }
     ])
@@ -494,8 +524,10 @@ describe('InputSystem', () => {
   it('should not trigger action for non-matching combination', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const triggerActionSpy = vi.spyOn(inputSystem, 'triggerAction' as any)
+
     inputSystem['activeKeys'].add('KeyB') // Active key is B
     const INPUT_KEYBOARD_A = 'INPUT_KEYBOARD_A'
+
     inputSystem.registry.register(INPUT_KEYBOARD_A, [
       { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] } // Mapping is for A
     ])
@@ -508,9 +540,11 @@ describe('InputSystem', () => {
   it('should trigger action with detail if provided in combo', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const triggerActionSpy = vi.spyOn(inputSystem, 'triggerAction' as any)
+
     inputSystem['activeKeys'].add(keyMap.keys.KeyA)
     const mockDetail = { some: 'detail' }
     const INPUT_KEYBOARD_A = 'INPUT_KEYBOARD_A'
+
     inputSystem.registry.register(INPUT_KEYBOARD_A, [
       {
         type: InputType.KEYBOARD,
@@ -534,6 +568,7 @@ describe('InputSystem', () => {
     const listener1 = vi.fn()
     const listener2 = vi.fn()
     const INPUT_KEYBOARD_A = 'INPUT_KEYBOARD_A'
+
     inputSystem.on(INPUT_KEYBOARD_A, listener1)
     inputSystem.on(INPUT_KEYBOARD_A, listener2)
 
@@ -543,6 +578,7 @@ describe('InputSystem', () => {
       modifiers: { meta: false, ctrl: false, alt: false, shift: false },
       pointer: {} as PointerEventData
     }
+
     inputSystem['triggerAction'](INPUT_KEYBOARD_A, rawEvent)
 
     expect(listener1).toHaveBeenCalledTimes(1)
@@ -555,6 +591,7 @@ describe('InputSystem', () => {
     const listener1 = vi.fn()
     const listener2 = vi.fn()
     const eventName = 'INPUT_LISTENER_CLEANUP'
+
     inputSystem.on(eventName, listener1)
     inputSystem.on(eventName, listener2)
 
@@ -567,6 +604,7 @@ describe('InputSystem', () => {
       modifiers: { meta: false, ctrl: false, alt: false, shift: false },
       pointer: {} as PointerEventData
     }
+
     inputSystem['triggerAction'](eventName, rawEvent)
 
     expect(listener1).not.toHaveBeenCalled()
@@ -576,6 +614,7 @@ describe('InputSystem', () => {
 
   it('should handle async listeners correctly', async () => {
     const asyncListener = vi.fn(() => Promise.resolve())
+
     inputSystem.on('INPUT_KEYBOARD_A', asyncListener)
 
     const rawEvent: RawInputEvent = {
@@ -584,6 +623,7 @@ describe('InputSystem', () => {
       modifiers: { meta: false, ctrl: false, alt: false, shift: false },
       pointer: {} as PointerEventData
     }
+
     await inputSystem['triggerAction']('INPUT_KEYBOARD_A', rawEvent)
 
     expect(asyncListener).toHaveBeenCalledTimes(1)
@@ -594,6 +634,7 @@ describe('InputSystem', () => {
       /* no-op */
     })
     const asyncListener = vi.fn(() => Promise.reject('Test Error'))
+
     inputSystem.on('INPUT_KEYBOARD_A', asyncListener)
 
     const rawEvent: RawInputEvent = {
@@ -602,6 +643,7 @@ describe('InputSystem', () => {
       modifiers: { meta: false, ctrl: false, alt: false, shift: false },
       pointer: {} as PointerEventData
     }
+
     await inputSystem['triggerAction']('INPUT_KEYBOARD_A', rawEvent)
 
     expect(asyncListener).toHaveBeenCalledTimes(1)

@@ -44,6 +44,7 @@ export class LocalStoragePersistence implements IPersistenceProvider {
   async save(data: CoreRawData): Promise<void> {
     try {
       const serialized = JSON.stringify(data)
+
       localStorage.setItem(this.storageKey, serialized)
     } catch (error) {
       console.error('[LocalStoragePersistence] Save failed:', error)
@@ -54,12 +55,15 @@ export class LocalStoragePersistence implements IPersistenceProvider {
   async load(): Promise<unknown | null> {
     try {
       const serialized = localStorage.getItem(this.storageKey)
+
       if (!serialized) {
         return null
       }
+
       return JSON.parse(serialized)
     } catch (error) {
       console.error('[LocalStoragePersistence] Load failed:', error)
+
       return null
     }
   }
@@ -80,7 +84,9 @@ export class LocalStoragePersistence implements IPersistenceProvider {
  */
 export class IndexedDbPersistence implements IPersistenceProvider {
   readonly name = 'IndexedDB'
+
   private readonly databaseName: string
+
   private readonly factory?: IDBFactory
 
   constructor(
@@ -97,11 +103,13 @@ export class IndexedDbPersistence implements IPersistenceProvider {
         'persistence:indexeddb-open',
         () => this.openDatabase()
       )
+
       try {
         const transaction = database.transaction(
           INDEXED_DB_OBJECT_STORE_NAME,
           'readwrite'
         )
+
         measureBrowserDragPhase('persistence:indexeddb-put', () =>
           transaction
             .objectStore(INDEXED_DB_OBJECT_STORE_NAME)
@@ -123,6 +131,7 @@ export class IndexedDbPersistence implements IPersistenceProvider {
   async load(): Promise<unknown | null> {
     try {
       const database = await this.openDatabase()
+
       try {
         const transaction = database.transaction(
           INDEXED_DB_OBJECT_STORE_NAME,
@@ -132,10 +141,13 @@ export class IndexedDbPersistence implements IPersistenceProvider {
           .objectStore(INDEXED_DB_OBJECT_STORE_NAME)
           .get(this.storageKey)
         let result: unknown | null = null
+
         request.onsuccess = () => {
           result = request.result ?? null
         }
+
         await waitForTransaction(transaction, 'load')
+
         return result
       } finally {
         database.close()
@@ -149,11 +161,13 @@ export class IndexedDbPersistence implements IPersistenceProvider {
   async clear(): Promise<void> {
     try {
       const database = await this.openDatabase()
+
       try {
         const transaction = database.transaction(
           INDEXED_DB_OBJECT_STORE_NAME,
           'readwrite'
         )
+
         transaction
           .objectStore(INDEXED_DB_OBJECT_STORE_NAME)
           .delete(this.storageKey)
@@ -184,25 +198,32 @@ export class IndexedDbPersistence implements IPersistenceProvider {
           request.result.createObjectStore(INDEXED_DB_OBJECT_STORE_NAME)
         }
       }
+
       request.onsuccess = () => {
         if (settled) {
           request.result.close()
+
           return
         }
+
         settled = true
         resolve(request.result)
       }
+
       request.onerror = () => {
         if (settled) {
           return
         }
+
         settled = true
         reject(getIndexedDbError(request.error, 'open'))
       }
+
       request.onblocked = () => {
         if (settled) {
           return
         }
+
         settled = true
         reject(new Error('IndexedDB open blocked by another connection'))
       }
@@ -211,9 +232,11 @@ export class IndexedDbPersistence implements IPersistenceProvider {
 
   private getFactory(): IDBFactory {
     const factory = this.factory ?? globalThis.indexedDB
+
     if (!factory) {
       throw new Error('IndexedDB is not available in this environment')
     }
+
     return factory
   }
 }
@@ -225,6 +248,7 @@ export class IndexedDbPersistence implements IPersistenceProvider {
  */
 export class MemoryPersistence implements IPersistenceProvider {
   readonly name = 'Memory'
+
   private data: CoreRawData | null = null
 
   async save(data: CoreRawData): Promise<void> {

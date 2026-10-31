@@ -15,6 +15,7 @@ const repositoryRoot = path.resolve(
 
 test('package README generator owns the exact release package set', async () => {
   const readmes = await generatePublicPackageReadmes({ repositoryRoot })
+
   assert.equal(readmes.length, 19)
   assert.equal(new Set(readmes.map(({ path: value }) => value)).size, 19)
   readmes.forEach((readme) => {
@@ -45,6 +46,7 @@ test('checked-in package READMEs match deterministic generation', async () => {
 test('Core package readers can reach the complete App guide directly', async () => {
   const readmes = await generatePublicPackageReadmes({ repositoryRoot })
   const core = readmes.find((entry) => entry.path === 'packages/core/README.md')
+
   assert.ok(core)
   assert.match(
     core.content,

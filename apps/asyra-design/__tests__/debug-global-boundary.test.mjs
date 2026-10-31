@@ -45,10 +45,13 @@ const collectSourceFiles = (directory) =>
     if (ignoredDirectories.has(entry.name)) {
       return []
     }
+
     const entryPath = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       return collectSourceFiles(entryPath)
     }
+
     return sourceExtensions.has(path.extname(entry.name)) ? [entryPath] : []
   })
 
@@ -58,14 +61,17 @@ test('debug Window handles are defined for human DevTools but never consumed by 
     .flatMap((filePath) => {
       const relativePath = path.relative(reportRoot, filePath)
       const appRelativePath = path.relative(appRoot, filePath)
+
       if (relativePath.endsWith('debug-global-boundary.test.mjs')) {
         return []
       }
+
       const source = fs.readFileSync(filePath, 'utf8')
       const names = source.match(hiddenGlobalPattern) ?? []
       const allowedNames = allowedDefinitionFiles.has(appRelativePath)
         ? new Set(debugHandleNames)
         : new Set()
+
       return names
         .filter((name) => !allowedNames.has(name))
         .map((name) => ({ file: relativePath, name }))

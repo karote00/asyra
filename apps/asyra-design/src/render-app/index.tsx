@@ -59,8 +59,10 @@ const RenderApp: React.FC<RenderAppProps> = ({
     let active = true
     let runtimeDestroyPromise: Promise<void> | undefined
     let unsubscribeCollaborationState: (() => void) | undefined
+
     const destroyRuntime = (): Promise<void> => {
       runtimeDestroyPromise ??= core.destroy()
+
       return runtimeDestroyPromise
     }
 
@@ -70,13 +72,17 @@ const RenderApp: React.FC<RenderAppProps> = ({
         if (!active) {
           return
         }
+
         const container = renderContainerRef.current
+
         if (!container) {
           return
         }
+
         const collaborationMode = getConfiguredCollaborationMode()
         let collaborationLifecycle:
           typeof import('../collaboration/lifecycle') | undefined
+
         if (collaborationMode) {
           collaborationLifecycle = await import('../collaboration/lifecycle')
           core.registerCollaborationSession(
@@ -87,6 +93,7 @@ const RenderApp: React.FC<RenderAppProps> = ({
         } else {
           core.setLoadSource({
             name: 'LocalOnlyDocument',
+
             load: async () => createEmptyDocument()
           })
         }
@@ -99,15 +106,18 @@ const RenderApp: React.FC<RenderAppProps> = ({
         })
         if (!active) {
           await destroyRuntime()
+
           return
         }
 
         const handle = collaborationLifecycle?.getActiveCollaborationHandle()
+
         if (collaborationMode && !handle) {
           throw new Error(
             '[RenderApp] collaboration session did not activate through Core'
           )
         }
+
         if (handle) {
           setCollaborationNotification(handle.getSessionState().notification)
           setRecoverySession(
@@ -122,10 +132,12 @@ const RenderApp: React.FC<RenderAppProps> = ({
             }
           )
         }
+
         if (!active) {
           await destroyRuntime()
         }
       })
+
     lifecycleRef.current = lifecycle
     void lifecycle.catch((error: unknown) => {
       if (active) {
@@ -146,14 +158,18 @@ const RenderApp: React.FC<RenderAppProps> = ({
     if (!recoverySession) {
       return
     }
+
     const guard = (event: BeforeUnloadEvent) => {
       if (!recoverySession.hasUnpersistedChanges()) {
         return
       }
+
       event.preventDefault()
       event.returnValue = ''
     }
+
     window.addEventListener('beforeunload', guard)
+
     return () => window.removeEventListener('beforeunload', guard)
   }, [recoverySession])
 

@@ -9,6 +9,7 @@ self.addEventListener(
   'message',
   async (event: MessageEvent<DecodeRequest>) => {
     const request = event.data
+
     try {
       if (
         !request ||
@@ -17,7 +18,9 @@ self.addEventListener(
       ) {
         throw new Error('Invalid GLB worker request')
       }
+
       const asset = await decodeRestrictedGlb(new Uint8Array(request.bytes))
+
       self.postMessage({ id: request.id, ok: true, asset })
     } catch (error) {
       self.postMessage({

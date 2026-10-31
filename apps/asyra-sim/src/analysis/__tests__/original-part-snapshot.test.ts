@@ -28,9 +28,11 @@ const descriptor: MethodDescriptor = {
   supportsMotion: true,
   maxPairs: 4096
 }
+
 function input() {
   const example = createSyntheticExample(),
     draft = createSyntheticExperimentDraft(example)
+
   example.workcell.bodies[0].visuals = [
     {
       version: 1,
@@ -40,6 +42,7 @@ function input() {
       pose: IDENTITY_POSE
     }
   ]
+
   return {
     snapshotId: 'mesh-study',
     candidateId: 'candidate',
@@ -62,10 +65,12 @@ function input() {
     acknowledgedWarningCodes: []
   }
 }
+
 describe('original part snapshot admission', () => {
   it('freezes every original triangle in a new version and preserves immutable history', () => {
     const data = input(),
       snapshot = createExperimentSnapshot(data)
+
     expect(snapshot.version).toBe(2)
     expect(snapshot.workcell.bodies[0].colliders[0].geometry).toEqual(
       data.workcell.bodies[0].colliders[0].geometry
@@ -81,6 +86,7 @@ describe('original part snapshot admission', () => {
   it('rejects mismatched placement, omitted parts and open surfaces without waivers', () => {
     const data = input(),
       original = structuredClone(data.workcell)
+
     data.workcell.bodies[0].colliders[0].pose = {
       ...IDENTITY_POSE,
       position: [1, 0, 0]
@@ -91,9 +97,11 @@ describe('original part snapshot admission', () => {
     ).toBeGreaterThan(0)
     data.workcell = original
     const geometry = data.workcell.bodies[0].colliders[0].geometry
+
     if (geometry.kind !== 'mesh') {
       throw new Error('Missing test geometry')
     }
+
     geometry.indices = geometry.indices.slice(3)
     expect(
       preflightExperiment(data.workcell, data.definition, data.methods).blockers

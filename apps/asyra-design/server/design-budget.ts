@@ -34,15 +34,19 @@ export const measureDesignBudget = (
     depth: limits.depth
   }
   let lowerBound = false
+
   const points = (rings: unknown): number => {
     if (!Array.isArray(rings)) {
       return 0
     }
+
     let count = 0
+
     for (const ring of rings) {
       if (!Array.isArray(ring)) {
         continue
       }
+
       for (const anchor of ring) {
         count +=
           1 +
@@ -50,28 +54,35 @@ export const measureDesignBudget = (
           Number(record(anchor) && !!anchor.outControl)
         if (count > limits.expandedPathCommands) {
           lowerBound = true
+
           return count
         }
       }
     }
+
     return count
   }
+
   const definitions =
     record(draft) && record(draft.motifTemplates) ? draft.motifTemplates : {}
   const definitionCounts = new Map<
     string,
     { motifs: unknown[]; points: number; largest: number }
   >()
+
   for (const [name, source] of Object.entries(definitions)) {
     const motifs = Array.isArray(source) ? source : []
     let total = 0,
       largest = 0
+
     for (const motif of motifs) {
       const vertices = record(motif) ? motif.vertices : undefined
       const count = Array.isArray(vertices) ? vertices.length : 0
+
       total += count
       largest = Math.max(largest, count)
     }
+
     definitionCounts.set(name, { motifs, points: total, largest })
     observed.sourceNodes += motifs.length
     observed.sourcePathCommands += total
@@ -80,27 +91,33 @@ export const measureDesignBudget = (
       largest
     )
   }
+
   const visit = (value: unknown, depth: number, multiplier = 1) => {
     if (!record(value)) {
       return
     }
+
     observed.sourceNodes++
     observed.depth = Math.max(observed.depth, depth)
     if (observed.sourceNodes > limits.expandedNodes || depth > limits.depth) {
       lowerBound = true
+
       return
     }
+
     let instances = 1,
       sourcePoints = 0,
       generatedNodes = 1,
       primitivePoints: number | undefined,
       expandedPoints: number | undefined
+
     if (value.type === 'vector-pattern') {
       instances = Array.isArray(value.placements) ? value.placements.length : 0
       generatedNodes = instances
       sourcePoints = record(value.template) ? points(value.template.rings) : 0
     } else if (value.type === 'pattern') {
       const axes = Array.isArray(value.axes) ? value.axes : []
+
       instances = axes.reduce(
         (total, axis) =>
           total *
@@ -124,6 +141,7 @@ export const measureDesignBudget = (
           0
         )
       }
+
       if (Array.isArray(value.members)) {
         for (const member of value.members) {
           // Unsupported recursive members are rejected by construction, never traversed.
@@ -133,18 +151,23 @@ export const measureDesignBudget = (
           ) {
             visit(member, depth, multiplier * instances)
           }
+
           if (observed.sourceNodes > limits.expandedNodes) {
             break
           }
         }
+
         return
       }
+
       const faces = Array.isArray(value.faces) ? value.faces : []
+
       generatedNodes = instances * faces.length
       observed.sourceNodes += faces.length - 1
       primitivePoints = 0
       for (const face of faces) {
         const pointCount = facePointCount(face)
+
         primitivePoints = Math.max(primitivePoints, pointCount)
         sourcePoints += pointCount
       }
@@ -161,21 +184,26 @@ export const measureDesignBudget = (
         ? value.motifs
         : (reference?.motifs ?? [])
       let motifPoints = reference?.points ?? 0
+
       primitivePoints = Math.max(4, reference?.largest ?? 0)
       if (!reference) {
         for (const motif of motifs) {
           const vertices = record(motif) ? motif.vertices : undefined
           const count = Array.isArray(vertices) ? vertices.length : 0
+
           motifPoints += count
           primitivePoints = Math.max(primitivePoints, count)
         }
       }
+
       let boundaryPoints = 0
+
       if (Array.isArray(value.boundary)) {
         boundaryPoints = value.boundary.length
       } else if (record(value.boundary)) {
         boundaryPoints = 4
       }
+
       sourcePoints = boundaryPoints + (reference ? 0 : motifPoints)
       generatedNodes = instances * motifs.length
       expandedPoints = instances * motifPoints
@@ -185,6 +213,7 @@ export const measureDesignBudget = (
     } else {
       sourcePoints = points(value.rings)
     }
+
     observed.sourcePrimitivePathCommands = Math.max(
       observed.sourcePrimitivePathCommands,
       primitivePoints ?? sourcePoints
@@ -202,10 +231,12 @@ export const measureDesignBudget = (
       }
     }
   }
+
   visit(draft, 1)
   const exceeded = (Object.keys(allowed) as (keyof typeof allowed)[]).filter(
     (key) => observed[key] > allowed[key]
   )
+
   return { observed, allowed, lowerBound, exceeded }
 }
 
@@ -217,9 +248,11 @@ export const inspectDesignBudget = (
     draft,
     expandedNodeLimit
   )
+
   if (!exceeded.length) {
     return
   }
+
   return {
     available: false,
     code: 'DESIGN_BUDGET_EXCEEDED',
@@ -240,12 +273,15 @@ export const createDesignSourceWork = () => {
     batchPaths = 0
   let largestBatchNodes = 0,
     largestBatchPathCommands = 0
+
   return {
     admit(points: number) {
       const previousBatches = batches
+
       if (points > limits.pathCommands) {
         throw new Error('Invalid design: indivisible source vector point limit')
       }
+
       if (
         !batchNodes ||
         batchNodes === limits.nodes ||
@@ -255,6 +291,7 @@ export const createDesignSourceWork = () => {
         batchNodes = 0
         batchPaths = 0
       }
+
       nodes++
       pathCommands += points
       batchNodes++
@@ -265,10 +302,13 @@ export const createDesignSourceWork = () => {
       ) {
         throw new Error('Invalid design: expanded source work limit')
       }
+
       largestBatchNodes = Math.max(largestBatchNodes, batchNodes)
       largestBatchPathCommands = Math.max(largestBatchPathCommands, batchPaths)
+
       return previousBatches > 0 && batches !== previousBatches
     },
+
     summary: () => ({
       batches,
       nodes,
@@ -283,26 +323,33 @@ export const sourcePathCommandCount = (node: unknown): number => {
   if (!record(node)) {
     return 0
   }
+
   if (node.type === 'projected-face') {
     return facePointCount(node)
   }
+
   if (node.type === 'pattern') {
     return Array.isArray(node.faces)
       ? node.faces.reduce((total, face) => total + facePointCount(face), 0)
       : 0
   }
+
   const source =
     node.type === 'vector-pattern' && record(node.template)
       ? node.template
       : node
+
   if (!Array.isArray(source.rings)) {
     return 0
   }
+
   let points = 0
+
   for (const ring of source.rings) {
     if (!Array.isArray(ring)) {
       continue
     }
+
     for (const anchor of ring) {
       points +=
         1 +
@@ -313,6 +360,7 @@ export const sourcePathCommandCount = (node: unknown): number => {
       }
     }
   }
+
   return points
 }
 
@@ -331,16 +379,21 @@ export const selectDesignSource = (
   items: DesignSourceSelection[]
 ) => {
   const resolved = resolveSurfaceBoundaries(input)
+
   if (!record(resolved)) {
     throw new Error('Invalid design source.')
   }
+
   const children = resolved.children as Record<string, unknown>[]
   const selected: Record<string, unknown>[] = []
   let previousChild = -1
+
   for (const item of items) {
     const child = children[item.child]
+
     if (item.range && previousChild === item.child) {
       const previous = selected[selected.length - 1]
+
       previous.instanceRanges = [
         ...(previous.instanceRanges as unknown[]),
         item.range
@@ -350,8 +403,10 @@ export const selectDesignSource = (
         item.range ? { ...child, instanceRanges: [item.range] } : child
       )
     }
+
     previousChild = item.child
   }
+
   return { ...input, children: selected }
 }
 
@@ -368,6 +423,7 @@ export const partitionDesignBudget = (
   const refuse = (code: string, message: string): DesignPartitionPlan => ({
     limitation: { code, message }
   })
+
   if (
     !record(input) ||
     input.type !== 'group' ||
@@ -396,17 +452,20 @@ export const partitionDesignBudget = (
       'Automatic partitions require an independent flat projected group; unsupported root semantics must remain intact.'
     )
   }
+
   if (input.brief !== undefined) {
     const issue = operationInputIssue(
       input.brief,
       designConstructionSchema.brief
     )
+
     if (issue) {
       return refuse(
         'invalid-brief',
         `Invalid brief: ${issue}. Correct the retained brief; no source was applied.`
       )
     }
+
     if (
       record(input.brief) &&
       Array.isArray(input.brief.checks) &&
@@ -418,7 +477,9 @@ export const partitionDesignBudget = (
       )
     }
   }
+
   const children = input.children
+
   if (
     children.some(
       (child) =>
@@ -433,6 +494,7 @@ export const partitionDesignBudget = (
       'Automatic partitions require independent projected faces, surface grids or patterns; preserve unsupported child relationships.'
     )
   }
+
   try {
     resolveSurfaceBoundaries(input)
   } catch (error) {
@@ -441,27 +503,32 @@ export const partitionDesignBudget = (
       error instanceof Error ? error.message : 'Invalid source boundary.'
     )
   }
+
   // Recovery is conservative about global identity: never allow two source key
   // families to become independently valid merely because artifacts are separate.
   const families = children.map((child) => ({
     key: child.key,
     generated: child.type !== 'projected-face'
   }))
+
   if (input.key !== undefined) {
     families.push({ key: input.key, generated: false })
   }
+
   if (families.some(({ key }) => typeof key !== 'string' || !key.trim())) {
     return refuse(
       'source-identity',
       'Partition source keys must be nonempty and disjoint.'
     )
   }
+
   families.sort((a, b) =>
     String(a.key) < String(b.key) ? -1 : Number(String(a.key) > String(b.key))
   )
   for (let index = 1; index < families.length; index++) {
     const earlier = families[index - 1],
       current = families[index]
+
     if (
       earlier.key === current.key ||
       (earlier.generated && String(current.key).startsWith(String(earlier.key)))
@@ -472,28 +539,36 @@ export const partitionDesignBudget = (
       )
     }
   }
+
   const whole = measureDesignBudget(input, expandedNodeLimit)
+
   if (whole.lowerBound) {
     return refuse(
       'indeterminate-budget',
       'Source cost is not exact; automatic partitions cannot establish safe limits.'
     )
   }
+
   if (!whole.exceeded.length) {
     return {}
   }
+
   const sharedCost = measureDesignBudget(
     { ...input, children: [] },
     expandedNodeLimit
   ).observed
+
   const empty = () => ({ ...sharedCost })
+
   const parts: DesignBudgetPartition[] = []
   let selections: DesignSourceSelection[] = []
   let cost = empty()
+
   const flush = () => {
     if (!selections.length) {
       return
     }
+
     parts.push({
       selections,
       expandedNodes: cost.expandedNodes,
@@ -502,6 +577,7 @@ export const partitionDesignBudget = (
     selections = []
     cost = empty()
   }
+
   for (const [child, value] of children.entries()) {
     if (!record(value)) {
       return refuse(
@@ -509,8 +585,10 @@ export const partitionDesignBudget = (
         'Partition source child must be an object.'
       )
     }
+
     let ranges: { start: number; end: number }[] = [{ start: 0, end: 1 }]
     const pattern = value.type === 'pattern'
+
     if (pattern) {
       if (!Array.isArray(value.axes) || !value.axes.length) {
         return refuse(
@@ -518,6 +596,7 @@ export const partitionDesignBudget = (
           'Pattern axes must define bounded instances.'
         )
       }
+
       const total = value.axes.reduce(
         (n, axis) =>
           record(axis) &&
@@ -527,20 +606,25 @@ export const partitionDesignBudget = (
             : NaN,
         1
       )
+
       if (!Number.isSafeInteger(total) || total <= 0) {
         return refuse(
           'invalid-pattern',
           'Pattern instance count must be a positive safe integer.'
         )
       }
+
       const selectedRanges = value.instanceRanges ?? [{ start: 0, end: total }]
+
       if (!Array.isArray(selectedRanges) || !selectedRanges.length) {
         return refuse(
           'invalid-pattern',
           'Pattern ranges must select complete instances.'
         )
       }
+
       let previousEnd = 0
+
       ranges = []
       for (const range of selectedRanges) {
         if (
@@ -556,10 +640,12 @@ export const partitionDesignBudget = (
             'Pattern ranges must be ordered, disjoint and inside the instance count.'
           )
         }
+
         ranges.push({ start: Number(range.start), end: Number(range.end) })
         previousEnd = Number(range.end)
       }
     }
+
     // Measure the source component once. Only output cost scales with instances;
     // sparse ranges of one component share its source cost within each artifact.
     const member = pattern
@@ -572,12 +658,14 @@ export const partitionDesignBudget = (
       { ...input, children: [member] },
       expandedNodeLimit
     )
+
     if (measured.lowerBound || measured.exceeded.length) {
       return refuse(
         'indivisible-capacity',
         'One complete source component exceeds an artifact guard; automatic partitions cannot split its geometry.'
       )
     }
+
     const unit = {
       ...measured.observed,
       sourceNodes: measured.observed.sourceNodes - sharedCost.sourceNodes,
@@ -586,6 +674,7 @@ export const partitionDesignBudget = (
       expandedNodes: measured.observed.expandedNodes - 1,
       depth: measured.observed.depth - 1
     }
+
     if (
       !Object.values(unit).every(Number.isSafeInteger) ||
       unit.expandedNodes <= 0
@@ -595,8 +684,10 @@ export const partitionDesignBudget = (
         'Complete component cost must be exact and positive.'
       )
     }
+
     for (const range of ranges) {
       let start = range.start
+
       while (start < range.end) {
         if (parts.length >= limits.recoveryParts) {
           return refuse(
@@ -604,6 +695,7 @@ export const partitionDesignBudget = (
             `Automatic recovery exceeds ${limits.recoveryParts} retained parts; source remains unchanged.`
           )
         }
+
         const newSource = selections.at(-1)?.child !== child
         const nextSourceNodes =
           cost.sourceNodes + (newSource ? unit.sourceNodes : 0)
@@ -628,6 +720,7 @@ export const partitionDesignBudget = (
                     )
                   : Infinity
               )
+
         if (!capacity) {
           if (!selections.length) {
             return refuse(
@@ -635,9 +728,11 @@ export const partitionDesignBudget = (
               'One complete source component cannot fit an empty artifact.'
             )
           }
+
           flush()
           continue
         }
+
         selections.push(
           pattern
             ? { child, range: { start, end: start + capacity } }
@@ -659,7 +754,9 @@ export const partitionDesignBudget = (
       }
     }
   }
+
   flush()
+
   return parts.length > 1 && parts.length <= limits.recoveryParts
     ? { partitions: parts }
     : refuse(

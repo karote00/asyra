@@ -12,6 +12,7 @@ import {
 } from '@asyra/preset/spatial'
 export type SceneBounds = SpatialBounds
 export { spatialCameraDistance as cameraDistance } from '@asyra/preset/spatial'
+
 export function setCameraDistance(
   camera: SpatialCamera,
   distance: number
@@ -19,14 +20,17 @@ export function setCameraDistance(
   if (!Number.isFinite(distance) || distance <= camera.near) {
     throw new Error('Invalid camera distance')
   }
+
   return dollySpatialCamera(camera, distance)
 }
+
 /** Site framing keeps its nonempty-scene policy; Preset owns presentation bounds. */
 export function measureScene(
   meshes: SpatialFrame['meshes'],
   owner?: SpatialBoundsOwner
 ): SceneBounds {
   const bounds = owner ?? new SpatialBoundsOwner()
+
   try {
     const result = bounds.measure(
       meshes.map(
@@ -36,9 +40,11 @@ export function measureScene(
           ) as import('@asyra/preset/spatial').SpatialMesh
       )
     )
+
     if (!result) {
       throw new Error('Empty site bounds')
     }
+
     return result
   } finally {
     if (!owner) {
@@ -61,6 +67,7 @@ export function panCamera(
     fov: fitCamera({ ...camera, fov: referenceFov }, width / height).fov
   })
 }
+
 export function fitScene(
   camera: SpatialCamera,
   bounds: SceneBounds,

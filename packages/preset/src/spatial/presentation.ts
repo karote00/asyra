@@ -4,19 +4,25 @@ import { readSpatialCamera } from './camera-controls.js'
 /** One presentation target; the caller owns time, scheduling and follow policy. */
 export class SpatialCameraPresentation {
   private target: SpatialCamera | null = null
+
   private disposed = false
+
   get active(): boolean {
     return this.target !== null
   }
+
   retarget(target: SpatialCamera): void {
     this.assertLive()
     const admitted = readSpatialCamera(target)
+
     this.target = admitted
   }
+
   cancel(): void {
     this.assertLive()
     this.target = null
   }
+
   advance(
     current: SpatialCamera,
     fraction: number,
@@ -24,6 +30,7 @@ export class SpatialCameraPresentation {
   ): SpatialCamera {
     this.assertLive()
     const original = current
+
     current = readSpatialCamera(current)
     if (
       !Number.isFinite(fraction) ||
@@ -35,12 +42,17 @@ export class SpatialCameraPresentation {
     ) {
       throw new Error('Invalid camera interpolation')
     }
+
     const target = this.target
+
     if (!target) {
       return original
     }
+
     const t = policy.reducedMotion ? 1 : fraction
+
     const mix = (a: number, b: number) => a + (b - a) * t
+
     const next =
       t === 1
         ? target
@@ -64,15 +76,19 @@ export class SpatialCameraPresentation {
       (['fov', 'near', 'far'] as const).some(
         (key) => Math.abs(next[key] - target[key]) > policy.tolerance
       )
+
     if (!moving) {
       this.target = null
     }
+
     return next
   }
+
   dispose(): void {
     this.target = null
     this.disposed = true
   }
+
   private assertLive(): void {
     if (this.disposed) {
       throw new Error('Camera presentation is disposed')

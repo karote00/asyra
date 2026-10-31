@@ -86,17 +86,21 @@ if (printPlan) {
 const findAvailablePort = () =>
   new Promise((resolve, reject) => {
     const server = net.createServer()
+
     server.unref()
     server.once('error', reject)
     server.listen(0, '127.0.0.1', () => {
       const address = server.address()
+
       if (!address || typeof address === 'string') {
         server.close()
         reject(new Error('Unable to allocate release validation port'))
+
         return
       }
 
       const { port } = address
+
       server.close((error) => {
         if (error) {
           reject(error)
@@ -109,10 +113,12 @@ const findAvailablePort = () =>
 
 let validationRoot
 let keepValidationWorkspace = false
+
 const cleanup = () => {
   if (!validationRoot || keepValidationWorkspace) {
     return
   }
+
   removeReleaseValidationWorkspace(validationRoot, validationParent)
   validationRoot = undefined
 }
@@ -134,6 +140,7 @@ try {
     FRAMEWORK_VALIDATION_POINTER
   )
   let sourceCommitSha
+
   if (preserveWorkspace) {
     const sourceChanges = execSync(
       'git status --porcelain --untracked-files=all',
@@ -142,21 +149,25 @@ try {
         encoding: 'utf8'
       }
     ).trim()
+
     if (sourceChanges) {
       throw new Error(
         'Preserved Framework validation requires a clean source checkout'
       )
     }
+
     if (fs.existsSync(validationPointerPath)) {
       throw new Error(
         `Framework validation handoff already exists: ${FRAMEWORK_VALIDATION_POINTER}`
       )
     }
+
     sourceCommitSha = execSync('git rev-parse HEAD', {
       cwd: repositoryRoot,
       encoding: 'utf8'
     }).trim()
   }
+
   validationRoot = createReleaseValidationWorkspace({
     sourceRoot: repositoryRoot,
     validationParent

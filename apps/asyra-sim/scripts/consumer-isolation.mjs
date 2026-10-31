@@ -9,16 +9,21 @@ export function isolatedConsumerCommand(directory, command, args) {
       'Independent consumer isolation is currently verified only on macOS.'
     )
   }
+
   const denied = []
   let ancestor = path.dirname(realpathSync(directory))
+
   while (true) {
     denied.push(path.join(ancestor, 'node_modules'))
     const parent = path.dirname(ancestor)
+
     if (parent === ancestor) {
       break
     }
+
     ancestor = parent
   }
+
   const profile = [
     '(version 1)',
     '(allow default)',
@@ -26,6 +31,7 @@ export function isolatedConsumerCommand(directory, command, args) {
       (directory) => `(deny file-read* (subpath ${JSON.stringify(directory)}))`
     )
   ].join('\n')
+
   return {
     command: '/usr/bin/sandbox-exec',
     args: ['-p', profile, command, ...args]

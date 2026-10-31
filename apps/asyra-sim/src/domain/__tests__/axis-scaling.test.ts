@@ -30,6 +30,7 @@ const fixture = (magnitude: number): Workcell => {
     visible: true,
     color: 0
   }
+
   return {
     version: 1,
     robotRootId: 'base',
@@ -52,16 +53,20 @@ const fixture = (magnitude: number): Workcell => {
     ]
   }
 }
+
 it.each([1, 1e308, Number.MAX_VALUE])(
   'preserves a 2 m displacement along a direction scaled by %s',
   (magnitude) => {
     const model = fixture(magnitude)
+
     validateWorkcell(model)
     expect(forwardKinematics(model).get('slide')?.position).toEqual([2, 0, 0])
     const pose = evaluateKinematics(model, {}, intervalAlgebra).get('slide')
+
     if (!pose) {
       throw new Error('Missing pose')
     }
+
     for (const [index, value] of [2, 0, 0].entries()) {
       expect(pose.position[index][0]).toBeLessThanOrEqual(value)
       expect(pose.position[index][1]).toBeGreaterThanOrEqual(value)

@@ -70,6 +70,7 @@ describe('ElementChangeHandler canonical owner provenance', () => {
       .mockImplementation(() => undefined)
     const handler = new ElementChangeHandler()
     const setter = new Setter<ElementAttrs>(handler.addChange)
+
     setter.data = {
       id: 'element-1',
       type: EntityTypes.ELEMENT,

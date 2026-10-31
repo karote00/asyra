@@ -28,7 +28,9 @@ const summary = {
 }
 const session = {
   subscribe: () => () => undefined,
+
   getState: () => state,
+
   start: vi.fn(),
   list: vi.fn(),
   copy: vi.fn(),
@@ -38,15 +40,19 @@ const session = {
   exportProject: vi.fn(),
   importProject: vi.fn()
 }
+
 const button = (name: string) => {
   const value = [...host.querySelectorAll('button')].find(
     (el) => el.textContent === name || el.getAttribute('aria-label') === name
   )
+
   if (!value) {
     throw new Error(`Missing action: ${name}`)
   }
+
   return value
 }
+
 beforeEach(async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.spyOn(window, 'confirm').mockReturnValue(true)
@@ -88,6 +94,7 @@ it.each([
   'shows local pending feedback for %s and restores the action on failure',
   async (label, pending, method) => {
     let reject: (error: Error) => void = () => undefined
+
     session[method].mockImplementation(
       () =>
         new Promise((_resolve, failure) => {
@@ -95,6 +102,7 @@ it.each([
         })
     )
     const action = button(label)
+
     await act(() => {
       action.click()
       action.click()
@@ -119,19 +127,24 @@ it('reveals the validated project preview and reports import progress without re
     loadIssues: []
   })
   const file = new File([], 'review.json')
+
   file.text = async () => text
   const input = host.querySelector<HTMLInputElement>(
     '[aria-label="Portable project file"]'
   )
+
   if (!input) {
     throw new Error('Missing portable input')
   }
+
   Object.defineProperty(input, 'files', { configurable: true, value: [file] })
   await act(() => input.dispatchEvent(new Event('change', { bubbles: true })))
   expect(document.activeElement?.getAttribute('data-testid')).toBe(
     'project-import-preview'
   )
+
   let reject: (error: Error) => void = () => undefined
+
   session.importProject.mockImplementation(
     () =>
       new Promise((_resolve, failure) => {
@@ -139,6 +152,7 @@ it('reveals the validated project preview and reports import progress without re
       })
   )
   const action = button('Import and replace current project')
+
   await act(() => {
     action.click()
     action.click()

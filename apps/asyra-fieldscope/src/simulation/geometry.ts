@@ -82,16 +82,22 @@ export type WalkingObservationGeometrySource =
   QueryGeometryProduct<WalkingObservationGeometryReceipt>
 export type QueryGeometrySource =
   GeometrySource | WalkingObservationGeometrySource
+
 const placementKey = (position: readonly number[], yaw: number) =>
   `${position[0]}:${position[1]}:${position[2]}:${yaw}`
 
 /** Shared source preparation, not a detector or collision decision provider. */
 export class QueryGeometry {
   private source?: QueryGeometrySource
+
   readonly work = { membershipBuilds: 0 }
+
   private members = new Set<GeometryMesh>()
+
   private membershipChecks = 0
+
   private placements = 0
+
   constructor(
     private readonly owners: GeometryOwners | WalkingObservationGeometryOwners
   ) {}
@@ -115,11 +121,14 @@ export class QueryGeometry {
       ) {
         throw new Error('Retired or invalid walking geometry receipt')
       }
+
       return
     }
+
     if (!('isCurrentReceipt' in this.owners)) {
       throw new Error('Legacy geometry owner required')
     }
+
     if (
       !this.owners.isCurrentReceipt(receipt) ||
       !Number.isSafeInteger(receipt.revision) ||
@@ -149,9 +158,11 @@ export class QueryGeometry {
     if (this.source?.receipt === receipt) {
       return this.source as QueryGeometryProduct<R>
     }
+
     if ('robot' in receipt && !receipt.robot.rig) {
       throw new Error('Robot rigid ownership unavailable')
     }
+
     const shapes = new Set<SpatialShape>()
     const meshes: GeometryMesh[] = []
     const members = new Set<GeometryMesh>()
@@ -167,6 +178,7 @@ export class QueryGeometry {
       SpatialShape,
       Map<readonly SourceRegion[], PreparedGeometry>
     >()
+
     const prepareBounds = (
       shape: Extract<SpatialShape, { kind: 'triangles' }>,
       region?: SourceRegion
@@ -177,48 +189,60 @@ export class QueryGeometry {
       const end = region
         ? start + region.indexCount
         : shape.positions.length / 3
+
       if (region) {
         work.regionBounds++
       } else {
         work.shapeBounds++
       }
+
       for (let index = start; index < end; index++) {
         const offset = (region ? shape.indices[index] : index) * 3
+
         if (region) {
           work.regionIndexVisits++
         } else {
           work.vertexVisits++
         }
+
         for (let axis = 0; axis < 3; axis++) {
           min[axis] = Math.min(min[axis], shape.positions[offset + axis])
           max[axis] = Math.max(max[axis], shape.positions[offset + axis])
         }
       }
+
       return Object.freeze({ min: Object.freeze(min), max: Object.freeze(max) })
     }
+
     const parts = new Map<
       SpatialShape,
       { part: CropPart; model: SceneFruit['model'] }
     >()
     const models = new Set<SceneFruit['model']>()
+
     for (const fruit of receipt.scene.fruits) {
       if (models.has(fruit.model)) {
         continue
       }
+
       models.add(fruit.model)
       for (const part of fruit.model.parts) {
         if (parts.has(part.shape)) {
           throw new Error('Ambiguous crop shape ownership')
         }
+
         parts.set(part.shape, { part, model: fruit.model })
       }
     }
+
     const plants = new Map<
       SceneFruit['model'],
       Map<string, SceneFruit['plant']>
     >()
+
     for (const model of models) {
       const group = new Map<string, SceneFruit['plant']>()
+
       for (const plant of receipt.scene.plants) {
         if (
           plant.species !== model.species ||
@@ -226,31 +250,43 @@ export class QueryGeometry {
         ) {
           continue
         }
+
         const key = placementKey(plant.position, plant.yaw)
+
         if (group.has(key)) {
           throw new Error('Ambiguous plant placement')
         }
+
         group.set(key, plant)
       }
+
       plants.set(model, group)
     }
+
     const register = (mesh: Omit<GeometryMesh, 'prepared'>) => {
       if (mesh.shape.kind !== 'triangles') {
         throw new Error('Unsupported physical source shape')
       }
+
       let box = localBounds.get(mesh.shape)
+
       if (!box) {
         box = prepareBounds(mesh.shape)
         localBounds.set(mesh.shape, box)
       }
+
       let mappings = products.get(mesh.shape)
+
       if (!mappings) {
         mappings = new Map()
         products.set(mesh.shape, mappings)
       }
+
       let prepared = mappings.get(mesh.origin.regions)
+
       if (!prepared) {
         const shape = mesh.shape
+
         prepared = Object.freeze({
           bounds: box,
           regions: Object.freeze(
@@ -266,36 +302,46 @@ export class QueryGeometry {
         })
         mappings.set(mesh.origin.regions, prepared)
       }
+
       shapes.add(mesh.shape)
       const member = Object.freeze({ ...mesh, prepared })
+
       meshes.push(member)
       members.add(member)
       work.membershipVisits++
     }
+
     for (const mesh of receipt.scene.meshes) {
       if (mesh.layer === 'dimensions') {
         continue
       }
+
       const { descriptor } = mesh
       const crop = parts.get(descriptor.shape)
       let bindings: readonly SceneFruit['plant'][] | undefined
+
       if (mesh.layer === 'cucumbers' || mesh.layer === 'tomatoes') {
         if (!crop || !descriptor.instances) {
           throw new Error('Missing canonical crop ownership')
         }
+
         const group = plants.get(crop.model)
+
         bindings = Object.freeze(
           descriptor.instances.map((instance) => {
             const plant = group?.get(
               placementKey(instance.position, instance.yaw)
             )
+
             if (!plant) {
               throw new Error('Missing canonical plant instance')
             }
+
             return plant
           })
         )
       }
+
       register({
         kind: 'farm',
         frame: 'world',
@@ -306,15 +352,19 @@ export class QueryGeometry {
         ...(crop ? { partitions: crop.part.partitions, plants: bindings } : {})
       })
     }
+
     if ('robot' in receipt) {
       const rig = receipt.robot.rig
+
       if (!rig) {
         throw new Error('Robot rigid ownership unavailable')
       }
+
       for (const part of rig.parts) {
         if (!receipt.robot.parts.includes(part.source)) {
           throw new Error('Mismatched robot source')
         }
+
         register({
           kind: 'robot',
           frame: 'robot',
@@ -323,9 +373,11 @@ export class QueryGeometry {
           body: part.body
         })
       }
+
       if (rig.parts.length !== receipt.robot.parts.length) {
         throw new Error('Incomplete robot source')
       }
+
       for (const mesh of receipt.dock.meshes) {
         register({
           kind: 'dock',
@@ -336,6 +388,7 @@ export class QueryGeometry {
         })
       }
     }
+
     this.assertCurrent(receipt)
     const source = Object.freeze({
       receipt,
@@ -344,9 +397,11 @@ export class QueryGeometry {
       fruits: receipt.scene.fruits,
       work: Object.freeze(work)
     })
+
     this.source = source as QueryGeometrySource
     this.work.membershipBuilds++
     this.members = members
+
     return source
   }
 
@@ -354,6 +409,7 @@ export class QueryGeometry {
     if (source !== this.source) {
       throw new Error('Unissued or retired query geometry')
     }
+
     try {
       this.assertCurrent(source.receipt)
     } catch (error) {
@@ -361,6 +417,7 @@ export class QueryGeometry {
       this.members.clear()
       throw error
     }
+
     return source
   }
 
@@ -376,9 +433,11 @@ export class QueryGeometry {
     if (!this.members.has(mesh)) {
       throw new Error('Unissued geometry mesh')
     }
+
     if (mesh.frame !== 'world' || !mesh.descriptor) {
       throw new Error('Current robot pose required')
     }
+
     if (
       !Number.isInteger(instance) ||
       instance < 0 ||
@@ -387,15 +446,20 @@ export class QueryGeometry {
     ) {
       throw new Error('Invalid placement input')
     }
+
     const descriptor = mesh.descriptor
     let local = point
+
     if (descriptor.instances) {
       const placement = descriptor.instances[instance]
+
       if (!placement) {
         throw new Error('Missing source instance')
       }
+
       const cosine = Math.cos(placement.yaw),
         sine = Math.sin(placement.yaw)
+
       local = [
         placement.position[0] + cosine * point[0] + sine * point[2],
         placement.position[1] + point[1],
@@ -404,8 +468,11 @@ export class QueryGeometry {
     } else if (instance !== 0) {
       throw new Error('Unexpected source instance')
     }
+
     const position = transformRobotPoint(descriptor, local)
+
     this.placements++
+
     return position
   }
 

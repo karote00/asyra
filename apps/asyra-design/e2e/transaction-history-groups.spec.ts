@@ -16,6 +16,7 @@ test('finite history members project nested hierarchy before the history group c
 }, testInfo) => {
   test.setTimeout(90000)
   const identity = createTestDocumentIdentity()
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   await createRectangle(page, 0.25, 0.25)
@@ -23,25 +24,31 @@ test('finite history members project nested hierarchy before the history group c
   const initial = await getCoreDocumentDigest(page)
   const peerContext = await browser.newContext()
   const peer = await peerContext.newPage()
+
   try {
     await peer.goto(identity.url)
     await waitForAppReady(peer)
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(initial)
+
     const verifyDurableState = async (stage: string) => {
       const receipt = await page.evaluate(async () => {
         const { getActiveCollaborationHandle } =
           await import('../src/testing/runtime-access')
         const session = getActiveCollaborationHandle()
+
         if (!session) {
           throw new Error('Missing document session')
         }
+
         return session.confirmPersistence(AbortSignal.timeout(10000))
       })
+
       expect(receipt.durableSequence).toBeGreaterThanOrEqual(receipt.sequence)
       const expected = await page.evaluate(async () =>
         (await import('../src/testing/runtime-access')).core.save()
       )
       const actual = await getPersistedDocumentCheckpoint(identity.fileId)
+
       await testInfo.attach(`durable-${stage}`, {
         body: JSON.stringify({ receipt, expected, actual }),
         contentType: 'application/json'
@@ -54,6 +61,7 @@ test('finite history members project nested hierarchy before the history group c
 
     await page.evaluate(async () => {
       const runtime = await import('../src/testing/runtime-access')
+
       runtime.startSharedPublicationCapture('history-source')
       runtime.startDocumentPublicationCapture('history-document')
     })
@@ -61,25 +69,31 @@ test('finite history members project nested hierarchy before the history group c
       const { core } = await import('../src/testing/runtime-access')
       const { hierarchyApis } = await import('../src/common-apis/hierarchy')
       const workspace = hierarchyApis.getWorkspaceId()
+
       if (!workspace) {
         throw new Error('Missing workspace')
       }
+
       const ids = [...(core.getElementData(workspace)?.children ?? [])]
+
       if (ids.length !== 2) {
         throw new Error('Expected two rectangles')
       }
+
       const immediate = { undoable: true, sharedDelivery: 'immediate' } as const
       const history = core.startHistoryGroup()
       const historyBefore = core.getUndoHistoryDepth()
       const drawing = core.updateHistoryGroup(history, () => {
         const body = hierarchyApis.groupElements([ids[0]], immediate)
         const detail = hierarchyApis.groupElements([ids[1]], immediate)
+
         hierarchyApis.moveElements({
           elementIds: [detail.groupId],
           targetParentId: body.groupId,
           targetIndex: 1
         })
         const members = hierarchyApis.ungroupElement(body.groupId, immediate)
+
         return hierarchyApis.groupElements(members.elementIds, immediate)
       })
       const bounds = core.getElementComputedData(drawing.groupId, [
@@ -91,6 +105,7 @@ test('finite history members project nested hierarchy before the history group c
       const image = core.captureElementSnapshot(drawing.groupId, 1024)
       const pendingDepth = core.getUndoHistoryDepth()
       const status = core.getHistoryGroupStatus(history)
+
       return {
         history,
         drawingId: drawing.groupId,
@@ -107,6 +122,7 @@ test('finite history members project nested hierarchy before the history group c
       }
     })
     const result = await live.evaluate(({ history, ...result }) => result)
+
     expect(result.bounds?.width).toBeGreaterThan(0)
     expect(result.bounds?.height).toBeGreaterThan(0)
     expect(result.image.width).toBeGreaterThan(0)
@@ -131,15 +147,19 @@ test('finite history members project nested hierarchy before the history group c
     const grouped = await getCoreDocumentDigest(page)
     const finalDepth = await live.evaluate(async ({ history }) => {
       const { core } = await import('../src/testing/runtime-access')
+
       core.endHistoryGroup(history)
+
       return core.getUndoHistoryDepth()
     })
     const publicationPath = testInfo.outputPath('history-publications.json')
+
     await writeFile(
       publicationPath,
       JSON.stringify(
         await page.evaluate(async () => {
           const runtime = await import('../src/testing/runtime-access')
+
           return {
             source: runtime.readTestCapture('history-source'),
             document: runtime.readTestCapture('history-document')
@@ -160,8 +180,10 @@ test('finite history members project nested hierarchy before the history group c
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(grouped)
     const restoredImage = await page.evaluate(async (id) => {
       const { core } = await import('../src/testing/runtime-access')
+
       return core.captureElementSnapshot(id, 1024).dataUrl
     }, result.drawingId)
+
     expect(restoredImage).toBe(result.image.dataUrl)
     await page.screenshot({ path: testInfo.outputPath('restored-group.png') })
     await verifyDurableState('redo')
@@ -175,15 +197,18 @@ test('finite history members project nested hierarchy before the history group c
         await import('../src/common-apis')
       const workspace = core.getCurrentWorkspaceId()
       const id = core.getElementData(workspace)?.children?.[0]
+
       if (!id) {
         throw new Error('Reloaded group missing')
       }
+
       transactionApis.runTransaction(() =>
         elementApis.setElementsVisible([id], false)
       )
     })
     await verifyDurableState('edit-after-reload')
     const edited = await getCoreDocumentDigest(page)
+
     await page.reload()
     await waitForAppReady(page)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)

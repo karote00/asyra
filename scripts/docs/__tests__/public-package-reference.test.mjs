@@ -29,6 +29,7 @@ test('package reference derives all release facts and guide relationships', asyn
         'utf8'
       )
     )
+
     assert.equal(packageRecord.version, manifest.version)
     assert.equal(packageRecord.license, manifest.license)
     assert.ok(packageRecord.publicEntries.length > 0)
@@ -43,5 +44,6 @@ test('package reference derives all release facts and guide relationships', asyn
 
 test('checked package reference is deterministic and current', async () => {
   const reference = await checkPublicPackageReference({ repositoryRoot })
+
   assert.equal(reference.packages.length, 19)
 })

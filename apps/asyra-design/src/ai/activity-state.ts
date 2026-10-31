@@ -64,6 +64,7 @@ const boundedActivityMessage = (
   value: string | undefined
 ): string | undefined => {
   const message = value?.trim()
+
   if (message && message.length <= 1000) {
     return message
   }
@@ -75,6 +76,7 @@ const executionActivityMessage = (
   if (update.phase !== 'execution' || update.activity?.kind !== 'work') {
     return
   }
+
   return boundedActivityMessage(update.summary)
 }
 
@@ -83,8 +85,10 @@ const activityLabel = (update: AiRuntimeProgressUpdate): string => {
     const tool = Object.hasOwn(activityToolLabels, update.tool)
       ? activityToolLabels[update.tool]
       : 'Planning the drawing'
+
     return update.toolStatus === 'running' ? tool : 'Reviewing the results'
   }
+
   switch (update.phase) {
     case 'context':
       return 'Reviewing the drawing'
@@ -98,22 +102,27 @@ const activityLabel = (update: AiRuntimeProgressUpdate): string => {
       return 'Awaiting approval'
     case 'execution': {
       const summary = executionActivityMessage(update)
+
       if (summary) {
         return summary
       }
+
       return update.tool && Object.hasOwn(activityToolLabels, update.tool)
         ? activityToolLabels[update.tool]
         : 'Preparing the drawing'
     }
+
     case 'settlement':
       return update.summary
     case 'settled':
       if (update.outcome === 'failed') {
         return 'Failed'
       }
+
       if (update.outcome === 'cancelled') {
         return 'Stopped'
       }
+
       return 'Finished'
   }
 }
@@ -179,11 +188,14 @@ const settledEntry = (
   const settled = Object.values(closedCalls).filter(
     (call): call is Exclude<ClosedCall, true> => call !== true
   )
+
   if (!settled.length) {
     return
   }
+
   const statuses = settled.map((call) => call.outcome?.status ?? 'unknown')
   let status: 'unknown' | 'success' | 'failed' | 'partial' = 'partial'
+
   if (statuses.includes('unknown')) {
     status = 'unknown'
   } else if (statuses.every((value) => value === 'success')) {
@@ -191,12 +203,14 @@ const settledEntry = (
   } else if (statuses.every((value) => value === 'failed')) {
     status = 'failed'
   }
+
   const labels = {
     success: 'Completed operation',
     partial: 'Partially completed operation',
     failed: 'Failed operation',
     unknown: 'Operation ended - outcome unconfirmed'
   }
+
   return {
     label: labels[status] + (settled.length > 1 ? ` (${settled.length})` : ''),
     message: settled
@@ -261,6 +275,7 @@ const authorPurpose = (
   if (!message) {
     return previous
   }
+
   if (
     previous?.message === message &&
     previous.id === id &&
@@ -268,6 +283,7 @@ const authorPurpose = (
   ) {
     return previous
   }
+
   return { id, scope, revision: sequence, message }
 }
 
@@ -279,11 +295,13 @@ const callAncestry = (
   const result: string[] = []
   const visited = new Set<string>()
   let current: string | undefined = id
+
   while (current && calls[current] && !visited.has(current)) {
     result.push(current)
     visited.add(current)
     current = calls[current].parentCallId
   }
+
   return result
 }
 
@@ -294,18 +312,23 @@ const livePurpose = (
   const entries = Object.entries(calls)
   const parents = new Set(entries.map(([, call]) => call.parentCallId))
   const leaves = entries.filter(([id]) => !parents.has(id))
+
   if (!leaves.length) {
     return
   }
+
   const paths = (selectedIds ?? leaves.map(([id]) => id)).map((id) =>
     callAncestry(id, calls)
   )
+
   if (!paths.length) {
     return
   }
+
   const common = paths[0].find(
     (id) => calls[id].purpose && paths.every((path) => path.includes(id))
   )
+
   return common ? calls[common].purpose : undefined
 }
 
@@ -317,9 +340,11 @@ const livePhaseLabel = (
   const entries = Object.entries(calls)
   const parents = new Set(entries.map(([, call]) => call.parentCallId))
   const leaves = entries.filter(([id]) => !parents.has(id))
+
   if (leaves.length === 1) {
     return leaves[0][1].label
   }
+
   return leaves.length ? `Running ${leaves.length} operations` : fallback
 }
 
@@ -352,13 +377,17 @@ const principalOperationLabel = (
   const parents = new Set(descendants.map(([, call]) => call.parentCallId))
   const leaves = descendants.filter(([child]) => !parents.has(child))
   const effects = new Set(leaves.map(([, call]) => call.effect))
+
   if (!effects.size || effects.has(undefined)) {
     return calls[id].operationLabel
   }
+
   const effect = [...effects][0]
+
   if (!effect) {
     return calls[id].operationLabel
   }
+
   return effects.size > 1 ? dispatchLabels.mixed : dispatchLabels[effect]
 }
 
@@ -369,23 +398,28 @@ const projectCallEntry = (
 ): ActivityEntry => {
   const visibleIds = publicOperationIds(calls)
   const visible = visibleIds.map((id) => calls[id])
+
   if (!visible.length) {
     const context =
       livePurpose(calls, publicOperationIds(calls, false))?.message ??
       stagePurpose
+
     return context ? { label: 'Current task', message: context } : fallback
   }
+
   const message =
     livePurpose(calls, visibleIds)?.message ?? stagePurpose ?? fallback.message
   const descriptions = new Set(
     visibleIds.map((id) => principalOperationLabel(id, calls))
   )
   let label = `${[...descriptions].join(' - ')} - ${visible.length} operations`
+
   if (visible.length === 1) {
     label = principalOperationLabel(visibleIds[0], calls)
   } else if (descriptions.size === 1) {
     label = `${[...descriptions][0]} - ${visible.length} operations`
   }
+
   return { label, ...(message ? { message } : {}) }
 }
 
@@ -433,6 +467,7 @@ export const reduceAiActivity = (
     const activeCallCount = Object.keys(next.calls).length
     let selected: ActivityPurpose | undefined
     let purposeSource = 'none'
+
     if (next.lifecycle === 'running') {
       if (live) {
         selected = live
@@ -442,6 +477,7 @@ export const reduceAiActivity = (
         purposeSource = 'request'
       }
     }
+
     const phaseLabel =
       next.lifecycle === 'running'
         ? livePhaseLabel(
@@ -449,6 +485,7 @@ export const reduceAiActivity = (
             next.phaseLabel ?? (next.entry.label || ownerPhaseLabels.provider)
           )
         : next.entry.label
+
     return {
       state: next,
       decision: {
@@ -469,8 +506,10 @@ export const reduceAiActivity = (
       }
     }
   }
+
   if (event.type === 'conversation') {
     const snapshot = event.snapshot
+
     // The conversation is authoritative. A question is not a completed drawing.
     if (snapshot.awaitingAnswer) {
       return transition(
@@ -479,29 +518,36 @@ export const reduceAiActivity = (
         'awaiting-answer'
       )
     }
+
     if (snapshot.outcome) {
       let label = 'Finished'
+
       if (snapshot.outcome === 'partial') {
         label = 'Partially completed'
         if (state.failed) {
           label = 'Failed'
         }
       }
+
       if (snapshot.outcome === 'failed') {
         label = 'Failed'
       }
+
       if (snapshot.outcome === 'cancelled') {
         label = 'Stopped'
       }
+
       return transition(
         { ...state, lifecycle: 'settled', entry: { label } },
         'accepted',
         'conversation-outcome'
       )
     }
+
     if (state.lifecycle === 'settled') {
       return transition(state, 'retained', 'terminal-state')
     }
+
     if (snapshot.stopping) {
       return transition(
         { ...state, lifecycle: 'stopping', entry: { label: 'Stopping…' } },
@@ -509,6 +555,7 @@ export const reduceAiActivity = (
         'lifecycle-control'
       )
     }
+
     if (
       snapshot.awaitingApproval &&
       allowedTransitions[state.lifecycle].includes('awaiting-approval')
@@ -523,23 +570,30 @@ export const reduceAiActivity = (
         'lifecycle-control'
       )
     }
+
     return transition(state, 'retained', 'no-control-change')
   }
 
   const update = event.update
+
   if (update.attempt < state.attempt) {
     return transition(state, 'rejected', 'older-attempt')
   }
+
   let sequence = state.sequence
+
   if (update.attempt > state.attempt) {
     sequence = 0
   }
+
   if (update.activity) {
     if (update.activity.sequence <= sequence) {
       return transition(state, 'rejected', 'old-sequence')
     }
+
     sequence = update.activity.sequence
   }
+
   const ordered = {
     ...state,
     attempt: update.attempt,
@@ -551,9 +605,11 @@ export const reduceAiActivity = (
   }
 
   const lifecycle = transitionKind(update)
+
   if (!allowedTransitions[state.lifecycle].includes(lifecycle)) {
     return transition(ordered, 'rejected', 'illegal-lifecycle-transition')
   }
+
   if (
     state.lifecycle === 'awaiting-approval' &&
     lifecycle === 'running' &&
@@ -591,12 +647,14 @@ export const reduceAiActivity = (
         ? (boundedActivityMessage(update.message) ??
           executionActivityMessage(update))
         : undefined
+
     if (
       closedCalls[activity.callId] ||
       (activity.parentCallId && closedCalls[activity.parentCallId])
     ) {
       return transition(ordered, 'rejected', 'completed-call')
     }
+
     if (activity.scope === 'request') {
       if (update.toolStatus === 'completed') {
         closedCalls[activity.callId] = true
@@ -614,6 +672,7 @@ export const reduceAiActivity = (
         ) {
           closedCalls[requestPurpose.id] = true
         }
+
         requestPurpose = authorPurpose(
           requestPurpose,
           authored,
@@ -624,6 +683,7 @@ export const reduceAiActivity = (
       }
     } else if (update.toolStatus === 'completed') {
       const previous = calls[activity.callId]
+
       closedCalls[activity.callId] =
         previous && !previous.parentCallId
           ? {
@@ -636,6 +696,7 @@ export const reduceAiActivity = (
           : true
       Reflect.deleteProperty(calls, activity.callId)
       let changed = true
+
       while (changed) {
         changed = false
         for (const [id, call] of Object.entries(calls)) {
@@ -648,6 +709,7 @@ export const reduceAiActivity = (
       }
     } else {
       const previous = calls[activity.callId]
+
       if (
         !previous &&
         !activity.parentCallId &&
@@ -657,14 +719,18 @@ export const reduceAiActivity = (
           closedCalls[id] = true
         }
       }
+
       if (!previous && !activity.parentCallId && requestPurpose) {
         closedCalls[requestPurpose.id] = true
         requestPurpose = undefined
       }
+
       let operationLabel =
         previous?.operationLabel ?? ownerPhaseLabels.executing
+
       if (update.tool && Object.hasOwn(activityToolLabels, update.tool)) {
         const description = activityToolLabels[update.tool]
+
         operationLabel =
           activity.phase && ['queued', 'admission'].includes(activity.phase)
             ? (previous?.operationLabel ??
@@ -677,6 +743,7 @@ export const reduceAiActivity = (
       ) {
         operationLabel = ownerPhaseLabels[activity.phase]
       }
+
       calls[activity.callId] = {
         effect: activity.effect ?? previous?.effect,
         executing:
@@ -701,6 +768,7 @@ export const reduceAiActivity = (
         parentCallId: activity.parentCallId ?? previous?.parentCallId
       }
     }
+
     const entry = projectCallEntry(
       calls,
       publicOperationIds(calls, false).length
@@ -725,12 +793,14 @@ export const reduceAiActivity = (
           ? state.entry
           : entry
     }
+
     return transition(
       next,
       sameActivity(state.entry, next.entry) ? 'retained' : 'accepted',
       'scoped-owner-phase'
     )
   }
+
   if (Object.keys(ordered.calls).length || ordered.requestPurpose) {
     const entry = projectCallEntry(
       ordered.calls,
@@ -742,6 +812,7 @@ export const reduceAiActivity = (
       },
       ordered.requestPurpose?.message
     )
+
     return transition(
       {
         ...ordered,
@@ -758,12 +829,14 @@ export const reduceAiActivity = (
       'active-purpose'
     )
   }
+
   const entry: ActivityEntry = settledEntry(ordered.closedCalls) ?? {
     label:
       update.toolStatus === 'completed'
         ? ownerPhaseLabels.provider
         : activityLabel(update)
   }
+
   return transition(
     { ...ordered, lifecycle, entry, phaseLabel: entry.label },
     sameActivity(state.entry, entry) ? 'retained' : 'accepted',
@@ -777,6 +850,7 @@ const activityMode = (
   if (state.lifecycle !== 'running') {
     return 'control'
   }
+
   return publicOperationIds(state.calls).length ? 'operation' : 'context'
 }
 
@@ -790,16 +864,19 @@ export const createAiActivityProjection = (
     lifecycle: ActivityLifecycle
     purposeKey?: string
   }[] = []
+
   const purposeKey = (value: ActivityState) => {
     if (value.lifecycle !== 'running') {
       return
     }
+
     const ids = publicOperationIds(value.calls)
     const purpose =
       livePurpose(
         value.calls,
         ids.length ? ids : publicOperationIds(value.calls, false)
       ) ?? value.requestPurpose
+
     return purpose
       ? JSON.stringify([
           value.attempt,
@@ -809,6 +886,7 @@ export const createAiActivityProjection = (
         ])
       : undefined
   }
+
   const sameSubject = (
     previous: (typeof history)[number] | undefined,
     entry: ActivityEntry,
@@ -817,10 +895,13 @@ export const createAiActivityProjection = (
     key || previous?.purposeKey
       ? key === previous?.purposeKey
       : sameActivitySubject(previous?.entry, entry)
+
   const append = (update: AiRuntimeProgressUpdate) => {
     const result = reduceAiActivity(state, { type: 'progress', update })
+
     state = result.state
     const key = purposeKey(state)
+
     if (
       result.decision.status !== 'rejected' &&
       !sameSubject(history.at(-1), state.entry, key)
@@ -831,8 +912,10 @@ export const createAiActivityProjection = (
         purposeKey: key
       })
     }
+
     return result.decision
   }
+
   const result = (overrides: AiActivityProjectionState = {}) => {
     const projected = reduceAiActivity(state, {
       type: 'conversation',
@@ -845,9 +928,11 @@ export const createAiActivityProjection = (
         ? lastEntry
         : projected.entry
     let entries: ActivityEntry[] | undefined
+
     return {
       current,
       mode: activityMode(projected),
+
       get entries() {
         if (!entries) {
           entries = history
@@ -868,14 +953,17 @@ export const createAiActivityProjection = (
               entries.push(current)
             }
           }
+
           if (!entries.length) {
             entries.push({ label: 'Starting request' })
           }
         }
+
         return entries
       }
     }
   }
+
   return { append, result }
 }
 
@@ -885,6 +973,8 @@ export const projectAiActivity = (
   snapshot: AiActivityProjectionState = {}
 ) => {
   const projection = createAiActivityProjection(snapshot)
+
   updates.forEach(projection.append)
+
   return projection.result()
 }

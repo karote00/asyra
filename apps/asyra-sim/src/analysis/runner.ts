@@ -56,7 +56,9 @@ const errorMessage = (input: unknown, fallback: string): string =>
 
 export class AnalysisRunner {
   private active: ActiveRun | null = null
+
   private closed = false
+
   private progressState: AnalysisProgress | null = null
 
   constructor(
@@ -82,17 +84,21 @@ export class AnalysisRunner {
     if (this.closed) {
       return Promise.reject(new Error('Analysis runner is closed'))
     }
+
     if (this.active) {
       return Promise.reject(new Error('A formal analysis is already running'))
     }
+
     const runId = this.createId(),
       startedAt = this.now()
     let snapshot: ExperimentSnapshot
+
     try {
       snapshot = admitSnapshotExecution(input, this.methods)
     } catch (error) {
       return Promise.reject(error)
     }
+
     const initialProgress: AnalysisProgress = {
       runId,
       snapshotId: snapshot.snapshotId,
@@ -103,12 +109,14 @@ export class AnalysisRunner {
       evaluations: 0,
       evidenceLeafCount: 0
     }
+
     this.progressState = Object.freeze(initialProgress)
     if (signal?.aborted) {
       this.progressState = Object.freeze({
         ...initialProgress,
         state: 'cancelled'
       })
+
       return Promise.resolve(
         terminalAnalysisResult(snapshot, [], {
           runId,
@@ -119,7 +127,9 @@ export class AnalysisRunner {
         })
       )
     }
+
     let worker: Worker
+
     try {
       worker = this.createWorker()
     } catch (error) {
@@ -127,6 +137,7 @@ export class AnalysisRunner {
         ...initialProgress,
         state: 'failed'
       })
+
       return Promise.resolve(
         terminalAnalysisResult(snapshot, [], {
           runId,
@@ -139,6 +150,7 @@ export class AnalysisRunner {
     }
 
     let resolveResult: (result: AnalysisResult) => void = () => undefined
+
     const promise = new Promise<AnalysisResult>((resolve) => {
       resolveResult = resolve
     })
@@ -157,21 +169,27 @@ export class AnalysisRunner {
     let retainedLeaves = 0,
       retainedEvaluations = 0,
       retainedBytes = 2
+
     const retained = () =>
       snapshot.pairs.flatMap((pair) => {
         const item = progress.get(pair.id)
+
         return item ? [item] : []
       })
+
     const acceptProgress = (pairs: readonly MethodPairEvidence[]) => {
       if (!Array.isArray(pairs) || pairs.length > snapshot.pairs.length) {
         throw new Error('Invalid analysis progress batch')
       }
+
       for (const input of pairs) {
         if (progress.has(input?.pairId)) {
           throw new Error('Worker returned duplicate pair progress')
         }
+
         const pair = validatePairProgress(snapshot, input),
           bytes = measureWorkerPayload(pair) + (progress.size ? 1 : 0)
+
         if (
           retainedLeaves + pair.evidence.leaves.length >
             EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves ||
@@ -183,15 +201,19 @@ export class AnalysisRunner {
             'Analysis progress exceeds its global evidence budget'
           )
         }
+
         retainedLeaves += pair.evidence.leaves.length
         retainedEvaluations += pair.evidence.evaluations
         retainedBytes += bytes
         progress.set(pair.pairId, pair)
       }
+
       let state: AnalysisProgress['state'] = 'running'
+
       if (stopping) {
         state = stopping.execution === 'cancelled' ? 'cancelling' : 'timing-out'
       }
+
       this.progressState = Object.freeze({
         ...initialProgress,
         state,
@@ -200,6 +222,7 @@ export class AnalysisRunner {
         evidenceLeafCount: retainedLeaves
       })
     }
+
     const cleanup = () => {
       clearTimeout(timers.timeout)
       clearTimeout(timers.grace)
@@ -209,15 +232,18 @@ export class AnalysisRunner {
       worker.onmessageerror = null
       worker.terminate()
     }
+
     const settle = (result: AnalysisResult) => {
       if (settled) {
         return
       }
+
       settled = true
       cleanup()
       if (this.active?.promise === promise) {
         this.active = null
       }
+
       this.progressState = Object.freeze({
         ...initialProgress,
         state: result.execution,
@@ -233,6 +259,7 @@ export class AnalysisRunner {
       })
       resolveResult(result)
     }
+
     const finishTerminal = (
       execution: Exclude<AnalysisExecution, 'completed'>,
       reason: string
@@ -240,6 +267,7 @@ export class AnalysisRunner {
       if (settled) {
         return
       }
+
       settle(
         terminalAnalysisResult(snapshot, retained(), {
           runId,
@@ -250,6 +278,7 @@ export class AnalysisRunner {
         })
       )
     }
+
     const requestStop = (
       execution: Extract<AnalysisExecution, 'cancelled' | 'timed-out'>,
       reason: string
@@ -257,6 +286,7 @@ export class AnalysisRunner {
       if (settled || stopping) {
         return
       }
+
       stopping = { execution, reason }
       this.progressState = Object.freeze({
         ...(this.progressState ?? initialProgress),
@@ -270,13 +300,16 @@ export class AnalysisRunner {
       } catch {
         // Termination below remains the authoritative cancellation boundary.
       }
+
       timers.grace = setTimeout(
         () => finishTerminal(execution, reason),
         this.terminationGraceMs
       )
     }
+
     const abort = () =>
       requestStop('cancelled', 'Analysis was cancelled by the user.')
+
     const checkDeadline = () => {
       if (this.now() - startedAt >= snapshot.budget.maxDurationMs) {
         requestStop(
@@ -285,6 +318,7 @@ export class AnalysisRunner {
         )
       }
     }
+
     signal?.addEventListener('abort', abort, { once: true })
     timers.timeout = setTimeout(
       () =>
@@ -298,17 +332,22 @@ export class AnalysisRunner {
       if (settled) {
         return
       }
+
       const response = event.data
+
       if (!response || response.runId !== runId) {
         return
       }
+
       try {
         checkDeadline()
         measureWorkerPayload(response)
         if (response.type === AnalysisWorkerMessages.PROGRESS) {
           acceptProgress(response.pairs)
+
           return
         }
+
         if (response.type === AnalysisWorkerMessages.COMPLETE) {
           const completed = completeAnalysisResult(
             snapshot,
@@ -319,41 +358,51 @@ export class AnalysisRunner {
               endedAt: this.now()
             }
           )
+
           for (const pair of completed.pairEvidence) {
             const previous = progress.get(pair.pairId)
+
             if (previous && !samePairEvidence(previous, pair)) {
               throw new Error(
                 'Terminal evidence contradicts previously validated pair progress'
               )
             }
           }
+
           checkDeadline()
           if (stopping) {
             for (const pair of completed.pairEvidence) {
               progress.set(pair.pairId, pair)
             }
+
             finishTerminal(stopping.execution, stopping.reason)
           } else {
             settle(Object.freeze({ ...completed, endedAt: this.now() }))
           }
+
           return
         }
+
         if (response.type === AnalysisWorkerMessages.ERROR) {
           if (response.pairs !== undefined) {
             acceptProgress(response.pairs)
           }
+
           if (stopping) {
             finishTerminal(stopping.execution, stopping.reason)
           } else {
             finishTerminal('failed', response.error)
           }
+
           return
         }
+
         throw new Error('Unknown analysis worker response')
       } catch (error) {
         finishTerminal('failed', errorMessage(error, 'Invalid worker evidence'))
       }
     }
+
     worker.onerror = (event) => {
       event.preventDefault?.()
       if (stopping) {
@@ -365,6 +414,7 @@ export class AnalysisRunner {
         )
       }
     }
+
     worker.onmessageerror = () =>
       finishTerminal(
         'failed',
@@ -375,9 +425,11 @@ export class AnalysisRunner {
       if (signal?.aborted) {
         abort()
       }
+
       checkDeadline()
       if (!stopping) {
         const input = structuredClone(snapshot)
+
         checkDeadline()
         if (!stopping) {
           worker.postMessage({
@@ -390,20 +442,25 @@ export class AnalysisRunner {
     } catch (error) {
       finishTerminal('failed', errorMessage(error, 'Worker startup failed'))
     }
+
     return promise
   }
 
   async dispose(): Promise<void> {
     if (this.closed) {
       await this.active?.promise
+
       return
     }
+
     this.closed = true
     const active = this.active
+
     if (active) {
       active.requestStop('cancelled', 'Analysis runtime was disposed.')
       await active.promise
     }
+
     this.progressState = null
   }
 }

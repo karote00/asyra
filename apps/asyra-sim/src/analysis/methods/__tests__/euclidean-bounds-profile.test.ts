@@ -11,6 +11,7 @@ import { queryOriginalPartPair } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
 
 const ops = poseOperations(intervalAlgebra)
+
 afterEach(() => vi.restoreAllMocks())
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
   'euclidean bounds passive profile',
@@ -24,9 +25,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
+
         if (!pair) {
           throw new Error('Missing fixed source pair')
         }
+
         const original = projection.projectedBoundsGap
         let calls = 0,
           normAttempts = 0,
@@ -34,10 +37,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           bypassedAxes = 0,
           alreadyRejected = 0,
           zeroThresholdCalls = 0
+
         vi.spyOn(projection, 'projectedBoundsGap').mockImplementation(
           (a, ap, b, bp, threshold, checkpoint) => {
             calls++
             let proves = false
+
             if (threshold === 0) {
               zeroThresholdCalls++
             } else {
@@ -50,6 +55,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   isub(interval(bw[i][0]), interval(axis[1]))[0]
                 )
               )
+
               if (
                 gaps.filter((gap) => gap > 0).length >= 2 &&
                 Math.max(...gaps) <= threshold
@@ -60,27 +66,32 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   interval(gaps[1]),
                   interval(gaps[2])
                 ])[0]
+
                 proves = norm > threshold
                 if (proves) {
                   newProofs++
                 }
               }
             }
+
             let axes = 0
             const result = original(a, ap, b, bp, threshold, () => {
               axes++
               checkpoint()
             })
+
             if (proves) {
               bypassedAxes += axes
               if (result > threshold) {
                 alreadyRejected++
               }
             }
+
             return result
           }
         )
         const context = new OriginalMeshQuery()
+
         const run = (queryContext: OriginalMeshQuery) =>
           queryOriginalPartPair(
             {
@@ -98,10 +109,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             () => undefined,
             queryContext
           )
+
         const result = run(context)
+
         expect(result.coverage).toBe('complete')
         let candidateNorms = 0,
           candidateProofs = 0
+
         vi.spyOn(projection, 'projectedBoundsGap').mockImplementation(
           (a, ap, b, bp, threshold, checkpoint) => {
             if (threshold > 0) {
@@ -116,6 +130,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   isub(interval(bw[i][0]), interval(axis[1]))[0]
                 )
               )
+
               if (
                 gaps.filter((gap) => gap > 0).length >= 2 &&
                 Math.max(...gaps) <= threshold
@@ -127,17 +142,21 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   interval(gaps[1]),
                   interval(gaps[2])
                 ])[0]
+
                 if (norm > threshold) {
                   candidateProofs++
+
                   return norm
                 }
               }
             }
+
             return original(a, ap, b, bp, threshold, checkpoint)
           }
         )
         const candidateContext = new OriginalMeshQuery()
         const candidate = run(candidateContext)
+
         expect(candidate.coverage).toBe('complete')
         expect(
           candidate.leaves.map((leaf) => [

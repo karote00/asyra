@@ -58,6 +58,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const exactKeys = (value: Record<string, unknown>, keys: readonly string[]) => {
   const actual = Object.keys(value)
+
   return actual.length === keys.length && keys.every((key) => key in value)
 }
 
@@ -71,12 +72,15 @@ function readRoute(value: unknown): SceneDemandRoute {
   if (!isRecord(value) || typeof value.kind !== 'string') {
     return invalid()
   }
+
   if (value.kind === 'unknown') {
     if (!exactKeys(value, ['kind'])) {
       return invalid()
     }
+
     return Object.freeze({ kind: 'unknown' })
   }
+
   if (
     value.kind !== 'soil-strip' ||
     !exactKeys(value, ['kind', 'bay', 'stripId', 'from', 'until']) ||
@@ -91,6 +95,7 @@ function readRoute(value: unknown): SceneDemandRoute {
   ) {
     return invalid()
   }
+
   return Object.freeze({
     kind: 'soil-strip',
     bay: value.bay as number,
@@ -104,18 +109,23 @@ function readEvidence(value: unknown): SceneDemandEvidence {
   if (!isRecord(value) || typeof value.kind !== 'string') {
     return invalid()
   }
+
   if (value.kind === 'unknown') {
     if (!exactKeys(value, ['kind'])) {
       return invalid()
     }
+
     return Object.freeze({ kind: 'unknown' })
   }
+
   if (value.kind === 'measured') {
     if (!exactKeys(value, ['kind', 'id']) || !identity(value.id)) {
       return invalid()
     }
+
     return Object.freeze({ kind: 'measured', id: value.id as string })
   }
+
   if (
     value.kind !== 'synthetic' ||
     !exactKeys(value, ['kind', 'id', 'label']) ||
@@ -124,6 +134,7 @@ function readEvidence(value: unknown): SceneDemandEvidence {
   ) {
     return invalid()
   }
+
   return Object.freeze({
     kind: 'synthetic',
     id: value.id as string,
@@ -135,12 +146,15 @@ function readGrowth(value: unknown): SceneDemandGrowth {
   if (!isRecord(value) || typeof value.kind !== 'string') {
     return invalid()
   }
+
   if (value.kind === 'unknown') {
     if (!exactKeys(value, ['kind'])) {
       return invalid()
     }
+
     return Object.freeze({ kind: 'unknown' })
   }
+
   if (
     value.kind !== 'bounded' ||
     !exactKeys(value, ['kind', 'coverage', 'volumes']) ||
@@ -149,6 +163,7 @@ function readGrowth(value: unknown): SceneDemandGrowth {
   ) {
     return invalid()
   }
+
   const ids = new Set<string>()
   const volumes = value.volumes.map((raw): GrowthVolume => {
     if (
@@ -162,13 +177,17 @@ function readGrowth(value: unknown): SceneDemandGrowth {
     ) {
       return invalid()
     }
+
     const min = raw.min
     const max = raw.max
+
     if (min.some((minimum, axis) => minimum >= max[axis])) {
       return invalid()
     }
+
     ids.add(raw.id as string)
     let anchor: GrowthVolume['anchor']
+
     if (raw.anchor.kind === 'world' && exactKeys(raw.anchor, ['kind'])) {
       anchor = Object.freeze({ kind: 'world' })
     } else if (
@@ -183,6 +202,7 @@ function readGrowth(value: unknown): SceneDemandGrowth {
     } else {
       return invalid()
     }
+
     return Object.freeze({
       id: raw.id as string,
       anchor,
@@ -190,6 +210,7 @@ function readGrowth(value: unknown): SceneDemandGrowth {
       max: Object.freeze([...max]) as Point3
     })
   })
+
   return Object.freeze({
     kind: 'bounded',
     coverage: value.coverage as 'complete' | 'discrete',
@@ -201,12 +222,15 @@ function readMargin(value: unknown): SceneDemandClearanceMargin {
   if (!isRecord(value) || typeof value.kind !== 'string') {
     return invalid()
   }
+
   if (value.kind === 'unknown') {
     if (!exactKeys(value, ['kind'])) {
       return invalid()
     }
+
     return Object.freeze({ kind: 'unknown' })
   }
+
   if (
     value.kind !== 'bounded' ||
     !exactKeys(value, ['kind', 'metres']) ||
@@ -215,6 +239,7 @@ function readMargin(value: unknown): SceneDemandClearanceMargin {
   ) {
     return invalid()
   }
+
   return Object.freeze({ kind: 'bounded', metres: value.metres as number })
 }
 
@@ -222,6 +247,7 @@ export function validateSceneDemandConfiguration(
   value: unknown
 ): SceneDemandConfiguration {
   const snapshot: unknown = structuredClone(value)
+
   if (
     !isRecord(snapshot) ||
     !exactKeys(snapshot, [
@@ -235,6 +261,7 @@ export function validateSceneDemandConfiguration(
   ) {
     return invalid()
   }
+
   return Object.freeze({
     version: 1,
     route: readRoute(snapshot.route),
@@ -250,9 +277,11 @@ export function assertCurrentSceneDemandRoute(
   farm: FarmConfiguration
 ) {
   const route = configuration.route
+
   if (route.kind === 'unknown') {
     return
   }
+
   if (
     !farm.strips.some(({ id }) => id === route.stripId) ||
     route.until > farm.length

@@ -13,12 +13,15 @@ const architecture = require('../../inspectors/design-collaboration-flow-inspect
 
 test('collaboration admission requires bounded participant counts and exact observation inputs', () => {
   const admitted = admitContract(manifest, architecture)
+
   assert.equal(admitted.cases.length, 22)
   for (const count of [0, -1, 1.5, '2', null]) {
     const changed = structuredClone(manifest)
+
     changed.flows[0].cases[0].minimumParticipants = count
     assert.throws(() => admitContract(changed, architecture), /participant/)
   }
+
   for (const file of [
     '../secret',
     '/tmp/secret',
@@ -26,12 +29,14 @@ test('collaboration admission requires bounded participant counts and exact obse
     'apps/./test.ts'
   ]) {
     const changed = structuredClone(manifest)
+
     changed.observationInputs = [file]
     assert.throws(
       () => admitContract(changed, architecture),
       /observation input/
     )
   }
+
   assert.deepEqual(admitted.observationInputs, manifest.observationInputs)
 })
 
@@ -59,8 +64,10 @@ test('the collaboration configuration inventory has exactly one declared case pe
       }
     }
   )
+
   assert.equal(run.status, 0, run.stderr)
   const report = JSON.parse(run.stdout)
+
   assert.deepEqual(report.errors, [])
   const actual = report.suites.flatMap((suite) =>
     suite.specs.flatMap((spec) =>
@@ -72,6 +79,7 @@ test('the collaboration configuration inventory has exactly one declared case pe
     )
   )
   const contract = loadContract(root, undefined, manifestPath)
+
   assert.deepEqual(
     actual.sort(),
     contract.cases.map((c) => [c.testFile, c.testName, c.projectName]).sort()
@@ -92,6 +100,7 @@ function collaborationReport() {
     startedAt: '2026-01-01T00:00:00Z',
     contracts: [contract]
   }
+
   const attachment = (actorId) => ({
     name: 'collaboration-participant',
     contentType: 'application/json',
@@ -105,6 +114,7 @@ function collaborationReport() {
       })
     ).toString('base64')
   })
+
   const attempt = {
     status: 'passed',
     retry: 0,
@@ -138,26 +148,31 @@ function collaborationReport() {
       }
     ]
   }
+
   return { context, report, attempt, entry }
 }
 
 test('collaboration participant identity is bound to original invocation, test, project and retry', () => {
   const { normalizeReport } = require('../playwright-results.cjs')
+
   const status = (fixture) =>
     normalizeReport(root, fixture.context, fixture.report).report.testResults[0]
       .assertionResults[0].status
+
   assert.equal(status(collaborationReport()), 'passed')
   for (const key of ['observationId', 'testId', 'projectName', 'retry']) {
     const f = collaborationReport()
     const evidence = JSON.parse(
       Buffer.from(f.attempt.attachments[0].body, 'base64').toString()
     )
+
     evidence[key] = 'foreign'
     f.attempt.attachments[0].body = Buffer.from(
       JSON.stringify(evidence)
     ).toString('base64')
     assert.equal(status(f), 'unknown', key)
   }
+
   for (const change of [
     (f) => {
       f.attempt.attachments = []
@@ -170,10 +185,13 @@ test('collaboration participant identity is bound to original invocation, test, 
     }
   ]) {
     const f = collaborationReport()
+
     change(f)
     assert.equal(status(f), 'unknown')
   }
+
   const failed = collaborationReport()
+
   failed.attempt.status = 'failed'
   failed.attempt.errors = [
     { message: 'original peer assertion', stack: 'original stack' }
@@ -181,6 +199,7 @@ test('collaboration participant identity is bound to original invocation, test, 
   failed.attempt.attachments = []
   assert.equal(status(failed), 'failed')
   const normalized = normalizeReport(root, failed.context, failed.report)
+
   assert.ok(
     normalized.options.errors.some((error) => error.includes('participant'))
   )
@@ -195,14 +214,17 @@ test('collaboration source cannot borrow functional configuration or erase faile
     normalizeReport,
     sourceManifestPaths
   } = require('../playwright-results.cjs')
+
   assert.deepEqual(sourceManifestPaths('collaboration'), [manifestPath])
   const f = collaborationReport()
+
   f.report.config.configFile = path.join(
     root,
     'apps/asyra-design/playwright.config.ts'
   )
   assert.equal(normalizeReport(root, f.context, f.report).options.stale, true)
   const retry = collaborationReport()
+
   retry.entry.results.push({
     ...retry.attempt,
     status: 'failed',
@@ -225,6 +247,7 @@ test(
   async (t) => {
     const { playwrightFixture } = require('./playwright-results-fixture.cjs')
     const fixture = await playwrightFixture(t, { source: 'collaboration' })
+
     t.diagnostic('Original collaboration evidence: ' + fixture.repository)
     const selected = fixture.cases.find(
       (c) => c.stepId === 'observe-session-state'
@@ -234,6 +257,7 @@ test(
       'utf8'
     )
     const baseline = await fixture.run([selected.id])
+
     assert.equal(baseline.result.code, 0, baseline.result.output.slice(-3000))
     assert.equal(
       baseline.record.cases[0].status,
@@ -246,11 +270,13 @@ test(
       'resolveCollaborationConnectionTransition'
     )
     const fault = await fixture.run([selected.id])
+
     assert.equal(fault.result.code, 1, fault.result.output.slice(-3000))
     assert.equal(fault.record.cases[0].status, 'failed')
     assert.equal(fault.record.cases[0].locations[0].stepId, selected.stepId)
     fixture.restore()
     const recovery = await fixture.run([selected.id])
+
     assert.equal(recovery.result.code, 0, recovery.result.output.slice(-3000))
     assert.equal(
       recovery.record.cases[0].status,
@@ -287,8 +313,10 @@ test(
       observationDirectory
     } = require('../localization.cjs')
     const reader = createObservationReader(observationDirectory(root))
+
     for (const [file, count] of sharedFrameworkManifests) {
       const contract = loadContract(root, undefined, file)
+
       assert.equal(contract.cases.length, count)
       const run = spawnSync(
         process.execPath,
@@ -314,6 +342,7 @@ test(
           }
         }
       )
+
       assert.equal(
         run.status,
         0,
@@ -322,8 +351,10 @@ test(
       const id = run.stdout.match(
         /Flow Inspector observation: ([a-f0-9-]+)/
       )?.[1]
+
       assert.ok(id, run.stdout)
       const record = reader.get(id)
+
       assert.equal(record.cases.length, count, file)
       assert.deepEqual(record.issues, [], file)
       assert.ok(
@@ -366,23 +397,30 @@ for (const proof of [
         createObservationReader,
         observationDirectory
       } = require('../localization.cjs')
+
       const port = async () => {
         const server = net.createServer()
+
         await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
         const value = server.address().port
+
         await new Promise((resolve) => server.close(resolve))
+
         return value
       }
+
       const [appPort, backendPort, collaborationPort] = await Promise.all([
         port(),
         port(),
         port()
       ])
+
       fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
       const directory = fs.mkdtempSync(
         path.join(root, 'tmp/flow-inspector/collaboration-full-')
       )
       const report = path.join(directory, 'original.json')
+
       t.diagnostic('Complete original collaboration evidence: ' + directory)
       const result = await runProcess({
         executable: '/bin/bash',
@@ -408,12 +446,14 @@ for (const proof of [
         signal: t.signal,
         timeoutMs: 1800000,
         maxOutputBytes: 2 * 1024 * 1024,
+
         onSpawn: (pid) =>
           fs.writeFileSync(
             path.join(directory, 'process.json'),
             JSON.stringify({ pid, appPort, backendPort, collaborationPort })
           )
       })
+
       fs.writeFileSync(path.join(directory, 'run.log'), result.output)
       fs.writeFileSync(
         path.join(directory, 'result.json'),
@@ -423,6 +463,7 @@ for (const proof of [
       assert.equal(result.code, 0, result.output.slice(-5000))
       const id = JSON.parse(fs.readFileSync(report + '.context.json')).id
       const record = createObservationReader(observationDirectory(root)).get(id)
+
       assert.equal(record.cases.length, proof.total)
       assert.ok(
         record.cases.every((item) => item.resolution === 'mapped'),
@@ -476,6 +517,7 @@ const collaborationOwnerRoutes = [
     }
   ]
 ]
+
 for (const [step, name, file, operation] of collaborationOwnerRoutes) {
   test(
     'original collaboration owner route - ' + step,
@@ -490,12 +532,15 @@ for (const [step, name, file, operation] of collaborationOwnerRoutes) {
         isolateWorkspaces: file.startsWith('packages/')
       })
       const item = fixture.cases.find((c) => c.testName === name)
+
       assert.equal(item.stepId, step)
       const unchanged = fs.readFileSync(
         path.join(fixture.repository, item.testFile),
         'utf8'
       )
+
       t.diagnostic('Original owner evidence: ' + fixture.repository)
+
       const verify = (run, status, code) => {
         assert.equal(run.result.reason, null, run.result.output.slice(-3500))
         assert.equal(run.result.code, code, run.result.output.slice(-3500))
@@ -510,13 +555,16 @@ for (const [step, name, file, operation] of collaborationOwnerRoutes) {
           unchanged
         )
       }
+
       verify(await fixture.run([item.id]), 'passed', 0)
       if (typeof operation === 'string') {
         fixture.faultOperation(item.id, file, operation)
       } else {
         fixture.faultCase(item.id, { file, ...operation })
       }
+
       const fault = await fixture.run([item.id])
+
       verify(fault, 'failed', 1)
       fixture.restore()
       verify(await fixture.run([item.id]), 'passed', 0)
@@ -524,6 +572,7 @@ for (const [step, name, file, operation] of collaborationOwnerRoutes) {
         createObservationReader,
         observationDirectory
       } = require('../localization.cjs')
+
       assert.deepEqual(
         createObservationReader(observationDirectory(fixture.repository)).get(
           fault.record.id
@@ -536,6 +585,7 @@ for (const [step, name, file, operation] of collaborationOwnerRoutes) {
 
 test('the complete collaboration report fits its bounded producer budget while oversized reports remain unavailable', () => {
   const { begin, complete } = require('../playwright-results.cjs')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/collaboration-capacity-')
@@ -543,15 +593,19 @@ test('the complete collaboration report fits its bounded producer budget while o
   const reportPath = path.join(directory, 'original.json')
   const context = begin(root, reportPath, {}, undefined, 'collaboration')
   const f = collaborationReport()
+
   f.report.stats.startTime = new Date().toISOString()
   for (const attachment of f.attempt.attachments) {
     const value = JSON.parse(Buffer.from(attachment.body, 'base64').toString())
+
     value.observationId = context.id
     attachment.body = Buffer.from(JSON.stringify(value)).toString('base64')
   }
+
   f.report.metadata = { originalDiagnostic: 'x'.repeat(5 * 1024 * 1024) }
   fs.writeFileSync(reportPath, JSON.stringify(f.report))
   const record = complete(root, reportPath)
+
   assert.equal(record.cases.length, 1, JSON.stringify(record.issues))
   assert.equal(record.cases[0].status, 'passed', JSON.stringify(record.issues))
   assert.equal(
@@ -559,10 +613,12 @@ test('the complete collaboration report fits its bounded producer budget while o
     5 * 1024 * 1024
   )
   const oversized = path.join(directory, 'oversized.json')
+
   begin(root, oversized, {}, undefined, 'collaboration')
   fs.writeFileSync(oversized, '')
   fs.truncateSync(oversized, 32 * 1024 * 1024 + 1)
   const unavailable = complete(root, oversized)
+
   assert.equal(unavailable.cases.length, 0)
   assert.ok(unavailable.issues.some((issue) => issue.includes('32 MiB')))
 })
@@ -587,6 +643,7 @@ test(
     )
     const id = JSON.parse(fs.readFileSync(reportPath + '.context.json')).id
     const retained = createObservationReader(observationDirectory(root)).get(id)
+
     assert.ok(retained.source)
     assert.equal(
       require('node:crypto')
@@ -607,6 +664,7 @@ test(
       issues: []
     }
     const normalized = normalizeReport(root, context, original)
+
     assert.equal(normalized.options.stale, false)
     const corrected = localizeReport(
       root,
@@ -614,6 +672,7 @@ test(
       normalized.report,
       normalized.options
     )
+
     assert.equal(corrected.cases.length, 17)
     assert.ok(corrected.cases.every((item) => item.resolution === 'mapped'))
     assert.equal(
@@ -634,6 +693,7 @@ test(
     const replay = fs.mkdtempSync(
       path.join(root, 'tmp/flow-inspector/historical-replay-')
     )
+
     saveObservation(replay, corrected)
     assert.deepEqual(createObservationReader(replay).get(id), corrected)
     assert.deepEqual(
@@ -645,11 +705,13 @@ test(
 
 test('collaboration command finalizes once and preserves original failure and termination exits', () => {
   const { spawnSync } = require('node:child_process')
+
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/collaboration-shell-')
   )
   const bin = path.join(directory, 'bin')
+
   fs.mkdirSync(bin)
   fs.writeFileSync(
     path.join(bin, 'node'),
@@ -695,6 +757,7 @@ exit 42
         }
       }
     )
+
     assert.equal(result.status, code, result.stdout + result.stderr)
     assert.deepEqual(fs.readFileSync(log, 'utf8').trim().split('\n'), [
       'begin|' + report,
@@ -730,17 +793,21 @@ test(
     )
     const frameworkPath = 'packages/factory/flow-contracts.json'
     const framework = loadContract(root, undefined, frameworkPath)
+
     for (const {
       path: file
     } of require('../localization.cjs').sourceFingerprint(root, [framework])
       .files) {
       const destination = path.join(fixture.repository, file)
+
       fs.mkdirSync(path.dirname(destination), { recursive: true })
       fs.cpSync(path.join(root, file), destination, { recursive: true })
     }
+
     const reader = createObservationReader(
       observationDirectory(fixture.repository)
     )
+
     const runFramework = async () => {
       const result = await runProcess({
         executable: process.execPath,
@@ -768,13 +835,17 @@ test(
         timeoutMs: 30000,
         maxOutputBytes: 512 * 1024
       })
+
       assert.equal(result.reason, null, result.output.slice(-3000))
       const id = result.output.match(
         /Flow Inspector observation: ([a-f0-9-]+)/
       )?.[1]
+
       assert.ok(id, result.output.slice(-3000))
+
       return { result, record: reader.get(id) }
     }
+
     fixture.faultOperation(
       selected.id,
       'packages/factory/src/data-transact.ts',
@@ -782,6 +853,7 @@ test(
     )
     const collaboration = await fixture.run([selected.id])
     const shared = await runFramework()
+
     assert.equal(
       collaboration.result.code,
       1,
@@ -797,10 +869,13 @@ test(
     const sharedFailures = shared.record.cases.filter(
       (c) => c.status === 'failed'
     )
+
     assert.ok(sharedFailures.length > 0 && sharedFailures.length < 9)
     assert.ok(shared.record.cases.every((c) => c.resolution === 'mapped'))
+
     const currentFailures = () =>
       reader.list().currentCases.filter((c) => c.status === 'failed')
+
     assert.equal(currentFailures().length, sharedFailures.length + 1)
     assert.deepEqual(
       new Set(
@@ -819,8 +894,10 @@ test(
     const { startServer } = require('../server.cjs')
     const { chromium, expect } = require('@playwright/test')
     const prior = process.env.TMPDIR
+
     process.env.TMPDIR = path.join(fixture.repository, 'browser')
     let server, browser
+
     t.after(async () => {
       await browser?.close()
       await server?.close()
@@ -844,10 +921,12 @@ test(
       viewport: { width: 1800, height: 1200 }
     })
     const errors = []
+
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto(server.origin + '/design-collaboration')
     const frame = page.frameLocator('iframe')
     const buttons = frame.locator('#test-result-failures button')
+
     await expect(buttons).toHaveCount(sharedFailures.length + 1)
     await buttons.filter({ hasText: selected.testName }).click()
     await expect(
@@ -856,17 +935,21 @@ test(
       )
     ).toHaveCount(1)
     const detail = frame.locator('#test-result-detail')
+
     await expect(detail).toContainText('packages/factory/src/data-transact.ts')
     await expect(detail).toContainText(
       collaboration.record.cases[0].runnerDetails
     )
     const { main } = require('../cli.cjs')
+
     for (const record of [collaboration.record, shared.record]) {
       const api = await (
         await fetch(server.origin + '/api/test-results/' + record.id)
       ).json()
+
       assert.deepEqual(api, record)
       const output = []
+
       assert.equal(
         await main(['--url', server.origin, 'test-results', record.id], {
           write: (value) => output.push(value)
@@ -875,6 +958,7 @@ test(
       )
       assert.deepEqual(JSON.parse(output.join('')), record)
     }
+
     await page.screenshot({
       path: path.join(fixture.repository, 'shared-collaboration-desktop.png'),
       fullPage: true
@@ -888,10 +972,12 @@ test(
     })
     fixture.restore()
     const recovery = await fixture.run([selected.id])
+
     assert.equal(recovery.result.code, 0, recovery.result.output.slice(-3000))
     assert.equal(currentFailures().length, sharedFailures.length)
     await expect(buttons).toHaveCount(sharedFailures.length)
     const frameworkRecovery = await runFramework()
+
     assert.equal(
       frameworkRecovery.result.code,
       0,
@@ -922,15 +1008,19 @@ test('an oversized localized collaboration envelope remains readable and cannot 
   const reportPath = path.join(directory, 'original.json')
   const context = begin(root, reportPath, {}, undefined, 'collaboration')
   const f = collaborationReport()
+
   f.report.stats.startTime = new Date().toISOString()
   for (const attachment of f.attempt.attachments) {
     const value = JSON.parse(Buffer.from(attachment.body, 'base64').toString())
+
     value.observationId = context.id
     attachment.body = Buffer.from(JSON.stringify(value)).toString('base64')
   }
+
   f.attempt.stdout = [{ text: 'x'.repeat(17 * 1024 * 1024) }]
   fs.writeFileSync(reportPath, JSON.stringify(f.report))
   const record = complete(root, reportPath)
+
   assert.deepEqual(
     createObservationReader(observationDirectory(root)).get(record.id),
     record
@@ -954,11 +1044,14 @@ test('observation helper edits invalidate in-flight localization independently o
   )
   const contract = loadContract(root, undefined, manifestPath)
   const inputs = sourceFingerprint(root, [contract])
+
   for (const item of inputs.files) {
     const destination = path.join(directory, item.path)
+
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.copyFileSync(path.join(root, item.path), destination)
   }
+
   const f = collaborationReport()
   const context = {
     ...f.context,
@@ -969,6 +1062,7 @@ test('observation helper edits invalidate in-flight localization independently o
     issues: []
   }
   const helper = path.join(directory, manifest.observationInputs[0])
+
   fs.appendFileSync(helper, '\n// Changed observation producer.\n')
   assert.notEqual(
     sourceFingerprint(directory, [contract]).digest,
@@ -991,6 +1085,7 @@ test('observation helper edits invalidate in-flight localization independently o
     },
     { projects: ['chromium'] }
   )
+
   assert.equal(record.cases[0].resolution, 'stale')
   assert.ok(record.issues.some((issue) => issue.includes('stale')))
 })
@@ -1014,6 +1109,7 @@ test(
     const remote = fixture.cases.find((c) =>
       c.testName.startsWith('partial Fill updates')
     )
+
     fixture.faultOperation(
       local.id,
       'apps/asyra-design/src/collaboration/lifecycle.ts',
@@ -1027,21 +1123,27 @@ test(
     const reader = createObservationReader(
       observationDirectory(fixture.repository)
     )
+
     const failure = async (item) => {
       const result = await fixture.run([item.id])
+
       assert.equal(result.result.code, 1, result.result.output.slice(-2500))
       assert.equal(result.record.cases[0].status, 'failed')
       assert.equal(result.record.cases[0].locations[0].stepId, item.stepId)
+
       return result.record
     }
+
     const localFault = await failure(local)
     const remoteFault = await failure(remote)
+
     assert.equal(
       reader.list().currentCases.filter((c) => c.status === 'failed').length,
       2
     )
     fixture.restore()
     const localRecovery = await fixture.run([local.id])
+
     assert.equal(
       localRecovery.result.code,
       0,
@@ -1055,6 +1157,7 @@ test(
       [remote.testName]
     )
     const remoteRecovery = await fixture.run([remote.id])
+
     assert.equal(
       remoteRecovery.result.code,
       0,
@@ -1099,6 +1202,7 @@ test('stored observation capacity includes the actual formatted envelope', () =>
       }
     }
   )
+
   assert.deepEqual(
     createObservationReader(observationDirectory(directory)).get(record.id),
     record
@@ -1111,6 +1215,7 @@ test('ordinary guarded skips do not turn a completed collaboration invocation in
   const { normalizeReport } = require('../playwright-results.cjs')
   const f = collaborationReport()
   const skipped = structuredClone(f.report.suites[0].specs[0])
+
   skipped.id = 'guarded-case'
   skipped.title = 'guarded case'
   skipped.tests[0].results = [
@@ -1118,6 +1223,7 @@ test('ordinary guarded skips do not turn a completed collaboration invocation in
   ]
   f.report.suites[0].specs.push(skipped)
   const normalized = normalizeReport(root, f.context, f.report)
+
   assert.equal(normalized.report.success, true)
   assert.deepEqual(
     normalized.report.testResults.map(
@@ -1146,8 +1252,10 @@ for (const [termination, exitCode] of [
         path.join(root, 'tmp/flow-inspector/collaboration-descendants-')
       )
       const bin = path.join(directory, 'bin')
+
       fs.mkdirSync(bin)
       const pidFile = path.join(directory, 'child.pid')
+
       fs.writeFileSync(
         path.join(bin, 'node'),
         `#!/bin/bash
@@ -1196,11 +1304,13 @@ exit 0
           }
         }
       )
+
       assert.equal(result.status, exitCode, result.stdout + result.stderr)
       const pid = Number(fs.readFileSync(pidFile))
       const state = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], {
         encoding: 'utf8'
       }).stdout.trim()
+
       assert.ok(
         !state || state.startsWith('Z'),
         'Owned runner descendant remains live: ' + pid + ' (' + state + ')'

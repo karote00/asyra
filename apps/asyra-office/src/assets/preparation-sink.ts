@@ -16,6 +16,7 @@ export function preparationSink(): AssetPart[] {
   const s = COUNTERTOP_REFERENCE.preparationSink
   const outer = emptyMesh(),
     cutter = emptyMesh()
+
   append(outer, box([s.width, s.depth, s.drop + s.rimRise], 0.012), [
     0,
     0,
@@ -33,6 +34,7 @@ export function preparationSink(): AssetPart[] {
   const x = s.width / 2 - s.rimWidth / 2,
     y = 0.028
   const h = s.faucetHeight
+
   return [
     part('basin', subtractSolid(outer, cutter), color, 'metal', 0.48),
     ...placeParts(
@@ -72,10 +74,12 @@ export function preparationSink(): AssetPart[] {
 export function cutPreparationOpening(mesh: Mesh, relativeSink: Vec): Mesh {
   const s = COUNTERTOP_REFERENCE.preparationSink
   const cutter = emptyMesh()
+
   append(
     cutter,
     box([s.width - 0.018, s.depth - 0.018, s.drop + 0.04], 0.009),
     [relativeSink[0], relativeSink[1], relativeSink[2] + (0.03 - s.drop) / 2]
   )
+
   return subtractSolid(mesh, cutter)
 }

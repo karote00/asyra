@@ -11,12 +11,14 @@ const serviceDisposers: (() => void)[] = []
 
 const request = (operation: string, args: readonly unknown[] = []) => {
   const detail: RuntimeDiagnosticRequest = { args, operation }
+
   document.dispatchEvent(
     new CustomEvent(RUNTIME_DIAGNOSTIC_REQUEST_EVENT, { detail })
   )
   if (detail.error) {
     throw new Error(detail.error)
   }
+
   return detail.response
 }
 
@@ -39,6 +41,7 @@ describe('runtime diagnostic service', () => {
       snapshot: vi.fn(() => snapshot),
       readCounterTotal: vi.fn((name: string) => (name === 'counter-a' ? 3 : 0))
     } as unknown as performanceProfile.AiDrawingPerformanceProfile
+
     vi.spyOn(
       performanceProfile,
       'getActiveAiDrawingPerformanceProfile'
@@ -63,13 +66,16 @@ describe('runtime diagnostic service', () => {
       | undefined
     const collaboration = {
       getStatus: () => 'connected' as const,
+
       observePublicationOutcomes: vi.fn((subscriber) => {
         outcomeSubscriber = subscriber
+
         return () => {
           outcomeSubscriber = undefined
         }
       })
     }
+
     vi.spyOn(
       collaborationLifecycle,
       'getActiveCollaborationHandle'

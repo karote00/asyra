@@ -36,8 +36,10 @@ export const initPropXSubscribes = () => {
     EventTypes.ADD_PROPERTY,
     ({ payload, options }) => {
       const replayMode = getTransactionReplayMode()
+
       if (payload.data.length === 0) {
         propsManager.commitChanges(options)
+
         return false
       }
 
@@ -50,10 +52,12 @@ export const initPropXSubscribes = () => {
         const creationBatch = propsManager.runInPropertyCreationBatch(() =>
           propsManager.applyPropertyCreationBatch(preparedCreationBatch)
         )
+
         try {
           acknowledgeTransactionReplayApplied()
           propsManager.commitChanges(options)
           creationBatch.complete()
+
           return true
         } catch (error) {
           creationBatch.rollback()
@@ -69,21 +73,27 @@ export const initPropXSubscribes = () => {
         let newProperty = propsManager.getRestoreComponentById(
           propData.id as string
         )
+
         if (newProperty) {
           propsManager.addChangeForAddProperty(newProperty)
         } else {
           newProperty = propsManager.createProperty(propData)
         }
+
         return newProperty
       })
+
       propsManager.addProperty(propComponents)
       const applied = propComponents.some(
         (property, index) => property !== previousProperties[index]
       )
+
       if (applied) {
         acknowledgeTransactionReplayApplied()
       }
+
       propsManager.commitChanges(options)
+
       return applied
     }
   )
@@ -102,7 +112,9 @@ export const initPropXSubscribes = () => {
       if (applied) {
         acknowledgeTransactionReplayApplied()
       }
+
       propsManager.commitChanges(options)
+
       return applied
     }
   )
@@ -133,9 +145,12 @@ export const initPropXSubscribes = () => {
             options
           })
         )
+
         return result.evidence.length > 0
       }
+
       const previousChangeCount = propsManager.changes.length
+
       propsManager.updatePropertyById(
         payload.id,
         payload.key,
@@ -143,7 +158,9 @@ export const initPropXSubscribes = () => {
         options
       )
       const applied = propsManager.changes.length > previousChangeCount
+
       propsManager.commitChanges(options)
+
       return applied
     }
   )

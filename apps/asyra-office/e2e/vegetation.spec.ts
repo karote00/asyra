@@ -11,6 +11,7 @@ for (const asset of ['leaf', 'cluster', 'bare-tree', 'tree', 'plant']) {
       .filter({ hasText: '3D preview ready' })
       .waitFor()
     const viewport = page.getByLabel('Asset 3D viewport')
+
     for (const view of ['Three-quarter', 'Front', 'Right', 'Top']) {
       await page.getByRole('button', { name: view, exact: true }).click()
       await page.evaluate(
@@ -23,6 +24,7 @@ for (const asset of ['leaf', 'cluster', 'bare-tree', 'tree', 'plant']) {
         path: info.outputPath(`${asset}-${view.toLowerCase()}.png`)
       })
     }
+
     await expect(page.getByRole('alert')).toHaveCount(0)
     await info.attach('review-state', {
       body: JSON.stringify({

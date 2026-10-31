@@ -28,8 +28,10 @@ describe('Framework renderer facade', () => {
     const container = document.createElement('div')
     const canvas = document.createElement('canvas')
     const app = { canvas, instance: { name: 'engine-runtime' } }
+
     renderRuntime.init.mockImplementation(async () => {
       renderRuntime.app = app
+
       return app
     })
     const adapter = new RenderAdapter(renderRuntime as unknown as Render)
@@ -64,6 +66,7 @@ describe('Framework renderer facade', () => {
       app: null as typeof renderRuntime.app,
       init: vi.fn(async () => {
         selectedRuntime.app = app
+
         return app
       }),
       start: vi.fn(),
@@ -114,11 +117,14 @@ describe('Framework renderer facade', () => {
     const container = document.createElement('div')
     const canvas = document.createElement('canvas')
     const app = { canvas, instance: { name: 'engine-runtime' } }
+
     renderRuntime.init.mockImplementation(async () => {
       renderRuntime.app = app
+
       return app
     })
     const adapter = new RenderAdapter(renderRuntime as unknown as Render)
+
     await adapter.init(container, {
       width: 640,
       height: 480,
@@ -138,6 +144,7 @@ describe('Framework renderer facade', () => {
     const canvas = document.createElement('canvas')
     const app = { canvas, instance: { name: 'pending-runtime' } }
     let resolveInitialization: ((value: typeof app) => void) | undefined
+
     renderRuntime.init.mockImplementation(
       () =>
         new Promise<typeof app>((resolve) => {
@@ -151,6 +158,7 @@ describe('Framework renderer facade', () => {
       height: 480,
       backgroundColor: 0x112233
     })
+
     adapter.destroy()
     resolveInitialization?.(app)
 

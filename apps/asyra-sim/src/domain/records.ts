@@ -4,7 +4,9 @@ export function isPlainRecord(
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return false
   }
+
   const prototype = Object.getPrototypeOf(input)
+
   return prototype === Object.prototype || prototype === null
 }
 
@@ -15,7 +17,9 @@ export function hasExactOwnKeys(
   if (!isPlainRecord(input)) {
     return false
   }
+
   const keys = Object.keys(input)
+
   return (
     keys.length === expected.length &&
     expected.every((key) => Object.prototype.hasOwnProperty.call(input, key))

@@ -28,6 +28,7 @@ const definition = {
   valueKeys: ['opacity']
 }
 const properties = [{ name: 'material', type: materialType }]
+
 const transactionOwner = (updateTransactionBatch = vi.fn()) =>
   ({
     startTransaction: vi.fn(),
@@ -40,6 +41,7 @@ const transactionOwner = (updateTransactionBatch = vi.fn()) =>
 
 const fixture = () => {
   const props = new PropsManager()
+
   props.load({
     source: {
       id: 'source',
@@ -58,6 +60,7 @@ const fixture = () => {
     }
   })
   const scene = new SceneTree(props)
+
   scene.load({
     workspace: 'workspace',
     workspaceList: ['workspace'],
@@ -87,6 +90,7 @@ const fixture = () => {
       )
     }
   })
+
   const request = (elementId = 'a', before = 'source', after = 'local') => ({
     elementId,
     propertyName: 'material',
@@ -94,12 +98,15 @@ const fixture = () => {
     after,
     propertyType: materialType
   })
+
   const apply = (requests = [request()], owner = transactionOwner()) => {
     const prepared = scene.prepareElementPropertyBindingMutation(requests)
+
     return runWithTransactionOwner(owner, () =>
       scene.applyPreparedElementMutation(prepared)
     )
   }
+
   return { props, scene, request, apply }
 }
 
@@ -142,6 +149,7 @@ describe('Canonical element property binding mutation', () => {
       { elementId: 'a', propertyName: 'material' },
       { elementId: 'b', propertyName: 'material', expectedRootId: 'source' }
     ])
+
     expect(
       targets.map((target) => [
         target.relation.ownerElementId,
@@ -153,6 +161,7 @@ describe('Canonical element property binding mutation', () => {
       ['b', 'source', true]
     ])
     const first = scene.prepareElementPropertyBindingMutation([request()])
+
     expect(first.orphanRootPropertyIds).toEqual([])
     expect(first.retainedRootPropertyIds).toEqual(
       expect.arrayContaining(['source', 'local'])
@@ -161,9 +170,11 @@ describe('Canonical element property binding mutation', () => {
       request(),
       request('b')
     ])
+
     expect(both.orphanRootPropertyIds).toEqual(['source'])
     expect(both.retainedRootPropertyIds).toEqual(['local'])
     const before = scene.save()
+
     expect(() =>
       scene.resolveElementPropertyBindings([
         { elementId: 'a', propertyName: 'material' },
@@ -182,6 +193,7 @@ describe('Canonical element property binding mutation', () => {
     const { scene, apply } = fixture()
     const publish = vi.fn()
     const result = apply(undefined, transactionOwner(publish))
+
     expect(scene.getElementById('a')?.props.getPropId('material')).toBe('local')
     expect(scene.getElementById('b')?.props.getPropId('material')).toBe(
       'source'
@@ -206,6 +218,7 @@ describe('Canonical element property binding mutation', () => {
     ])
     expect(publish).toHaveBeenCalledOnce()
     const events = publish.mock.calls[0][0] as UpdateTransactionEvent[]
+
     expect(events[0].canonicalEvidence?.orderedIds).toEqual(['a'])
   })
 
@@ -219,6 +232,7 @@ describe('Canonical element property binding mutation', () => {
     )
     const prepared =
       remote.scene.prepareCanonicalElementPropertyBindingMutation(evidence)
+
     runWithTransactionOwner(transactionOwner(), () =>
       remote.scene.applyPreparedElementMutation(prepared)
     )
@@ -228,6 +242,7 @@ describe('Canonical element property binding mutation', () => {
     ).toMatchObject({ opacity: 0.4 })
     const propsSnapshot = remote.props.save()
     const sceneSnapshot = remote.scene.save()
+
     remote.props.load(propsSnapshot)
     remote.scene.load(sceneSnapshot)
     expect(remote.scene.save()).toEqual(sceneSnapshot)
@@ -240,6 +255,7 @@ describe('Canonical element property binding mutation', () => {
         after: before
       }))
     }))
+
     runWithTransactionOwner(transactionOwner(), () =>
       remote.scene.applyPreparedElementMutation(
         remote.scene.prepareCanonicalElementPropertyBindingMutation(inverse)
@@ -259,6 +275,7 @@ describe('Canonical element property binding mutation', () => {
     const prepared = scene.prepareElementPropertyBindingMutation([
       request('a', 'source', 'allocated')
     ])
+
     props.addProperty([
       props.createProperty({
         id: 'allocated',
@@ -275,6 +292,7 @@ describe('Canonical element property binding mutation', () => {
     const stale = scene.prepareElementPropertyBindingMutation([
       request('a', 'allocated', 'local')
     ])
+
     props.removeProperty(['local'])
     expect(() =>
       runWithTransactionOwner(transactionOwner(), () =>
@@ -288,6 +306,7 @@ describe('Canonical element property binding mutation', () => {
 
   it('rejects a complete invalid batch and stale preparation without changing bindings', () => {
     const { scene, request, apply } = fixture()
+
     for (const invalid of [
       request('missing'),
       request('b', 'wrong'),
@@ -300,8 +319,10 @@ describe('Canonical element property binding mutation', () => {
         'source'
       )
     }
+
     expect(() => apply([request(), request()])).toThrow()
     const prepared = scene.prepareElementPropertyBindingMutation([request()])
+
     apply()
     expect(() =>
       runWithTransactionOwner(transactionOwner(), () =>
@@ -313,6 +334,7 @@ describe('Canonical element property binding mutation', () => {
   it('restores bindings and reverse relations after a rejected handoff, then permits retry and exact inverse', () => {
     const { scene, request, apply } = fixture()
     const before = scene.save()
+
     expect(() =>
       apply(
         undefined,

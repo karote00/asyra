@@ -39,6 +39,7 @@ const evidenceOf = (result: { evidence?: InspectionEvidenceStamp }) => {
   if (!result.evidence) {
     throw new Error('Missing coherent mechanical evidence')
   }
+
   return result.evidence
 }
 
@@ -90,6 +91,7 @@ const create = async (draft: unknown) => {
     provider: {
       requestActionBatch: async (_input, options) => {
         receipt = await options.executeBatch?.(pending)
+
         return { batchId: 'report', actions: [] }
       }
     },
@@ -112,14 +114,17 @@ const create = async (draft: unknown) => {
       if (!receipt) {
         throw new Error('Missing creation receipt')
       }
+
       return receipt
     }
   )
   const prepared = JSON.parse(
     await tools.call('prepare_design', { draft }, new AbortController().signal)
   )
+
   expect(prepared, JSON.stringify(prepared)).toHaveProperty('artifactId')
   const canonical = preparation.resolve(prepared.artifactId)
+
   await operations.call(
     AiDesignToolIds.EXECUTE_DESIGN_BATCH,
     {
@@ -132,6 +137,7 @@ const create = async (draft: unknown) => {
   )
   expect(receipt?.failure).toBeUndefined()
   expect(receipt?.actionResults[0].result).toMatchObject({ status: 'complete' })
+
   return canonical
 }
 
@@ -149,21 +155,27 @@ const observeReads = () => {
     .spyOn(owner, 'getAllComputedData')
     .mockImplementation(function (this: Group, ...args) {
       const source = this.computed.data
+
       this.computed.data = new Proxy(source, {
         ownKeys(target) {
           fullProjectionEnumerations++
+
           return Reflect.ownKeys(target)
         },
+
         get(target, key, receiver) {
           if (typeof key === 'string' && !needed.has(key)) {
             omittedComputedReads++
           }
+
           return Reflect.get(target, key, receiver)
         }
       })
       try {
         const snapshot = original.apply(this, args)
+
         producedComputedKeys += Object.keys(snapshot).length
+
         return snapshot
       } finally {
         this.computed.data = source
@@ -173,9 +185,11 @@ const observeReads = () => {
   const metadata = vi.spyOn(core, 'getElementMetadata')
   const children = vi.spyOn(core, 'getElementChildren')
   const clone = vi.spyOn(globalThis, 'structuredClone')
+
   return {
     targets: () =>
       [...full.mock.calls, ...metadata.mock.calls].map(([id]) => id),
+
     counts: () => ({
       fullProjectionEnumerations,
       omittedComputedReads,
@@ -190,6 +204,7 @@ const observeReads = () => {
         0
       )
     }),
+
     restore: () =>
       [computed, element, full, metadata, children, clone].forEach((spy) =>
         spy.mockRestore()
@@ -216,8 +231,10 @@ it.each(saved.cases)(
     const reference = createDesignReviewer(
       {
         read: (id) => core.getElementData(id),
+
         computed: (id, fields) => {
           const all = core.getElementComputedData(id)
+
           return (
             all &&
             Object.fromEntries(
@@ -227,7 +244,9 @@ it.each(saved.cases)(
             )
           )
         },
+
         measure: (ids) => core.measureElementContentBounds(ids),
+
         observeChanges: observeInspectionChanges
       },
       async () => undefined,
@@ -238,6 +257,7 @@ it.each(saved.cases)(
       reviewer.isCurrent
     )
     let work: ReturnType<typeof observeReads> | undefined
+
     try {
       const expected = await createDesignReviewAction(
         reference.capture,
@@ -245,15 +265,18 @@ it.each(saved.cases)(
       ).execute({ elementId: canonical.rootId }, {
         signal: new AbortController().signal
       } as never)
+
       work = observeReads()
       const result = await action.execute({ elementId: canonical.rootId }, {
         signal: new AbortController().signal
       } as never)
       const counts = work.counts()
+
       work.restore()
       work = undefined
       const { evidence: _expectedEvidence, ...expectedFields } = expected
       const { evidence, ...actualFields } = result
+
       expect(actualFields).toEqual(expectedFields)
       expect(result).toMatchObject({
         complete: true,
@@ -262,12 +285,14 @@ it.each(saved.cases)(
       })
       expect(evidence).toBeDefined()
       const coverage = await reviewer.coverage(evidenceOf(result))
+
       expect(coverage?.checks.map((check) => check.elementId)).toEqual(
         canonical.entries.map((entry) => entry.descriptor.id)
       )
       const repeated = await action.execute({ elementId: canonical.rootId }, {
         signal: new AbortController().signal
       } as never)
+
       expect(repeated.evidence).toEqual(evidence)
       expect(repeated.observation).toMatchObject({
         evaluatedNodes: 0,
@@ -281,9 +306,11 @@ it.each(saved.cases)(
       expect(publish).not.toHaveBeenCalled()
       // Full-data reads and detached child observations remain independently valid.
       const full = core.getElementData(canonical.rootId)
+
       if (!full) {
         throw new Error('Missing canonical root')
       }
+
       expect(full.children).toEqual(
         document.sceneTree.elements[canonical.rootId].children
       )
@@ -359,14 +386,17 @@ it('preserves complete membership, local validity and read-only state through un
   const group = ids[1],
     leaf = ids[2],
     oval = ids[ids.length - 1]
+
   transactionApis.runTransaction(() =>
     core.updateElementProperties([
       { elementId: oval, values: { rotation: 0.4 } }
     ])
   )
   const reviewer = createDesignReviewer(undefined, async () => undefined, true)
+
   try {
     let initial = await reviewer.capture(root.rootId)
+
     expect(initial).toMatchObject({
       complete: true,
       findings: [],
@@ -381,6 +411,7 @@ it('preserves complete membership, local validity and read-only state through un
     ).toEqual(new Set(ids))
     const independent = await reviewer.capture(oval)
     const initialGeometry = core.getElementComputedData(leaf, ['x', 'y'])
+
     transactionApis.runTransaction(() =>
       core.updateElementProperties([{ elementId: leaf, values: { x: 2 } }])
     )
@@ -397,6 +428,7 @@ it('preserves complete membership, local validity and read-only state through un
     })
     initial = await reviewer.capture(root.rootId)
     const beforeEdit = await core.save()
+
     transactionApis.runTransaction(() =>
       core.updateElementData(leaf, { visible: false })
     )
@@ -404,6 +436,7 @@ it('preserves complete membership, local validity and read-only state through un
     const history = core.getUndoHistoryDepth()
     const publish = vi.fn()
     const stop = core.subscribeToSharedPublication(publish)
+
     try {
       expect((await reviewer.validate(evidenceOf(independent))).current).toBe(
         true
@@ -416,6 +449,7 @@ it('preserves complete membership, local validity and read-only state through un
           readTargets = validationReads.targets()
           validationReads.restore()
         })
+
       expect(new Set(readTargets)).toEqual(
         new Set([root.rootId, group, leaf, oval])
       )
@@ -427,6 +461,7 @@ it('preserves complete membership, local validity and read-only state through un
         reusedNodes: ids.length - 4
       })
       const refreshed = await reviewer.capture(root.rootId)
+
       expect(refreshed).toMatchObject({ complete: true, findings: [] })
       expect(await core.save()).toEqual(changed)
       expect(core.getUndoHistoryDepth()).toBe(history)
@@ -434,11 +469,13 @@ it('preserves complete membership, local validity and read-only state through un
     } finally {
       stop()
     }
+
     factory.undo()
     expect((await core.save()).sceneTree).toEqual(beforeEdit.sceneTree)
     factory.redo()
     expect((await core.save()).sceneTree).toEqual(changed.sceneTree)
     const old = await reviewer.capture(root.rootId)
+
     transactionApis.runTransaction(() =>
       core.createElementInParent({ type: 'rect', width: 3, height: 4 }, group)
     )
@@ -503,17 +540,22 @@ it('keeps successful mechanical results while retrying an interrupted read witho
     actions,
     {
       modelActions: (a) => a,
+
       resolveBatch: (a) => a,
+
       checkResults: checks
     },
     async (batch) => {
       const actionResults = []
+
       for (const item of batch.actions) {
         dispatched.push(item.name)
         const action = actions.find((a) => a.name === item.name)
+
         if (!action) {
           throw new Error('Unexpected dispatched action')
         }
+
         actionResults.push({
           actionId: item.id,
           actionName: item.name,
@@ -523,17 +565,22 @@ it('keeps successful mechanical results while retrying an interrupted read witho
           )
         })
       }
+
       return { context: {}, actionResults } as never
     }
   )
+
   const call = async (name: string, args: unknown = {}) =>
     JSON.parse(await owner.call(name, args, new AbortController().signal))
+
   try {
     const leaf = root.entries[1].descriptor.id
+
     await call(AiActionNames.REVIEW_DESIGN, { arguments: { elementId: leaf } })
     expect((await call('read_design_checks')).counts.pass).toBe(1)
     const document = await core.save()
     const history = core.getUndoHistoryDepth()
+
     abort = new AbortController()
     await expect(
       actions[0].execute(
@@ -546,6 +593,7 @@ it('keeps successful mechanical results while retrying an interrupted read witho
     const completed = await call(AiActionNames.REVIEW_DESIGN, {
       arguments: { elementId: root.rootId }
     })
+
     expect(completed.mechanicalSelection).toBeDefined()
     expect(
       (await call('verify_design_checks', completed.mechanicalSelection))
@@ -563,6 +611,7 @@ it('keeps successful mechanical results while retrying an interrupted read witho
     ).toBe(true)
     mutate = true
     const mixed = await reviewer.capture(root.rootId)
+
     expect(mixed).toMatchObject({ available: false, complete: false })
     expect(mixed.evidence).toBeUndefined()
     expect((await reviewer.capture(root.rootId)).complete).toBe(true)
@@ -584,6 +633,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
     payloadBytes: number
     legacyBytes: number
   }[] = []
+
   for (const count of [64, 256]) {
     reset()
     const root = await create({
@@ -619,6 +669,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       provider: {
         requestActionBatch: async (_input, options) => {
           receipt = await options.executeBatch?.(pending)
+
           return { batchId: 'report', actions: [] }
         }
       },
@@ -633,7 +684,9 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       actions,
       {
         modelActions: (a) => a,
+
         resolveBatch: (a) => a,
+
         checkResults: checks
       },
       async (batch) => {
@@ -646,7 +699,9 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
         if (!receipt) {
           throw new Error('Missing actual Runtime receipt')
         }
+
         exchanges.push({ request: batch, reply: receipt })
+
         return receipt
       }
     )
@@ -656,6 +711,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       this: Map<string, unknown>
     ) {
       const stamp = this.get(ids[0])
+
       if (
         stamp &&
         typeof stamp === 'object' &&
@@ -664,8 +720,10 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       ) {
         retainedKeyVisits += this.size
       }
+
       return keys.call(this)
     })
+
     try {
       const geometryFields = ['x', 'y', 'width', 'height', 'rotation']
       const geometry = ids.map((id) =>
@@ -703,6 +761,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
           new AbortController().signal
         )
       )
+
       scan.mockRestore()
       expect(response.status, JSON.stringify(response)).not.toBe('failed')
       expect(exchanges[0].reply.actionResults[0].result).toMatchObject({
@@ -717,11 +776,13 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       const captures = exchanges.filter(
         (e) => e.request.actions[0].name === AiActionNames.REVIEW_DESIGN
       )
+
       expect(captures).toHaveLength(Math.ceil(count / 64))
       expect(exchanges).toHaveLength(captures.length + 1)
       const outputs = captures
         .flatMap((e) => e.reply.actionResults)
         .map((a) => a.result)
+
       expect(outputs).toHaveLength(count)
       for (const result of outputs) {
         expect(result).toMatchObject({
@@ -736,10 +797,12 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
           }
         })
       }
+
       expect(
         checks.read({ includePassed: true, limit: count }).counts.pass
       ).toBe(count)
       const after = await core.save()
+
       expect(after.sceneTree).toEqual(before.sceneTree)
       expect(
         ids.map((id) => core.getElementComputedData(id, geometryFields))
@@ -764,21 +827,26 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       // keeping identical IDs, results, receipts and material mutation input.
       const legacy = structuredClone(exchanges)
       const prior: string[] = []
+
       for (const exchange of legacy) {
         if (exchange.request.actions[0].name !== AiActionNames.REVIEW_DESIGN) {
           continue
         }
+
         const batchIds = exchange.request.actions.map((a) =>
           String(a.arguments.elementId)
         )
         const candidates = [...prior, ...batchIds]
+
         for (const action of exchange.request.actions) {
           action.arguments.measurementTargets = candidates.filter(
             (id) => id !== action.arguments.elementId
           )
         }
+
         prior.push(...batchIds)
       }
+
       const legacyBytes = Buffer.byteLength(JSON.stringify(legacy))
       const legacyPayloadBytes = legacy.reduce(
         (n, e) =>
@@ -793,6 +861,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
           ),
         0
       )
+
       expect.soft(payloadBytes).toBeLessThan(legacyPayloadBytes)
       process.stdout.write(
         JSON.stringify({
@@ -825,8 +894,10 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       factory.transact.reset()
     }
   }
+
   const [small, large] = samples
   const ratio = large.count / small.count
+
   // Equal-width identities and equal-sized batches make a linear envelope bound.
   expect(large.bytes).toBeLessThanOrEqual(small.bytes * ratio)
   expect(large.payloadBytes).toBeLessThanOrEqual(small.payloadBytes * ratio)

@@ -66,6 +66,7 @@ export const useGradientInteractions = ({
 
   useEffect(() => {
     const prevStops = lastStopsRef.current
+
     lastStopsRef.current = gradient.gradientStops
 
     // Find if a stop was re-added (e.g. Redo) or added
@@ -76,6 +77,7 @@ export const useGradientInteractions = ({
 
       // Find the first index where they differ or the first added index
       let addedIndex = -1
+
       for (let i = 0; i < gradient.gradientStops.length; i++) {
         if (
           i >= prevStops.length ||
@@ -134,6 +136,7 @@ export const useGradientInteractions = ({
 
   const startInteractionSession = () => {
     const currentFill = fillRef.current
+
     if (isDraggingRef.current || !currentFill) {
       return
     }
@@ -153,15 +156,18 @@ export const useGradientInteractions = ({
       (isDraggingRef.current
         ? (interactionLatestFillRef.current ?? fillRef.current)
         : fillRef.current)
+
     if (!currentFill || !hasFillPatch(patch)) {
       return
     }
 
     const nextFill = applyFillPatch(currentFill, patch)
+
     interactionLatestFillRef.current = nextFill
 
     if (isDraggingRef.current) {
       onChangeFill(patch, options ?? GRADIENT_EDITOR_DRAG_OPTIONS)
+
       return
     }
 
@@ -213,6 +219,7 @@ export const useGradientInteractions = ({
           }
         : stop
     )
+
     applyGradientStops(nextStops)
   }
 
@@ -223,6 +230,7 @@ export const useGradientInteractions = ({
     const targetStop =
       interactionLatestFillRef.current?.gradient?.gradientStops[stopIndex] ??
       gradient.gradientStops[stopIndex]
+
     if (!targetStop) {
       return
     }
@@ -246,7 +254,9 @@ export const useGradientInteractions = ({
     if (!gradient.gradientStops[stopIndex]) {
       return false
     }
+
     const parsed = Number.parseFloat(value)
+
     if (!Number.isFinite(parsed)) {
       return false
     }
@@ -254,6 +264,7 @@ export const useGradientInteractions = ({
     updateStop(stopIndex, {
       position: clampUnit(parsed / 100)
     })
+
     return true
   }
 
@@ -262,6 +273,7 @@ export const useGradientInteractions = ({
     value: string
   ): boolean => {
     const targetStop = gradient.gradientStops[stopIndex]
+
     if (!targetStop) {
       return false
     }
@@ -275,6 +287,7 @@ export const useGradientInteractions = ({
     updateStop(stopIndex, {
       color: nextColor
     })
+
     return true
   }
 
@@ -283,11 +296,13 @@ export const useGradientInteractions = ({
     value: string
   ): boolean => {
     const targetStop = gradient.gradientStops[stopIndex]
+
     if (!targetStop) {
       return false
     }
 
     const parsed = Number.parseFloat(value)
+
     if (!Number.isFinite(parsed)) {
       return false
     }
@@ -295,6 +310,7 @@ export const useGradientInteractions = ({
     updateStop(stopIndex, {
       opacity: clampUnit(parsed / 100)
     })
+
     return true
   }
 
@@ -304,6 +320,7 @@ export const useGradientInteractions = ({
       gradient.gradientStops[selectedStopIndex] ??
       gradient.gradientStops[0]
     const nextStops = [...gradient.gradientStops]
+
     nextStops.push({
       position,
       color: seedStop?.color ?? fill.color,
@@ -315,6 +332,7 @@ export const useGradientInteractions = ({
 
   const handleAddStop = (clientX: number) => {
     const rect = stripRef.current?.getBoundingClientRect()
+
     if (!rect) {
       return
     }
@@ -331,15 +349,18 @@ export const useGradientInteractions = ({
         selectedOrderIndex >= 0 ? selectedOrderIndex : orderedStops.length - 1
       ]
     let nextEntryIndex = -1
+
     if (selectedOrderIndex > 0) {
       nextEntryIndex = selectedOrderIndex
     }
+
     if (
       selectedOrderIndex >= 0 &&
       selectedOrderIndex < orderedStops.length - 1
     ) {
       nextEntryIndex = selectedOrderIndex + 1
     }
+
     const nextEntry = orderedStops[nextEntryIndex]
 
     const nextPosition = nextEntry
@@ -359,6 +380,7 @@ export const useGradientInteractions = ({
     const nextStops = gradient.gradientStops.filter(
       (_, currentIndex) => currentIndex !== stopIndex
     )
+
     applyGradientStops(nextStops)
     setSelectedStopIndex((currentSelected) => {
       if (currentSelected === stopIndex) {
@@ -411,6 +433,7 @@ export const useGradientInteractions = ({
     const draggingIndex = draggingStopIndexRef.current
     const rect =
       dragRectRef.current ?? stripRef.current?.getBoundingClientRect()
+
     if (!rect || draggingIndex === null) {
       return
     }
@@ -420,6 +443,7 @@ export const useGradientInteractions = ({
       interactionLatestFillRef.current?.gradient?.gradientStops ??
       gradient.gradientStops
     const currentStop = sourceStops[draggingIndex]
+
     if (
       currentStop &&
       Math.abs(currentStop.position - position) <= DRAG_EPSILON
@@ -435,6 +459,7 @@ export const useGradientInteractions = ({
           }
         : stop
     )
+
     applyGradientStops(nextStops)
   }
 
@@ -447,10 +472,12 @@ export const useGradientInteractions = ({
     dragFrameRef.current = requestAnimationFrame(() => {
       dragFrameRef.current = null
       const pending = pendingClientXRef.current
+
       pendingClientXRef.current = null
       if (pending === null) {
         return
       }
+
       updateStopPositionFromClientX(pending)
     })
   }
@@ -460,7 +487,9 @@ export const useGradientInteractions = ({
       cancelAnimationFrame(dragFrameRef.current)
       dragFrameRef.current = null
     }
+
     const pending = pendingClientXRef.current
+
     pendingClientXRef.current = null
     if (pending !== null) {
       updateStopPositionFromClientX(pending)
@@ -476,6 +505,7 @@ export const useGradientInteractions = ({
     setSelectedStopIndex(stopIndex)
     draggingStopIndexRef.current = stopIndex
     const rect = stripRef.current?.getBoundingClientRect()
+
     dragRectRef.current = rect ? { left: rect.left, width: rect.width } : null
 
     if (!isDraggingRef.current) {

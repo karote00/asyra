@@ -21,6 +21,7 @@ import {
 
 it('composes the normal workcell runtime and cleans up surface subscriptions and resources', async () => {
   const host = document.createElement('div')
+
   host.getBoundingClientRect = () => ({
     x: 0,
     y: 0,
@@ -30,6 +31,7 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
     top: 0,
     right: 640,
     bottom: 480,
+
     toJSON: () => ({})
   })
   const canvas = document.createElement('canvas')
@@ -47,14 +49,18 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   let onResize: ResizeObserverCallback | undefined,
     frame: FrameRequestCallback | undefined
   const disconnect = vi.fn()
+
   vi.stubGlobal(
     'ResizeObserver',
     class {
       constructor(callback: ResizeObserverCallback) {
         onResize = callback
       }
+
       observe = vi.fn()
+
       unobserve = vi.fn()
+
       disconnect = disconnect
     }
   )
@@ -63,10 +69,13 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
     () =>
       new ThreeEngine({
         createDriver: () => driver,
+
         requestFrame: (callback) => {
           frame = callback
+
           return 1
         },
+
         cancelFrame: () => {
           frame = undefined
         }
@@ -74,12 +83,14 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
     undefined,
     new VisualAssetArchive({ decode: decodeRestrictedGlb, dispose: vi.fn() })
   )
+
   onTestFinished(async () => {
     await runtime.dispose()
     vi.unstubAllGlobals()
   })
   const candidate = runtime.getCandidates()[0],
     model = runtime.getWorkcell(candidate.id)
+
   expect(candidate.name).toBe('A - Baseline workcell')
   expect(model.bodies.every((body) => body.visuals?.length === 1)).toBe(true)
   expect(model.bodies.every((body) => body.colliders.length === 0)).toBe(true)
@@ -99,11 +110,13 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
     model.bodies.filter((body) => body.joint.kind === 'revolute')
   ).toHaveLength(6)
   const experiments = runtime.getExperiments(candidate.id)
+
   expect(experiments).toHaveLength(6)
   expect(new Set(experiments.map((item) => item.id)).size).toBe(6)
   for (const item of experiments) {
     expect(runtime.preflightExperiment(item.id).blockers).toEqual([])
     const snapshot = runtime.createExperimentSnapshot(item.id, [])
+
     expect(snapshot.version).toBe(2)
     expect(snapshot.methodDescriptor?.manifest.name).toBe(
       'Original-part continuous clearance'
@@ -116,12 +129,16 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
       )
     ).toBe(true)
   }
+
   const experiment = experiments[0]
+
   if (!experiment) {
     throw new Error('Expected synthetic experiment')
   }
+
   expect(experiment.definition.trajectory.keyframes).toHaveLength(3)
   const preflight = runtime.preflightExperiment(experiment.id)
+
   expect(preflight.blockers).toEqual([])
   expect(preflight.pairs.length).toBeGreaterThan(0)
   const frozen = runtime.createExperimentSnapshot(experiment.id, [])
@@ -133,17 +150,21 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   }
   const parseInput = vi.spyOn(trajectoryImport, 'prepareTrajectoryCsv')
   const convertInput = vi.spyOn(trajectoryImport, 'previewTrajectoryCsv')
+
   try {
     const preview = runtime.experimentInputs.previewTrajectory(authored, model)
+
     if (!preview.value) {
       throw new Error('Expected valid authored input')
     }
+
     await runtime.features.edit.updateExperiment(experiment.id, 1, {
       ...definitionToDraft(experiment.definition),
       trajectoryInput: authored
     })
     expect(runtime.preflightExperiment(experiment.id).blockers).toEqual([])
     const currentSnapshot = runtime.createExperimentSnapshot(experiment.id, [])
+
     expect(currentSnapshot.trajectory).toEqual(preview.value.trajectory)
     expect(currentSnapshot).not.toHaveProperty('trajectoryInput')
     expect(parseInput).toHaveBeenCalledOnce()
@@ -196,6 +217,7 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   )
   frame?.(1)
   const depth = runtime.getHistoryDepth()
+
   runtime.setCamera({ ...DEFAULT_CAMERA, position: [4, 3, 5] })
   frame?.(2)
   expect(runtime.getHistoryDepth()).toBe(depth)
@@ -214,6 +236,7 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
     bottom: 450,
     width: 400,
     height: 300,
+
     toJSON: () => ({})
   })
   runtime.setFrame({
@@ -251,11 +274,13 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   const publications = vi.fn<(publication: SharedPublication) => void>()
   const stopPublications = core.subscribeToSharedPublication(publications)
   const originalBody = model.bodies[0]
+
   const projectedColor = () =>
     (
       core.getElementComputedData(originalBody.id)?.[PropertyFields.BODY] as
         { color: number } | undefined
     )?.color
+
   expect(projectedColor()).toBe(originalBody.color)
   await runtime.features.edit.upsert(candidate.id, {
     ...originalBody,
@@ -283,12 +308,15 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
       }
     }
   }
+
   const currentBody = runtime
     .getWorkcell(candidate.id)
     .bodies.find((body) => body.id === originalBody.id)
+
   if (!currentBody) {
     throw new Error('Expected retained body')
   }
+
   await runtime.features.edit.upsert(candidate.id, currentBody)
   expect(publications).toHaveBeenCalledTimes(3)
   expect(() =>

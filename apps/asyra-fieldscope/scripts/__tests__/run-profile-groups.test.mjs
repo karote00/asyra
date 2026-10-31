@@ -30,12 +30,14 @@ const remaining = 'src/runtime/__tests__/nested/new-owner.profile.test.ts'
 
 function writeProfile(root, relative) {
   const target = path.join(root, relative)
+
   mkdirSync(path.dirname(target), { recursive: true })
   writeFileSync(target, '')
 }
 
 function fixture() {
   const root = mkdtempSync(path.join(artifacts, 'fixture-'))
+
   writeFileSync(
     path.join(root, 'package.json'),
     JSON.stringify({
@@ -49,6 +51,7 @@ function fixture() {
   writeProfile(root, remaining)
   writeProfile(root, 'src/runtime/__tests__/ignored.profile.test.tsx')
   writeProfile(root, 'src/runtime/outside.profile.test.ts')
+
   return root
 }
 
@@ -71,12 +74,15 @@ print(json.dumps(owner.discover_profile_groups(Path(sys.argv[2]))))
     encoding: 'utf8',
     timeout: 5000
   })
+
   assert.equal(result.status, 0, result.stderr)
+
   return JSON.parse(result.stdout)
 }
 
 function writeFakeSupervisor(root) {
   const fake = path.join(root, 'fake-supervisor.py')
+
   writeFileSync(
     fake,
     String.raw`
@@ -152,6 +158,7 @@ if result['outcome'] == 'failed':
     raise SystemExit(7)
 `
   )
+
   return fake
 }
 
@@ -188,7 +195,9 @@ print(json.dumps(result))
     ],
     { cwd: app, encoding: 'utf8', timeout: 5000 }
   )
+
   assert.equal(result.status, 0, result.stderr)
+
   return {
     result: JSON.parse(result.stdout),
     calls: readFileSync(record, 'utf8')
@@ -204,9 +213,11 @@ test.after(() => rmSync(artifacts, { recursive: true, force: true }))
 
 test('runs the complete cold hierarchy workload in the supervised source profile group', () => {
   const profile = 'src/simulation/__tests__/collision.source.profile.test.ts'
+
   assert.ok(discover(app).source.includes(profile))
   const title =
     'profiles cold source hierarchy and two warm poses without Cartesian triangle traversal'
+
   assert.ok(readFileSync(path.join(app, profile), 'utf8').includes(title))
   assert.ok(
     !readFileSync(
@@ -218,6 +229,7 @@ test('runs the complete cold hierarchy workload in the supervised source profile
 
 test('discovers the exact profile config class and automatically assigns nested source and remaining files', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   assert.deepEqual(discover(root), {
     heavy: [heavy],
@@ -236,14 +248,17 @@ test('discovers the exact profile config class and automatically assigns nested 
     ],
     { cwd: app, encoding: 'utf8', timeout: 5000 }
   )
+
   assert.notEqual(missing.status, 0)
   assert.match(missing.stderr, /heavy profile/i)
 })
 
 test('runs heavy then source then remaining and reports full completion only after three exact receipts', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const result = run(root, writeFakeSupervisor(root))
+
   assert.deepEqual(result.calls, [[heavy], [source], [remaining]])
   assert.equal(result.result.outcome, 'passed')
   assert.equal(result.result.completion, 'profile-suite-complete')
@@ -258,8 +273,10 @@ test('runs heavy then source then remaining and reports full completion only aft
 test('rejects an error, incomplete or mismatched receipt and never starts the source group', (t) => {
   for (const mode of ['error', 'incomplete', 'wrong-selection']) {
     const root = fixture()
+
     t.after(() => rmSync(root, { recursive: true, force: true }))
     const result = run(root, writeFakeSupervisor(root), mode)
+
     assert.equal(result.result.outcome, 'failed')
     assert.equal(result.result.completion, 'incomplete')
     assert.deepEqual(result.calls, [[heavy]])
@@ -284,8 +301,10 @@ test('fails full completion when the source or remaining group is incomplete', (
     ]
   ]) {
     const root = fixture()
+
     t.after(() => rmSync(root, { recursive: true, force: true }))
     const result = run(root, writeFakeSupervisor(root), mode)
+
     assert.equal(result.result.outcome, 'failed')
     assert.equal(result.result.completion, 'incomplete')
     assert.deepEqual(result.calls, calls)
@@ -298,14 +317,17 @@ test('fails full completion when the source or remaining group is incomplete', (
 
 test('preserves bounded failed receipt and malformed output diagnostics', (t) => {
   const receiptRoot = fixture()
+
   t.after(() => rmSync(receiptRoot, { recursive: true, force: true }))
   const receiptResult = run(
     receiptRoot,
     writeFakeSupervisor(receiptRoot),
     'remaining-error'
   )
+
   assert.deepEqual(receiptResult.calls, [[heavy], [source], [remaining]])
   const remainingGroup = receiptResult.result.groups.at(-1)
+
   assert.equal(remainingGroup.summaryPath, 'remaining-summary.json')
   assert.equal(remainingGroup.logPath, 'remaining-console.log')
   assert.equal(
@@ -343,14 +365,17 @@ test('preserves bounded failed receipt and malformed output diagnostics', (t) =>
   )
 
   const malformedRoot = fixture()
+
   t.after(() => rmSync(malformedRoot, { recursive: true, force: true }))
   const malformedResult = run(
     malformedRoot,
     writeFakeSupervisor(malformedRoot),
     'malformed'
   )
+
   assert.deepEqual(malformedResult.calls, [[heavy]])
   const malformedFailure = malformedResult.result.groups[0].failure
+
   assert.match(malformedFailure.reason, /did not return one JSON receipt/)
   assert.equal(malformedFailure.exitCode, 9)
   assert.equal(malformedFailure.supervisor, null)
@@ -360,6 +385,7 @@ test('preserves bounded failed receipt and malformed output diagnostics', (t) =>
 
 test('forwards interruption to the active supervisor and waits for its cleanup', async (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const supervisor = writeFakeSupervisor(root)
   const record = path.join(root, 'record.jsonl')
@@ -395,12 +421,14 @@ except KeyboardInterrupt:
     ],
     { cwd: app, stdio: 'pipe' }
   )
+
   t.after(() => {
     if (child.exitCode === null) {
       child.kill('SIGKILL')
     }
   })
   const deadline = Date.now() + 3000
+
   while (Date.now() < deadline) {
     try {
       if (readFileSync(started, 'utf8') === 'started') {
@@ -411,11 +439,14 @@ except KeyboardInterrupt:
         throw error
       }
     }
+
     await delay(10)
   }
+
   assert.equal(readFileSync(started, 'utf8'), 'started')
   child.kill('SIGTERM')
   const exit = await new Promise((resolve) => child.once('exit', resolve))
+
   assert.notEqual(exit, 0)
   assert.equal(readFileSync(cleaned, 'utf8'), String(15))
   assert.deepEqual(
@@ -429,6 +460,7 @@ except KeyboardInterrupt:
 
 test('covers interruption after child spawn but before Popen returns', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const supervisor = writeFakeSupervisor(root)
   const record = path.join(root, 'record.jsonl')
@@ -483,6 +515,7 @@ except owner.ProfileGroupInterrupted as error:
     { cwd: app, encoding: 'utf8', timeout: 5000 }
   )
   const spawnedPid = Number(readFileSync(childPid, 'utf8'))
+
   t.after(() => {
     try {
       process.kill(spawnedPid, 'SIGKILL')
@@ -512,6 +545,7 @@ for (const [group, files] of Object.entries({
 })) {
   test(`selected profile group ${group} runs exactly its own files without claiming the full suite`, (t) => {
     const root = fixture()
+
     t.after(() => rmSync(root, { recursive: true, force: true }))
     const { result, calls } = run(
       root,
@@ -519,6 +553,7 @@ for (const [group, files] of Object.entries({
       'pass',
       group
     )
+
     assert.deepEqual(calls, [files])
     assert.equal(result.outcome, 'passed')
     assert.equal(result.completion, 'profile-group-complete')
@@ -537,6 +572,7 @@ for (const [group, files] of Object.entries({
 
 test('selected profile groups preserve incomplete receipts as failure', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const { result, calls } = run(
     root,
@@ -544,6 +580,7 @@ test('selected profile groups preserve incomplete receipts as failure', (t) => {
     'incomplete',
     'source'
   )
+
   assert.deepEqual(calls, [[source]])
   assert.equal(result.outcome, 'failed')
   assert.equal(result.completion, 'incomplete')
@@ -552,6 +589,7 @@ test('selected profile groups preserve incomplete receipts as failure', (t) => {
 
 test('unknown profile groups reject before launching a supervisor', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const result = spawnSync(
     'python3',
@@ -569,6 +607,7 @@ except ValueError:
     ],
     { cwd: app, encoding: 'utf8', timeout: 5000 }
   )
+
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout.trim(), 'rejected')
 })
@@ -578,6 +617,7 @@ test('each walking motion profile isolates one scenario in its own worker file',
   const files = readdirSync(directory).filter((file) =>
     /^walking-motion(?:-.+)?\.profile\.test\.ts$/.test(file)
   )
+
   assert.ok(files.length > 0)
   for (const file of files) {
     const source = ts.createSourceFile(
@@ -587,6 +627,7 @@ test('each walking motion profile isolates one scenario in its own worker file',
       true
     )
     const cases = []
+
     function visit(node) {
       if (
         ts.isCallExpression(node) &&
@@ -595,8 +636,10 @@ test('each walking motion profile isolates one scenario in its own worker file',
       ) {
         cases.push(node)
       }
+
       ts.forEachChild(node, visit)
     }
+
     visit(source)
     assert.equal(
       cases.length,
@@ -608,8 +651,10 @@ test('each walking motion profile isolates one scenario in its own worker file',
 
 test('selected profiles execute only intersecting groups and preserve exact receipts', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const result = run(root, writeFakeSupervisor(root), 'pass', null, [remaining])
+
   assert.deepEqual(result.calls, [[remaining]])
   assert.equal(result.result.selection.coverage, 'filtered-profiles')
   assert.deepEqual(result.result.selection.files, [remaining])
@@ -618,6 +663,7 @@ test('selected profiles execute only intersecting groups and preserve exact rece
 
 test('rejects empty, duplicate and foreign profile selections before starting a child', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   for (const files of [
     [],
@@ -639,6 +685,7 @@ owner.run_profile_groups(Path(sys.argv[2]), selected_files=json.loads(sys.argv[3
       ],
       { cwd: app, encoding: 'utf8' }
     )
+
     assert.notEqual(checked.status, 0)
     assert.match(checked.stderr, /Selected profiles must/)
   }
@@ -646,13 +693,16 @@ owner.run_profile_groups(Path(sys.argv[2]), selected_files=json.loads(sys.argv[3
 
 test('discovers split constrained midpoint profiles in the heavy group without dropping exact selections', (t) => {
   const root = fixture()
+
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const split =
     'src/domain/__tests__/walking-constrained-kinematics-midpoint-phase.profile.test.ts'
+
   writeProfile(root, split)
   assert.deepEqual(discover(root).heavy, [split, heavy].sort())
   assert.ok(!discover(root).remaining.includes(split))
   const result = run(root, writeFakeSupervisor(root), 'pass', 'heavy', [split])
+
   assert.deepEqual(result.calls, [[split]])
   assert.equal(result.result.outcome, 'passed')
   assert.deepEqual(result.result.selection.files, [split])

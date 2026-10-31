@@ -29,6 +29,7 @@ test.describe('Group hierarchy product projection', () => {
     const setup = await page.evaluate(async () => {
       const { core, elementApis, hierarchyApis, testRuntimeState } =
         await import('../src/testing/runtime-access')
+
       if (!core.deps.sceneTree.currentWorkspace) {
         core.sceneTreeInit()
       }
@@ -51,6 +52,7 @@ test.describe('Group hierarchy product projection', () => {
         },
         { undoable: false }
       )
+
       if (!firstId || !secondId) {
         throw new Error('Failed to create Gate 3 visual review elements')
       }
@@ -61,6 +63,7 @@ test.describe('Group hierarchy product projection', () => {
       const targetGroup = hierarchyApis.groupElements([secondId], {
         undoable: false
       })
+
       core.selectElements([], { undoable: false })
 
       const getWorldRectangle = (elementId: string) => {
@@ -75,21 +78,27 @@ test.describe('Group hierarchy product projection', () => {
           if (visited.has(currentId)) {
             throw new Error(`Hierarchy cycle reaches "${currentId}"`)
           }
+
           visited.add(currentId)
           const element = core.deps.sceneTree.getElementById(currentId)
+
           if (!element) {
             throw new Error(`Missing hierarchy element "${currentId}"`)
           }
+
           if (element.get('type') === 'workspace') {
             break
           }
+
           const computed = element.getAllComputedData()
+
           x += Number(computed.x)
           y += Number(computed.y)
           if (currentId === elementId) {
             width = Number(computed.width)
             height = Number(computed.height)
           }
+
           currentId = String(element.get('parentId') ?? '')
         }
 
@@ -104,6 +113,7 @@ test.describe('Group hierarchy product projection', () => {
         firstElement: core.deps.sceneTree.getElementById(firstId),
         firstRenderNode: core.deps.render.getElementById(firstId)
       }
+
       testRuntimeState.set('gate3-group-visual-review', review)
 
       return {
@@ -120,9 +130,11 @@ test.describe('Group hierarchy product projection', () => {
     expect(setup.renderExists).toBe(true)
     const contentsBounds = await getContentsPanel(page).boundingBox()
     const propertiesBounds = await getPropertiesPanel(page).boundingBox()
+
     if (!contentsBounds || !propertiesBounds) {
       throw new Error('Asyra Design canvas viewport bounds are unavailable')
     }
+
     const canvasLeft = Math.ceil(contentsBounds.x + contentsBounds.width)
     const canvasTop = Math.ceil(Math.max(contentsBounds.y, propertiesBounds.y))
     const canvasRight = Math.floor(propertiesBounds.x)
@@ -138,6 +150,7 @@ test.describe('Group hierarchy product projection', () => {
       width: canvasRight - canvasLeft,
       height: canvasBottom - canvasTop
     }
+
     expect(canvasClip.width).toBeGreaterThan(0)
     expect(canvasClip.height).toBeGreaterThan(0)
     const beforeScreenshotPath = testInfo.outputPath('before-reparent.png')
@@ -157,6 +170,7 @@ test.describe('Group hierarchy product projection', () => {
         sourceGroupId: string
         targetGroupId: string
       }>('gate3-group-visual-review')
+
       if (!review) {
         throw new Error('Gate 3 visual review state is unavailable')
       }
@@ -173,21 +187,27 @@ test.describe('Group hierarchy product projection', () => {
           if (visited.has(currentId)) {
             throw new Error(`Hierarchy cycle reaches "${currentId}"`)
           }
+
           visited.add(currentId)
           const element = core.deps.sceneTree.getElementById(currentId)
+
           if (!element) {
             throw new Error(`Missing hierarchy element "${currentId}"`)
           }
+
           if (element.get('type') === 'workspace') {
             break
           }
+
           const computed = element.getAllComputedData()
+
           x += Number(computed.x)
           y += Number(computed.y)
           if (currentId === elementId) {
             width = Number(computed.width)
             height = Number(computed.height)
           }
+
           currentId = String(element.get('parentId') ?? '')
         }
 
@@ -235,7 +255,9 @@ test.describe('Group hierarchy product projection', () => {
           core.deps.render.getElementById(review.firstId) ===
           review.firstRenderNode
       }
+
       testRuntimeState.delete('gate3-group-visual-review')
+
       return response
     })
 
@@ -281,6 +303,7 @@ test.describe('Group hierarchy product projection', () => {
           setup.secondBefore.y + setup.secondBefore.height
         ) - Math.min(setup.firstBefore.y, setup.secondBefore.y)
     }
+
     expect(result.targetBounds).toEqual(expectedTargetBounds)
     expect(result.sceneIdentityPreserved).toBe(true)
     expect(result.renderIdentityPreserved).toBe(true)
@@ -293,6 +316,7 @@ test.describe('Group hierarchy product projection', () => {
       .evaluateAll((rows) =>
         rows.map((row) => row.getAttribute('data-layer-element-id'))
       )
+
     expect(projectedRowIds).toEqual([
       setup.sourceGroupId,
       setup.targetGroupId,
@@ -317,6 +341,7 @@ test.describe('Group hierarchy product projection', () => {
       setup,
       result
     }
+
     await writeFile(runtimeStatePath, JSON.stringify(runtimeState, null, 2))
     await testInfo.attach('group-hierarchy-runtime-state', {
       path: runtimeStatePath,
@@ -342,11 +367,14 @@ test('nested Frames expose disclosure controls and retain their children when fo
       },
       { undoable: false }
     )
+
     if (!root) {
       throw new Error('Missing frame')
     }
+
     const nested = 'disclosure-nested-frame'
     const leaf = 'disclosure-frame-child'
+
     for (const [id, type, parentId, size] of [
       [nested, 'frame', root, 150],
       [leaf, 'rect', nested, 50]
@@ -374,14 +402,17 @@ test('nested Frames expose disclosure controls and retain their children when fo
           { undoable: false }
         )
       )
+
       if (!created?.includes(id)) {
         throw new Error(`Missing ${id}`)
       }
     }
+
     return { root, nested, leaf }
   })
   const toggle = page.getByTestId(`layers-group-toggle-${ids.nested}`)
   const leaf = page.getByTestId(`element-item-${ids.leaf}`)
+
   await expect(toggle).toBeVisible()
   await expect(leaf).toBeVisible()
   await getContentsPanel(page).screenshot({
@@ -406,6 +437,7 @@ test('nested Frames expose disclosure controls and retain their children when fo
         ?.parentId,
     ids.leaf
   )
+
   expect(parent).toBe(ids.nested)
 })
 
@@ -419,6 +451,7 @@ for (const containerType of ['group', 'frame'] as const) {
       async ({ containerType, fill }) => {
         const { core, elementApis, hierarchyApis } =
           await import('../src/testing/runtime-access')
+
         const makeVector = () => {
           const prefix = crypto.randomUUID()
           const points = Object.fromEntries(
@@ -429,12 +462,14 @@ for (const containerType of ['group', 'frame'] as const) {
               [200, 400]
             ].map(([x, y], i) => {
               const id = `${prefix}-p${i}`
+
               return [id, { id, kind: 'anchor', anchorType: 'sharp', x, y }]
             })
           )
           const segments = Object.fromEntries(
             Array.from({ length: 4 }, (_, i) => {
               const id = `${prefix}-s${i}`
+
               return [
                 id,
                 {
@@ -465,20 +500,26 @@ for (const containerType of ['group', 'frame'] as const) {
             },
             { undoable: false }
           )
+
           if (!id) {
             throw new Error('Missing vector')
           }
+
           return id
         }
+
         const back = makeVector()
         const front = makeVector()
         const inner = hierarchyApis.groupElements([back, front], {
           undoable: false
         }).groupId
+
         if (!inner) {
           throw new Error('Missing inner Group')
         }
+
         let outer: string | null
+
         if (containerType === 'group') {
           outer = hierarchyApis.groupElements([inner], {
             undoable: false
@@ -500,17 +541,21 @@ for (const containerType of ['group', 'frame'] as const) {
             )
           }
         }
+
         if (!outer) {
           throw new Error('Missing outer container')
         }
+
         // Exercise persisted hierarchy too, through the ordinary canonical load.
         await core.load(await core.save())
         core.selectElements([], { undoable: false })
+
         return { outer, inner, front, back }
       },
       { containerType, fill: createDefaultFill({ color: '#3478c6' }) }
     )
     const canvas = page.locator('canvas').first()
+
     await page.mouse.click(500, 600)
     await page.keyboard.press('Meta+1')
     await expect
@@ -518,9 +563,11 @@ for (const containerType of ['group', 'frame'] as const) {
         page.evaluate(async (id) => {
           const { elementApis } = await import('../src/testing/runtime-access')
           const bounds = elementApis.getElementClientBounds(id)
+
           if (!bounds) {
             return null
           }
+
           return elementApis.getRenderElementIdAtClientPos({
             x: bounds.x + bounds.width / 2,
             y: bounds.y + bounds.height / 2
@@ -531,53 +578,68 @@ for (const containerType of ['group', 'frame'] as const) {
     const point = await page.evaluate(async (id) => {
       const { elementApis } = await import('../src/testing/runtime-access')
       const bounds = elementApis.getElementClientBounds(id)
+
       if (!bounds) {
         throw new Error('Missing vector client bounds')
       }
+
       return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
     }, ids.front)
     const bounds = await canvas.boundingBox()
+
     if (!bounds) {
       throw new Error('Missing canvas')
     }
+
     const x = point.x
     const y = point.y
+
     const selection = () =>
       page.evaluate(async () =>
         (
           await import('../src/testing/runtime-access')
         ).core.getSelectedElementIds()
       )
+
     const editing = () =>
       page.evaluate(async () =>
         (
           await import('../src/common-apis/system-context')
         ).systemContextApis.getPathEditingMode()
       )
+
     await canvas.screenshot({
       path: testInfo.outputPath('before-container-click.png')
     })
+
     const documentState = () =>
       page.evaluate(async (ids) => {
         const { core } = await import('../src/testing/runtime-access')
+
         return Object.values(ids).map((id) => core.getElementComputedData(id))
       }, ids)
+
     const before = await documentState()
+
     await page.mouse.click(x, y)
     await expect.poll(selection).toEqual([ids.outer])
     if (containerType === 'frame') {
       const blank = await page.evaluate(async (id) => {
         const { elementApis } = await import('../src/testing/runtime-access')
         const bounds = elementApis.getElementClientBounds(id)
+
         if (!bounds) {
           throw new Error('Missing Frame bounds')
         }
+
         return { x: bounds.x + 10, y: bounds.y + 10 }
       }, ids.outer)
+
       await page.mouse.dblclick(blank.x, blank.y)
       await expect.poll(selection).toEqual([ids.outer])
       await expect.poll(editing).toBe(false)
     }
+
     await page.mouse.dblclick(x, y)
     await expect.poll(selection).toEqual([ids.inner])
     await expect.poll(editing).toBe(false)
@@ -586,6 +648,7 @@ for (const containerType of ['group', 'frame'] as const) {
       .poll(() =>
         page.evaluate(async () => {
           const { core } = await import('../src/testing/runtime-access')
+
           return core.getSystemProperty('hoveredElementId')
         })
       )
@@ -593,11 +656,14 @@ for (const containerType of ['group', 'frame'] as const) {
     await page.mouse.move(260, 50)
     const innerBounds = await page.evaluate(async (id) => {
       const { elementApis } = await import('../src/testing/runtime-access')
+
       return elementApis.getElementClientBounds(id)
     }, ids.inner)
+
     if (!innerBounds) {
       throw new Error('Missing selected Group bounds')
     }
+
     await expect
       .poll(
         async () => {
@@ -611,6 +677,7 @@ for (const containerType of ['group', 'frame'] as const) {
             .removeAlpha()
             .raw()
             .toBuffer()
+
           for (let offset = 0; offset < pixels.length; offset += 3) {
             if (
               pixels[offset] < 35 &&
@@ -621,6 +688,7 @@ for (const containerType of ['group', 'frame'] as const) {
               return true
             }
           }
+
           return false
         },
         { message: 'Selected inner Group has a visible blue outline' }
@@ -636,6 +704,7 @@ for (const containerType of ['group', 'frame'] as const) {
       .poll(() =>
         page.evaluate(async () => {
           const { core } = await import('../src/testing/runtime-access')
+
           return core.getSystemProperty('hoveredElementId')
         })
       )
@@ -648,12 +717,14 @@ for (const containerType of ['group', 'frame'] as const) {
     await expect.poll(editing).toBe(true)
     const parents = await page.evaluate(async (ids) => {
       const { core } = await import('../src/testing/runtime-access')
+
       return [
         core.getElementData(ids.front)?.parentId,
         core.getElementData(ids.back)?.parentId,
         core.getElementData(ids.inner)?.parentId
       ]
     }, ids)
+
     expect(parents).toEqual([ids.inner, ids.inner, ids.outer])
     expect(await documentState()).toEqual(before)
   })

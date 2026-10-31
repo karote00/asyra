@@ -39,6 +39,7 @@ const TextProperties = () => {
   const typography = useProperty<(TextData & Record<string, unknown>) | null>(
     TEXT_PROPERTY_TYPE
   )
+
   if (!selectedId || !typography || typeof typography !== 'object') {
     return null
   }
@@ -66,6 +67,7 @@ const TextProperties = () => {
           onClick={() => {
             const edit = getFeature(FeatureNames.EDIT_TEXT)?.editSelected as
               (() => void) | undefined
+
             edit?.()
           }}
         >
@@ -99,6 +101,7 @@ const TextProperties = () => {
               }))}
               onChange={(value) => {
                 const style = fontStyles.find((entry) => entry.id === value)
+
                 if (
                   style &&
                   (style.fontWeight !== typography.fontWeight ||
@@ -167,4 +170,5 @@ const TextProperties = () => {
     </div>
   )
 }
+
 export default TextProperties

@@ -71,23 +71,28 @@ const encodePublicationMessageFrames = (
           ? message.sequence
           : ++inboundDocumentSequence
     }
+
     return encodeProtocolPublicationMessageFrames(sequenced, options)
   }
+
   if (message.type === 'publications') {
     const firstSequence = inboundDocumentSequence + 1
     const sequences =
       'sequences' in message && Array.isArray(message.sequences)
         ? message.sequences
         : message.publications.map((_, index) => firstSequence + index)
+
     inboundDocumentSequence = Math.max(
       inboundDocumentSequence,
       sequences.at(-1) ?? inboundDocumentSequence
     )
+
     return encodeProtocolPublicationMessageFrames(
       { ...message, sequences },
       options
     )
   }
+
   return encodeProtocolPublicationMessageFrames(message, options)
 }
 
@@ -98,6 +103,7 @@ const createDeferred = <T>(): Deferred<T> => {
     resolve = settle
     reject = fail
   })
+
   return { promise, resolve, reject }
 }
 
@@ -119,6 +125,7 @@ const createPublication = ({
     orderedIds: [`element-${suffix}`],
     payload
   }
+
   return {
     publicationId: `publication-${suffix}`,
     artifactId,
@@ -179,6 +186,7 @@ const createTwoDeliveryPublication = (
     orderedIds: [payload.id],
     payload
   }))
+
   return {
     publicationId: `publication-${suffix}`,
     artifactId,
@@ -206,6 +214,7 @@ const createLargePublication = (): SharedPublication => {
     { length: 1024 },
     (_, index) => `vector-point-${String(index).padStart(6, '0')}`
   )
+
   return createPublication({
     channel: 'props',
     eventName: 'addProperty',
@@ -239,43 +248,58 @@ class TestCollaborationTransportWorker implements CollaborationTransportWorkerLi
   readonly posted: {
     readonly message: CollaborationTransportWorkerRequest
   }[] = []
+
   readonly mainBoundMessages: CollaborationTransportWorkerResponse[] = []
+
   socketConstructionCount = 0
+
   paused = false
+
   postObserver?: (message: CollaborationTransportWorkerRequest) => void
+
   terminateCount = 0
 
   private readonly runtime = new CollaborationTransportWorkerRuntime({
     createWebSocket: (endpoint) => {
       this.socketConstructionCount += 1
+
       return new NodeWebSocket(endpoint) as unknown as WebSocket
     },
+
     postMessage: (response) => {
       const mainResponse = structuredClone(response)
+
       this.mainBoundMessages.push(mainResponse)
       this.emit('message', { data: mainResponse })
     }
   })
+
   private readonly listeners = new Map<
     TestWorkerEventName,
     Set<TestWorkerListener>
   >()
+
   private readonly queuedTasks: (() => void)[] = []
+
   private terminated = false
 
   postMessage(message: CollaborationTransportWorkerRequest): void {
     if (this.terminated) {
       throw new Error('worker is terminated')
     }
+
     this.posted.push({ message })
     this.postObserver?.(message)
     const workerMessage = structuredClone(message)
+
     const run = () => {
       if (this.terminated) {
         return
       }
+
       this.runtime.handle(workerMessage)
     }
+
     if (this.paused) {
       this.queuedTasks.push(run)
     } else {
@@ -288,6 +312,7 @@ class TestCollaborationTransportWorker implements CollaborationTransportWorkerLi
     listener: TestWorkerListener
   ): void {
     const listeners = this.listeners.get(type) ?? new Set<TestWorkerListener>()
+
     listeners.add(listener)
     this.listeners.set(type, listeners)
   }
@@ -303,6 +328,7 @@ class TestCollaborationTransportWorker implements CollaborationTransportWorkerLi
     if (this.terminated) {
       return
     }
+
     this.terminated = true
     this.terminateCount += 1
     this.runtime.destroy()
@@ -330,6 +356,7 @@ class TestCollaborationTransportWorker implements CollaborationTransportWorkerLi
 
 const asBinaryMessage = (data: RawData): Uint8Array => {
   const bytes = Array.isArray(data) ? Buffer.concat(data) : data
+
   return bytes instanceof ArrayBuffer
     ? new Uint8Array(bytes)
     : new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
@@ -356,6 +383,7 @@ const createLoopbackServer = async (
 ): Promise<LoopbackServer> => {
   const server = new WebSocketServer({ host: '127.0.0.1', port: 0 })
   const sockets = new Set<NodeWebSocket>()
+
   server.on('connection', (socket) => {
     const originalSend = socket.send
     let bootstrapReleased = true
@@ -363,19 +391,24 @@ const createLoopbackServer = async (
       readonly data: unknown
       readonly args: readonly unknown[]
     }>[] = []
+
     const sendOriginal = (data: unknown, args: readonly unknown[]): unknown =>
       Reflect.apply(originalSend, socket, [data, ...args])
+
     const flushBootstrapSuccessors = (): void => {
       bootstrapSuccessorMessages
         .splice(0)
         .forEach(({ data, args }) => sendOriginal(data, args))
     }
+
     socket.send = ((data: unknown, ...args: unknown[]) => {
       let normalized = data
       let beginsBootstrap = false
+
       if (typeof data === 'string') {
         try {
           const message = JSON.parse(data)
+
           if (message?.type === 'ready') {
             beginsBootstrap = true
             bootstrapReleased = false
@@ -403,29 +436,36 @@ const createLoopbackServer = async (
           // Individual tests retain ownership of malformed wire payloads.
         }
       }
+
       if (
         beginsBootstrap ||
         data === JSON.stringify({ type: 'bootstrap-checkpoint-ready' })
       ) {
         return sendOriginal(normalized, args)
       }
+
       if (!bootstrapReleased) {
         bootstrapSuccessorMessages.push({ data: normalized, args })
+
         return
       }
+
       return sendOriginal(normalized, args)
     }) as typeof socket.send
     const publicationFramesByRequest = new Map<string, ArrayBuffer[]>()
+
     sockets.add(socket)
     socket.on('close', () => sockets.delete(socket))
     socket.on('message', (data: RawData, isBinary) => {
       const encoded = isBinary ? asBinaryMessage(data) : data.toString()
+
       if (typeof encoded !== 'string' && isPublicationFrame(encoded)) {
         const frame = encoded.buffer.slice(
           encoded.byteOffset,
           encoded.byteOffset + encoded.byteLength
         ) as ArrayBuffer
         const header = inspectPublicationFrameHeader(frame)
+
         onSourceFrame?.(socket, header)
         if (autoAdmitSourceFrames && header.requestId) {
           socket.send(
@@ -438,8 +478,10 @@ const createLoopbackServer = async (
             })
           )
         }
+
         const requestKey = header.requestId ?? header.frameId
         const frames = publicationFramesByRequest.get(requestKey) ?? []
+
         frames.push(frame)
         publicationFramesByRequest.set(requestKey, frames)
         const headers = frames.map((item) =>
@@ -455,14 +497,17 @@ const createLoopbackServer = async (
             const publicationHeaders = headers.filter(
               (item) => item.publicationIndex === publicationIndex
             )
+
             return (
               publicationHeaders.length > 0 &&
               publicationHeaders.length === publicationHeaders[0]?.chunkCount
             )
           })
+
         if (!complete) {
           return
         }
+
         publicationFramesByRequest.delete(requestKey)
         const orderedFrames = frames
           .map((item) => ({
@@ -475,18 +520,23 @@ const createLoopbackServer = async (
               left.header.chunkIndex - right.header.chunkIndex
           )
           .map(({ frame: item }) => item)
+
         onMessage(
           socket,
           decodePublicationMessageFrames(orderedFrames) as ClientMessage,
           encoded
         )
+
         return
       }
+
       const message = decodeCollaborationMessage(encoded) as ClientMessage
       const releasesBootstrap = message.type === 'bootstrap-consumed'
+
       if (releasesBootstrap) {
         bootstrapReleased = true
       }
+
       onMessage(socket, message, encoded)
       if (
         autoCompleteBootstrap &&
@@ -501,6 +551,7 @@ const createLoopbackServer = async (
           })
         )
       }
+
       if (releasesBootstrap) {
         flushBootstrapSuccessors()
       }
@@ -511,17 +562,22 @@ const createLoopbackServer = async (
     server.once('error', reject)
   })
   const address = server.address()
+
   if (!address || typeof address === 'string') {
     throw new Error('loopback WebSocket server did not expose a TCP port')
   }
+
   const loopback: LoopbackServer = {
     endpoint: `ws://127.0.0.1:${address.port}/collaboration`,
+
     close: async () => {
       sockets.forEach((socket) => socket.terminate())
       await new Promise<void>((resolve) => server.close(() => resolve()))
     }
   }
+
   servers.add(loopback)
+
   return loopback
 }
 
@@ -539,11 +595,15 @@ type TestProvider = CollaborationWebSocketProvider
 const createProvider = (endpoint: string): TestProvider =>
   new CollaborationWebSocketProvider({
     endpoint,
+
     transportWorkerFactory: () => {
       const worker = new TestCollaborationTransportWorker()
+
       transportWorkers.push(worker)
+
       return worker
     },
+
     identity: {
       documentId: 'internal-document',
       roomId: 'internal-room',
@@ -558,10 +618,12 @@ const createProvider = (endpoint: string): TestProvider =>
 beforeEach(() => {
   inboundDocumentSequence = 0
   mainThreadWebSocketConstructor.mockClear()
+
   function MainThreadWebSocketSentinel() {
     mainThreadWebSocketConstructor()
     throw new Error('main-thread WebSocket construction is forbidden')
   }
+
   Object.defineProperty(globalThis, 'WebSocket', {
     configurable: true,
     writable: true,
@@ -599,8 +661,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
               }
             })
           )
+
           return
         }
+
         if (message.type === 'bootstrap-consumed' && message.requestId) {
           bootstrapCompletions.push(message)
           socket.send(
@@ -616,11 +680,15 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     )
     const provider = new CollaborationWebSocketProvider({
       endpoint: server.endpoint,
+
       transportWorkerFactory: () => {
         const worker = new TestCollaborationTransportWorker()
+
         transportWorkers.push(worker)
+
         return worker
       },
+
       identity: {
         documentId: 'internal-document',
         roomId: 'internal-room',
@@ -668,8 +736,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             publications: [publication, secondPublication],
             fromActorId: 'actor-b'
           })
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         frameConsumedIds.push(message.frameId)
       }
@@ -678,6 +748,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const runtime = new CollaborationTransportWorkerRuntime({
       createWebSocket: (endpoint) =>
         new NodeWebSocket(endpoint) as unknown as WebSocket,
+
       postMessage: (message) => {
         mainBoundMessages.push(structuredClone(message))
       }
@@ -728,12 +799,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     expect(
       mainBoundMessages.some((message) => {
         const data = message as unknown
+
         return data instanceof ArrayBuffer || ArrayBuffer.isView(data)
       })
     ).toBe(false)
     const firstDelivery = mainBoundMessages.find(
       (message) => message.type === 'publication-delivery'
     )
+
     expect(firstDelivery).toMatchObject({
       type: 'publication-delivery',
       publication: { publicationId: publication.publicationId }
@@ -747,12 +820,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         message.phase === 'collaboration:receiver-handoff' &&
         message.publicationId === publication.publicationId
     )
+
     expect(firstDeliveryIndex).toBeGreaterThanOrEqual(0)
     expect(firstHandoffTimingIndex).toBeGreaterThan(firstDeliveryIndex)
 
     if (!firstDelivery || firstDelivery.type !== 'publication-delivery') {
       throw new Error('Expected the first worker-owned publication delivery')
     }
+
     runtime.handle({
       type: 'settle-publication',
       generation: 1,
@@ -780,6 +855,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       hello = message
       socket.send(JSON.stringify({ type: 'ready' }))
     })
@@ -808,6 +884,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(
         JSON.stringify({
           type: 'connection-error',
@@ -831,11 +908,15 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = new CollaborationWebSocketProvider({
       endpoint: server.endpoint,
       connectionTimeoutMs: 25,
+
       transportWorkerFactory: () => {
         const worker = new TestCollaborationTransportWorker()
+
         transportWorkers.push(worker)
+
         return worker
       },
+
       identity: {
         documentId: 'internal-document',
         roomId: 'internal-room',
@@ -845,6 +926,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     let settlement: 'pending' | 'resolved' | 'rejected' = 'pending'
     let failure: unknown
+
     void provider.openDocumentSession().then(
       () => {
         settlement = 'resolved'
@@ -880,13 +962,16 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = new CollaborationWebSocketProvider({
       endpoint: server.endpoint,
       connectionTimeoutMs: 100,
+
       transportWorkerFactory: () => worker,
+
       identity: { documentId: 'document', roomId: 'room', actorId: 'actor' }
     })
     const outcome = provider.openDocumentSession().then(
       () => 'connected',
       (error) => error.code
     )
+
     try {
       await vi.waitFor(() => {
         expect(
@@ -923,6 +1008,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             const marker = JSON.stringify({
               type: 'bootstrap-checkpoint-ready'
             })
+
             socket.send(marker)
             socket.send(
               kind === 'late' ? JSON.stringify({ type: 'ready' }) : marker
@@ -937,10 +1023,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       const worker = new TestCollaborationTransportWorker()
       const provider = new CollaborationWebSocketProvider({
         endpoint: server.endpoint,
+
         transportWorkerFactory: () => worker,
+
         identity: { documentId: 'document', roomId: 'room', actorId: 'actor' }
       })
       const opened = provider.openDocumentSession().catch(() => undefined)
+
       try {
         await vi.waitFor(() => expect(provider.getStatus()).toBe('failed'))
         expect(
@@ -966,11 +1055,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
   it('bounds real bootstrap stages independently and ignores duplicate or stale progress', async () => {
     vi.useFakeTimers()
     const worker = new TestCollaborationTransportWorker()
+
     worker.paused = true
     const provider = new CollaborationWebSocketProvider({
       endpoint: 'ws://127.0.0.1:1',
       connectionTimeoutMs: 50,
+
       transportWorkerFactory: () => worker,
+
       identity: {
         documentId: 'document',
         roomId: 'room',
@@ -982,8 +1074,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       (value) => ({ value }),
       (error) => ({ error })
     )
+
     try {
       const generation = worker.posted[0].message.generation
+
       worker.deliver({
         type: 'bootstrap-progress',
         generation,
@@ -999,6 +1093,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         worker.deliver({ type: 'bootstrap-progress', generation, phase })
         expect(provider.getStatus()).toBe('connecting')
       }
+
       await vi.advanceTimersByTimeAsync(30)
       worker.deliver({
         type: 'bootstrap-progress',
@@ -1050,6 +1145,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
     unsubscribeFirst()
     const unsubscribeSecond = provider.onPublication(secondConsumer)
+
     unsubscribeSecond()
     await provider.destroy()
 
@@ -1092,20 +1188,24 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const headers: PublicationFrameHeader[] = []
     const phaseSink = vi.fn()
     const counterSink = vi.fn()
+
     diagnosticDisposers.push(subscribeToBrowserDragPhases(phaseSink))
     diagnosticDisposers.push(subscribeToDiagnosticCounters(counterSink))
     const server = await createLoopbackServer(
       (socket, message) => {
         if (message.type === 'hello') {
           socket.send(JSON.stringify({ type: 'ready' }))
+
           return
         }
+
         if (message.type === 'send-publication') {
           sent = message.publication
         }
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (socket, header) => {
           headers.push(header)
           socket.send(
@@ -1129,12 +1229,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       }
     )
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
     phaseSink.mockClear()
     counterSink.mockClear()
 
     let settlement: 'pending' | 'accepted' | 'rejected' = 'pending'
     const sending = provider.sendPublication(publication)
+
     void sending.then(
       () => {
         settlement = 'accepted'
@@ -1150,12 +1252,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
       expect(sent).toEqual(publication)
       const worker = transportWorkers[0]
+
       expect(worker).toBeDefined()
       const publicationPosts = worker?.posted.filter(
         ({ message }) =>
           message.type === 'send-request' &&
           message.message.type === 'send-publication'
       )
+
       expect(publicationPosts).toHaveLength(1)
       expect(worker?.socketConstructionCount).toBe(1)
       expect(mainThreadWebSocketConstructor).not.toHaveBeenCalled()
@@ -1196,6 +1300,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (socket, header) => {
           sendPublicationFrames(socket, {
             type: 'publication',
@@ -1224,6 +1329,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       }
     )
     const provider = createProvider(server.endpoint)
+
     provider.onPublication(async (inbound) => {
       order.push(`peer:${inbound.publicationId}`)
     })
@@ -1261,6 +1367,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const failures = vi.fn()
+
     provider.onFailure(failures)
     await provider.connect()
     const sendFailure = new Error('publication socket send failed')
@@ -1301,6 +1408,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (socket, header) => {
           sourceSocket = socket
           headers.push(header)
@@ -1308,6 +1416,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       }
     )
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
     const secondPublication = createPublication({
       suffix: 'bounded-b',
@@ -1317,6 +1426,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     let secondSettlement: 'pending' | 'accepted' | 'rejected' = 'pending'
     const firstSending = provider.sendPublication(publication)
     const secondSending = provider.sendPublication(secondPublication)
+
     void firstSending.then(
       () => {
         firstSettlement = 'accepted'
@@ -1342,6 +1452,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       expect(headers).toHaveLength(1)
 
       const firstHeader = headers[0] as PublicationFrameHeader
+
       sourceSocket?.send(
         JSON.stringify({
           type: 'source-frame-admitted',
@@ -1363,6 +1474,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       )
       await vi.waitFor(() => expect(firstSettlement).toBe('accepted'))
       const secondHeader = headers[1] as PublicationFrameHeader
+
       sourceSocket?.send(
         JSON.stringify({
           type: 'source-frame-admitted',
@@ -1399,8 +1511,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       (socket, message) => {
         if (message.type === 'hello') {
           socket.send(JSON.stringify({ type: 'ready' }))
+
           return
         }
+
         if (
           message.type === 'send-publication' &&
           message.requestId &&
@@ -1414,16 +1528,20 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
               sequences: [1]
             })
           )
+
           return
         }
+
         if (
           message.type === 'source-publication-settlement' &&
           message.requestId
         ) {
           const sourceHeader = sourceHeaders.get(message.requestId)
+
           if (!sourceHeader) {
             return
           }
+
           settlements.push(message)
           socket.send(
             JSON.stringify({
@@ -1455,8 +1573,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
                   }
             )
           )
+
           return
         }
+
         if (message.type === 'send-awareness' && message.requestId) {
           socket.send(
             JSON.stringify({
@@ -1469,6 +1589,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (_socket, header) => {
           if (header.requestId) {
             sourceHeaders.set(header.requestId, header)
@@ -1477,6 +1598,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       }
     )
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
     const recoveryFailure = new Error('missing active property')
     const consumeAcceptedSource = vi.fn().mockRejectedValue(recoveryFailure)
@@ -1509,6 +1631,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         suffix: 'after-rejected-recovery',
         transactionId: 2
       })
+
       await expect(
         provider.sendPublication(nextPublication)
       ).resolves.toBeUndefined()
@@ -1530,6 +1653,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (socket, header) => {
           sourceSocket = socket
           firstHeader = header
@@ -1538,16 +1662,19 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     )
     const provider = createProvider(server.endpoint)
     const failures = vi.fn()
+
     provider.onFailure(failures)
     await provider.connect()
     const sending = provider.sendPublication(
       createTwoDeliveryPublication(700_000)
     )
+
     void sending.catch(() => undefined)
 
     try {
       await vi.waitFor(() => expect(firstHeader).toBeDefined())
       const header = firstHeader as unknown as PublicationFrameHeader
+
       sourceSocket?.send(
         JSON.stringify({
           type: 'source-frame-admitted',
@@ -1585,6 +1712,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (socket, header) => {
           headers.push(header)
           socket.send(
@@ -1599,6 +1727,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     )
     const provider = createProvider(server.endpoint)
     const failures = vi.fn()
+
     provider.onFailure(failures)
     await provider.connect()
 
@@ -1632,16 +1761,19 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (_socket, header) => {
           headers.push(header)
         }
       }
     )
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
     const firstOutcome = provider.sendPublication(
       createTwoDeliveryPublication(700_000)
     )
+
     void firstOutcome.catch(() => undefined)
     const secondOutcome = provider
       .sendPublication(createTwoDeliveryPublication(700_000))
@@ -1671,8 +1803,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       (socket, message) => {
         if (message.type === 'hello') {
           socket.send(JSON.stringify({ type: 'ready' }))
+
           return
         }
+
         if (message.type === 'send-awareness') {
           socket.send(
             JSON.stringify({
@@ -1681,14 +1815,17 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
               ok: true
             })
           )
+
           return
         }
+
         if (message.type === 'send-publication') {
           publicationRequestId = message.requestId
         }
       },
       {
         autoAdmitSourceFrames: false,
+
         onSourceFrame: (socket, header) => {
           sourceSocket = socket
           headers.push(header)
@@ -1696,6 +1833,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       }
     )
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
     const publicationSending = provider.sendPublication(
       createTwoDeliveryPublication(700_000)
@@ -1712,9 +1850,11 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     expect(headers).toHaveLength(1)
 
     const frameCount = headers[0]?.chunkCount ?? 0
+
     for (let index = 0; index < frameCount; index += 1) {
       await vi.waitFor(() => expect(headers.length).toBe(index + 1))
       const header = headers[index] as PublicationFrameHeader
+
       sourceSocket?.send(
         JSON.stringify({
           type: 'source-frame-admitted',
@@ -1725,6 +1865,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         })
       )
     }
+
     await vi.waitFor(() => expect(publicationRequestId).toBeDefined())
     sourceSocket?.send(
       JSON.stringify({
@@ -1741,11 +1882,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
   it('forwards worker-owned inbound byte counters as bounded scalars', async () => {
     let sendInbound: (() => void) | undefined
     const counterSink = vi.fn()
+
     diagnosticDisposers.push(subscribeToDiagnosticCounters(counterSink))
     const server = await createLoopbackServer((socket, message) => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         socket.send(
@@ -1759,6 +1902,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const awareness = vi.fn()
+
     provider.onAwareness(awareness)
     await provider.connect()
     counterSink.mockClear()
@@ -1775,6 +1919,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         ([counterName]) =>
           counterName === 'collaboration:inbound-frame-byte-length'
       )
+
       expect(frameEntryCallIndex).toBeGreaterThanOrEqual(0)
       expect(byteLengthCallIndex).toBeGreaterThan(frameEntryCallIndex)
       expect(
@@ -1796,6 +1941,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         socket.send(
@@ -1809,6 +1955,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const awareness = vi.fn()
+
     provider.onAwareness(awareness)
     await provider.connect()
 
@@ -1835,11 +1982,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const server = await createLoopbackServer((socket, message) => {
       if (message.type === 'hello') {
         socket.send(JSON.stringify({ type: 'ready' }))
+
         return
       }
+
       if (message.type !== 'send-awareness' || !message.requestId) {
         return
       }
+
       receivedAwareness = message
       socket.send(
         JSON.stringify({
@@ -1850,8 +2000,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       )
     })
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
     const worker = transportWorkers[0]
+
     if (!worker) {
       throw new Error('Expected a transport worker')
     }
@@ -1878,11 +2030,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const server = await createLoopbackServer((socket, message) => {
       if (message.type === 'hello') {
         socket.send(JSON.stringify({ type: 'ready' }))
+
         return
       }
+
       if (message.type !== 'reset-document' || !message.requestId) {
         return
       }
+
       receivedReset = message
       socket.send(
         JSON.stringify({
@@ -1893,6 +2048,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       )
     })
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
 
     await provider.resetDocument()
@@ -1927,11 +2083,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const server = await createLoopbackServer((socket, message, encoded) => {
       if (message.type === 'hello') {
         socket.send(JSON.stringify({ type: 'ready' }))
+
         return
       }
+
       if (message.type !== 'send-publication' || !message.requestId) {
         return
       }
+
       encodedRequest = encoded
       received = message.publication
       socket.send(
@@ -1944,6 +2103,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       )
     })
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
 
     await provider.sendPublication(largePublication)
@@ -1954,6 +2114,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       requestId: 'actor-a:1',
       publication: largePublication
     })
+
     expect(received).toEqual(largePublication)
     expect(encodedRequest).toBeInstanceOf(Uint8Array)
     expect(encodedRequest.length).toBeLessThan(plain.length * 0.6)
@@ -1967,6 +2128,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         sendPublicationFrames(socket, {
@@ -1978,11 +2140,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
 
     await provider.connect()
     const send = vi.spyOn(NodeWebSocket.prototype, 'send')
+
     sendInbound?.()
     await vi.waitFor(() => {
       expect(failures.mock.calls).toEqual([])
@@ -1991,6 +2155,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
     expect(inbound).toHaveBeenCalledWith(largePublication)
     const worker = transportWorkers[0]
+
     expect(
       worker?.mainBoundMessages.filter(
         ({ type }) => type === 'publication-delivery'
@@ -2001,6 +2166,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       ([value]) =>
         typeof value === 'string' && value.includes('"frame-consumed"')
     )
+
     expect(creditSendIndex).toBeGreaterThanOrEqual(0)
     expect(send.mock.invocationCallOrder[creditSendIndex]).toBeLessThan(
       inbound.mock.invocationCallOrder[0] as number
@@ -2020,20 +2186,25 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       { softTargetBytes: 256 }
     )
+
     expect(inboundFrames.length).toBeGreaterThan(1)
     let sendInbound: (() => void) | undefined
     const phaseSink = vi.fn()
+
     diagnosticDisposers.push(subscribeToBrowserDragPhases(phaseSink))
     const server = await createLoopbackServer((socket, message) => {
       if (message.type === 'hello') {
         socket.send(JSON.stringify({ type: 'ready' }))
         sendInbound = () =>
           inboundFrames.forEach((frame) => socket.send(new Uint8Array(frame)))
+
         return
       }
+
       if (message.type !== 'send-publication' || !message.requestId) {
         return
       }
+
       socket.send(
         JSON.stringify({
           type: 'response',
@@ -2045,6 +2216,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
+
     provider.onPublication(inbound)
     await provider.connect()
     const send = vi.spyOn(NodeWebSocket.prototype, 'send')
@@ -2058,10 +2230,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         if (typeof value !== 'string') {
           return []
         }
+
         const message = decodeCollaborationMessage(value) as ClientMessage
+
         if (message.type !== 'frame-consumed') {
           return []
         }
+
         return [
           {
             message,
@@ -2099,6 +2274,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           phaseName === 'collaboration:codec-worker-encode' ||
           phaseName === 'collaboration:codec-worker-decode'
       )
+
       expect(
         codecTimings.some(
           ([phaseName]) => phaseName === 'collaboration:codec-worker-encode'
@@ -2142,6 +2318,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       },
       { softTargetBytes: 256 }
     )
+
     expect(inboundFrames.length).toBeGreaterThan(2)
     let sendFirstChunk: (() => void) | undefined
     let nextChunkIndex = 1
@@ -2151,21 +2328,27 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         sendFirstChunk = () => {
           const frame = inboundFrames[0]
+
           if (frame) {
             socket.send(new Uint8Array(frame))
           }
         }
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
         const nextFrame = inboundFrames[nextChunkIndex]
+
         nextChunkIndex += 1
         if (nextFrame) {
           socket.send(new Uint8Array(nextFrame))
         }
+
         return
       }
+
       if (message.type === 'peer-applied' && message.requestId) {
         socket.send(
           JSON.stringify({
@@ -2178,6 +2361,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
+
     provider.onPublication(inbound)
     await provider.connect()
 
@@ -2234,6 +2418,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       ...oversizedFrames,
       ...trailingFrames
     ]
+
     expect(firstFrames).toHaveLength(1)
     expect(oversizedFrames.length).toBeGreaterThan(1)
     expect(trailingFrames).toHaveLength(1)
@@ -2252,21 +2437,27 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         sendFirstFrame = () => {
           const frame = inboundFrames[0]
+
           if (frame) {
             socket.send(new Uint8Array(frame))
           }
         }
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
         const nextFrame = inboundFrames[nextFrameIndex]
+
         nextFrameIndex += 1
         if (nextFrame) {
           socket.send(new Uint8Array(nextFrame))
         }
+
         return
       }
+
       if (message.type === 'peer-applied' && message.requestId) {
         socket.send(
           JSON.stringify({
@@ -2279,9 +2470,11 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const firstSettlement = createDeferred<undefined>()
+
     void firstSettlement.promise.catch(() => undefined)
     const received: SharedPublication[] = []
     const failures = vi.fn()
+
     provider.onPublication(async (inbound) => {
       received.push(inbound)
       if (inbound.publicationId === firstPublication.publicationId) {
@@ -2336,10 +2529,12 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       publications,
       fromActorId: 'actor-b'
     })
+
     expect(inboundFrames).toHaveLength(publications.length)
     const frameByteLengths = inboundFrames.map(
       (frame) => inspectPublicationFrameHeader(frame).frameByteLength
     )
+
     expect(
       frameByteLengths.slice(0, 3).reduce((sum, size) => sum + size, 0)
     ).toBeLessThanOrEqual(2 * 1024 * 1024)
@@ -2356,18 +2551,23 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           inboundFrames
             .slice(0, 3)
             .forEach((frame) => socket.send(new Uint8Array(frame)))
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
         if (consumedFrameIds.length === 1) {
           const tailFrame = inboundFrames[3]
+
           if (tailFrame) {
             socket.send(new Uint8Array(tailFrame))
           }
         }
+
         return
       }
+
       if (
         message.type === 'peer-applied' &&
         message.publicationId &&
@@ -2385,9 +2585,11 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const firstSettlement = createDeferred<undefined>()
+
     void firstSettlement.promise.catch(() => undefined)
     const received: SharedPublication[] = []
     const phaseSink = vi.fn()
+
     diagnosticDisposers.push(subscribeToBrowserDragPhases(phaseSink))
     provider.onPublication(async (inbound) => {
       received.push(inbound)
@@ -2469,12 +2671,16 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             publications: [publication, secondPublication],
             fromActorId: 'actor-b'
           })
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.publicationId) {
         consumedPublicationIds.push(message.publicationId)
+
         return
       }
+
       if (message.type === 'peer-applied' && message.publicationId) {
         appliedPublicationIds.push(message.publicationId)
       }
@@ -2482,9 +2688,11 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const applyFailure = new Error('remote apply failed')
     const firstSettlement = createDeferred<undefined>()
+
     void firstSettlement.promise.catch(() => undefined)
     const receivedPublicationIds: string[] = []
     const failures = vi.fn()
+
     provider.onPublication(async (inbound) => {
       receivedPublicationIds.push(inbound.publicationId)
       if (inbound.publicationId === publication.publicationId) {
@@ -2525,6 +2733,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       sendGap = () =>
         sendPublicationFrames(socket, {
@@ -2537,6 +2746,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async () => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
@@ -2570,6 +2780,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       publication: oversizedPublication,
       fromActorId: 'actor-b'
     })
+
     expect(frames).toHaveLength(1)
     expect(frames[0]?.byteLength).toBeGreaterThan(2 * 1024 * 1024)
     let sendInbound: (() => void) | undefined
@@ -2579,16 +2790,21 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         sendInbound = () => {
           const frame = frames[0]
+
           if (frame) {
             socket.send(new Uint8Array(frame))
           }
         }
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
+
         return
       }
+
       if (message.type === 'peer-applied' && message.requestId) {
         socket.send(
           JSON.stringify({
@@ -2601,6 +2817,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const received: SharedPublication[] = []
+
     provider.onPublication(async (inbound) => {
       received.push(inbound)
     })
@@ -2633,8 +2850,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             publications: [publication, secondPublication],
             fromActorId: 'actor-b'
           })
+
         return
       }
+
       if (message.type === 'peer-applied' && message.publicationId) {
         appliedPublicationIds.push(message.publicationId)
       }
@@ -2642,6 +2861,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const settlement = createDeferred<undefined>()
     const receivedPublicationIds: string[] = []
+
     provider.onPublication(async (inbound) => {
       receivedPublicationIds.push(inbound.publicationId)
       await settlement.promise
@@ -2679,8 +2899,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             publications: [publication, secondPublication],
             fromActorId: 'actor-b'
           })
+
         return
       }
+
       if (
         message.type === 'peer-applied' &&
         message.publicationId &&
@@ -2699,6 +2921,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_received: SharedPublication) => undefined)
+
     provider.onPublication(inbound)
 
     await provider.connect()
@@ -2713,10 +2936,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         if (typeof value !== 'string') {
           return []
         }
+
         const message = decodeCollaborationMessage(value) as ClientMessage
+
         if (message.type !== 'peer-applied') {
           return []
         }
+
         return [
           {
             message,
@@ -2763,11 +2989,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       publication: secondPublication,
       fromActorId: 'actor-c'
     })
+
     expect(firstFrames.length).toBeGreaterThan(1)
     expect(secondFrames).toHaveLength(1)
     let sendInterleaved: (() => void) | undefined
     const consumedFrameIds: string[] = []
     const phaseSink = vi.fn()
+
     diagnosticDisposers.push(subscribeToBrowserDragPhases(phaseSink))
     const server = await createLoopbackServer((socket, message) => {
       if (message.type === 'hello') {
@@ -2779,12 +3007,16 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             .slice(1)
             .forEach((frame) => socket.send(new Uint8Array(frame)))
         }
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
+
         return
       }
+
       if (message.type === 'peer-applied' && message.requestId) {
         socket.send(
           JSON.stringify({
@@ -2798,6 +3030,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
@@ -2819,6 +3052,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       const expectedFrameIds = [...firstFrames, ...secondFrames].map(
         (frame) => inspectPublicationFrameHeader(frame).frameId
       )
+
       expect(new Set(consumedFrameIds)).toEqual(new Set(expectedFrameIds))
       expect(
         phaseSink.mock.calls.filter(
@@ -2841,9 +3075,11 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       { softTargetBytes: 256 }
     )
     const duplicateFrame = frames[0]
+
     if (!duplicateFrame) {
       throw new Error('Expected a publication frame')
     }
+
     let sendDuplicate: (() => void) | undefined
     const consumedFrameIds: string[] = []
     const server = await createLoopbackServer((socket, message) => {
@@ -2853,8 +3089,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           socket.send(new Uint8Array(duplicateFrame))
           socket.send(new Uint8Array(duplicateFrame))
         }
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
       }
@@ -2862,6 +3100,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
@@ -2891,6 +3130,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       publications: [publication, secondPublication],
       fromActorId: 'actor-b'
     })
+
     expect(frames).toHaveLength(2)
     const firstFrame = frames.find(
       (frame) => inspectPublicationFrameHeader(frame).publicationIndex === 0
@@ -2898,9 +3138,11 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const secondFrame = frames.find(
       (frame) => inspectPublicationFrameHeader(frame).publicationIndex === 1
     )
+
     if (!firstFrame || !secondFrame) {
       throw new Error('Expected ordered publication frames')
     }
+
     let sendOutOfOrder: (() => void) | undefined
     const consumedFrameIds: string[] = []
     const server = await createLoopbackServer((socket, message) => {
@@ -2910,8 +3152,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           socket.send(new Uint8Array(secondFrame))
           socket.send(new Uint8Array(firstFrame))
         }
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
       }
@@ -2919,6 +3163,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
@@ -2959,15 +3204,19 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     )
     const firstOpeningFrame = frames.find((frame) => {
       const header = inspectPublicationFrameHeader(frame)
+
       return header.publicationIndex === 0 && header.chunkIndex === 0
     })
     const secondOpeningFrame = frames.find((frame) => {
       const header = inspectPublicationFrameHeader(frame)
+
       return header.publicationIndex === 1 && header.chunkIndex === 0
     })
+
     if (!firstOpeningFrame || !secondOpeningFrame) {
       throw new Error('Expected two ordered publication openings')
     }
+
     expect(
       inspectPublicationFrameHeader(firstOpeningFrame).chunkCount
     ).toBeGreaterThan(1)
@@ -2980,8 +3229,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           socket.send(new Uint8Array(firstOpeningFrame))
           socket.send(new Uint8Array(secondOpeningFrame))
         }
+
         return
       }
+
       if (message.type === 'frame-consumed' && message.frameId) {
         consumedFrameIds.push(message.frameId)
       }
@@ -2989,6 +3240,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
@@ -3024,8 +3276,10 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           publication,
           fromActorId: 'actor-b'
         })
+
         return
       }
+
       if (message.type === 'peer-applied' && message.requestId) {
         socket.send(
           JSON.stringify({
@@ -3038,6 +3292,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const received: SharedPublication[] = []
+
     provider.onPublication(async (inbound) => {
       received.push(inbound)
     })
@@ -3061,11 +3316,14 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const server = await createLoopbackServer((socket, message) => {
       if (message.type === 'hello') {
         socket.send(JSON.stringify({ type: 'ready' }))
+
         return
       }
+
       if (message.type !== 'send-publication' || !message.requestId) {
         return
       }
+
       publicationRequestCount += 1
       socket.send(
         JSON.stringify({
@@ -3076,6 +3334,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       )
     })
     const provider = createProvider(server.endpoint)
+
     await provider.connect()
     const unsafeValues: unknown[] = [
       Number.NaN,
@@ -3090,10 +3349,12 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         payload: { value },
         suffix: 'unsafe'
       })
+
       await expect(
         provider.sendPublication(unsafePublication)
       ).rejects.toMatchObject({ code: 'transport-failed' })
     }
+
     expect(publicationRequestCount).toBe(0)
     await provider.destroy()
   })
@@ -3103,6 +3364,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       socket.send(
         JSON.stringify({
@@ -3115,6 +3377,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
 
@@ -3141,6 +3404,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       sendPublicationFrames(socket, {
         type: 'publication',
@@ -3150,6 +3414,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
+
     provider.onPublication(inbound)
 
     await provider.connect()
@@ -3165,6 +3430,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       socket.send(
         JSON.stringify({
@@ -3176,6 +3442,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const failures = vi.fn()
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
+
     provider.onFailure(failures)
     provider.onPublication(inbound)
 
@@ -3196,27 +3463,34 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const server = await createLoopbackServer((socket, message) => {
       if (message.type === 'frame-consumed') {
         consumed()
+
         return
       }
+
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       const frame = encodePublicationMessageFrames({
         type: 'publication',
         publication,
         fromActorId: 'actor-b'
       })[0]
+
       if (!frame) {
         throw new Error('Expected a publication frame')
       }
+
       const invalid = frame.slice(0)
+
       new Uint8Array(invalid)[PUBLICATION_FRAME_VERSION_OFFSET] = 0xff
       sendInvalidFrame = () => socket.send(new Uint8Array(invalid))
     })
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
@@ -3247,26 +3521,33 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const server = await createLoopbackServer((socket, message) => {
       if (message.type === 'frame-consumed') {
         consumed()
+
         return
       }
+
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       const frame = encodePublicationMessageFrames({
         type: 'publication',
         publication,
         fromActorId: 'actor-b'
       })[0]
+
       if (!frame) {
         throw new Error('Expected a publication frame')
       }
+
       const truncated = frame.slice(0, frame.byteLength - 1)
+
       sendTruncatedFrame = () => socket.send(new Uint8Array(truncated))
     })
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
@@ -3293,6 +3574,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         sendPublicationFrames(socket, {
@@ -3304,13 +3586,16 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     const inbound = vi.fn(async (_publication: SharedPublication) => undefined)
     const failures = vi.fn()
+
     provider.onPublication(inbound)
     provider.onFailure(failures)
     await provider.connect()
     const worker = transportWorkers[0]
+
     if (!worker) {
       throw new Error('Expected a transport worker')
     }
+
     const send = vi.spyOn(NodeWebSocket.prototype, 'send')
 
     try {
@@ -3325,6 +3610,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         ([value]) =>
           typeof value === 'string' && value.includes('"frame-consumed"')
       )
+
       expect(failures).toHaveBeenCalledOnce()
       expect(failures).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -3356,13 +3642,16 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
     await provider.connect()
     const worker = transportWorkers[0]
+
     if (!worker) {
       throw new Error('Expected a transport worker')
     }
+
     worker.paused = true
     const sendingOutcome = provider
       .sendPublication(publication)
       .catch((error: unknown) => error)
+
     await vi.waitFor(() =>
       expect(
         worker.posted.some(
@@ -3390,6 +3679,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     })
     const provider = createProvider(server.endpoint)
     const failures = vi.fn()
+
     provider.onFailure(failures)
     await provider.connect()
 
@@ -3420,6 +3710,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       if (message.type !== 'hello') {
         return
       }
+
       connectionCount += 1
       socket.send(JSON.stringify({ type: 'ready' }))
     })
@@ -3443,6 +3734,7 @@ it('confirms the captured document version through the transport worker', async 
     if (message.type === 'hello') {
       socket.send(JSON.stringify({ type: 'ready' }))
     }
+
     if (message.type === 'confirm-persistence') {
       captured = message
       socket.send(
@@ -3461,6 +3753,7 @@ it('confirms the captured document version through the transport worker', async 
     }
   })
   const provider = createProvider(server.endpoint)
+
   try {
     await provider.connect()
     await provider.completeDocumentBootstrap()
@@ -3485,6 +3778,7 @@ it('rejects a durable receipt for a different document generation', async () => 
     if (message.type === 'hello') {
       socket.send(JSON.stringify({ type: 'ready' }))
     }
+
     if (message.type === 'confirm-persistence') {
       socket.send(
         JSON.stringify({
@@ -3502,6 +3796,7 @@ it('rejects a durable receipt for a different document generation', async () => 
     }
   })
   const provider = createProvider(server.endpoint)
+
   try {
     await provider.connect()
     await provider.completeDocumentBootstrap()
@@ -3520,6 +3815,7 @@ it('cancels persistence confirmation while leaving the document session usable',
     }
   })
   const provider = createProvider(server.endpoint)
+
   try {
     await provider.connect()
     await provider.completeDocumentBootstrap()
@@ -3527,6 +3823,7 @@ it('cancels persistence confirmation while leaving the document session usable',
     const result = expect(
       provider.confirmPersistence(controller.signal)
     ).rejects.toThrow('cancelled')
+
     controller.abort(new Error('cancelled'))
     await result
     expect(provider.getStatus()).toBe('connected')

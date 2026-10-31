@@ -103,6 +103,7 @@ const ensureRegistrationPreconditions = (
 
   for (const property of properties) {
     const schemaType = property.schema?.type
+
     if (!schemaType) {
       continue
     }
@@ -114,6 +115,7 @@ const ensureRegistrationPreconditions = (
 
   for (let index = 0; index < properties.length; index += 1) {
     const schemaType = properties[index].schema?.type
+
     if (!schemaType) {
       continue
     }
@@ -144,11 +146,13 @@ const countActiveSceneInstances = (
   // Runtime guard source:
   // unregister is blocked by default when scene instances still use this type.
   let count = 0
+
   sceneTreeOwner.getAllElements().forEach((element) => {
     if (element.get('type') === type) {
       count += 1
     }
   })
+
   return count
 }
 
@@ -169,11 +173,13 @@ const createComponentDefaults = (
   properties: readonly PropertyDefinition[]
 ): Record<string, unknown> => {
   const defaults: Record<string, unknown> = {}
+
   properties.forEach((property) => {
     if (property.defaultValue !== undefined) {
       defaults[property.name] = property.defaultValue
     }
   })
+
   return defaults
 }
 
@@ -195,6 +201,7 @@ const assertComponentRelationMutationAllowed = (
     componentType,
     sceneTreeOwner
   )
+
   if (activeInstances > 0) {
     return relationFailure(
       'REGISTRATION_IN_USE',
@@ -240,6 +247,7 @@ const rebuildComponentProperties = (
   properties: PropertyDefinition[]
 ) => {
   const registration = componentRegistry.get(componentType)
+
   if (!registration) {
     return relationFailure(
       'REGISTRATION_NOT_FOUND',
@@ -272,6 +280,7 @@ export const getComponentPropertyRelations = (
   componentType: string
 ): readonly ComponentPropertyRelationMetadata[] => {
   const registration = componentRegistry.get(componentType)
+
   if (!registration) {
     return relationFailure(
       'REGISTRATION_NOT_FOUND',
@@ -303,6 +312,7 @@ const removeComponentPropertyRelationWithOwner = (
     sceneTreeOwner
   )
   const registration = componentRegistry.get(componentType)
+
   if (!registration) {
     return relationFailure(
       'REGISTRATION_NOT_FOUND',
@@ -311,9 +321,11 @@ const removeComponentPropertyRelationWithOwner = (
       { source: { kind: 'component', key: componentType } }
     )
   }
+
   const property = registration.properties.find(
     (candidate) => candidate.name === propertyName
   )
+
   if (!property) {
     return relationFailure(
       'RELATION_NOT_FOUND',
@@ -329,6 +341,7 @@ const removeComponentPropertyRelationWithOwner = (
   const properties = registration.properties.filter(
     (candidate) => candidate.name !== propertyName
   )
+
   rebuildComponentProperties(componentType, properties)
 
   const relation: RegistrationRelationMetadata = {
@@ -337,6 +350,7 @@ const removeComponentPropertyRelationWithOwner = (
     target: { kind: 'property', key: property.type },
     onTargetUnregister: 'detach'
   }
+
   return {
     ok: true,
     operation: 'remove-relation',
@@ -369,6 +383,7 @@ const defineComponentPropertyRelationWithOwner = (
     sceneTreeOwner
   )
   const registration = componentRegistry.get(componentType)
+
   if (!registration) {
     return relationFailure(
       'REGISTRATION_NOT_FOUND',
@@ -377,6 +392,7 @@ const defineComponentPropertyRelationWithOwner = (
       { source: { kind: 'component', key: componentType } }
     )
   }
+
   if (
     registration.properties.some(
       (candidate) => candidate.name === property.name
@@ -392,6 +408,7 @@ const defineComponentPropertyRelationWithOwner = (
       }
     )
   }
+
   if (!getPropertyComponent(property.type)) {
     return relationFailure(
       'RELATION_TARGET_NOT_FOUND',
@@ -404,6 +421,7 @@ const defineComponentPropertyRelationWithOwner = (
       }
     )
   }
+
   if (
     property.schema?.type &&
     propertySchemaRegistry.has(property.schema.type)
@@ -430,6 +448,7 @@ const defineComponentPropertyRelationWithOwner = (
   if (property.schema?.type) {
     registerPropertySchema(property.schema)
   }
+
   commitComponentRegistration(registration, {
     ...registration,
     constructor: Constructor,
@@ -443,6 +462,7 @@ const defineComponentPropertyRelationWithOwner = (
     target: { kind: 'property', key: property.type },
     onTargetUnregister: 'detach'
   }
+
   return {
     ok: true,
     operation: 'define-relation',
@@ -469,6 +489,7 @@ const addUniqueRemoved = (
   if (removedSet.has(item)) {
     return
   }
+
   removedSet.add(item)
   result.removed.push(item)
 }
@@ -506,6 +527,7 @@ export function defineComponent(definition: ComponentDefinition): void {
     renderStrategy,
     isContainer
   } = definition
+
   // Phase A: preflight checks before any writes.
   ensureRegistrationPreconditions(type, renderStrategy, properties)
 
@@ -519,6 +541,7 @@ export function defineComponent(definition: ComponentDefinition): void {
 
   // Phase B: register counters + properties, and derive default values.
   const defaults = createComponentDefaults(properties)
+
   for (const prop of properties) {
     elementPropertyRegistry.register(prop, type)
   }
@@ -526,11 +549,14 @@ export function defineComponent(definition: ComponentDefinition): void {
   // Phase C: register schema types declared by this component definition.
   for (const prop of properties) {
     const schema = prop.schema
+
     if (!schema?.type) {
       continue
     }
+
     registerPropertySchema(schema)
   }
+
   // Phase D: construct runtime class and register component metadata.
   const ComponentClass = createDynamicComponent(
     type,
@@ -565,9 +591,11 @@ export const unregisterComponentGraphRegistration = (type: string): boolean => {
   if (!componentRegistry.unregister(type)) {
     return false
   }
+
   elementPropertyRegistry.unregisterComponent(type)
   idCounter.unregisterType(type)
   nameCounter.unregisterType(type)
+
   return true
 }
 
@@ -605,6 +633,7 @@ export function unregisterComponent(
       item: `component:${type}`,
       reason: `Blocked because ${activeInstances} active scene instance(s) still use this type. Pass { force: true } to override.`
     })
+
     return detailed ? result : false
   }
 
@@ -626,6 +655,7 @@ export function unregisterComponent(
       item: `component:${type}`,
       reason: 'No component-related registrations found'
     })
+
     return detailed ? result : false
   }
 
@@ -642,6 +672,7 @@ export function unregisterComponent(
   if (!cascade) {
     // Compatibility path: only remove the component registry entry.
     result.ok = didMutate
+
     return detailed ? result : didMutate
   }
 
@@ -650,13 +681,17 @@ export function unregisterComponent(
     registration?.properties ??
     elementPropertyRegistry.getPropertiesForComponent(type)
   const ownedPropertyNames: string[] = []
+
   for (const property of registeredProperties) {
     const propertyName = property.name
+
     if (!propertyName) {
       continue
     }
+
     const owners =
       elementPropertyRegistry.getComponentTypesForProperty(propertyName)
+
     if (owners.includes(type)) {
       ownedPropertyNames.push(propertyName)
     }
@@ -686,6 +721,7 @@ export function unregisterComponent(
 
       const ownersAfter =
         elementPropertyRegistry.getComponentTypesForProperty(propertyName)
+
       // Shared definition: keep it and report remaining owners.
       result.skipped.push({
         item: `property-definition:${propertyName}`,
@@ -696,6 +732,7 @@ export function unregisterComponent(
 
   for (const property of registration?.properties ?? []) {
     const schemaType = property.schema?.type
+
     if (!schemaType) {
       continue
     }
@@ -746,5 +783,6 @@ export function unregisterComponent(
 
   // Phase 4: finalize compatibility + detailed reporting.
   result.ok = didMutate
+
   return detailed ? result : didMutate
 }

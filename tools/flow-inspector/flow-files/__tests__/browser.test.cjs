@@ -7,6 +7,7 @@ const test = require('node:test'),
 const { chromium } = require('@playwright/test')
 const { document: flowDocument, directory } = require('./fixtures.cjs')
 const { startFlowServer } = require('../server.cjs')
+
 test(
   'human panel shows primary actions, folds technical detail and updates file state live',
   { timeout: 30000 },
@@ -14,27 +15,32 @@ test(
     const root = directory(t),
       file = path.join(root, 'checkout.flow.json'),
       doc = flowDocument()
+
     fs.writeFileSync(file, JSON.stringify(doc))
     const server = await startFlowServer(root, {
       directory: root,
       url: 'http://127.0.0.1:0'
     })
+
     t.after(() => server.close())
     const browserRoot = path.resolve(
       __dirname,
       '../../../../tmp/flow-stage-one/browser'
     )
+
     fs.mkdirSync(browserRoot, { recursive: true })
     const browser = await chromium.launch({
       headless: true,
       channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
       env: { ...process.env, TMPDIR: browserRoot }
     })
+
     t.after(() => browser.close())
     const page = await browser.newPage({
       viewport: { width: 1440, height: 1000 }
     })
     const errors = []
+
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (message) => {
       if (message.type() === 'error') {
@@ -145,9 +151,11 @@ test(
           'utf8'
         )
       )
+
     fs.writeFileSync(path.join(dir, 'mixed.flow.json'), JSON.stringify(doc))
     const store = openProject(dir),
       binding = store.snapshot().evaluation.flows[0].nodes[0].binding
+
     store.update('mixed', {
       expectedRevision: 0,
       kind: 'observation',
@@ -168,20 +176,25 @@ test(
       directory: dir,
       url: 'http://127.0.0.1:0'
     })
+
     t.after(() => server.close())
     const artifacts = path.join(root, 'tmp/flow-stage-one/browser')
+
     fs.mkdirSync(artifacts, { recursive: true })
     const browser = await chromium.launch({
       headless: true,
       channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
       env: { ...process.env, TMPDIR: artifacts }
     })
+
     t.after(() => browser.close())
     const page = await browser.newPage({
       viewport: { width: 1440, height: 1000 }
     })
+
     await page.goto(server.origin)
     const rerun = page.getByRole('button', { name: 'Rerun', exact: true })
+
     await rerun.waitFor()
     assert.ok((await rerun.boundingBox()).y < 450)
     assert.equal(

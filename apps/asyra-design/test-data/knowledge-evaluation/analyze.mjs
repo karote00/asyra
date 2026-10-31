@@ -12,17 +12,22 @@ import { restorePublicActivity } from './public-activity.mjs'
 export function summarizeCalls(rows) {
   const starts = new Map()
   const calls = []
+
   for (const row of rows) {
     if (row.stage === 'tool_started') {
       starts.set(row.callId, row)
     }
+
     if (!['tool_completed', 'tool_failed'].includes(row.stage)) {
       continue
     }
+
     const start = starts.get(row.callId)
+
     if (!start) {
       continue
     }
+
     calls.push({
       tool: start.tool,
       callId: row.callId,
@@ -33,6 +38,7 @@ export function summarizeCalls(rows) {
     })
     starts.delete(row.callId)
   }
+
   return {
     calls,
     incomplete: [...starts.values()].map((row) => ({
@@ -49,9 +55,11 @@ const stable = (value) => {
   if (value === null || typeof value !== 'object') {
     return JSON.stringify(value)
   }
+
   if (Array.isArray(value)) {
     return '[' + value.map(stable).join(',') + ']'
   }
+
   return (
     '{' +
     Object.keys(value)
@@ -61,12 +69,16 @@ const stable = (value) => {
     '}'
   )
 }
+
 const elementState = (snapshot, id) => {
   const element = snapshot.elements[id]
+
   if (!element) {
     return null
   }
+
   const props = {}
+
   const visit = (value) => {
     if (
       typeof value === 'string' &&
@@ -79,27 +91,36 @@ const elementState = (snapshot, id) => {
       Object.values(value).forEach(visit)
     }
   }
+
   visit(element.props)
+
   return { element, props }
 }
+
 export function verifyPreservation(before, after, seed, field, expected) {
   if (!Array.isArray(seed) || seed.length !== 3) {
     throw new Error('Expected three seeded IDs')
   }
+
   const [left, target, right] = seed
   const unchanged = [left, right].every(
     (id) => stable(elementState(before, id)) === stable(elementState(after, id))
   )
   const expectedState = JSON.parse(JSON.stringify(elementState(before, target)))
   const result = elementState(after, target)
+
   if (!expectedState || !result) {
     return { unchanged, targetCorrect: false, sameIds: false }
   }
+
   const dimensionId = expectedState.element.props.dimension
+
   if (!expectedState.props[dimensionId]) {
     throw new Error('Missing canonical dimension')
   }
+
   expectedState.props[dimensionId][field] = expected
+
   return {
     unchanged,
     targetCorrect: stable(expectedState) === stable(result),
@@ -113,34 +134,44 @@ export function readPayload(directory, reference) {
   if (!reference) {
     return null
   }
+
   const filename = path.resolve(directory, reference.path)
+
   if (!filename.startsWith(path.resolve(directory) + path.sep)) {
     throw new Error('Payload escapes evidence directory')
   }
+
   const bytes = fs.readFileSync(filename)
+
   if (createHash('sha256').update(bytes).digest('hex') !== reference.sha256) {
     throw new Error('Payload digest mismatch')
   }
+
   return JSON.parse(bytes)
 }
 
 /** Resolve exact native reply images; never recapture or fetch replacement pixels. */
 export function restoreToolImages(directory, rows) {
   const expected = new Map()
+
   for (const row of rows) {
     if (row.stage === 'tool_completed' && row.evidence?.imageCount > 0) {
       expected.set(row.callId, row.evidence.imageCount)
     }
   }
+
   const root = fs.realpathSync(directory)
   const images = []
   const identities = new Set()
+
   for (const row of rows) {
     if (row.stage !== 'asset_retained' || !row.evidence?.callId) {
       continue
     }
+
     const { callId, contentIndex, mediaType, status, asset } = row.evidence
     const key = JSON.stringify([callId, contentIndex])
+
     if (
       status !== 'submitted' ||
       !Number.isSafeInteger(contentIndex) ||
@@ -151,6 +182,7 @@ export function restoreToolImages(directory, rows) {
     ) {
       throw new Error('Invalid or duplicate image delivery identity')
     }
+
     identities.add(key)
     if (
       asset?.status !== 'queued' ||
@@ -160,17 +192,22 @@ export function restoreToolImages(directory, rows) {
     ) {
       throw new Error('Submitted image asset was not retained')
     }
+
     const target = fs.realpathSync(path.resolve(root, asset.path))
+
     if (!target.startsWith(root + path.sep)) {
       throw new Error('Image asset escapes evidence directory')
     }
+
     const bytes = fs.readFileSync(target)
+
     if (
       bytes.length !== asset.bytes ||
       createHash('sha256').update(bytes).digest('hex') !== asset.sha256
     ) {
       throw new Error('Image asset digest or size mismatch')
     }
+
     images.push({
       callId,
       contentIndex,
@@ -180,6 +217,7 @@ export function restoreToolImages(directory, rows) {
       sha256: asset.sha256
     })
   }
+
   for (const [callId, count] of expected) {
     if (
       !Number.isSafeInteger(count) ||
@@ -188,12 +226,14 @@ export function restoreToolImages(directory, rows) {
       throw new Error('Incomplete submitted image evidence: ' + callId)
     }
   }
+
   return images
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2)
   const activityOnly = args.length === 2 && args[1] === '--activities'
+
   if (
     !args[0] ||
     (!activityOnly &&
@@ -204,8 +244,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       'Usage: analyze.mjs <run-directory> [--activities | --assessment <assessment.json>]'
     )
   }
+
   const directory = path.resolve(args[0])
   const run = JSON.parse(fs.readFileSync(path.join(directory, 'run.json')))
+
   if (
     !Array.isArray(run.sourceRequestIds) ||
     !run.sourceRequestIds.length ||
@@ -214,6 +256,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   ) {
     throw new Error('Missing execution source identities')
   }
+
   if (
     !activityOnly &&
     (!Array.isArray(run.sourceRequestIds) ||
@@ -245,36 +288,45 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       'Incomplete evaluation capture; retain raw evidence without a quality report'
     )
   }
+
   const nativeBoundaries = run.nativeBoundaryEvidence
     ? readPayload(directory, run.nativeBoundaryEvidence)
     : undefined
   const recordingDirectory = path.resolve(run.recordingDirectory)
   const streams = []
   const expectedAttempts = new Map()
+
   for (const id of run.sourceRequestIds) {
     expectedAttempts.set(id, (expectedAttempts.get(id) ?? 0) + 1)
   }
+
   const matchedAttempts = new Map()
   const records = []
+
   for (const file of fs
     .readdirSync(recordingDirectory)
     .filter((name) => name.endsWith('.jsonl'))) {
     const text = fs.readFileSync(path.join(recordingDirectory, file), 'utf8')
     let first
+
     try {
       first = JSON.parse(text.split('\n', 1)[0])
     } catch {
       continue
     }
+
     if (first?.provider === 'local-codex') {
       records.push({ file, text, first })
     }
   }
+
   // Follow the canonical source-request edges, never nearby timestamps. Keep
   // nested provider calls visible without counting them as browser attempts.
   const reachable = new Set(run.sourceRequestIds)
+
   for (;;) {
     const before = reachable.size
+
     for (const { first } of records) {
       if (
         reachable.has(first.sourceRequestId) &&
@@ -283,21 +335,27 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         reachable.add(first.requestId)
       }
     }
+
     if (before === reachable.size) {
       break
     }
   }
+
   const seen = new Set()
+
   for (const { file, text, first } of records) {
     if (!reachable.has(first.sourceRequestId)) {
       continue
     }
+
     const parsed = parseExecutionRecord(text)
+
     if (!activityOnly && !parsed.complete) {
       throw new Error(
         `Incomplete execution record ${file}: ${parsed.issues.join('; ')}`
       )
     }
+
     if (
       !activityOnly &&
       expectedAttempts.has(first.sourceRequestId) &&
@@ -306,6 +364,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ) {
       throw new Error(`Drawing request did not complete successfully: ${file}`)
     }
+
     if (
       !run.expectedModel ||
       first.model !== run.expectedModel.model ||
@@ -313,11 +372,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ) {
       throw new Error(`Execution configuration mismatch: ${file}`)
     }
+
     if (seen.has(parsed.requestId)) {
       throw new Error(
         `Duplicate execution record identity: ${parsed.requestId}`
       )
     }
+
     seen.add(parsed.requestId)
     if (
       expectedAttempts.has(first.sourceRequestId) &&
@@ -328,8 +389,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         (matchedAttempts.get(first.sourceRequestId) ?? 0) + 1
       )
     }
+
     const rows = parsed.records
     const summary = summarizeCalls(rows)
+
     if (!activityOnly) {
       for (const call of summary.calls) {
         call.inputValue = readPayload(recordingDirectory, call.input)
@@ -340,9 +403,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         }
       }
     }
+
     const nativeStream = nativeBoundaries?.streams.find(
       (stream) => stream.requestId === parsed.requestId
     )
+
     if (
       nativeStream &&
       (nativeStream.startedAt !== first.startedAt ||
@@ -350,6 +415,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ) {
       throw new Error('Native diagnostic stream provenance mismatch')
     }
+
     streams.push({
       nativeDiagnostics: nativeStream ?? {
         status: 'unavailable',
@@ -376,11 +442,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       knowledgeUse: observeKnowledgeUse(summary.calls)
     })
   }
+
   for (const [id, count] of expectedAttempts) {
     if (matchedAttempts.get(id) !== count) {
       throw new Error(`Missing or unexpected exact request attempts: ${id}`)
     }
   }
+
   const analysis = {
     id: run.id,
     outcome: run.outcome,
@@ -388,11 +456,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     firstContentMs: run.firstContentMs,
     streams
   }
+
   if (!activityOnly && run.seed) {
     const before = JSON.parse(
         fs.readFileSync(path.join(directory, 'before.json'))
       ),
       after = JSON.parse(fs.readFileSync(path.join(directory, 'after.json')))
+
     analysis.preservation = verifyPreservation(
       before,
       after,
@@ -401,9 +471,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       run.arm === 'transfer' ? 110 : 140
     )
   }
+
   if (!activityOnly) {
     analysis.attribution = assessRecordedChanges(directory, args[2])
   }
+
   fs.writeFileSync(
     path.join(
       directory,

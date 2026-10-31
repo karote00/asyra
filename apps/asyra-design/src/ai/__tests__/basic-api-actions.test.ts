@@ -13,6 +13,7 @@ it('delegates every contract in parameter order without copying inputs or inject
     const mutating = !['read', 'viewport', 'prepare'].includes(contract.effect)
     const method = vi.fn(function (this: object, ...args: unknown[]) {
       expect(inMutation).toBe(mutating)
+
       return contract.result.kind === 'allocated-ids'
         ? ['el-reserved']
         : { receiver: this, args }
@@ -31,22 +32,28 @@ it('delegates every contract in parameter order without copying inputs or inject
     const action = createBasicApiActions(() => owners).find(
       (a) => a.name === contract.name
     )
+
     if (!action) {
       throw new Error('Missing action')
     }
+
     const args = Object.fromEntries(
       contract.parameters.map((p) => {
         if (p === 'types') {
           return [p, ['el']]
         }
+
         if (p === 'elementIds') {
           return [p, ['first', 'second']]
         }
+
         return [p, { input: p }]
       })
     )
+
     await action.execute(args, {
       signal: new AbortController().signal,
+
       runMutation: async (mutate) => {
         inMutation = true
         try {
@@ -62,6 +69,7 @@ it('delegates every contract in parameter order without copying inputs or inject
     for (let i = 0; i < contract.parameters.length; i++) {
       expect(method.mock.calls[0][i]).toBe(args[contract.parameters[i]])
     }
+
     expect(basicApiPermissionRules[contract.name]).toBe('allow')
   }
 })
@@ -83,14 +91,17 @@ it('cancels before dispatch and preserves null/false and owner failures', async 
     fill: {},
     stroke: {}
   })).find((a) => a.name === 'api_element_setVectorClosed')
+
   if (!action) {
     throw new Error('Missing action')
   }
+
   await expect(
     action.execute({}, { signal: AbortSignal.abort() })
   ).rejects.toThrow()
   expect(method).not.toHaveBeenCalled()
   const context = { signal: new AbortController().signal }
+
   expect(
     await action.execute({ elementId: 'v', closed: true }, context)
   ).toMatchObject({ value: null })
@@ -116,9 +127,11 @@ it('rejects invalid declared owner results while preserving completed settlement
   const context = { signal: new AbortController().signal }
   const write = actions.find((a) => a.name === 'api_element_setVectorClosed')
   const read = actions.find((a) => a.name === 'api_core_getElementData')
+
   if (!write || !read) {
     throw new Error('Missing API actions')
   }
+
   expect(await write.execute({}, context)).toMatchObject({
     status: 'failed',
     code: 'OWNER_RESULT_INVALID',
@@ -159,10 +172,13 @@ it('reports mixed creation outcomes in order instead of claiming complete', asyn
     fill: {},
     stroke: {}
   })).find((a) => a.name === 'api_element_createElements')
+
   if (!action) {
     throw new Error('Missing batch creation')
   }
+
   const context = { signal: new AbortController().signal }
+
   expect(
     await action.execute({ createOptions: [{}, {}, {}] }, context)
   ).toMatchObject({
@@ -235,15 +251,18 @@ it.each([
       fill: {},
       stroke: {}
     })).find((entry) => entry.name === 'api_element_setElementsVisible')
+
     if (!action) {
       throw new Error('Missing visibility action')
     }
+
     const result = await action.execute(
       { elementIds: ids, visible: false },
       {
         signal: new AbortController().signal
       }
     )
+
     expect(result).toMatchObject({
       status,
       value: values
@@ -271,15 +290,18 @@ it.each([
       fill: {},
       stroke: {}
     })).find((entry) => entry.name === 'api_element_setElementsVisible')
+
     if (!action) {
       throw new Error('Missing visibility action')
     }
+
     const result = await action.execute(
       { elementIds: ids, visible: false },
       {
         signal: new AbortController().signal
       }
     )
+
     expect(result).toMatchObject({ status: 'failed' })
     expect(result).not.toHaveProperty('reviewElementIds')
   }
@@ -327,26 +349,34 @@ it('captures only admitted execution through settlement and releases the scope o
     {
       observe: (listener) => {
         changed = listener
+
         return stop
       },
+
       resolve: read
     }
   ).find((action) => action.name === 'api_core_updateElementProperties')
+
   if (!action) {
     throw new Error('Missing action')
   }
+
   const result = await action.execute(
     { updates: [] },
     {
       signal: new AbortController().signal,
+
       runMutation: async (work) => {
         changed?.({ elementIds: ['unrelated-wait'] })
         const value = work()
+
         changed?.({ elementIds: ['after-commit', 'removed', 'inside'] })
+
         return value
       }
     }
   )
+
   expect(result).toMatchObject({
     mutationScope: {
       complete: true,
@@ -383,19 +413,24 @@ it('does not certify unknown publication or unavailable scope resolution as empt
     {
       observe: (listener) => {
         changed = listener
+
         return () => {
           changed = undefined
         }
       },
+
       resolve: () => {
         throw new Error('unavailable metadata')
       }
     }
   ).find((action) => action.name === 'api_core_updateElementProperties')
+
   if (!action) {
     throw new Error('Missing action')
   }
+
   const context = { signal: new AbortController().signal }
+
   expect(await action.execute({ updates: [] }, context)).toMatchObject({
     mutationScope: { complete: false }
   })
@@ -426,14 +461,17 @@ it('exposes distinct owner-local and shared-source operations with exact target 
     detachElementPropertyTargets: { targets: [target] },
     shareElementPropertyTargets: { updates: [{ target, sourceId: 'source' }] }
   }
+
   for (const [method, input] of Object.entries(requests)) {
     const contract = basicApiContracts.find(
       (item) => item.owner === 'core' && item.method === method
     )
+
     expect(contract, method).toBeDefined()
     if (!contract) {
       throw new Error(`Missing ${method}`)
     }
+
     expect(operationInputIssue(input, contract.inputSchema)).toBeUndefined()
     expect(
       operationInputIssue(
@@ -448,6 +486,7 @@ it('exposes distinct owner-local and shared-source operations with exact target 
       const invalid = JSON.parse(
         JSON.stringify(input).replace('"childId":"slot"', '"index":0')
       )
+
       expect(operationInputIssue(invalid, contract.inputSchema)).toBeDefined()
     }
   }
@@ -455,6 +494,7 @@ it('exposes distinct owner-local and shared-source operations with exact target 
 
 it('versions selected-owner property semantics separately from read and structural contracts', () => {
   const actions = createBasicApiActions()
+
   for (const name of [
     'api_element_setElementsVisible',
     'api_core_updateElementProperties',
@@ -465,16 +505,20 @@ it('versions selected-owner property semantics separately from read and structur
     'api_stroke_updateStrokeFieldsBatch'
   ]) {
     let revision = 9
+
     if (name.startsWith('api_core_')) {
       revision = 8
     }
+
     if (name === 'api_element_setElementsVisible') {
       revision = 7
     }
+
     expect(actions.find((action) => action.name === name)?.revision, name).toBe(
       revision
     )
   }
+
   expect(
     actions.find((action) => action.name === 'api_core_getElementComputedData')
       ?.revision
@@ -493,15 +537,22 @@ it('rejects misaligned creation receipts while preserving acknowledged IDs', asy
       selection: {},
       viewport: {}
     }),
-    { observe: () => () => undefined, resolve: () => 'live' }
+    {
+      observe: () => () => undefined,
+
+      resolve: () => 'live'
+    }
   ).find((entry) => entry.name === 'api_element_createElements')
+
   if (!action) {
     throw new Error('Missing creation action')
   }
+
   const result = await action.execute(
     { createOptions: [{}, {}] },
     { signal: new AbortController().signal }
   )
+
   expect(result).toMatchObject({
     status: 'failed',
     code: 'OWNER_RESULT_INVALID',
@@ -530,9 +581,11 @@ it.each([
     const contract = basicApiContracts.find(
       (item) => item.name === 'api_element_setElementsVisible'
     )
+
     if (!contract) {
       throw new Error('Missing visibility contract')
     }
+
     expect(
       describeBasicApiResult(
         contract,
@@ -548,6 +601,7 @@ it('requires an explicit result contract for every registered Core mutation', ()
     (contract) =>
       contract.owner === 'core' && ['write', 'delete'].includes(contract.effect)
   )
+
   expect(writers).toHaveLength(11)
   expect(
     writers.filter((contract) => String(contract.result.kind) === 'owner')
@@ -575,9 +629,11 @@ it.each([
     const contract = basicApiContracts.find(
       (item) => item.owner === 'core' && item.method === method
     )
+
     if (!contract) {
       throw new Error('Missing Core mutation')
     }
+
     for (const changed of [false, true]) {
       expect(
         describeBasicApiResult(
@@ -587,6 +643,7 @@ it.each([
         )
       ).toMatchObject({ status: changed ? 'complete' : 'no-change' })
     }
+
     expect(
       describeBasicApiResult(contract, { acceptedIds: [], changed: false }, [])
     ).toMatchObject({ status: 'no-change' })
@@ -610,9 +667,11 @@ it('treats only the declared canonical changed flag as a valid boolean no-op', (
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_core_updateElementData'
   )
+
   if (!contract) {
     throw new Error('Missing element data mutation')
   }
+
   expect(describeBasicApiResult(contract, false, 'a')).toMatchObject({
     status: 'no-change',
     value: false
@@ -631,9 +690,11 @@ it('rejects misaligned Core creation output while retaining the acknowledged pre
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_core_createElementsInParent'
   )
+
   if (!contract) {
     throw new Error('Missing Core creation contract')
   }
+
   expect(describeBasicApiResult(contract, ['created'], [{}, {}])).toMatchObject(
     {
       status: 'failed',
@@ -647,9 +708,11 @@ it.each(['api_core_createElementsInParent', 'api_core_moveElements'])(
   'fails missing %s owner output with its original value retained',
   (name) => {
     const contract = basicApiContracts.find((item) => item.name === name)
+
     if (!contract) {
       throw new Error('Missing Core contract')
     }
+
     expect(describeBasicApiResult(contract, undefined, [])).toMatchObject({
       status: 'failed',
       code: 'OWNER_RESULT_INVALID',

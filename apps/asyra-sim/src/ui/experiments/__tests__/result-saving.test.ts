@@ -75,6 +75,7 @@ it('distinguishes canonical retention from acknowledged saving, failure and retr
   const host = document.createElement('div')
   const root = createRoot(host)
   const retain = vi.fn()
+
   try {
     await act(() =>
       root.render(
@@ -105,6 +106,7 @@ it('distinguishes canonical retention from acknowledged saving, failure and retr
     const retry = [...host.querySelectorAll('button')].find(
       (button) => button.textContent === 'Retry saving'
     )
+
     expect(retry).toBeDefined()
     await act(() => {
       retry?.click()

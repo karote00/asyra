@@ -28,12 +28,15 @@ const object = (
   required,
   additionalProperties: false
 })
+
 const identity = {
   name: toolResultString,
   revision: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER }
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
+
 const saved = {
   oneOf: [
     toolResultObject({
@@ -157,6 +160,7 @@ export const registeredToolInvocationSchemas = (
       },
       ['execution']
     )
+
   return {
     inputSchema: object(
       {
@@ -197,6 +201,7 @@ export const createLocalToolLibraryTools = (
     string,
     AiJsonValue
   >
+
   const definition = (
     name: string,
     description: string,
@@ -217,6 +222,7 @@ export const createLocalToolLibraryTools = (
     composition: 'control-plane' as const,
     executionAccess: LocalToolAccess.COORDINATOR
   })
+
   const definitions: (LocalToolDefinition & {
     type: 'function'
     executionAccess: LocalToolAccess
@@ -262,8 +268,10 @@ export const createLocalToolLibraryTools = (
       { anyOf: [submitted, saved] }
     )
   ]
+
   return {
     definitions,
+
     projectModelResult(name: string, input: unknown, value: unknown) {
       if (
         name !== AiDesignToolIds.INVOKE_TOOL ||
@@ -274,6 +282,7 @@ export const createLocalToolLibraryTools = (
       ) {
         return value
       }
+
       const originalOutcome = record(value.toolOutcome)
         ? value.toolOutcome
         : {
@@ -283,6 +292,7 @@ export const createLocalToolLibraryTools = (
       const projected = Object.hasOwn(value.execution, 'value')
         ? project(input.name, input.input, value.execution.value)
         : undefined
+
       return {
         ...value,
         execution: {
@@ -321,6 +331,7 @@ export const createLocalToolLibraryTools = (
           : {})
       }
     },
+
     invocationSchemas(name: string, input: unknown) {
       if (
         name !== AiDesignToolIds.INVOKE_TOOL ||
@@ -330,16 +341,20 @@ export const createLocalToolLibraryTools = (
       ) {
         return
       }
+
       const selected = resolve().describe(input.name, input.revision)
+
       if (!selected) {
         return
       }
+
       return registeredToolInvocationSchemas(
         selected,
         { name: input.name, revision: input.revision },
         resolve().describeRecovery(input.name, input.revision)
       )
     },
+
     resultOutcome(
       _name: string,
       value: unknown
@@ -349,6 +364,7 @@ export const createLocalToolLibraryTools = (
       if (!record(value)) {
         throw new Error('Library control returned no receipt')
       }
+
       if (record(value.execution)) {
         return {
           status: value.execution.status as AiToolOutcome['status'],
@@ -356,6 +372,7 @@ export const createLocalToolLibraryTools = (
           issues: []
         }
       }
+
       if (value.ok === false || value.status === 'unsaved') {
         return {
           status: 'failed',
@@ -368,8 +385,10 @@ export const createLocalToolLibraryTools = (
           ]
         }
       }
+
       return { status: 'success', settlement: 'completed', issues: [] }
     },
+
     async call(
       name: string,
       input: unknown,
@@ -377,16 +396,21 @@ export const createLocalToolLibraryTools = (
     ): Promise<string> {
       signal.throwIfAborted()
       const selected = definitions.find((item) => item.name === name)
+
       if (!selected) {
         throw new LocalToolInputError('Unknown library control')
       }
+
       const issue = operationInputIssue(input, selected.inputSchema)
+
       if (issue || !record(input)) {
         throw new LocalToolInputError(
           issue ?? 'A control input object is required'
         )
       }
+
       const library = resolve()
+
       switch (name) {
         case AiDesignToolIds.SUBMIT_TOOL:
           return JSON.stringify(

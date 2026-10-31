@@ -32,6 +32,7 @@ const REMOVED_MEMORY_HUB_CAPABILITIES: Record<
   RemovedMemoryHubCapability,
   never
 > = {}
+
 type RemovedProviderExportProbe = [
   InboundPublication,
   InboundPublicationLease,
@@ -100,6 +101,7 @@ describe('replaceable collaboration Provider contract', () => {
     const receiver = new MemoryProvider(hub, identity('actor-b'))
     const senderInbound = vi.fn(async () => undefined)
     let received: SharedPublication | undefined
+
     sender.onPublication(senderInbound)
     receiver.onPublication(async (inbound) => {
       received = inbound
@@ -142,6 +144,7 @@ describe('replaceable collaboration Provider contract', () => {
       releaseConsumer = resolve
     })
     const consumer = vi.fn(() => consumerSettlement)
+
     receiver.onPublication(consumer)
     await sender.connect()
     await receiver.connect()
@@ -167,6 +170,7 @@ describe('replaceable collaboration Provider contract', () => {
       releaseFirst = resolve
     })
     const consumedPublicationIds: string[] = []
+
     receiver.onPublication(async (inbound) => {
       consumedPublicationIds.push(inbound.publicationId)
       if (inbound.publicationId === 'publication-a') {
@@ -181,6 +185,7 @@ describe('replaceable collaboration Provider contract', () => {
       publication('publication-b', 2)
     )
     let secondAccepted = false
+
     void secondAcceptance.then(() => {
       secondAccepted = true
     })
@@ -209,6 +214,7 @@ describe('replaceable collaboration Provider contract', () => {
     const firstSettlement = new Promise<void>((resolve) => {
       releaseFirst = resolve
     })
+
     receiver.onPublication(async (inbound) => {
       if (inbound.publicationId === 'publication-a') {
         await firstSettlement
@@ -221,6 +227,7 @@ describe('replaceable collaboration Provider contract', () => {
     const secondAcceptance = sender.sendPublication(
       publication('publication-b', 2)
     )
+
     await vi.waitFor(() =>
       expect(acknowledgePublication).toHaveBeenCalledTimes(2)
     )
@@ -251,6 +258,7 @@ describe('replaceable collaboration Provider contract', () => {
       releaseFirst = resolve
     })
     const consumedPublicationIds: string[] = []
+
     receiver.onPublication(async (inbound) => {
       consumedPublicationIds.push(inbound.publicationId)
       if (inbound.publicationId === 'publication-a') {
@@ -265,6 +273,7 @@ describe('replaceable collaboration Provider contract', () => {
       publication('publication-b', 2)
     )
     let staleAccepted = false
+
     void staleAcceptance.then(() => {
       staleAccepted = true
     })
@@ -283,6 +292,7 @@ describe('replaceable collaboration Provider contract', () => {
       publication('publication-c', 3)
     )
     let futureAccepted = false
+
     void futureAcceptance.then(() => {
       futureAccepted = true
     })
@@ -313,6 +323,7 @@ describe('replaceable collaboration Provider contract', () => {
       releaseConsumer = resolve
     })
     const consumer = vi.fn(() => consumerSettlement)
+
     receiver.onPublication(consumer)
     await receiver.connect()
 
@@ -322,6 +333,7 @@ describe('replaceable collaboration Provider contract', () => {
       publication('publication-a', 1)
     )
     const deliveryOutcome = vi.fn()
+
     void inboundDelivery.then(
       () => deliveryOutcome('resolved'),
       () => deliveryOutcome('rejected')
@@ -346,6 +358,7 @@ describe('replaceable collaboration Provider contract', () => {
     }
     const failure = new Error('canonical apply failed')
     const consumerRejection = Promise.reject(failure)
+
     void consumerRejection.catch(() => undefined)
     receiver.onPublication(() => consumerRejection)
     await receiver.connect()
@@ -364,6 +377,7 @@ describe('replaceable collaboration Provider contract', () => {
     const failure = new Error('canonical apply failed')
     const receivedPublicationIds: string[] = []
     const providerFailure = vi.fn()
+
     receiver.onFailure(providerFailure)
     receiver.onPublication(async (inbound) => {
       receivedPublicationIds.push(inbound.publicationId)
@@ -397,6 +411,7 @@ describe('replaceable collaboration Provider contract', () => {
     const sender = new MemoryProvider(hub, identity('actor-a'))
     const receiver = new MemoryProvider(hub, identity('actor-b'))
     const receivedPublicationIds: string[] = []
+
     receiver.onPublication(async (inbound) => {
       receivedPublicationIds.push(inbound.publicationId)
     })
@@ -417,6 +432,7 @@ describe('replaceable collaboration Provider contract', () => {
     const otherRoom = new MemoryProvider(hub, identity('actor-c', 'room-b'))
     const peerPublicationIds: string[] = []
     const otherRoomPublicationIds: string[] = []
+
     peer.onPublication(async (inbound) => {
       peerPublicationIds.push(inbound.publicationId)
     })
@@ -449,6 +465,7 @@ describe('replaceable collaboration Provider contract', () => {
     const receiver = new MemoryProvider(hub, identity('actor-b'))
     const awareness = vi.fn()
     const disconnect = vi.fn()
+
     receiver.onAwareness((message) => {
       ;(message.state as { cursor: number[] }).cursor[0] = 999
     })

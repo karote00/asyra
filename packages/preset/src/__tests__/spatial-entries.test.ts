@@ -10,6 +10,7 @@ vi.mock('three', () => {
   throw new Error('Spatial SDK was evaluated eagerly')
 })
 const options = { host: document.createElement('div'), width: 640, height: 480 }
+
 const deferred = <T>() => {
   let resolve!: (value: T) => void
   let reject!: (error: Error) => void
@@ -17,8 +18,10 @@ const deferred = <T>() => {
     resolve = yes
     reject = no
   })
+
   return { promise, resolve, reject }
 }
+
 const delegate = () =>
   new RecordingRenderEngine({
     name: 'Deferred spatial test',
@@ -29,17 +32,22 @@ it('keeps root/2D, pure admission and mechanism imports independent of the spati
   const root = await import('../index.js')
   const contract = await import('../spatial-contract.js')
   const spatial = await import('../spatial.js')
+
   expect(root.PresetCatalog).toBeDefined()
   const core = {
     isCompositionOpen: () => true,
+
     hasRenderEngineProvider: () => false,
+
     setRenderEngineProvider: vi.fn(() => vi.fn()),
+
     getPresetDependencies: () => ({})
   }
   const result = root.applyPreset(core as never, {
     profile: root.PresetProfiles['2D'],
     defaults: []
   })
+
   expect(result.profile).toBe('2D')
   expect(core.setRenderEngineProvider).toHaveBeenCalledTimes(1)
   const spatialCore = { ...core, setRenderEngineProvider: vi.fn(() => vi.fn()) }
@@ -47,11 +55,13 @@ it('keeps root/2D, pure admission and mechanism imports independent of the spati
     profile: root.PresetProfiles['3D'],
     defaults: []
   })
+
   expect(official.presetEngineId).toBe('@asyra/preset/spatial-engine')
   expect(spatialCore.setRenderEngineProvider).toHaveBeenCalledWith(
     createSpatialRenderEngine
   )
   const engine = createSpatialRenderEngine()
+
   expect(engine.capabilities.has(RenderEngineCapabilities.SPATIAL)).toBe(true)
   engine.destroy()
   expect(contract.readSpatialDescriptor).toBeTypeOf('function')
@@ -62,6 +72,7 @@ it('creates synchronously, loads once at initialization and delegates only when 
   const loaded = delegate()
   const load = vi.fn(async () => loaded)
   const engine = createSpatialRenderEngine({}, {}, load)
+
   expect(load).not.toHaveBeenCalled()
   expect(() => engine.execute({ type: 'flush' })).toThrow()
   expect(() =>
@@ -82,6 +93,7 @@ it('settles retired startup only after late loading and disposes without initial
   const destroy = vi.spyOn(loaded, 'destroy')
   const engine = createSpatialRenderEngine({}, {}, () => pending.promise)
   const starting = engine.initialize(options)
+
   engine.destroy()
   pending.resolve(loaded)
   await expect(starting).rejects.toThrow(/retired/)
@@ -92,11 +104,13 @@ it('settles retired startup only after late loading and disposes without initial
 
 it('disposes failed initialization and does not retry or substitute an engine', async () => {
   const loaded = delegate()
+
   loaded.initialize = vi.fn(() => {
     throw new Error('WebGL unavailable')
   })
   const destroy = vi.spyOn(loaded, 'destroy')
   const engine = createSpatialRenderEngine({}, {}, async () => loaded)
+
   await expect(engine.initialize(options)).rejects.toThrow('WebGL unavailable')
   expect(destroy).toHaveBeenCalledTimes(1)
   engine.destroy()
@@ -108,6 +122,7 @@ it('rejects import failure and delegate capability mismatch explicitly', async (
   const failing = createSpatialRenderEngine({}, {}, async () => {
     throw new Error('Import failed')
   })
+
   await expect(failing.initialize(options)).rejects.toThrow('Import failed')
   const loaded = new RecordingRenderEngine({
     name: 'Unsupported',
@@ -115,6 +130,7 @@ it('rejects import failure and delegate capability mismatch explicitly', async (
   })
   const destroy = vi.spyOn(loaded, 'destroy')
   const engine = createSpatialRenderEngine({}, {}, async () => loaded)
+
   await expect(engine.initialize(options)).rejects.toThrow(/capabilities/)
   expect(destroy).toHaveBeenCalledTimes(1)
 })
@@ -123,10 +139,12 @@ it('waits for an initializing delegate before releasing it after retirement', as
   const loaded: RenderEngine = delegate()
   const result = await loaded.initialize(options)
   const pending = deferred<typeof result>()
+
   loaded.initialize = vi.fn(() => pending.promise)
   const destroy = vi.spyOn(loaded, 'destroy')
   const engine = createSpatialRenderEngine({}, {}, async () => loaded)
   const starting = engine.initialize(options)
+
   await Promise.resolve()
   engine.destroy()
   expect(destroy).not.toHaveBeenCalled()

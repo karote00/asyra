@@ -99,6 +99,7 @@ function NodeInteractions({ item, drafts, setDraft }) {
 
     try {
       const value = await request(route, body)
+
       done?.(value)
       setRevision((current) => current + 1)
     } catch (failure) {
@@ -365,6 +366,7 @@ export function Localization({ entry, onSelect, onHighlight }) {
 
   useEffect(() => {
     let active = true
+
     void crypto.subtle
       .digest('SHA-256', new TextEncoder().encode(JSON.stringify(entry.data)))
       .then((value) => {

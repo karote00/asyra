@@ -11,6 +11,7 @@ export function projectResultPairs(
   const remaining: AnalysisResult['pairEvidence'][number][] = []
   const sources = new Map(snapshot.pairs.map((pair) => [pair.id, pair]))
   const recorded = new Set<string>()
+
   for (const pair of result.pairEvidence) {
     recorded.add(pair.pairId)
     if (pair.evidence.leaves.some((leaf) => leaf.state === 'finding')) {
@@ -21,6 +22,7 @@ export function projectResultPairs(
       remaining.push(pair)
     }
   }
+
   return {
     attention: [...finding, ...unresolved],
     all: [...finding, ...unresolved, ...remaining],
