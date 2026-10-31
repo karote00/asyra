@@ -2,6 +2,25 @@
 
 Status: Rules 1-4 enforced; structural rules 5-8 remain deferred.
 
+## Spacing CI declaration correction
+
+Run `41228351764` rejected the spacing update note: 697 changed source paths
+were not covered by the PR's changed notes. The exact CI base/head check
+reproduces this failure locally. Default working-tree checks after committing
+did not inspect the PR range and therefore did not prove declaration coverage.
+Correct only the existing spacing note with exact paths verified against commit
+`04f68f6e8`; preserve the no-action classification and all enforcement. Validate
+the existing guidance regression suite and the explicit PR base/final-head
+gate before pushing. Keep the unpushed advisory audit commit `88399e43b` in its
+original worktree; this repair is isolated in `.worktrees/readability-ci-repair`.
+Do not dispatch, rerun or monitor CI. No source behavior or template changes.
+
+The corrected working-tree check against `origin/main` passes with 13 changed
+notes; all 21 guidance/plan regression tests pass. Review confirms that only the
+spacing note's exact source list changed, with no removed source declarations or
+changed impact classification. The final committed snapshot must also pass the
+same gate with both `UPDATE_GUIDANCE_BASE_SHA` and `UPDATE_GUIDANCE_HEAD_SHA` set.
+
 ## Current spacing task
 
 The user explicitly authorizes enabling and autofixing rules 2, 3 and 4
