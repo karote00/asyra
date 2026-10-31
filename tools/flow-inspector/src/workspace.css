@@ -282,6 +282,11 @@ input {
 .architecture-view {
   --accent: #59b7ff;
 }
+
+.architecture-view .detail {
+  scroll-padding-block-start: calc(28px + 24px);
+}
+
 .architecture-view .detail > .panel-close-button {
   position: sticky;
   top: 0;
@@ -323,6 +328,7 @@ input {
     inset: 40px 0 0;
     height: auto;
     padding: 24px 20px;
+    scroll-padding-block-start: calc(36px + 24px + 8px);
   }
 
   .workspace-main .architecture-view .detail::before {

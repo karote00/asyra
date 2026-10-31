@@ -1,5 +1,25 @@
 # Asyra Release Notes
 
+## Pending - Detail scroll visibility and deterministic deadline proof
+
+```update-note
+{
+  "change": "ci-detail-scroll-and-deadline-proof",
+  "owner": "Flow Inspector presentation and Design verification",
+  "summary": "Reserve scroll space for the sticky detail close control at desktop and narrow widths. Drive the scripted execution deadline with a controlled test clock after observing the first turn.",
+  "reason": "CI exposed assessment content scrolling beneath the close control and a real-time test window expiring during asynchronous setup. Preserve the same production deadline, service behavior and complete cleanup assertions.",
+  "impact": "no-action",
+  "sources": [
+    "tools/flow-inspector/src/workspace.css",
+    "tools/flow-inspector/control-plane/__tests__/board.test.cjs",
+    "tools/flow-inspector/workspace/generated/flow-dashboard.css",
+    "tools/flow-inspector/workspace/generated/flow-inspector-workspace.css",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts"
+  ],
+  "guides": []
+}
+```
+
 ## Pending - Large CI plan transport
 
 ```update-note

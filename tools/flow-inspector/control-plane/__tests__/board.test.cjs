@@ -3721,6 +3721,9 @@ test(
           await closeCatalog.click()
         }
         await page.locator('#assessment-summary').scrollIntoViewIfNeeded()
+        await page.locator('#assessment-summary').evaluate((element) => {
+          element.scrollIntoView({ block: 'start' })
+        })
         await expect(page.locator('#assessment-summary')).toBeVisible()
         const summaryBounds = await page
           .locator('#assessment-summary')
@@ -3730,7 +3733,7 @@ test(
           .boundingBox()
         assert.ok(
           summaryBounds.y >= closeBounds.y + closeBounds.height,
-          'The retained assessment identity must not be covered by the sticky close control'
+          `The retained assessment identity must not be covered by the sticky close control: ${JSON.stringify({ viewport, summaryBounds, closeBounds })}`
         )
         const file = path.join(artifacts, name + '.png')
         await page.screenshot({ path: file })

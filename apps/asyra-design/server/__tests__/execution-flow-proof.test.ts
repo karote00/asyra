@@ -8733,6 +8733,10 @@ it('execution proof separates bounded work from same-thread self-report without 
     params?: Record<string, unknown>
   }[] = []
   let turns = 0
+  let observeFirstTurn!: () => void
+  const firstTurn = new Promise<void>((resolve) => {
+    observeFirstTurn = resolve
+  })
   const child = Object.assign(new EventEmitter(), {
     stdout: new PassThrough(),
     stderr: new PassThrough(),
@@ -8772,6 +8776,9 @@ it('execution proof separates bounded work from same-thread self-report without 
           result = { turn: { id: `turn-${++turns}` } }
         }
         send({ id: packet.id, result })
+        if (packet.method === 'turn/start' && turns === 1) {
+          observeFirstTurn()
+        }
         if (packet.method === 'turn/interrupt') {
           send({
             method: 'turn/completed',
@@ -8822,7 +8829,11 @@ it('execution proof separates bounded work from same-thread self-report without 
   })
   spawn.mockReturnValueOnce(child)
   const executeBatch = vi.fn()
-  const result = await requestLocalAiActionBatch(
+  vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] })
+  onTestFinished(() => {
+    vi.useRealTimers()
+  })
+  const request = requestLocalAiActionBatch(
     {
       intent: 'Draw a generic composition',
       actions: [],
@@ -8842,6 +8853,10 @@ it('execution proof separates bounded work from same-thread self-report without 
       executeBatch
     }
   )
+  await Promise.race([firstTurn, request])
+  await vi.advanceTimersByTimeAsync(100)
+  const result = await request
+  vi.useRealTimers()
   expect(result).toMatchObject({
     explanation: 'Evaluation self-report - not artwork acceptance',
     actions: [{ name: 'report_outcome', arguments: { outcome: 'unsupported' } }]

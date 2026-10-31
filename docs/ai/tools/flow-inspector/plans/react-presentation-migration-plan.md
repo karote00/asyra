@@ -39,6 +39,40 @@ deployment, publication and unrelated release failures are excluded. No subagent
 
 ## Architecture and implementation slices
 
+### CI repair segment - detail scroll visibility
+
+Owner: `services`, consuming the admitted architecture and authoritative retained
+assessment snapshot. The task contract requires readable detail panels at narrow,
+tablet and desktop widths. The presentation flow's services step permits React
+presentation under `src/` and control-plane proofs; service verdicts, history,
+acceptance and legacy renderer paths remain excluded. The required output is the
+same assessment identity visible below the sticky close control after scrolling.
+No bypass or new cache is introduced. Failure belongs to presentation layout.
+The existing Board geometry oracle failed in CI; explicitly aligning the summary
+to the scroll start reproduces it locally. Limit correction to the detail scroll
+container in `src/workspace.css` and its Board regression. Gates are the focused
+three-width browser proof, React build/tests, lint and screenshot inspection.
+Stop if correction requires changing assessment semantics or weakening the oracle.
+
+The strengthened Board proof now passes at all three widths after reproducing
+the sticky overlap before correction. React tests (23), build and focused lint
+pass; the narrow screenshot shows the complete retained identity below the
+close control. No assessment service behavior changed.
+
+The next bounded CI repair is the Design execution-proof test's clock ownership.
+Its real 100 ms work window includes asynchronous setup, and CI expires before
+the first turn starts. Keep the production deadline and all original assertions;
+control the test clock and advance the same 100 ms only after the scripted first
+turn is observed. Limit edits to this test and delivery notes. Verify the focused
+proof and its complete test file, naming, lint and typecheck before delivery.
+
+The corrected deadline proof and all 85 tests in its file pass. The declared
+Design `typecheck` gate, naming and focused lint pass (one unchanged console
+warning). The generic `tsc --noEmit` diagnostic used the broad test configuration
+and reported existing test typing mismatches; it is not the package's declared
+typecheck entrypoint. Generated Inspector CSS was rebuilt from canonical source.
+Remote verification must use a new full workflow dispatch on the repair commit.
+
 1. **Architecture presentation.** The React architecture viewer owns rendering
    of admitted schema-v2 target, lanes, steps, routes and detailed contracts.
    Inputs are immutable architecture data, controlled selection and explicit
