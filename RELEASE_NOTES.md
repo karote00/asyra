@@ -6,7 +6,7 @@
 {
   "change": "ci-detail-scroll-and-deadline-proof",
   "owner": "Flow Inspector presentation and Design verification",
-  "summary": "Reserve scroll space for the sticky detail close control at desktop and narrow widths. Drive the scripted execution deadline with a controlled test clock after observing the first turn.",
+  "summary": "Reserve scroll space and an explicit readable gap below the sticky detail close control at desktop and narrow widths, including fractional scroll positions. Drive the scripted execution deadline with a controlled test clock after observing the first turn.",
   "reason": "CI exposed assessment content scrolling beneath the close control and a real-time test window expiring during asynchronous setup. Preserve the same production deadline, service behavior and complete cleanup assertions.",
   "impact": "no-action",
   "sources": [

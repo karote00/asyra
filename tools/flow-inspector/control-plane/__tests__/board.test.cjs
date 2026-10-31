@@ -3732,7 +3732,7 @@ test(
           .getByRole('button', { name: 'Close step details' })
           .boundingBox()
         assert.ok(
-          summaryBounds.y >= closeBounds.y + closeBounds.height,
+          summaryBounds.y >= closeBounds.y + closeBounds.height + 4,
           `The retained assessment identity must not be covered by the sticky close control: ${JSON.stringify({ viewport, summaryBounds, closeBounds })}`
         )
         const file = path.join(artifacts, name + '.png')

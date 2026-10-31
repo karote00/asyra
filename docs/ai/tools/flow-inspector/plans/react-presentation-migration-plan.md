@@ -73,6 +73,14 @@ and reported existing test typing mismatches; it is not the package's declared
 typecheck entrypoint. Generated Inspector CSS was rebuilt from canonical source.
 Remote verification must use a new full workflow dispatch on the repair commit.
 
+Full CI exposed a remaining desktop boundary: the summary started 0.375 px above
+the close control's bottom after fractional scroll rounding. Re-review of the
+same services presentation contract keeps the scope unchanged. Reserve the same
+8 px readable gap on desktop as on narrow layouts, and strengthen the geometry
+oracle to require at least 4 px of separation. The stronger oracle fails locally
+before correction (the previous desktop gap was exactly zero). This changes
+layout spacing, not tolerance, service behavior or the accepted assessment.
+
 1. **Architecture presentation.** The React architecture viewer owns rendering
    of admitted schema-v2 target, lanes, steps, routes and detailed contracts.
    Inputs are immutable architecture data, controlled selection and explicit
