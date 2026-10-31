@@ -56,15 +56,7 @@ test('Node.js 24 Inspector authorities and entry resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'node-24-runtime-upgrade-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('Node.js 24 Inspector defines exactly nine complete owner steps', () => {

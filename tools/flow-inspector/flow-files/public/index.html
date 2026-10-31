@@ -3,37 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Flow Inspector</title>
-    <link rel="stylesheet" href="/viewer.css" />
-    <link rel="stylesheet" href="/flow.css" />
+    <title>Flow Dashboard</title>
+    <link rel="stylesheet" href="/flow-dashboard.css" />
   </head>
   <body>
-    <nav aria-label="Project flows">
-      <label
-        >Flow
-        <select id="flow-selector"></select></label
-      ><span id="feature-status"></span
-      ><button id="integration-action">Feature acceptance</button>
-      <p id="file-error" role="alert"></p>
-    </nav>
-    <div class="app">
-      <main class="main">
-        <div class="header">
-          <div>
-            <h1 id="inspector-title">Flow Inspector</h1>
-            <p id="inspector-subtitle" class="subtitle"></p>
-            <div id="inspector-links" class="header-links"></div>
-          </div>
-        </div>
-        <div id="filters" class="filters"></div>
-        <details class="guide-panel">
-          <summary>Flow contract</summary>
-          <p id="target-contract-summary"></p>
-        </details>
-        <section id="flow" class="flow" aria-label="Flow Inspector"></section>
-      </main>
-      <aside id="detail" class="detail" aria-label="Task details"></aside>
-    </div>
-    <script src="/flow.js"></script>
+    <div id="flow-dashboard-root"></div>
+    <script src="/flow-dashboard.js"></script>
   </body>
 </html>

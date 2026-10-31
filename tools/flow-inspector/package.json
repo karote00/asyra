@@ -4,11 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "node workspace/generate-workspace.cjs && vite --open /workspace/dev.html",
-    "build": "vite build",
-    "react:build": "vite build",
+    "build": "node workspace/generate-workspace.cjs && vite build && vite build --mode live",
+    "react:build": "yarn build",
     "typecheck": "tsc --noEmit",
     "test:react": "vitest run --config vitest.config.ts",
-    "test:contracts": "node --test __tests__/viewer-entry.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/workspace.test.cjs __tests__/package.test.cjs",
+    "test:contracts": "node --test __tests__/architecture-contract.test.cjs __tests__/react-delivery.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/react-workspace.contract.test.cjs __tests__/package.test.cjs",
     "test": "yarn test:react && yarn test:contracts && yarn test:flow-files",
     "test:local": "yarn test:react && yarn test:contracts && yarn test:flow-files",
     "test:ci": "yarn test:react && yarn test:contracts && yarn test:flow-files && yarn test:installed",
@@ -44,9 +44,6 @@
     "access": "public"
   },
   "files": [
-    "embed-viewer.cjs",
-    "viewer.js",
-    "viewer.css",
     "src",
     "__tests__",
     "control-plane",

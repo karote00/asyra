@@ -35,32 +35,17 @@ const titleFromId = (id) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
 
-const schemaKind = (data) => {
+const schemaKind = (data, sourcePath) => {
   if (data?.schema?.id === 'flow-inspector' && data.schema.version === 2) {
     return 'flow-v2'
   }
-  if (data?.schema === 'flow-inspector.v1') {
-    return 'legacy-v1'
+  if (catalogPolicy.contractDocuments.includes(path.basename(sourcePath))) {
+    return 'contract-document'
   }
 
-  return 'plan-contract'
-}
-
-const standalonePathFor = (repoPath) => {
-  const direct = repoPath.replace(/\.data\.(?:cjs|js)$/, '.html')
-  if (fs.existsSync(path.join(projectRoot, direct))) {
-    return direct
-  }
-  if (repoPath.endsWith('stroke-flow-inspector.data.js')) {
-    const strokeEntry = repoPath.replace(
-      'stroke-flow-inspector.data.js',
-      'stroke-flow-inspector.html'
-    )
-    if (fs.existsSync(path.join(projectRoot, strokeEntry))) {
-      return strokeEntry
-    }
-  }
-  return null
+  throw new Error(
+    `Inspector is neither a v2 architecture nor a registered contract document: ${sourcePath}`
+  )
 }
 
 const ownerMetadata = (repoPath, id) => {
@@ -117,7 +102,7 @@ const entries = candidates
   .map((repoPath) => {
     const absolutePath = path.join(projectRoot, repoPath)
     const data = loadSource(absolutePath)
-    const kind = schemaKind(data)
+    const kind = schemaKind(data, repoPath)
     const derivedId = idFromPath(repoPath)
     const id = data?.target?.id || derivedId
     const owner = ownerMetadata(repoPath, id)
@@ -135,7 +120,6 @@ const entries = candidates
       subgroup: owner.subgroup,
       lifecycle: lifecycleFor(data),
       sourcePath: repoPath,
-      standalonePath: standalonePathFor(repoPath),
       labels: [derivedId, owner.group, owner.subgroup, kind],
       data
     }

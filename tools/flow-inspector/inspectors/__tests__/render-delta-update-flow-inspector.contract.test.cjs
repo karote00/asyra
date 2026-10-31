@@ -53,11 +53,7 @@ test('authority resolves to the active product contract and dedicated viewer', (
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '../render-delta-update-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   data.links.forEach((link) => {
     assert.ok(
       fs.existsSync(path.resolve(__dirname, '..', link.href)),
@@ -473,12 +469,12 @@ test('all non-empty cache dimensions have profiling and lifecycle evidence', () 
       'apply-render-delta',
       'resync-render-snapshot',
       'flush-render-snapshot',
+      'evaluate-vector-material',
       'cleanup-render-projection'
     ]
   )
 
   cacheSteps.forEach((item) => {
-    assert.deepEqual(item.cacheDimensions, ['elementId'])
     assert.ok(item.cacheEvidence)
     ;[
       'measuredPhase',
@@ -491,6 +487,22 @@ test('all non-empty cache dimensions have profiling and lifecycle evidence', () 
     ].forEach((field) =>
       assert.equal(typeof item.cacheEvidence[field], 'string')
     )
+    if (item.id === 'evaluate-vector-material') {
+      assert.deepEqual(item.cacheDimensions, [
+        'live graphic',
+        'immutable points, segments and networks',
+        'fill rule',
+        'material input identity'
+      ])
+      assert.match(item.cacheEvidence.baseline, /1 preparation.*paint.*transform.*2.*fill.rule.*3.*geometry/i)
+      assert.match(item.cacheEvidence.invalidation, /immutable.*fill.rule/i)
+      assert.match(item.cacheEvidence.cleanup, /destroy/i)
+      assert.match(item.cacheEvidence.memoryBound, /one.*live graphic/i)
+      assert.equal(item.cacheEvidence.testPath, 'packages/preset/src/__tests__/vector-mesh-fill.test.ts')
+      assert.ok(fs.existsSync(path.join(repoRoot, item.cacheEvidence.testPath)))
+      return
+    }
+    assert.deepEqual(item.cacheDimensions, ['elementId'])
     assert.match(item.cacheEvidence.decision, /add no cache dimension/i)
     assert.match(
       item.cacheEvidence.memoryBound,

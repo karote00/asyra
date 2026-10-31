@@ -80,7 +80,7 @@ test(
     const errors = []
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     await expect(frame.locator('#test-result-failures button')).toHaveCount(2)
     await frame.locator('#test-result-failures button').first().click()
     await expect(
@@ -156,16 +156,16 @@ test(
     )
     t.after(() => release())
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     await received
-    await frame.locator('#test-result-history').selectOption('')
-    const response = page.waitForResponse((r) =>
+    const aborted = page.waitForEvent('requestfailed', (r) =>
       r.url().endsWith('/api/test-results/' + fault.record.id)
     )
+    await frame.locator('#test-result-history').selectOption('')
     release()
-    await response
+    await aborted
     await expect(frame.locator('#test-result-history')).toHaveValue('')
     // Wait for the body and UI completion, not merely the response headers.
     await page.waitForTimeout(200)
@@ -202,7 +202,7 @@ test(
     const recovered = await fixture.run('app')
     assert.equal(recovered.result.code, 0, recovered.result.output)
     await page.goto(server.origin + '/transaction-atomicity')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     const crossTarget = frame
@@ -254,7 +254,7 @@ test(
     const failures = machine.cases.filter((item) => item.status === 'failed')
     assert.equal(failures.length, 2)
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(2)
     for (const [index, item] of failures.entries()) {
@@ -318,7 +318,7 @@ test(
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.equal(fault.record.executionFailureDetails.length, 1)
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const execution = frame.locator('#test-result-execution-details')
     await expect(execution).toContainText(fault.record.id)
     await expect(
@@ -355,7 +355,7 @@ test(
       8
     )
     await page.goto(server.origin + '/history-replay')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(8)
     await buttons.first().click()
@@ -441,7 +441,7 @@ test(
       expected
     )
     await page.goto(server.origin + '/ai-execution-flow')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(3)
@@ -500,7 +500,7 @@ test(
     )
     assert.equal(failures.length, 1)
     await page.goto(server.origin + '/render-engine-boundary')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
@@ -593,7 +593,7 @@ test(
       expected
     )
     await page.goto(server.origin + '/reusable-tool-composition')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(4)
@@ -656,7 +656,7 @@ test(
       assert.equal(fault.result.code, 1, fault.result.output)
     }
     await page.goto(server.origin + '/render-engine-boundary')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     const details = frame.locator('#test-result-detail')
     await expect(buttons).toHaveCount(2)
@@ -747,7 +747,7 @@ test(
     )
     assert.equal(failures.length, 1)
     await page.goto(server.origin + '/render-delta-update')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
@@ -800,9 +800,9 @@ test(
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
-    await frame
-      .getByRole('button', { name: 'Details panel', exact: true })
-      .click()
+    await expect(
+      frame.getByRole('button', { name: 'Hide details', exact: true })
+    ).toBeVisible()
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
@@ -829,7 +829,7 @@ test(
     )
     assert.equal(failures.length, 3)
     await page.goto(server.origin + '/render-delta-update')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(4)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
@@ -983,7 +983,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       const errors = []
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto(server.origin + '/' + targetId)
-      const frame = page.frameLocator('iframe')
+      const frame = page
       await expect(frame.locator('#test-result-failures button')).toHaveCount(
         secondCaseId ? 2 : 1
       )
@@ -1092,7 +1092,7 @@ test(
         '/transaction-atomicity?observation=' +
         encodeURIComponent(failed.id)
     )
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const panel = frame.locator('#node-interactions')
     await expect(panel).toBeVisible()
     const input = panel.getByLabel('Add investigation note')
@@ -1173,7 +1173,7 @@ test(
     await page.goto(
       server.origin + '/transaction-atomicity?observation=' + failed.id
     )
-    const panel = page.frameLocator('iframe').locator('#node-interactions')
+    const panel = page.locator('#node-interactions')
     await expect(panel).toContainText('Reference: available')
     let releaseOld,
       readCount = 0
@@ -1212,7 +1212,7 @@ test('node status uses one border through selection, hover and keyboard focus', 
   const fixture = localizationFixture()
   const { page, server } = await openBoard(t, fixture)
   await page.goto(server.origin + '/history-shortcut')
-  const card = page.frameLocator('iframe').locator('.step-card').first()
+  const card = page.locator('.step-card').first()
   await expect(card).toBeVisible()
   for (const [status, color] of [
     ['observation-failed', 'rgb(248, 113, 113)'],
@@ -1296,7 +1296,7 @@ test('Board separates current evidence problems from historical warnings and lin
   }
   const failed = observe('failed', ['old warning <script>'])
   await page.goto(server.origin + '/history-shortcut')
-  const frame = page.frameLocator('iframe')
+  const frame = page
   await expect(frame.locator('#test-result-current-problems')).toContainText(
     'old warning <script>'
   )

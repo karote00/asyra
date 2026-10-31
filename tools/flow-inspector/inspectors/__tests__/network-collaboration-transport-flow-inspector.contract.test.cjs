@@ -53,15 +53,7 @@ test('dedicated transport Inspector and product authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'network-collaboration-transport-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('every step has exact execution fields and every route and artifact resolves', () => {

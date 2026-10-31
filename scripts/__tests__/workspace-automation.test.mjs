@@ -7,7 +7,43 @@ import test from 'node:test'
 import { runInNewContext } from 'node:vm'
 import yaml from 'js-yaml'
 import ts from 'typescript'
-import { fileURLToPath } from 'node:url'
+import { ESLint } from 'eslint'
+import { getFileInfo } from 'prettier'
+import { fileURLToPath, URL } from 'node:url'
+
+test('frozen source formatting exemption preserves current-source lint and semantic checks', async () => {
+  const cwd = fileURLToPath(new URL('../../', import.meta.url))
+  const eslint = new ESLint({ cwd })
+  const frozen =
+    'apps/asyra-fieldscope/src/domain/__tests__/fixtures/pre-p5b-source/crop-models.ts'
+  const current = 'apps/asyra-fieldscope/src/domain/crop-models.ts'
+  const otherFixture =
+    'apps/asyra-fieldscope/src/domain/__tests__/fixtures/current-example.ts'
+
+  for (const filePath of [frozen, current, otherFixture]) {
+    assert.equal(await eslint.isPathIgnored(filePath), false)
+    const [result] = await eslint.lintText(
+      'export function example(value: boolean) { if (value) return 1; return 0 }',
+      { filePath }
+    )
+    assert.equal(
+      result.messages.some((message) => message.ruleId === 'curly'),
+      filePath !== frozen
+    )
+    const [semantic] = await eslint.lintText('export const value: any = 1\n', {
+      filePath
+    })
+    assert.ok(
+      semantic.messages.some(
+        (message) => message.ruleId === '@typescript-eslint/no-explicit-any'
+      )
+    )
+    const info = await getFileInfo(path.join(cwd, filePath), {
+      ignorePath: path.join(cwd, '.prettierignore')
+    })
+    assert.equal(info.ignored, filePath === frozen)
+  }
+})
 
 import {
   createWorkspaceVersionPlan,

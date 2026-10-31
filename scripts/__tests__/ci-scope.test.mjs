@@ -264,6 +264,16 @@ test('workspace manifests own independent lint, test, and standard E2E selection
   )
 })
 
+test('formatter ignore changes select lint ownership and its regression tests', () => {
+  const result = classifyChanges(['.prettierignore'], manifests)
+  assert.deepEqual(result.unknownPaths, [])
+  assert.ok(
+    result.executionPlan.checks.repositoryScripts.tests.includes(
+      'scripts/__tests__/workspace-automation.test.mjs'
+    )
+  )
+})
+
 test('shared setup selects all E2E suites and fixture changes keep full owner tests', () => {
   const shared = classifyChanges(['tsconfig.json'], manifests)
   assert.deepEqual(shared.relationshipMap.executionPlan.checks.e2e.selected, [

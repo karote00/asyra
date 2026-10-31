@@ -690,7 +690,7 @@ function classifyChanges(
       /^(?:scripts|\.github|\.changeset|agents|\.codex|\.antigravity|release-configs)\//.test(
         changedPath
       ) ||
-      /^(?:eslint\.config\.[cm]?js|turbo(?:\.base)?\.json|\.gitignore|\.env\.example)$/.test(
+      /^(?:eslint\.config\.[cm]?js|turbo(?:\.base)?\.json|\.gitignore|\.prettierignore|\.env\.example)$/.test(
         changedPath
       )
     ) {

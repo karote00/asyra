@@ -741,7 +741,7 @@
         id: 'existing-group-inspector',
         kind: 'prerequisite',
         label: 'Existing Group feature authority',
-        href: '../inspectors/group-interaction-mvp-flow-inspector.html'
+        href: '../workspace/workspace.html#inspector=asyra-design-group-interaction-mvp'
       }
     ],
     lanes,

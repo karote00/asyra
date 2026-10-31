@@ -28,6 +28,7 @@
   "lintFullInputPaths": [
     "eslint.config.js",
     "eslint.config.mjs",
+    ".prettierignore",
     ".gitignore",
     "tsconfig.json"
   ],
@@ -302,6 +303,7 @@
         "scripts/check-test-exists.js",
         ".github/**",
         "eslint.config.*",
+        ".prettierignore",
         "apps/asyra-design/vite.config.ts",
         "apps/asyra-design/src/index.css",
         "apps/**/tsconfig*.json",

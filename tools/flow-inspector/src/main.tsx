@@ -1,7 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { WorkspaceApp } from './App'
+import './architecture/styles.css'
 import './workspace.css'
+import './control-plane/styles.css'
 
 const root = document.getElementById('flow-inspector-workspace-root')
 const bundle = globalThis.FLOW_INSPECTOR_WORKSPACE_BUNDLE

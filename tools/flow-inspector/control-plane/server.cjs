@@ -61,27 +61,9 @@ async function startServer(
   const address = parseLocalUrl(url)
   const capability = randomBytes(32).toString('hex')
   const workspacePath = '/tools/flow-inspector/workspace/'
-  const targetPath = workspacePath + 'target.html'
-  const assets = new Map([
-    [
-      '/board.js',
-      [
-        path.join(__dirname, 'public/board.js'),
-        'text/javascript; charset=utf-8'
-      ]
-    ],
-    [
-      '/board.css',
-      [path.join(__dirname, 'public/board.css'), 'text/css; charset=utf-8']
-    ]
-  ])
+  const assets = new Map()
   for (const relative of [
-    'viewer.js',
-    'viewer.css',
     'workspace/workspace.html',
-    'workspace/target.html',
-    'workspace/target.js',
-    'workspace/legacy-viewer.js',
     'workspace/workspace-bundle.data.js',
     'workspace/generated/flow-inspector-workspace.js',
     'workspace/generated/flow-inspector-workspace.css'
@@ -109,18 +91,11 @@ async function startServer(
     { timeout: 1000 }
   )
   const localBase = new URL('http://catalog.local/')
-  const standaloneRoutes = new Map()
   const workspaceAsset = assets.get(workspacePath + 'workspace.html')
   assets.set('/', workspaceAsset)
   for (const entry of workspaceSnapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE
     .entries) {
     assets.set('/' + entry.slug, workspaceAsset)
-    if (entry.standalonePath) {
-      const standalone = new URL(entry.standalonePath, localBase)
-      if (standalone.origin === localBase.origin) {
-        standaloneRoutes.set(standalone.pathname, '/' + entry.slug)
-      }
-    }
     const source = new URL(entry.sourcePath, localBase)
     const resources = [
       source,
@@ -151,10 +126,6 @@ async function startServer(
       assets.set(resource.pathname, [file, 'text/plain; charset=utf-8'])
     }
   }
-  assets.set('/localization.js', [
-    path.join(__dirname, 'public/localization.js'),
-    'text/javascript; charset=utf-8'
-  ])
   const service = createService(repositoryRoot, serviceOptions)
   let origin
   let closing = false
@@ -184,10 +155,6 @@ async function startServer(
           throw new ActionError(403, 'Origin is not authorized')
         }
         const route = new URL(request.url, origin)
-        const targetQuery =
-          route.pathname === targetPath &&
-          [...route.searchParams.keys()].length === 1 &&
-          Boolean(route.searchParams.get('inspector'))
         const observationSelector = route.searchParams
           .get('observation')
           ?.match(/^([a-f0-9-]{36}):(0|[1-9][0-9]{0,8})$/)
@@ -198,7 +165,7 @@ async function startServer(
           [...route.searchParams.keys()].length === 1 &&
           observationSelector &&
           validId(observationSelector[1])
-        if (route.search && !targetQuery && !observationQuery) {
+        if (route.search && !observationQuery) {
           throw new ActionError(400, 'Query parameters are unsupported')
         }
         if (request.method === 'GET') {
@@ -208,11 +175,6 @@ async function startServer(
             assets.get(route.pathname.slice(0, -1)) === workspaceAsset
           ) {
             response.writeHead(308, { Location: route.pathname.slice(0, -1) })
-            return response.end()
-          }
-          const standaloneRoute = standaloneRoutes.get(route.pathname)
-          if (standaloneRoute) {
-            response.writeHead(302, { Location: standaloneRoute })
             return response.end()
           }
           if (route.pathname === '/api/session') {
@@ -329,13 +291,11 @@ async function startServer(
           if (!asset) {
             throw new ActionError(404, 'Route not found')
           }
-          // Existing canvas geometry uses style attributes; target.js owns a
-          // same-origin base URL. Scripts remain external and same-origin only.
+          // React canvas geometry uses style attributes. Scripts remain
+          // external and same-origin; no embedded renderer is permitted.
           response.setHeader(
             'Content-Security-Policy',
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors " +
-              (route.pathname === targetPath ? "'self'" : "'none'") +
-              "; object-src 'none'; base-uri 'self'"
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
           )
           let content = fs.readFileSync(asset[0])
           if (asset === workspaceAsset) {
@@ -346,18 +306,6 @@ async function startServer(
                 '<html lang="en" data-workspace-routing="path">'
               )
               .replace('<head>', '<head><base href="' + workspacePath + '" />')
-          }
-          if (route.pathname === targetPath) {
-            content = content
-              .toString()
-              .replace(
-                '</head>',
-                '<link rel="stylesheet" href="/board.css" /></head>'
-              )
-              .replace(
-                '</body>',
-                '<script src="/board.js"></script><script src="/localization.js"></script></body>'
-              )
           }
           response.writeHead(status, { 'Content-Type': asset[1] })
           return response.end(content)

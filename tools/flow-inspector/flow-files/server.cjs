@@ -28,10 +28,14 @@ async function startFlowServer(
     capability = randomBytes(32).toString('hex')
   const assets = {
     '/': ['public/index.html', 'text/html'],
-    '/flow.js': ['public/flow.js', 'text/javascript'],
-    '/flow.css': ['public/flow.css', 'text/css'],
-    '/viewer.js': ['../viewer.js', 'text/javascript'],
-    '/viewer.css': ['../viewer.css', 'text/css']
+    '/flow-dashboard.js': [
+      '../workspace/generated/flow-dashboard.js',
+      'text/javascript'
+    ],
+    '/flow-dashboard.css': [
+      '../workspace/generated/flow-dashboard.css',
+      'text/css'
+    ]
   }
   let origin = address.origin
   const server = http.createServer(async (req, res) => {

@@ -57,6 +57,7 @@ const architecture = {
       bypasses: ['No contribution may be inferred from another owner.'],
       allowedContributors: ['@asyra/factory public runtime'],
       forbiddenContributors: ['PR status', 'caller supplied evidence'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/factory/src/index.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'produce-factory-runtime'
@@ -74,6 +75,7 @@ const architecture = {
       bypasses: ['No missing prerequisite may pass.'],
       allowedContributors: ['@asyra/collaboration public runtime'],
       forbiddenContributors: ['evidence from another HEAD'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/collaboration/src/process.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'produce-collaboration-runtime'
@@ -91,6 +93,7 @@ const architecture = {
       bypasses: ['No partial source may become an integrated result.'],
       allowedContributors: ['@asyra/ui-context public runtime'],
       forbiddenContributors: ['combined green results from different sources'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/ui-context/src/property-registry.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'complete-ui-context-runtime'

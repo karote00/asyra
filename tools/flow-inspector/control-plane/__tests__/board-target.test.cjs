@@ -10,7 +10,7 @@ const { startServer } = require('../server.cjs')
 test(
   'flow target work decomposition operates on desktop tablet and narrow board with retained audit',
   { timeout: 60000 },
-  async () => {
+  async (t) => {
     const { randomUUID } = require('node:crypto')
     const { LOCAL_ACTOR } = require('../service.cjs')
     const root = path.resolve(__dirname, '../../../..')
@@ -61,8 +61,15 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+      page.on('response', async (response) => {
+        if (response.status() >= 400) {
+          t.diagnostic(
+            `${response.status()} ${response.url()}: ${await response.text()}`
+          )
+        }
+      })
       await page.goto(server.origin + '/transaction-atomicity')
-      const frame = page.frameLocator('iframe')
+      const frame = page
       await frame.locator('[data-step-id="finalize-transaction-state"]').click()
       await frame.locator('#proof-controls > summary').click()
       await frame.locator('#target-controls > summary').click()

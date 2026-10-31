@@ -56,11 +56,7 @@ test('AI Agent Runtime Inspector and product authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '..', 'ai-agent-runtime-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('every owner step has exact execution and cleanup fields', () => {

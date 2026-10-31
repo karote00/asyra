@@ -59,15 +59,7 @@ test('Gate 5 Inspector and product authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'framework-release-readiness-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   const decisionStep = step('decide-release-readiness')
   assert.ok(
     decisionStep.implementationBoundary.includes('scripts/release-records.js')

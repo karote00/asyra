@@ -1329,7 +1329,7 @@
       {
         id: 'gate-3-inspector',
         label: 'Gate 3 Hierarchy Inspector',
-        href: '../inspectors/group-component-and-hierarchy-flow-inspector.html',
+        href: '../workspace/workspace.html#inspector=group-component-and-hierarchy',
         kind: 'authority'
       },
       {

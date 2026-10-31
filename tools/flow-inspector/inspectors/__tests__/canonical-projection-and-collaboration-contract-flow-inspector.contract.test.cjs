@@ -106,15 +106,7 @@ test('canonical Inspector uses the current plan and retains historical reference
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'canonical-projection-and-collaboration-contract-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(Object.isFrozen(data))
   assert.ok(data.steps.every(Object.isFrozen))
 

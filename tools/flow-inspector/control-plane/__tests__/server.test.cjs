@@ -72,9 +72,6 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       assert.match(await missing.text(), /data-workspace-routing="path"/)
     }
     for (const asset of [
-      'viewer.js',
-      'viewer.css',
-      'workspace/target.js',
       'workspace/generated/flow-inspector-workspace.js',
       'workspace/generated/flow-inspector-workspace.css'
     ]) {
@@ -87,20 +84,16 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         fs.readFileSync(path.join(root, 'tools/flow-inspector', asset), 'utf8')
       )
     }
-    const target = await fetch(
-      server.origin +
-        '/tools/flow-inspector/workspace/target.html?inspector=transaction-atomicity'
-    )
-    assert.equal(target.status, 200)
-    assert.match(await target.text(), /src="\/board.js"/)
-    assert.match(
-      target.headers.get('content-security-policy'),
-      /frame-ancestors 'self'/
-    )
-    assert.match(
-      target.headers.get('content-security-policy'),
-      /script-src 'self'/
-    )
+    for (const retired of [
+      '/board.js',
+      '/localization.js',
+      '/tools/flow-inspector/viewer.js',
+      '/tools/flow-inspector/workspace/target.html',
+      '/tools/flow-inspector/workspace/target.js',
+      '/tools/flow-inspector/workspace/legacy-viewer.js'
+    ]) {
+      assert.equal((await fetch(server.origin + retired)).status, 404, retired)
+    }
     assert.equal(
       (await fetch(server.origin + '/api/state?inspector=x')).status,
       400
@@ -145,8 +138,9 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         server.origin + '/tools/flow-inspector/inspectors/' + name + '.html',
         { redirect: 'manual' }
       )
-      assert.equal(linked.status, 302, name)
-      assert.equal(linked.headers.get('location'), '/' + id)
+      assert.equal(linked.status, 404, name)
+      assert.equal(linked.headers.get('location'), null)
+      assert.equal((await fetch(server.origin + '/' + id)).status, 200)
       assert.match(
         linked.headers.get('content-security-policy'),
         /frame-ancestors 'none'/

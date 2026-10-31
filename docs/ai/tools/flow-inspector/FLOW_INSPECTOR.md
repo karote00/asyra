@@ -33,27 +33,23 @@ Flow Inspector helps a reader answer:
 
 ## Ownership
 
-`tools/flow-inspector/viewer.js` owns generic browser rendering and structural
-validation. It may read only the public Flow Inspector schema.
+`tools/flow-inspector/src/architecture/` owns React DOM/SVG presentation and
+browser structural admission. It reads the public Flow Inspector schema.
 
-`tools/flow-inspector/inspectors/` owns every target data artifact, standalone
-HTML entry, and Inspector contract test. Framework and App `plans/` directories
+`tools/flow-inspector/inspectors/` owns target data artifacts and Inspector
+contract tests. Framework and App `plans/` directories
 contain plans only; they must not own generated or executable Inspector
 artifacts. A target data file directly declares its complete contract and exposes it as
 `globalThis.FLOW_INSPECTOR_DATA` for the browser. It may also export the same
 object through CommonJS for static validation. It must not import, require, or
 re-export another target data file.
 
-Each viewer entry owns only the established HTML/CSS shell and these browser
-inputs, in order:
-
-1. the target data file from the shared tool-owned Inspector directory;
-2. a synchronized inline snapshot of `tools/flow-inspector/viewer.js`.
-
-`tools/flow-inspector/embed-viewer.cjs` owns snapshot embedding. Target entries
-must not load the renderer across directories because each entry must remain
-directly openable without a local server. `viewer-entry.test.cjs` verifies that
-the inline snapshot exactly matches the shared renderer source.
+The workspace HTML mounts one React application using the generated catalog
+and checked-in Vite build. Its hash routes work when opened directly from the
+repository. Hosted services use the same React architecture view and canonical
+catalog routes. Live flow documents use the React dashboard build. No target
+iframe, imperative renderer, embedded renderer snapshot, or removed-HTML
+compatibility redirect is delivered.
 
 Product semantics remain in the target's authoritative Framework, App, Release,
 or Tool specification. Centralized artifact ownership does not transfer those
@@ -190,21 +186,21 @@ verified against the target specification by the target's formal gates.
 
 ## Storage
 
-- Shared renderer: `tools/flow-inspector/viewer.js`
-- Snapshot embedder: `tools/flow-inspector/embed-viewer.cjs`
-- Direct-open and synchronization gate:
-  `tools/flow-inspector/__tests__/viewer-entry.test.cjs`
-- Target data and HTML entry: near the target's authoritative documentation
+- React presentation: `tools/flow-inspector/src/architecture/`
+- Build owner: `tools/flow-inspector/vite.config.ts`
+- Architecture contract gate:
+  `tools/flow-inspector/__tests__/architecture-contract.test.cjs`
+- React delivery gate: `tools/flow-inspector/__tests__/react-delivery.test.cjs`
+- Target data: `tools/flow-inspector/inspectors/`
 - Target-specific semantic handoff gate: next to the target data when the
   generic structural gate cannot prove route-conditional behavior
-- Workspace package: not required for the static schema and renderer
+- Direct-open workspace: `tools/flow-inspector/workspace/workspace.html`
 
 A multi-target workspace, catalog, future generator, result sidecar, or local
 server requires a separate contract. A static workspace may discover and load
 schema version 2 targets, but its catalog must not duplicate target semantics
-or make standalone viewer entries dependent on the workspace. Future dynamic
-layers must not add execution fields to schema version 2 or make the static
-viewer dependent on product/runtime internals.
+or add execution fields to schema version 2. Dynamic service surfaces remain
+separate owners and do not make the static viewer depend on product internals.
 
 ## First Target
 
@@ -215,10 +211,10 @@ Stroke Engine uses:
 - target data:
   `tools/flow-inspector/inspectors/stroke-flow-inspector.data.cjs`;
 - viewer entry:
-  `tools/flow-inspector/inspectors/stroke-flow-inspector.html`.
+  `tools/flow-inspector/workspace/workspace.html#inspector=stroke-engine`.
 - target-specific semantic handoff gate:
   `tools/flow-inspector/inspectors/__tests__/stroke-flow-inspector.contract.test.cjs`.
 
 The Stroke data file exercises the generic schema with its end-to-end feature
-flow. Future features must provide their own target data and viewer entry while
-reusing the same schema and renderer.
+flow. Future features provide target data and catalog membership while reusing
+the same schema and React presentation.

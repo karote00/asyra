@@ -45,6 +45,11 @@ test(
     await page
       .getByRole('button', { name: 'Accept - Order accepted', exact: true })
       .waitFor()
+    assert.equal(
+      await page.evaluate(() => typeof globalThis.FLOW_INSPECTOR_VIEW),
+      'undefined',
+      'The task dashboard must render through React without the old viewer'
+    )
     await page
       .getByLabel('Acceptance reason or note')
       .fill('Reviewed the order manually')
@@ -77,7 +82,10 @@ test(
       fullPage: true
     })
     fs.writeFileSync(file, '{')
-    await page.waitForFunction(() => document.body.dataset.invalid === 'true')
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.flow-dashboard')?.dataset.invalid === 'true'
+    )
     assert.equal(
       await page
         .getByRole('button', { name: 'Accept - Order accepted', exact: true })
@@ -88,11 +96,26 @@ test(
     fs.writeFileSync(file, JSON.stringify(doc))
     await page.waitForFunction(
       () =>
-        document.body.dataset.invalid === 'false' &&
+        document.querySelector('.flow-dashboard')?.dataset.invalid ===
+          'false' &&
         document.querySelector('#feature-status')?.textContent !==
           'Feature - done'
     )
     await page.setViewportSize({ width: 600, height: 900 })
+    await page
+      .getByLabel('Acceptance reason or note')
+      .fill('Retained narrow draft')
+    await page
+      .getByRole('button', { name: 'Hide details', exact: true })
+      .click({ timeout: 3000 })
+    await page.getByRole('button', { name: 'Fit all', exact: true }).click()
+    await page
+      .getByRole('button', { name: 'Show details', exact: true })
+      .click()
+    assert.equal(
+      await page.getByLabel('Acceptance reason or note').inputValue(),
+      'Retained narrow draft'
+    )
     await page.screenshot({
       path: path.join(browserRoot, 'narrow.png'),
       fullPage: true

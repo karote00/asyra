@@ -36,11 +36,7 @@ test('dedicated migration Inspector and product authority resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '../app-level-migration-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(
     step('receive-raw-document').implementationBoundary.includes(
       'packages/persistence/src/providers/index.ts'
@@ -161,18 +157,15 @@ test('package validators share only the domain-neutral diagnostic contract', () 
   })
 })
 
-test('viewer preserves frozen data and exposes steps, routes, and artifacts', () => {
-  const viewer = fs.readFileSync(
-    path.resolve(__dirname, '../app-level-migration-flow-inspector.html'),
-    'utf8'
-  )
+test('React catalog preserves frozen steps, routes, and artifacts', () => {
+  const entry = require('./assert-react-catalog.cjs')(data)
 
-  assert.match(viewer, /\[\.\.\.data\.lanes\]\s*\.sort/)
-  assert.match(viewer, /data\.steps/)
-  assert.match(viewer, /data\.routes/)
-  assert.match(viewer, /data\.artifacts/)
-  assert.match(viewer, />Routes</)
-  assert.match(viewer, />Artifacts</)
+  assert.ok(Object.isFrozen(data))
+  assert.ok(data.steps.every(Object.isFrozen))
+  assert.equal(entry.kind, 'flow-v2')
+  assert.equal(entry.data.steps.length, data.steps.length)
+  assert.equal(entry.data.routes.length, data.routes.length)
+  assert.equal(entry.data.artifacts.length, data.artifacts.length)
 })
 
 test('raw direct and provider loads share one pre-validation migration route', () => {

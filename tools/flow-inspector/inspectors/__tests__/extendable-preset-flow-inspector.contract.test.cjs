@@ -65,14 +65,7 @@ test('completed extendable-preset plan remains the resolvable product authority'
     fs.existsSync(path.resolve(repoRoot, formerActiveSpecPath)),
     false
   )
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        repoRoot,
-        'tools/flow-inspector/inspectors/extendable-preset-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('app startup owns only ordinary public composition and migration choice', () => {

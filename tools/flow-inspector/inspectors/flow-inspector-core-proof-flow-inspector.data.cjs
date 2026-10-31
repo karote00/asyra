@@ -1010,7 +1010,7 @@ const data = {
       ],
       allowedContributors: [
         'same-origin proof HTTP API',
-        'existing static workspace and native browser DOM'
+        'shared React workspace and architecture components'
       ],
       forbiddenContributors: [
         'static architecture data or renderer mutation',
@@ -1019,9 +1019,9 @@ const data = {
       ],
       cacheDimensions: [],
       implementationBoundary: [
-        'tools/flow-inspector/control-plane/public/board.js',
-        'tools/flow-inspector/control-plane/public/board.css',
-        'tools/flow-inspector/control-plane/public/localization.js',
+        'tools/flow-inspector/src/control-plane/ControlPlane.jsx',
+        'tools/flow-inspector/src/control-plane/styles.css',
+        'tools/flow-inspector/src/control-plane/Localization.jsx',
         'tools/flow-inspector/control-plane/__tests__/board-localization.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/board.test.cjs'
       ],

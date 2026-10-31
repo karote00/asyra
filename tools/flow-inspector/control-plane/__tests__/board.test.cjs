@@ -94,8 +94,15 @@ test(
         requests.push(new URL(request.url()).pathname)
       )
       await page.goto(server.origin + '/transaction-atomicity')
-      const frame = page.frameLocator('iframe')
-      await frame.locator('[data-step-id="finalize-transaction-state"]').click()
+      const frame = page
+      await frame
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click({ timeout: 5000 })
+        .catch(async (error) => {
+          throw new Error(
+            `${error.message}\nBrowser errors: ${JSON.stringify(errors)}\nAlerts: ${await page.getByRole('alert').allTextContents()}`
+          )
+        })
       await frame.locator('#proof-controls > summary').click()
       await frame.locator('#target-controls > summary').click()
       await expect(frame.locator('#target-review')).toHaveValue('')
@@ -262,6 +269,9 @@ test(
         })
       })
       await dependentPrepare.click()
+      await expect
+        .poll(() => admissionRequest?.assessmentId)
+        .toBe(assessment.id)
       assert.equal(admissionRequest.assessmentId, assessment.id)
       assert.equal(admissionRequest.sourceAttemptId, undefined)
       assert.equal(admissionRequest.workId, target.works[1].id)
@@ -1076,7 +1086,7 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       await page.goto(server.origin + '/transaction-atomicity')
-      const canvas = page.frameLocator('iframe')
+      const canvas = page
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
         .click()
@@ -1208,8 +1218,8 @@ test(
         }
       })
       await page.goto(server.origin + '/transaction-atomicity')
-      await expect(page.locator('iframe[title]')).toHaveCount(1)
-      const canvas = page.frameLocator('iframe')
+      await expect(page.locator('iframe')).toHaveCount(0)
+      const canvas = page
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
       await expect(canvas.locator('#proof-controls')).toBeVisible()
@@ -1362,6 +1372,11 @@ test(
         new MutationObserver((records) => {
           window.graphChanges += records.length
         }).observe(document.getElementById('flow'), { childList: true })
+      })
+      await expect(viewport).not.toHaveAttribute('data-zoom-scale', '1')
+      await viewport.evaluate((node) => {
+        node.scrollLeft = 65
+        node.scrollTop = 45
       })
       const view = await viewport.evaluate((node) => ({
         zoom: node.dataset.zoomScale,
@@ -1625,7 +1640,7 @@ test(
       await run(
         'baseline',
         'passed',
-        menu.getByRole('button', { name: 'Publish a committed change' })
+        menu.getByRole('menuitem', { name: 'Publish a committed change' })
       )
       await expect(canvas.locator('#checks')).toHaveText('3 / 3')
       await canvas.locator('#proof-flow').selectOption('immediate-cancellation')
@@ -1653,8 +1668,7 @@ test(
       )
       await run('baseline', 'passed')
       await capture('canvas-recovery')
-      // Existing filtering/selection replaces graph DOM, so the adapter must bind
-      // the new cards and immediately project the selected evidence.
+      // React projects filtered evidence without rescanning or rebinding DOM cards.
       const previousReads = await viewport.evaluate(() => window.cardReads)
       await canvas
         .getByRole('button', { name: 'Boundary', exact: true })
@@ -1662,8 +1676,9 @@ test(
       await expect(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(0)
-      assert.ok(
-        (await viewport.evaluate(() => window.cardReads)) > previousReads
+      assert.equal(
+        await viewport.evaluate(() => window.cardReads),
+        previousReads
       )
       await canvas.getByRole('button', { name: 'All', exact: true }).click()
       await expect(
@@ -1756,11 +1771,11 @@ test(
         .click()
       await canvas.getByRole('button', { name: 'Close step details' }).click()
       await canvas
-        .getByRole('button', { name: 'Close Inspector header' })
+        .getByRole('button', { name: 'Hide header', exact: true })
         .click()
       await expect(canvas.locator('.flow-viewport')).toBeVisible()
       await expect(
-        canvas.locator('[data-panel-button="details"]')
+        canvas.getByRole('button', { name: 'Show details', exact: true })
       ).toBeVisible()
       await capture('narrow-canvas')
       assert.equal(
@@ -1831,6 +1846,7 @@ test(
       context.on('page', (tab) =>
         tab.on('pageerror', (error) => errors.push(error.message))
       )
+      page.on('pageerror', (error) => errors.push(error.message))
       context.on('response', (response) => {
         if (response.status() >= 400) {
           errors.push(response.status() + ' ' + response.url())
@@ -1848,24 +1864,13 @@ test(
               : []
         }))
       )
-      // The public address is independent of the target iframe's stable id.
-      const legacy =
-        server.origin +
-        '/tools/flow-inspector/workspace/workspace.html#inspector=asyra-design-ai-conversational-drawing-performance'
-      await page.goto(legacy)
+      await page.goto(server.origin + '/ai-drawing-performance')
       await expect(page).toHaveURL(server.origin + '/ai-drawing-performance')
-      await expect(page.frameLocator('iframe').locator('html')).toHaveAttribute(
-        'data-target-state',
-        'rendered'
-      )
-      const targetSource = await page.locator('iframe').getAttribute('src')
-      assert.match(
-        targetSource,
-        /inspector=asyra-design-ai-conversational-drawing-performance/
-      )
+      await expect(page.locator('.architecture-view')).toBeVisible()
+      await expect(page.locator('iframe')).toHaveCount(0)
       await page.reload()
       await expect(page).toHaveURL(server.origin + '/ai-drawing-performance')
-      await expect(page.locator('iframe')).toHaveAttribute('src', targetSource)
+      await expect(page.locator('.architecture-view')).toBeVisible()
       await page.getByRole('button', { name: 'Overview', exact: true }).click()
       await expect(page).toHaveURL(server.origin + '/')
       await expect(page.locator('iframe')).toHaveCount(0)
@@ -1874,9 +1879,7 @@ test(
         .filter({ hasText: 'Transaction Atomicity Inspector Flow' })
         .click()
       await expect(page).toHaveURL(server.origin + '/transaction-atomicity')
-      await expect(
-        page.frameLocator('iframe').locator('.step-card')
-      ).toHaveCount(7)
+      await expect(page.locator('.step-card')).toHaveCount(7)
       const historyLength = await page.evaluate(() => window.history.length)
       await page
         .getByTestId('inspector-entry')
@@ -1891,14 +1894,12 @@ test(
       await expect(page.locator('iframe')).toHaveCount(0)
       await page.goBack()
       await expect(page).toHaveURL(server.origin + '/ai-drawing-performance')
-      await expect(page.locator('iframe')).toHaveAttribute('src', targetSource)
+      await expect(page.locator('.architecture-view')).toBeVisible()
       await page.goForward()
       await expect(page).toHaveURL(server.origin + '/')
       await page.goForward()
       await expect(page).toHaveURL(server.origin + '/transaction-atomicity')
-      await expect(
-        page.frameLocator('iframe').locator('.step-card')
-      ).toHaveCount(7)
+      await expect(page.locator('.step-card')).toHaveCount(7)
       const links = new Set()
       const destinations = new Map()
       let selectedSteps = 0
@@ -1908,10 +1909,12 @@ test(
         const response = await page.goto(server.origin + '/' + entry.slug)
         assert.equal(response.status(), 200)
         await expect(page).toHaveURL(server.origin + '/' + entry.slug)
-        const canvas = page.frameLocator('iframe')
-        await expect(canvas.locator('html')).toHaveAttribute(
-          'data-target-state',
-          'rendered'
+        const canvas = page
+        await expect(
+          canvas.locator('.architecture-view, .contract-document')
+        ).toBeVisible()
+        await expect(canvas.locator('.step-card'), entry.id).toHaveCount(
+          entry.steps.length
         )
         const collectAndClick = async () => {
           const anchors = canvas.locator('a[href]')
@@ -1961,13 +1964,8 @@ test(
               assert.equal(await popup.evaluate(() => window.opener), null)
               if (url.pathname.endsWith('.html')) {
                 await expect(
-                  popup.frameLocator('iframe').locator('html')
-                ).toHaveAttribute('data-target-state', 'rendered')
-                const linkedSlug = await popup
-                  .frameLocator('iframe')
-                  .locator('html')
-                  .evaluate(() => window.FLOW_INSPECTOR_WORKSPACE_ENTRY.slug)
-                assert.equal(new URL(popup.url()).pathname, '/' + linkedSlug)
+                  popup.locator('.architecture-view, .contract-document')
+                ).toBeVisible()
               } else {
                 assert.equal(popup.url(), record.href)
               }
@@ -2008,7 +2006,14 @@ test(
         }
         await collectAndClick()
         for (const step of entry.steps) {
-          await canvas.locator(`[data-step-id="${step}"]`).click()
+          await canvas
+            .locator(`[data-step-id="${step}"]`)
+            .click({ timeout: 5000 })
+            .catch(async (error) => {
+              throw new Error(
+                `${entry.id}: ${error.message}\nURL: ${page.url()}\nCards: ${await page.locator('.step-card').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-step-id')))}\nBrowser errors: ${JSON.stringify(errors)}\nBody: ${(await page.locator('body').innerText()).slice(0, 2000)}`
+              )
+            })
           selectedSteps++
           await collectAndClick()
         }
@@ -2034,9 +2039,7 @@ test(
         ).toBeVisible()
       }
       await page.goto(server.origin + '/transaction-atomicity')
-      await expect(
-        page.frameLocator('iframe').locator('.step-card')
-      ).toHaveCount(7)
+      await expect(page.locator('.step-card')).toHaveCount(7)
       const retainedCanvas = path.join(artifacts, 'retained-canvas.png')
       await page.screenshot({ path: retainedCanvas })
       screenshots.push(retainedCanvas)
@@ -2098,7 +2101,7 @@ test(
       const errors = []
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto(server.origin + '/transaction-atomicity')
-      const canvas = page.frameLocator('iframe')
+      const canvas = page
       await canvas.locator('#proof-controls > summary').click()
       await canvas.locator('#run-all').click()
       await expect(canvas.locator('#overall')).toHaveAttribute(
@@ -2252,7 +2255,7 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       await page.goto(server.origin + '/transaction-atomicity')
-      const canvas = page.frameLocator('iframe')
+      const canvas = page
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await canvas.locator('#proof-controls > summary').click()
       await canvas
@@ -2422,7 +2425,7 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       await page.goto(server.origin + '/transaction-atomicity')
-      const canvas = page.frameLocator('iframe')
+      const canvas = page
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
@@ -2540,6 +2543,9 @@ test(
       await canvas.locator('#agent-handoff').click()
       await expect(canvas.locator('#agent-result')).toContainText('handed-off')
       await page.setViewportSize({ width: 560, height: 900 })
+      await page
+        .getByRole('button', { name: 'Close Inspector catalog' })
+        .click()
       await canvas.locator('#agent-result').scrollIntoViewIfNeeded()
       await canvas
         .locator('#agent-result')
@@ -2666,7 +2672,7 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       await page.goto(origin + '/transaction-atomicity')
-      const canvas = page.frameLocator('iframe')
+      const canvas = page
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
         .click()
@@ -2781,7 +2787,7 @@ test(
       for (const width of [1600, 960, 576]) {
         await page.setViewportSize({ width, height: 1000 })
         await page.goto(server.origin + '/transaction-atomicity')
-        const frame = page.frameLocator('iframe')
+        const frame = page
         await frame
           .locator('[data-step-id="finalize-transaction-state"]')
           .click()
@@ -2899,8 +2905,8 @@ test(
       await page.setViewportSize({ width: 1280, height: 900 })
       for (const entry of snapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries) {
         await page.goto(server.origin + '/' + entry.slug)
-        const frame = page.frameLocator('iframe')
-        await expect(frame.locator('h1:visible')).toBeVisible()
+        const frame = page
+        await expect(frame.locator('.workspace-main h1:visible')).toBeVisible()
         if (entry.kind === 'flow-v2') {
           await frame.locator('.step-card').first().click()
           await expect(
@@ -2958,7 +2964,7 @@ test(
         viewport: { width: 576, height: 720 }
       })
       await page.goto(server.origin + '/transaction-atomicity')
-      const frame = page.frameLocator('iframe')
+      const frame = page
       await expect(page.locator('.sidebar')).toBeHidden()
       await expect(frame.locator('#detail')).toBeHidden()
       const viewport = frame.locator('.flow-viewport')
@@ -3004,18 +3010,21 @@ test(
       )
       await page.setViewportSize({ width: 820, height: 720 })
       await expect(viewport).toBeVisible()
-      await frame.getByRole('button', { name: 'Catalog panel' }).click()
+      await frame
+        .getByRole('button', { name: 'Open Inspector catalog' })
+        .click()
       await expect(page.locator('.sidebar')).toBeVisible()
       await expect(page.locator('.workspace-main')).toBeHidden()
       await page
-        .getByRole('button', {
-          name: /Transaction Atomicity Inspector Flow Architecture/
-        })
+        .getByTestId('inspector-entry')
+        .filter({ hasText: 'Transaction Atomicity Inspector Flow' })
         .click()
       await expect(page.locator('.sidebar')).toBeHidden()
       await expect(viewport).toBeVisible()
       await page.screenshot({ path: path.join(artifacts, 'flow-restored.png') })
-      await frame.getByRole('button', { name: 'Catalog panel' }).click()
+      await frame
+        .getByRole('button', { name: 'Open Inspector catalog' })
+        .click()
       await expect(page.locator('.sidebar')).toBeVisible()
       await page.getByRole('button', { name: 'Overview', exact: true }).click()
       await expect(
@@ -3111,7 +3120,7 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       await page.goto(server.origin + '/transaction-atomicity')
-      const canvas = page.frameLocator('iframe')
+      const canvas = page
       await canvas
         .locator('[data-step-id="finalize-transaction-state"]')
         .click()
@@ -3324,7 +3333,7 @@ test(
         viewport: { width: 1600, height: 1100 }
       })
       await page.goto(origin + '/transaction-atomicity')
-      const canvas = page.frameLocator('iframe')
+      const canvas = page
       await canvas.locator('[data-step-id="' + task.task.stepId + '"]').click()
       await canvas.locator('#proof-controls > summary').click()
       await canvas.locator('#agent-controls > summary').click()
@@ -3464,7 +3473,7 @@ test(
       const errors = []
       page.on('pageerror', (e) => errors.push(e.message))
       await page.goto(server.origin + '/transaction-atomicity')
-      const frame = page.frameLocator('iframe')
+      const frame = page
       await frame.locator('[data-step-id="finalize-transaction-state"]').click()
       await frame.locator('#proof-controls > summary').click()
       await frame.locator('#target-controls > summary').click()
@@ -3600,8 +3609,12 @@ test(
               entries: [
                 {
                   id: fixture.architecture.target.id,
-                  slug: fixture.architecture.target.id,
+                  slug: 'transaction-atomicity',
+                  title: fixture.architecture.target.title,
                   kind: 'flow-v2',
+                  group: 'Framework',
+                  subgroup: 'Runtime',
+                  labels: [],
                   sourcePath:
                     'tools/flow-inspector/control-plane/__tests__/fixtures/full-runtime/architecture.cjs',
                   data: fixture.architecture
@@ -3610,18 +3623,14 @@ test(
             })
         })
       )
-      const id = fixture.architecture.target.id
-      await page.goto(
-        server.origin +
-          '/tools/flow-inspector/workspace/target.html?inspector=' +
-          id +
-          '#inspector=' +
-          id
-      )
-      await expect(page.locator('html')).toHaveAttribute(
-        'data-target-state',
-        'rendered'
-      )
+      await page.goto(server.origin + '/transaction-atomicity')
+      await expect(page.locator('.architecture-view'))
+        .toBeVisible()
+        .catch(async (error) => {
+          throw new Error(
+            `${error.message}\nBrowser errors: ${JSON.stringify(errors)}\nBody: ${(await page.locator('body').innerText()).slice(0, 2000)}`
+          )
+        })
       await page.locator('[data-step-id="complete-ui-context-runtime"]').click()
       await page.locator('#proof-controls > summary').click()
       await page.locator('#target-controls > summary').click()
@@ -3705,7 +3714,24 @@ test(
         ['narrow', { width: 430, height: 920 }]
       ]) {
         await page.setViewportSize(viewport)
+        const closeCatalog = page.getByRole('button', {
+          name: 'Close Inspector catalog'
+        })
+        if (viewport.width <= 900 && (await closeCatalog.isVisible())) {
+          await closeCatalog.click()
+        }
         await page.locator('#assessment-summary').scrollIntoViewIfNeeded()
+        await expect(page.locator('#assessment-summary')).toBeVisible()
+        const summaryBounds = await page
+          .locator('#assessment-summary')
+          .boundingBox()
+        const closeBounds = await page
+          .getByRole('button', { name: 'Close step details' })
+          .boundingBox()
+        assert.ok(
+          summaryBounds.y >= closeBounds.y + closeBounds.height,
+          'The retained assessment identity must not be covered by the sticky close control'
+        )
         const file = path.join(artifacts, name + '.png')
         await page.screenshot({ path: file })
         screenshots.push({ path: file, viewport })

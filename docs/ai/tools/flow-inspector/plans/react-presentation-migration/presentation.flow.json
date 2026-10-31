@@ -1,0 +1,399 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "react-presentation-migration",
+  "revision": 0,
+  "definition": {
+    "title": "Complete React Flow Inspector",
+    "purpose": "Correct the incomplete React migration without retaining legacy presentation paths.",
+    "nodes": [
+      {
+        "id": "architecture",
+        "title": "React architecture presentation",
+        "objective": "Render admitted architecture as React DOM and SVG with complete contracts, selection, filtering and viewport interaction.",
+        "owner": "@asyra/flow-inspector",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Behavior and negative cases pass on this source",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+        ],
+        "implementationRefs": [
+          "tools/flow-inspector/src/"
+        ],
+        "actions": []
+      },
+      {
+        "id": "workspace",
+        "title": "Direct React workspace composition",
+        "objective": "Pass current selected architecture directly to React; remove iframe messaging and old renderer routes without silently omitting targets.",
+        "owner": "@asyra/flow-inspector",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "react-presentation-migration",
+            "nodeId": "architecture"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Behavior and negative cases pass on this source",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+        ],
+        "implementationRefs": [
+          "tools/flow-inspector/src/",
+          "tools/flow-inspector/workspace/"
+        ],
+        "actions": []
+      },
+      {
+        "id": "services",
+        "title": "React live service presentation",
+        "objective": "Render authoritative flow-file and control-plane snapshots; preserve notes, drafts, manual acceptance, previews, cancellation and diagnostics.",
+        "owner": "@asyra/flow-inspector",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "react-presentation-migration",
+            "nodeId": "architecture"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Behavior and negative cases pass on this source",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+        ],
+        "implementationRefs": [
+          "tools/flow-inspector/src/",
+          "tools/flow-inspector/flow-files/",
+          "tools/flow-inspector/control-plane/"
+        ],
+        "actions": []
+      },
+      {
+        "id": "delivery",
+        "title": "React delivery and removal",
+        "objective": "Serve tested React builds through all current entrypoints and delete obsolete renderer, adapter and embedded HTML delivery paths.",
+        "owner": "@asyra/flow-inspector",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "react-presentation-migration",
+            "nodeId": "workspace"
+          },
+          {
+            "flowId": "react-presentation-migration",
+            "nodeId": "services"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Behavior and negative cases pass on this source",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+        ],
+        "implementationRefs": [
+          "tools/flow-inspector/",
+          "docs/ai/tools/flow-inspector/"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated",
+        "title": "All entrypoints use React and required integration and visual gates pass",
+        "kind": "manual"
+      }
+    ],
+    "architecture": {
+      "schema": {
+        "id": "flow-inspector",
+        "version": 2
+      },
+      "target": {
+        "id": "react-presentation-migration",
+        "kind": "tool",
+        "title": "React presentation migration",
+        "subtitle": "One React presentation implementation without legacy compatibility"
+      },
+      "authority": {
+        "specPath": "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md",
+        "inspectorPath": "docs/ai/tools/flow-inspector/plans/react-presentation-migration/presentation.flow.json",
+        "semanticOwner": "Flow Inspector",
+        "inspectorOwner": "Flow Inspector"
+      },
+      "links": [],
+      "lanes": [
+        {
+          "id": "presentation",
+          "title": "React presentation",
+          "order": 1
+        }
+      ],
+      "steps": [
+        {
+          "id": "architecture",
+          "order": 1,
+          "laneId": "presentation",
+          "title": "React architecture presentation",
+          "ownerPackage": "@asyra/flow-inspector",
+          "purpose": "Render admitted architecture as React DOM and SVG with complete contracts, selection, filtering and viewport interaction.",
+          "inputs": [
+            "Admitted current architecture or authoritative service snapshot"
+          ],
+          "outputs": [
+            "artifact:architecture"
+          ],
+          "conditions": [
+            "Preserve current product contracts and accepted user interactions."
+          ],
+          "bypasses": [
+            "No legacy renderer or iframe fallback is allowed."
+          ],
+          "allowedContributors": [
+            "React state, explicit service requests and pure presentation helpers"
+          ],
+          "forbiddenContributors": [
+            "Legacy viewer globals",
+            "UI-derived service verdicts",
+            "Report-authored executable commands"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "tools/flow-inspector/src/"
+          ],
+          "specRefs": [
+            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          ],
+          "failureOwnerStepId": "architecture"
+        },
+        {
+          "id": "workspace",
+          "order": 2,
+          "laneId": "presentation",
+          "title": "Direct React workspace composition",
+          "ownerPackage": "@asyra/flow-inspector",
+          "purpose": "Pass current selected architecture directly to React; remove iframe messaging and old renderer routes without silently omitting targets.",
+          "inputs": [
+            "Admitted current architecture or authoritative service snapshot",
+            "artifact:architecture"
+          ],
+          "outputs": [
+            "artifact:workspace"
+          ],
+          "conditions": [
+            "Preserve current product contracts and accepted user interactions."
+          ],
+          "bypasses": [
+            "No legacy renderer or iframe fallback is allowed."
+          ],
+          "allowedContributors": [
+            "React state, explicit service requests and pure presentation helpers"
+          ],
+          "forbiddenContributors": [
+            "Legacy viewer globals",
+            "UI-derived service verdicts",
+            "Report-authored executable commands"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "tools/flow-inspector/src/",
+            "tools/flow-inspector/workspace/"
+          ],
+          "specRefs": [
+            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          ],
+          "failureOwnerStepId": "workspace"
+        },
+        {
+          "id": "services",
+          "order": 3,
+          "laneId": "presentation",
+          "title": "React live service presentation",
+          "ownerPackage": "@asyra/flow-inspector",
+          "purpose": "Render authoritative flow-file and control-plane snapshots; preserve notes, drafts, manual acceptance, previews, cancellation and diagnostics.",
+          "inputs": [
+            "Admitted current architecture or authoritative service snapshot",
+            "artifact:architecture"
+          ],
+          "outputs": [
+            "artifact:services"
+          ],
+          "conditions": [
+            "Preserve current product contracts and accepted user interactions."
+          ],
+          "bypasses": [
+            "No legacy renderer or iframe fallback is allowed."
+          ],
+          "allowedContributors": [
+            "React state, explicit service requests and pure presentation helpers"
+          ],
+          "forbiddenContributors": [
+            "Legacy viewer globals",
+            "UI-derived service verdicts",
+            "Report-authored executable commands"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "tools/flow-inspector/src/",
+            "tools/flow-inspector/flow-files/",
+            "tools/flow-inspector/control-plane/"
+          ],
+          "specRefs": [
+            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          ],
+          "failureOwnerStepId": "services"
+        },
+        {
+          "id": "delivery",
+          "order": 4,
+          "laneId": "presentation",
+          "title": "React delivery and removal",
+          "ownerPackage": "@asyra/flow-inspector",
+          "purpose": "Serve tested React builds through all current entrypoints and delete obsolete renderer, adapter and embedded HTML delivery paths.",
+          "inputs": [
+            "Admitted current architecture or authoritative service snapshot",
+            "artifact:workspace",
+            "artifact:services"
+          ],
+          "outputs": [
+            "artifact:delivery"
+          ],
+          "conditions": [
+            "Preserve current product contracts and accepted user interactions."
+          ],
+          "bypasses": [
+            "No legacy renderer or iframe fallback is allowed."
+          ],
+          "allowedContributors": [
+            "React state, explicit service requests and pure presentation helpers"
+          ],
+          "forbiddenContributors": [
+            "Legacy viewer globals",
+            "UI-derived service verdicts",
+            "Report-authored executable commands"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "tools/flow-inspector/",
+            "docs/ai/tools/flow-inspector/"
+          ],
+          "specRefs": [
+            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          ],
+          "failureOwnerStepId": "delivery"
+        }
+      ],
+      "routes": [
+        {
+          "id": "architecture-to-workspace",
+          "from": "architecture",
+          "to": "workspace",
+          "kind": "required",
+          "predicate": "Upstream presentation contract is verified.",
+          "producedArtifacts": [
+            "artifact:architecture"
+          ]
+        },
+        {
+          "id": "architecture-to-services",
+          "from": "architecture",
+          "to": "services",
+          "kind": "required",
+          "predicate": "Upstream presentation contract is verified.",
+          "producedArtifacts": [
+            "artifact:architecture"
+          ]
+        },
+        {
+          "id": "workspace-to-delivery",
+          "from": "workspace",
+          "to": "delivery",
+          "kind": "required",
+          "predicate": "Upstream presentation contract is verified.",
+          "producedArtifacts": [
+            "artifact:workspace"
+          ]
+        },
+        {
+          "id": "services-to-delivery",
+          "from": "services",
+          "to": "delivery",
+          "kind": "required",
+          "predicate": "Upstream presentation contract is verified.",
+          "producedArtifacts": [
+            "artifact:services"
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "artifact:architecture",
+          "ownerStepId": "architecture",
+          "consumerStepIds": [
+            "workspace",
+            "services"
+          ],
+          "channel": "React props and service contracts"
+        },
+        {
+          "id": "artifact:workspace",
+          "ownerStepId": "workspace",
+          "consumerStepIds": [
+            "delivery"
+          ],
+          "channel": "React props and service contracts"
+        },
+        {
+          "id": "artifact:services",
+          "ownerStepId": "services",
+          "consumerStepIds": [
+            "delivery"
+          ],
+          "channel": "React props and service contracts"
+        },
+        {
+          "id": "artifact:delivery",
+          "ownerStepId": "delivery",
+          "terminal": true,
+          "consumerStepIds": [],
+          "channel": "React props and service contracts"
+        }
+      ],
+      "invariants": [],
+      "acceptanceContracts": []
+    }
+  },
+  "current": {
+    "observations": [],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

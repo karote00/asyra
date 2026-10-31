@@ -53,15 +53,7 @@ test('Gate 3 Inspector and product authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'group-component-and-hierarchy-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(Object.isFrozen(data))
   assert.ok(data.steps.every(Object.isFrozen))
 })

@@ -12,15 +12,12 @@ export class TriangleBuilder {
 
   /** An enclosing source primitive may replace its own child face declarations. */
   region(kind: SourceRegion['kind'], indexStart: number) {
-    if (indexStart === this.indices.length) {
-      return
-    }
+    if (indexStart === this.indices.length) return
     while (
       this.sourceRegions.length &&
       this.sourceRegions[this.sourceRegions.length - 1].indexStart >= indexStart
-    ) {
+    )
       this.sourceRegions.pop()
-    }
     this.sourceRegions.push({
       id: `region-${this.sourceRegions.length}`,
       kind,
@@ -117,16 +114,13 @@ export class TriangleBuilder {
       previousNormal = normal
       for (let side = 0; side < sides; side++) {
         const angle = (side / sides) * Math.PI * 2
-        for (let k = 0; k < 3; k++) {
+        for (let k = 0; k < 3; k++)
           this.positions.push(
             p[k] +
               (diameter / 2) *
                 (normal[k] * Math.cos(angle) + binormal[k] * Math.sin(angle))
           )
-        }
-        if (i === 0) {
-          continue
-        }
+        if (i === 0) continue
         const a = offset + (i - 1) * sides + side,
           b = offset + (i - 1) * sides + ((side + 1) % sides)
         this.indices.push(a, b, b + sides, a, b + sides, a + sides)

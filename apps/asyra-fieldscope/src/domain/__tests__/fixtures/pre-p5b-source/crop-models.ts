@@ -138,9 +138,7 @@ function leaf(
       Math.sin(angle) * length * t + Math.cos(angle) * across
     ])
   let sections = cucumber ? 12 : 8
-  if (distant) {
-    sections = 2
-  }
+  if (distant) sections = 2
   const offset = builder.positions.length / 3
   const centers: Point3[] = []
   const acrossCount = distant ? 3 : 5
@@ -169,9 +167,7 @@ function leaf(
       )
     }
     centers.push(point(t, 0, 0.0006))
-    if (!i) {
-      continue
-    }
+    if (!i) continue
     for (let side = 0; side < acrossCount - 1; side++) {
       const a = offset + (i - 1) * acrossCount + side,
         b = a + acrossCount
@@ -188,17 +184,13 @@ function leaf(
     ]
     veins.quad(a, b, add(b, d), add(a, d))
   }
-  for (let i = 2; i < centers.length; i += 2) {
-    vein(centers[i - 2], centers[i])
-  }
-  for (const side of [-1, 1]) {
-    for (const t of [0.35, 0.65]) {
+  for (let i = 2; i < centers.length; i += 2) vein(centers[i - 2], centers[i])
+  for (const side of [-1, 1])
+    for (const t of [0.35, 0.65])
       vein(
         point(t * 0.7, 0, 0.001),
         point(t, width * 0.38 * Math.sin(Math.PI * t) * side, 0.001)
       )
-    }
-  }
 }
 
 function star(
@@ -232,9 +224,7 @@ export function createCropModels(
         ...model,
         parts: model.parts.map((part) => {
           const counterpart = distant.parts.find((item) => item.id === part.id)
-          if (!counterpart) {
-            throw new Error('Missing distant crop source')
-          }
+          if (!counterpart) throw new Error('Missing distant crop source')
           return {
             ...part,
             distantShape: counterpart.shape,
@@ -332,7 +322,7 @@ function createModel(
         Math.sin(angle) * 0.25 * leafScale
       ])
       stems.tube({ points: [petiole, tip], diameter: 0.002 * leafScale })
-      for (let pair = 0; pair < 3; pair++) {
+      for (let pair = 0; pair < 3; pair++)
         for (const side of [-1, 1]) {
           const t = (pair + 0.5) / 3.5
           const anchor = petiole.map(
@@ -350,7 +340,6 @@ function createModel(
           )
           leafletCount++
         }
-      }
       leaf(
         foliage,
         veins,
@@ -382,9 +371,7 @@ function createModel(
     indexStart: number,
     indexCount = builder.indices.length - indexStart
   ) => {
-    if (!indexCount) {
-      return
-    }
+    if (!indexCount) return
     const spans = anatomy.get(builder) ?? []
     spans.push({ targetFruitId, role, indexStart, indexCount })
     anatomy.set(builder, spans)
@@ -395,9 +382,7 @@ function createModel(
     indexStart: number
   ) => {
     const indexCount = builder.indices.length - indexStart
-    if (!indexCount) {
-      return
-    }
+    if (!indexCount) return
     const spans = owned.get(builder) ?? []
     spans.push({ fruitId, indexStart, indexCount })
     owned.set(builder, spans)
@@ -424,12 +409,11 @@ function createModel(
         -j * 0.027 * scale,
         Math.sin(angle) * 0.025 * scale * Math.sin(j * 0.4)
       ])
-    if (!cucumber) {
+    if (!cucumber)
       stems.tube({
         points: Array.from({ length: count }, (_, j) => rachis(j)),
         diameter: 0.0026 * scale
       })
-    }
     for (let j = 0; j < count; j++) {
       const growth =
         extraGrowth && truss === 0
@@ -539,7 +523,7 @@ function createModel(
         stemStart + (cucumber ? 0 : tubeSides * 6),
         tubeSides * 6
       )
-      if (!cucumber) {
+      if (!cucumber)
         recordPatch(
           stems,
           fruitId,
@@ -547,7 +531,6 @@ function createModel(
           retainedStart,
           tubeSides * 6
         )
-      }
       const body = [green, turning, ripe][maturity]
       const bodyStart = body.indices.length
       const flowerStart = flowers.indices.length
@@ -602,18 +585,15 @@ function createModel(
         (role, indexStart, indexCount) =>
           recordPatch(body, fruitId, role, indexStart, indexCount)
       )
-      if (cucumber) {
-        star(stems, top, 0.009 * scale, -0.005 * scale)
-      } else {
-        appendFruitCalyx(stems, top, 0.019 * scale, distant)
-      }
+      if (cucumber) star(stems, top, 0.009 * scale, -0.005 * scale)
+      else appendFruitCalyx(stems, top, 0.019 * scale, distant)
       recordPatch(
         stems,
         fruitId,
         cucumber ? 'fruit-detail' : 'calyx',
         detailStart
       )
-      if (cucumber) {
+      if (cucumber)
         appendCucumberFlower(
           flowers,
           add(center, [0, -length / 2, 0]),
@@ -621,7 +601,6 @@ function createModel(
           scale,
           distant
         )
-      }
       record(body, fruitId, bodyStart)
       record(stems, fruitId, retainedStart)
       record(flowers, fruitId, flowerStart)
@@ -672,16 +651,12 @@ function createModel(
           [0.045, 0.13, 0.035]
         )
       : 0
-  if (cucumber && distant) {
-    for (let i = 0; i < stems.positions.length; i += 3) {
+  if (cucumber && distant)
+    for (let i = 0; i < stems.positions.length; i += 3)
       stems.colors.push(0.125, 0.231, 0.053)
-    }
-  }
-  if (flowers.colors.length) {
-    while (flowers.colors.length < flowers.positions.length) {
+  if (flowers.colors.length)
+    while (flowers.colors.length < flowers.positions.length)
       flowers.colors.push(0.89, 0.58, 0.035)
-    }
-  }
   const builders = [stems, foliage, veins, green, turning, ripe, flowers]
   const partNames = [
     'stems',
@@ -700,24 +675,19 @@ function createModel(
       indexStart: number,
       indexCount: number
     ) => {
-      if (!indexCount) {
-        return
-      }
+      if (!indexCount) return
       const previous = spans.at(-1)
       if (
         previous &&
         previous.fruitId === fruitId &&
         previous.indexStart + previous.indexCount === indexStart
-      ) {
+      )
         previous.indexCount += indexCount
-      } else {
-        spans.push({ fruitId, indexStart, indexCount })
-      }
+      else spans.push({ fruitId, indexStart, indexCount })
     }
     for (const span of owned.get(builder) ?? []) {
-      if (span.indexStart < cursor) {
+      if (span.indexStart < cursor)
         throw new Error('Overlapping crop source ownership')
-      }
       append(null, cursor, span.indexStart - cursor)
       append(span.fruitId, span.indexStart, span.indexCount)
       cursor = span.indexStart + span.indexCount
@@ -757,9 +727,7 @@ function createModel(
             span.indexStart + span.indexCount,
             region.indexStart + region.indexCount
           ) - indexStart
-        if (indexCount <= 0) {
-          return []
-        }
+        if (indexCount <= 0) return []
         const key = `${span.targetFruitId}/${span.role}`
         const ordinal = counts.get(key) ?? 0
         counts.set(key, ordinal + 1)

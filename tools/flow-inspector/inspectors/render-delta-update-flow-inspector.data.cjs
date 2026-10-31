@@ -532,6 +532,22 @@
         'fill rule',
         'material input identity'
       ],
+      cacheEvidence: {
+        measuredPhase: 'prepareVectorCompoundFill invocation count',
+        baseline:
+          'The retained coverage regression measures 1 preparation after initial render, paint and transform edits; 2 after a fill-rule change; 3 after immutable geometry changes.',
+        decision:
+          'Retain the existing graphic-owned coverage and mesh projection across paint and transform updates; this contract correction introduces no new cache.',
+        invalidation:
+          'Changed immutable points, segments, networks or fill rule replace geometry; changed material input updates paint without preparing coverage.',
+        equivalenceOracle:
+          'The shared coverage supplies the rendered mesh and hit predicate for all supported materials without changing canonical input or invoking CPU rasterization.',
+        cleanup:
+          'Graphic destroy releases its mesh children; projection maps use weak graphic keys and do not retain destroyed graphics independently.',
+        memoryBound:
+          'At most one current fill projection per live graphic; replacement does not accumulate prior geometry versions.',
+        testPath: 'packages/preset/src/__tests__/vector-mesh-fill.test.ts'
+      },
       implementationBoundary: [
         'packages/preset/src/components/vector.ts',
         'packages/preset/src/components/fills.ts',

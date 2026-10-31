@@ -57,8 +57,3 @@ export const parseWorkspaceRoute = (
 
 export const workspaceHash = (id: string) =>
   `#inspector=${encodeURIComponent(id)}`
-
-export const targetHref = (id: string) => {
-  const encoded = encodeURIComponent(id)
-  return `./target.html?inspector=${encoded}#inspector=${encoded}`
-}

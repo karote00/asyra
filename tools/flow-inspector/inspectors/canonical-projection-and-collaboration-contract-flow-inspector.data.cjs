@@ -34,7 +34,7 @@
       "id": "transaction-inspector",
       "kind": "framework",
       "label": "Existing Factory transaction authority",
-      "href": "../inspectors/transaction-flow-inspector.html"
+      "href": "../workspace/workspace.html#inspector=transaction-atomicity"
     }
   ],
   "lanes": [
